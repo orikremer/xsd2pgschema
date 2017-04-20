@@ -19,6 +19,16 @@
 		<name>PDBj-BMRB, Institute for Protein Research, Osaka University</name>
 		<url>http://bmrbdep.pdbj.org</url>
 	</organization>
+		<scm>
+		<url>https://sourceforge.net/p/xsd2pgschema/code/</url>
+		<connection>git://git.code.sf.net/p/xsd2pgschema/code</connection>
+		<developerConnection>git://git.code.sf.net/p/xsd2pgschema/code</developerConnection>
+		<tag>xsd2pgschema-code</tag>
+	</scm>
+	<issueManagement>
+		<system>SourceForge</system>
+		<url>https://sourceforge.net/p/xsd2pgschema/tickets/</url>
+	</issueManagement>
 	<developers>
 		<developer>
 			<id>yokochi</id>
