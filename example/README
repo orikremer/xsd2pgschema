@@ -1,0 +1,17 @@
+
+ Example scripts demonstrating XML->PostgreSQL migration using xsd2pgschema
+
+ A script (update_intact.sh) can replicate IntAct Molecular Interaction Database
+(http://www.ebi.ac.uk/intact) on your PostgreSQL DB (dbname: intact) from
+XML documents (downloaded from public FTP site) and its XML Schema (MIF254.xsd).
+
+Usage:
+
+ 1. Create PostgreSQL database (first time only)
+
+    % createdb intact
+
+ 2. Retrieve XML documents and update IntAct database.
+
+    % ./update_intact.sh
+

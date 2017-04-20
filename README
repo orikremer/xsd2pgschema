@@ -1,0 +1,409 @@
+ Changes in xsd2pgschema 2.4.3 (release 2017-04-20)
+
+  No functional change at all.
+  Added Java package name for core classes.
+  Added Maven project.
+
+ Changes in xsd2pgschema 2.4.2 (release 2017-04-18)
+
+  XML Schema validation has been turned off by default (to turn on, please use --valid option).
+  Allowed to change DB host (localhost) and port (5432) by --db-host and --db-port options.
+  Fixed isseus around data migration (in case of --no-rel mode) occurred only in previous 2.4.2.
+  Fixed relational oriented JSON convesion.
+
+ Changes in xsd2pgschema 2.4.1 (release 2017-04-10)
+
+  Allowed multiple --xml options to designate multiple sources of XML file or directory.
+  Fixed fault detection of parent node name list which causes missing of data.
+  Fixed nullPointerException at getLocalName().
+  Revised console output while processing.
+  Changed option name from --array-json to --json-array-all.
+  Changed option name from --smpl-cont-json-key to --simple-cont-json-key.
+  Fixed missing of data of element with qualified name.
+
+ Changes in xsd2pgschema 2.4.0 (release 2017-04-06)
+
+  Added --max-thrds option to allow parallel processing (default is number of available processors) in xml2pgcsv, xml2pgsql, xml2json, xml2luceneidx and xml2sphinxds.
+  Added --shard-size option to enable sharding in xml2luceneidx and xml2sphinxds.
+  Allowed multiple --xml options to designate multiple sources of XML file or directory.
+
+ Changes in xsd2pgschema 2.3.0 (release 2017-03-31)
+
+  Revised PostgreSQL DDL mapping for xs:dateTime (TIMESTAMP), xs:time (TIME) and xs:explicitTimezone (e.g. WITH TIME ZONE).
+  Revised time checker based on LocalTime and OffsetTime.
+  Added normalizer for xs:fractionDigits and xs:whiteSpace restrictions.
+  Added --no-wild-card option to ignore wild cards for backward compatibility.
+  Fixed recognition of list table which causes missing of data.
+  Added --update option in xml2pgsql enables partial update of document where document key must be predefined.
+
+ Changes in xsd2pgschema 2.2.0 (release 2017-03-29)
+
+  NOTICE: xsd2pgschema conforms to W3C XML Schema Definition Language 1.1 at last.
+  Added support for XML Schema 1.1 open content components as known as wild cards (xs:any, xs:anyAttribute).
+   where contents of the wild card are stored in PostgreSQL XML datatype with column name "any_element" for xs:any and "any_attribute" for xs:anyAttribute, it can be indexed by either Apache Lucene or Sphinx Search, and mapped as XML content in JSON item.
+  Updated description about statistics of schema in PostgreSQL DDL.
+  Removed improper enumeration value length limit on XML->JSON conversion.
+
+ Changes in xsd2pgschema 2.1.0 (release 2017-03-27)
+
+  Internal code refactoring and class name revisions.
+  Added automatic retrieval of XML Schemata located in the same directory of designated XML Schema.
+  Allowed to include or import XML Schema having neither root element nor administrative elements, but with warning message.
+  Fixed stack overflow issue when including nested XML Schemata.
+  Properly copying target namespace and schema location as concatenated form in multiple referencing case.
+  Added --xml-file-ext-digest option in xml2pgcsv, xml2pgsql, xml2luceneidx and xml2sphinxds classes as well as xml2json class.
+  Added descriptions about schema modeling options and statistics of schema in PostgreSQL DDL.
+  Fixed to add transaction commit per document in xml2pgsql.
+
+ Changes in xsd2pgschema 2.0.0 (release 2017-03-24)
+
+  NOTICE: As we adopt strict schema component naming scheme from 2.0.0, PostgreSQL DDL is not compatible between v2.x.x and v1.x.x.
+  Revised XML->JSON and XML Schema->JSON Schema conversion (inlining content of virtual table and dropped --no-rel option).
+  Internal code refactoring and class name revisions.
+  Fixed java.util.ConcurrentModificationException while blocking substitution group.
+  Added --numeric-idx option in xml2luceneidx to allow to store numeric values in index for backward compatibility.
+  
+ Changes in xsd2pgschema 2.0.0.rc1 (release 2017-03-17)
+
+  NOTICE: We recommend all users avoid to use 1.14.0 and 1.15.x.
+  Fixed critical bug which causes missing of data occurs on 1.14.0 and 1.15.x.
+  Fixed XPath base name.
+  Adopted strict schema component name matching that sweeps name collision.
+  Removed non-sense --no-key option except for xsd2pgschema class.
+  Fixed escaping constraint name in PostgreSQL DDL.
+  Added parent node name list of nested key in PostgreSQL DDL.
+  Changed to store numerical data as Lucene index, previously stored numerical data for range filter.
+  Allowed include or import top level elements.
+
+ Changes in xsd2pgschema 1.15.5 (release 2017-03-15)
+
+  Strict primary key assignment.
+  Fixed virtual duplication of nested key. (e.g. IntAct//experimentList/experimentDescription_id is dropped because another IntAct//experimentList/experimentDescriptionList_id is pointing the same id via IntAct//experimentDiscriptionList/experimentDescription_id)
+  Internal code refactoring and class name revisions.
+
+ Changes in xsd2pgschema 1.15.4 (release 2017-03-13)
+
+  Fixed invalid primary key assignment.
+  Added support for xs:all|xs:choice|xs:sequence/@maxOccurs|@minOccurs.
+  Added table type declarations in PostgreSQL DDL: content holder (content: true), list holder (list: true), bridge table (bridge: true), hub table (hub: true), administrative table (virtual: true), target namespace and schema location, respectively.
+  Fixed invalid XPath base name.
+  Fixed extension of xs:simpleContent.
+  Allowed to set schema location in --xsd option.
+  Fixed virtual table identification.
+  Updated table type declarations in PostgreSQL DDL (adding type column).
+
+ Changes in xsd2pgschema 1.15.3 (release 2017-03-09)
+
+  Fixed java.util.ConcurrentModificationException in case including or importing namespaces.
+
+ Changes in xsd2pgschema 1.15.2 (release 2017-03-08)
+
+  Added "xpath_id" column to enable direct access via XPath expression if --xpath-key is set in xsd2pgschema, xml2pgcsv and xml2pgsql.
+   where primary key named "(relation_name)_id" stores hash value calculated from (document_id)(XPath to current node)
+     and xpath key named "xpath_id" stores hash value calculated from (XPath to current node).
+  Fixed a potential bug which causes missing of data in xml2pgcsv and xml2pgsql in case --ser-key is selected.
+  Fixed default setting for --ser-key in xml2pgsql.
+  Fixed invalid XPath base name in case of --xpath-key.
+  Internal code refactoring for performance improvement.
+
+ Changes in xsd2pgschema 1.15.1 (release 2017-03-02)
+
+  Added "serial_id" column to keep node order if --ser-key option is set in xsd2pgschema, xml2pgcsv and xml2pgsql.
+  Added --ser-size option in xml2pgcsv, xml2pgsql and xsd2pgschema classes that allows to choose bit length of serial key from "short" and "int" (default).
+  Fixed PostgreSQL DDL conversion of XML Schema using unqualified name with error message; No namespace prefix stands for http://www.w3.org/2001/XMLSchema in a document.
+  Adopted more XPath compatible nomenclature as base name. For example (document_id)/root_elem/child_elem[3] represents base name of the third child element (child_elem) of root element (root_elem) in document_id.xml.
+
+ Changes in xsd2pgschema 1.15.0 (release 2017-02-24)
+
+  NOTICE: Hash strategy has been changed to use XPath compatible nomenclature as base name. Hence, primary key, foreign key and nested key values are not compatible with previous ones.
+  User can select a hash algorithm from MD5, SHA-1 and SHA-256 and truncation size from 32 bit integer, 64 bit long, default bit size; 128i bit for MD5, 160 bit for SHA-1 and 256 bit for SHA-256, respectively.
+  Added --hash-by and --hash-size options in xml2json, xml2pgcsv, xml2pgsql, xml2luceneidx, xml2sphinxds classes.
+  Added --hash-size option in xsd2pgscehma and xsd2jsonschema classes.
+   where --hash-by allows to choose message digest algorithm from "MD5", "SHA-1" (default) and "SHA-256" and --hash-size allows to choose from "int", "long" (default) and "default". "int" and "long" represent truncation of hash key to unsigned 32bit integer and unsigned 64bit long, respectively and "default" means no truncation.
+  Reusing MessageDigest to generate hash key.
+  Fixed a potential bug in xml2pgcsv and xml2pgsql.
+  Added truncation of constraint name to be less than 64 characters that reduces PostgreSQL warning message.
+  Retrieved xs:attribute and xs:simpleContent declaration as comment in PostgreSQL DDL.
+  
+ Changes in xsd2pgschema 1.14.0 (release 2017-02-02)
+
+  Internal code refactoring.
+
+ Changes in xsd2pgschema 1.13.5 (release 2017-01-31)
+
+  Updated IOUtils from 1.4 to 2.5.
+  Updated CommonsLang from 2.4 to 3.5.
+  Replaced StringBuffer by StringBuilder.
+
+ Changes in xsd2pgschema 1.13.4 (release 2017-01-26)
+
+  Reusing DOMParser for XML Schema validation.
+  Reusing DocumentBuilfer for XML parser.
+
+ Changes in xsd2pgschema 1.13.3 (release 2016-12-19)
+
+  Enabled subset Lucene full-text indexing like Sphinx and introduced --attr, --field, --attr-all and --field-all options in xml2luceneidx.
+  Enabled Sphinx full-text indexing including all attributes, then introduced --attr-all options like Lucene.
+  Aligned option names in both Lucene and Sphinx full-text indexing; --attr, --field, --attr-all, --field-all options are common in both xml2luceneidx and xml2sphinxds.
+  NOTICE: --sph-attr and --sph-field of xml2sphinxds are not valid. Please use --attr or --field instead.
+  
+ Changes in xsd2pgschema 1.13.2 (release 2016-12-14)
+
+  Allowed additional retrieval of Sphinx attribute by using --sph-attr option that enables to reduce size of Sphinx index. You can repeat --sph-attr options to select attributes.
+  Renamed --field option to --sph-field of xml2sphinxds that allows selective indexing by adding field in Sphinx xmlpipe2 format and the other fields are ignored from the index. You can repeat --sph-field options to select fields.
+  xs:ID content is stored as Sphinx attribute by default not like 1.11.1 or earlier.
+  Non xs:ID contents are not stored as Sphinx attribute by default that helps to reduce size of Sphinx index.
+  Fixed foreign key constraint for multiple columns and append "NOT VALID" option by default.
+
+ Changes in xsd2pgschema 1.13.1 (release 2016-12-01)
+
+  NOTICE: We recommend all users avoid to use 1.13.1 released on 2016-11-29.
+  Speed enhancement by reducing ancestor's node check for non-list holder node.
+  Added '--valid' to turn on XML Schema validation, though it has been turned on by default.
+  Fixed nullPointerException in case of invalid argument for xml2json and xsd2jsonschema.
+  Changed schema source for XML Schema validation from embedded schema location in XML document (/@xsi:schemaLocation) to specified path by --xsd option.
+  Fixed PostgreSQL DDL mapping error in declaration of foreign key because of remaining XPath's attribute notation: '@'.
+  Fixed PostgreSQL DDL mapping error in xs:simpleContent and xs:complexContent.
+
+ Changes in xsd2pgschema 1.13.0 (release 2016-11-21)
+
+  Added xsd2jsonschema main class to map XML Schema to JSON Schema for all object-, column- and relational-oriented JSON formats.
+  Retrieved top level annotation (/xs:schema/xs:annotation).
+  Changed PostgreSQL mapping for xs:duration from INTERVAL to TEXT because JDBC driver does not support INTERVAL.
+  Added support for xs:restriction/xs:minLength|xs:maxLength|xs:maxInclusive|xs:maxExclusive|xs:minExclusive|xs:minInclusive|xs:totalDigits|xs:fractionDigits, respectively.
+  Extracted xs:restriction/xs:whiteSpace|xs:assertions|xs:explicitTimezone/@value, but not utilized for any mapping or migration.
+  More precise PostgreSQL DDL mapping which depends on xs:restriction above.
+  Fixed issue that --case-insensitive option is ignored in xml2json.
+  Fixed missing array in object-oriented JSON format.
+  Changed default JSON format from object- to column-oriented JSON format and introduced --obj-json option to select object-oriented JSON format.
+  Fixed false-positive conflict detection again.
+  Fixed ClassNotFoundException: org.w3c.dom.ElementTraversal.
+  Passed JSON Schema validation by revision of XML->JSON conversion and XML Schema->JSON Schema mapping.
+  Fixed PostgreSQL mapping of xs:simpleType/xs:list/@itemType to TEXT.
+  Fixed PostgreSQL mapping in case xs:simpleType/xs:union/@memberTypes does not consist of built-in data types.
+
+ Changes in xsd2pgschema 1.12.0 (release 2016-11-15)
+
+  Internal class name revisions.
+  Added source code annotations using Javadoc style.
+  Revised xs:hexBinary and xs:base64Binary checker.
+  Fixed xs:serial and xs:bigserial checker.
+  Fixed false-positive conflict detection.
+  NOTICE: We have filled specifications of XML Schema 1.1 by the following extensions.
+  CAVEAT: Several XML Schema components which might break strict DDL schema, such as wild cards (xs:any, xs:anyAttribute) are neither mapped nor migrated.
+  Added support for targetNamespace (xs:schema/@targetNamespace, xs:attribute/@targetNamespace, xs:element/@targetNamespace, etc.)
+  Added support for include (xs:include) or import (xs:import) namespaces.
+  Fixed issue that /xs:schema/xs:element/@abstract=true element can be selected as concrete root element.
+  Added support for attributeGroup definitions and default attributes (xs:attributeGroup, xs:schema/@defaultAttriburtes and xs:complexType/@defaultAttributesApply).
+  Added support for modelGroup definitions (xs:model).
+  Fixed issue that modelGroup definitions are not properly extended.
+  Added support for prohibited attribute (xs:attribute/@use="prohibited").
+  Added support for element substitution (xs:element/@substitutionGroup).
+  Added support for element substitution block (xs:element/@block="substitution").
+  Added support for datatype xs:anyType that is mapped to xs:string in PostgreSQL DDL and ignored xs:alternative definitions.
+  Retrieved annotation from xs:annotation/xs:appinfo as well as xs:annotation/xs:documentation.
+  Revised datatype assignment strategy when datatype definition is concatenated form trying to search least common datatype. (e.g. xs:union/@memberTypes="xs:long xs:int" is mapped to xs:long.)
+  Updated Xerces from 2.7.0 to 2.11.0.
+  Fixed enumerator name truncation in PostgreSQL DDL.
+  Removed --json-root-prefix option.
+  Removed xs:string type from Sphinx attribute except for enumeration.
+
+ Changes in xsd2pgschema 1.11.1 (release 2016-11-02)
+
+  Added ordinary object-oriented XML->JSON conversion (default) and column-oriented JSON conversion (--col-json).
+  Added --json-indent-spaces [0-4], --json-key-value-spaces [0-1], --json-no-linefeed and --json-compact (equals to set --json-indent-spaces 0 --json-key-value-spaces 0 --json-no-linefeed) options in xml2json.
+  Added --json-root-prefix option in xml2json (default="data_").
+  Added --xml-file-prefix-digest option in xml2json (default="").
+  Changed option name from --xml-file-digest to --xml-file-ext-digest.
+  Added --discard-json-doc-key option in xml2json (default="").
+  Fixed --array-json option issue.
+
+ Changes in xsd2pgschema 1.11.0 (release 2016-11-01)
+
+  Added xml2json main class to convert XML document to ordinary JSON or relational-oriented JSON (PDBx/mmJSON or BMRB/JSON style) document (--rel-json option is required).
+  NOTICE: Column-oriented XML->JSON conversion (--col-json) has not been implemented yet.
+  Added --array-json option in xml2json to convert XML content to JSON array uniformly even if the content consists of single data, except for root node.
+  Fixed escaping string in JSON (RFC4627).
+  Revised xs:decimal checker using BigDecimal, instead of Double.
+  Revised PostgreSQL reserved words extracted from current 9.6.
+  Revised example script.
+
+ Changes in xsd2pgschema 1.10.5 (release 2016-06-15)
+
+  Added --filt-in option in xml2pgcsv, xml2pgsql, xml2luceneidx and xml2sphinxds for replication of subset database.
+  Fixed bugs in processing --filt-out option.
+  Performance improvement when --field option is set in xml2sphinxds.
+
+ Changes in xsd2pgschema 1.10.4 (release 2016-04-11)
+
+  NOTICE: Java 8 is now required.
+  Added --field-annotation option in xsd2pgschema to retrieve field annotations in PostgreSQL DDL.
+  Fixed missing data of hub table, which consists of primary key and nested keys only.
+  Fixed duplication of data in case of list holder in list holder.
+  Updated to support Apache Lucene 6.0.0 or later.
+  Changed system requirement because the latest Apache Lucene runs on Java 8 or greater.
+
+ Changes in xsd2pgschema 1.10.3 (release 2016-04-04)
+
+  Fixed true-negative conflict detection raised by 1.10.2.
+  Fixed DDL conversion of xs:fixed in case of conflict.
+  Fixed missing of data in case of conflict.
+
+ Changes in xsd2pgschema 1.10.2 (release 2016-03-14)
+
+  Fixed false-positive conflict detection.
+
+ Changes in xsd2pgschema 1.10.1 (release 2016-03-08)
+
+  Fixed missing data of administrative xs:simpleType content.
+  Added enumeration checker for simple content.
+  Added duplication checker for enumerator.
+  Added xs:pattern checker.
+  Added xs:fixed checker.
+
+ Changes in xsd2pgschema 1.10.0 (release 2016-03-04)
+
+  Internal class name revisions.
+  Added value checker for simple content.
+  Fixed missing of data when root element is defined as simple element which does not use built-in data type.
+  Fixed redundant data replication occurred only in 1.9.4.
+  Passed replication tests of BMRB/XML, PDBML, UniProtKB, BLAST output, IntAct and EMDB header.
+
+ Changes in xsd2pgschema 1.9.4 (release 2016-02-26)
+
+  NOTICE: We recommend all users avoid to use 1.9.4 because of redundant data replication issue, fixed in 1.10.0.
+  Revised PostgreSQL reserved words extracted from current 9.5.
+  Dropped "document_url" field formerly used as resource URL of documents from both Lucene and Sphinx index.
+  Allowed XML documents with default namespace.
+  Added test with EMDB header (ftp://ftp.ebi.ac.uk/pub/databases/emdb/doc/XML-schemas/Header-schema/current/emdb.xsd).
+
+ Changes in xsd2pgschema 1.9.3 (release 2016-02-18)
+
+  Added support for built-in derived types (xs:NOTATION, xs:NMTOKEN, xs:NMTOKENS, xs:ID, xs:IDREF, xs:IDREFS, xs:ENTITY and xs:ENTITIES).
+  Added polite checker of namespace prefix stands for http://www.w3.org/2001/XMLSchema.
+  Fixed replication problem of all xs:element occurred only in 1.9.2.
+
+ Changes in xsd2pgschema 1.9.2 (release 2016-02-15)
+
+  NOTICE: We recommend all users avoid to use 1.9.2, whose critical bug was fixed in 1.9.3.
+  Allowed non-primitive type assignment for xs:attribute.
+  Added --ddl option to redirect XSD output in xsd2pgschema.
+
+ Changes in xsd2pgschema 1.9.1 (release 2016-02-04)
+
+  Fixed bugs in processing of --filt-out and --fill-this options.
+  Added field selector (--filed option) in xml2sphinxds for generating subset dictionary utilized for autosuggestion.
+  Added dicmerge4sphinx main class to generate trigram database for autosuggestion from Sphinx dictionary.
+  Fixed a bug in timestamp conversion of Sphinx xmlpipe2 format.
+  Changed attribute nomenclature of Sphinx data schema from "table_name"."column_name" to "table_name"__"column_name"
+   to prevent syntax collision between SphinxQL and MySQL ("table_name"."column_name").
+  Added --ds-name option in xml2sphinxds and dsmerge4sphinx.
+  Added support for generating Sphinx data source configuration file (data_source.conf).
+  Fixed a bug in xs:hexBinary and xs:base64Binary conversion of Sphinx xmlpipe2 format.
+
+ Changes in xsd2pgschema 1.9.0 (release 2015-12-21)
+
+  Added support for full-text search using Sphinx.
+    xml2sphinxds main class exports Sphinx xmlpipe2 data source file (data_source.xml).
+    option names are basically compatible with the xml2luceneidx main class.
+    added dsmerge4sphinx main class to merge separated data source files (data_source.xml) generated by the xml2sphinxds class.
+  Changed field names "url" -> "document_url" and "id" -> "document_id" used as pointer to data source in Lucene index.
+  Added --min-word-len option in xml2luceneidx and xml2sphinxds, which allows to filter out short words.
+  Added --delimiter option in xml2sphinxds, either tab (default) or comma code is used as delimiter code in non-mva attribute (e.g. string).
+
+ Changes in xsd2pgschema 1.8.0 (release 2015-09-30)
+
+  Added --case-insensitive option in csv2pgsql, xml2pgcsv, xml2pgsql and xsd2pgschema, which allows lowercase table names and column names.
+  NOTICE: You should retain --case-insensitive option through replication processes.
+  Retrieved documentation source annotation in PostgreSQL DDL quoting xs:annotation/xs:documentation/@source.
+
+ Changes in xsd2pgschema 1.7.4 (release 2015-09-30)
+
+  Fixed NullPointerException when "type" attribute is null.
+
+ Changes in xsd2pgschema 1.7.3 (release 2015-08-19)
+
+  Added --dbuser option for authentication in csv2pgsql, xml2pgcsv and xml2pgsql.
+  Revised example script.
+
+ Changes in xsd2pgschema 1.7.2 (release 2015-08-03)
+
+  NOTICE: We recommend all users should update 1.7.2 or later.
+  Fixed invalid nested-key assignment in list holder relations caused missing of data.
+
+ Changes in xsd2pgschema 1.7.1 (release 2015-07-10)
+
+  Fixed enumeration constraint overriding under merged relations because of name collision.
+  Revised example script.
+
+ Changes in xsd2pgschema 1.7.0 (release 2015-06-19)
+
+  Fixed insufficient xml exploring under merged relations because of name collision.
+  Fixed schema errors because of name collision with PostgreSQL reserved words.
+  Fixed invalid FOREIGN KEY constraint assignment for not unique case.
+  More fixed invalid PRIMARY KEY assignment for not unique case.
+  Changed message digest algorithm from MD5 to SHA-1.
+  Fixed potential issues on both replication and indexing, which resolved missing data and useless keys.
+  Re-tested with BMRB/XML, PDBML, UniProtKB, BLAST output and IntAct.
+  Revised example scripts in which newer IntAct XML Schema (MIF254.xsd) was used.
+  Added --no-doc-key option in xsd2pgschema, xml2pgcsv, xml2pgdb and csv2pgdb (revived from 1.3.0).
+  Fixed translation error on xs:complexContent.
+  Added support for default property for all xs:attribute and xs:element.
+  Fixed xs:boolean value check issue.
+  Fixed enumerator extraction error.
+
+ Changes in xsd2pgschema 1.6.0 (release 2015-05-26)
+
+  Fixed invalid PRIMARY KEY assignment for not unique case.
+  Fixed unexpected content in "document_id" column in case of "xml.gz" file extension.
+  Tested with BLAST output (blast.xsd refer to https://github.com/lindenb/xsd-sandbox).
+
+ Changes in xsd2pgschema 1.5.0 (release 2015-04-28)
+
+  Added luceneidx2dic, luceneidx2infix and luceneidx2ftxt main classes to prepare dictionary from index
+   for autosuggestion using AnalyzingSuggester, AnalyzingInfixSuggester and FreeTextSuggester, respectively.
+  Revised option names (filter -> filt-out, post-fill -> fill-this) and syntax ("table_name":"column_name":... -> "table_name"."column_name":...).
+  Added field selector in luceneidx2dic and luceneidx2ftxt.
+  Added "id" field as pointer to data source in Lucene index.
+
+ Changes in xsd2pgschema 1.4.0 (release 2015-03-12)
+
+  Added enumeration check while replication and indexing.
+  Fixed schema conflicts in merged relations because of name collision.
+  Re-tested with UniProtKB XML database (uniprot.xsd).
+  Added "document_id" column as pointer to data source by default.
+  Enhanced speed by bulk uploading.
+  Turned off load-dtd-grammar and load-external-dtd features.
+
+ Changes in xsd2pgschema 1.3.5 (release 2015-02-23)
+
+  Updated to support Apache Lucene 5.0.0 or later.
+
+ Changes in xsd2pgschema 1.3.0 (release 2015-02-20)
+
+  Fixed translation error on xs:simpleContent.
+  Anonymous xs:simpleContent has been mapped on "content" field of an relation.
+  Added enumeration support for xs:attribute.
+  Stored primary-key, foreign-key and nested-key values at Lucene indexing, if relational model was reconstructed.
+
+ Changes in xsd2pgschema 1.2.0 (release 2015-01-20)
+
+  Re-packaging (xsd2pgschema-*.tgz)
+  Apache License V2.0 branding.
+  Revised error messages.
+  Enabled StoreTermVectors at Apache Lucene indexing by default.
+  Added VecTextFiled.java and VecStringField.java files to support the TermVectors.
+  Revised example scripts.
+
+ Changes in xsd2pgschema 1.1.0 (release 2014-12-09)
+
+  Released @ sourceforge.net.
+  Added to support for full-text indexing using Apache Lucene.
+  Added minimum jar file (xsd2pgschema-min.jar).
+  Tested with UniProtKB XML database (uniprot.xsd).
+
+ Changes in xsd2pgschema 1.0.0 (internal release)
+
+  Released only for internal use.
+  Tested with IntAct (MIF25.xsd), PDBML (pdbx-v40.xsd), BMRB/XML (mmcif_nmr-star.xsd) databases.
+

@@ -1,0 +1,480 @@
+/*
+    xsd2pgschema - Database replication tool based on XML Schema
+    Copyright 2014-2017 Masashi Yokochi
+
+    https://sourceforge.net/projects/xsd2pgschema/
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
+package net.sf.xsd2pgschema;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.SQLXML;
+import java.util.Arrays;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Node;
+
+/**
+ * Node parser for XML -> PostgreSQL data migration
+ * @author yokochi
+ */
+public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
+
+	PreparedStatement ps = null; // prepared statement
+
+	boolean[] occupied = null; // whether field is occupied or not
+
+	Connection db_conn; // database connection
+
+	/**
+	 * Node parser for PostgreSQL data migration
+	 * @param schema PostgreSQL data model
+	 * @param parent_table parent table
+	 * @param table current table
+	 * @param db_conn database connection
+	 * @throws SQLException
+	 * @throws ParserConfigurationException
+	 * @throws TransformerConfigurationException
+	 */
+	public PgSchemaNode2PgSql(final PgSchema schema, final PgTable parent_table, final PgTable table, final Connection db_conn) throws SQLException, ParserConfigurationException, TransformerConfigurationException {
+
+		super(schema, parent_table, table);
+
+		occupied = new boolean[fields.size()];
+
+		this.db_conn = db_conn;
+
+		if (table.required && (rel_data_ext || !table.relational)) {
+
+			StringBuilder sql = new StringBuilder();
+
+			sql.append("INSERT INTO " + PgSchemaUtil.avoidPgReservedWords(table.name) + " VALUES ( ");
+
+			for (int f = 0; f < fields.size(); f++) {
+
+				PgField field = fields.get(f);
+
+				if (field.isOmitted(schema))
+					continue;
+
+				if (field.enum_name == null)
+					sql.append("?");
+				else
+					sql.append("?::" + field.enum_name);
+
+				sql.append(", ");
+
+			}
+
+			sql.setLength(sql.length() - 2);
+			sql.append(" )");
+
+			ps = db_conn.prepareStatement(sql.toString());
+
+			sql.setLength(0);
+
+		}
+
+	}
+
+	/**
+	 * Parse processing node (root)
+	 * @param proc_node processing node
+	 * @param key_name processing key name
+	 */
+	@Override
+	public void parseRootNode(final Node proc_node) throws SQLException, TransformerException, IOException {
+
+		parse(false, proc_node, null, key_name = document_id + "/" + table.name, nested, 1);
+
+	}
+
+	/**
+	 * Parse processing node (child)
+	 * @param proc_node processing node
+	 * @param parent_key key name of parent node
+	 * @param key_name processing key name
+	 * @param nested whether it is nested
+	 * @param key_id ordinal number of current node
+	 */
+	@Override
+	public void parseChildNode(final Node proc_node, final String parent_key, final String key_name, final boolean nested, final int key_id) throws SQLException, TransformerException, IOException {
+
+		parse(true, proc_node, parent_key, key_name, nested, key_id);
+
+	}
+
+	/**
+	 * Parse processing node
+	 * @param child_node whether if child node
+	 * @param proc_node processing node
+	 * @param parent_key key name of parent node
+	 * @param key_name processing key name
+	 * @param nested whether it is nested
+	 * @param key_id ordinal number of current node
+	 * @throws SQLException
+	 * @throws TransformerException
+	 * @throws IOException
+	 */
+	private void parse(final boolean child_node, final Node proc_node, final String parent_key, final String key_name, final boolean nested, final int key_id) throws SQLException, TransformerException, IOException {
+
+		Arrays.fill(occupied, false);
+
+		filled = true;
+
+		nested_fields = 0;
+
+		int param_id = 1;
+
+		for (int f = 0; f < fields.size(); f++) {
+
+			PgField field = fields.get(f);
+
+			// document_key
+
+			if (field.document_key) {
+
+				if (ps != null)
+					setValue(f, param_id, document_id);
+
+			}
+
+			// serial_key
+
+			else if (field.serial_key) {
+
+				if (ps != null)
+					setSerKey(f, param_id, key_id);
+
+			}
+
+			// xpath_key
+
+			else if (field.xpath_key) {
+
+				if (ps != null)
+					setHashKey(f, param_id, key_name.substring(document_id_len));
+
+			}
+
+			// primary_key
+
+			else if (field.primary_key) {
+
+				if (ps != null && rel_data_ext)
+					setHashKey(f, param_id, key_name);
+
+			}
+
+			// foreign_key
+
+			else if (field.foreign_key) {
+
+				if (parent_table.name.equals(field.foreign_table)) {
+
+					if (ps != null && rel_data_ext)
+						setHashKey(f, param_id, parent_key);
+
+				}
+
+			}
+
+			// nested_key
+
+			else if (field.nested_key) {
+
+				if (setNestedKey(field, key_name)) {
+
+					if (ps != null && rel_data_ext)
+						setHashKey(f, param_id, nested_key_name[nested_fields]);
+
+					nested_fields++;
+
+				}
+
+			}
+
+			// attribute, simple_cont, element
+
+			else if (field.attribute || field.simple_cont || field.element) {
+
+				if (setCont(proc_node, field, true)) {
+
+					if (ps != null)
+						setValue(f, param_id, XsDataType.normalize(field, content));
+
+				} else if (field.required) {
+					filled = false;
+					break;
+				}
+
+			}
+
+			// any, any_attribute
+
+			else if ((field.any || field.any_attribute) && ps != null) {
+
+				if (field.any ? setAnyElement(proc_node) : setAnyAttr(proc_node)) {
+
+					doc.appendChild(doc_root);
+
+					DOMSource source = new DOMSource(doc);
+					StringWriter writer = new StringWriter();
+					StreamResult result = new StreamResult(writer);
+
+					transformer.transform(source, result);
+
+					SQLXML xml_object = db_conn.createSQLXML();
+
+					xml_object.setString(writer.toString());
+
+					setValue(f, param_id, xml_object);
+
+					writer.close();
+
+				}
+
+			}
+
+			if (!filled)
+				break;
+
+			if (!field.isOmitted(schema))
+				param_id++;
+
+		}
+
+		if (filled) {
+
+			write(child_node);
+
+			this.proc_node = proc_node;
+
+			if (child_node) {
+
+				this.nested = nested;
+				this.key_name = key_name;
+
+			}
+
+		}
+
+	}
+
+	/**
+	 * Writer of processing node
+	 * @param child_node whether if child node
+	 * @throws SQLException
+	 */
+	private void write(boolean child_node) throws SQLException {
+
+		written = false;
+
+		if (ps != null) {
+
+			written = true;
+
+			int param_id = 1;
+
+			for (int f = 0; f < fields.size(); f++) {
+
+				PgField field = fields.get(f);
+
+				if (field.isOmitted(schema))
+					continue;
+
+				if (!occupied[f])
+					ps.setNull(param_id, XsDataType.getSqlDataType(field));
+
+				param_id++;
+
+			}
+
+			ps.addBatch();
+
+			if (!child_node) {
+
+				ps.executeBatch();
+				ps.close();
+
+			}
+
+		}
+
+	}
+
+	/**
+	 * Invoke nested node (root)
+	 */
+	@Override
+	public void invokeRootNestedNode() throws SQLException, ParserConfigurationException, TransformerException, IOException {
+
+		if (!filled)
+			return;
+
+		for (int n = 0; n < nested_fields; n++)
+			schema.parseChildNode2PgSql(proc_node, table, schema.getTable(nested_table_id[n]), key_name, nested_key_name[n], list_holder[n], table.bridge, 0, db_conn);
+
+	}
+
+	/**
+	 * Invoke nested node (child)
+	 * @param node_test node tester
+	 */
+	@Override
+	public void invokeChildNestedNode(PgSchemaNodeTester node_test) throws SQLException, ParserConfigurationException, TransformerException, IOException {
+
+		if (!filled)
+			return;
+
+		invoked = true;
+
+		for (int n = 0; n < nested_fields; n++) {
+
+			PgTable nested_table = schema.getTable(nested_table_id[n]);
+
+			boolean exists = existsNestedNode(schema, nested_table, node_test.proc_node);
+
+			schema.parseChildNode2PgSql(exists || nested ? node_test.proc_node : proc_node, table, nested_table, node_test.key_name, nested_key_name[n], list_holder[n], !exists, exists ? 0 : node_test.key_id, db_conn);
+
+		}
+
+	}
+
+	/**
+	 * Invoke nested node (child)
+	 */
+	@Override
+	public void invokeChildNestedNode() throws SQLException, ParserConfigurationException, TransformerException, IOException {
+
+		if (!filled)
+			return;
+
+		for (int n = 0; n < nested_fields; n++) {
+
+			PgTable nested_table = schema.getTable(nested_table_id[n]);
+
+			if (existsNestedNode(schema, nested_table, proc_node))
+				schema.parseChildNode2PgSql(proc_node, table, nested_table, key_name, nested_key_name[n], list_holder[n], false, 0, db_conn);
+
+		}
+
+	}
+
+	/**
+	 * Set value via prepared statement
+	 * @param field_id field id
+	 * @param param_id parameter index
+	 * @param value data string
+	 * @throws SQLException
+	 */
+	private void setValue(int field_id, int param_id, String value) throws SQLException {
+
+		XsDataType.setValue(fields.get(field_id), ps, param_id, value);
+
+		occupied[field_id] = true;
+
+	}
+
+	/**
+	 * Set XML object via prepared statement
+	 * @param field_id field id
+	 * @param param_id parameter index
+	 * @param xml_object XML object
+	 * @throws SQLException
+	 */
+	private void setValue(int field_id, int param_id, SQLXML xml_object) throws SQLException {
+
+		XsDataType.setValue(fields.get(field_id), ps, param_id, xml_object);
+
+		occupied[field_id] = true;
+
+	}
+
+	/**
+	 * Set hash key via prepared statement
+	 * @param field_id field id
+	 * @param param_id parameter index
+	 * @param key_name source string
+	 * @throws SQLException
+	 */
+	private void setHashKey(int field_id, int param_id, String key_name) throws SQLException {
+
+		switch (schema.option.hash_size) {
+		case native_default:
+			ps.setBytes(param_id, schema.getHashKeyBytes(key_name));
+			break;
+		case unsigned_int_32:
+			ps.setInt(param_id, schema.getHashKeyInt(key_name));
+			break;
+		case unsigned_long_64:
+			ps.setLong(param_id, schema.getHashKeyLong(key_name));
+			break;
+		default:
+			ps.setString(param_id, key_name);
+			break;
+		}
+
+		occupied[field_id] = true;
+
+	}
+
+	/**
+	 * Set serial key via prepared statement
+	 * @param field_id field id
+	 * @param param_id parameter index
+	 * @param key_id serial id
+	 * @throws SQLException
+	 */
+	private void setSerKey(int field_id, int param_id, int key_id) throws SQLException {
+
+		switch (schema.option.ser_size) {
+		case unsigned_int_32:
+			ps.setInt(param_id, key_id);
+			break;
+		case unsigned_short_16:
+			ps.setShort(param_id, (short) key_id);
+			break;
+		}
+
+		occupied[field_id] = true;
+
+	}
+
+	/**
+	 * Execute batch SQL
+	 * @throws SQLException
+	 */
+	public void write() throws SQLException {
+
+		if (ps != null && !ps.isClosed()) {
+
+			ps.executeBatch();
+			ps.close();
+
+		}
+
+	}
+
+}
