@@ -109,7 +109,7 @@ public class PgSchema {
 	 * @param def_schema_location default schema location
 	 * @param option PostgreSQL schema option
 	 * @throws NoSuchAlgorithmException
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public PgSchema(DocumentBuilder doc_builder, Document doc, PgSchema root_schema, String def_schema_location, PgSchemaOption option) throws NoSuchAlgorithmException, PgSchemaException {
 
@@ -2543,7 +2543,7 @@ public class PgSchema {
 	/**
 	 * Apply filt-in options
 	 * @param filt_ins filt-in options
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	private void applyFiltIn(List<String> filt_ins) throws PgSchemaException {
 
@@ -2640,7 +2640,7 @@ public class PgSchema {
 	/**
 	 * Apply filt-out options
 	 * @param filt_outs filt-out options
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	private void applyFiltOut(List<String> filt_outs) throws PgSchemaException {
 
@@ -2705,7 +2705,7 @@ public class PgSchema {
 	/**
 	 * Apply fill-this options
 	 * @param fill_these fill-this options
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	private void applyFillThis(List<String> fill_these) throws PgSchemaException {
 
@@ -2759,7 +2759,7 @@ public class PgSchema {
 	/**
 	 * Apply attr options for full-text indexing
 	 * @param attrs attr options
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	private void applyAttr(final List<String> attrs) throws PgSchemaException {
 
@@ -2837,7 +2837,7 @@ public class PgSchema {
 	/**
 	 * Apply field options for full-text indexing
 	 * @param fields field options
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	private void applyField(final List<String> fields) throws PgSchemaException {
 
@@ -3005,7 +3005,7 @@ public class PgSchema {
 
 	/**
 	 * Check root table
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	private void hasRootTable() throws PgSchemaException {
 
@@ -3019,7 +3019,7 @@ public class PgSchema {
 	 * @param xml_parser XML document
 	 * @param xml_post_editor XML post editing
 	 * @return Node root node of document
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	private Node getRootNode(XmlParser xml_parser, XmlPostEditor xml_post_editor) throws PgSchemaException {
 
@@ -3052,7 +3052,7 @@ public class PgSchema {
 	 * @param xml_post_editor XML post editing
 	 * @param index_filter index filter
 	 * @return Node root node of document
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	private Node getRootNode(XmlParser xml_parser, XmlPostEditor xml_post_editor, IndexFilter index_filter) throws PgSchemaException {
 
@@ -3136,7 +3136,7 @@ public class PgSchema {
 	 * @param append_csv whether allows to append CSV files
 	 * @throws ParserConfigurationException
 	 * @throws TransformerException
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public void xml2PgCsv(XmlParser xml_parser, String csv_dir_name, Connection db_conn, XmlPostEditor xml_post_editor, boolean append_csv) throws ParserConfigurationException, TransformerException, PgSchemaException {
 
@@ -3273,7 +3273,7 @@ public class PgSchema {
 	 * @throws ParserConfigurationException
 	 * @throws TransformerException
 	 * @throws IOException
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public void xml2PgSql(XmlParser xml_parser, Connection db_conn, XmlPostEditor xml_post_editor, boolean update) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
@@ -3359,7 +3359,7 @@ public class PgSchema {
 	 * Execute PostgreSQL DELETE command before INSERT for all tables of current document
 	 * @param db_conn Database connection
 	 * @return boolean whether success or not
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	private boolean deleteBeforeUpdate(Connection db_conn) throws PgSchemaException {
 
@@ -3442,7 +3442,7 @@ public class PgSchema {
 	 * @param db_conn Database connection
 	 * @param csv_dir_name directory name of CSV files
 	 * @return boolean whether success or not
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public boolean pgCsv2PgSql(Connection db_conn, String csv_dir_name) throws PgSchemaException {
 
@@ -3532,7 +3532,7 @@ public class PgSchema {
 	 * @throws ParserConfigurationException
 	 * @throws TransformerException
 	 * @throws IOException
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public void xml2LucIdx(XmlParser xml_parser, org.apache.lucene.document.Document lucene_doc, XmlPostEditor xml_post_editor, IndexFilter index_filter) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
@@ -3619,7 +3619,7 @@ public class PgSchema {
 	/**
 	 * Extract Sphinx schema part and map sphinx:field and sphinx:attr in PgSchema
 	 * @param sph_doc Sphinx xmlpipe2 document
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public void syncSphSchema(Document sph_doc) throws PgSchemaException {
 
@@ -3683,7 +3683,7 @@ public class PgSchema {
 	 * Write Sphinx schema part
 	 * @param sphinx_schema Sphinx xmlpipe2 file
 	 * @param data_source whether it is xmlpipe2 or schema
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public void writeSphSchema(File sphinx_schema, boolean data_source) throws PgSchemaException {
 
@@ -3826,7 +3826,7 @@ public class PgSchema {
 	 * @param sphinx_conf Sphinx configuration file
 	 * @param idx_name name of Sphinx index
 	 * @param data_source Sphinx xmlpipe2 file
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public void writeSphConf(File sphinx_conf, String idx_name, File data_source) throws PgSchemaException {
 
@@ -3946,7 +3946,7 @@ public class PgSchema {
 	 * @throws ParserConfigurationException
 	 * @throws TransformerException
 	 * @throws IOException
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public void xml2SphDs(XmlParser xml_parser, FileWriter writer, XmlPostEditor xml_post_editor, IndexFilter index_filter) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
@@ -4158,7 +4158,7 @@ public class PgSchema {
 
 	/**
 	 * Realize Object-oriented JSON Schema
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public void realizeObjJsonSchema() throws PgSchemaException {
 
@@ -4357,7 +4357,7 @@ public class PgSchema {
 	 * @throws ParserConfigurationException
 	 * @throws TransformerException
 	 * @throws IOException
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public void xml2ObjJson(XmlParser xml_parser, String json_file_name, XmlPostEditor xml_post_editor) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
@@ -4523,7 +4523,7 @@ public class PgSchema {
 
 	/**
 	 * Realize Column-oriented JSON Schema
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public void realizeColJsonSchema() throws PgSchemaException {
 
@@ -4720,7 +4720,7 @@ public class PgSchema {
 	 * @throws ParserConfigurationException
 	 * @throws TransformerException
 	 * @throws IOException
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public void xml2ColJson(XmlParser xml_parser, String json_file_name, XmlPostEditor xml_post_editor) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
@@ -4846,7 +4846,7 @@ public class PgSchema {
 
 	/**
 	 * Realize Relational-oriented JSON Schema
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public void realizeRelJsonSchema() throws PgSchemaException {
 
@@ -4991,7 +4991,7 @@ public class PgSchema {
 	 * @throws ParserConfigurationException
 	 * @throws TransformerException
 	 * @throws IOException
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public void xml2RelJson(XmlParser xml_parser, String json_file_name, XmlPostEditor xml_post_editor) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 

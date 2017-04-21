@@ -66,7 +66,7 @@ public class IndexFilter {
 	/**
 	 * Add field
 	 * @param field field name
-	 * @return boolean result o addition
+	 * @return boolean result of addition
 	 */
 	public boolean addField(String field) {
 		return fields.add(field);

@@ -60,7 +60,7 @@ public class Xml2PgSqlThrd implements Runnable {
 	 * @throws IOException
 	 * @throws NoSuchAlgorithmException
 	 * @throws SQLException
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public Xml2PgSqlThrd(final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 

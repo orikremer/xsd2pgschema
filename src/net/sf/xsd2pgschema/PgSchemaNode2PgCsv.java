@@ -33,7 +33,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.w3c.dom.Node;
 
 /**
- * Node parser for XML -> CSV conversion 
+ * Node parser for XML -> CSV conversion
  * @author yokochi
  */
 public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {

@@ -71,7 +71,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	 * @throws SAXException
 	 * @throws IOException
 	 * @throws NoSuchAlgorithmException
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public Xml2LuceneIdxThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 

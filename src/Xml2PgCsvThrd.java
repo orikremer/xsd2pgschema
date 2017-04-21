@@ -62,7 +62,7 @@ public class Xml2PgCsvThrd implements Runnable {
 	 * @throws IOException
 	 * @throws NoSuchAlgorithmException
 	 * @throws SQLException
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public Xml2PgCsvThrd(final int thrd_id, final int max_thrds, final InputStream is, final String csv_dir_name, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 

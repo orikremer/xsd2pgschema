@@ -55,7 +55,7 @@ public class Xml2JsonThrd implements Runnable {
 	 * @throws SAXException
 	 * @throws IOException
 	 * @throws NoSuchAlgorithmException
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public Xml2JsonThrd(final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 

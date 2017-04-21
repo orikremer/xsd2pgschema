@@ -66,7 +66,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @throws SAXException
 	 * @throws IOException
 	 * @throws NoSuchAlgorithmException
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
@@ -198,7 +198,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @throws ParserConfigurationException
 	 * @throws SAXException
 	 * @throws IOException
-	 * @throws PgSchemaException 
+	 * @throws PgSchemaException
 	 */
 	public void merge() throws ParserConfigurationException, SAXException, IOException, PgSchemaException {
 

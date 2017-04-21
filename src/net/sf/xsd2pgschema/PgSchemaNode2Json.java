@@ -32,7 +32,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Node;
 
 /**
- * Node parser for XML -> JSON conversion 
+ * Node parser for XML -> JSON conversion
  * @author yokochi
  */
 public class PgSchemaNode2Json extends PgSchemaNodeParser {

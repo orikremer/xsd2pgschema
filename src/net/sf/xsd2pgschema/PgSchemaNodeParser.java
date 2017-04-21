@@ -35,7 +35,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 /**
- * Abstract node parser 
+ * Abstract node parser
  * @author yokochi
  */
 public abstract class PgSchemaNodeParser {
