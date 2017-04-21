@@ -1,8 +1,8 @@
- Changes in xsd2pgschema 2.4.3 (release 2017-04-20)
+ Changes in xsd2pgschema 2.4.3 (release 2017-04-21)
 
-  No functional change at all.
   Added Java package name for core classes.
   Added Maven project.
+  Fixed collapsed JSON in case of multiple JSON conversion.
 
  Changes in xsd2pgschema 2.4.2 (release 2017-04-18)
 

@@ -4109,9 +4109,11 @@ public class PgSchema {
 	}
 
 	/**
-	 * Initialize JSON buffer
+	 * Clear JSON builder
 	 */
-	private void initJsonBuffer() {
+	private void clearJsonBuilder() {
+
+		jsonb.clear();
 
 		tables.stream().filter(table -> table.required && table.cont_holder).forEach(table -> {
 
@@ -4362,7 +4364,7 @@ public class PgSchema {
 		Node node = getRootNode(xml_parser, xml_post_editor);
 
 		initTableLock(true);
-		initJsonBuffer();
+		clearJsonBuilder();
 
 		// parse root node and store data to JSON builder
 
@@ -4725,7 +4727,7 @@ public class PgSchema {
 		Node node = getRootNode(xml_parser, xml_post_editor);
 
 		initTableLock(true);
-		initJsonBuffer();
+		clearJsonBuilder();
 
 		// parse root node and write data to JSON file
 
@@ -4996,7 +4998,7 @@ public class PgSchema {
 		Node node = getRootNode(xml_parser, xml_post_editor);
 
 		initTableLock(false);
-		initJsonBuffer();
+		clearJsonBuilder();
 
 		// parse root node and write data to JSON file
 

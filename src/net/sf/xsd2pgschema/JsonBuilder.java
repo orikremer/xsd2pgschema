@@ -92,6 +92,15 @@ public class JsonBuilder {
 
 		has_discard_doc_key = !discard_doc_key.isEmpty();
 
+		clear();
+
+	}
+
+	/**
+	 * Clear JSON builder
+	 */
+	public void clear() {
+
 		if (builder == null)
 			builder = new StringBuilder();
 		else if (builder.length() > 0)
