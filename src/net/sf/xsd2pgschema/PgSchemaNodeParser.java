@@ -35,53 +35,89 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 /**
- * Abstract node parser
+ * Abstract node parser.
+ *
  * @author yokochi
  */
 public abstract class PgSchemaNodeParser {
 
+	/** The schema. */
 	PgSchema schema = null; // PostgreSQL data model
 
+	/** The rel data ext. */
 	boolean rel_data_ext; // relational data extension
 
+	/** The parent table. */
 	PgTable parent_table = null; // parent table
+	
+	/** The table. */
 	PgTable table = null; // current table
 
+	/** The fields. */
 	List<PgField> fields = null; // field list
 
+	/** The values. */
 	String[] values = null; // values of fields
 
+	/** The nested fields. */
 	int nested_fields = 0; // number of nested fields in table
 
+	/** The list holder. */
 	boolean[] list_holder = null; // whether @maxOccurs > 1 || @minOccurs > 1
+	
+	/** The nested table id. */
 	int[] nested_table_id = null; // nested table id
+	
+	/** The nested key name. */
 	String[] nested_key_name = null; // nested key name
 
+	/** The filled. */
 	boolean filled = true; // whether if values were filled
+	
+	/** The written. */
 	boolean written = false; // whether if any content was written
+	
+	/** The invoked. */
 	boolean invoked = false; // whether if any nested node was invoked
 
+	/** The nested. */
 	boolean nested = false; // whether it is nested
+	
+	/** The proc node. */
 	Node proc_node; // processing node
+	
+	/** The key name. */
 	String key_name; // current key name
 
+	/** The document id. */
 	String document_id = null; // document key
+	
+	/** The document id len. */
 	int document_id_len; // length of document key
 
+	/** The content. */
 	String content; // common content holder for attribute, simple_cont and element
 
+	/** The doc builder. */
 	DocumentBuilder doc_builder = null; // document builder for xs:any and xs:anyAttribute
+	
+	/** The doc. */
 	Document doc = null; // XML content of xs:any and xs:anyAttribute
+	
+	/** The doc root. */
 	Element doc_root = null; // root element of XML content
+	
+	/** The transformer. */
 	Transformer transformer = null; // transformer of XML content
 
 	/**
-	 * Node parser
+	 * Node parser.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param parent_table parent table
 	 * @param table current table
-	 * @throws ParserConfigurationException
-	 * @throws TransformerConfigurationException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerConfigurationException the transformer configuration exception
 	 */
 	public PgSchemaNodeParser(final PgSchema schema, final PgTable parent_table, final PgTable table) throws ParserConfigurationException, TransformerConfigurationException {
 
@@ -119,44 +155,50 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Abstract parser of processing node (root)
+	 * Abstract parser of processing node (root).
+	 *
 	 * @param node processing node
-	 * @throws Exception
+	 * @throws Exception the exception
 	 */
 	abstract public void parseRootNode(final Node node) throws Exception;
 
 	/**
-	 * Abstract parser of processing node (child)
+	 * Abstract parser of processing node (child).
+	 *
 	 * @param node processing node
 	 * @param parent_key key name of parent node
 	 * @param key_name processing key name
 	 * @param nested whether it is nested
 	 * @param key_id ordinal number of current node
-	 * @throws Exception
+	 * @throws Exception the exception
 	 */
 	abstract public void parseChildNode(final Node node, final String parent_key, final String key_name, final boolean nested, final int key_id) throws Exception;
 
 	/**
-	 * Abstract invoker nested node (root)
-	 * @throws Exception
+	 * Abstract invoker nested node (root).
+	 *
+	 * @throws Exception the exception
 	 */
 	abstract public void invokeRootNestedNode() throws Exception;
 
 	/**
-	 * Abstract invoker nested node (child)
+	 * Abstract invoker nested node (child).
+	 *
 	 * @param node_test node tester
-	 * @throws Exception
+	 * @throws Exception the exception
 	 */
 	abstract public void invokeChildNestedNode(PgSchemaNodeTester node_test) throws Exception;
 
 	/**
-	 * Abstract invoker nested node (child)
-	 * @throws Exception
+	 * Abstract invoker nested node (child).
+	 *
+	 * @throws Exception the exception
 	 */
 	abstract public void invokeChildNestedNode() throws Exception;
 
 	/**
-	 * Set nested key
+	 * Set nested key.
+	 *
 	 * @param field current field
 	 * @param key_name processing key name
 	 * @param key_id ordinal number of current node
@@ -186,8 +228,10 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Return whether if parent node's name matches
+	 * Return whether if parent node's name matches.
+	 *
 	 * @param key_name processing key name
+	 * @param parent_node the parent node
 	 * @return boolean whether if parent node's name matches
 	 */
 	private boolean matchesParentNode(final String key_name, final String parent_node) {
@@ -213,7 +257,8 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Set content
+	 * Set content.
+	 *
 	 * @param node current node
 	 * @param field current field
 	 * @param pg_enum_limit whether if PostgreSQL enumeration length limit is applied
@@ -243,7 +288,8 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Set attribute
+	 * Set attribute.
+	 *
 	 * @param node current node
 	 * @param field current field
 	 */
@@ -259,7 +305,8 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Set simple content
+	 * Set simple content.
+	 *
 	 * @param node current node
 	 * @return boolean whether if simple content has value
 	 */
@@ -275,7 +322,8 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Set element
+	 * Set element.
+	 *
 	 * @param node current node
 	 * @param field current field
 	 * @return boolean whether if element has value
@@ -303,7 +351,8 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Apply content filter
+	 * Apply content filter.
+	 *
 	 * @param field current field
 	 * @param pg_enum_limit whether if PostgreSQL enumeration length limit is applied
 	 * @return boolean whether if content passes filter
@@ -346,7 +395,8 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Set any element
+	 * Set any element.
+	 *
 	 * @param node current node
 	 * @return boolean whether if any element exists
 	 */
@@ -386,7 +436,8 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Set any attribute
+	 * Set any attribute.
+	 *
 	 * @param node current node
 	 * @return boolean whether if any attribute exists
 	 */
@@ -428,7 +479,8 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Return whether if nested node exists
+	 * Return whether if nested node exists.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param nested_table nested table
 	 * @param node current node

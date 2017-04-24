@@ -22,24 +22,39 @@ package net.sf.xsd2pgschema;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 /**
- * JSON builder option
+ * JSON builder option.
+ *
  * @author yokochi
  */
 public class JsonBuilderOption {
 
+	/** The attr prefix. */
 	public String attr_prefix = ""; // prefix of JSON item name of xs:attribute
+	
+	/** The simple cont key. */
 	public String simple_cont_key = PgSchemaUtil.simple_cont_name; // JSON item name of xs:simpleContent
+	
+	/** The discard doc key. */
 	public String discard_doc_key = ""; // discarded JSON item name stands for document key
 
+	/** The indent spaces. */
 	public int indent_spaces = PgSchemaUtil.indent_spaces; // length of white spaces for indent
+	
+	/** The key value spaces. */
 	public int key_value_spaces = 1; // length of white spaces between key and value
 
+	/** The no field anno. */
 	public boolean no_field_anno = false; // whether retain field annotation or not
+	
+	/** The linefeed. */
 	public boolean linefeed = true; // whether use linefeed code in JSON document
+	
+	/** The array all. */
 	public boolean array_all = false; // use JSON array uniformly for descendant
 
 	/**
-	 * Set prefix in JSON document of xs:attribute
+	 * Set prefix in JSON document of xs:attribute.
+	 *
 	 * @param attr_prefix argument value
 	 */
 	public void setAttrPrefix(String attr_prefix) {
@@ -52,7 +67,8 @@ public class JsonBuilderOption {
 	}
 
 	/**
-	 * Set item name in JSON document of xs:simpleContent
+	 * Set item name in JSON document of xs:simpleContent.
+	 *
 	 * @param simple_cont_key argument value
 	 */
 	public void setSimpleContKey(String simple_cont_key) {
@@ -65,7 +81,8 @@ public class JsonBuilderOption {
 	}
 
 	/**
-	 * Set discarded item name stands for document key
+	 * Set discarded item name stands for document key.
+	 *
 	 * @param discard_doc_key argument value
 	 */
 	public void setDiscardDocKey(String discard_doc_key) {
@@ -78,7 +95,8 @@ public class JsonBuilderOption {
 	}
 
 	/**
-	 * Set length of indent spaces
+	 * Set length of indent spaces.
+	 *
 	 * @param indent_spaces argument value
 	 */
 	public void setIndentSpaces(String indent_spaces) {
@@ -93,7 +111,8 @@ public class JsonBuilderOption {
 	}
 
 	/**
-	 * Set length of key-value spaces
+	 * Set length of key-value spaces.
+	 *
 	 * @param key_value_spaces argument value
 	 */
 	public void setKeyValueSpaces(String key_value_spaces) {
@@ -108,7 +127,7 @@ public class JsonBuilderOption {
 	}
 
 	/**
-	 * Set JSON compact format
+	 * Set JSON compact format.
 	 */
 	public void setCompact() {
 

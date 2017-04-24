@@ -20,17 +20,22 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * Enumerator of JSON type
+ * Enumerator of JSON type.
+ *
  * @author yokochi
  */
 public enum JsonType {
 
-	column, // Column-oriented JSON (default)
-	object, // Object-oriented JSON
-	relational; // Relational-oriented JSON
+	/** The column-oriented JSON. (default) */
+	column,
+	/** The object-oriented JSON. */
+	object,
+	/** The relational-oriented JSON */
+	relational;
 
 	/**
-	 * Return default JSON type
+	 * Return default JSON type.
+	 *
 	 * @return JsonType default JSON type
 	 */
 	public static JsonType defaultType() {

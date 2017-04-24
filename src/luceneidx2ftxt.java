@@ -41,16 +41,29 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.OutputStreamDataOutput;
 
 /**
- * Lucene index -> Lucene free text suggester
+ * Generate Lucene free text suggester from index.
+ * 
+ * @author yokochi
  */
 public class luceneidx2ftxt {
 
+	/** The index directory name. */
 	public static String idx_dir_name = xml2luceneidx.idx_dir_name;
+	
+	/** The free text suggester directory name. */
 	public static String ftxt_dir_name = "lucene_ftxt";
+	
+	/** The dictionary file name. */
 	public static String dic_file_name = "dictionary";
 
+	/** The field list. */
 	public static List<String> fields = new ArrayList<String>();
 
+	/**
+	 * The main method.
+	 *
+	 * @param args the arguments
+	 */
 	public static void main(String[] args) {
 
 		for (int i = 0; i < args.length; i++) {
@@ -171,6 +184,9 @@ public class luceneidx2ftxt {
 
 	}
 
+	/**
+	 * Show usage.
+	 */
 	private static void showUsage() {
 
 		System.err.println("luceneidx2ftxt: Lucene index -> Lucene free text suggester");

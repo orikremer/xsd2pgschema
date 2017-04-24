@@ -35,28 +35,50 @@ import org.apache.commons.io.comparator.SizeFileComparator;
 import org.xml.sax.SAXException;
 
 /**
- * XML -> JSON conversion
+ * JSON conversion.
+ * 
+ * @author yokochi
  */
 public class xml2json {
 
+	/** The JSON directory name. */
 	public static String json_dir_name = "json_work";
 
+	/** The schema location. */
 	public static String schema_location = "";
 
+	/** The JSON type. */
 	public static JsonType json_type = JsonType.defaultType();
 
+	/** The schema option. */
 	public static PgSchemaOption option = new PgSchemaOption(false);
+	
+	/** The JSON builder option. */
 	public static JsonBuilderOption jsonb_option = new JsonBuilderOption();
 
+	/** The XML file filter. */
 	public static XmlFileFilter xml_file_filter = new XmlFileFilter();
+	
+	/** The XML post editor. */
 	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
+	/** The XML files. */
 	public static File[] xml_files = null;
 
+	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
+	
+	/** The Constant cpu_num. */
 	private static final int cpu_num = runtime.availableProcessors();
+	
+	/** The max threads. */
 	private static int max_thrds = cpu_num;
 
+	/**
+	 * The main method.
+	 *
+	 * @param args the arguments
+	 */
 	public static void main(String[] args) {
 
 		option.cancelRelDataExt();
@@ -251,6 +273,9 @@ public class xml2json {
 
 	}
 
+	/**
+	 * Show usage.
+	 */
 	private static void showUsage() {
 
 		JsonBuilderOption jsonb_option = new JsonBuilderOption();

@@ -27,17 +27,31 @@ import java.util.Set;
 import org.apache.lucene.search.suggest.InputIterator;
 import org.apache.lucene.util.BytesRef;
 
+/**
+ * The Class InputIteratorWrapper.
+ */
 public class InputIteratorWrapper implements InputIterator {
 
+	/** The iters. */
 	private List<InputIterator> iters = null;
+	
+	/** The cur. */
 	private int cur = -1;
 
+	/**
+	 * Instantiates a new input iterator wrapper.
+	 */
 	public InputIteratorWrapper() {
 
 		iters = new ArrayList<InputIterator>();
 
 	}
 
+	/**
+	 * Adds the.
+	 *
+	 * @param iter the iter
+	 */
 	public void add(InputIterator iter) {
 
 		if (iter == null)
@@ -48,6 +62,9 @@ public class InputIteratorWrapper implements InputIterator {
 
 	}
 
+	/* (non-Javadoc)
+	 * @see org.apache.lucene.util.BytesRefIterator#next()
+	 */
 	@Override
 	public BytesRef next() throws IOException {
 
@@ -70,26 +87,41 @@ public class InputIteratorWrapper implements InputIterator {
 		return next();
 	}
 
+	/* (non-Javadoc)
+	 * @see org.apache.lucene.search.suggest.InputIterator#contexts()
+	 */
 	@Override
 	public Set<BytesRef> contexts() {
 		return null;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.apache.lucene.search.suggest.InputIterator#hasContexts()
+	 */
 	@Override
 	public boolean hasContexts() {
 		return false;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.apache.lucene.search.suggest.InputIterator#hasPayloads()
+	 */
 	@Override
 	public boolean hasPayloads() {
 		return false;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.apache.lucene.search.suggest.InputIterator#payload()
+	 */
 	@Override
 	public BytesRef payload() {
 		return null;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.apache.lucene.search.suggest.InputIterator#weight()
+	 */
 	@Override
 	public long weight() {
 		return 0;

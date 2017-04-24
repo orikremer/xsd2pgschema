@@ -37,36 +37,53 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 /**
- * Thread function for xml2sphinxds
+ * Thread function for xml2sphinxds.
+ *
  * @author yokochi
  */
 public class Xml2SphinxDsThrd implements Runnable {
 
-	private int shard_id; // shard id
-	private int shard_size; // shard size
+	/** The shard id. */
+	private int shard_id;
+	
+	/** The shard size. */
+	private int shard_size;
 
-	private int thrd_id; // thread id
-	private int max_thrds; // max threads
+	/** The thread id. */
+	private int thrd_id;
+	
+	/** The max threads. */
+	private int max_thrds;
 
-	private DocumentBuilder doc_builder; // document builder factory for reuse
-	private PgSchema schema = null; // PostgreSQL schema
-	private XmlValidator validator = null; // XML validator
-	private String ds_dir_name = null; // directory name for Sphinx data source files
-	private File sphinx_schema = null; // Sphinx schema file
+	/** The document builder for reusing. */
+	private DocumentBuilder doc_builder;
+	
+	/** The PostgreSQL schema. */
+	private PgSchema schema = null;
+	
+	/** The XML validator. */
+	private XmlValidator validator = null;
+	
+	/** The data source directory name. */
+	private String ds_dir_name = null;
+	
+	/** The Sphinx schema file. */
+	private File sphinx_schema = null;
 
 	/**
-	 * Instance of Xml2SphinxDsThrd
+	 * Instance of Xml2SphinxDsThrd.
+	 *
 	 * @param shard_id shard id
 	 * @param shard_size shard size
 	 * @param thrd_id thread id
 	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
 	 * @param option PostgreSQL schema option
-	 * @throws ParserConfigurationException
-	 * @throws SAXException
-	 * @throws IOException
-	 * @throws NoSuchAlgorithmException
-	 * @throws PgSchemaException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws SAXException the SAX exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws NoSuchAlgorithmException the no such algorithm exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
@@ -142,6 +159,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 	}
 
+	/* (non-Javadoc)
+	 * @see java.lang.Runnable#run()
+	 */
 	@Override
 	public void run() {
 
@@ -194,11 +214,12 @@ public class Xml2SphinxDsThrd implements Runnable {
 	}
 
 	/**
-	 * Merge Sphinx data source files
-	 * @throws ParserConfigurationException
-	 * @throws SAXException
-	 * @throws IOException
-	 * @throws PgSchemaException
+	 * Merge Sphinx data source files.
+	 *
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws SAXException the SAX exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void merge() throws ParserConfigurationException, SAXException, IOException, PgSchemaException {
 

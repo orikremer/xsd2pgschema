@@ -20,18 +20,24 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * XML file filter
+ * XML file filter.
+ *
  * @author yokochi
  */
 public class XmlFileFilter {
 
+	/** The ext. */
 	public String ext = "xml";
 
+	/** The prefix digest. */
 	String prefix_digest = "";
+	
+	/** The ext digest. */
 	String ext_digest = ".";
 
 	/**
-	 * Set extension of target file
+	 * Set extension of target file.
+	 *
 	 * @param ext argument value
 	 * @return boolean whether it is valid or not
 	 */
@@ -50,7 +56,8 @@ public class XmlFileFilter {
 	}
 
 	/**
-	 * Set digested prefix of file name
+	 * Set digested prefix of file name.
+	 *
 	 * @param prefix_digest argument value
 	 */
 	public void setPrefixDigest(String prefix_digest) {
@@ -63,7 +70,8 @@ public class XmlFileFilter {
 	}
 
 	/**
-	 * Set digested extension of file name
+	 * Set digested extension of file name.
+	 *
 	 * @param ext_digest argument value
 	 */
 	public void setExtDigest(String ext_digest) {

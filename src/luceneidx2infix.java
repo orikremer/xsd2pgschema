@@ -38,15 +38,26 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 /**
- * Lucene index -> Lucene analyzed infix suggester
+ * Generate Lucene analyzed infix suggester from index.
+ * 
+ * @author yokochi
  */
 public class luceneidx2infix {
 
+	/** The index directory name. */
 	public static String idx_dir_name = xml2luceneidx.idx_dir_name;
+	
+	/** The analyzing infix suggester directory name. */
 	public static String infix_dir_name = "lucene_infix";
 
+	/** The field list. */
 	public static List<String> fields = new ArrayList<String>();
 
+	/**
+	 * The main method.
+	 *
+	 * @param args the arguments
+	 */
 	public static void main(String[] args) {
 
 		for (int i = 0; i < args.length; i++) {
@@ -163,6 +174,9 @@ public class luceneidx2infix {
 
 	}
 
+	/**
+	 * Show usage.
+	 */
 	private static void showUsage() {
 
 		System.err.println("luceneidx2infix: Lucene index -> Lucene analyzed infix suggester");

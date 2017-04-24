@@ -19,17 +19,22 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+// TODO: Auto-generated Javadoc
 /**
- * Enumerator of serial key size
+ * Enumerator of serial key size.
+ *
  * @author yokochi
  */
 public enum PgSerSize {
 
-	unsigned_int_32, // unsigned int 32bit (default)
-	unsigned_short_16; // unsigned short 16bit
+	/** The unsigned int 32 bit. */
+	unsigned_int_32,
+	/** The unsigned short 16 bit. */
+	unsigned_short_16;
 
 	/**
-	 * Return default serial key size
+	 * Return default serial key size.
+	 *
 	 * @return PgSerSize default value
 	 */
 	public static PgSerSize defaultSize() {
@@ -37,7 +42,8 @@ public enum PgSerSize {
 	}
 
 	/**
-	 * Return serial key size
+	 * Return serial key size.
+	 *
 	 * @param name name of serial key size
 	 * @return PgSerSize matched serial key size
 	 */

@@ -31,24 +31,30 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 /**
- * XML parser
+ * XML parser.
+ *
  * @author yokochi
  */
 public class XmlParser {
 
+	/** The document. */
 	Document document; // XML document
 
+	/** The document id. */
 	public String document_id; // content of document key
+	
+	/** The basename. */
 	public String basename; // basename of XML file
 
 	/**
-	 * Instance of XML parser
+	 * Instance of XML parser.
+	 *
 	 * @param doc_builder instance of DocumentBuilder
 	 * @param validator instance of XmlValidator
 	 * @param xml_file XML file
 	 * @param xml_file_filter XML file filter
-	 * @throws IOException
-	 * @throws SAXException
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws SAXException the SAX exception
 	 */
 	public XmlParser(DocumentBuilder doc_builder, XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter) throws IOException, SAXException {
 

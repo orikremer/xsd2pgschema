@@ -27,42 +27,72 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 /**
- * PostgreSQL table declaration
+ * PostgreSQL table declaration.
+ *
  * @author yokochi
  */
 public class PgTable {
 
+	/** The target namespace. */
 	String target_namespace = null; // target namespace
+	
+	/** The schema location. */
 	String schema_location = null; // schema location
 
+	/** The name. */
 	String name = ""; // table name in PostgreSQL
+	
+	/** The anno. */
 	String anno = ""; // xs:annotation
 
+	/** The xs type. */
 	XsTableType xs_type; // table type classified by xs_root (root node), xs_root_child (children node of root node), xs_admin_root (administrative root node), xs_admin_child (children node of administrative node).
 
+	/** The fields. */
 	List<PgField> fields = null; // field list
 
+	/** The level. */
 	int level = -1; // depth of table (internal use only)
 
+	/** The nested fields. */
 	int nested_fields = 0; // number of nested fields in table
 
+	/** The cont holder. */
 	boolean cont_holder = false; // content holder table
+	
+	/** The list holder. */
 	boolean list_holder = false; // list holder table
+	
+	/** The bridge. */
 	boolean bridge = false; // bridge table
+	
+	/** The virtual. */
 	boolean virtual = false; // whether xs_type equals xs_admin_root
+	
+	/** The relational. */
 	boolean relational = false; // bridge table or virtual table or not cont_holder
+	
+	/** The conflict. */
 	boolean conflict = false; // whether name collision occurs or not
+	
+	/** The required. */
 	boolean required = false; // whether table is referred from child table
+	
+	/** The filt out. */
 	boolean filt_out = false; // subset database replication (internal use only)
 
+	/** The filew. */
 	FileWriter filew = null; // content writer
 
+	/** The jsonb not empty. */
 	boolean jsonb_not_empty = false; // whether if JSON buffer of any field in table is not empty
 
+	/** The lucene doc. */
 	org.apache.lucene.document.Document lucene_doc = null; // Lucene document
 
 	/**
-	 * Instance of PostgreSQL table
+	 * Instance of PostgreSQL table.
+	 *
 	 * @param target_namespace target namespace URI
 	 * @param schema_location schema location
 	 */
@@ -74,7 +104,7 @@ public class PgTable {
 	}
 
 	/**
-	 * Classify table type: cont_holder, list_holder, bridge, hub, virtual
+	 * Classify table type: cont_holder, list_holder, bridge, hub, virtual.
 	 */
 	public void classify() {
 
@@ -86,7 +116,7 @@ public class PgTable {
 	}
 
 	/**
-	 * Determine content holder table having one of arbitrary content field such as attribute, element, simple content
+	 * Determine content holder table having one of arbitrary content field such as attribute, element, simple content.
 	 */
 	private void testContHolder() {
 
@@ -96,7 +126,7 @@ public class PgTable {
 	}
 
 	/**
-	 * Determine list holder table having one of field whose occurrence is unbounded
+	 * Determine list holder table having one of field whose occurrence is unbounded.
 	 */
 	private void testListHolder() {
 
@@ -105,7 +135,7 @@ public class PgTable {
 	}
 
 	/**
-	 * Determine bridge table having primary key and a nested key
+	 * Determine bridge table having primary key and a nested key.
 	 */
 	private void testBridge() {
 
@@ -139,7 +169,7 @@ public class PgTable {
 	}
 
 	/**
-	 * Determine virtual table equals administrative table (xs_admin_root)
+	 * Determine virtual table equals administrative table (xs_admin_root).
 	 */
 	private void testVirtual() {
 
@@ -149,7 +179,8 @@ public class PgTable {
 	}
 
 	/**
-	 * Suggest new name for a given field name avoiding name collision with current ones
+	 * Suggest new name for a given field name avoiding name collision with current ones.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param field_name candidate name of new field
 	 * @return String field name without name collision
@@ -184,7 +215,8 @@ public class PgTable {
 	}
 
 	/**
-	 * Add primary key
+	 * Add primary key.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param name name of primary key
 	 * @param unique_key whether primary key should be unique
@@ -221,7 +253,8 @@ public class PgTable {
 	}
 
 	/**
-	 * Add a nested key
+	 * Add a nested key.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param name name of nested key
 	 * @param node current node
@@ -305,7 +338,8 @@ public class PgTable {
 	}
 
 	/**
-	 * Add a nested key from foreign table
+	 * Add a nested key from foreign table.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param foreign_table name of foreign table
 	 */
@@ -334,7 +368,8 @@ public class PgTable {
 	}
 
 	/**
-	 * Add a foreign key from foreign table
+	 * Add a foreign key from foreign table.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param foreign_table foreign table
 	 */
@@ -368,7 +403,8 @@ public class PgTable {
 	}
 
 	/**
-	 * Add a serial key
+	 * Add a serial key.
+	 *
 	 * @param schema PostgreSQL data model
 	 */
 	public void addSerialKey(PgSchema schema) {
@@ -390,7 +426,8 @@ public class PgTable {
 	}
 
 	/**
-	 * Add an XPath key
+	 * Add an XPath key.
+	 *
 	 * @param schema PostgreSQL data model
 	 */
 	public void addXPathKey(PgSchema schema) {
@@ -409,7 +446,8 @@ public class PgTable {
 	}
 
 	/**
-	 * Return field id
+	 * Return field id.
+	 *
 	 * @param field_name name of field
 	 * @return int field id, -1 represents not found
 	 */
@@ -426,7 +464,8 @@ public class PgTable {
 	}
 
 	/**
-	 * Append substitution group property
+	 * Append substitution group property.
+	 *
 	 * @param field_name name of field
 	 */
 	public void appendSubstitutionGroup(String field_name) {
@@ -465,7 +504,7 @@ public class PgTable {
 	}
 
 	/**
-	 * Remove prohibited attributes
+	 * Remove prohibited attributes.
 	 */
 	public void removeProhibitedAttrs() {
 
@@ -474,7 +513,7 @@ public class PgTable {
 	}
 
 	/**
-	 * Remove blocked substitution group elements
+	 * Remove blocked substitution group elements.
 	 */
 	public void removeBlockedSubstitutionGroups() {
 
@@ -483,7 +522,7 @@ public class PgTable {
 	}
 
 	/**
-	 * Cancel unique key because of name collision
+	 * Cancel unique key because of name collision.
 	 */
 	public void cancelUniqueKey() {
 
@@ -492,7 +531,7 @@ public class PgTable {
 	}
 
 	/**
-	 * Determine the number of nested keys
+	 * Determine the number of nested keys.
 	 */
 	public void countNestedFields() {
 
@@ -502,7 +541,7 @@ public class PgTable {
 	}
 
 	/**
-	 * set system key flag
+	 * set system key flag.
 	 */
 	public void setSystemKey() {
 
@@ -511,7 +550,7 @@ public class PgTable {
 	}
 
 	/**
-	 * set user key flag
+	 * set user key flag.
 	 */
 	public void setUserKey() {
 

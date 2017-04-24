@@ -20,17 +20,24 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * Enumerator of table type
+ * Enumerator of table type.
+ *
  * @author yokochi
  */
 public enum XsTableType {
 
-	xs_root, // root table
-	xs_root_child, // child table of root table
-	xs_admin_root, // administrative table
-	xs_admin_child, // child table of administrative table
+	/** The root table. */
+	xs_root,
+	/** The child table of the root table. */
+	xs_root_child, 
+	/** The administrative root table. */
+	xs_admin_root, 
+	/** The child table of the administrative table. */
+	xs_admin_child,
 
-	xs_attr_group, // attribute group
-	xs_model_group // model group
+	/** The attribute group. */
+	xs_attr_group,
+	/** The model group */
+	xs_model_group
 
 }

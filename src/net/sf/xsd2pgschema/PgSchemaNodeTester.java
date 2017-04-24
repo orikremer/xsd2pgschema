@@ -22,25 +22,36 @@ package net.sf.xsd2pgschema;
 import org.w3c.dom.Node;
 
 /**
- * Node tester
+ * Node tester.
+ *
  * @author yokochi
  */
 public class PgSchemaNodeTester {
 
+	/** The key id. */
 	public int key_id = 1; // ordinal number in sibling nodes
 
+	/** The key name. */
 	public String key_name = null; // current key name
+	
+	/** The proc node. */
 	public Node proc_node = null; // processing node
 
+	/** The omitted. */
 	public boolean omitted = false; // whether if omit this node
 
+	/** The nested. */
 	boolean nested; // whether it is nested
+	
+	/** The nest id. */
 	int nest_id; // ordinal number of current node in nested case
 
+	/** The node count. */
 	int node_count = 0; // total number of sibling nodes
 
 	/**
-	 * Decide to process this node or not (see result at omitted)
+	 * Decide to process this node or not (see result at omitted).
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param parent_node parent node
 	 * @param node current node
@@ -151,7 +162,8 @@ public class PgSchemaNodeTester {
 	}
 
 	/**
-	 * Return whether if current node is the last one
+	 * Return whether if current node is the last one.
+	 *
 	 * @return boolean whether if current node is the last one
 	 */
 	public boolean isLastNode() {

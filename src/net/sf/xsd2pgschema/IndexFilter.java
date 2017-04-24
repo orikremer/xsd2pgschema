@@ -23,19 +23,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Full-text index filter
+ * Full-text index filter.
+ *
  * @author yokochi
  */
 public class IndexFilter {
 
+	/** The attrs. */
 	public List<String> attrs = null; // attributes for filtering index
+	
+	/** The fields. */
 	public List<String> fields = null; // fields to be stored
 
+	/** The min word len. */
 	public int min_word_len = PgSchemaUtil.min_word_len; // minimum word length for indexing
+	
+	/** The numeric index. */
 	public boolean numeric_index = false; // numeric values are stored in Lucene index
 
 	/**
-	 * Instance of index filter
+	 * Instance of index filter.
 	 */
 	public IndexFilter() {
 
@@ -45,7 +52,8 @@ public class IndexFilter {
 	}
 
 	/**
-	 * Add attribute
+	 * Add attribute.
+	 *
 	 * @param attr attribute name
 	 * @return boolean result of addition
 	 */
@@ -64,7 +72,8 @@ public class IndexFilter {
 	}
 
 	/**
-	 * Add field
+	 * Add field.
+	 *
 	 * @param field field name
 	 * @return boolean result of addition
 	 */
@@ -73,7 +82,7 @@ public class IndexFilter {
 	}
 
 	/**
-	 * Add all attributes
+	 * Add all attributes.
 	 */
 	public void setAttrAll() {
 
@@ -87,7 +96,7 @@ public class IndexFilter {
 	}
 
 	/**
-	 * Add all fields
+	 * Add all fields.
 	 */
 	public void setFiledAll() {
 
@@ -96,7 +105,8 @@ public class IndexFilter {
 	}
 
 	/**
-	 * Set minimum word length
+	 * Set minimum word length.
+	 *
 	 * @param min_word_len argument value
 	 */
 	public void setMinWordLen(String min_word_len) {
@@ -109,7 +119,7 @@ public class IndexFilter {
 	}
 
 	/**
-	 * Enable indexing for numerical data
+	 * Enable indexing for numerical data.
 	 */
 	public void enableNumericIndex() {
 

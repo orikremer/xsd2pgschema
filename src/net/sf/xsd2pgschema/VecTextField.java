@@ -29,11 +29,16 @@ import org.apache.lucene.index.IndexOptions;
 // this code was taken from:
 // http://stackoverflow.com/questions/11945728/how-to-use-termvector-lucene-4-0
 
+/**
+ * The Class VecTextField.
+ */
 public class VecTextField extends Field {
 
+	/** The Constant TYPE_NOT_STORED. */
 	/* Indexed, tokenized, not stored. */
 	public static final FieldType TYPE_NOT_STORED = new FieldType();
 
+	/** The Constant TYPE_STORED. */
 	/* Indexed, tokenized, stored. */
 	public static final FieldType TYPE_STORED = new FieldType();
 
@@ -55,17 +60,34 @@ public class VecTextField extends Field {
 
 	}
 
-	/** Creates a new TextField with Reader value. */
+	/**
+	 *  Creates a new TextField with Reader value.
+	 *
+	 * @param name the name
+	 * @param reader the reader
+	 * @param store the store
+	 */
 	public VecTextField(String name, Reader reader, Store store) {
 		super(name, reader, store == Store.YES ? TYPE_STORED : TYPE_NOT_STORED);
 	}
 
-	/** Creates a new TextField with String value. */
+	/**
+	 *  Creates a new TextField with String value.
+	 *
+	 * @param name the name
+	 * @param value the value
+	 * @param store the store
+	 */
 	public VecTextField(String name, String value, Store store) {
 		super(name, value, store == Store.YES ? TYPE_STORED : TYPE_NOT_STORED);
 	}
 
-	/** Creates a new un-stored TextField with TokenStream value. */
+	/**
+	 *  Creates a new un-stored TextField with TokenStream value.
+	 *
+	 * @param name the name
+	 * @param stream the stream
+	 */
 	public VecTextField(String name, TokenStream stream) {
 		super(name, stream, TYPE_NOT_STORED);
 	}

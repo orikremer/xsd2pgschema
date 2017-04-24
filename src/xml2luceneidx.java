@@ -35,29 +35,50 @@ import org.apache.commons.io.comparator.SizeFileComparator;
 import org.xml.sax.SAXException;
 
 /**
- * XML -> Lucene full-text indexing
+ * Lucene full-text indexing.
+ * 
+ * @author yokochi
  */
 public class xml2luceneidx {
 
+	/** The index directory name. */
 	public static String idx_dir_name = "lucene_index";
 
+	/** The schema location. */
 	public static String schema_location = "";
 
+	/** The schema option. */
 	public static PgSchemaOption option = new PgSchemaOption(false);
 
+	/** The XML file filter. */
 	public static XmlFileFilter xml_file_filter = new XmlFileFilter();
+	
+	/** The XML post editor. */
 	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
+	/** The index filter. */
 	public static IndexFilter index_filter = new IndexFilter();
 
+	/** The XML files. */
 	public static File[] xml_files = null;
 
+	/** The shard size. */
 	public static int shard_size = 1;
 
+	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
+	
+	/** The Constant cpu_num. */
 	private static final int cpu_num = runtime.availableProcessors();
+	
+	/** The max threads. */
 	private static int max_thrds = cpu_num;
 
+	/**
+	 * The main method.
+	 *
+	 * @param args the arguments
+	 */
 	public static void main(String[] args) {
 
 		List<String> xml_file_names = new ArrayList<String>();
@@ -276,6 +297,9 @@ public class xml2luceneidx {
 
 	}
 
+	/**
+	 * Show usage.
+	 */
 	private static void showUsage() {
 
 		System.err.println("xm2luceneidx: XML -> Lucene full-text indexing");

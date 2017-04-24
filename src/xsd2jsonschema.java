@@ -34,10 +34,17 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 /**
- * XML Schema -> JSON Schema conversion
+ * JSON Schema translation.
+ * 
+ * @author yokochi
  */
 public class xsd2jsonschema {
 
+	/**
+	 * The main method.
+	 *
+	 * @param args the arguments
+	 */
 	public static void main(String[] args) {
 
 		JsonType json_type = JsonType.defaultType();
@@ -172,6 +179,9 @@ public class xsd2jsonschema {
 
 	}
 
+	/**
+	 * Show usage.
+	 */
 	private static void showUsage() {
 
 		JsonBuilderOption jsonb_option = new JsonBuilderOption();

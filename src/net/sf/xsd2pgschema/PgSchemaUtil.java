@@ -49,50 +49,90 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 /**
- * Utility functions and default values
+ * Utility functions and default values.
+ *
  * @author yokochi
  */
 public class PgSchemaUtil {
 
+	/** The Constant xs_namespace_uri. */
 	public final static String xs_namespace_uri = "http://www.w3.org/2001/XMLSchema"; // namespace URI representing XML Schema 1.x
+	
+	/** The Constant json_schema_def. */
 	public final static String json_schema_def = "http://json-schema.org/schema#"; // namespace URI representing JSON Schema
 
+	/** The Constant document_key_name. */
 	public final static String document_key_name = "document_id"; // PostgreSQL item name of document key
+	
+	/** The Constant serial_key_name. */
 	public final static String serial_key_name = "serial_id"; // PostgreSQL item name of serial key
+	
+	/** The Constant xpath_key_name. */
 	public final static String xpath_key_name = "xpath_id"; // PostgreSQL item name of xpath key
 
+	/** The Constant simple_cont_name. */
 	public final static String simple_cont_name = "content"; // PostgreSQL item name of xs:simpleContent
 
+	/** The Constant any_elem_name. */
 	public final static String any_elem_name = "any_element"; // PostgreSQL item name of xs:any
+	
+	/** The Constant any_attr_name. */
 	public final static String any_attr_name = "any_attribute"; // PostgreSQL item name of xs:anyAttribute
 
+	/** The Constant def_hash_algorithm. */
 	public final static String def_hash_algorithm = "SHA-1"; // default hash algorithm
 
+	/** The Constant host. */
 	public final static String host = "localhost"; // default PostgreSQL host name
+	
+	/** The Constant port. */
 	public final static int port = 5432; // default PostgreSQL port number
 
+	/** The Constant min_word_len. */
 	public final static int min_word_len = 1; // minimum word length for indexing
+	
+	/** The Constant enum_max_len. */
 	public final static int enum_max_len = 63; // PostgreSQL maximum length of enumeration
+	
+	/** The Constant indent_spaces. */
 	public final static int indent_spaces = 2; // default length of indent spaces
 
+	/** The Constant shard_dir_prefix. */
 	public final static String shard_dir_prefix = "part-"; // prefix of directory name for sharding
+	
+	/** The Constant thrd_dir_prefix. */
 	public final static String thrd_dir_prefix = "thrd-"; // prefix of directory name for multi-threading
 
+	/** The Constant sphinx_schema_name. */
 	public final static String sphinx_schema_name = ".schema_part.xml"; // xmlpipe2 schema file name
+	
+	/** The Constant sphinx_conf_name. */
 	public final static String sphinx_conf_name = "data_source.conf"; // xmlpipe2 configuration file name
+	
+	/** The Constant sphinx_document_prefix. */
 	public final static String sphinx_document_prefix = "document_part_"; // xmlpipe2 document prefix name
+	
+	/** The Constant sphinx_data_source_name. */
 	public final static String sphinx_data_source_name = "data_source.xml"; // xmlpipe2 data source file name
+	
+	/** The Constant trigram_field_name. */
 	public final static String trigram_field_name = "trigrams"; // trigram field name for Sphinx dictionary
 
+	/** The Constant reserved_words. */
 	// PostgreSQL reserved words
 	public final static String[] reserved_words = { "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC", "AUTHORIZATION", "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLLATION", "COLUMN", "CONCURRENTLY", "CONSTRAINT", "CREATE", "CROSS", "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT", "DEFERRABLE", "DESC", "DISTINCT", "DO", "ELSE", "END", "EXCEPT", "FALSE", "FETCH", "FOR", "FOREIGN", "FREEZE", "FROM", "FULL", "GRANT", "GROUP", "HAVING", "ILIKE", "IN", "INITIALLY", "INNER", "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "LATERAL", "LEADING", "LEFT", "LIKE", "LIMIT", "LOCALTIME", "LOCALTIMESTAMP", "NATURAL", "NOT", "NOTNULL", "NULL", "OFFSET", "ON", "ONLY", "OR", "ORDER", "OUTER", "OVERLAPS", "PLACING", "PRIMARY", "REFERENCES", "RETURNING", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "TABLESAMPLE", "THEN", "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VARIADIC", "VERBOSE", "WHEN", "WHERE", "WINDOW", "WITH" };
+	
+	/** The Constant reserved_ops. */
 	// PostgreSQL reserved operator codes
 	public final static String[] reserved_ops = { "+", "-", "*", "/", "%", "^", "|/", "||/", "!", "!!", "@", "&", "|", "#", "~", "<<", ">>" };
+	
+	/** The Constant reserved_ops_rex. */
 	// PostgreSQL reserved operator codes escaping regex match
 	public final static String[] reserved_ops_rex = { "\\+", "-", "\\*", "/", "%", "\\^", "\\|/", "\\|\\|/", "!", "!!", "@", "\\&", "\\|", "#", "~", "<<", ">>" };
 
 	/**
-	 * Return input stream of schema location
+	 * Return input stream of schema location.
+	 *
 	 * @param schema_location schema location
 	 * @param schema_parent parent of schema location
 	 * @return InputStream input stream of schema location
@@ -192,7 +232,8 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Return file of schema location
+	 * Return file of schema location.
+	 *
 	 * @param schema_location schema location
 	 * @param schema_parent parent of schema location
 	 * @return File file of schema location
@@ -228,7 +269,8 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Copy file of schema location in current directory if not exist
+	 * Copy file of schema location in current directory if not exist.
+	 *
 	 * @param schema_location schema location
 	 * @param schema_parent parent of schema location
 	 * @return File file of schema location
@@ -260,7 +302,8 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Return name of schema location
+	 * Return name of schema location.
+	 *
 	 * @param schema_location schema location
 	 * @return String schema location
 	 */
@@ -275,7 +318,8 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Return file name of schema location
+	 * Return file name of schema location.
+	 *
 	 * @param schema_location schema location
 	 * @return String file name of schema location
 	 */
@@ -301,7 +345,8 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Return parent of schema location
+	 * Return parent of schema location.
+	 *
 	 * @param schema_location schema location
 	 * @return String parent name of schema location
 	 */
@@ -327,7 +372,8 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Suggest new name in PostgreSQL for a given name
+	 * Suggest new name in PostgreSQL for a given name.
+	 *
 	 * @param name name
 	 * @return String name without name collision against PostgreSQL reserved words
 	 */
@@ -347,7 +393,8 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Suggest new name in PostgreSQL for a given name
+	 * Suggest new name in PostgreSQL for a given name.
+	 *
 	 * @param name name
 	 * @return String name without name collision against PostgreSQL operators
 	 */
@@ -374,10 +421,11 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Extract annotation from xs:annotation/xs:appinfo|xs:documentation
+	 * Extract annotation from xs:annotation/xs:appinfo|xs:documentation.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
-	 * @param boolean whether node is table (or field)
+	 * @param is_table the is table
 	 * @return String annotation
 	 */
 	public static String extractAnnotation(PgSchema schema, Node node, boolean is_table) {
@@ -426,7 +474,8 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Extract annotation from xs:annotation/xs:appinfo
+	 * Extract annotation from xs:annotation/xs:appinfo.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 * @return String appinfo of annotation
@@ -463,7 +512,8 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Extract annotation from xs:annotation/xs:documentation
+	 * Extract annotation from xs:annotation/xs:documentation.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 * @return String documentation of annotation
@@ -500,7 +550,8 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Return array of target file
+	 * Return array of target file.
+	 *
 	 * @param file_names list of file name
 	 * @param filter file name filter
 	 * @return File[] array of target file

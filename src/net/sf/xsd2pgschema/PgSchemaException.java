@@ -20,25 +20,40 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * PostgreSQL schema contractor exception
+ * PostgreSQL schema contractor exception.
+ *
  * @author yokochi
  */
 public class PgSchemaException extends Exception {
 
+	/** The Constant serialVersionUID. */
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Instantiates a new pg schema exception.
+	 */
 	public PgSchemaException() {
 
 		super();
 
 	}
 
+	/**
+	 * Instantiates a new pg schema exception.
+	 *
+	 * @param message the message
+	 */
 	public PgSchemaException(String message) {
 
 		super(message);
 
 	}
 
+	/**
+	 * Instantiates a new pg schema exception.
+	 *
+	 * @param cause the cause
+	 */
 	public PgSchemaException(Throwable cause) {
 
 		super(cause);

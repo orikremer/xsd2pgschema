@@ -32,14 +32,23 @@ import java.util.Map.Entry;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 /**
- * Sphinx data source -> Sphinx dictionary index
+ * Merge Sphinx dictionary index.
+ * 
+ * @author yokochi
  */
 public class dicmerge4sphinx {
 
+	/** The frequency threshold. */
 	public static int freq_threshold = 10;
 
+	/** The dictionary file list. */
 	public static List<String> dic_file_list = new ArrayList<String>();
 
+	/**
+	 * The main method.
+	 *
+	 * @param args the arguments
+	 */
 	public static void main(String[] args) {
 
 		for (int i = 0; i < args.length; i++) {
@@ -154,6 +163,12 @@ public class dicmerge4sphinx {
 
 	}
 
+	/**
+	 * Convert to trigram.
+	 *
+	 * @param keyword the keyword
+	 * @return the string
+	 */
 	private static String toTrigram(String keyword) {
 
 		if (keyword == null || keyword.isEmpty())
@@ -174,6 +189,9 @@ public class dicmerge4sphinx {
 		return sb.substring(0, len - 1);
 	}
 
+	/**
+	 * Show usage.
+	 */
 	private static void showUsage() {
 
 		System.err.println("dicmerge4sphinx: Sphinx data source -> Sphinx dictionary index");

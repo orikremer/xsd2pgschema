@@ -20,21 +20,33 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * PostgreSQL option
+ * PostgreSQL option.
+ *
  * @author yokochi
  */
 public class PgOption {
 
+	/** The host. */
 	public String host = PgSchemaUtil.host; // default host name
+	
+	/** The port. */
 	public int port = PgSchemaUtil.port; // default port number
+	
+	/** The database. */
 	public String database = ""; // database name
+	
+	/** The user. */
 	public String user = ""; // database user name
+	
+	/** The password. */
 	public String password = ""; // database password
 
+	/** The update. */
 	public boolean update = false; // whether copy or update (delete before insert)
 
 	/**
-	 * Return database URL for JDBC connection
+	 * Return database URL for JDBC connection.
+	 *
 	 * @return String database URL
 	 */
 	public String getDbUrl() {

@@ -51,65 +51,106 @@ import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 /**
- * PostgreSQL schema constructor based on XML Schema
+ * PostgreSQL schema constructor based on XML Schema.
+ *
  * @author yokochi
  */
 public class PgSchema {
 
+	/** The root node. */
 	private Node root_node = null; // root node (internal use only)
 
+	/** The def schema parent. */
 	private String def_schema_parent = null; // parent of default schema location
+	
+	/** The def schema location. */
 	private String def_schema_location = null; // default schema location
 
+	/** The schema locations. */
 	private List<String> schema_locations = null; // schema locations which are included or imported
 
+	/** The attr groups. */
 	private List<PgTable> attr_groups = null; // attribute group definitions
+	
+	/** The model groups. */
 	private List<PgTable> model_groups = null; // model group definitions
+	
+	/** The tables. */
 	private List<PgTable> tables = null; // PostgreSQL table list
 
+	/** The foreign keys. */
 	private List<PgForeignKey> foreign_keys = null; // PostgreSQL foreign key list
 
+	/** The option. */
 	PgSchemaOption option = null; // PostgreSQL schema option
 
+	/** The conflicted. */
 	private boolean conflicted = false; // whether name collision occurs or not
 
+	/** The level. */
 	private int level; // current depth of table (internal use only)
 
+	/** The root table id. */
 	private int root_table_id = -1; // root table id (internal use only)
+	
+	/** The root table. */
 	private PgTable root_table = null; // PostgreSQL root table
 
+	/** The min word len. */
 	int min_word_len = PgSchemaUtil.min_word_len; // minimum word length for indexing
+	
+	/** The numeric index. */
 	boolean numeric_index = false; // numeric values are stored in Lucene index
 
+	/** The xs prefix. */
 	String xs_prefix = null; // prefix of xs_namespace_uri
+	
+	/** The xs prefix. */
 	String xs_prefix_ = null; // xs_prefix.isEmpty() ? "" : xs_prefix + ":"
 
+	/** The def namespaces. */
 	private HashMap<String, String> def_namespaces = null; // default namespace (key=prefix, value=namespace_uri)
 
+	/** The def anno. */
 	private String def_anno = null; // top level xs:annotation
+	
+	/** The def appinfo. */
 	private String def_appinfo = null; // top level xs:annotation/xs:appinfo
+	
+	/** The def doc. */
 	private String def_doc = null; // top level xs:annotation/xs:documentation
+	
+	/** The def attrs. */
 	private String def_attrs = null; // default attributes
 
+	/** The def stat msg. */
 	private StringBuilder def_stat_msg = null; // statistics message
 
+	/** The realized. */
 	private boolean[] realized = null; // flags used for PostgreSQL DDL metalization (internal use only)
+	
+	/** The table order. */
 	private int[] table_order = null; // store generation/destruction order of tables (internal use only)
+	
+	/** The table lock. */
 	private Object[] table_lock = null; // table lock objects
 
+	/** The document id. */
 	private String document_id; // content of document key
 
+	/** The message digest. */
 	private MessageDigest message_digest = null; // instance of message digest
 
 	/**
-	 * PostgreSQL schema constructor
+	 * PostgreSQL schema constructor.
+	 *
 	 * @param doc_builder Document builder used for xs:include or xs:import
 	 * @param doc XML Schema document
 	 * @param root_schema root schema object (should be null at first)
 	 * @param def_schema_location default schema location
 	 * @param option PostgreSQL schema option
-	 * @throws NoSuchAlgorithmException
-	 * @throws PgSchemaException
+	 * @throws NoSuchAlgorithmException the no such algorithm exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public PgSchema(DocumentBuilder doc_builder, Document doc, PgSchema root_schema, String def_schema_location, PgSchemaOption option) throws NoSuchAlgorithmException, PgSchemaException {
 
@@ -678,7 +719,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract root element of XML Schema
+	 * Extract root element of XML Schema.
+	 *
 	 * @param node current node
 	 * @param root_element whether it is root element or not
 	 */
@@ -751,7 +793,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Add orphaned item of root element
+	 * Add orphaned item of root element.
+	 *
 	 * @param node current node
 	 * @param table root table
 	 */
@@ -839,7 +882,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract administrative element of XML Schema
+	 * Extract administrative element of XML Schema.
+	 *
 	 * @param node current node
 	 * @param complex_type whether it is complexType or not (simpleType)
 	 * @param annotation whether corrects annotation only
@@ -910,7 +954,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract administrative attribute group of XML Schema
+	 * Extract administrative attribute group of XML Schema.
+	 *
 	 * @param node current node
 	 */
 	private void extractAdminAttributeGroup(Node node) {
@@ -948,7 +993,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract administrative model group of XML Schema
+	 * Extract administrative model group of XML Schema.
+	 *
 	 * @param node current node
 	 */
 	private void extractAdminModelGroup(Node node) {
@@ -984,8 +1030,10 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract field of table
+	 * Extract field of table.
+	 *
 	 * @param node current node
+	 * @param table the table
 	 * @table new table
 	 */
 	private void extractField(Node node, PgTable table) {
@@ -1071,7 +1119,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract foreign key under xs:keyref
+	 * Extract foreign key under xs:keyref.
+	 *
 	 * @param node current node
 	 * @param parent_node parent node
 	 */
@@ -1116,7 +1165,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract any
+	 * Extract any.
+	 *
 	 * @param node current node
 	 * @param table new table
 	 */
@@ -1143,7 +1193,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract any attribute
+	 * Extract any attribute.
+	 *
 	 * @param node current node
 	 * @param table new table
 	 */
@@ -1167,7 +1218,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract attribute
+	 * Extract attribute.
+	 *
 	 * @param node current node
 	 * @param table new table
 	 */
@@ -1178,7 +1230,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract element
+	 * Extract element.
+	 *
 	 * @param node current node
 	 * @param table new table
 	 */
@@ -1189,7 +1242,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Concrete extractor for both attribute and element
+	 * Concrete extractor for both attribute and element.
+	 *
 	 * @param node current node
 	 * @param table new table
 	 * @param attribute whether it is attribute or not (element)
@@ -1452,7 +1506,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Add arbitrary child item
+	 * Add arbitrary child item.
+	 *
 	 * @param node current node
 	 * @param foreign_table foreign table
 	 */
@@ -1511,7 +1566,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract attribute group
+	 * Extract attribute group.
+	 *
 	 * @param node current node
 	 * @param table new table
 	 */
@@ -1546,7 +1602,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract model group
+	 * Extract model group.
+	 *
 	 * @param node current node
 	 * @param table new table
 	 */
@@ -1569,7 +1626,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract simple content
+	 * Extract simple content.
+	 *
 	 * @param node current node
 	 * @param table new table
 	 */
@@ -1645,7 +1703,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract complex content
+	 * Extract complex content.
+	 *
 	 * @param node current node
 	 * @param table new table
 	 */
@@ -1670,7 +1729,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Extract complex content under xs:extension
+	 * Extract complex content under xs:extension.
+	 *
 	 * @param node current node
 	 * @param table new table
 	 */
@@ -1741,7 +1801,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Avoid table duplication while merging two equivalent tables
+	 * Avoid table duplication while merging two equivalent tables.
+	 *
 	 * @param tables target PostgreSQL table list
 	 * @param table new table having table name at least
 	 * @return boolean whether if no name collision occurs
@@ -1890,7 +1951,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return PostgreSQL table
+	 * Return PostgreSQL table.
+	 *
 	 * @param table_id table id
 	 * @return PostgreSQL table
 	 */
@@ -1899,7 +1961,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return namespace URI
+	 * Return namespace URI.
+	 *
 	 * @param prefix prefix of namespace URI
 	 * @return String namespace URI
 	 */
@@ -1908,7 +1971,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return table id from table name
+	 * Return table id from table name.
+	 *
 	 * @param table_name table name
 	 * @return int table id, -1 represents not found
 	 */
@@ -1925,7 +1989,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return attribute group id from attribute group name
+	 * Return attribute group id from attribute group name.
+	 *
 	 * @param table_name table name
 	 * @return int table id, -1 represents not found
 	 */
@@ -1942,7 +2007,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return model group id from model group name
+	 * Return model group id from model group name.
+	 *
 	 * @param table_name table name
 	 * @return int table id, -1 represents not found
 	 */
@@ -1959,9 +2025,10 @@ public class PgSchema {
 	}
 
 	/**
-	 *  Return unqualified name
-	 *  @param name qualified name or unqualified name
-	 *  @return String unqualified name
+	 *  Return unqualified name.
+	 *
+	 * @param name qualified name or unqualified name
+	 * @return String unqualified name
 	 */
 	protected String getUnqualifiedName(String name) {
 
@@ -1980,7 +2047,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Realize PostgreSQL DDL
+	 * Realize PostgreSQL DDL.
 	 */
 	private void realize() {
 
@@ -2276,8 +2343,9 @@ public class PgSchema {
 	}
 
 	/**
-	 * Realize PostgreSQL DDL of administrative table
-	 * @param talbe table
+	 * Realize PostgreSQL DDL of administrative table.
+	 *
+	 * @param table the table
 	 * @param output whether outputs PostgreSQL DDL via standard output
 	 */
 	private void realizeAdmin(PgTable table, boolean output) {
@@ -2342,8 +2410,9 @@ public class PgSchema {
 	}
 
 	/**
-	 * Realize PostgreSQL DDL of arbitrary table
-	 * @param talbe table
+	 * Realize PostgreSQL DDL of arbitrary table.
+	 *
+	 * @param table the table
 	 * @param table_id table id
 	 * @param output whether outputs PostgreSQL DDL via standard output
 	 */
@@ -2538,12 +2607,14 @@ public class PgSchema {
 
 	// post XML editorial functions
 
+	/** The filt in selected. */
 	private boolean filt_in_selected = false;
 
 	/**
-	 * Apply filt-in options
+	 * Apply filt-in options.
+	 *
 	 * @param filt_ins filt-in options
-	 * @throws PgSchemaException
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void applyFiltIn(List<String> filt_ins) throws PgSchemaException {
 
@@ -2638,9 +2709,10 @@ public class PgSchema {
 	}
 
 	/**
-	 * Apply filt-out options
+	 * Apply filt-out options.
+	 *
 	 * @param filt_outs filt-out options
-	 * @throws PgSchemaException
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void applyFiltOut(List<String> filt_outs) throws PgSchemaException {
 
@@ -2703,9 +2775,10 @@ public class PgSchema {
 	}
 
 	/**
-	 * Apply fill-this options
+	 * Apply fill-this options.
+	 *
 	 * @param fill_these fill-this options
-	 * @throws PgSchemaException
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void applyFillThis(List<String> fill_these) throws PgSchemaException {
 
@@ -2754,12 +2827,14 @@ public class PgSchema {
 
 	}
 
+	/** The attr selected. */
 	protected boolean attr_selected = false;
 
 	/**
-	 * Apply attr options for full-text indexing
+	 * Apply attr options for full-text indexing.
+	 *
 	 * @param attrs attr options
-	 * @throws PgSchemaException
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void applyAttr(final List<String> attrs) throws PgSchemaException {
 
@@ -2832,12 +2907,14 @@ public class PgSchema {
 
 	}
 
+	/** The field selected. */
 	protected boolean field_selected = false;
 
 	/**
-	 * Apply field options for full-text indexing
+	 * Apply field options for full-text indexing.
+	 *
 	 * @param fields field options
-	 * @throws PgSchemaException
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void applyField(final List<String> fields) throws PgSchemaException {
 
@@ -2931,7 +3008,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Determine hash key of source string
+	 * Determine hash key of source string.
+	 *
 	 * @param key_name source string
 	 * @return String hash key
 	 */
@@ -2960,7 +3038,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Determine hash key of source string
+	 * Determine hash key of source string.
+	 *
 	 * @param key_name source string
 	 * @return bytes[] hash key
 	 */
@@ -2972,7 +3051,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Determine hash key of source string
+	 * Determine hash key of source string.
+	 *
 	 * @param key_name source string
 	 * @return int hash key
 	 */
@@ -2988,7 +3068,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Determine hash key of source string
+	 * Determine hash key of source string.
+	 *
 	 * @param key_name source string
 	 * @return long hash key
 	 */
@@ -3004,8 +3085,9 @@ public class PgSchema {
 	}
 
 	/**
-	 * Check root table
-	 * @throws PgSchemaException
+	 * Check root table.
+	 *
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void hasRootTable() throws PgSchemaException {
 
@@ -3015,11 +3097,12 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return root node of document
+	 * Return root node of document.
+	 *
 	 * @param xml_parser XML document
 	 * @param xml_post_editor XML post editing
 	 * @return Node root node of document
-	 * @throws PgSchemaException
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	private Node getRootNode(XmlParser xml_parser, XmlPostEditor xml_post_editor) throws PgSchemaException {
 
@@ -3047,12 +3130,13 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return root node of document
+	 * Return root node of document.
+	 *
 	 * @param xml_parser XML document
 	 * @param xml_post_editor XML post editing
 	 * @param index_filter index filter
 	 * @return Node root node of document
-	 * @throws PgSchemaException
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	private Node getRootNode(XmlParser xml_parser, XmlPostEditor xml_post_editor, IndexFilter index_filter) throws PgSchemaException {
 
@@ -3070,7 +3154,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return current document id
+	 * Return current document id.
+	 *
 	 * @return String document id
 	 */
 	protected String getDocumentId() {
@@ -3078,7 +3163,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Initialize table lock objects
+	 * Initialize table lock objects.
+	 *
 	 * @param single_lock whether if single object no all objects
 	 */
 	private void initTableLock(boolean single_lock) {
@@ -3110,7 +3196,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Close table lock objects
+	 * Close table lock objects.
 	 */
 	private void closeTableLock() {
 
@@ -3125,18 +3211,19 @@ public class PgSchema {
 
 	}
 
-	// XML -> CSV conversion
+	// CSV conversion
 
 	/**
-	 * XML -> CSV conversion
+	 * CSV conversion.
+	 *
 	 * @param xml_parser XML document
 	 * @param csv_dir_name directory name of CSV files
 	 * @param db_conn Database connection
 	 * @param xml_post_editor XML post editing
 	 * @param append_csv whether allows to append CSV files
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws PgSchemaException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void xml2PgCsv(XmlParser xml_parser, String csv_dir_name, Connection db_conn, XmlPostEditor xml_post_editor, boolean append_csv) throws ParserConfigurationException, TransformerException, PgSchemaException {
 
@@ -3187,7 +3274,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Close xml2PgCsv
+	 * Close xml2PgCsv.
 	 */
 	public void closeXml2PgCsv() {
 
@@ -3210,7 +3297,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and write data to CSV file
+	 * Parse current node and write data to CSV file.
+	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
 	 * @param table current table
@@ -3219,9 +3307,9 @@ public class PgSchema {
 	 * @param list_holder whether parent field is list holder
 	 * @param nested whether it is nested
 	 * @param nest_id ordinal number of current node
-	 * @throws IOException
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
 	 */
 	protected void parseChildNode2PgCsv(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String key_base, final boolean list_holder, final boolean nested, final int nest_id) throws IOException, ParserConfigurationException, TransformerException {
 
@@ -3262,18 +3350,19 @@ public class PgSchema {
 
 	}
 
-	// XML -> PostgreSQL data migration via prepared statement
+	// PostgreSQL data migration via prepared statement
 
 	/**
-	 * XML -> PostgreSQL data migration
+	 * PostgreSQL data migration.
+	 *
 	 * @param xml_parser XML document
 	 * @param db_conn Database connection
 	 * @param xml_post_editor XML post editing
 	 * @param update delete before insert
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
-	 * @throws PgSchemaException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void xml2PgSql(XmlParser xml_parser, Connection db_conn, XmlPostEditor xml_post_editor, boolean update) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
@@ -3303,7 +3392,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and send data to PostgreSQL
+	 * Parse current node and send data to PostgreSQL.
+	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
 	 * @param table current table
@@ -3313,10 +3403,10 @@ public class PgSchema {
 	 * @param nested whether it is nested
 	 * @param nest_id ordinal number of current node
 	 * @param db_conn Database connection
-	 * @throws SQLException
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
+	 * @throws SQLException the SQL exception
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	protected void parseChildNode2PgSql(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String key_base, final boolean list_holder, final boolean nested, final int nest_id, final Connection db_conn) throws SQLException, ParserConfigurationException, TransformerException, IOException {
 
@@ -3356,10 +3446,11 @@ public class PgSchema {
 	}
 
 	/**
-	 * Execute PostgreSQL DELETE command before INSERT for all tables of current document
+	 * Execute PostgreSQL DELETE command before INSERT for all tables of current document.
+	 *
 	 * @param db_conn Database connection
 	 * @return boolean whether success or not
-	 * @throws PgSchemaException
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	private boolean deleteBeforeUpdate(Connection db_conn) throws PgSchemaException {
 
@@ -3438,11 +3529,12 @@ public class PgSchema {
 	}
 
 	/**
-	 * Execute PostgreSQL COPY command for all CSV files
+	 * Execute PostgreSQL COPY command for all CSV files.
+	 *
 	 * @param db_conn Database connection
 	 * @param csv_dir_name directory name of CSV files
 	 * @return boolean whether success or not
-	 * @throws PgSchemaException
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public boolean pgCsv2PgSql(Connection db_conn, String csv_dir_name) throws PgSchemaException {
 
@@ -3524,15 +3616,16 @@ public class PgSchema {
 	// Lucene full-text indexing
 
 	/**
-	 * XML -> Lucene document conversion
+	 * Lucene document conversion.
+	 *
 	 * @param xml_parser XML document
 	 * @param lucene_doc Lucene document
 	 * @param xml_post_editor XML post editing
 	 * @param index_filter index filter
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
-	 * @throws PgSchemaException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void xml2LucIdx(XmlParser xml_parser, org.apache.lucene.document.Document lucene_doc, XmlPostEditor xml_post_editor, IndexFilter index_filter) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
@@ -3553,7 +3646,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Close xml2LucIdx
+	 * Close xml2LucIdx.
 	 */
 	public void closeXml2LucIdx() {
 
@@ -3564,7 +3657,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store data to Lucene document
+	 * Parse current node and store data to Lucene document.
+	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
 	 * @param table current table
@@ -3573,9 +3667,9 @@ public class PgSchema {
 	 * @param list_holder whether parent field is list holder
 	 * @param nested whether it is nested
 	 * @param nest_id ordinal number of current node
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	protected void parseChildNode2LucIdx(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String key_base, final boolean list_holder, final boolean nested, final int nest_id) throws ParserConfigurationException, TransformerException, IOException {
 
@@ -3617,9 +3711,10 @@ public class PgSchema {
 	// Sphinx xmlpipe2
 
 	/**
-	 * Extract Sphinx schema part and map sphinx:field and sphinx:attr in PgSchema
+	 * Extract Sphinx schema part and map sphinx:field and sphinx:attr in PgSchema.
+	 *
 	 * @param sph_doc Sphinx xmlpipe2 document
-	 * @throws PgSchemaException
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void syncSphSchema(Document sph_doc) throws PgSchemaException {
 
@@ -3680,10 +3775,11 @@ public class PgSchema {
 	}
 
 	/**
-	 * Write Sphinx schema part
+	 * Write Sphinx schema part.
+	 *
 	 * @param sphinx_schema Sphinx xmlpipe2 file
 	 * @param data_source whether it is xmlpipe2 or schema
-	 * @throws PgSchemaException
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void writeSphSchema(File sphinx_schema, boolean data_source) throws PgSchemaException {
 
@@ -3822,11 +3918,12 @@ public class PgSchema {
 	}
 
 	/**
-	 * Write Sphinx configuration file
+	 * Write Sphinx configuration file.
+	 *
 	 * @param sphinx_conf Sphinx configuration file
 	 * @param idx_name name of Sphinx index
 	 * @param data_source Sphinx xmlpipe2 file
-	 * @throws PgSchemaException
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void writeSphConf(File sphinx_conf, String idx_name, File data_source) throws PgSchemaException {
 
@@ -3938,15 +4035,16 @@ public class PgSchema {
 	// Sphinx full-text indexing
 
 	/**
-	 * XML -> Sphinx xmlpipe2 conversion
+	 * Sphinx xmlpipe2 conversion.
+	 *
 	 * @param xml_parser XML document
 	 * @param writer writer of Sphinx xmlpipe2
 	 * @param xml_post_editor XML post editing
 	 * @param index_filter index filter
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
-	 * @throws PgSchemaException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void xml2SphDs(XmlParser xml_parser, FileWriter writer, XmlPostEditor xml_post_editor, IndexFilter index_filter) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
@@ -3980,7 +4078,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Close xml2SphDs
+	 * Close xml2SphDs.
 	 */
 	public void closeXml2SphDs() {
 
@@ -3991,7 +4089,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store data to Sphinx xmlpipe2
+	 * Parse current node and store data to Sphinx xmlpipe2.
+	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
 	 * @param table current table
@@ -4000,9 +4099,9 @@ public class PgSchema {
 	 * @param list_holder whether parent field is list holder
 	 * @param nested whether it is nested
 	 * @param nest_id ordinal number of current node
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	protected void parseChildNode2SphDs(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String key_base, final boolean list_holder, final boolean nested, final int nest_id) throws ParserConfigurationException, TransformerException, IOException {
 
@@ -4042,7 +4141,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return whether if Sphinx attribute
+	 * Return whether if Sphinx attribute.
+	 *
 	 * @param table_name table name
 	 * @param field_name field name
 	 * @return boolean whether if Sphinx attribute
@@ -4067,7 +4167,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return whether if Sphinx mult-value attribute
+	 * Return whether if Sphinx mult-value attribute.
+	 *
 	 * @param table_name table name
 	 * @param field_name field name
 	 * @return boolean whether if Sphinx multi-value attribute
@@ -4094,13 +4195,15 @@ public class PgSchema {
 		return field.sph_mva;
 	}
 
-	// XML -> JSON conversion
+	// JSON conversion
 
+	/** The jsonb. */
 	protected JsonBuilder jsonb = null; // Instanced JSON builder
 
 	/**
-	 * Initialize JSON builder
-	 * @param json_option JSON builder option
+	 * Initialize JSON builder.
+	 *
+	 * @param option the option
 	 */
 	public void initJsonBuilder(JsonBuilderOption option) {
 
@@ -4109,7 +4212,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Clear JSON builder
+	 * Clear JSON builder.
 	 */
 	private void clearJsonBuilder() {
 
@@ -4137,7 +4240,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Close JSON builder
+	 * Close JSON builder.
 	 */
 	private void closeJsonBuilder() {
 
@@ -4154,11 +4257,12 @@ public class PgSchema {
 
 	}
 
-	// XML -> Object-oriented JSON conversion
+	// Object-oriented JSON conversion
 
 	/**
-	 * Realize Object-oriented JSON Schema
-	 * @throws PgSchemaException
+	 * Realize Object-oriented JSON Schema.
+	 *
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void realizeObjJsonSchema() throws PgSchemaException {
 
@@ -4269,11 +4373,12 @@ public class PgSchema {
 	}
 
 	/**
-	 * Realize Object-oriented JSON Schema
+	 * Realize Object-oriented JSON Schema.
+	 *
 	 * @param parent_table parent table
 	 * @param table current table
-	 * @param nested whether it is nested
-	 * @param nest_id ordinal number of current node
+	 * @param list_id the list id
+	 * @param list_size the list size
 	 * @param json_indent_level current indent level
 	 */
 	private void realizeObjJsonSchema(final PgTable parent_table, final PgTable table, final int list_id, final int list_size, int json_indent_level) {
@@ -4350,14 +4455,15 @@ public class PgSchema {
 	}
 
 	/**
-	 * XML -> Object-oriented JSON conversion
+	 * Object-oriented JSON conversion.
+	 *
 	 * @param xml_parser XML document
 	 * @param json_file_name JSON file name
 	 * @param xml_post_editor XML post editing
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
-	 * @throws PgSchemaException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void xml2ObjJson(XmlParser xml_parser, String json_file_name, XmlPostEditor xml_post_editor) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
@@ -4404,7 +4510,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Close xml2Json
+	 * Close xml2Json.
 	 */
 	public void closeXml2Json() {
 
@@ -4414,7 +4520,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store data to JSON builder (Object-oriented JSON format)
+	 * Parse current node and store data to JSON builder (Object-oriented JSON format).
+	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
 	 * @param table current table
@@ -4424,9 +4531,9 @@ public class PgSchema {
 	 * @param nested whether it is nested
 	 * @param nest_id ordinal number of current node
 	 * @param json_indent_level current indent level
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	protected void parseChildNode2ObjJson(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String key_base, final boolean list_holder, final boolean nested, final int nest_id, int json_indent_level) throws ParserConfigurationException, TransformerException, IOException {
 
@@ -4519,11 +4626,12 @@ public class PgSchema {
 
 	}
 
-	// XML -> Column-oriented JSON conversion
+	// Column-oriented JSON conversion
 
 	/**
-	 * Realize Column-oriented JSON Schema
-	 * @throws PgSchemaException
+	 * Realize Column-oriented JSON Schema.
+	 *
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void realizeColJsonSchema() throws PgSchemaException {
 
@@ -4634,11 +4742,12 @@ public class PgSchema {
 	}
 
 	/**
-	 * Realize Column-oriented JSON Schema
+	 * Realize Column-oriented JSON Schema.
+	 *
 	 * @param parent_table parent table
 	 * @param table current table
-	 * @param nested whether it is nested
-	 * @param nest_id ordinal number of current node
+	 * @param list_id the list id
+	 * @param list_size the list size
 	 * @param json_indent_level current indent level
 	 */
 	private void realizeColJsonSchema(final PgTable parent_table, final PgTable table, final int list_id, final int list_size, final int json_indent_level) {
@@ -4713,14 +4822,15 @@ public class PgSchema {
 	}
 
 	/**
-	 * XML -> Column-oriented JSON conversion
+	 * Column-oriented JSON conversion.
+	 *
 	 * @param xml_parser XML document
 	 * @param json_file_name JSON file name
 	 * @param xml_post_editor XML post editing
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
-	 * @throws PgSchemaException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void xml2ColJson(XmlParser xml_parser, String json_file_name, XmlPostEditor xml_post_editor) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
@@ -4767,7 +4877,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store data to JSON builder (Column-oriented JSON format)
+	 * Parse current node and store data to JSON builder (Column-oriented JSON format).
+	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
 	 * @param table current table
@@ -4777,9 +4888,9 @@ public class PgSchema {
 	 * @param nested whether it is nested
 	 * @param nest_id ordinal number of current node
 	 * @param json_indent_level current indent level
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	protected void parseChildNode2ColJson(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String key_base, final boolean list_holder, final boolean nested, final int nest_id, int json_indent_level) throws ParserConfigurationException, TransformerException, IOException {
 
@@ -4842,11 +4953,12 @@ public class PgSchema {
 
 	}
 
-	// XML -> Relational-oriented JSON conversion
+	// Relational-oriented JSON conversion
 
 	/**
-	 * Realize Relational-oriented JSON Schema
-	 * @throws PgSchemaException
+	 * Realize Relational-oriented JSON Schema.
+	 *
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void realizeRelJsonSchema() throws PgSchemaException {
 
@@ -4920,7 +5032,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Realize Relational-oriented JSON Schema
+	 * Realize Relational-oriented JSON Schema.
+	 *
 	 * @param table current table
 	 * @param json_indent_level current indent level
 	 */
@@ -4984,14 +5097,15 @@ public class PgSchema {
 	}
 
 	/**
-	 * XML -> Relational-oriented JSON conversion
+	 * Relational-oriented JSON conversion.
+	 *
 	 * @param xml_parser XML document
 	 * @param json_file_name JSON file name
 	 * @param xml_post_editor XML post editing
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
-	 * @throws PgSchemaException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void xml2RelJson(XmlParser xml_parser, String json_file_name, XmlPostEditor xml_post_editor) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
@@ -5096,7 +5210,8 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store data to JSON builder (Relational-oriented JSON format)
+	 * Parse current node and store data to JSON builder (Relational-oriented JSON format).
+	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
 	 * @param table current table
@@ -5105,6 +5220,9 @@ public class PgSchema {
 	 * @param list_holder whether parent field is list holder
 	 * @param nested whether it is nested
 	 * @param nest_id ordinal number of current node
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws ParserConfigurationException the parser configuration exception
 	 */
 	protected void parseChildNode2Json(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String key_base, final boolean list_holder, final boolean nested, final int nest_id) throws TransformerException, IOException, ParserConfigurationException {
 

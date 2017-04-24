@@ -26,11 +26,16 @@ import org.apache.lucene.index.IndexOptions;
 // this code was derived from:
 // http://stackoverflow.com/questions/11945728/how-to-use-termvector-lucene-4-0
 
+/**
+ * The Class NoIdxStringField.
+ */
 public class NoIdxStringField extends Field {
 
+	/** The Constant TYPE_NOT_STORED. */
 	/* Not stored. */
 	public static final FieldType TYPE_NOT_STORED = new FieldType();
 
+	/** The Constant TYPE_STORED. */
 	/* Stored. */
 	public static final FieldType TYPE_STORED = new FieldType();
 
@@ -52,7 +57,13 @@ public class NoIdxStringField extends Field {
 
 	}
 
-	/** Creates a new StringField with String value. */
+	/**
+	 *  Creates a new StringField with String value.
+	 *
+	 * @param name the name
+	 * @param value the value
+	 * @param store the store
+	 */
 	public NoIdxStringField(String name, String value, Store store) {
 		super(name, value, store == Store.YES ? TYPE_STORED : TYPE_NOT_STORED);
 	}

@@ -33,18 +33,20 @@ import org.jsoup.Jsoup;
 import org.w3c.dom.Node;
 
 /**
- * Node parser for XML -> Lucene document conversion
+ * Node parser for Lucene document conversion.
+ *
  * @author yokochi
  */
 public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 	/**
-	 * Node parser for Lucene document conversion
+	 * Node parser for Lucene document conversion.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param parent_table parent table
 	 * @param table current table
-	 * @throws TransformerConfigurationException
-	 * @throws ParserConfigurationException
+	 * @throws TransformerConfigurationException the transformer configuration exception
+	 * @throws ParserConfigurationException the parser configuration exception
 	 */
 	public PgSchemaNode2LucIdx(final PgSchema schema, final PgTable parent_table, final PgTable table) throws TransformerConfigurationException, ParserConfigurationException {
 
@@ -53,8 +55,11 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse processing node (root)
+	 * Parse processing node (root).
+	 *
 	 * @param proc_node processing node
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	@Override
 	public void parseRootNode(final Node proc_node) throws TransformerException, IOException {
@@ -64,12 +69,15 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse processing node (child)
+	 * Parse processing node (child).
+	 *
 	 * @param proc_node processing node
 	 * @param parent_key key name of parent node
 	 * @param key_name processing key name
 	 * @param nested whether it is nested
 	 * @param key_id ordinal number of current node
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	@Override
 	public void parseChildNode(final Node proc_node, final String parent_key, final String key_name, final boolean nested, final int key_id) throws TransformerException, IOException {
@@ -79,15 +87,16 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse processing node
+	 * Parse processing node.
+	 *
 	 * @param child_node whether if child node
 	 * @param proc_node processing node
 	 * @param parent_key key name of parent node
 	 * @param key_name processing key name
 	 * @param nested whether it is nested
 	 * @param key_id ordinal number of current node
-	 * @throws TransformerException
-	 * @throws IOException
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	private void parse(final boolean child_node, final Node proc_node, final String parent_key, final String key_name, final boolean nested, final int key_id) throws TransformerException, IOException {
 
@@ -204,7 +213,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Writer of processing node
+	 * Writer of processing node.
 	 */
 	private void write() {
 
@@ -236,7 +245,11 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (root)
+	 * Invoke nested node (root).
+	 *
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	@Override
 	public void invokeRootNestedNode() throws ParserConfigurationException, TransformerException, IOException {
@@ -250,8 +263,12 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (child)
+	 * Invoke nested node (child).
+	 *
 	 * @param node_test node tester
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	@Override
 	public void invokeChildNestedNode(PgSchemaNodeTester node_test) throws ParserConfigurationException, TransformerException, IOException {
@@ -274,7 +291,11 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (child)
+	 * Invoke nested node (child).
+	 *
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	@Override
 	public void invokeChildNestedNode() throws ParserConfigurationException, TransformerException, IOException {

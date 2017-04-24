@@ -35,34 +35,48 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 /**
- * Thread function for xml2pgcsv
+ * Thread function for xml2pgcsv.
+ *
  * @author yokochi
  */
 public class Xml2PgCsvThrd implements Runnable {
 
-	private int thrd_id; // thread id
-	private int max_thrds; // max threads
+	/** The thread id. */
+	private int thrd_id;
+	
+	/** The max threads. */
+	private int max_thrds;
 
-	private DocumentBuilder doc_builder; // document builder factory for reuse
-	private PgSchema schema = null; // PostgreSQL schema
-	private XmlValidator validator = null; // XML validator
-	private Connection db_conn = null; // database connection
-	private String csv_dir_name = null; // directory name of CSV files
+	/** The document builder for reusing. */
+	private DocumentBuilder doc_builder;
+	
+	/** The PostgreSQL schema. */
+	private PgSchema schema = null;
+	
+	/** The XML validator. */
+	private XmlValidator validator = null;
+	
+	/** The database connection. */
+	private Connection db_conn = null;
+	
+	/** The CSV directory name. */
+	private String csv_dir_name = null;
 
 	/**
-	 * Instance of Xml2PgCsvThrd
+	 * Instance of Xml2PgCsvThrd.
+	 *
 	 * @param thrd_id thread id
 	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
 	 * @param csv_dir_name directory name of CSV files
 	 * @param option PosgreSQL schema option
 	 * @param pg_option PostgreSQL option
-	 * @throws ParserConfigurationException
-	 * @throws SAXException
-	 * @throws IOException
-	 * @throws NoSuchAlgorithmException
-	 * @throws SQLException
-	 * @throws PgSchemaException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws SAXException the SAX exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws NoSuchAlgorithmException the no such algorithm exception
+	 * @throws SQLException the SQL exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	public Xml2PgCsvThrd(final int thrd_id, final int max_thrds, final InputStream is, final String csv_dir_name, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
@@ -114,6 +128,9 @@ public class Xml2PgCsvThrd implements Runnable {
 
 	}
 
+	/* (non-Javadoc)
+	 * @see java.lang.Runnable#run()
+	 */
 	@Override
 	public void run() {
 

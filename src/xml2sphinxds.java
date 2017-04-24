@@ -35,30 +35,53 @@ import org.apache.commons.io.comparator.SizeFileComparator;
 import org.xml.sax.SAXException;
 
 /**
- * XML -> Sphinx data source (xmlpipe2) conversion
+ * Sphinx data source (xmlpipe2) conversion.
+ * 
+ * @author yokochi
  */
 public class xml2sphinxds {
 
+	/** The schema location. */
 	public static String schema_location = "";
 
+	/** The data source name. */
 	public static String ds_name = "";
+	
+	/** The data source direcotry name. */
 	public static String ds_dir_name = "sphinx_xmlpipe2";
 
+	/** The schema option. */
 	public static PgSchemaOption option = new PgSchemaOption(false);
 
+	/** The XML file filter. */
 	public static XmlFileFilter xml_file_filter = new XmlFileFilter();
+	
+	/** The XML post editor. */
 	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
+	/** The index filter. */
 	public static IndexFilter index_filter = new IndexFilter();
 
+	/** The XML files. */
 	public static File[] xml_files = null;
 
+	/** The shard size. */
 	public static int shard_size = 1;
 
+	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
+	
+	/** The Constant cpu_num. */
 	private static final int cpu_num = runtime.availableProcessors();
+	
+	/** The max threads. */
 	private static int max_thrds = cpu_num;
 
+	/**
+	 * The main method.
+	 *
+	 * @param args the arguments
+	 */
 	public static void main(String[] args) {
 
 		List<String> xml_file_names = new ArrayList<String>();
@@ -295,6 +318,9 @@ public class xml2sphinxds {
 
 	}
 
+	/**
+	 * Show usage.
+	 */
 	private static void showUsage() {
 
 		System.err.println("xml2sphinxds: XML -> Sphinx data source (xmlpipe2) conversion");

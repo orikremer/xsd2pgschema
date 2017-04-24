@@ -24,29 +24,48 @@ import java.util.List;
 import org.apache.commons.lang3.StringEscapeUtils;
 
 /**
- * JSON builder
+ * JSON builder.
+ *
  * @author yokochi
  */
 public class JsonBuilder {
 
+	/** The builder. */
 	StringBuilder builder = null; // JSON buffer
 
+	/** The attr prefix. */
 	String attr_prefix = ""; // prefix of JSON item name of xs:attribute
+	
+	/** The simple cont key. */
 	String simple_cont_key = PgSchemaUtil.simple_cont_name; // JSON item name of xs:simpleContent
+	
+	/** The discard doc key. */
 	String discard_doc_key = ""; // discarded JSON item name stands for document key
+	
+	/** The indent space. */
 	String indent_space = "  "; // white spaces for indent
+	
+	/** The key value space. */
 	String key_value_space = " "; // white spaces between JSON item and JSON data
+	
+	/** The linefeed. */
 	String linefeed = "\n"; // linefeed code in JSON document
 
+	/** The no field anno. */
 	boolean no_field_anno = false; // whether retain field annotation or not
+	
+	/** The array all. */
 	boolean array_all = false; // use JSON array uniformly for descendant
 
+	/** The has discard doc key. */
 	boolean has_discard_doc_key = false; // whether of there is discarded document key
 
+	/** The key value spaces. */
 	int key_value_spaces = key_value_space.length(); // length of key_value_space
 
 	/**
-	 * Instance of JSON builder
+	 * Instance of JSON builder.
+	 *
 	 * @param option JSON builder option
 	 */
 	public JsonBuilder(JsonBuilderOption option) {
@@ -97,7 +116,7 @@ public class JsonBuilder {
 	}
 
 	/**
-	 * Clear JSON builder
+	 * Clear JSON builder.
 	 */
 	public void clear() {
 
@@ -109,7 +128,7 @@ public class JsonBuilder {
 	}
 
 	/**
-	 * Close JSON builder
+	 * Close JSON builder.
 	 */
 	public void close() {
 
@@ -125,7 +144,8 @@ public class JsonBuilder {
 	}
 
 	/**
-	 * Decide JSON indent white spaces
+	 * Decide JSON indent white spaces.
+	 *
 	 * @param indent_level current indent level
 	 * @return String JSON indent white spaces
 	 */
@@ -140,10 +160,12 @@ public class JsonBuilder {
 		return indent_spaces_array[indent_level];
 	}
 
+	/** The indent spaces array. */
 	private String[] indent_spaces_array = null;
 
 	/**
-	 * Initialize JSON indent white space pattern
+	 * Initialize JSON indent white space pattern.
+	 *
 	 * @param indent_level current indent level
 	 */
 	private void initIndentSpacesArray(int indent_level) {
@@ -164,7 +186,8 @@ public class JsonBuilder {
 	}
 
 	/**
-	 * Write schema property of field
+	 * Write schema property of field.
+	 *
 	 * @param field current field
 	 * @param object whether object
 	 * @param array whether array
@@ -225,7 +248,8 @@ public class JsonBuilder {
 	}
 
 	/**
-	 * Write schema property of field
+	 * Write schema property of field.
+	 *
 	 * @param field current field
 	 * @param field_anno field annotation
 	 * @param indent_level current indent level
@@ -314,7 +338,8 @@ public class JsonBuilder {
 	}
 
 	/**
-	 * Write table header
+	 * Write table header.
+	 *
 	 * @param table current table
 	 * @param object whether object
 	 * @param indent_level current indent level
@@ -356,7 +381,8 @@ public class JsonBuilder {
 	}
 
 	/**
-	 * Write list holder table header
+	 * Write list holder table header.
+	 *
 	 * @param table current table
 	 * @param indent_level current indent level
 	 * @return int size of last builder
@@ -397,7 +423,8 @@ public class JsonBuilder {
 	}
 
 	/**
-	 * Write field content
+	 * Write field content.
+	 *
 	 * @param table current table
 	 * @param indent_level current indent level
 	 */
@@ -447,7 +474,8 @@ public class JsonBuilder {
 	}
 
 	/**
-	 * Write table footer
+	 * Write table footer.
+	 *
 	 * @param table current table
 	 * @param indent_level current indent level
 	 * @param jsonb_header_begin position of header begin
@@ -485,7 +513,8 @@ public class JsonBuilder {
 	}
 
 	/**
-	 * Write list holder table footer
+	 * Write list holder table footer.
+	 *
 	 * @param table current table
 	 * @param indent_level current indent level
 	 * @param jsonb_header_begin position of header begin

@@ -32,16 +32,21 @@ import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.SAXParseException;
 
 /**
- * XML validator
+ * XML validator.
+ *
  * @author yokochi
  */
 public class XmlValidator {
 
+	/** The dom parser. */
 	DOMParser dom_parser = null;
+
+	/** The err handler. */
 	Validator err_handler = null;
 
 	/**
-	 * Instance of XML validator
+	 * Instance of XML validator.
+	 *
 	 * @param xsd_file XML Schema file
 	 */
 	public XmlValidator(File xsd_file) {
@@ -69,7 +74,8 @@ public class XmlValidator {
 	}
 
 	/**
-	 * Execute XML Schema validation
+	 * Execute XML Schema validation.
+	 *
 	 * @param xml_file_name XML file name
 	 * @param in InputStream of XML file
 	 */
@@ -93,14 +99,15 @@ public class XmlValidator {
 	}
 
 	/**
-	 * Error hander implementation
+	 * Error hander implementation.
 	 */
 	private static class Validator implements ErrorHandler {
 
+		/** The success. */
 		public boolean success = true; // status flag
 
 		/**
-		 * Initialize status flag (success)
+		 * Initialize status flag (success).
 		 */
 		public void init() {
 
@@ -108,6 +115,9 @@ public class XmlValidator {
 
 		}
 
+		/* (non-Javadoc)
+		 * @see org.xml.sax.ErrorHandler#error(org.xml.sax.SAXParseException)
+		 */
 		@Override
 		public void error(SAXParseException e) throws SAXException {
 
@@ -118,6 +128,9 @@ public class XmlValidator {
 
 		}
 
+		/* (non-Javadoc)
+		 * @see org.xml.sax.ErrorHandler#fatalError(org.xml.sax.SAXParseException)
+		 */
 		@Override
 		public void fatalError(SAXParseException e) throws SAXException {
 
@@ -128,6 +141,9 @@ public class XmlValidator {
 
 		}
 
+		/* (non-Javadoc)
+		 * @see org.xml.sax.ErrorHandler#warning(org.xml.sax.SAXParseException)
+		 */
 		@Override
 		public void warning(SAXParseException e) throws SAXException {
 

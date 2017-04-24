@@ -36,24 +36,44 @@ import org.apache.commons.io.comparator.SizeFileComparator;
 import org.xml.sax.SAXException;
 
 /**
- * XML -> PostgreSQL data migration
+ * PostgreSQL data migration.
+ * 
+ * @author yokochi
  */
 public class xml2pgsql {
 
+	/** The schema location. */
 	public static String schema_location = "";
 
+	/** The schema option. */
 	public static PgSchemaOption option = new PgSchemaOption(true);
+	
+	/** The PostgreSQL option. */
 	public static PgOption pg_option = new PgOption();
 
+	/** The XML file filter. */
 	public static XmlFileFilter xml_file_filter = new XmlFileFilter();
+	
+	/** The XML post editor. */
 	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
+	/** The XML files. */
 	public static File[] xml_files = null;
 
+	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
+	
+	/** The Constant cpu_num. */
 	private static final int cpu_num = runtime.availableProcessors();
+	
+	/** The max threads. */
 	private static int max_thrds = cpu_num;
 
+	/**
+	 * The main method.
+	 *
+	 * @param args the arguments
+	 */
 	public static void main(String[] args) {
 
 		List<String> xml_file_names = new ArrayList<String>();
@@ -270,6 +290,9 @@ public class xml2pgsql {
 
 	}
 
+	/**
+	 * Show usage.
+	 */
 	private static void showUsage() {
 
 		System.err.println("xml2pgsql: XML -> PostgreSQL data migration");

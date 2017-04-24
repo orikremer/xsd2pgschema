@@ -32,21 +32,26 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Node;
 
 /**
- * Node parser for XML -> JSON conversion
+ * Node parser for JSON conversion.
+ *
  * @author yokochi
  */
 public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
-	int jsonb_header_begin; // position of header begins in JSON buffer
-	int jsonb_header_end; // position of header ends in JSON buffer
+	/** The position of header begins in JSON buffer. */
+	int jsonb_header_begin;
+	
+	/** position of header ends in JSON buffer. */
+	int jsonb_header_end;
 
 	/**
-	 * Node parser for JSON conversion
+	 * Node parser for JSON conversion.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param parent_table parent table
 	 * @param table current table
-	 * @throws ParserConfigurationException
-	 * @throws TransformerConfigurationException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerConfigurationException the transformer configuration exception
 	 */
 	public PgSchemaNode2Json(final PgSchema schema, final PgTable parent_table, final PgTable table) throws ParserConfigurationException, TransformerConfigurationException {
 
@@ -55,8 +60,11 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse processing node (root)
+	 * Parse processing node (root).
+	 *
 	 * @param proc_node processing node
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	@Override
 	public void parseRootNode(final Node proc_node) throws TransformerException, IOException {
@@ -66,12 +74,15 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse processing node (child)
+	 * Parse processing node (child).
+	 *
 	 * @param proc_node processing node
 	 * @param parent_key key name of parent node
 	 * @param key_name processing key name
 	 * @param nested whether it is nested
 	 * @param key_id ordinal number of current node
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	@Override
 	public void parseChildNode(final Node proc_node, final String parent_key, final String key_name, final boolean nested, final int key_id) throws TransformerException, IOException {
@@ -81,15 +92,16 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse processing node
+	 * Parse processing node.
+	 *
 	 * @param child_node whether if child node
 	 * @param proc_node processing node
 	 * @param parent_key key name of parent node
 	 * @param key_name processing key name
 	 * @param nested whether it is nested
 	 * @param key_id ordinal number of current node
-	 * @throws TransformerException
-	 * @throws IOException
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	private void parse(final boolean child_node, final Node proc_node, final String parent_key, final String key_name, final boolean nested, final int key_id) throws TransformerException, IOException {
 
@@ -176,7 +188,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Writer of processing node
+	 * Writer of processing node.
 	 */
 	private void write() {
 
@@ -209,11 +221,12 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (root): Object-oriented JSON
+	 * Invoke nested node (root): Object-oriented JSON.
+	 *
 	 * @param json_indent_level current indent level
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public void invokeRootNestedNodeObj(int json_indent_level) throws ParserConfigurationException, TransformerException, IOException {
 
@@ -226,11 +239,12 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (root): Column-oriented JSON
+	 * Invoke nested node (root): Column-oriented JSON.
+	 *
 	 * @param json_indent_level current indent level
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public void invokeRootNestedNodeCol(int json_indent_level) throws ParserConfigurationException, TransformerException, IOException {
 
@@ -243,7 +257,11 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (root): Relational-oriented JSON
+	 * Invoke nested node (root): Relational-oriented JSON.
+	 *
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws ParserConfigurationException the parser configuration exception
 	 */
 	@Override
 	public void invokeRootNestedNode() throws TransformerException, IOException, ParserConfigurationException {
@@ -257,12 +275,13 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (child): Object-oriented JSON
+	 * Invoke nested node (child): Object-oriented JSON.
+	 *
 	 * @param node_test node tester
 	 * @param json_indent_level current indent level
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public void invokeChildNestedNodeObj(PgSchemaNodeTester node_test, int json_indent_level) throws ParserConfigurationException, TransformerException, IOException {
 
@@ -284,12 +303,13 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (child): Column-oriented JSON
+	 * Invoke nested node (child): Column-oriented JSON.
+	 *
 	 * @param node_test node tester
 	 * @param json_indent_level current indent level
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public void invokeChildNestedNodeCol(PgSchemaNodeTester node_test, int json_indent_level) throws ParserConfigurationException, TransformerException, IOException {
 
@@ -311,8 +331,12 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (child): Relational-oriented JSON
+	 * Invoke nested node (child): Relational-oriented JSON.
+	 *
 	 * @param node_test node tester
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws ParserConfigurationException the parser configuration exception
 	 */
 	@Override
 	public void invokeChildNestedNode(PgSchemaNodeTester node_test) throws TransformerException, IOException, ParserConfigurationException {
@@ -335,11 +359,12 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (child): Object-oriented JSON
+	 * Invoke nested node (child): Object-oriented JSON.
+	 *
 	 * @param json_indent_level current indent level
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public void invokeChildNestedNodeObj(int json_indent_level) throws ParserConfigurationException, TransformerException, IOException {
 
@@ -358,11 +383,12 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (child): Column-oriented JSON
+	 * Invoke nested node (child): Column-oriented JSON.
+	 *
 	 * @param json_indent_level current indent level
-	 * @throws ParserConfigurationException
-	 * @throws TransformerException
-	 * @throws IOException
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public void invokeChildNestedNodeCol(int json_indent_level) throws ParserConfigurationException, TransformerException, IOException {
 
@@ -381,7 +407,11 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (child): Relational-oriented JSON
+	 * Invoke nested node (child): Relational-oriented JSON.
+	 *
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws ParserConfigurationException the parser configuration exception
 	 */
 	@Override
 	public void invokeChildNestedNode() throws TransformerException, IOException, ParserConfigurationException {

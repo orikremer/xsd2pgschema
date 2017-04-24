@@ -23,108 +23,219 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 /**
- * PostgreSQL field declaration
+ * PostgreSQL field declaration.
+ *
  * @author yokochi
  */
 public class PgField {
 
+	/** The target namespace. */
 	String target_namespace = PgSchemaUtil.xs_namespace_uri; // target namespace URI
 
+	/** The xname. */
 	String xname = ""; // field name in XML
+	
+	/** The name. */
 	String name = ""; // field name in PostgreSQL
+	
+	/** The type. */
 	String type = ""; // datatype
 
+	/** The substitution group. */
 	String substitution_group = ""; // substitution group requiring type definition later
 
+	/** The maxoccurs. */
 	String maxoccurs = "1"; // @maxOccurs
+	
+	/** The minoccurs. */
 	String minoccurs = "1"; // @minOccurs
+	
+	/** The anno. */
 	String anno = ""; // xs:annotation
 
+	/** The xs type. */
 	XsDataType xs_type; // mapped to XML Schema datatype
 
+	/** The element. */
 	boolean element = false; // xs:element
+	
+	/** The attribute. */
 	boolean attribute = false; // xs:attribute
+	
+	/** The simple cont. */
 	boolean simple_cont = false; // xs:simpleContent
 
+	/** The any. */
 	boolean any = false; // xs:any
+	
+	/** The any attribute. */
 	boolean any_attribute = false; // xs:anyAttribute
 
+	/** The primary key. */
 	boolean primary_key = false; // primary key in PostgreSQL
+	
+	/** The unique key. */
 	boolean unique_key = false; // unique key in PostgreSQL
+	
+	/** The foreign key. */
 	boolean foreign_key = false; // foreign key in PostgreSQL
+	
+	/** The nested key. */
 	boolean nested_key = false; // nested key in PostgreSQL
 
+	/** The document key. */
 	boolean document_key = false; // key for original document
+	
+	/** The serial key. */
 	boolean serial_key = false; // key for original node order
+	
+	/** The xpath key. */
 	boolean xpath_key = false; // key for location path
 
+	/** The system key. */
 	boolean system_key = false; // whether it has any system's administrative key (primary_key || foreign_key || nested_key)
+	
+	/** The user key. */
 	boolean user_key = false; // whether it has any user's discretion key (document_key || serial_key || xpath_key)
 
+	/** The xrequired. */
 	boolean xrequired = false; // ! @nillable, original in XMl
+	
+	/** The required. */
 	boolean required = false; // ! @nillable, but mutable in PostgreSQL when conflict occurs
 
+	/** The prohibited. */
 	boolean prohibited = false; // whether @use is "prohibited"
+	
+	/** The list holder. */
 	boolean list_holder = false; // whether @maxOccurs > 1 || @minOccurs > 1
 
+	/** The rep substitution group. */
 	boolean rep_substitution_group = false; // representative field of substitution group
 
+	/** The sph attr. */
 	boolean sph_attr = false; // Sphinx attribute
+	
+	/** The sph mva. */
 	boolean sph_mva = false; // Sphinx multi value attribute
 
+	/** The field sel. */
 	boolean field_sel = false; // Lucene/Sphinx partial indexing: field option
+	
+	/** The attr sel. */
 	boolean attr_sel = false; // Lucene/Sphinx partial indexing: attr option
 
+	/** The constraint name. */
 	String constraint_name = null; // constraint name in PostgreSQL
 
+	/** The foreign table id. */
 	int foreign_table_id = -1; // foreign table id
+	
+	/** The foreign table. */
 	String foreign_table = null; // foreign table name in PostgreSQL
+	
+	/** The foreign field. */
 	String foreign_field = null; // foreign field name in PostgreSQL
+	
+	/** The parent node. */
 	String parent_node = null; // parent node name
 
+	/** The fixed value. */
 	String fixed_value = null; // @fixed
+	
+	/** The default value. */
 	String default_value = null; // @default
+	
+	/** The block value. */
 	String block_value = null; // @block
 
+	/** The restriction. */
 	boolean restriction = false; // whether field has any restriction or not
 
+	/** The enum name. */
 	String enum_name = null; // xs:enumeration
+	
+	/** The xenumeration. */
 	String[] xenumeration = null; // array of xs:enumeration in XML
+	
+	/** The enumeration. */
 	String[] enumeration = null; // array of xs:enumeration in PostgreSQL
 
+	/** The length. */
 	String length = null; // xs:length
+	
+	/** The min length. */
 	String min_length = null; // xs:minLength
+	
+	/** The max length. */
 	String max_length = null; // xs:maxLength
+	
+	/** The pattern. */
 	String pattern = null; // xs:pattern
+	
+	/** The max inclusive. */
 	String max_inclusive = null; // xs:maxInclusive
+	
+	/** The max exclusive. */
 	String max_exclusive = null; // xs:maxExclusive
+	
+	/** The min exclusive. */
 	String min_exclusive = null; // xs:minExclusive
+	
+	/** The min inclusive. */
 	String min_inclusive = null; // xs:minInclusive
+	
+	/** The total digits. */
 	String total_digits = null; // xs:totalDigits
+	
+	/** The fraction digits. */
 	String fraction_digits = null; // xs:fractionDigits
 
+	/** The white space. */
 	String white_space = null; // xs:whiteSpace
+	
+	/** The assertions. */
 	String assertions = null; // xs:assertions (TODO)
+	
+	/** The explicit timezone. */
 	String explicit_timezone = null; // xs:explicitTimezone
 
+	/** The list. */
 	boolean _list = false; // xs:list
+	
+	/** The union. */
 	boolean _union = false; // xs:union
 
+	/** The fill this. */
 	boolean fill_this = false; // Post XML edition: fill-this option
+	
+	/** The filled text. */
 	String filled_text = null; // Post XML edition: content of fill-this option
 
+	/** The filt out. */
 	boolean filt_out = false; // Post XML edition: filt-out option
+	
+	/** The out pattern. */
 	String[] out_pattern = null; // Post XML edition: pattern of filt-out option
 
+	/** The sph attr occurs. */
 	int sph_attr_occurs = 0; // input counter of Sphinx attribute
 
+	/** The jsonb not empty. */
 	boolean jsonb_not_empty = false; // whether if JSON buffer is not empty
+	
+	/** The jsonb col size. */
 	int jsonb_col_size = 0; // size of JSON item
+	
+	/** The jsonb null size. */
 	int jsonb_null_size = 0; // size of null JSON item
+	
+	/** The jsonb. */
 	StringBuilder jsonb = null; // JSON buffer
 
 	/**
-	 * Extract @type, @itemType, @memberTypes or @base and set type
+	 * Extract @type, @itemType, @memberTypes or @base and set type.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 */
@@ -279,7 +390,8 @@ public class PgField {
 	}
 
 	/**
-	 * Extract @targetNamespace of current node
+	 * Extract @targetNamespace of current node.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 */
@@ -310,7 +422,8 @@ public class PgField {
 	}
 
 	/**
-	 * Extract @maxOccurs
+	 * Extract @maxOccurs.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 */
@@ -406,7 +519,8 @@ public class PgField {
 	}
 
 	/**
-	 * Extract @minOccurs
+	 * Extract @minOccurs.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 */
@@ -502,7 +616,8 @@ public class PgField {
 	}
 
 	/**
-	 * Extract @use or @nillable of current node
+	 * Extract @use or @nillable of current node.
+	 *
 	 * @param node current node
 	 */
 	public void extractRequired(Node node) {
@@ -534,7 +649,8 @@ public class PgField {
 	}
 
 	/**
-	 * Extract @fixed of current node
+	 * Extract @fixed of current node.
+	 *
 	 * @param node current node
 	 */
 	public void extractFixedValue(Node node) {
@@ -559,7 +675,8 @@ public class PgField {
 	}
 
 	/**
-	 * Extract @default of current node
+	 * Extract @default of current node.
+	 *
 	 * @param node current node
 	 */
 	public void extractDefaultValue(Node node) {
@@ -580,7 +697,8 @@ public class PgField {
 	}
 
 	/**
-	 * Extract @block of current node
+	 * Extract @block of current node.
+	 *
 	 * @param node current node
 	 */
 	public void extractBlockValue(Node node) {
@@ -601,7 +719,8 @@ public class PgField {
 	}
 
 	/**
-	 * Extract xs:restriction/xs:enumeration@value
+	 * Extract xs:restriction/xs:enumeration@value.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 */
@@ -755,7 +874,8 @@ public class PgField {
 	}
 
 	/**
-	 * Extract xs:restriction/xs:any@value
+	 * Extract xs:restriction/xs:any@value.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 */
@@ -1018,7 +1138,8 @@ public class PgField {
 	}
 
 	/**
-	 * Set hash key type
+	 * Set hash key type.
+	 *
 	 * @param schema PostgreSQL data model
 	 */
 	public void setHashKeyType(PgSchema schema) {
@@ -1047,7 +1168,8 @@ public class PgField {
 	}
 
 	/**
-	 * Set serial key type
+	 * Set serial key type.
+	 *
 	 * @param schema PostgreSQL data model
 	 */
 	public void setSerKeyType(PgSchema schema) {
@@ -1068,7 +1190,8 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether if string matches enumeration
+	 * Return whether if string matches enumeration.
+	 *
 	 * @param string string
 	 * @return boolean whether if string matches enumeration
 	 */
@@ -1088,7 +1211,8 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether if string matches enumeration
+	 * Return whether if string matches enumeration.
+	 *
 	 * @param string string
 	 * @return boolean whether if string matches enumeration
 	 */
@@ -1108,7 +1232,8 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether if string matches out pattern
+	 * Return whether if string matches out pattern.
+	 *
 	 * @param string string
 	 * @return boolean whether if string matches out pattern
 	 */
@@ -1131,7 +1256,8 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether if field is omitted
+	 * Return whether if field is omitted.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @return boolean whether if field is omitted
 	 */
@@ -1143,7 +1269,8 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether if field is indexable
+	 * Return whether if field is indexable.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @return boolean whether if field is indexable
 	 */
@@ -1152,7 +1279,8 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether if field is JSON convertible
+	 * Return whether if field is JSON convertible.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @return boolean whether field is JSON convertible
 	 */

@@ -36,26 +36,31 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Node;
 
 /**
- * Node parser for XML -> PostgreSQL data migration
+ * Node parser for PostgreSQL data migration.
+ *
  * @author yokochi
  */
 public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
-	PreparedStatement ps = null; // prepared statement
+	/** The prepared statement. */
+	PreparedStatement ps = null;
 
-	boolean[] occupied = null; // whether field is occupied or not
+	/** The flag whether field is occupied or not. */
+	boolean[] occupied = null;
 
-	Connection db_conn; // database connection
+	/** The database connection. */
+	Connection db_conn;
 
 	/**
-	 * Node parser for PostgreSQL data migration
+	 * Node parser for PostgreSQL data migration.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param parent_table parent table
 	 * @param table current table
 	 * @param db_conn database connection
-	 * @throws SQLException
-	 * @throws ParserConfigurationException
-	 * @throws TransformerConfigurationException
+	 * @throws SQLException the SQL exception
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerConfigurationException the transformer configuration exception
 	 */
 	public PgSchemaNode2PgSql(final PgSchema schema, final PgTable parent_table, final PgTable table, final Connection db_conn) throws SQLException, ParserConfigurationException, TransformerConfigurationException {
 
@@ -99,9 +104,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse processing node (root)
+	 * Parse processing node (root).
+	 *
 	 * @param proc_node processing node
-	 * @param key_name processing key name
+	 * @throws SQLException the SQL exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	@Override
 	public void parseRootNode(final Node proc_node) throws SQLException, TransformerException, IOException {
@@ -111,12 +119,16 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse processing node (child)
+	 * Parse processing node (child).
+	 *
 	 * @param proc_node processing node
 	 * @param parent_key key name of parent node
 	 * @param key_name processing key name
 	 * @param nested whether it is nested
 	 * @param key_id ordinal number of current node
+	 * @throws SQLException the SQL exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	@Override
 	public void parseChildNode(final Node proc_node, final String parent_key, final String key_name, final boolean nested, final int key_id) throws SQLException, TransformerException, IOException {
@@ -126,16 +138,17 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse processing node
+	 * Parse processing node.
+	 *
 	 * @param child_node whether if child node
 	 * @param proc_node processing node
 	 * @param parent_key key name of parent node
 	 * @param key_name processing key name
 	 * @param nested whether it is nested
 	 * @param key_id ordinal number of current node
-	 * @throws SQLException
-	 * @throws TransformerException
-	 * @throws IOException
+	 * @throws SQLException the SQL exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	private void parse(final boolean child_node, final Node proc_node, final String parent_key, final String key_name, final boolean nested, final int key_id) throws SQLException, TransformerException, IOException {
 
@@ -283,9 +296,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Writer of processing node
+	 * Writer of processing node.
+	 *
 	 * @param child_node whether if child node
-	 * @throws SQLException
+	 * @throws SQLException the SQL exception
 	 */
 	private void write(boolean child_node) throws SQLException {
 
@@ -325,7 +339,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (root)
+	 * Invoke nested node (root).
+	 *
+	 * @throws SQLException the SQL exception
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	@Override
 	public void invokeRootNestedNode() throws SQLException, ParserConfigurationException, TransformerException, IOException {
@@ -339,8 +358,13 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (child)
+	 * Invoke nested node (child).
+	 *
 	 * @param node_test node tester
+	 * @throws SQLException the SQL exception
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	@Override
 	public void invokeChildNestedNode(PgSchemaNodeTester node_test) throws SQLException, ParserConfigurationException, TransformerException, IOException {
@@ -363,7 +387,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Invoke nested node (child)
+	 * Invoke nested node (child).
+	 *
+	 * @throws SQLException the SQL exception
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	@Override
 	public void invokeChildNestedNode() throws SQLException, ParserConfigurationException, TransformerException, IOException {
@@ -383,11 +412,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Set value via prepared statement
+	 * Set value via prepared statement.
+	 *
 	 * @param field_id field id
 	 * @param param_id parameter index
 	 * @param value data string
-	 * @throws SQLException
+	 * @throws SQLException the SQL exception
 	 */
 	private void setValue(int field_id, int param_id, String value) throws SQLException {
 
@@ -398,11 +428,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Set XML object via prepared statement
+	 * Set XML object via prepared statement.
+	 *
 	 * @param field_id field id
 	 * @param param_id parameter index
 	 * @param xml_object XML object
-	 * @throws SQLException
+	 * @throws SQLException the SQL exception
 	 */
 	private void setValue(int field_id, int param_id, SQLXML xml_object) throws SQLException {
 
@@ -413,11 +444,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Set hash key via prepared statement
+	 * Set hash key via prepared statement.
+	 *
 	 * @param field_id field id
 	 * @param param_id parameter index
 	 * @param key_name source string
-	 * @throws SQLException
+	 * @throws SQLException the SQL exception
 	 */
 	private void setHashKey(int field_id, int param_id, String key_name) throws SQLException {
 
@@ -441,11 +473,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Set serial key via prepared statement
+	 * Set serial key via prepared statement.
+	 *
 	 * @param field_id field id
 	 * @param param_id parameter index
 	 * @param key_id serial id
-	 * @throws SQLException
+	 * @throws SQLException the SQL exception
 	 */
 	private void setSerKey(int field_id, int param_id, int key_id) throws SQLException {
 
@@ -463,8 +496,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Execute batch SQL
-	 * @throws SQLException
+	 * Execute batch SQL.
+	 *
+	 * @throws SQLException the SQL exception
 	 */
 	public void write() throws SQLException {
 

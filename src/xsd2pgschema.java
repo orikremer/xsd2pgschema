@@ -31,10 +31,17 @@ import javax.xml.parsers.*;
 import org.w3c.dom.Document;
 
 /**
- * XML Schema -> PostgreSQL DDL conversion
+ * PostgreSQL DDL translation.
+ * 
+ * @author yokochi
  */
 public class xsd2pgschema {
 
+	/**
+	 * The main method.
+	 *
+	 * @param args the arguments
+	 */
 	public static void main(String[] args) {
 
 		PgSchemaOption option = new PgSchemaOption(true);
@@ -172,6 +179,9 @@ public class xsd2pgschema {
 
 	}
 
+	/**
+	 * Show usage.
+	 */
 	private static void showUsage() {
 
 		System.err.println("xsd2pgschema: XML Schema -> PostgreSQL DDL conversion");

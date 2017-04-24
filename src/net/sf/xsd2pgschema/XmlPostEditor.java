@@ -23,17 +23,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * XML post editor
+ * XML post editor.
+ *
  * @author yokochi
  */
 public class XmlPostEditor {
 
+	/** The filt ins. */
 	List<String> filt_ins = null; // filt-in option
+	
+	/** The filt outs. */
 	List<String> filt_outs = null; // filt-out option
+	
+	/** The fill these. */
 	List<String> fill_these = null; // fill-this option
 
 	/**
-	 * Instance of XmlPostEditor
+	 * Instance of XmlPostEditor.
 	 */
 	public XmlPostEditor() {
 
@@ -44,7 +50,8 @@ public class XmlPostEditor {
 	}
 
 	/**
-	 * Add filt-in option
+	 * Add filt-in option.
+	 *
 	 * @param filt_in argument value
 	 * @return result of addition
 	 */
@@ -53,7 +60,8 @@ public class XmlPostEditor {
 	}
 
 	/**
-	 * Add filt-out option
+	 * Add filt-out option.
+	 *
 	 * @param filt_out argument value
 	 * @return result of addition
 	 */
@@ -62,7 +70,8 @@ public class XmlPostEditor {
 	}
 
 	/**
-	 * Add fill-this option
+	 * Add fill-this option.
+	 *
 	 * @param fill_this argument value
 	 * @return result of addition
 	 */

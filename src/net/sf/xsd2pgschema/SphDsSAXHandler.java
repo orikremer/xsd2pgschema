@@ -29,28 +29,45 @@ import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Sphinx xmlpipe2 SAX handler
+ * Sphinx xmlpipe2 SAX handler.
+ *
  * @author yokochi
  */
 public class SphDsSAXHandler extends DefaultHandler {
 
+	/** The schema. */
 	PgSchema schema; // PostgreSQL data model
+	
+	/** The writer. */
 	FileWriter writer; // Sphinx data source writer
 
+	/** The sph document. */
 	boolean sph_document = false; // current state for sphinx:document
+	
+	/** The document id. */
 	boolean document_id = false; // current state for document_id
+	
+	/** The content. */
 	boolean content = false; // current state for (default) content
 
+	/** The sph attr. */
 	boolean sph_attr = false; // whether if sphinx attribute
+	
+	/** The sph mva attr. */
 	boolean sph_mva_attr = false; // whether if sphinx multi-value attribute
 
+	/** The sph attr name. */
 	String sph_attr_name = null; // current sphinx attribute name
 
+	/** The sb. */
 	StringBuilder sb = null; // buffer for default field
+	
+	/** The buffer. */
 	HashMap<String, StringBuilder> buffer = null; // buffer holder for each Sphinx attribute
 
 	/**
-	 * Instance of Sphinx xmlpipe2 SAX handler
+	 * Instance of Sphinx xmlpipe2 SAX handler.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param writer Sphinx data source writer
 	 */
@@ -210,8 +227,9 @@ public class SphDsSAXHandler extends DefaultHandler {
 	}
 
 	/**
-	 * Write Sphinx attributes
-	 * @throws IOException
+	 * Write Sphinx attributes.
+	 *
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	private void write() throws IOException {
 

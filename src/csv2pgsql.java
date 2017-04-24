@@ -33,17 +33,29 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 /**
- * CSV -> PostgreSQL data migration
+ * PostgreSQL data migration from CSV file.
+ * 
+ * @author yokochi
  */
 public class csv2pgsql {
 
+	/** The CSV directory name. */
 	public static String csv_dir_name = xml2pgcsv.csv_dir_name;
 
+	/** The schema location. */
 	public static String schema_location = "";
 
+	/** The schema option. */
 	public static PgSchemaOption option = new PgSchemaOption(true);
+	
+	/** The PostgreSQL option. */
 	public static PgOption pg_option = new PgOption();
 
+	/**
+	 * The main method.
+	 *
+	 * @param args the arguments
+	 */
 	public static void main(String[] args) {
 
 		Connection db_conn = null;
@@ -182,6 +194,9 @@ public class csv2pgsql {
 
 	}
 
+	/**
+	 * Show usage.
+	 */
 	private static void showUsage() {
 
 		System.err.println("csv2pgsql: CSV -> PostgreSQL data migration");

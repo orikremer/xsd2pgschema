@@ -36,17 +36,29 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 /**
- * Merge Sphinx data source files into one
+ * Merge Sphinx data sources.
+ * 
+ * @author yokochi
  */
 public class dsmerge4sphinx {
 
+	/** The schema location. */
 	public static String schema_location = "";
 
+	/** The data source name. */
 	public static String ds_name = "";
+	
+	/** The destination directory name of data source. */
 	public static String dst_ds_dir_name = xml2sphinxds.ds_dir_name;
 
+	/** The source directory name of data source. */
 	public static List<String> src_ds_dir_list = new ArrayList<String>();
 
+	/**
+	 * The main method.
+	 *
+	 * @param args the arguments
+	 */
 	public static void main(String[] args) {
 
 		for (int i = 0; i < args.length; i++) {
@@ -247,6 +259,13 @@ public class dsmerge4sphinx {
 
 	}
 
+	/**
+	 * Merge data source.
+	 *
+	 * @param schema the schema
+	 * @param filew the filew
+	 * @param sph_doc the sph doc
+	 */
 	private static void mergeDataSource(PgSchema schema, FileWriter filew, File sph_doc) {
 
 		try {
@@ -283,6 +302,9 @@ public class dsmerge4sphinx {
 
 	}
 
+	/**
+	 * Show usage.
+	 */
 	private static void showUsage() {
 
 		System.err.println("dsmerge4sphinx: Merge Sphinx data source files into one");

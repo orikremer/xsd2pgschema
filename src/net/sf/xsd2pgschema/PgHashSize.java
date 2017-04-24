@@ -20,18 +20,24 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * Enumerator of hash key size
+ * Enumerator of hash key size.
+ *
  * @author yokochi
  */
 public enum PgHashSize {
 
-	unsigned_long_64, // unsigned long 64bit (default)
-	unsigned_int_32, // unsigned int 32bit
-	native_default, // algorithm dependent
-	debug_string; // debug mode (no hash)
+	/** The unsigned long 64 bit. */
+	unsigned_long_64,
+	/** The unsigned int 32 bit. */
+	unsigned_int_32, 
+	/** The native default bit. */
+	native_default, 
+	/** The debug string (no hashing). */
+	debug_string;
 
 	/**
-	 * Return default hash size
+	 * Return default hash size.
+	 *
 	 * @return PgHashSize default value
 	 */
 	public static PgHashSize defaultSize() {
@@ -39,7 +45,8 @@ public enum PgHashSize {
 	}
 
 	/**
-	 * Return hash size
+	 * Return hash size.
+	 *
 	 * @param name name of hash size
 	 * @return PgHashSize matched hash size
 	 */

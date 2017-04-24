@@ -49,22 +49,123 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 
 /**
- * Enumerator of XSD datatypes and conversion functions
+ * Enumerator of XSD datatypes and conversion functions.
+ *
  * @author yokochi
  */
 public enum XsDataType {
 
-	xs_boolean, xs_hexBinary, xs_base64Binary, xs_bigserial, xs_serial,
-	xs_float, xs_double, xs_decimal, xs_long, xs_bigint, xs_integer, xs_int, xs_short, xs_byte,
-	xs_nonPositiveInteger, xs_negativeInteger, xs_nonNegativeInteger, xs_positiveInteger,
-	xs_unsignedLong, xs_unsignedInt, xs_unsignedShort, xs_unsignedByte,
-	xs_duration, xs_dateTime, xs_time, xs_date, xs_gYearMonth, xs_gYear, xs_gMonthDay, xs_gMonth, xs_gDay,
-	xs_string, xs_normalizedString, xs_token, xs_language, xs_Name, xs_QName, xs_NCName, xs_anyURI,
-	xs_NOTATION, xs_NMTOKEN, xs_NMTOKENS, xs_ID, xs_IDREF, xs_IDREFS, xs_ENTITY, xs_ENTITIES,
-	xs_anyType, xs_any, xs_anyAttribute;
+	/** The xs boolean. */
+	xs_boolean,
+	/** The xs hex binary. */
+	xs_hexBinary,
+	/** The xs base 64 binary. */
+	xs_base64Binary,
+	/** The xs bigserial. */
+	xs_bigserial,
+	/** The xs serial. */
+	xs_serial,
+
+	/** The xs float. */
+	xs_float, 
+	/** The xs double. */
+	xs_double, 
+	/** The xs decimal. */
+	xs_decimal, 
+	/** The xs long. */
+	xs_long, 
+	/** The xs bigint. */
+	xs_bigint, 
+	/** The xs integer. */
+	xs_integer, 
+	/** The xs int. */
+	xs_int, 
+	/** The xs short. */
+	xs_short, 
+	/** The xs byte. */
+	xs_byte,
+
+	/** The xs non positive integer. */
+	xs_nonPositiveInteger, 
+	/** The xs negative integer. */
+	xs_negativeInteger, 
+	/** The xs non negative integer. */
+	xs_nonNegativeInteger, 
+	/** The xs positive integer. */
+	xs_positiveInteger,
+
+	/** The xs unsigned long. */
+	xs_unsignedLong, 
+	/** The xs unsigned int. */
+	xs_unsignedInt, 
+	/** The xs unsigned short. */
+	xs_unsignedShort, 
+	/** The xs unsigned byte. */
+	xs_unsignedByte,
+
+	/** The xs duration. */
+	xs_duration, 
+	/** The xs date time. */
+	xs_dateTime, 
+	/** The xs time. */
+	xs_time, 
+	/** The xs date. */
+	xs_date, 
+	/** The xs g year month. */
+	xs_gYearMonth, 
+	/** The xs g year. */
+	xs_gYear, 
+	/** The xs g month day. */
+	xs_gMonthDay, 
+	/** The xs g month. */
+	xs_gMonth, 
+	/** The xs g day. */
+	xs_gDay,
+
+	/** The xs string. */
+	xs_string, 
+	/** The xs normalized string. */
+	xs_normalizedString, 
+	/** The xs token. */
+	xs_token, 
+	/** The xs language. */
+	xs_language, 
+	/** The xs name. */
+	xs_Name, 
+	/** The xs Q name. */
+	xs_QName, 
+	/** The xs NC name. */
+	xs_NCName, 
+	/** The xs any URI. */
+	xs_anyURI,
+
+	/** The xs NOTATION. */
+	xs_NOTATION, 
+	/** The xs NMTOKEN. */
+	xs_NMTOKEN, 
+	/** The xs NMTOKENS. */
+	xs_NMTOKENS, 
+	/** The xs ID. */
+	xs_ID, 
+	/** The xs IDREF. */
+	xs_IDREF, 
+	/** The xs IDREFS. */
+	xs_IDREFS, 
+	/** The xs ENTITY. */
+	xs_ENTITY, 
+	/** The xs ENTITIES. */
+	xs_ENTITIES,
+
+	/** The xs any type. */
+	xs_anyType, 
+	/** The xs any. */
+	xs_any, 
+	/** The xs any attribute. */
+	xs_anyAttribute;
 
 	/**
-	 * Return least common data type
+	 * Return least common data type.
+	 *
 	 * @param xs_type1 data type 1
 	 * @param xs_type2 data type 2
 	 * @return least common data type
@@ -448,7 +549,8 @@ public enum XsDataType {
 	}
 
 	/**
-	 * PostgreSQL DDL mapping
+	 * PostgreSQL DDL mapping.
+	 *
 	 * @param field PostgreSQL field
 	 * @return String PostgreSQL DDL type definition
 	 */
@@ -1503,7 +1605,8 @@ public enum XsDataType {
 	}
 
 	/**
-	 * JSON Schema type mapping
+	 * JSON Schema type mapping.
+	 *
 	 * @param field PostgreSQL field
 	 * @return String JSON Schema type definition
 	 */
@@ -1569,7 +1672,8 @@ public enum XsDataType {
 	}
 
 	/**
-	 * JSON Schema $ref mapping
+	 * JSON Schema $ref mapping.
+	 *
 	 * @param field PostgreSQL field
 	 * @return String JSON Schema $ref definition
 	 */
@@ -1578,7 +1682,8 @@ public enum XsDataType {
 	}
 
 	/**
-	 * Return JSON Schema default value
+	 * Return JSON Schema default value.
+	 *
 	 * @param field PostgreSQL field
 	 * @return String JSON Schema default value
 	 */
@@ -1643,8 +1748,10 @@ public enum XsDataType {
 	}
 
 	/**
-	 * Return JSON Schema enum array
+	 * Return JSON Schema enum array.
+	 *
 	 * @param field PostgreSQL field
+	 * @param json_key_value_space the json key value space
 	 * @return String JSON Schema enum array
 	 */
 	public static String getJsonSchemaEnumArray(PgField field, String json_key_value_space) {
@@ -1719,8 +1826,10 @@ public enum XsDataType {
 	}
 
 	/**
-	 * Return JSON Schema maximum value
+	 * Return JSON Schema maximum value.
+	 *
 	 * @param field PostgreSQL field
+	 * @param json_key_value_space the json key value space
 	 * @return String JSON Schema maximum value
 	 */
 	public static String getJsonSchemaMaximumValue(PgField field, String json_key_value_space) {
@@ -2008,8 +2117,10 @@ public enum XsDataType {
 	}
 
 	/**
-	 * Return JSON Schema minimum value
+	 * Return JSON Schema minimum value.
+	 *
 	 * @param field PostgreSQL field
+	 * @param json_key_value_space the json key value space
 	 * @return String JSON Schema minimum value
 	 */
 	public static String getJsonSchemaMinimumValue(PgField field, String json_key_value_space) {
@@ -2261,7 +2372,8 @@ public enum XsDataType {
 	}
 
 	/**
-	 * Return JSON Schema multipleOf value
+	 * Return JSON Schema multipleOf value.
+	 *
 	 * @param field PostgreSQL field
 	 * @return String JSON Schema multipleOf value
 	 */
@@ -2327,7 +2439,8 @@ public enum XsDataType {
 	}
 
 	/**
-	 * Validate data
+	 * Validate data.
+	 *
 	 * @param field PostgreSQL field
 	 * @param value content
 	 * @return boolean whether if content is valid
@@ -2498,7 +2611,8 @@ public enum XsDataType {
 	}
 
 	/**
-	 * Return normalized value
+	 * Return normalized value.
+	 *
 	 * @param field PostgreSQL field
 	 * @param value content
 	 * @return String normalized format
@@ -2648,12 +2762,13 @@ public enum XsDataType {
 	}
 
 	/**
-	 * Set value via PreparedStatement
+	 * Set value via PreparedStatement.
+	 *
 	 * @param field PostgreSQL field
 	 * @param ps prepared statement
 	 * @param par_idx parameter index id
 	 * @param value content
-	 * @throws SQLException
+	 * @throws SQLException the SQL exception
 	 */
 	public static void setValue(PgField field, PreparedStatement ps, int par_idx, String value) throws SQLException {
 
@@ -2779,12 +2894,13 @@ public enum XsDataType {
 	}
 
 	/**
-	 * Set XML object via PreparedStatement
-	 * @param xs_type XSD datatype
+	 * Set XML object via PreparedStatement.
+	 *
+	 * @param field the field
 	 * @param ps prepared statement
 	 * @param par_idx parameter index id
 	 * @param value content
-	 * @throws SQLException
+	 * @throws SQLException the SQL exception
 	 */
 	public static void setValue(PgField field, PreparedStatement ps, int par_idx, SQLXML value) throws SQLException {
 
@@ -2800,7 +2916,8 @@ public enum XsDataType {
 	// Lucene index
 
 	/**
-	 * Set value for Lucene full-text indexing
+	 * Set value for Lucene full-text indexing.
+	 *
 	 * @param field PostgreSQL field
 	 * @param lucene_doc Lucene document
 	 * @param name field name
@@ -2910,7 +3027,8 @@ public enum XsDataType {
 	}
 
 	/**
-	 * Set retrievable key
+	 * Set retrievable key.
+	 *
 	 * @param lucene_doc Lucene document
 	 * @param name field name
 	 * @param value content
@@ -2924,8 +3042,10 @@ public enum XsDataType {
 	// Sphinx data source
 
 	/**
-	 * Set value as Sphinx data source
+	 * Set value as Sphinx data source.
+	 *
 	 * @param field PostgreSQL field
+	 * @param writer the writer
 	 * @param attr_name Sphinx attribute name
 	 * @param value content
 	 * @param min_word_len_filter whether if it exceeds minimum word length
@@ -3049,11 +3169,12 @@ public enum XsDataType {
 	// JSON array object
 
 	/**
-	 * Set value in field's JSON buffer
+	 * Set value in field's JSON buffer.
+	 *
 	 * @param field PostgreSQL field
 	 * @param value content
 	 * @param json_key_value_space while spaces between values
-	 * @param boolean whether if value is set to JSON buffer
+	 * @return true, if successful
 	 */
 	public static boolean setValue(PgField field, String value, String json_key_value_space) {
 
@@ -3161,6 +3282,7 @@ public enum XsDataType {
 		return true;
 	}
 
+	/** The Constant date_patterns_iso. */
 	/* Date pattern in ISO 8601 format */
 	private static final String[] date_patterns_iso = new String[] {
 			"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "yyyy-MM-dd'T'HH:mm:ssXXX", "yyyy-MM-dd'T'HH:mmXXX", "yyyy-MM-dd'T'HHXXX", "yyyy-MM-ddXXX",
@@ -3171,6 +3293,7 @@ public enum XsDataType {
 			"--dd'T'HH:mmXXX", "--dd'T'HHXXX", "--ddXXX"
 	};
 
+	/** The Constant date_patterns_z. */
 	/* Date pattern in UTC */
 	private static final String[] date_patterns_z = new String[] {
 			"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm'Z'", "yyyy-MM-dd'T'HH'Z'", "yyyy-MM-dd'Z'",
@@ -3181,6 +3304,7 @@ public enum XsDataType {
 			"--dd'T'HH:mm'Z'", "--dd'T'HH'Z'", "--dd'Z'"
 	};
 
+	/** The Constant date_patterns_loc. */
 	/* Date pattern in local time */
 	private static final String[] date_patterns_loc = new String[] {
 			"yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm", "yyyy-MM-dd'T'HH", "yyyy-MM-dd",
@@ -3193,6 +3317,7 @@ public enum XsDataType {
 
 	/**
 	 * Parse string as java.util.Date
+	 * 
 	 * @param value content
 	 * @return Date java.util.Date
 	 */

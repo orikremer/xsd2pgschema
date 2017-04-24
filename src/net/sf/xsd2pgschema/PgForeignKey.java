@@ -23,20 +23,30 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 /**
- * PostgreSQL foreign key declaration
+ * PostgreSQL foreign key declaration.
+ *
  * @author yokochi
  */
 public class PgForeignKey {
 
+	/** The name. */
 	String name = ""; // foreign key name in PostgreSQL
 
+	/** The child table. */
 	String child_table = null; // child table name
+	
+	/** The child fields. */
 	String child_fields = null; // child field names separated by comma
+	
+	/** The parent table. */
 	String parent_table = null; // parent table name
+	
+	/** The parent fields. */
 	String parent_fields = null; // parent field names separated by comma
 
 	/**
-	 * Set child table name
+	 * Set child table name.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 */
@@ -47,9 +57,11 @@ public class PgForeignKey {
 	}
 
 	/**
-	 * Set parent table name from xs:key/@name
+	 * Set parent table name from xs:key/@name.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
+	 * @param key_name the key name
 	 */
 	public void extractParentTable(PgSchema schema, Node node, String key_name) {
 
@@ -75,7 +87,8 @@ public class PgForeignKey {
 	}
 
 	/**
-	 * Extract child field names from xs:field/@xpath
+	 * Extract child field names from xs:field/@xpath.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 * @return child field names separated by comma
@@ -106,7 +119,8 @@ public class PgForeignKey {
 	}
 
 	/**
-	 * Set child field names
+	 * Set child field names.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 */
@@ -117,7 +131,8 @@ public class PgForeignKey {
 	}
 
 	/**
-	 * Set parent field names from xs:key/@name
+	 * Set parent field names from xs:key/@name.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 * @param key_name key name
@@ -146,7 +161,8 @@ public class PgForeignKey {
 	}
 
 	/**
-	 * Extract child table name from xs:selector/@xpath
+	 * Extract child table name from xs:selector/@xpath.
+	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 * @return String child table name
