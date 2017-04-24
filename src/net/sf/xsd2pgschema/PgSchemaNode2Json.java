@@ -112,7 +112,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			else if (field.nested_key) {
 
-				if (setNestedKey(field, key_name))
+				if (setNestedKey(field, key_name, key_id))
 					nested_fields++;
 
 			}

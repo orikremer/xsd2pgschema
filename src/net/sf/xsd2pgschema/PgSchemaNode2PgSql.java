@@ -204,7 +204,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else if (field.nested_key) {
 
-				if (setNestedKey(field, key_name)) {
+				if (setNestedKey(field, key_name, key_id)) {
 
 					if (ps != null && rel_data_ext)
 						setHashKey(f, param_id, nested_key_name[nested_fields]);

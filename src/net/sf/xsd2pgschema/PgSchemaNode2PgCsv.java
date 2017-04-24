@@ -158,7 +158,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			else if (field.nested_key) {
 
-				if (setNestedKey(field, key_name)) {
+				if (setNestedKey(field, key_name, key_id)) {
 
 					if (table.filew != null && rel_data_ext)
 						values[f] = schema.getHashKeyString(nested_key_name[nested_fields]);

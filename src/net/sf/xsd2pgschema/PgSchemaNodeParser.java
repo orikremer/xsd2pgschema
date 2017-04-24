@@ -159,9 +159,10 @@ public abstract class PgSchemaNodeParser {
 	 * Set nested key
 	 * @param field current field
 	 * @param key_name processing key name
+	 * @param key_id ordinal number of current node
 	 * @return boolean whether success or not
 	 */
-	public boolean setNestedKey(final PgField field, final String key_name) {
+	public boolean setNestedKey(final PgField field, final String key_name, final int key_id) {
 
 		if (!matchesParentNode(key_name, field.parent_node))
 			return false;
@@ -172,8 +173,14 @@ public abstract class PgSchemaNodeParser {
 		nested_table_id[nested_fields] = field.foreign_table_id;
 		nested_key_name[nested_fields] = key_name;
 
-		if (!nested_table.virtual)
+		if (!nested_table.virtual) {
+
 			nested_key_name[nested_fields] += "/" + field.foreign_table; // XPath child
+
+			if (field.list_holder)
+				nested_key_name[nested_fields] += "[" + key_id + "]"; // XPath predicate
+
+		}
 
 		return true;
 	}
