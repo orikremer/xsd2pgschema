@@ -29,20 +29,20 @@ import org.w3c.dom.Node;
  */
 public class PgForeignKey {
 
-	/** The name. */
-	String name = ""; // foreign key name in PostgreSQL
+	/** The foreign key name in PostgreSQL. */
+	String name = "";
 
-	/** The child table. */
-	String child_table = null; // child table name
-	
-	/** The child fields. */
-	String child_fields = null; // child field names separated by comma
-	
-	/** The parent table. */
-	String parent_table = null; // parent table name
-	
-	/** The parent fields. */
-	String parent_fields = null; // parent field names separated by comma
+	/** The child table name. */
+	String child_table = null;
+
+	/** The child field names, separated by comma character. */
+	String child_fields = null;
+
+	/** The parent table name. */
+	String parent_table = null;
+
+	/** The parent field names, separated by comma character. */
+	String parent_fields = null;
 
 	/**
 	 * Set child table name.

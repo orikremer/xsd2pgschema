@@ -55,79 +55,76 @@ import org.w3c.dom.Node;
  */
 public class PgSchemaUtil {
 
-	/** The Constant xs_namespace_uri. */
-	public final static String xs_namespace_uri = "http://www.w3.org/2001/XMLSchema"; // namespace URI representing XML Schema 1.x
-	
-	/** The Constant json_schema_def. */
-	public final static String json_schema_def = "http://json-schema.org/schema#"; // namespace URI representing JSON Schema
+	/** The namespace URI representing XML Schema 1.x. */
+	public final static String xs_namespace_uri = "http://www.w3.org/2001/XMLSchema";
 
-	/** The Constant document_key_name. */
-	public final static String document_key_name = "document_id"; // PostgreSQL item name of document key
-	
-	/** The Constant serial_key_name. */
-	public final static String serial_key_name = "serial_id"; // PostgreSQL item name of serial key
-	
-	/** The Constant xpath_key_name. */
-	public final static String xpath_key_name = "xpath_id"; // PostgreSQL item name of xpath key
+	/** The namespace URI representing JSON Schema. */
+	public final static String json_schema_def = "http://json-schema.org/schema#";
 
-	/** The Constant simple_cont_name. */
-	public final static String simple_cont_name = "content"; // PostgreSQL item name of xs:simpleContent
+	/** The document key name in PostgreSQL. */
+	public final static String document_key_name = "document_id";
 
-	/** The Constant any_elem_name. */
-	public final static String any_elem_name = "any_element"; // PostgreSQL item name of xs:any
-	
-	/** The Constant any_attr_name. */
-	public final static String any_attr_name = "any_attribute"; // PostgreSQL item name of xs:anyAttribute
+	/** The serial key name in PostgreSQL. */
+	public final static String serial_key_name = "serial_id";
 
-	/** The Constant def_hash_algorithm. */
-	public final static String def_hash_algorithm = "SHA-1"; // default hash algorithm
+	/** The XPath key name in PostgreSQL. */
+	public final static String xpath_key_name = "xpath_id";
 
-	/** The Constant host. */
-	public final static String host = "localhost"; // default PostgreSQL host name
-	
-	/** The Constant port. */
-	public final static int port = 5432; // default PostgreSQL port number
+	/** The name of xs;simpleContent in PostgreSQL. */
+	public final static String simple_cont_name = "content";
 
-	/** The Constant min_word_len. */
-	public final static int min_word_len = 1; // minimum word length for indexing
-	
-	/** The Constant enum_max_len. */
-	public final static int enum_max_len = 63; // PostgreSQL maximum length of enumeration
-	
-	/** The Constant indent_spaces. */
-	public final static int indent_spaces = 2; // default length of indent spaces
+	/** The name of xs:any in PostgreSQL. */
+	public final static String any_elem_name = "any_element";
 
-	/** The Constant shard_dir_prefix. */
-	public final static String shard_dir_prefix = "part-"; // prefix of directory name for sharding
-	
-	/** The Constant thrd_dir_prefix. */
-	public final static String thrd_dir_prefix = "thrd-"; // prefix of directory name for multi-threading
+	/** The name of xs:anyAttribute in PostgreSQL. */
+	public final static String any_attr_name = "any_attribute";
 
-	/** The Constant sphinx_schema_name. */
-	public final static String sphinx_schema_name = ".schema_part.xml"; // xmlpipe2 schema file name
-	
-	/** The Constant sphinx_conf_name. */
-	public final static String sphinx_conf_name = "data_source.conf"; // xmlpipe2 configuration file name
-	
-	/** The Constant sphinx_document_prefix. */
-	public final static String sphinx_document_prefix = "document_part_"; // xmlpipe2 document prefix name
-	
-	/** The Constant sphinx_data_source_name. */
-	public final static String sphinx_data_source_name = "data_source.xml"; // xmlpipe2 data source file name
-	
-	/** The Constant trigram_field_name. */
-	public final static String trigram_field_name = "trigrams"; // trigram field name for Sphinx dictionary
+	/** The default hash algorithm. */
+	public final static String def_hash_algorithm = "SHA-1";
 
-	/** The Constant reserved_words. */
-	// PostgreSQL reserved words
+	/** The default host name. */
+	public final static String host = "localhost";
+
+	/** The default port number. */
+	public final static int port = 5432;
+
+	/** The minimum word length for index. */
+	public final static int min_word_len = 1;
+
+	/** The PostgreSQL maximum length for enumeration/constraint. */
+	public final static int enum_max_len = 63;
+
+	/** The default length of indent spaces. */
+	public final static int indent_spaces = 2;
+
+	/** The prefix of directory name for sharding. */
+	public final static String shard_dir_prefix = "part-";
+
+	/** The prefix of directory name for multi-threading */
+	public final static String thrd_dir_prefix = "thrd-";
+
+	/** The Sphinx schema file name. */
+	public final static String sphinx_schema_name = ".schema_part.xml";
+
+	/** The Sphinx configration file name. */
+	public final static String sphinx_conf_name = "data_source.conf";
+
+	/** The prefix of Sphinx data source file. */
+	public final static String sphinx_document_prefix = "document_part_";
+
+	/** The Sphinx data source file name. */
+	public final static String sphinx_data_source_name = "data_source.xml";
+
+	/** The field name of Sphinx dictionary */
+	public final static String trigram_field_name = "trigrams";
+
+	/** The PostgreSQL reserved words. */
 	public final static String[] reserved_words = { "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC", "AUTHORIZATION", "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLLATION", "COLUMN", "CONCURRENTLY", "CONSTRAINT", "CREATE", "CROSS", "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT", "DEFERRABLE", "DESC", "DISTINCT", "DO", "ELSE", "END", "EXCEPT", "FALSE", "FETCH", "FOR", "FOREIGN", "FREEZE", "FROM", "FULL", "GRANT", "GROUP", "HAVING", "ILIKE", "IN", "INITIALLY", "INNER", "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "LATERAL", "LEADING", "LEFT", "LIKE", "LIMIT", "LOCALTIME", "LOCALTIMESTAMP", "NATURAL", "NOT", "NOTNULL", "NULL", "OFFSET", "ON", "ONLY", "OR", "ORDER", "OUTER", "OVERLAPS", "PLACING", "PRIMARY", "REFERENCES", "RETURNING", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "TABLESAMPLE", "THEN", "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VARIADIC", "VERBOSE", "WHEN", "WHERE", "WINDOW", "WITH" };
-	
-	/** The Constant reserved_ops. */
-	// PostgreSQL reserved operator codes
+
+	/** The PostgreSQL reserved operator codes. */
 	public final static String[] reserved_ops = { "+", "-", "*", "/", "%", "^", "|/", "||/", "!", "!!", "@", "&", "|", "#", "~", "<<", ">>" };
-	
-	/** The Constant reserved_ops_rex. */
-	// PostgreSQL reserved operator codes escaping regex match
+
+	/** The PostgreSQL reserved operator codes escaping regular expression match. */
 	public final static String[] reserved_ops_rex = { "\\+", "-", "\\*", "/", "%", "\\^", "\\|/", "\\|\\|/", "!", "!!", "@", "\\&", "\\|", "#", "~", "<<", ">>" };
 
 	/**

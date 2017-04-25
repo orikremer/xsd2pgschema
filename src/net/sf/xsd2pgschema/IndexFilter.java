@@ -29,17 +29,17 @@ import java.util.List;
  */
 public class IndexFilter {
 
-	/** The attrs. */
-	public List<String> attrs = null; // attributes for filtering index
+	/** The attributes for filtering index. */
+	public List<String> attrs = null;
 	
-	/** The fields. */
-	public List<String> fields = null; // fields to be stored
+	/** The fields to be stored. */
+	public List<String> fields = null;
 
-	/** The min word len. */
-	public int min_word_len = PgSchemaUtil.min_word_len; // minimum word length for indexing
+	/** The minimum word length for indexing. */
+	public int min_word_len = PgSchemaUtil.min_word_len;
 	
-	/** The numeric index. */
-	public boolean numeric_index = false; // numeric values are stored in Lucene index
+	/** Whether if numeric values are stored in Lucene index. */
+	public boolean numeric_index = false;
 
 	/**
 	 * Instance of index filter.

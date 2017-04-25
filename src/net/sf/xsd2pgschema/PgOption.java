@@ -26,23 +26,23 @@ package net.sf.xsd2pgschema;
  */
 public class PgOption {
 
-	/** The host. */
-	public String host = PgSchemaUtil.host; // default host name
-	
-	/** The port. */
-	public int port = PgSchemaUtil.port; // default port number
-	
-	/** The database. */
-	public String database = ""; // database name
-	
-	/** The user. */
-	public String user = ""; // database user name
-	
-	/** The password. */
-	public String password = ""; // database password
+	/** The default host name. */
+	public String host = PgSchemaUtil.host;
 
-	/** The update. */
-	public boolean update = false; // whether copy or update (delete before insert)
+	/** The default port number. */
+	public int port = PgSchemaUtil.port;
+
+	/** The database name. */
+	public String database = "";
+
+	/** The database user name. */
+	public String user = "";
+
+	/** The database password. */
+	public String password = "";
+
+	/** Whether insert or update (delete before insert). */
+	public boolean update = false;
 
 	/**
 	 * Return database URL for JDBC connection.

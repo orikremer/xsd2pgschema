@@ -45,7 +45,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/** The prepared statement. */
 	PreparedStatement ps = null;
 
-	/** The flag whether field is occupied or not. */
+	/** Whether field is occupied or not. */
 	boolean[] occupied = null;
 
 	/** The database connection. */

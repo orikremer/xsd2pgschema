@@ -55,112 +55,112 @@ import org.apache.lucene.document.TextField;
  */
 public enum XsDataType {
 
-	/** The xs boolean. */
+	/** The xs:boolean. */
 	xs_boolean,
-	/** The xs hex binary. */
+	/** The xs:hexBinary. */
 	xs_hexBinary,
-	/** The xs base 64 binary. */
+	/** The xs:base64Binary. */
 	xs_base64Binary,
-	/** The xs bigserial. */
+	/** The xs:bigserial. */
 	xs_bigserial,
-	/** The xs serial. */
+	/** The xs:serial. */
 	xs_serial,
 
-	/** The xs float. */
+	/** The xs:float. */
 	xs_float, 
-	/** The xs double. */
+	/** The xs:double. */
 	xs_double, 
-	/** The xs decimal. */
+	/** The xs:decimal. */
 	xs_decimal, 
-	/** The xs long. */
+	/** The xs:long. */
 	xs_long, 
-	/** The xs bigint. */
+	/** The xs:bigint. */
 	xs_bigint, 
-	/** The xs integer. */
+	/** The xs:integer. */
 	xs_integer, 
-	/** The xs int. */
+	/** The xs:int. */
 	xs_int, 
-	/** The xs short. */
+	/** The xs:short. */
 	xs_short, 
-	/** The xs byte. */
+	/** The xs:byte. */
 	xs_byte,
 
-	/** The xs non positive integer. */
+	/** The xs:nonPositiveInteger. */
 	xs_nonPositiveInteger, 
-	/** The xs negative integer. */
+	/** The xs:negativeInteger. */
 	xs_negativeInteger, 
-	/** The xs non negative integer. */
+	/** The xs:nonNegativeInteger. */
 	xs_nonNegativeInteger, 
-	/** The xs positive integer. */
+	/** The xs:positiveInteger. */
 	xs_positiveInteger,
 
-	/** The xs unsigned long. */
+	/** The xs:unsignedLong. */
 	xs_unsignedLong, 
-	/** The xs unsigned int. */
+	/** The xs:unsignedInt. */
 	xs_unsignedInt, 
-	/** The xs unsigned short. */
+	/** The xs:unsignedShort. */
 	xs_unsignedShort, 
-	/** The xs unsigned byte. */
+	/** The xs:unsignedByte. */
 	xs_unsignedByte,
 
-	/** The xs duration. */
+	/** The xs:duration. */
 	xs_duration, 
-	/** The xs date time. */
+	/** The xs:dateTime. */
 	xs_dateTime, 
-	/** The xs time. */
+	/** The xs:time. */
 	xs_time, 
-	/** The xs date. */
+	/** The xs:date. */
 	xs_date, 
-	/** The xs g year month. */
+	/** The xs:gYearMonth. */
 	xs_gYearMonth, 
-	/** The xs g year. */
+	/** The xs:gYear. */
 	xs_gYear, 
-	/** The xs g month day. */
+	/** The xs:gMonthDay. */
 	xs_gMonthDay, 
-	/** The xs g month. */
+	/** The xs:gMonth. */
 	xs_gMonth, 
-	/** The xs g day. */
+	/** The xs:gDay. */
 	xs_gDay,
 
-	/** The xs string. */
+	/** The xs:string. */
 	xs_string, 
-	/** The xs normalized string. */
+	/** The xs:normalizedString. */
 	xs_normalizedString, 
-	/** The xs token. */
+	/** The xs:token. */
 	xs_token, 
-	/** The xs language. */
+	/** The xs:language. */
 	xs_language, 
-	/** The xs name. */
+	/** The xs:Name. */
 	xs_Name, 
-	/** The xs Q name. */
+	/** The xs:QName. */
 	xs_QName, 
-	/** The xs NC name. */
+	/** The xs:NCName. */
 	xs_NCName, 
-	/** The xs any URI. */
+	/** The xs:anyURI. */
 	xs_anyURI,
 
-	/** The xs NOTATION. */
+	/** The xs:NOTATION. */
 	xs_NOTATION, 
-	/** The xs NMTOKEN. */
+	/** The xs:NMTOKEN. */
 	xs_NMTOKEN, 
-	/** The xs NMTOKENS. */
+	/** The xs:NMTOKENS. */
 	xs_NMTOKENS, 
-	/** The xs ID. */
+	/** The xs:ID. */
 	xs_ID, 
-	/** The xs IDREF. */
+	/** The xs:IDREF. */
 	xs_IDREF, 
-	/** The xs IDREFS. */
+	/** The xs:IDREFS. */
 	xs_IDREFS, 
-	/** The xs ENTITY. */
+	/** The xs:ENTITY. */
 	xs_ENTITY, 
-	/** The xs ENTITIES. */
+	/** The xs:ENTITIES. */
 	xs_ENTITIES,
 
-	/** The xs any type. */
+	/** The xs:anyType. */
 	xs_anyType, 
-	/** The xs any. */
+	/** The xs:any. */
 	xs_any, 
-	/** The xs any attribute. */
+	/** The xs:anyAttribute. */
 	xs_anyAttribute;
 
 	/**
@@ -3282,8 +3282,7 @@ public enum XsDataType {
 		return true;
 	}
 
-	/** The Constant date_patterns_iso. */
-	/* Date pattern in ISO 8601 format */
+	/** The date pattern in ISO 8601 format. */
 	private static final String[] date_patterns_iso = new String[] {
 			"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "yyyy-MM-dd'T'HH:mm:ssXXX", "yyyy-MM-dd'T'HH:mmXXX", "yyyy-MM-dd'T'HHXXX", "yyyy-MM-ddXXX",
 			"yyyy-MM'T'HH:mm:ss.SSSXXX", "yyyy-MM'T'HH:mm:ssXXX", "yyyy-MM'T'HH:mmXXX", "yyyy-MM'T'HHXXX", "yyyy-MMXXX",
@@ -3293,8 +3292,7 @@ public enum XsDataType {
 			"--dd'T'HH:mmXXX", "--dd'T'HHXXX", "--ddXXX"
 	};
 
-	/** The Constant date_patterns_z. */
-	/* Date pattern in UTC */
+	/** The date pattern in UTC */
 	private static final String[] date_patterns_z = new String[] {
 			"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm'Z'", "yyyy-MM-dd'T'HH'Z'", "yyyy-MM-dd'Z'",
 			"yyyy-MM'T'HH:mm:ss.SSS'Z'", "yyyy-MM'T'HH:mm:ss'Z'", "yyyy-MM'T'HH:mm'Z'", "yyyy-MM'T'HH'Z'", "yyyy-MM'Z'",
@@ -3304,8 +3302,7 @@ public enum XsDataType {
 			"--dd'T'HH:mm'Z'", "--dd'T'HH'Z'", "--dd'Z'"
 	};
 
-	/** The Constant date_patterns_loc. */
-	/* Date pattern in local time */
+	/** The date pattern in local time */
 	private static final String[] date_patterns_loc = new String[] {
 			"yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm", "yyyy-MM-dd'T'HH", "yyyy-MM-dd",
 			"yyyy-MM'T'HH:mm:ss.SSS", "yyyy-MM'T'HH:mm:ss", "yyyy-MM'T'HH:mm", "yyyy-MM'T'HH", "yyyy-MM",

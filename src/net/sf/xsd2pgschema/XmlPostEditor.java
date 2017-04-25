@@ -29,14 +29,14 @@ import java.util.List;
  */
 public class XmlPostEditor {
 
-	/** The filt ins. */
-	List<String> filt_ins = null; // filt-in option
-	
-	/** The filt outs. */
-	List<String> filt_outs = null; // filt-out option
-	
-	/** The fill these. */
-	List<String> fill_these = null; // fill-this option
+	/** The filt-in option. */
+	List<String> filt_ins = null;
+
+	/** The filt-out option. */
+	List<String> filt_outs = null;
+
+	/** The fill-this option. */
+	List<String> fill_these = null;
 
 	/**
 	 * Instance of XmlPostEditor.

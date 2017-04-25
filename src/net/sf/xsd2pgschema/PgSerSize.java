@@ -19,7 +19,6 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-// TODO: Auto-generated Javadoc
 /**
  * Enumerator of serial key size.
  *

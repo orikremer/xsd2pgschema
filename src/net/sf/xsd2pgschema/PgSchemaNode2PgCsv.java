@@ -39,7 +39,7 @@ import org.w3c.dom.Node;
  */
 public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
-	/** The string builder for line string of CSV format. */
+	/** The string builder for a line of CSV format. */
 	StringBuilder sb = null;
 
 	/**

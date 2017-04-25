@@ -26,13 +26,13 @@ package net.sf.xsd2pgschema;
  */
 public class XmlFileFilter {
 
-	/** The ext. */
+	/** The extension of XML file. */
 	public String ext = "xml";
 
-	/** The prefix digest. */
+	/** The digest-able prefix name. */
 	String prefix_digest = "";
-	
-	/** The ext digest. */
+
+	/** The digest-able extension name. */
 	String ext_digest = ".";
 
 	/**

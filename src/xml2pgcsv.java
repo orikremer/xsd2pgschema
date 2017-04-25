@@ -66,7 +66,7 @@ public class xml2pgcsv {
 	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
 	
-	/** The Constant cpu_num. */
+	/** The available processors. */
 	private static final int cpu_num = runtime.availableProcessors();
 	
 	/** The max threads. */

@@ -41,74 +41,74 @@ import org.w3c.dom.Node;
  */
 public abstract class PgSchemaNodeParser {
 
-	/** The schema. */
-	PgSchema schema = null; // PostgreSQL data model
+	/** The PostgreSQL schema. */
+	PgSchema schema = null;
 
-	/** The rel data ext. */
-	boolean rel_data_ext; // relational data extension
+	/** The relational data extension. */
+	boolean rel_data_ext;
 
 	/** The parent table. */
-	PgTable parent_table = null; // parent table
-	
-	/** The table. */
-	PgTable table = null; // current table
+	PgTable parent_table = null;
 
-	/** The fields. */
-	List<PgField> fields = null; // field list
+	/** The current table. */
+	PgTable table = null;
 
-	/** The values. */
-	String[] values = null; // values of fields
+	/** The field list. */
+	List<PgField> fields = null;
 
-	/** The nested fields. */
-	int nested_fields = 0; // number of nested fields in table
+	/** The content of fields. */
+	String[] values = null;
 
-	/** The list holder. */
-	boolean[] list_holder = null; // whether @maxOccurs > 1 || @minOccurs > 1
-	
+	/** The number of nested fields. */
+	int nested_fields = 0;
+
+	/** Whether if list holder. */
+	boolean[] list_holder = null;
+
 	/** The nested table id. */
-	int[] nested_table_id = null; // nested table id
-	
+	int[] nested_table_id = null;
+
 	/** The nested key name. */
-	String[] nested_key_name = null; // nested key name
+	String[] nested_key_name = null;
 
-	/** The filled. */
-	boolean filled = true; // whether if values were filled
-	
-	/** The written. */
-	boolean written = false; // whether if any content was written
-	
-	/** The invoked. */
-	boolean invoked = false; // whether if any nested node was invoked
+	/** Whether if values were filled. */
+	boolean filled = true;
 
-	/** The nested. */
-	boolean nested = false; // whether it is nested
-	
-	/** The proc node. */
-	Node proc_node; // processing node
-	
-	/** The key name. */
-	String key_name; // current key name
+	/** Whether if any content was written. */
+	boolean written = false;
+
+	/** Whether if any nested node was invoked. */
+	boolean invoked = false;
+
+	/** Whether if nested node. */
+	boolean nested = false;
+
+	/** The processing node. */
+	Node proc_node;
+
+	/** The current key name. */
+	String key_name;
 
 	/** The document id. */
-	String document_id = null; // document key
-	
-	/** The document id len. */
-	int document_id_len; // length of document key
+	String document_id = null;
 
-	/** The content. */
-	String content; // common content holder for attribute, simple_cont and element
+	/** The length of document id. */
+	int document_id_len;
 
-	/** The doc builder. */
-	DocumentBuilder doc_builder = null; // document builder for xs:any and xs:anyAttribute
-	
-	/** The doc. */
-	Document doc = null; // XML content of xs:any and xs:anyAttribute
-	
-	/** The doc root. */
-	Element doc_root = null; // root element of XML content
-	
-	/** The transformer. */
-	Transformer transformer = null; // transformer of XML content
+	/** The common content holder for attribute, simple_cont and element. */
+	String content;
+
+	/** The document builder for xs:any and xs:anyAttribute. */
+	DocumentBuilder doc_builder = null;
+
+	/** The XML content of xs:any and xs:anyAttribute. */
+	Document doc = null;
+
+	/** The root element of the XML content. */
+	Element doc_root = null;
+
+	/** The transformer of the XML content. */
+	Transformer transformer = null;
 
 	/**
 	 * Node parser.

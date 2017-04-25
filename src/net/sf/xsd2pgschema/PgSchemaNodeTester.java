@@ -28,26 +28,26 @@ import org.w3c.dom.Node;
  */
 public class PgSchemaNodeTester {
 
-	/** The key id. */
-	public int key_id = 1; // ordinal number in sibling nodes
+	/** The ordinal number in sibling node. */
+	public int key_id = 1;
 
-	/** The key name. */
-	public String key_name = null; // current key name
-	
-	/** The proc node. */
-	public Node proc_node = null; // processing node
+	/** The current key name. */
+	public String key_name = null;
 
-	/** The omitted. */
-	public boolean omitted = false; // whether if omit this node
+	/** The processing node. */
+	public Node proc_node = null;
 
-	/** The nested. */
-	boolean nested; // whether it is nested
-	
-	/** The nest id. */
-	int nest_id; // ordinal number of current node in nested case
+	/** Whether if this node is omitted or not. */
+	public boolean omitted = false;
 
-	/** The node count. */
-	int node_count = 0; // total number of sibling nodes
+	/** Whether if nested node. */
+	boolean nested;
+
+	/** The ordinal number of current node in nested case. */
+	int nest_id;
+
+	/** The total number of sibling node. */
+	int node_count = 0;
 
 	/**
 	 * Decide to process this node or not (see result at omitted).

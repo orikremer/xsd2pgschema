@@ -34,61 +34,61 @@ import org.w3c.dom.Node;
 public class PgTable {
 
 	/** The target namespace. */
-	String target_namespace = null; // target namespace
-	
+	String target_namespace = null;
+
 	/** The schema location. */
-	String schema_location = null; // schema location
+	String schema_location = null;
 
-	/** The name. */
-	String name = ""; // table name in PostgreSQL
-	
-	/** The anno. */
-	String anno = ""; // xs:annotation
+	/** The table name in PostgreSQL. */
+	String name = "";
 
-	/** The xs type. */
-	XsTableType xs_type; // table type classified by xs_root (root node), xs_root_child (children node of root node), xs_admin_root (administrative root node), xs_admin_child (children node of administrative node).
+	/** The xs:annotation. */
+	String anno = "";
 
-	/** The fields. */
-	List<PgField> fields = null; // field list
+	/** The table type classified by xs_root (root node), xs_root_child (children node of root node), xs_admin_root (administrative root node), xs_admin_child (children node of administrative node). */
+	XsTableType xs_type;
 
-	/** The level. */
-	int level = -1; // depth of table (internal use only)
+	/** The field list. */
+	List<PgField> fields = null;
 
-	/** The nested fields. */
-	int nested_fields = 0; // number of nested fields in table
+	/** The depth of table (internal use only). */
+	int level = -1;
 
-	/** The cont holder. */
-	boolean cont_holder = false; // content holder table
-	
-	/** The list holder. */
-	boolean list_holder = false; // list holder table
-	
-	/** The bridge. */
-	boolean bridge = false; // bridge table
-	
-	/** The virtual. */
-	boolean virtual = false; // whether xs_type equals xs_admin_root
-	
-	/** The relational. */
-	boolean relational = false; // bridge table or virtual table or not cont_holder
-	
-	/** The conflict. */
-	boolean conflict = false; // whether name collision occurs or not
-	
-	/** The required. */
-	boolean required = false; // whether table is referred from child table
-	
-	/** The filt out. */
-	boolean filt_out = false; // subset database replication (internal use only)
+	/** The number of nested field. */
+	int nested_fields = 0;
 
-	/** The filew. */
-	FileWriter filew = null; // content writer
+	/** Whether if content holder. */
+	boolean cont_holder = false;
 
-	/** The jsonb not empty. */
-	boolean jsonb_not_empty = false; // whether if JSON buffer of any field in table is not empty
+	/** Whether if list holder. */
+	boolean list_holder = false;
 
-	/** The lucene doc. */
-	org.apache.lucene.document.Document lucene_doc = null; // Lucene document
+	/** Whether if bridge table. */
+	boolean bridge = false;
+
+	/** Whether if xs_type equals xs_admin_root. */
+	boolean virtual = false;
+
+	/** Whether if bridge table or virtual table or not cont_holder. */
+	boolean relational = false;
+
+	/** Whether if name collision occurs or not. */
+	boolean conflict = false;
+
+	/** Whether if table is referred from child table. */
+	boolean required = false;
+
+	/** Whether if table is subset of database (internal use only). */
+	boolean filt_out = false;
+
+	/** The content writer. */
+	FileWriter filew = null;
+
+	/** Whether if JSON buffer of any field is not empty. */
+	boolean jsonb_not_empty = false;
+
+	/** The Lucene document. */
+	org.apache.lucene.document.Document lucene_doc = null;
 
 	/**
 	 * Instance of PostgreSQL table.

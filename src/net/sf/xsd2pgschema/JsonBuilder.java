@@ -30,38 +30,38 @@ import org.apache.commons.lang3.StringEscapeUtils;
  */
 public class JsonBuilder {
 
-	/** The builder. */
-	StringBuilder builder = null; // JSON buffer
+	/** The JSON buffer. */
+	StringBuilder builder = null;
 
-	/** The attr prefix. */
-	String attr_prefix = ""; // prefix of JSON item name of xs:attribute
-	
-	/** The simple cont key. */
-	String simple_cont_key = PgSchemaUtil.simple_cont_name; // JSON item name of xs:simpleContent
-	
-	/** The discard doc key. */
-	String discard_doc_key = ""; // discarded JSON item name stands for document key
-	
-	/** The indent space. */
-	String indent_space = "  "; // white spaces for indent
-	
-	/** The key value space. */
-	String key_value_space = " "; // white spaces between JSON item and JSON data
-	
-	/** The linefeed. */
-	String linefeed = "\n"; // linefeed code in JSON document
+	/** The prefix of JSON item name of xs:attribute. */
+	String attr_prefix = "";
 
-	/** The no field anno. */
-	boolean no_field_anno = false; // whether retain field annotation or not
-	
-	/** The array all. */
-	boolean array_all = false; // use JSON array uniformly for descendant
+	/** The JSON item name of xs:simpleContent. */
+	String simple_cont_key = PgSchemaUtil.simple_cont_name;
 
-	/** The has discard doc key. */
-	boolean has_discard_doc_key = false; // whether of there is discarded document key
+	/** The discarded JSON item name stands for document key. */
+	String discard_doc_key = "";
 
-	/** The key value spaces. */
-	int key_value_spaces = key_value_space.length(); // length of key_value_space
+	/** The unit of indent space. */
+	String indent_space = "  ";
+
+	/** The white spaces between JSON item and JSON data. */
+	String key_value_space = " ";
+
+	/** The linefeed code in JSON document. */
+	String linefeed = "\n";
+
+	/** Whether if retain field annotation or not. */
+	boolean no_field_anno = false;
+
+	/** Use JSON array uniformly for descendants. */
+	boolean array_all = false;
+
+	/** Whether if discarded document key exists or not. */
+	boolean has_discard_doc_key = false;
+
+	/** The length of the key_value_space */
+	int key_value_spaces = key_value_space.length();
 
 	/**
 	 * Instance of JSON builder.

@@ -57,89 +57,89 @@ import org.xml.sax.SAXException;
  */
 public class PgSchema {
 
-	/** The root node. */
-	private Node root_node = null; // root node (internal use only)
+	/** The root node (internal use only). */
+	private Node root_node = null;
 
-	/** The def schema parent. */
-	private String def_schema_parent = null; // parent of default schema location
-	
-	/** The def schema location. */
-	private String def_schema_location = null; // default schema location
+	/** The parent of default schema location. */
+	private String def_schema_parent = null;
 
-	/** The schema locations. */
-	private List<String> schema_locations = null; // schema locations which are included or imported
+	/** The default schema location. */
+	private String def_schema_location = null;
 
-	/** The attr groups. */
-	private List<PgTable> attr_groups = null; // attribute group definitions
-	
-	/** The model groups. */
-	private List<PgTable> model_groups = null; // model group definitions
-	
-	/** The tables. */
-	private List<PgTable> tables = null; // PostgreSQL table list
+	/** The included or imported schema locations. */
+	private List<String> schema_locations = null;
 
-	/** The foreign keys. */
-	private List<PgForeignKey> foreign_keys = null; // PostgreSQL foreign key list
+	/** The attribute group definitions. */
+	private List<PgTable> attr_groups = null;
 
-	/** The option. */
-	PgSchemaOption option = null; // PostgreSQL schema option
+	/** The model group definitions. */
+	private List<PgTable> model_groups = null;
 
-	/** The conflicted. */
-	private boolean conflicted = false; // whether name collision occurs or not
+	/** The PostgreSQL tables. */
+	private List<PgTable> tables = null;
 
-	/** The level. */
-	private int level; // current depth of table (internal use only)
+	/** The PostgreSQL foreign keys. */
+	private List<PgForeignKey> foreign_keys = null;
 
-	/** The root table id. */
-	private int root_table_id = -1; // root table id (internal use only)
-	
-	/** The root table. */
-	private PgTable root_table = null; // PostgreSQL root table
+	/** The PostgreSQL schema option. */
+	PgSchemaOption option = null;
 
-	/** The min word len. */
-	int min_word_len = PgSchemaUtil.min_word_len; // minimum word length for indexing
-	
-	/** The numeric index. */
-	boolean numeric_index = false; // numeric values are stored in Lucene index
+	/** Whether name collision occurs or not. */
+	private boolean conflicted = false;
 
-	/** The xs prefix. */
-	String xs_prefix = null; // prefix of xs_namespace_uri
-	
-	/** The xs prefix. */
-	String xs_prefix_ = null; // xs_prefix.isEmpty() ? "" : xs_prefix + ":"
+	/** The current depth of table (internal use only). */
+	private int level;
 
-	/** The def namespaces. */
-	private HashMap<String, String> def_namespaces = null; // default namespace (key=prefix, value=namespace_uri)
+	/** The root table id (internal use only). */
+	private int root_table_id = -1;
 
-	/** The def anno. */
-	private String def_anno = null; // top level xs:annotation
-	
-	/** The def appinfo. */
-	private String def_appinfo = null; // top level xs:annotation/xs:appinfo
-	
-	/** The def doc. */
-	private String def_doc = null; // top level xs:annotation/xs:documentation
-	
-	/** The def attrs. */
-	private String def_attrs = null; // default attributes
+	/** The PostgreSQL root table. */
+	private PgTable root_table = null;
 
-	/** The def stat msg. */
-	private StringBuilder def_stat_msg = null; // statistics message
+	/** The minimum word length for index. */
+	int min_word_len = PgSchemaUtil.min_word_len;
 
-	/** The realized. */
-	private boolean[] realized = null; // flags used for PostgreSQL DDL metalization (internal use only)
-	
-	/** The table order. */
-	private int[] table_order = null; // store generation/destruction order of tables (internal use only)
-	
-	/** The table lock. */
-	private Object[] table_lock = null; // table lock objects
+	/** Whether if numeric index are stored in Lucene index. */
+	boolean numeric_index = false;
 
-	/** The document id. */
-	private String document_id; // content of document key
+	/** The prefix of xs_namespace_uri. */
+	String xs_prefix = null;
 
-	/** The message digest. */
-	private MessageDigest message_digest = null; // instance of message digest
+	/** The xs_prefix.isEmpty() ? "" : xs_prefix + ":". */
+	String xs_prefix_ = null;
+
+	/** The default namespace (key=prefix, value=namespace_uri). */
+	private HashMap<String, String> def_namespaces = null;
+
+	/** The top level xs:annotation. */
+	private String def_anno = null;
+
+	/** The top level xs:annotation/xs:appinfo. */
+	private String def_appinfo = null;
+
+	/** The top level xs:annotation/xs:documentation. */
+	private String def_doc = null;
+
+	/** The default attributes. */
+	private String def_attrs = null;
+
+	/** The statistics message on schema. */
+	private StringBuilder def_stat_msg = null;
+
+	/** Whether used for PostgreSQL DDL realization (internal use only). */
+	private boolean[] realized = null;
+
+	/** The generation or destruction order of table (internal use onyl). */
+	private int[] table_order = null;
+
+	/** The table lock object. */
+	private Object[] table_lock = null;
+
+	/** The content of document key. */
+	private String document_id;
+
+	/** The instance of message digest. */
+	private MessageDigest message_digest = null;
 
 	/**
 	 * PostgreSQL schema constructor.
@@ -2607,8 +2607,8 @@ public class PgSchema {
 
 	// post XML editorial functions
 
-	/** The filt in selected. */
-	private boolean filt_in_selected = false;
+	/** Whether if filt-in options are resolved. */
+	private boolean filt_in_resolved = false;
 
 	/**
 	 * Apply filt-in options.
@@ -2621,10 +2621,10 @@ public class PgSchema {
 		if (filt_ins.size() == 0)
 			return;
 
-		if (filt_in_selected)
+		if (filt_in_resolved)
 			return;
 
-		filt_in_selected = true;
+		filt_in_resolved = true;
 
 		for (String filt_in : filt_ins) {
 
@@ -2827,8 +2827,8 @@ public class PgSchema {
 
 	}
 
-	/** The attr selected. */
-	protected boolean attr_selected = false;
+	/** Whether if selected attributes are resolved. */
+	protected boolean attr_resolved = false;
 
 	/**
 	 * Apply attr options for full-text indexing.
@@ -2838,14 +2838,14 @@ public class PgSchema {
 	 */
 	private void applyAttr(final List<String> attrs) throws PgSchemaException {
 
-		if (attr_selected)
+		if (attr_resolved)
 			return;
 
 		if (attrs == null) { // all attributes are selected
 
 			tables.forEach(table -> table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true));
 
-			attr_selected = true;
+			attr_resolved = true;
 
 			return;
 		}
@@ -2888,7 +2888,7 @@ public class PgSchema {
 
 					field.attr_sel = true;
 
-					attr_selected = true;
+					attr_resolved = true;
 
 				}
 
@@ -2899,7 +2899,7 @@ public class PgSchema {
 
 				fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true);
 
-				attr_selected = true;
+				attr_resolved = true;
 
 			}
 
@@ -2907,8 +2907,8 @@ public class PgSchema {
 
 	}
 
-	/** The field selected. */
-	protected boolean field_selected = false;
+	/** Whether if selected fields are resolved. */
+	protected boolean field_resolved = false;
 
 	/**
 	 * Apply field options for full-text indexing.
@@ -2918,7 +2918,7 @@ public class PgSchema {
 	 */
 	private void applyField(final List<String> fields) throws PgSchemaException {
 
-		if (field_selected || fields.size() == 0)
+		if (field_resolved || fields.size() == 0)
 			return;
 
 		for (String field : fields) {
@@ -2956,7 +2956,7 @@ public class PgSchema {
 
 					_field.field_sel = true;
 
-					field_selected = true;
+					field_resolved = true;
 
 				}
 
@@ -2967,13 +2967,13 @@ public class PgSchema {
 
 				_fields.stream().filter(_field -> !_field.system_key && !_field.user_key).forEach(_field -> _field.field_sel = true);
 
-				field_selected = true;
+				field_resolved = true;
 
 			}
 
 		}
 
-		if (filt_in_selected)
+		if (filt_in_resolved)
 			return;
 
 		for (int t = 0; t < tables.size(); t++) {
@@ -3003,7 +3003,7 @@ public class PgSchema {
 
 		}
 
-		filt_in_selected = true;
+		filt_in_resolved = true;
 
 	}
 
@@ -4197,8 +4197,8 @@ public class PgSchema {
 
 	// JSON conversion
 
-	/** The jsonb. */
-	protected JsonBuilder jsonb = null; // Instanced JSON builder
+	/** The instance of JSON builder. */
+	protected JsonBuilder jsonb = null;
 
 	/**
 	 * Initialize JSON builder.

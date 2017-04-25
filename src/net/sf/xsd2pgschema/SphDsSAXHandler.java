@@ -35,35 +35,35 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class SphDsSAXHandler extends DefaultHandler {
 
-	/** The schema. */
-	PgSchema schema; // PostgreSQL data model
-	
-	/** The writer. */
-	FileWriter writer; // Sphinx data source writer
+	/** The PostgreSQL schema. */
+	PgSchema schema;
 
-	/** The sph document. */
-	boolean sph_document = false; // current state for sphinx:document
-	
-	/** The document id. */
-	boolean document_id = false; // current state for document_id
-	
-	/** The content. */
-	boolean content = false; // current state for (default) content
+	/** The Sphinx data source writer. */
+	FileWriter writer;
 
-	/** The sph attr. */
-	boolean sph_attr = false; // whether if sphinx attribute
-	
-	/** The sph mva attr. */
-	boolean sph_mva_attr = false; // whether if sphinx multi-value attribute
+	/** The current state for sphinx:document. */
+	boolean sph_document = false;
 
-	/** The sph attr name. */
-	String sph_attr_name = null; // current sphinx attribute name
+	/** The current state for document_id. */
+	boolean document_id = false;
 
-	/** The sb. */
-	StringBuilder sb = null; // buffer for default field
-	
-	/** The buffer. */
-	HashMap<String, StringBuilder> buffer = null; // buffer holder for each Sphinx attribute
+	/** The current state for default content. */
+	boolean content = false;
+
+	/** Whether if Sphinx attribute. */
+	boolean sph_attr = false;
+
+	/** Whether if Sphinx multi-value attribute. */
+	boolean sph_mva_attr = false;
+
+	/** The current Sphinx attribute name. */
+	String sph_attr_name = null;
+
+	/** The string builder for default field. */
+	StringBuilder sb = null;
+
+	/** The holder of string builder for each Sphinx attribute. */
+	HashMap<String, StringBuilder> buffer = null;
 
 	/**
 	 * Instance of Sphinx xmlpipe2 SAX handler.

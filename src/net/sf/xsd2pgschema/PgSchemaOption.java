@@ -26,50 +26,50 @@ package net.sf.xsd2pgschema;
  */
 public class PgSchemaOption {
 
-	/** The rel model ext. */
-	boolean rel_model_ext = true; // relational model extension
-	
-	/** The rel data ext. */
-	boolean rel_data_ext = true; // relational data extension
+	/** The relational model extension. */
+	boolean rel_model_ext = true;
 
-	/** The wild card. */
-	public boolean wild_card = true; // wild card extension
-	
-	/** The document key. */
-	public boolean document_key = true; // add document key in PostgreSQL DDL
-	
-	/** The serial key. */
-	public boolean serial_key = false; // add serial key in PostgreSQL DDL
-	
-	/** The xpath key. */
-	public boolean xpath_key = false; // add XPath compatible location key in PostgreSQL DDL
-	
-	/** The case sense. */
-	public boolean case_sense = true; // retain case sensitive name in PostgreSQL DDL
+	/** The relational data extension. */
+	boolean rel_data_ext = true;
 
-	/** The ddl output. */
-	public boolean ddl_output = false; // whether if output PostgreSQL DDL
-	
-	/** The retain key. */
-	public boolean retain_key = true; // retain primary key/foreign key constraint in PostgreSQL DDL
-	
-	/** The no field anno. */
-	public boolean no_field_anno = true; // not retrieve field annotation in PostgreSQL DD
+	/** The wild card extension. */
+	public boolean wild_card = true;
 
-	/** The validate. */
-	public boolean validate = false; // whether if execute XML Schema validation
-	
-	/** The append. */
-	public boolean append = true; // whether if append to existing data
+	/** Whether add document key in PostgreSQL DDL. */
+	public boolean document_key = true;
 
-	/** The hash algorithm. */
-	public String hash_algorithm = PgSchemaUtil.def_hash_algorithm; // name of hash algorithm
+	/** Whether add serial key in PostgreSQL DDL. */
+	public boolean serial_key = false;
 
-	/** The hash size. */
-	public PgHashSize hash_size = PgHashSize.defaultSize(); // hash key size
-	
-	/** The ser size. */
-	public PgSerSize ser_size = PgSerSize.defaultSize(); // serial key size
+	/** Whether add XPath key in PostgreSQL DDL. */
+	public boolean xpath_key = false;
+
+	/** Whether retain case sensitive name in PostgreSQL DDL. */
+	public boolean case_sense = true;
+
+	/** Whether output PostgreSQL DDL. */
+	public boolean ddl_output = false;
+
+	/** Whether retain primary key/foreign key constraint in PostgreSQL DDL. */
+	public boolean retain_key = true;
+
+	/** Whether not retrieve field annotation in PostgreSQL DDL. */
+	public boolean no_field_anno = true;
+
+	/** Whether execute XML Schema validation. */
+	public boolean validate = false;
+
+	/** Whether append to existing data. */
+	public boolean append = true;
+
+	/** The name of hash algorithm. */
+	public String hash_algorithm = PgSchemaUtil.def_hash_algorithm;
+
+	/** The size of hash key. */
+	public PgHashSize hash_size = PgHashSize.defaultSize();
+
+	/** The size of serial key. */
+	public PgSerSize ser_size = PgSerSize.defaultSize();
 
 	/**
 	 * Instance of PostgreSQL data modeling option.

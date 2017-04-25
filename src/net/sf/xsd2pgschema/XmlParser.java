@@ -37,14 +37,14 @@ import org.xml.sax.SAXException;
  */
 public class XmlParser {
 
-	/** The document. */
-	Document document; // XML document
+	/** The XML document. */
+	Document document;
 
 	/** The document id. */
-	public String document_id; // content of document key
-	
-	/** The basename. */
-	public String basename; // basename of XML file
+	public String document_id;
+
+	/** The basename of XML file. */
+	public String basename;
 
 	/**
 	 * Instance of XML parser.

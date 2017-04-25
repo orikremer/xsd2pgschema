@@ -29,209 +29,209 @@ import org.w3c.dom.Node;
  */
 public class PgField {
 
-	/** The target namespace. */
-	String target_namespace = PgSchemaUtil.xs_namespace_uri; // target namespace URI
+	/** The target namespace URI. */
+	String target_namespace = PgSchemaUtil.xs_namespace_uri;
 
-	/** The xname. */
-	String xname = ""; // field name in XML
-	
-	/** The name. */
-	String name = ""; // field name in PostgreSQL
-	
-	/** The type. */
-	String type = ""; // datatype
+	/** The field name in XML document. */
+	String xname = "";
+
+	/** The field name in PostgreSQL. */
+	String name = "";
+
+	/** The datatype. */
+	String type = "";
 
 	/** The substitution group. */
-	String substitution_group = ""; // substitution group requiring type definition later
+	String substitution_group = "";
 
-	/** The maxoccurs. */
-	String maxoccurs = "1"; // @maxOccurs
-	
-	/** The minoccurs. */
-	String minoccurs = "1"; // @minOccurs
-	
-	/** The anno. */
-	String anno = ""; // xs:annotation
+	/** The @maxOccurs. */
+	String maxoccurs = "1";
 
-	/** The xs type. */
-	XsDataType xs_type; // mapped to XML Schema datatype
+	/** The @minOccurs. */
+	String minoccurs = "1";
 
-	/** The element. */
-	boolean element = false; // xs:element
-	
-	/** The attribute. */
-	boolean attribute = false; // xs:attribute
-	
-	/** The simple cont. */
-	boolean simple_cont = false; // xs:simpleContent
+	/** The xs:annotation. */
+	String anno = "";
 
-	/** The any. */
-	boolean any = false; // xs:any
-	
-	/** The any attribute. */
-	boolean any_attribute = false; // xs:anyAttribute
+	/** The XML Schema datatype. */
+	XsDataType xs_type;
 
-	/** The primary key. */
-	boolean primary_key = false; // primary key in PostgreSQL
-	
-	/** The unique key. */
-	boolean unique_key = false; // unique key in PostgreSQL
-	
-	/** The foreign key. */
-	boolean foreign_key = false; // foreign key in PostgreSQL
-	
-	/** The nested key. */
-	boolean nested_key = false; // nested key in PostgreSQL
+	/** Whether if xs:element. */
+	boolean element = false;
 
-	/** The document key. */
-	boolean document_key = false; // key for original document
-	
-	/** The serial key. */
-	boolean serial_key = false; // key for original node order
-	
-	/** The xpath key. */
-	boolean xpath_key = false; // key for location path
+	/** Whether if xs:attribute. */
+	boolean attribute = false;
 
-	/** The system key. */
-	boolean system_key = false; // whether it has any system's administrative key (primary_key || foreign_key || nested_key)
-	
-	/** The user key. */
-	boolean user_key = false; // whether it has any user's discretion key (document_key || serial_key || xpath_key)
+	/** Whether if xs:simpleContent. */
+	boolean simple_cont = false;
 
-	/** The xrequired. */
-	boolean xrequired = false; // ! @nillable, original in XMl
-	
-	/** The required. */
-	boolean required = false; // ! @nillable, but mutable in PostgreSQL when conflict occurs
+	/** Whether if xs:any. */
+	boolean any = false;
 
-	/** The prohibited. */
-	boolean prohibited = false; // whether @use is "prohibited"
-	
-	/** The list holder. */
-	boolean list_holder = false; // whether @maxOccurs > 1 || @minOccurs > 1
+	/** Whether if xs:anyAttribute. */
+	boolean any_attribute = false;
 
-	/** The rep substitution group. */
-	boolean rep_substitution_group = false; // representative field of substitution group
+	/** Whether if primary key. */
+	boolean primary_key = false;
 
-	/** The sph attr. */
-	boolean sph_attr = false; // Sphinx attribute
-	
-	/** The sph mva. */
-	boolean sph_mva = false; // Sphinx multi value attribute
+	/** Whether if unique key. */
+	boolean unique_key = false;
 
-	/** The field sel. */
-	boolean field_sel = false; // Lucene/Sphinx partial indexing: field option
-	
-	/** The attr sel. */
-	boolean attr_sel = false; // Lucene/Sphinx partial indexing: attr option
+	/** Whether if foreign key. */
+	boolean foreign_key = false;
 
-	/** The constraint name. */
-	String constraint_name = null; // constraint name in PostgreSQL
+	/** Whether if nested key. */
+	boolean nested_key = false;
+
+	/** Whether if document key. */
+	boolean document_key = false;
+
+	/** Whether if serial key. */
+	boolean serial_key = false;
+
+	/** Whether if XPath key. */
+	boolean xpath_key = false;
+
+	/** Whether it has any system's administrative key (primary_key || foreign_key || nested_key). */
+	boolean system_key = false;
+
+	/** Whether it has any user's discretion key (document_key || serial_key || xpath_key). */
+	boolean user_key = false;
+
+	/** Whether if not @nillable. */
+	boolean xrequired = false;
+
+	/** Whether if not @nillable, but mutable in PostgreSQL when conflict occurs. */
+	boolean required = false;
+
+	/** Whether if @use is "prohibited". */
+	boolean prohibited = false;
+
+	/** Whether if @maxOccurs > 1 || @minOccurs > 1. */
+	boolean list_holder = false;
+
+	/** Whether if representative field of substitution group. */
+	boolean rep_substitution_group = false;
+
+	/** Whether if Sphinx attribute. */
+	boolean sph_attr = false;
+
+	/** Whether if Sphinx multi-value attribute. */
+	boolean sph_mva = false;
+
+	/** Whether it is selected as field for partial index. */
+	boolean field_sel = false;
+
+	/** Whether it is selected as attribute for partial index. */
+	boolean attr_sel = false;
+
+	/** The constraint name in PostgreSQL. */
+	String constraint_name = null;
 
 	/** The foreign table id. */
-	int foreign_table_id = -1; // foreign table id
-	
-	/** The foreign table. */
-	String foreign_table = null; // foreign table name in PostgreSQL
-	
-	/** The foreign field. */
-	String foreign_field = null; // foreign field name in PostgreSQL
-	
-	/** The parent node. */
-	String parent_node = null; // parent node name
+	int foreign_table_id = -1;
 
-	/** The fixed value. */
-	String fixed_value = null; // @fixed
-	
-	/** The default value. */
-	String default_value = null; // @default
-	
-	/** The block value. */
-	String block_value = null; // @block
+	/** The foreign table name in PostgreSQL. */
+	String foreign_table = null;
 
-	/** The restriction. */
-	boolean restriction = false; // whether field has any restriction or not
+	/** The foreign field name in PostgreSQL. */
+	String foreign_field = null;
 
-	/** The enum name. */
-	String enum_name = null; // xs:enumeration
-	
-	/** The xenumeration. */
-	String[] xenumeration = null; // array of xs:enumeration in XML
-	
-	/** The enumeration. */
-	String[] enumeration = null; // array of xs:enumeration in PostgreSQL
+	/** The parent node names. */
+	String parent_node = null;
 
-	/** The length. */
-	String length = null; // xs:length
-	
-	/** The min length. */
-	String min_length = null; // xs:minLength
-	
-	/** The max length. */
-	String max_length = null; // xs:maxLength
-	
-	/** The pattern. */
-	String pattern = null; // xs:pattern
-	
-	/** The max inclusive. */
-	String max_inclusive = null; // xs:maxInclusive
-	
-	/** The max exclusive. */
-	String max_exclusive = null; // xs:maxExclusive
-	
-	/** The min exclusive. */
-	String min_exclusive = null; // xs:minExclusive
-	
-	/** The min inclusive. */
-	String min_inclusive = null; // xs:minInclusive
-	
-	/** The total digits. */
-	String total_digits = null; // xs:totalDigits
-	
-	/** The fraction digits. */
-	String fraction_digits = null; // xs:fractionDigits
+	/** Whether if @fixed. */
+	String fixed_value = null;
 
-	/** The white space. */
-	String white_space = null; // xs:whiteSpace
-	
-	/** The assertions. */
-	String assertions = null; // xs:assertions (TODO)
-	
-	/** The explicit timezone. */
-	String explicit_timezone = null; // xs:explicitTimezone
+	/** Whether if @default. */
+	String default_value = null;
 
-	/** The list. */
-	boolean _list = false; // xs:list
-	
-	/** The union. */
-	boolean _union = false; // xs:union
+	/** Whether if @block. */
+	String block_value = null;
 
-	/** The fill this. */
-	boolean fill_this = false; // Post XML edition: fill-this option
-	
-	/** The filled text. */
-	String filled_text = null; // Post XML edition: content of fill-this option
+	/** Whether if field has any restriction. */
+	boolean restriction = false;
 
-	/** The filt out. */
-	boolean filt_out = false; // Post XML edition: filt-out option
-	
-	/** The out pattern. */
-	String[] out_pattern = null; // Post XML edition: pattern of filt-out option
+	/** The xs:enumeration. */
+	String enum_name = null;
 
-	/** The sph attr occurs. */
-	int sph_attr_occurs = 0; // input counter of Sphinx attribute
+	/** The array of xs:enumeration in XML document. */
+	String[] xenumeration = null;
 
-	/** The jsonb not empty. */
-	boolean jsonb_not_empty = false; // whether if JSON buffer is not empty
-	
-	/** The jsonb col size. */
-	int jsonb_col_size = 0; // size of JSON item
-	
-	/** The jsonb null size. */
-	int jsonb_null_size = 0; // size of null JSON item
-	
-	/** The jsonb. */
-	StringBuilder jsonb = null; // JSON buffer
+	/** The array of xs:enumeration in PostgreSQL. */
+	String[] enumeration = null;
+
+	/** The xs:length restriction. */
+	String length = null;
+
+	/** The xs:minLength restriction. */
+	String min_length = null;
+
+	/** The xs:maxLength restriction. */
+	String max_length = null;
+
+	/** The xs:pattern restriction. */
+	String pattern = null;
+
+	/** The xs:maxInclusive restriction. */
+	String max_inclusive = null;
+
+	/** The xs:maxExclusive restriction. */
+	String max_exclusive = null;
+
+	/** The xs:minExclusive restriction. */
+	String min_exclusive = null;
+
+	/** The xs:minInclusive restriction. */
+	String min_inclusive = null;
+
+	/** The xs:totalDigits restriction. */
+	String total_digits = null;
+
+	/** The xs:fractionDigits restriction. */
+	String fraction_digits = null;
+
+	/** The xs:whiteSpace restriction. */
+	String white_space = null;
+
+	/** The xs:assertions restriction. (TODO) */
+	String assertions = null;
+
+	/** The xs:explicitTimezone restriction. */
+	String explicit_timezone = null;
+
+	/** Whether xs:list. */
+	boolean _list = false;
+
+	/** Whether xs:union. */
+	boolean _union = false;
+
+	/** The fill-this post XML edition. */
+	boolean fill_this = false;
+
+	/** The filled text used in post XML edition. */
+	String filled_text = null;
+
+	/** The filt-out post XML edition. */
+	boolean filt_out = false;
+
+	/** The filt-out pattern used in post XML edition. */
+	String[] out_pattern = null;
+
+	/** The counter of Sphinx attribute. */
+	int sph_attr_occurs = 0;
+
+	/** Whether if JSON buffer is not empty. */
+	boolean jsonb_not_empty = false;
+
+	/** The size of JSON item in JSON buffer. */
+	int jsonb_col_size = 0;
+
+	/** The size of null JSON value in JSON buffer. */
+	int jsonb_null_size = 0;
+
+	/** The JSON buffer. */
+	StringBuilder jsonb = null;
 
 	/**
 	 * Extract @type, @itemType, @memberTypes or @base and set type.
@@ -1275,7 +1275,7 @@ public class PgField {
 	 * @return boolean whether if field is indexable
 	 */
 	public boolean isIndexable(PgSchema schema) {
-		return !schema.field_selected || (schema.field_selected && field_sel) || (schema.attr_selected && attr_sel);
+		return !schema.field_resolved || (schema.field_resolved && field_sel) || (schema.attr_resolved && attr_sel);
 	}
 
 	/**
@@ -1289,7 +1289,7 @@ public class PgField {
 		if (schema.jsonb.has_discard_doc_key && xname.equals(schema.jsonb.discard_doc_key))
 			return false;
 
-		return !schema.field_selected || (schema.field_selected && field_sel);
+		return !schema.field_resolved || (schema.field_resolved && field_sel);
 	}
 
 }

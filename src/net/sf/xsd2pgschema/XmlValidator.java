@@ -38,10 +38,10 @@ import org.xml.sax.SAXParseException;
  */
 public class XmlValidator {
 
-	/** The dom parser. */
+	/** The DOM parser. */
 	DOMParser dom_parser = null;
 
-	/** The err handler. */
+	/** The error handler. */
 	Validator err_handler = null;
 
 	/**
@@ -103,8 +103,8 @@ public class XmlValidator {
 	 */
 	private static class Validator implements ErrorHandler {
 
-		/** The success. */
-		public boolean success = true; // status flag
+		/** The result of XML Schema validation. */
+		public boolean success = true;
 
 		/**
 		 * Initialize status flag (success).
