@@ -94,11 +94,6 @@ public class PgSchemaNodeTester {
 
 		if (list_holder) {
 
-			// relabeling ordinal number in sibling nodes
-
-			if (key_name.endsWith("]"))
-				key_name = key_name.substring(0, key_name.lastIndexOf("["));
-
 			boolean node_test = false;
 
 			for (Node child = parent_node.getFirstChild(); child != null; child = child.getNextSibling()) {
@@ -125,8 +120,15 @@ public class PgSchemaNodeTester {
 				return;
 			}
 
-			if (!virtual)
+			if (!virtual) {
+
+				// relabeling ordinal number in sibling node
+
+				if (key_name.endsWith("]"))
+					key_name = key_name.substring(0, key_name.lastIndexOf("["));
+
 				key_name += "[" + key_id + "]"; // XPath predicate
+			}
 
 		}
 
