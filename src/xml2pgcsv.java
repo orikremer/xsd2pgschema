@@ -121,8 +121,8 @@ public class xml2pgcsv {
 			else if (args[i].equals("--case-insensitive"))
 				option.case_sense = false;
 
-			else if (args[i].equals("--ow-csv"))
-				option.append = false;
+			else if (args[i].equals("--append"))
+				option.append = true;
 
 			else if (args[i].startsWith("--valid"))
 				option.validate = true;
@@ -310,7 +310,7 @@ public class xml2pgcsv {
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --csv-dir DIRECTORY (default=\"" + csv_dir_name + "\")");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
-		System.err.println("        --ow-csv (allow to overwrite existing csv files)");
+		System.err.println("        --append (append to existing CSV files)");
 		System.err.println("        --doc-key (append " + PgSchemaUtil.document_key_name + " column in all relations, default with relational model extension)");
 		System.err.println("        --no-doc-key (remove " + PgSchemaUtil.document_key_name + " column from all relations, effective only with relational model extension)");
 		System.err.println("        --ser-key (append " + PgSchemaUtil.serial_key_name + " column in child relation of list holder)");

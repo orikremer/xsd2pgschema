@@ -60,7 +60,7 @@ public class PgSchemaOption {
 	public boolean validate = false;
 
 	/** Whether append to existing data. */
-	public boolean append = true;
+	public boolean append = false;
 
 	/** The name of hash algorithm. */
 	public String hash_algorithm = PgSchemaUtil.def_hash_algorithm;
