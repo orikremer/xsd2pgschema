@@ -1,10 +1,11 @@
- Changes in xsd2pgschema 2.4.3 (release 2017-04-25)
+ Changes in xsd2pgschema 2.4.3 (release 2017-04-26)
 
   Added Java package name for core classes.
-  Added Maven project.
+  Added Maven project (groupId=net.sf.xsd2pgschema, artifactId=xsd2pgschema).
   Fixed collapsed JSON in case of multiple JSON conversion.
   Fixed XPath predicate error in list holder.
   Dropped --ow-csv, --ow-idx and --ow-ds option and appending mode has been turned off by default (to turn on, please use --append option).
+  Deployed to the Maven Central Repository.
 
  Changes in xsd2pgschema 2.4.2 (release 2017-04-18)
 
