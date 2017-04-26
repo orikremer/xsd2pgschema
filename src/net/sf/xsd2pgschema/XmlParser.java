@@ -43,7 +43,7 @@ public class XmlParser {
 	/** The document id. */
 	public String document_id;
 
-	/** The basename of XML file. */
+	/** The base name of XML file. */
 	public String basename;
 
 	/**

@@ -129,7 +129,7 @@ public class PgSchema {
 	/** Whether used for PostgreSQL DDL realization (internal use only). */
 	private boolean[] realized = null;
 
-	/** The generation or destruction order of table (internal use onyl). */
+	/** The generation or destruction order of table (internal use only). */
 	private int[] table_order = null;
 
 	/** The table lock object. */
@@ -693,7 +693,7 @@ public class PgSchema {
 		if (option.serial_key)
 			tables.stream().filter(table -> table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> tables.get(field.foreign_table_id).addSerialKey(this)));
 
-		// add xpath key
+		// add XPath key
 
 		if (option.xpath_key)
 			tables.forEach(table -> table.addXPathKey(this));
@@ -2065,7 +2065,7 @@ public class PgSchema {
 
 		realize(root_table, root_table_id, false);
 
-		// referenced admin tables at first
+		// referenced administrative tables at first
 
 		foreign_keys.forEach(foreign_key -> {
 
@@ -2083,7 +2083,7 @@ public class PgSchema {
 
 		});
 
-		// admin tables ordered by level
+		// administrative tables ordered by level
 
 		int max_child_level = tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child)).max(Comparator.comparingInt(table -> table.level)).get().level;
 
@@ -2105,7 +2105,7 @@ public class PgSchema {
 
 		}
 
-		// remaining admin tables
+		// remaining administrative tables
 
 		for (int t = 0; t < tables.size(); t++) {
 
@@ -3035,10 +3035,10 @@ public class PgSchema {
 			return "E'\\\\x" + DatatypeConverter.printHexBinary(bytes) + "'"; // PostgreSQL hex format
 		case unsigned_long_64:
 			BigInteger blong = new BigInteger(bytes);
-			return Long.toString(Math.abs(blong.longValue())); // uses lower order 64bit
+			return Long.toString(Math.abs(blong.longValue())); // use lower order 64bit
 		case unsigned_int_32:
 			BigInteger bint = new BigInteger(bytes);
-			return Integer.toString(Math.abs(bint.intValue())); // uses lower order 32bit
+			return Integer.toString(Math.abs(bint.intValue())); // use lower order 32bit
 		default:
 			return key_name;
 		}
@@ -3072,7 +3072,7 @@ public class PgSchema {
 
 		BigInteger bint = new BigInteger(hash);
 
-		return Math.abs(bint.intValue()); // uses lower order 32bit
+		return Math.abs(bint.intValue()); // use lower order 32bit
 	}
 
 	/**
@@ -3089,7 +3089,7 @@ public class PgSchema {
 
 		BigInteger bint = new BigInteger(hash);
 
-		return Math.abs(bint.longValue()); // uses lower order 64bit
+		return Math.abs(bint.longValue()); // use lower order 64bit
 	}
 
 	/**
@@ -4040,8 +4040,6 @@ public class PgSchema {
 
 	}
 
-	// Sphinx full-text indexing
-
 	/**
 	 * Sphinx xmlpipe2 conversion.
 	 *
@@ -4278,7 +4276,7 @@ public class PgSchema {
 
 		List<PgField> fields = root_table.fields;
 
-		System.out.print("{" + jsonb.linefeed); // json document start
+		System.out.print("{" + jsonb.linefeed); // JSON document start
 
 		System.out.print(jsonb.getIndentSpaces(1) + "\"$schema\":" + jsonb.key_value_space + "\"" + PgSchemaUtil.json_schema_def + "\"," + jsonb.linefeed); // declaring a JSON Schema
 
@@ -4350,7 +4348,7 @@ public class PgSchema {
 		}
 
 		if (!root_table.virtual)
-			System.out.print(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.linefeed); // json own items start
+			System.out.print(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.linefeed); // JSON own items start
 
 		fields.stream().filter(field -> !field.user_key && !field.system_key && !(jsonb.has_discard_doc_key && field.xname.equals(jsonb.discard_doc_key))).forEach(field -> jsonb.writeSchemaFieldProperty(field, true, false, 2));
 
@@ -4360,7 +4358,7 @@ public class PgSchema {
 		jsonb.builder.setLength(0);
 
 		if (!root_table.virtual)
-			System.out.print(jsonb.getIndentSpaces(2) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // json child items start
+			System.out.print(jsonb.getIndentSpaces(2) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // JSON child items start
 
 		int[] list_id = { 0 };
 
@@ -4368,13 +4366,13 @@ public class PgSchema {
 
 		if (!root_table.virtual) {
 
-			System.out.print(jsonb.getIndentSpaces(2) + "}" + jsonb.linefeed); // json child items end
+			System.out.print(jsonb.getIndentSpaces(2) + "}" + jsonb.linefeed); // JSON child items end
 
-			System.out.print(jsonb.getIndentSpaces(1) + "}" + jsonb.linefeed); // json own items end
+			System.out.print(jsonb.getIndentSpaces(1) + "}" + jsonb.linefeed); // JSON own items end
 
 		}
 
-		System.out.print("}" + jsonb.linefeed); // json document end
+		System.out.print("}" + jsonb.linefeed); // JSON document end
 
 		jsonb.builder.setLength(0);
 
@@ -4434,7 +4432,7 @@ public class PgSchema {
 		}
 
 		if (!table.virtual)
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.linefeed); // json own object start
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.linefeed); // JSON own object start
 
 		fields.stream().filter(field -> !field.user_key && !field.system_key && !(jsonb.has_discard_doc_key && field.xname.equals(jsonb.discard_doc_key))).forEach(field -> jsonb.writeSchemaFieldProperty(field, true, false, json_indent_level + (table.virtual ? 0 : 1)));
 
@@ -4446,19 +4444,19 @@ public class PgSchema {
 		if (table.nested_fields > 0) {
 
 			if (!table.virtual)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // json child items start
+				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // JSON child items start
 
 			int[] _list_id = { 0 };
 
 			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(table, tables.get(field.foreign_table_id), _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : 2)));
 
 			if (!table.virtual)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.linefeed); // json child items end
+				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.linefeed); // JSON child items end
 
 		}
 
 		if (!table.virtual)
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "}" + (list_id < list_size - 1 ? "," : "") + jsonb.linefeed); // json own items end
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "}" + (list_id < list_size - 1 ? "," : "") + jsonb.linefeed); // JSON own items end
 
 	}
 
@@ -4503,11 +4501,11 @@ public class PgSchema {
 
 			FileWriter json_writer = new FileWriter(new File(json_file_name));
 
-			json_writer.write("{" + jsonb.linefeed); // json document start
+			json_writer.write("{" + jsonb.linefeed); // JSON document start
 
 			json_writer.write(jsonb.builder.toString());
 
-			json_writer.write("}" + jsonb.linefeed); // json document end
+			json_writer.write("}" + jsonb.linefeed); // JSON document end
 
 			json_writer.close();
 
@@ -4647,7 +4645,7 @@ public class PgSchema {
 
 		List<PgField> fields = root_table.fields;
 
-		System.out.print("{" + jsonb.linefeed); // json document start
+		System.out.print("{" + jsonb.linefeed); // JSON document start
 
 		System.out.print(jsonb.getIndentSpaces(1) + "\"$schema\":" + jsonb.key_value_space + "\"" + PgSchemaUtil.json_schema_def + "\"," + jsonb.linefeed); // declaring a JSON Schema
 
@@ -4719,7 +4717,7 @@ public class PgSchema {
 		}
 
 		if (!root_table.virtual)
-			System.out.print(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.linefeed); // json own items start
+			System.out.print(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.linefeed); // JSON own items start
 
 		fields.stream().filter(field -> !field.user_key && !field.system_key && !(jsonb.has_discard_doc_key && field.xname.equals(jsonb.discard_doc_key))).forEach(field -> jsonb.writeSchemaFieldProperty(field, !field.list_holder, field.list_holder, 2));
 
@@ -4729,7 +4727,7 @@ public class PgSchema {
 		jsonb.builder.setLength(0);
 
 		if (!root_table.virtual)
-			System.out.print(jsonb.getIndentSpaces(2) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // json child items start
+			System.out.print(jsonb.getIndentSpaces(2) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // JSON child items start
 
 		int[] list_id = { 0 };
 
@@ -4737,13 +4735,13 @@ public class PgSchema {
 
 		if (!root_table.virtual) {
 
-			System.out.print(jsonb.getIndentSpaces(2) + "}" + jsonb.linefeed); // json child items end
+			System.out.print(jsonb.getIndentSpaces(2) + "}" + jsonb.linefeed); // JSON child items end
 
-			System.out.print(jsonb.getIndentSpaces(1) + "}" + jsonb.linefeed); // json own items end
+			System.out.print(jsonb.getIndentSpaces(1) + "}" + jsonb.linefeed); // JSON own items end
 
 		}
 
-		System.out.print("}" + jsonb.linefeed); // json document end
+		System.out.print("}" + jsonb.linefeed); // JSON document end
 
 		jsonb.builder.setLength(0);
 
@@ -4801,7 +4799,7 @@ public class PgSchema {
 		}
 
 		if (!table.virtual)
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.linefeed); // json own items start
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.linefeed); // JSON own items start
 
 		fields.stream().filter(field -> !field.user_key && !field.system_key && !(jsonb.has_discard_doc_key && field.xname.equals(jsonb.discard_doc_key))).forEach(field -> jsonb.writeSchemaFieldProperty(field, obj_json && !field.list_holder, !table.virtual || field.list_holder, json_indent_level + (table.virtual ? 0 : 1)));
 
@@ -4813,19 +4811,19 @@ public class PgSchema {
 		if (table.nested_fields > 0) {
 
 			if (!table.virtual)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // json child items start
+				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // JSON child items start
 
 			int[] _list_id = { 0 };
 
 			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(table, tables.get(field.foreign_table_id), _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : 2)));
 
 			if (!table.virtual)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.linefeed); // json child items end
+				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.linefeed); // JSON child items end
 
 		}
 
 		if (!table.virtual)
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "}" + jsonb.linefeed); // json own items end
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "}" + jsonb.linefeed); // JSON own items end
 
 	}
 
@@ -4870,11 +4868,11 @@ public class PgSchema {
 
 			FileWriter json_writer = new FileWriter(new File(json_file_name));
 
-			json_writer.write("{" + jsonb.linefeed); // json document start
+			json_writer.write("{" + jsonb.linefeed); // JSON document start
 
 			json_writer.write(jsonb.builder.toString());
 
-			json_writer.write("}" + jsonb.linefeed); // json document end
+			json_writer.write("}" + jsonb.linefeed); // JSON document end
 
 			json_writer.close();
 
@@ -4972,7 +4970,7 @@ public class PgSchema {
 
 		hasRootTable();
 
-		System.out.print("{" + jsonb.linefeed); // json document start
+		System.out.print("{" + jsonb.linefeed); // JSON document start
 
 		System.out.print(jsonb.getIndentSpaces(1) + "\"$schema\":" + jsonb.key_value_space + "\"" + PgSchemaUtil.json_schema_def + "\"," + jsonb.linefeed); // declaring a JSON Schema
 
@@ -5033,7 +5031,7 @@ public class PgSchema {
 
 		}
 
-		System.out.print(jsonb.linefeed + "}" + jsonb.linefeed); // json document end
+		System.out.print(jsonb.linefeed + "}" + jsonb.linefeed); // JSON document end
 
 		jsonb.builder.setLength(0);
 
@@ -5083,7 +5081,7 @@ public class PgSchema {
 
 		}
 
-		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.linefeed); // json own items start
+		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.linefeed); // JSON own items start
 
 		fields.stream().filter(field -> !field.user_key && !field.system_key && !(jsonb.has_discard_doc_key && field.xname.equals(jsonb.discard_doc_key))).forEach(field -> {
 
@@ -5100,7 +5098,7 @@ public class PgSchema {
 
 		jsonb.builder.setLength(0);
 
-		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "}"); // json own items end
+		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "}"); // JSON own items end
 
 	}
 
@@ -5134,7 +5132,7 @@ public class PgSchema {
 
 			FileWriter json_writer = new FileWriter(new File(json_file_name));
 
-			json_writer.write("{" + jsonb.linefeed); // json document start
+			json_writer.write("{" + jsonb.linefeed); // JSON document start
 
 			boolean has_category = false;
 
@@ -5154,7 +5152,7 @@ public class PgSchema {
 						if (has_category)
 							json_writer.write("," + jsonb.linefeed);
 
-						json_writer.write(jsonb.getIndentSpaces(1) + "\"" + _table.name + "\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // json object start
+						json_writer.write(jsonb.getIndentSpaces(1) + "\"" + _table.name + "\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // JSON object start
 
 						boolean has_field = false;
 
@@ -5194,7 +5192,7 @@ public class PgSchema {
 						if (has_field)
 							json_writer.write(jsonb.linefeed);
 
-						json_writer.write(jsonb.getIndentSpaces(1) + "}"); // json object end
+						json_writer.write(jsonb.getIndentSpaces(1) + "}"); // JSON object end
 
 						has_category = true;
 
@@ -5207,7 +5205,7 @@ public class PgSchema {
 			if (has_category)
 				json_writer.write(jsonb.linefeed);
 
-			json_writer.write("}" + jsonb.linefeed); // json document end
+			json_writer.write("}" + jsonb.linefeed); // JSON document end
 
 			json_writer.close();
 

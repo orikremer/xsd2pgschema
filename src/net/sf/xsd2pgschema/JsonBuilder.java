@@ -48,7 +48,7 @@ public class JsonBuilder {
 	/** The white spaces between JSON item and JSON data. */
 	String key_value_space = " ";
 
-	/** The linefeed code in JSON document. */
+	/** The line feed code in JSON document. */
 	String linefeed = "\n";
 
 	/** Whether if retain field annotation or not. */
@@ -211,17 +211,17 @@ public class JsonBuilder {
 
 			builder.append(getIndentSpaces(indent_level) + "\"type\":" + key_value_space + "\"array\"," + linefeed);
 
-			builder.append(getIndentSpaces(indent_level++) + "\"items\":" + key_value_space + "{" + linefeed); // json items start
+			builder.append(getIndentSpaces(indent_level++) + "\"items\":" + key_value_space + "{" + linefeed); // JSON items start
 
 			writeSchemaFieldProperty(field, true, indent_level);
 
-			builder.append(getIndentSpaces(--indent_level) + "}," + linefeed); // json items end
+			builder.append(getIndentSpaces(--indent_level) + "}," + linefeed); // JSON items end
 
 		}
 
 		else { // object or array
 
-			builder.append(getIndentSpaces(indent_level++) + "\"oneOf\":" + key_value_space + "[" + linefeed); // json oneOf start
+			builder.append(getIndentSpaces(indent_level++) + "\"oneOf\":" + key_value_space + "[" + linefeed); // JSON oneOf start
 
 			builder.append(getIndentSpaces(indent_level++) + "{" + linefeed);
 
@@ -233,15 +233,15 @@ public class JsonBuilder {
 
 			builder.append(getIndentSpaces(indent_level) + "\"type\":" + key_value_space + "\"array\"," + linefeed);
 
-			builder.append(getIndentSpaces(indent_level++) + "\"items\":" + key_value_space + "{" + linefeed); // json items start
+			builder.append(getIndentSpaces(indent_level++) + "\"items\":" + key_value_space + "{" + linefeed); // JSON items start
 
 			writeSchemaFieldProperty(field, false, indent_level);
 
-			builder.append(getIndentSpaces(--indent_level) + "}" + linefeed); // json items end
+			builder.append(getIndentSpaces(--indent_level) + "}" + linefeed); // JSON items end
 
 			builder.append(getIndentSpaces(--indent_level) + "}" + linefeed);
 
-			builder.append(getIndentSpaces(--indent_level) + "]," + linefeed); // json oneOf end
+			builder.append(getIndentSpaces(--indent_level) + "]," + linefeed); // JSON oneOf end
 
 		}
 
@@ -375,7 +375,7 @@ public class JsonBuilder {
 
 		}
 
-		builder.append(getIndentSpaces(indent_level) + (object ? "\"" + table.name + "\":" + key_value_space : "") + "{" + linefeed); // json object start
+		builder.append(getIndentSpaces(indent_level) + (object ? "\"" + table.name + "\":" + key_value_space : "") + "{" + linefeed); // JSON object start
 
 		return builder.length();
 	}
@@ -417,7 +417,7 @@ public class JsonBuilder {
 
 		}
 
-		builder.append(getIndentSpaces(indent_level) + "\"" + table.name + "\":" + key_value_space + "[" + linefeed); // json array start
+		builder.append(getIndentSpaces(indent_level) + "\"" + table.name + "\":" + key_value_space + "[" + linefeed); // JSON array start
 
 		return builder.length();
 	}
@@ -506,7 +506,7 @@ public class JsonBuilder {
 
 			}
 
-			builder.append(getIndentSpaces(indent_level) + "}" + linefeed); // json object end
+			builder.append(getIndentSpaces(indent_level) + "}" + linefeed); // JSON object end
 
 		}
 
@@ -538,7 +538,7 @@ public class JsonBuilder {
 
 			}
 
-			builder.append(getIndentSpaces(indent_level) + "]" + linefeed); // json object end
+			builder.append(getIndentSpaces(indent_level) + "]" + linefeed); // JSON object end
 
 		}
 

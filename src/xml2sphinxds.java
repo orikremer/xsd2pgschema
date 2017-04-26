@@ -47,7 +47,7 @@ public class xml2sphinxds {
 	/** The data source name. */
 	public static String ds_name = "";
 
-	/** The data source direcotry name. */
+	/** The data source directory name. */
 	public static String ds_dir_name = "sphinx_xmlpipe2";
 
 	/** The schema option. */

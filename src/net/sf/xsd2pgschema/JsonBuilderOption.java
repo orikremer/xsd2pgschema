@@ -28,29 +28,29 @@ import org.apache.commons.lang3.StringEscapeUtils;
  */
 public class JsonBuilderOption {
 
-	/** The attr prefix. */
-	public String attr_prefix = ""; // prefix of JSON item name of xs:attribute
-	
-	/** The simple cont key. */
-	public String simple_cont_key = PgSchemaUtil.simple_cont_name; // JSON item name of xs:simpleContent
-	
-	/** The discard doc key. */
-	public String discard_doc_key = ""; // discarded JSON item name stands for document key
+	/** The prefix of JSON item name of xs:attribute. */
+	public String attr_prefix = "";
 
-	/** The indent spaces. */
-	public int indent_spaces = PgSchemaUtil.indent_spaces; // length of white spaces for indent
-	
-	/** The key value spaces. */
-	public int key_value_spaces = 1; // length of white spaces between key and value
+	/** The JSON item name of xs:simpleContent. */
+	public String simple_cont_key = PgSchemaUtil.simple_cont_name;
 
-	/** The no field anno. */
-	public boolean no_field_anno = false; // whether retain field annotation or not
-	
-	/** The linefeed. */
-	public boolean linefeed = true; // whether use linefeed code in JSON document
-	
-	/** The array all. */
-	public boolean array_all = false; // use JSON array uniformly for descendant
+	/** The JSON item name of discarded document key. */
+	public String discard_doc_key = "";
+
+	/** The length of white spaces for indent. */
+	public int indent_spaces = PgSchemaUtil.indent_spaces;
+
+	/** The length of white spaces between key and value. */
+	public int key_value_spaces = 1;
+
+	/** Whether retain field annotation or not. */
+	public boolean no_field_anno = false;
+
+	/** Whether use line feed code in JSON document. */
+	public boolean linefeed = true;
+
+	/** Whether use JSON array uniformly for descendants. */
+	public boolean array_all = false;
 
 	/**
 	 * Set prefix in JSON document of xs:attribute.

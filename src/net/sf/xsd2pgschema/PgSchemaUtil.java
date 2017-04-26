@@ -106,7 +106,7 @@ public class PgSchemaUtil {
 	/** The Sphinx schema file name. */
 	public final static String sphinx_schema_name = ".schema_part.xml";
 
-	/** The Sphinx configration file name. */
+	/** The Sphinx configuration file name. */
 	public final static String sphinx_conf_name = "data_source.conf";
 
 	/** The prefix of Sphinx data source file. */

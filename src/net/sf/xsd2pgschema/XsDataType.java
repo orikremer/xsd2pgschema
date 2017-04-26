@@ -1748,11 +1748,11 @@ public enum XsDataType {
 	}
 
 	/**
-	 * Return JSON Schema enum array.
+	 * Return JSON Schema enumeration array.
 	 *
 	 * @param field PostgreSQL field
-	 * @param json_key_value_space the json key value space
-	 * @return String JSON Schema enum array
+	 * @param json_key_value_space the JSON key value space
+	 * @return String JSON Schema enumeration array
 	 */
 	public static String getJsonSchemaEnumArray(PgField field, String json_key_value_space) {
 
@@ -1829,7 +1829,7 @@ public enum XsDataType {
 	 * Return JSON Schema maximum value.
 	 *
 	 * @param field PostgreSQL field
-	 * @param json_key_value_space the json key value space
+	 * @param json_key_value_space the JSON key value space
 	 * @return String JSON Schema maximum value
 	 */
 	public static String getJsonSchemaMaximumValue(PgField field, String json_key_value_space) {
@@ -2120,7 +2120,7 @@ public enum XsDataType {
 	 * Return JSON Schema minimum value.
 	 *
 	 * @param field PostgreSQL field
-	 * @param json_key_value_space the json key value space
+	 * @param json_key_value_space the JSON key value space
 	 * @return String JSON Schema minimum value
 	 */
 	public static String getJsonSchemaMinimumValue(PgField field, String json_key_value_space) {
@@ -2913,10 +2913,10 @@ public enum XsDataType {
 
 	}
 
-	// Lucene index
+	// Lucene full-text indexing
 
 	/**
-	 * Set value for Lucene full-text indexing.
+	 * Set value to Lucene document.
 	 *
 	 * @param field PostgreSQL field
 	 * @param lucene_doc Lucene document
@@ -3039,10 +3039,10 @@ public enum XsDataType {
 
 	}
 
-	// Sphinx data source
+	// Sphinx full-text indexing
 
 	/**
-	 * Set value as Sphinx data source.
+	 * Set value to Sphinx data source.
 	 *
 	 * @param field PostgreSQL field
 	 * @param writer the writer
