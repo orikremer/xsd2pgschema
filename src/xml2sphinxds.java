@@ -35,7 +35,7 @@ import org.apache.commons.io.comparator.SizeFileComparator;
 import org.xml.sax.SAXException;
 
 /**
- * Sphinx data source (xmlpipe2) conversion.
+ * Sphinx full-text indexing.
  * 
  * @author yokochi
  */
@@ -46,7 +46,7 @@ public class xml2sphinxds {
 
 	/** The data source name. */
 	public static String ds_name = "";
-	
+
 	/** The data source direcotry name. */
 	public static String ds_dir_name = "sphinx_xmlpipe2";
 
@@ -55,7 +55,7 @@ public class xml2sphinxds {
 
 	/** The XML file filter. */
 	public static XmlFileFilter xml_file_filter = new XmlFileFilter();
-	
+
 	/** The XML post editor. */
 	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
@@ -70,10 +70,10 @@ public class xml2sphinxds {
 
 	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
-	
+
 	/** The available processors. */
 	private static final int cpu_num = runtime.availableProcessors();
-	
+
 	/** The max threads. */
 	private static int max_thrds = cpu_num;
 

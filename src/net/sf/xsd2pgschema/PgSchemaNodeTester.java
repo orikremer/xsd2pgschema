@@ -128,6 +128,7 @@ public class PgSchemaNodeTester {
 					key_name = key_name.substring(0, key_name.lastIndexOf("["));
 
 				key_name += "[" + key_id + "]"; // XPath predicate
+
 			}
 
 		}

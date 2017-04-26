@@ -51,7 +51,7 @@ import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 /**
- * PostgreSQL schema constructor based on XML Schema.
+ * PostgreSQL schema constructor.
  *
  * @author yokochi
  */
@@ -2607,24 +2607,24 @@ public class PgSchema {
 
 	// post XML editorial functions
 
-	/** Whether if filt-in options are resolved. */
+	/** Whether if filt-in option are resolved. */
 	private boolean filt_in_resolved = false;
 
 	/**
-	 * Apply filt-in options.
+	 * Apply filt-in option.
 	 *
-	 * @param filt_ins filt-in options
+	 * @param filt_ins filt-in option
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void applyFiltIn(List<String> filt_ins) throws PgSchemaException {
-
-		if (filt_ins.size() == 0)
-			return;
 
 		if (filt_in_resolved)
 			return;
 
 		filt_in_resolved = true;
+
+		if (filt_ins.size() == 0)
+			return;
 
 		for (String filt_in : filt_ins) {
 
@@ -2708,13 +2708,24 @@ public class PgSchema {
 
 	}
 
+	/** Whether if filt-out option are resolved. */
+	private boolean filt_out_resolved = false;
+
 	/**
-	 * Apply filt-out options.
+	 * Apply filt-out option.
 	 *
-	 * @param filt_outs filt-out options
+	 * @param filt_outs filt-out option
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void applyFiltOut(List<String> filt_outs) throws PgSchemaException {
+
+		if (filt_out_resolved)
+			return;
+
+		filt_out_resolved = true;
+
+		if (filt_outs.size() == 0)
+			return;
 
 		for (String filt_out : filt_outs) {
 
@@ -2774,13 +2785,24 @@ public class PgSchema {
 
 	}
 
+	/** Whether if fill-this option are resolved. */
+	private boolean fill_this_resolved = false;
+
 	/**
-	 * Apply fill-this options.
+	 * Apply fill-this option.
 	 *
-	 * @param fill_these fill-this options
+	 * @param fill_these fill-this option
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void applyFillThis(List<String> fill_these) throws PgSchemaException {
+
+		if (fill_this_resolved)
+			return;
+
+		fill_this_resolved = true;
+
+		if (fill_these.size() == 0)
+			return;
 
 		for (String fill_this : fill_these) {
 
@@ -2831,9 +2853,9 @@ public class PgSchema {
 	protected boolean attr_resolved = false;
 
 	/**
-	 * Apply attr options for full-text indexing.
+	 * Apply attr option for full-text indexing.
 	 *
-	 * @param attrs attr options
+	 * @param attrs attr option
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void applyAttr(final List<String> attrs) throws PgSchemaException {
@@ -2841,11 +2863,11 @@ public class PgSchema {
 		if (attr_resolved)
 			return;
 
+		attr_resolved = true;
+
 		if (attrs == null) { // all attributes are selected
 
 			tables.forEach(table -> table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true));
-
-			attr_resolved = true;
 
 			return;
 		}
@@ -2888,20 +2910,13 @@ public class PgSchema {
 
 					field.attr_sel = true;
 
-					attr_resolved = true;
-
 				}
 
 				else
 					throw new PgSchemaException("Not found " + field_name + " field in " + table_name + " table.");
 
-			} else {
-
+			} else
 				fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true);
-
-				attr_resolved = true;
-
-			}
 
 		}
 
@@ -2911,14 +2926,19 @@ public class PgSchema {
 	protected boolean field_resolved = false;
 
 	/**
-	 * Apply field options for full-text indexing.
+	 * Apply field option for full-text indexing.
 	 *
-	 * @param fields field options
+	 * @param fields field option
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void applyField(final List<String> fields) throws PgSchemaException {
 
-		if (field_resolved || fields.size() == 0)
+		if (field_resolved)
+			return;
+
+		field_resolved = true;
+
+		if (fields.size() == 0)
 			return;
 
 		for (String field : fields) {
@@ -2956,25 +2976,15 @@ public class PgSchema {
 
 					_field.field_sel = true;
 
-					field_resolved = true;
-
 				}
 
 				else
 					throw new PgSchemaException("Not found " + field_name + " field in " + table_name + " table.");
 
-			} else {
-
+			} else
 				_fields.stream().filter(_field -> !_field.system_key && !_field.user_key).forEach(_field -> _field.field_sel = true);
 
-				field_resolved = true;
-
-			}
-
 		}
-
-		if (filt_in_resolved)
-			return;
 
 		for (int t = 0; t < tables.size(); t++) {
 
@@ -3002,8 +3012,6 @@ public class PgSchema {
 			_table.required = false;
 
 		}
-
-		filt_in_resolved = true;
 
 	}
 
@@ -3708,12 +3716,12 @@ public class PgSchema {
 
 	}
 
-	// Sphinx xmlpipe2
+	// Sphinx full-text indexing
 
 	/**
 	 * Extract Sphinx schema part and map sphinx:field and sphinx:attr in PgSchema.
 	 *
-	 * @param sph_doc Sphinx xmlpipe2 document
+	 * @param sph_doc Sphinx xmlpipe2 file
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void syncSphSchema(Document sph_doc) throws PgSchemaException {
@@ -3778,7 +3786,7 @@ public class PgSchema {
 	 * Write Sphinx schema part.
 	 *
 	 * @param sphinx_schema Sphinx xmlpipe2 file
-	 * @param data_source whether it is xmlpipe2 or schema
+	 * @param data_source whether it is data source or schema
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void writeSphSchema(File sphinx_schema, boolean data_source) throws PgSchemaException {
@@ -4038,7 +4046,7 @@ public class PgSchema {
 	 * Sphinx xmlpipe2 conversion.
 	 *
 	 * @param xml_parser XML document
-	 * @param writer writer of Sphinx xmlpipe2
+	 * @param writer writer of Sphinx xmlpipe2 file
 	 * @param xml_post_editor XML post editing
 	 * @param index_filter index filter
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -4067,7 +4075,7 @@ public class PgSchema {
 
 		});
 
-		// parse root node and store data to Sphinx xmlpipe2
+		// parse root node and store data to Sphinx xmlpipe2 file
 
 		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(this, null, root_table);
 
@@ -4089,7 +4097,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store data to Sphinx xmlpipe2.
+	 * Parse current node and store data to Sphinx xmlpipe2 file.
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
