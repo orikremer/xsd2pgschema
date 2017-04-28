@@ -262,7 +262,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 						e.printStackTrace();
 					}
 
-					sph_doc.deleteOnExit();
+					sph_doc.delete();
 
 				}
 
