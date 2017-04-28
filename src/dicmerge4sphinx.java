@@ -38,6 +38,9 @@ import org.apache.commons.lang3.StringEscapeUtils;
  */
 public class dicmerge4sphinx {
 
+	/** The data source directory name. */
+	public static String ds_dir_name = xml2sphinxds.ds_dir_name;
+
 	/** The frequency threshold. */
 	public static int freq_threshold = 10;
 
@@ -53,7 +56,10 @@ public class dicmerge4sphinx {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--dic"))
+			if (args[i].equals("--ds-dir"))
+				ds_dir_name = args[++i];
+
+			else if (args[i].equals("--dic"))
 				dic_file_list.add(args[++i]);
 
 			else if (args[i].equals("--freq"))
@@ -69,6 +75,17 @@ public class dicmerge4sphinx {
 		if (dic_file_list.size() == 0) {
 			System.err.println("There is no source dictionary to merge.");
 			showUsage();
+		}
+
+		File ds_dir = new File(ds_dir_name);
+
+		if (!ds_dir.isDirectory()) {
+
+			if (!ds_dir.mkdir()) {
+				System.err.println("Couldn't create directory '" + ds_dir_name + "'.");
+				System.exit(1);
+			}
+
 		}
 
 		try {
@@ -119,7 +136,7 @@ public class dicmerge4sphinx {
 
 			}
 
-			File sphinx_data_source = new File(PgSchemaUtil.sphinx_data_source_name);
+			File sphinx_data_source = new File(ds_dir_name, PgSchemaUtil.sphinx_data_source_name);
 
 			FileWriter filew = new FileWriter(sphinx_data_source);
 
@@ -195,7 +212,8 @@ public class dicmerge4sphinx {
 	private static void showUsage() {
 
 		System.err.println("dicmerge4sphinx: Sphinx data source -> Sphinx dictionary index");
-		System.err.println("Usage:  --dic DIC_FILE (repeat until you specify all dictionaries)");
+		System.err.println("Usage:  --ds-dir DIRECTORY (default=\"" + ds_dir_name + "\")");
+		System.err.println("        --dic DIC_FILE (repeat until you specify all dictionaries)");
 		System.err.println("Option: --freq FREQ_THRESHOLD (default=" + freq_threshold + ")");
 		System.exit(1);
 
