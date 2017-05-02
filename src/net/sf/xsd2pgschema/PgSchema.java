@@ -615,6 +615,7 @@ public class PgSchema {
 
 					PgTable parent_table = tables.get(t);
 
+					boolean has_content = false;
 					boolean has_foreign_key = false;
 
 					do {
@@ -635,6 +636,9 @@ public class PgSchema {
 							}
 
 						}
+
+						if (!has_foreign_key && _parent_table.cont_holder)
+							has_content = true;
 
 						for (PgTable ancestor_table : tables) { // ancestor table
 
@@ -666,7 +670,7 @@ public class PgSchema {
 							break;
 						}
 
-					} while (!has_foreign_key && !infinite_loop);
+					} while (!has_content && !has_foreign_key && !infinite_loop);
 
 				}
 
