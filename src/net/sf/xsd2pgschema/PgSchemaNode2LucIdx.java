@@ -64,7 +64,23 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	@Override
 	public void parseRootNode(final Node proc_node) throws TransformerException, IOException {
 
-		parse(false, proc_node, null, key_name = document_id + "/" + table.name, nested, 1);
+		current_key = document_id + "/" + table.name;
+
+		parse(false, proc_node, null, current_key, current_key, nested, 1);
+
+	}
+
+	/**
+	 * Parse processing node (child).
+	 *
+	 * @param node_test node tester
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws TransformerException the transformer exception
+	 */
+	@Override
+	public void parseChildNode(final PgSchemaNodeTester node_test) throws IOException, TransformerException {
+
+		parse(true, node_test.proc_node, node_test.parent_key, node_test.primary_key, node_test.current_key, node_test.nested, node_test.key_id);
 
 	}
 
@@ -73,16 +89,15 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 *
 	 * @param proc_node processing node
 	 * @param parent_key key name of parent node
-	 * @param key_name processing key name
+	 * @param proc_key processing key name
 	 * @param nested whether it is nested
-	 * @param key_id ordinal number of current node
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	@Override
-	public void parseChildNode(final Node proc_node, final String parent_key, final String key_name, final boolean nested, final int key_id) throws TransformerException, IOException {
+	public void parseChildNode(final Node proc_node, final String parent_key, final String proc_key, final boolean nested) throws TransformerException, IOException {
 
-		parse(true, proc_node, parent_key, key_name, nested, key_id);
+		parse(true, proc_node, parent_key, proc_key, proc_key, nested, 1);
 
 	}
 
@@ -91,14 +106,15 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 *
 	 * @param child_node whether if child node
 	 * @param proc_node processing node
-	 * @param parent_key key name of parent node
-	 * @param key_name processing key name
+	 * @param parent_key name of parent node
+	 * @param primary_key name of primary key
+	 * @param current_key name of current node
 	 * @param nested whether it is nested
 	 * @param key_id ordinal number of current node
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void parse(final boolean child_node, final Node proc_node, final String parent_key, final String key_name, final boolean nested, final int key_id) throws TransformerException, IOException {
+	private void parse(final boolean child_node, final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean nested, final int key_id) throws TransformerException, IOException {
 
 		Arrays.fill(values, "");
 
@@ -120,7 +136,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			else if (field.primary_key) {
 
 				if (table.lucene_doc != null && rel_data_ext)
-					values[f] = schema.getHashKeyString(key_name);
+					values[f] = schema.getHashKeyString(primary_key);
 
 			}
 
@@ -141,10 +157,10 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			else if (field.nested_key) {
 
-				if (setNestedKey(field, key_name, key_id)) {
+				if (setNestedKey(field, current_key, key_id)) {
 
 					if (table.lucene_doc != null && rel_data_ext)
-						values[f] = schema.getHashKeyString(nested_key_name[nested_fields]);
+						values[f] = schema.getHashKeyString(nested_key[nested_fields]);
 
 					nested_fields++;
 
@@ -204,7 +220,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			if (child_node) {
 
 				this.nested = nested;
-				this.key_name = key_name;
+				this.current_key = current_key;
 
 			}
 
@@ -258,7 +274,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			return;
 
 		for (int n = 0; n < nested_fields; n++)
-			schema.parseChildNode2LucIdx(proc_node, table, schema.getTable(nested_table_id[n]), key_name, nested_key_name[n], list_holder[n], table.bridge, 0);
+			schema.parseChildNode2LucIdx(proc_node, table, schema.getTable(nested_table_id[n]), current_key, nested_key[n], list_holder[n], table.bridge, 0);
 
 	}
 
@@ -284,7 +300,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			boolean exists = existsNestedNode(schema, nested_table, node_test.proc_node);
 
-			schema.parseChildNode2LucIdx(exists || nested ? node_test.proc_node : proc_node, table, nested_table, node_test.key_name, nested_key_name[n], list_holder[n], !exists, exists ? 0 : node_test.key_id);
+			schema.parseChildNode2LucIdx(exists || nested ? node_test.proc_node : proc_node, table, nested_table, node_test.current_key, nested_key[n], list_holder[n], !exists, exists ? 0 : node_test.key_id);
 
 		}
 
@@ -308,7 +324,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			PgTable nested_table = schema.getTable(nested_table_id[n]);
 
 			if (existsNestedNode(schema, nested_table, proc_node))
-				schema.parseChildNode2LucIdx(proc_node, table, nested_table, key_name, nested_key_name[n], list_holder[n], false, 0);
+				schema.parseChildNode2LucIdx(proc_node, table, nested_table, current_key, nested_key[n], list_holder[n], false, 0);
 
 		}
 

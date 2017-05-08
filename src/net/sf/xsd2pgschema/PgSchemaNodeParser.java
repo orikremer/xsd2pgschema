@@ -69,7 +69,7 @@ public abstract class PgSchemaNodeParser {
 	int[] nested_table_id = null;
 
 	/** The nested key name. */
-	String[] nested_key_name = null;
+	String[] nested_key = null;
 
 	/** Whether if values were filled. */
 	boolean filled = true;
@@ -87,7 +87,7 @@ public abstract class PgSchemaNodeParser {
 	Node proc_node;
 
 	/** The current key name. */
-	String key_name;
+	String current_key;
 
 	/** The document id. */
 	String document_id = null;
@@ -137,7 +137,7 @@ public abstract class PgSchemaNodeParser {
 
 		list_holder = new boolean[table.nested_fields];
 		nested_table_id = new int[table.nested_fields];
-		nested_key_name = new String[table.nested_fields];
+		nested_key = new String[table.nested_fields];
 
 		if (table.fields.stream().anyMatch(field -> field.any || field.any_attribute)) {
 
@@ -165,14 +165,21 @@ public abstract class PgSchemaNodeParser {
 	/**
 	 * Abstract parser of processing node (child).
 	 *
-	 * @param node processing node
-	 * @param parent_key key name of parent node
-	 * @param key_name processing key name
-	 * @param nested whether it is nested
-	 * @param key_id ordinal number of current node
+	 * @param node_test node tester
 	 * @throws Exception the exception
 	 */
-	abstract public void parseChildNode(final Node node, final String parent_key, final String key_name, final boolean nested, final int key_id) throws Exception;
+	abstract public void parseChildNode(final PgSchemaNodeTester node_test) throws Exception;
+
+	/**
+	 * Abstract parser of processing node (child).
+	 *
+	 * @param node processing node
+	 * @param parent_key key name of parent node
+	 * @param proc_key processing key name
+	 * @param nested whether it is nested
+	 * @throws Exception the exception
+	 */
+	abstract public void parseChildNode(final Node node, final String parent_key, final String proc_key, final boolean nested) throws Exception;
 
 	/**
 	 * Abstract invoker nested node (root).
@@ -200,29 +207,23 @@ public abstract class PgSchemaNodeParser {
 	 * Set nested key.
 	 *
 	 * @param field current field
-	 * @param key_name processing key name
+	 * @param proc_key processing key name
 	 * @param key_id ordinal number of current node
 	 * @return boolean whether success or not
 	 */
-	public boolean setNestedKey(final PgField field, final String key_name, final int key_id) {
+	public boolean setNestedKey(final PgField field, final String proc_key, final int key_id) {
 
-		if (!matchesParentNode(key_name, field.parent_node))
+		if (!matchesParentNode(proc_key, field.parent_node))
 			return false;
 
 		PgTable nested_table = schema.getTable(field.foreign_table_id);
 
 		list_holder[nested_fields] = field.list_holder;
 		nested_table_id[nested_fields] = field.foreign_table_id;
-		nested_key_name[nested_fields] = key_name;
+		nested_key[nested_fields] = proc_key;
 
-		if (!nested_table.virtual) {
-
-			nested_key_name[nested_fields] += "/" + field.foreign_table; // XPath child
-
-			if (field.list_holder)
-				nested_key_name[nested_fields] += "[" + key_id + "]"; // XPath predicate
-
-		}
+		if (!nested_table.virtual)
+			nested_key[nested_fields] += "/" + field.foreign_table; // XPath child
 
 		return true;
 	}
@@ -230,16 +231,16 @@ public abstract class PgSchemaNodeParser {
 	/**
 	 * Return whether if parent node's name matches.
 	 *
-	 * @param key_name processing key name
+	 * @param proc_key processing key name
 	 * @param parent_node the parent node
 	 * @return boolean whether if parent node's name matches
 	 */
-	private boolean matchesParentNode(final String key_name, final String parent_node) {
+	private boolean matchesParentNode(final String proc_key, final String parent_node) {
 
 		if (parent_node == null)
 			return true;
 
-		String[] path = key_name.substring(document_id_len).split("\\/"); // XPath notation
+		String[] path = proc_key.substring(document_id_len).split("\\/"); // XPath notation
 
 		String node_name = path[path.length - (table.virtual ? 1 : 2)];
 

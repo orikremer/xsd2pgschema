@@ -31,8 +31,14 @@ public class PgSchemaNodeTester {
 	/** The ordinal number in sibling node. */
 	public int key_id = 1;
 
+	/** The parent key name. */
+	public String parent_key = null;
+
+	/** The current primary key name. */
+	public String primary_key = null;
+
 	/** The current key name. */
-	public String key_name = null;
+	public String current_key = null;
 
 	/** The processing node. */
 	public Node proc_node = null;
@@ -57,12 +63,13 @@ public class PgSchemaNodeTester {
 	 * @param node current node
 	 * @param parent_table parent table
 	 * @param table current table
-	 * @param key_base basename of current node
+	 * @param parent_key name of parent node
+	 * @param proc_key name of processing node
 	 * @param list_holder whether parent field is list holder
 	 * @param nested whether it is nested
 	 * @param nest_id ordinal number of current node in nested case
 	 */
-	public PgSchemaNodeTester(final PgSchema schema, final Node parent_node, final Node node, final PgTable parent_table, final PgTable table, final String key_base, final boolean list_holder, final boolean nested, final int nest_id) {
+	public PgSchemaNodeTester(final PgSchema schema, final Node parent_node, final Node node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id) {
 
 		boolean virtual = table.virtual;
 
@@ -88,9 +95,11 @@ public class PgSchemaNodeTester {
 
 		}
 
+		this.parent_key = parent_key;
+
 		// processing key name
 
-		key_name = key_base;
+		primary_key = current_key = proc_key;
 
 		if (list_holder) {
 
@@ -120,16 +129,8 @@ public class PgSchemaNodeTester {
 				return;
 			}
 
-			if (!virtual) {
-
-				// relabeling ordinal number in sibling node
-
-				if (key_name.endsWith("]"))
-					key_name = key_name.substring(0, key_name.lastIndexOf("["));
-
-				key_name += "[" + key_id + "]"; // XPath predicate
-
-			}
+			if (!virtual)
+				current_key += "[" + key_id + "]"; // XPath predicate
 
 		}
 
