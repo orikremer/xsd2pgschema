@@ -2,6 +2,7 @@
 
   Fixed primary hash key which causes unreachable relational data.
   Revised index policy that index all data unless user didn't specify field option, previously string data were indexed in that case.
+  Added --attr-string, --attr-integer, --attr-float, --attr-date and --attr-time option to enable type dependent attribute selection in full-text indexing.
 
  Changes in xsd2pgschema 2.4.3 (release 2017-05-08)
 
