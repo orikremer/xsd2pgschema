@@ -1,6 +1,6 @@
  Changes in xsd2pgschema 2.4.4 (release 2017-05-10)
 
-  Fixed primary hash key which causes unreachable relational data.
+  Fixed primary hash key which caused unreachable relational data.
   Revised index policy that index all data unless user didn't specify field option, previously string data were indexed in that case.
   Added --attr-string, --attr-integer, --attr-float, --attr-date and --attr-time option to enable type dependent attribute selection in full-text indexing.
 
@@ -11,7 +11,7 @@
   Fixed collapsed JSON in case of multiple JSON conversion.
   Dropped --ow-csv, --ow-idx and --ow-ds option and appending mode has been turned off by default (to turn on, please use --append option).
   Deployed to the Maven Central Repository.
-  Fixed fault detection of parent node name list which causes missing of data.
+  Fixed fault detection of parent node name list which caused missing of data.
   Fixed XPath predicate error in list holder.
 
  Changes in xsd2pgschema 2.4.2 (release 2017-04-18)
@@ -24,7 +24,7 @@
  Changes in xsd2pgschema 2.4.1 (release 2017-04-10)
 
   Allowed multiple --xml options to designate multiple sources of XML file or directory.
-  Fixed fault detection of parent node name list which causes missing of data.
+  Fixed fault detection of parent node name list which caused missing of data.
   Fixed nullPointerException at getLocalName().
   Revised console output while processing.
   Changed option name from --array-json to --json-array-all.
@@ -43,7 +43,7 @@
   Revised time checker based on LocalTime and OffsetTime.
   Added normalizer for xs:fractionDigits and xs:whiteSpace restrictions.
   Added --no-wild-card option to ignore wild cards for backward compatibility.
-  Fixed recognition of list table which causes missing of data.
+  Fixed recognition of list table which caused missing of data.
   Added --update option in xml2pgsql enables partial update of document where document key must be predefined.
 
  Changes in xsd2pgschema 2.2.0 (release 2017-03-29)
@@ -76,7 +76,7 @@
  Changes in xsd2pgschema 2.0.0.rc1 (release 2017-03-17)
 
   NOTICE: We recommend all users avoid to use 1.14.0 and 1.15.x.
-  Fixed critical bug which causes missing of data occurs on 1.14.0 and 1.15.x.
+  Fixed critical bug which caused missing of data occurs on 1.14.0 and 1.15.x.
   Fixed XPath base name.
   Adopted strict schema component name matching that sweeps name collision.
   Removed non-sense --no-key option except for xsd2pgschema class.
@@ -111,7 +111,7 @@
   Added "xpath_id" column to enable direct access via XPath expression if --xpath-key is set in xsd2pgschema, xml2pgcsv and xml2pgsql.
    where primary key named "(relation_name)_id" stores hash value calculated from (document_id)(XPath to current node)
      and xpath key named "xpath_id" stores hash value calculated from (XPath to current node).
-  Fixed a potential bug which causes missing of data in xml2pgcsv and xml2pgsql in case --ser-key is selected.
+  Fixed a potential bug which caused missing of data in xml2pgcsv and xml2pgsql in case --ser-key is selected.
   Fixed default setting for --ser-key in xml2pgsql.
   Fixed invalid XPath base name in case of --xpath-key.
   Internal code refactoring for performance improvement.
