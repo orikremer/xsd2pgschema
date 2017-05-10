@@ -53,7 +53,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 	/** Whether if Sphinx attribute. */
 	boolean sph_attr = false;
 
-	/** Whether if Sphinx multi-value attribute. */
+	/** Whether if Sphinx multi-valued attribute. */
 	boolean sph_mva_attr = false;
 
 	/** The current Sphinx attribute name. */

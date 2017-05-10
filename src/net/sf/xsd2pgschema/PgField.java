@@ -116,7 +116,7 @@ public class PgField {
 	/** Whether if Sphinx attribute. */
 	boolean sph_attr = false;
 
-	/** Whether if Sphinx multi-value attribute. */
+	/** Whether if Sphinx multi-valued attribute. */
 	boolean sph_mva = false;
 
 	/** Whether it is selected as field for partial index. */

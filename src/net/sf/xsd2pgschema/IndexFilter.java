@@ -74,8 +74,13 @@ public class IndexFilter {
 	 */
 	public boolean addAttr(String attr) {
 
-		if (attrs != null)
+		if (attrs != null) {
+
+			if (attrs.contains(attr))
+				return false;
+
 			return attrs.add(attr);
+		}
 
 		else {
 
@@ -93,6 +98,10 @@ public class IndexFilter {
 	 * @return boolean result of addition
 	 */
 	public boolean addField(String field) {
+
+		if (fields.contains(field))
+			return false;
+
 		return fields.add(field);
 	}
 
