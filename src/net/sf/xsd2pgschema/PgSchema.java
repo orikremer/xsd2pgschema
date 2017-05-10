@@ -2944,10 +2944,10 @@ public class PgSchema {
 		if (field_resolved)
 			return;
 
-		field_resolved = true;
-
 		if (fields.size() == 0)
 			return;
+
+		field_resolved = true;
 
 		for (String field : fields) {
 

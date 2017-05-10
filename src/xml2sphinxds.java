@@ -337,7 +337,7 @@ public class xml2sphinxds {
 		System.err.println("        --attr  table_name.column_name");
 		System.err.println("        --field table_name.column_name");
 		System.err.println("        --attr-all");
-		System.err.println("        --attr-field (default)");
+		System.err.println("        --field-all (default)");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int | long (default) | native | debug]");
 		System.err.println("        --xml-file-prerix-digest DIGESTIBLE_PREFIX (default=\"\")");
