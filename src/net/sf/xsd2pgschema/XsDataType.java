@@ -2684,7 +2684,7 @@ public enum XsDataType {
 	 */
 	public static int getSqlDataType(PgField field) {
 
-		XsDataType xs_type = field.enum_name == null ? field.xs_type : XsDataType.xs_string;
+		XsDataType xs_type = field.enum_name == null ? field.xs_type : xs_string;
 
 		switch (xs_type) {
 		case xs_boolean:
@@ -2772,7 +2772,7 @@ public enum XsDataType {
 	 */
 	public static void setValue(PgField field, PreparedStatement ps, int par_idx, String value) throws SQLException {
 
-		XsDataType xs_type = field.enum_name == null ? field.xs_type : XsDataType.xs_string;
+		XsDataType xs_type = field.enum_name == null ? field.xs_type : xs_string;
 
 		switch (xs_type) {
 		case xs_boolean:
@@ -3282,6 +3282,67 @@ public enum XsDataType {
 		field.jsonb.append("," + json_key_value_space);
 
 		return true;
+	}
+
+	// Type dependent attribute of full-text indexing
+
+	/**
+	 * Append field as attribute of index
+	 *
+	 * @param table PosgtreSQL table
+	 * @param field PostgreSQL field
+	 * @param index_filter index filter
+	 */
+	public static void appendAttr(PgTable table, PgField field, IndexFilter index_filter) {
+
+		XsDataType xs_type = field.enum_name == null ? field.xs_type : xs_string;
+
+		switch (xs_type) {
+		case xs_bigserial:
+		case xs_long:
+		case xs_bigint:
+		case xs_unsignedLong:
+		case xs_serial:
+		case xs_integer:
+		case xs_int:
+		case xs_nonPositiveInteger:
+		case xs_negativeInteger:
+		case xs_nonNegativeInteger:
+		case xs_positiveInteger:
+		case xs_unsignedInt:
+		case xs_short:
+		case xs_byte:
+		case xs_unsignedShort:
+		case xs_unsignedByte:	
+			if (index_filter.attr_integer)
+				index_filter.addAttr(table.name + "." + field.name);
+			break;
+		case xs_float:
+		case xs_double:
+		case xs_decimal:
+			if (index_filter.attr_float)
+				index_filter.addAttr(table.name + "." + field.name);
+			break;
+		case xs_dateTime:
+		case xs_date:
+		case xs_gYearMonth:
+		case xs_gYear:
+			if (index_filter.attr_date)
+				index_filter.addAttr(table.name + "." + field.name);
+			break;
+		case xs_time:
+		case xs_gMonthDay:
+		case xs_gMonth:
+		case xs_gDay:
+			if (index_filter.attr_time)
+				index_filter.addAttr(table.name + "." + field.name);
+			break;
+		default:
+			if (index_filter.attr_string)
+				index_filter.addAttr(table.name + "." + field.name);
+			break;
+		}
+
 	}
 
 	/** The date pattern in ISO 8601 format. */

@@ -158,6 +158,21 @@ public class xml2sphinxds {
 			else if (args[i].equals("--field-all"))
 				index_filter.setFiledAll();
 
+			else if (args[i].equals("--attr-string"))
+				index_filter.attr_string = true;
+
+			else if (args[i].equals("--attr-integer"))
+				index_filter.attr_integer = true;
+
+			else if (args[i].equals("--attr-float"))
+				index_filter.attr_float = true;
+
+			else if (args[i].equals("--attr-date"))
+				index_filter.attr_date = true;
+
+			else if (args[i].equals("--attr-time"))
+				index_filter.attr_time = true;
+
 			else if (args[i].equals("--min-word-len"))
 				index_filter.setMinWordLen(args[++i]);
 
@@ -338,6 +353,11 @@ public class xml2sphinxds {
 		System.err.println("        --field table_name.column_name");
 		System.err.println("        --attr-all");
 		System.err.println("        --field-all (default)");
+		System.err.println("        --attr-string (all string values are stored as attribute)");
+		System.err.println("        --attr-integer (all integer values are stored as attribute)");
+		System.err.println("        --attr-float (all float values are stored as attribute)");
+		System.err.println("        --attr-date (all date values are stored as attribute)");
+		System.err.println("        --attr-time (all time values are stored as attribute)");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int | long (default) | native | debug]");
 		System.err.println("        --xml-file-prerix-digest DIGESTIBLE_PREFIX (default=\"\")");

@@ -2863,27 +2863,34 @@ public class PgSchema {
 	/**
 	 * Apply attr option for full-text indexing.
 	 *
-	 * @param attrs attr option
+	 * @param index_filter index filter
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void applyAttr(final List<String> attrs) throws PgSchemaException {
+	private void applyAttr(final IndexFilter index_filter) throws PgSchemaException {
 
 		if (attr_resolved)
 			return;
 
 		attr_resolved = true;
 
-		if (attrs == null) { // all attributes are selected
+		// type dependent attribute
+
+		if (index_filter.attr_string || index_filter.attr_integer || index_filter.attr_float || index_filter.attr_date)
+			tables.forEach(table -> table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> XsDataType.appendAttr(table, field, index_filter)));
+
+		// all attributes
+
+		if (index_filter.attrs == null) {
 
 			tables.forEach(table -> table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true));
 
 			return;
 		}
 
-		else if (attrs.size() == 0)
+		if (index_filter.attrs.size() == 0)
 			return;
 
-		for (String sph_attr : attrs) {
+		for (String sph_attr : index_filter.attrs) {
 
 			String[] key = sph_attr.split("\\.");
 
@@ -2936,20 +2943,20 @@ public class PgSchema {
 	/**
 	 * Apply field option for full-text indexing.
 	 *
-	 * @param fields field option
+	 * @param index_filer index filter
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void applyField(final List<String> fields) throws PgSchemaException {
+	private void applyField(final IndexFilter index_filter) throws PgSchemaException {
 
 		if (field_resolved)
 			return;
 
-		if (fields.size() == 0)
+		if (index_filter.fields.size() == 0)
 			return;
 
 		field_resolved = true;
 
-		for (String field : fields) {
+		for (String field : index_filter.fields) {
 
 			String[] key = field.split("\\.");
 
@@ -3158,10 +3165,10 @@ public class PgSchema {
 
 		Node node = getRootNode(xml_parser, xml_post_editor);
 
-		applyAttr(index_filter.attrs);
+		applyAttr(index_filter);
 
 		if (index_filter.fields != null)
-			applyField(index_filter.fields);
+			applyField(index_filter);
 
 		this.min_word_len = index_filter.min_word_len;
 		this.numeric_index = index_filter.numeric_index;
