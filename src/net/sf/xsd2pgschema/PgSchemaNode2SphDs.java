@@ -64,9 +64,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	@Override
 	public void parseRootNode(final Node proc_node) throws TransformerException, IOException {
 
-		current_key = document_id + "/" + table.name;
-
-		parse(false, proc_node, null, current_key, current_key, nested, 1);
+		parse(proc_node, null, current_key = document_id + "/" + table.name, nested, 1);
 
 	}
 
@@ -80,7 +78,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	@Override
 	public void parseChildNode(final PgSchemaNodeTester node_test) throws IOException, TransformerException {
 
-		parse(true, node_test.proc_node, node_test.parent_key, node_test.primary_key, node_test.current_key, node_test.nested, node_test.key_id);
+		parse(node_test.proc_node, node_test.parent_key, node_test.current_key, node_test.nested, node_test.key_id);
 
 	}
 
@@ -97,24 +95,22 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	@Override
 	public void parseChildNode(final Node proc_node, final String parent_key, final String proc_key, final boolean nested) throws TransformerException, IOException {
 
-		parse(true, proc_node, parent_key, proc_key, proc_key, nested, 1);
+		parse(proc_node, parent_key, proc_key, nested, 1);
 
 	}
 
 	/**
 	 * Parse processing node.
 	 *
-	 * @param child_node whether if child node
 	 * @param proc_node processing node
 	 * @param parent_key name of parent node
-	 * @param primary_key name of primary key
 	 * @param current_key name of current node
 	 * @param nested whether it is nested
 	 * @param key_id ordinal number of current node
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void parse(final boolean child_node, final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean nested, final int key_id) throws TransformerException, IOException {
+	private void parse(final Node proc_node, final String parent_key, final String current_key, final boolean nested, final int key_id) throws TransformerException, IOException {
 
 		Arrays.fill(values, "");
 
@@ -188,13 +184,8 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 			write();
 
 			this.proc_node = proc_node;
-
-			if (child_node) {
-
-				this.nested = nested;
-				this.current_key = current_key;
-
-			}
+			this.current_key = current_key;
+			this.nested = nested;
 
 		}
 

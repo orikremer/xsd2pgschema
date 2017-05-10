@@ -3019,10 +3019,11 @@ public enum XsDataType {
 		default:
 			if (field.attr_sel || xs_type.equals(xs_ID))
 				lucene_doc.add(new TextField(name, value, Field.Store.YES));
-			if (min_word_len_filter)
-				lucene_doc.add(new VecTextField(PgSchemaUtil.simple_cont_name, value, Field.Store.NO));
 			break;
 		}
+
+		if (min_word_len_filter)
+			lucene_doc.add(new VecTextField(PgSchemaUtil.simple_cont_name, value, Field.Store.NO));
 
 	}
 
@@ -3155,10 +3156,11 @@ public enum XsDataType {
 						field.sph_attr = true;
 					writer.write("<" + attr_name + ">" + value + "</" + attr_name + ">\n");
 				}
-				if (min_word_len_filter)
-					writer.write("<" + PgSchemaUtil.simple_cont_name + ">" + value + "</" + PgSchemaUtil.simple_cont_name + ">\n");
 				break;
 			}
+
+			if (min_word_len_filter)
+				writer.write("<" + PgSchemaUtil.simple_cont_name + ">" + value + "</" + PgSchemaUtil.simple_cont_name + ">\n");
 
 		} catch (IOException e) {
 			e.printStackTrace();

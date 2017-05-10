@@ -1,3 +1,8 @@
+ Changes in xsd2pgschema 2.4.4 (release 2017-05-10)
+
+  Fixed primary hash key which causes unreachable relational data.
+  Revised index policy that index all data unless user didn't specify field option, previously string data were indexed in that case.
+
  Changes in xsd2pgschema 2.4.3 (release 2017-05-08)
 
   Added Java package name for core classes.

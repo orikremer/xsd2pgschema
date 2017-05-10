@@ -3396,6 +3396,7 @@ public class PgSchema {
 			PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, null, root_table, db_conn);
 
 			node2pgsql.parseRootNode(node);
+			node2pgsql.executeBatch();
 
 			node2pgsql.invokeRootNestedNode();
 
@@ -3457,7 +3458,7 @@ public class PgSchema {
 
 		}
 
-		node2pgsql.write();
+		node2pgsql.executeBatch();
 
 	}
 
