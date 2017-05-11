@@ -84,14 +84,13 @@ public class xml2sphinxds {
 	 */
 	public static void main(String[] args) {
 
+		option.cancelRelDataExt();
+
 		List<String> xml_file_names = new ArrayList<String>();
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--no-rel"))
-				option.cancelRelDataExt();
-
-			else if (args[i].equals("--no-wild-card"))
+			if (args[i].equals("--no-wild-card"))
 				option.wild_card = false;
 
 			else if (args[i].equals("--append"))
@@ -340,7 +339,6 @@ public class xml2sphinxds {
 
 		System.err.println("xml2sphinxds: XML -> Sphinx data source (xmlpipe2) conversion");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --ds-dir DIRECTORY (default=\"" + ds_dir_name + "\")");
-		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --validate (turn off XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
