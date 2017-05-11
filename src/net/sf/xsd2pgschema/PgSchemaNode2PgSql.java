@@ -383,7 +383,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			boolean exists = existsNestedNode(schema, nested_table, node_test.proc_node);
 
-			schema.parseChildNode2PgSql(exists || nested ? node_test.proc_node : proc_node, table, nested_table, node_test.current_key, nested_key[n], list_holder[n], !exists, exists ? 0 : node_test.key_id, db_conn);
+			schema.parseChildNode2PgSql(exists || nested ? node_test.proc_node : proc_node, table, nested_table, node_test.primary_key, nested_key[n], list_holder[n], !exists, exists ? 0 : node_test.key_id, db_conn);
 
 		}
 
