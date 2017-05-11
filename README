@@ -3,6 +3,7 @@
   Fixed primary/foreign hash key which caused unreachable relational data.
   Revised index policy that index all data unless user didn't specify field option, previously string data were indexed in that case.
   Added --attr-string, --attr-integer, --attr-float, --attr-date and --attr-time option to enable type dependent attribute selection in full-text indexing.
+  Fixed missing of data while full-text indexing in case of --no-rel option.
 
  Changes in xsd2pgschema 2.4.3 (release 2017-05-08)
 
@@ -18,7 +19,7 @@
 
   XML Schema validation has been turned off by default (to turn on, please use --valid option).
   Allowed to change DB host (localhost) and port (5432) by --db-host and --db-port options.
-  Fixed isseus around data migration (in case of --no-rel mode) occurred only in previous 2.4.2.
+  Fixed isseus around data migration (in case of --no-rel option) occurred only in previous 2.4.2.
   Fixed relational oriented JSON convesion.
 
  Changes in xsd2pgschema 2.4.1 (release 2017-04-10)

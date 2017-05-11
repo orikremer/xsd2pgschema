@@ -3657,7 +3657,7 @@ public class PgSchema {
 
 		initTableLock(true);
 
-		tables.forEach(table -> table.lucene_doc = table.required && (option.rel_data_ext || !table.relational) ? lucene_doc : null);
+		tables.forEach(table -> table.lucene_doc = table.required ? lucene_doc : null);
 
 		// parse root node and store data to Lucene document
 
@@ -4076,7 +4076,7 @@ public class PgSchema {
 
 		tables.forEach(table -> {
 
-			if (table.required && (option.rel_data_ext || !table.relational)) {
+			if (table.required) {
 
 				table.filew = writer;
 
