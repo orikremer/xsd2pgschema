@@ -5,6 +5,7 @@
   Added --attr-string, --attr-integer, --attr-float, --attr-date and --attr-time option to enable type dependent attribute selection in full-text indexing.
   Fixed missing of data while full-text indexing in case of --no-rel option.
   Dropped --no-rel option from xml2sphinxds class.
+  Revised Sphinx attribute index policy that value of the first occurrence in a document was stored, except for integer's multi-valued attribute.
 
  Changes in xsd2pgschema 2.4.3 (release 2017-05-08)
 

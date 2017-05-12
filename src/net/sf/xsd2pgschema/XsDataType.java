@@ -3064,6 +3064,8 @@ public enum XsDataType {
 				if (field.attr_sel) {
 					if (!field.sph_attr)
 						field.sph_attr = true;
+					if (++field.sph_attr_occurs > 1)
+						return;
 					writer.write("<" + attr_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + attr_name + ">\n");
 				}
 				break;
@@ -3103,6 +3105,8 @@ public enum XsDataType {
 				if (field.attr_sel) {
 					if (!field.sph_attr)
 						field.sph_attr = true;
+					if (++field.sph_attr_occurs > 1)
+						return;
 					writer.write("<" + attr_name + ">" + Float.valueOf(value) + "</" + attr_name + ">\n");
 				}
 				break;
@@ -3111,6 +3115,8 @@ public enum XsDataType {
 				if (field.attr_sel) {
 					if (!field.sph_attr)
 						field.sph_attr = true;
+					if (++field.sph_attr_occurs > 1)
+						return;
 					writer.write("<" + attr_name + ">" + Double.valueOf(value) + "</" + attr_name + ">\n");
 				}
 				break;
@@ -3135,6 +3141,8 @@ public enum XsDataType {
 				if (field.attr_sel) {
 					if (!field.sph_attr)
 						field.sph_attr = true;
+					if (++field.sph_attr_occurs > 1)
+						return;
 					java.util.Date util_time = parseDate(value);
 					writer.write("<" + attr_name + ">" + util_time.getTime() / 1000L + "</" + attr_name + ">\n");
 				}
@@ -3146,6 +3154,8 @@ public enum XsDataType {
 				if (field.attr_sel) {
 					if (!field.sph_attr)
 						field.sph_attr = true;
+					if (++field.sph_attr_occurs > 1)
+						return;
 					writer.write("<" + attr_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + attr_name + ">\n");
 				}
 				break;
@@ -3154,6 +3164,8 @@ public enum XsDataType {
 				if (field.attr_sel || xs_type.equals(xs_ID)) {
 					if (!field.sph_attr)
 						field.sph_attr = true;
+					if (++field.sph_attr_occurs > 1)
+						return;
 					writer.write("<" + attr_name + ">" + value + "</" + attr_name + ">\n");
 				}
 				break;
