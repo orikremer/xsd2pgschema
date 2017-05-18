@@ -49,7 +49,7 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 
 /**
- * Enumerator of XSD datatypes and conversion functions.
+ * Enumerator of XSD data types and conversion functions.
  *
  * @author yokochi
  */

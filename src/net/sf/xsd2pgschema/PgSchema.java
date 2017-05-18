@@ -834,13 +834,13 @@ public class PgSchema {
 
 				String[] type = dummy.type.contains(" ") ? dummy.type.split(" ")[0].split(":") : dummy.type.split(":");
 
-				// primitive datatype
+				// primitive data type
 
 				if (type.length != 0 && type[0].equals(xs_prefix)) {
 
 				}
 
-				// non-primitive datatype
+				// non-primitive data type
 
 				else {
 
@@ -1323,7 +1323,7 @@ public class PgSchema {
 
 				String[] type = field.type.contains(" ") ? field.type.split(" ")[0].split(":") : field.type.split(":");
 
-				// primitive datatype
+				// primitive data type
 
 				if (type.length != 0 && type[0].equals(xs_prefix)) {
 
@@ -1333,7 +1333,7 @@ public class PgSchema {
 
 				}
 
-				// non-primitive datatype
+				// non-primitive data type
 
 				else {
 
@@ -1444,7 +1444,7 @@ public class PgSchema {
 
 							String[] type = field.type.contains(" ") ? field.type.split(" ")[0].split(":") : field.type.split(":");
 
-							// primitive datatype
+							// primitive data type
 
 							if (type.length != 0 && type[0].equals(xs_prefix)) {
 
@@ -1454,7 +1454,7 @@ public class PgSchema {
 
 							}
 
-							// non-primitive datatype
+							// non-primitive data type
 
 							else {
 
@@ -1673,7 +1673,7 @@ public class PgSchema {
 
 		String[] type = field.type.contains(" ") ? field.type.split(" ")[0].split(":") : field.type.split(":");
 
-		// primitive datatype
+		// primitive data type
 
 		if (type.length != 0 && type[0].equals(xs_prefix)) {
 
@@ -1703,7 +1703,7 @@ public class PgSchema {
 
 		}
 
-		// non-primitive datatype
+		// non-primitive data type
 
 		else
 			extractComplexContent(node, table);
@@ -3108,7 +3108,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Check root table.
+	 * Check whether if schema has root table.
 	 *
 	 * @throws PgSchemaException the pg schema exception
 	 */
@@ -3153,7 +3153,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return root node of document.
+	 * Return root node of document for full-text indexing.
 	 *
 	 * @param xml_parser XML document
 	 * @param xml_post_editor XML post editing
@@ -4189,11 +4189,11 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return whether if Sphinx mult-value attribute.
+	 * Return whether if Sphinx multi-valued attribute.
 	 *
 	 * @param table_name table name
 	 * @param field_name field name
-	 * @return boolean whether if Sphinx multi-value attribute
+	 * @return boolean whether if Sphinx multi-valued attribute
 	 */
 	public boolean isSphMvaAttr(String table_name, String field_name) {
 
@@ -4395,7 +4395,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Realize Object-oriented JSON Schema.
+	 * Realize Object-oriented JSON Schema (child).
 	 *
 	 * @param parent_table parent table
 	 * @param table current table
@@ -4764,7 +4764,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Realize Column-oriented JSON Schema.
+	 * Realize Column-oriented JSON Schema (child).
 	 *
 	 * @param parent_table parent table
 	 * @param table current table
@@ -5054,7 +5054,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Realize Relational-oriented JSON Schema.
+	 * Realize Relational-oriented JSON Schema (child).
 	 *
 	 * @param table current table
 	 * @param json_indent_level current indent level

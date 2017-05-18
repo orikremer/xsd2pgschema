@@ -38,7 +38,7 @@ public class PgField {
 	/** The field name in PostgreSQL. */
 	String name = "";
 
-	/** The datatype. */
+	/** The data type. */
 	String type = "";
 
 	/** The substitution group. */
@@ -53,7 +53,7 @@ public class PgField {
 	/** The xs:annotation. */
 	String anno = "";
 
-	/** The XML Schema datatype. */
+	/** The XML Schema data type. */
 	XsDataType xs_type;
 
 	/** Whether if xs:element. */
