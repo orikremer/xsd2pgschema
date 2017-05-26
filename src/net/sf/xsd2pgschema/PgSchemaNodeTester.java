@@ -56,7 +56,7 @@ public class PgSchemaNodeTester {
 	int node_count = 0;
 
 	/**
-	 * Decide to process this node or not (see result at omitted).
+	 * Decide to process this node or not.
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param parent_node parent node

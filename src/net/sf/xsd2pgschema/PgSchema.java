@@ -156,7 +156,7 @@ public class PgSchema {
 
 		this.option = option;
 
-		// check /xs:schema element
+		// check existence of root element
 
 		root_node = doc.getDocumentElement();
 
@@ -177,12 +177,12 @@ public class PgSchema {
 		else
 			xs_prefix_ = xs_prefix + ":";
 
-		// root-valid
+		// check root element name
 
 		if (!root_node.getNodeName().equals(xs_prefix_ + "schema"))
 			throw new PgSchemaException("Not found " + xs_prefix_ + "schema root element in XML Schema: " + def_schema_location);
 
-		// schema annotation
+		// retrieve top level schema annotation
 
 		def_anno = PgSchemaUtil.extractAnnotation(this, root_node, true);
 		def_appinfo = PgSchemaUtil.extractAppinfo(this, root_node);
@@ -235,7 +235,7 @@ public class PgSchema {
 
 		foreign_keys = new ArrayList<PgForeignKey>();
 
-		// include/import namespace
+		// include or import namespace
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -270,11 +270,11 @@ public class PgSchema {
 
 						is2.close();
 
-						// Reference XML Schema (xs:include|xs:import/@schemaLocation) analysis
+						// referred XML Schema (xs:include|xs:import/@schemaLocation) analysis
 
 						PgSchema schema2 = new PgSchema(doc_builder, doc2, _root_schema, PgSchemaUtil.getName(schema_location), option);
 
-						// prevent infinite cyclic reference which is allowed in XML Schema 1.1
+						// add schema location to prevent infinite cyclic reference
 
 						schema2.schema_locations.forEach(arg -> {
 
@@ -398,7 +398,7 @@ public class PgSchema {
 		else
 			_root_schema.def_stat_msg.append("--  " + (root_schema == null ? "Generated" : "Found") + " " + tables.size() + " tables (" + tables.stream().map(table -> table.fields.size()).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups " + (root_schema == null ? "in total" : "in XML Schema: " + def_schema_location) + "\n");
 
-		// statics on schema
+		// statistics on this schema
 
 		if (root_schema == null) {
 
@@ -450,7 +450,7 @@ public class PgSchema {
 
 		}
 
-		// append annotation of root table
+		// append annotation of root table if possible
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -472,7 +472,7 @@ public class PgSchema {
 
 		}
 
-		// append annotation of administrative tables
+		// append annotation of administrative tables if possible
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -682,7 +682,7 @@ public class PgSchema {
 
 		}));
 
-		// update required flag because of foreign keys
+		// update requirement flag because of foreign keys
 
 		foreign_keys.forEach(foreign_key -> {
 
@@ -706,7 +706,7 @@ public class PgSchema {
 		if (option.xpath_key)
 			tables.forEach(table -> table.addXPathKey(this));
 
-		// set system/user key flags
+		// update system key flag and user key flag
 
 		tables.forEach(table -> {
 
@@ -2059,7 +2059,7 @@ public class PgSchema {
 	 */
 	private void realize() {
 
-		// initialize realized flags
+		// initialize realization flag and table order
 
 		realized = new boolean[tables.size()];
 		table_order = new int [tables.size()];
@@ -2358,7 +2358,7 @@ public class PgSchema {
 	 */
 	private void realizeAdmin(PgTable table, boolean output) {
 
-		// realize parent table first
+		// realize parent table at first
 
 		foreign_keys.stream().filter(foreign_key -> foreign_key.child_table.equals(table.name)).forEach(foreign_key -> {
 
@@ -2703,7 +2703,7 @@ public class PgSchema {
 
 		} while (append_table);
 
-		// inverse
+		// inverse filt_out flag and update requirement
 
 		tables.forEach(table -> {
 
@@ -2873,12 +2873,12 @@ public class PgSchema {
 
 		attr_resolved = true;
 
-		// type dependent attribute
+		// type dependent attribute selection
 
 		if (index_filter.attr_string || index_filter.attr_integer || index_filter.attr_float || index_filter.attr_date)
 			tables.forEach(table -> table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> XsDataType.appendAttr(table, field, index_filter)));
 
-		// all attributes
+		// select all attributes
 
 		if (index_filter.attrs == null) {
 
@@ -3142,7 +3142,7 @@ public class PgSchema {
 
 		Node node = xml_parser.document.getDocumentElement();
 
-		// root-valid
+		// check root element name
 
 		if (!node.getNodeName().endsWith(root_table.name))
 			throw new PgSchemaException("Not found root element (node_name: " + root_table.name + ") in XML: " + document_id);
@@ -3280,7 +3280,7 @@ public class PgSchema {
 
 		});
 
-		// parse root node and write data to CSV file
+		// parse root node and write to CSV file
 
 		try {
 
@@ -3320,7 +3320,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and write data to CSV file.
+	 * Parse current node and write to CSV file.
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
@@ -3391,7 +3391,7 @@ public class PgSchema {
 
 		Node node = getRootNode(xml_parser, xml_post_editor);
 
-		// parse root node and send data to PostgreSQL
+		// parse root node and send to PostgreSQL
 
 		try {
 
@@ -3416,7 +3416,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and send data to PostgreSQL.
+	 * Parse current node and send to PostgreSQL.
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
@@ -3659,7 +3659,7 @@ public class PgSchema {
 
 		tables.forEach(table -> table.lucene_doc = table.required ? lucene_doc : null);
 
-		// parse root node and store data to Lucene document
+		// parse root node and store into Lucene document
 
 		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(this, null, root_table);
 
@@ -3681,7 +3681,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store data to Lucene document.
+	 * Parse current node and store into Lucene document.
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
@@ -4089,7 +4089,7 @@ public class PgSchema {
 
 		});
 
-		// parse root node and store data to Sphinx xmlpipe2 file
+		// parse root node and write to Sphinx xmlpipe2 file
 
 		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(this, null, root_table);
 
@@ -4111,7 +4111,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store data to Sphinx xmlpipe2 file.
+	 * Parse current node and store to Sphinx xmlpipe2 file.
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
@@ -4219,7 +4219,7 @@ public class PgSchema {
 
 	// JSON conversion
 
-	/** The instance of JSON builder. */
+	/** The JSON builder. */
 	protected JsonBuilder jsonb = null;
 
 	/**
@@ -4494,7 +4494,7 @@ public class PgSchema {
 		initTableLock(true);
 		clearJsonBuilder();
 
-		// parse root node and store data to JSON builder
+		// parse root node and store to JSON builder
 
 		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
 
@@ -4542,7 +4542,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store data to JSON builder (Object-oriented JSON format).
+	 * Parse current node and store to JSON builder (Object-oriented JSON format).
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
@@ -4861,7 +4861,7 @@ public class PgSchema {
 		initTableLock(true);
 		clearJsonBuilder();
 
-		// parse root node and write data to JSON file
+		// parse root node and write to JSON file
 
 		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
 
@@ -4899,7 +4899,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store data to JSON builder (Column-oriented JSON format).
+	 * Parse current node and store to JSON builder (Column-oriented JSON format).
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
@@ -5136,7 +5136,7 @@ public class PgSchema {
 		initTableLock(false);
 		clearJsonBuilder();
 
-		// parse root node and write data to JSON file
+		// parse root node and write to JSON file
 
 		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
 
@@ -5232,7 +5232,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store data to JSON builder (Relational-oriented JSON format).
+	 * Parse current node and store to JSON builder (Relational-oriented JSON format).
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table

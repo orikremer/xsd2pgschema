@@ -541,7 +541,7 @@ public class PgTable {
 	}
 
 	/**
-	 * set system key flag.
+	 * set system_key flag.
 	 */
 	public void setSystemKey() {
 
@@ -550,7 +550,7 @@ public class PgTable {
 	}
 
 	/**
-	 * set user key flag.
+	 * set user_key flag.
 	 */
 	public void setUserKey() {
 

@@ -3028,7 +3028,7 @@ public enum XsDataType {
 	}
 
 	/**
-	 * Set retrievable key.
+	 * Set system key.
 	 *
 	 * @param lucene_doc Lucene document
 	 * @param name field name
@@ -3296,7 +3296,7 @@ public enum XsDataType {
 		return true;
 	}
 
-	// Type dependent attribute of full-text indexing
+	// Type dependent attribute selection of full-text indexing
 
 	/**
 	 * Append field as attribute of index

@@ -1232,10 +1232,10 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether if string matches out pattern.
+	 * Return whether if string matches out_pattern.
 	 *
 	 * @param string string
-	 * @return boolean whether if string matches out pattern
+	 * @return boolean whether if string matches out_pattern
 	 */
 	public boolean matchesOutPattern(String string) {
 
