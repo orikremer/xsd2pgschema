@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -67,7 +68,7 @@ public class PgSchema {
 	private String def_schema_location = null;
 
 	/** The included or imported schema locations. */
-	private List<String> schema_locations = null;
+	private HashSet<String> schema_locations = null;
 
 	/** The attribute group definitions. */
 	private List<PgTable> attr_groups = null;
@@ -223,7 +224,7 @@ public class PgSchema {
 
 		this.def_schema_location = def_schema_location;
 
-		schema_locations = new ArrayList<String>();
+		schema_locations = new HashSet<String>();
 
 		schema_locations.add(PgSchemaUtil.getFileName(def_schema_location));
 
@@ -276,12 +277,7 @@ public class PgSchema {
 
 						// add schema location to prevent infinite cyclic reference
 
-						schema2.schema_locations.forEach(arg -> {
-
-							if (!_root_schema.schema_locations.contains(arg))
-								_root_schema.schema_locations.add(arg);
-
-						});
+						schema2.schema_locations.forEach(arg -> _root_schema.schema_locations.add(arg));
 
 						// copy default namespace from referred XML Schema
 

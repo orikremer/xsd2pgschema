@@ -24,9 +24,8 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
 
 import javax.xml.parsers.*;
 
@@ -52,13 +51,13 @@ public class xml2json {
 
 	/** The schema option. */
 	public static PgSchemaOption option = new PgSchemaOption(false);
-	
+
 	/** The JSON builder option. */
 	public static JsonBuilderOption jsonb_option = new JsonBuilderOption();
 
 	/** The XML file filter. */
 	public static XmlFileFilter xml_file_filter = new XmlFileFilter();
-	
+
 	/** The XML post editor. */
 	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
@@ -67,10 +66,10 @@ public class xml2json {
 
 	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
-	
+
 	/** The available processors. */
 	private static final int cpu_num = runtime.availableProcessors();
-	
+
 	/** The max threads. */
 	private static int max_thrds = cpu_num;
 
@@ -83,7 +82,7 @@ public class xml2json {
 
 		option.cancelRelDataExt();
 
-		List<String> xml_file_names = new ArrayList<String>();
+		HashSet<String> xml_file_names = new HashSet<String>();
 
 		for (int i = 0; i < args.length; i++) {
 
@@ -110,8 +109,7 @@ public class xml2json {
 					showUsage();
 				}
 
-				if (!xml_file_names.contains(xml_file_name))
-					xml_file_names.add(xml_file_name);
+				xml_file_names.add(xml_file_name);
 			}
 
 			else if (args[i].equals("--xml-file-ext")) {

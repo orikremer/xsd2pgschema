@@ -35,6 +35,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.net.ssl.HostnameVerifier;
@@ -553,7 +554,7 @@ public class PgSchemaUtil {
 	 * @param filter file name filter
 	 * @return File[] array of target file
 	 */
-	public static File[] getTargetFiles(List<String> file_names, FilenameFilter filter) {
+	public static File[] getTargetFiles(HashSet<String> file_names, FilenameFilter filter) {
 
 		List<File> files = new ArrayList<File>();
 

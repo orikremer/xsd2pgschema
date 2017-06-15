@@ -25,9 +25,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashSet;
 
 import javax.xml.parsers.*;
 
@@ -50,13 +49,13 @@ public class xml2pgcsv {
 
 	/** The schema option. */
 	public static PgSchemaOption option = new PgSchemaOption(true);
-	
+
 	/** The PostgreSQL option. */
 	public static PgOption pg_option = new PgOption();
 
 	/** The XML file filter. */
 	public static XmlFileFilter xml_file_filter = new XmlFileFilter();
-	
+
 	/** The XML post editor. */
 	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
@@ -65,10 +64,10 @@ public class xml2pgcsv {
 
 	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
-	
+
 	/** The available processors. */
 	private static final int cpu_num = runtime.availableProcessors();
-	
+
 	/** The max threads. */
 	private static int max_thrds = cpu_num;
 
@@ -79,7 +78,7 @@ public class xml2pgcsv {
 	 */
 	public static void main(String[] args) {
 
-		List<String> xml_file_names = new ArrayList<String>();
+		HashSet<String> xml_file_names = new HashSet<String>();
 
 		boolean _document_key = false;
 		boolean _no_document_key = false;
@@ -141,8 +140,7 @@ public class xml2pgcsv {
 					showUsage();
 				}
 
-				if (!xml_file_names.contains(xml_file_name))
-					xml_file_names.add(xml_file_name);
+				xml_file_names.add(xml_file_name);
 			}
 
 			else if (args[i].equals("--xml-file-ext")) {
