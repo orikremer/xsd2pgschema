@@ -400,15 +400,11 @@ public class PgSchema {
 
 			StringBuilder sb = new StringBuilder();
 
-			List<String> namespace_uri = new ArrayList<String>();
+			HashSet<String> namespace_uri = new HashSet<String>();
 
-			def_namespaces.entrySet().stream().map(arg -> arg.getValue()).filter(arg -> !namespace_uri.contains(arg)).forEach(arg -> {
+			def_namespaces.entrySet().stream().map(arg -> arg.getValue()).forEach(arg -> namespace_uri.add(arg));
 
-				namespace_uri.add(arg);
-				sb.append(arg + ", ");
-
-			});
-
+			namespace_uri.forEach(arg -> sb.append(arg + ", "));
 			namespace_uri.clear();
 
 			_root_schema.def_stat_msg.append("--   Namespaces:\n");
