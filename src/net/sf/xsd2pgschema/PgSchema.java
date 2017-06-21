@@ -1291,8 +1291,8 @@ public class PgSchema {
 
 				field.enum_name = "ENUM_" + PgSchemaUtil.avoidPgReservedOps(table.name) + "_" + PgSchemaUtil.avoidPgReservedOps(field.name);
 
-				if (field.enum_name.length() > PgSchemaUtil.enum_max_len)
-					field.enum_name = field.enum_name.substring(0, PgSchemaUtil.enum_max_len);
+				if (field.enum_name.length() > PgSchemaUtil.max_enum_len)
+					field.enum_name = field.enum_name.substring(0, PgSchemaUtil.max_enum_len);
 
 			}
 
@@ -1412,8 +1412,8 @@ public class PgSchema {
 
 							field.enum_name = "ENUM_" + PgSchemaUtil.avoidPgReservedOps(table.name) + "_" + PgSchemaUtil.avoidPgReservedOps(field.name);
 
-							if (field.enum_name.length() > PgSchemaUtil.enum_max_len)
-								field.enum_name = field.enum_name.substring(0, PgSchemaUtil.enum_max_len);
+							if (field.enum_name.length() > PgSchemaUtil.max_enum_len)
+								field.enum_name = field.enum_name.substring(0, PgSchemaUtil.max_enum_len);
 
 						}
 
@@ -1658,8 +1658,8 @@ public class PgSchema {
 
 			field.enum_name = "ENUM_" + PgSchemaUtil.avoidPgReservedOps(table.name) + "_" + PgSchemaUtil.avoidPgReservedOps(field.name);
 
-			if (field.enum_name.length() > PgSchemaUtil.enum_max_len)
-				field.enum_name = field.enum_name.substring(0, PgSchemaUtil.enum_max_len);
+			if (field.enum_name.length() > PgSchemaUtil.max_enum_len)
+				field.enum_name = field.enum_name.substring(0, PgSchemaUtil.max_enum_len);
 
 		}
 
@@ -2276,8 +2276,8 @@ public class PgSchema {
 
 			String constraint_name = "UNQ_" + foreign_key.parent_table;
 
-			if (constraint_name.length() > PgSchemaUtil.enum_max_len)
-				constraint_name = constraint_name.substring(0, PgSchemaUtil.enum_max_len);
+			if (constraint_name.length() > PgSchemaUtil.max_enum_len)
+				constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 
 			System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_table) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " UNIQUE ( " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_fields) + " );\n");
 
@@ -2327,8 +2327,8 @@ public class PgSchema {
 
 					String constraint_name = "KR_" + foreign_key.name + (child_fields.length > 1 ? "_" + i : "");
 
-					if (constraint_name.length() > PgSchemaUtil.enum_max_len)
-						constraint_name = constraint_name.substring(0, PgSchemaUtil.enum_max_len);
+					if (constraint_name.length() > PgSchemaUtil.max_enum_len)
+						constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 
 					System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + PgSchemaUtil.avoidPgReservedWords(foreign_key.child_table) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " FOREIGN KEY ( " + PgSchemaUtil.avoidPgReservedWords(child_fields[i]) + " ) REFERENCES " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(parent_fields[i]) + " ) NOT VALID;\n");
 				}

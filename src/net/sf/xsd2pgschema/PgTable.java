@@ -278,8 +278,8 @@ public class PgTable {
 		field.setHashKeyType(schema);
 		field.nested_key = true;
 		field.constraint_name = "FK_" + name;
-		if (field.constraint_name.length() > PgSchemaUtil.enum_max_len)
-			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.enum_max_len);
+		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
+			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 		field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
 		field.foreign_table = name;
 		field.foreign_field = field.name;
@@ -357,8 +357,8 @@ public class PgTable {
 		field.setHashKeyType(schema);
 		field.nested_key = true;
 		field.constraint_name = "FK_" + foreign_table;
-		if (field.constraint_name.length() > PgSchemaUtil.enum_max_len)
-			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.enum_max_len);
+		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
+			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 		field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
 		field.foreign_table = foreign_table;
 		field.foreign_field = foreign_table + "_id";
@@ -389,8 +389,8 @@ public class PgTable {
 			field.setHashKeyType(schema);
 			field.foreign_key = true;
 			field.constraint_name = "FK_" + name + "_" + foreign_table.name;
-			if (field.constraint_name.length() > PgSchemaUtil.enum_max_len)
-				field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.enum_max_len);
+			if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
+				field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 			field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
 			field.foreign_table = foreign_table.name;
 			field.foreign_field = arg.name;

@@ -242,7 +242,7 @@ public class xml2pgcsv {
 		if (xml_files.length < max_thrds)
 			max_thrds = xml_files.length;
 
-		if (max_thrds > 1)
+		if (max_thrds > 1 && xml_files.length < PgSchemaUtil.max_sort_xml_files)
 			Arrays.sort(xml_files, SizeFileComparator.SIZE_COMPARATOR);
 
 		File csv_dir = new File(csv_dir_name);

@@ -235,7 +235,7 @@ public class xml2luceneidx {
 		if (max_thrds == 0)
 			max_thrds = 1;
 
-		if (shard_size > 1 || max_thrds > 1)
+		if ((shard_size > 1 || max_thrds > 1) && xml_files.length < PgSchemaUtil.max_sort_xml_files)
 			Arrays.sort(xml_files, SizeFileComparator.SIZE_COMPARATOR);
 
 		File idx_dir = new File(idx_dir_name);

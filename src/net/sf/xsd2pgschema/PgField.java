@@ -787,7 +787,7 @@ public class PgField {
 							String enum_value = value.replaceAll("'", "''");
 
 							xenumeration[_length] = enum_value;
-							enumeration[_length] = enum_value.length() <= PgSchemaUtil.enum_max_len ? enum_value : enum_value.substring(0, PgSchemaUtil.enum_max_len);
+							enumeration[_length] = enum_value.length() <= PgSchemaUtil.max_enum_len ? enum_value : enum_value.substring(0, PgSchemaUtil.max_enum_len);
 
 							_length++;
 

@@ -379,8 +379,8 @@ public abstract class PgSchemaNodeParser {
 
 			if (pg_enum_limit) {
 
-				if (content != null && content.length() > PgSchemaUtil.enum_max_len)
-					content = content.substring(0, PgSchemaUtil.enum_max_len);
+				if (content != null && content.length() > PgSchemaUtil.max_enum_len)
+					content = content.substring(0, PgSchemaUtil.max_enum_len);
 
 				if (!field.matchesEnumeration(content))
 					return false;
