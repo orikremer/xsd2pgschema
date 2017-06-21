@@ -4187,7 +4187,7 @@ public class PgSchema {
 	 * @param field_name field name
 	 * @return boolean whether if Sphinx multi-valued attribute
 	 */
-	public boolean isSphMvaAttr(String table_name, String field_name) {
+	public boolean isSphMVAttr(String table_name, String field_name) {
 
 		int t = getTableId(table_name);
 

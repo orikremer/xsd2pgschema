@@ -126,7 +126,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 				return;
 
 			sph_attr = true;
-			sph_mva_attr = schema.isSphMvaAttr(table_name, field_name);
+			sph_mva_attr = schema.isSphMVAttr(table_name, field_name);
 
 			sph_attr_name = qName;
 
