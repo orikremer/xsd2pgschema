@@ -54,7 +54,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 	boolean sph_attr = false;
 
 	/** Whether if Sphinx multi-valued attribute. */
-	boolean sph_mva_attr = false;
+	boolean sph_mvattr = false;
 
 	/** The current Sphinx attribute name. */
 	String sph_attr_name = null;
@@ -126,7 +126,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 				return;
 
 			sph_attr = true;
-			sph_mva_attr = schema.isSphMVAttr(table_name, field_name);
+			sph_mvattr = schema.isSphMVAttr(table_name, field_name);
 
 			sph_attr_name = qName;
 
@@ -184,7 +184,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 				return;
 			}
 
-			sph_attr = sph_mva_attr = false;
+			sph_attr = sph_mvattr = false;
 			sph_attr_name = "";
 
 		}
@@ -217,7 +217,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 
 		else if (sph_attr) {
 
-			if (sph_mva_attr)
+			if (sph_mvattr)
 				buffer.get(sph_attr_name).append(StringEscapeUtils.escapeCsv(value) + ",");
 			else
 				buffer.get(sph_attr_name).append(value.replaceAll("\t", " ") + "\t");
