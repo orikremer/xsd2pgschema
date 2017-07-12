@@ -144,10 +144,9 @@ public class PgSchemaUtil {
 	 *
 	 * @param  file plane file or gzip compressed file
 	 * @return InputStream input stream of file
-	 * @throws IOException
-	 * @throws FileNotFoundException
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public static InputStream getInputStream(File file) throws FileNotFoundException, IOException {
+	public static InputStream getInputStream(File file) throws IOException {
 		return FilenameUtils.getExtension(file.getName()).equals("gz") ? new GZIPInputStream(new FileInputStream(file)) : new FileInputStream(file);
 	}
 

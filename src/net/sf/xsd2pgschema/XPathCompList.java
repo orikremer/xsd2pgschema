@@ -514,7 +514,7 @@ public class XPathCompList {
 	 * Validate XPath component with NCNameContext class having ancestor axis.
 	 *
 	 * @param comp current XPath component
-	 * @param boolean inc_self whether include self node or not
+	 * @param inc_self whether include self node or not
 	 * @param wild_card whether wild card follows or not
 	 * @param composite_text composite text including wild card
 	 * @throws PgSchemaException the pg schema exception
@@ -601,7 +601,7 @@ public class XPathCompList {
 	 * Validate XPath component with NodeTestContext class having ancestor axis.
 	 *
 	 * @param comp current XPath component
-	 * @param boolean inc_self whether include self node or not
+	 * @param inc_self whether include self node or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void validateNodeTestContextWithAncestorAxis(XPathComp comp, boolean inc_self) throws PgSchemaException {
@@ -656,7 +656,7 @@ public class XPathCompList {
 	 * @param comp current XPath component
 	 * @param namespace_uri current namespace URI
 	 * @param schema PostgreSQL data model
-	 * @param boolean inc_self whether include self node or not
+	 * @param inc_self whether include self node or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void validateNameTestContextWithAncestorAxis(XPathComp comp, String namespace_uri, PgSchema schema, boolean inc_self) throws PgSchemaException {
