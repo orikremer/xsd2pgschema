@@ -46,7 +46,7 @@ public class luceneidx2infix {
 
 	/** The index directory name. */
 	public static String idx_dir_name = xml2luceneidx.idx_dir_name;
-	
+
 	/** The analyzing infix suggester directory name. */
 	public static String infix_dir_name = "lucene_infix";
 

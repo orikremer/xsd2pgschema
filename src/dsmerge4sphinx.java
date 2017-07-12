@@ -47,7 +47,7 @@ public class dsmerge4sphinx {
 
 	/** The data source name. */
 	public static String ds_name = "";
-	
+
 	/** The destination directory name of data source. */
 	public static String dst_ds_dir_name = xml2sphinxds.ds_dir_name;
 

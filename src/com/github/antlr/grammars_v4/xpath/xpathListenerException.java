@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2017 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -17,29 +17,47 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package net.sf.xsd2pgschema;
+package com.github.antlr.grammars_v4.xpath;
 
 /**
- * Enumerator of JSON type.
+ * XPath listener exception.
  *
  * @author yokochi
  */
-public enum JsonType {
+public class xpathListenerException extends Exception {
 
-	/** The column-oriented JSON (default). */
-	column,
-	/** The object-oriented JSON. */
-	object,
-	/** The relational-oriented JSON. */
-	relational;
+	/** The Constant serialVersionUID. */
+	private static final long serialVersionUID = 1L;
 
 	/**
-	 * Return default JSON type.
-	 *
-	 * @return JsonType default JSON type
+	 * Instantiates a new xpath listener exception.
 	 */
-	public static JsonType defaultType() {
-		return column;
+	public xpathListenerException() {
+
+		super();
+
+	}
+
+	/**
+	 * Instantiates a new xpath listener exception.
+	 *
+	 * @param message the message
+	 */
+	public xpathListenerException(String message) {
+
+		super(message);
+
+	}
+
+	/**
+	 * Instantiates a new xpath listener exception.
+	 *
+	 * @param cause the cause
+	 */
+	public xpathListenerException(Throwable cause) {
+
+		super(cause);
+
 	}
 
 }

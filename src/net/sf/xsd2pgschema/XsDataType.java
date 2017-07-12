@@ -67,99 +67,99 @@ public enum XsDataType {
 	xs_serial,
 
 	/** The xs:float. */
-	xs_float, 
+	xs_float,
 	/** The xs:double. */
-	xs_double, 
+	xs_double,
 	/** The xs:decimal. */
-	xs_decimal, 
+	xs_decimal,
 	/** The xs:long. */
-	xs_long, 
+	xs_long,
 	/** The xs:bigint. */
-	xs_bigint, 
+	xs_bigint,
 	/** The xs:integer. */
-	xs_integer, 
+	xs_integer,
 	/** The xs:int. */
-	xs_int, 
+	xs_int,
 	/** The xs:short. */
-	xs_short, 
+	xs_short,
 	/** The xs:byte. */
 	xs_byte,
 
 	/** The xs:nonPositiveInteger. */
-	xs_nonPositiveInteger, 
+	xs_nonPositiveInteger,
 	/** The xs:negativeInteger. */
-	xs_negativeInteger, 
+	xs_negativeInteger,
 	/** The xs:nonNegativeInteger. */
-	xs_nonNegativeInteger, 
+	xs_nonNegativeInteger,
 	/** The xs:positiveInteger. */
 	xs_positiveInteger,
 
 	/** The xs:unsignedLong. */
-	xs_unsignedLong, 
+	xs_unsignedLong,
 	/** The xs:unsignedInt. */
-	xs_unsignedInt, 
+	xs_unsignedInt,
 	/** The xs:unsignedShort. */
-	xs_unsignedShort, 
+	xs_unsignedShort,
 	/** The xs:unsignedByte. */
 	xs_unsignedByte,
 
 	/** The xs:duration. */
-	xs_duration, 
+	xs_duration,
 	/** The xs:dateTime. */
-	xs_dateTime, 
+	xs_dateTime,
 	/** The xs:time. */
-	xs_time, 
+	xs_time,
 	/** The xs:date. */
-	xs_date, 
+	xs_date,
 	/** The xs:gYearMonth. */
-	xs_gYearMonth, 
+	xs_gYearMonth,
 	/** The xs:gYear. */
-	xs_gYear, 
+	xs_gYear,
 	/** The xs:gMonthDay. */
-	xs_gMonthDay, 
+	xs_gMonthDay,
 	/** The xs:gMonth. */
-	xs_gMonth, 
+	xs_gMonth,
 	/** The xs:gDay. */
 	xs_gDay,
 
 	/** The xs:string. */
-	xs_string, 
+	xs_string,
 	/** The xs:normalizedString. */
-	xs_normalizedString, 
+	xs_normalizedString,
 	/** The xs:token. */
-	xs_token, 
+	xs_token,
 	/** The xs:language. */
-	xs_language, 
+	xs_language,
 	/** The xs:Name. */
-	xs_Name, 
+	xs_Name,
 	/** The xs:QName. */
-	xs_QName, 
+	xs_QName,
 	/** The xs:NCName. */
-	xs_NCName, 
+	xs_NCName,
 	/** The xs:anyURI. */
 	xs_anyURI,
 
 	/** The xs:NOTATION. */
-	xs_NOTATION, 
+	xs_NOTATION,
 	/** The xs:NMTOKEN. */
-	xs_NMTOKEN, 
+	xs_NMTOKEN,
 	/** The xs:NMTOKENS. */
-	xs_NMTOKENS, 
+	xs_NMTOKENS,
 	/** The xs:ID. */
-	xs_ID, 
+	xs_ID,
 	/** The xs:IDREF. */
-	xs_IDREF, 
+	xs_IDREF,
 	/** The xs:IDREFS. */
-	xs_IDREFS, 
+	xs_IDREFS,
 	/** The xs:ENTITY. */
-	xs_ENTITY, 
+	xs_ENTITY,
 	/** The xs:ENTITIES. */
 	xs_ENTITIES,
 
 	/** The xs:anyType. */
-	xs_anyType, 
+	xs_anyType,
 	/** The xs:any. */
-	xs_any, 
+	xs_any,
 	/** The xs:anyAttribute. */
 	xs_anyAttribute;
 
@@ -2443,7 +2443,7 @@ public enum XsDataType {
 	 *
 	 * @param field PostgreSQL field
 	 * @param value content
-	 * @return boolean whether if content is valid
+	 * @return boolean whether content is valid
 	 */
 	public static boolean isValid(PgField field, String value) {
 
@@ -2922,8 +2922,8 @@ public enum XsDataType {
 	 * @param lucene_doc Lucene document
 	 * @param name field name
 	 * @param value content
-	 * @param min_word_len_filter whether if it exceeds minimum word length
-	 * @param numeric_index whether if numeric values are stored in index
+	 * @param min_word_len_filter whether it exceeds minimum word length
+	 * @param numeric_index whether numeric values are stored in index
 	 */
 	public static void setValue(PgField field, org.apache.lucene.document.Document lucene_doc, String name, String value, boolean min_word_len_filter, boolean numeric_index) {
 
@@ -3049,7 +3049,7 @@ public enum XsDataType {
 	 * @param writer the writer
 	 * @param attr_name Sphinx attribute name
 	 * @param value content
-	 * @param min_word_len_filter whether if it exceeds minimum word length
+	 * @param min_word_len_filter whether it exceeds minimum word length
 	 */
 	public static void setValue(PgField field, FileWriter writer, String attr_name, String value, boolean min_word_len_filter) {
 
@@ -3367,7 +3367,7 @@ public enum XsDataType {
 			"--dd'T'HH:mmXXX", "--dd'T'HHXXX", "--ddXXX"
 	};
 
-	/** The date pattern in UTC */
+	/** The date pattern in UTC. */
 	private static final String[] date_patterns_z = new String[] {
 			"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm'Z'", "yyyy-MM-dd'T'HH'Z'", "yyyy-MM-dd'Z'",
 			"yyyy-MM'T'HH:mm:ss.SSS'Z'", "yyyy-MM'T'HH:mm:ss'Z'", "yyyy-MM'T'HH:mm'Z'", "yyyy-MM'T'HH'Z'", "yyyy-MM'Z'",
@@ -3377,7 +3377,7 @@ public enum XsDataType {
 			"--dd'T'HH:mm'Z'", "--dd'T'HH'Z'", "--dd'Z'"
 	};
 
-	/** The date pattern in local time */
+	/** The date pattern in local time. */
 	private static final String[] date_patterns_loc = new String[] {
 			"yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm", "yyyy-MM-dd'T'HH", "yyyy-MM-dd",
 			"yyyy-MM'T'HH:mm:ss.SSS", "yyyy-MM'T'HH:mm:ss", "yyyy-MM'T'HH:mm", "yyyy-MM'T'HH", "yyyy-MM",
@@ -3389,7 +3389,7 @@ public enum XsDataType {
 
 	/**
 	 * Parse string as java.util.Date
-	 * 
+	 *
 	 * @param value content
 	 * @return Date java.util.Date
 	 */

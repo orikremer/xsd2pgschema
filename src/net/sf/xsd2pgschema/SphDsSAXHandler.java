@@ -50,10 +50,10 @@ public class SphDsSAXHandler extends DefaultHandler {
 	/** The current state for default content. */
 	boolean content = false;
 
-	/** Whether if Sphinx attribute. */
+	/** Whether Sphinx attribute. */
 	boolean sph_attr = false;
 
-	/** Whether if Sphinx multi-valued attribute. */
+	/** Whether Sphinx multi-valued attribute. */
 	boolean sph_mvattr = false;
 
 	/** The current Sphinx attribute name. */

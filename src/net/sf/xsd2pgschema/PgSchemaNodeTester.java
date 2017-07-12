@@ -43,10 +43,10 @@ public class PgSchemaNodeTester {
 	/** The processing node. */
 	public Node proc_node = null;
 
-	/** Whether if this node is omitted or not. */
+	/** Whether this node is omitted or not. */
 	public boolean omitted = false;
 
-	/** Whether if nested node. */
+	/** Whether nested node. */
 	boolean nested;
 
 	/** The ordinal number of current node in nested case. */
@@ -166,9 +166,9 @@ public class PgSchemaNodeTester {
 	}
 
 	/**
-	 * Return whether if current node is the last one.
+	 * Return whether current node is the last one.
 	 *
-	 * @return boolean whether if current node is the last one
+	 * @return boolean whether current node is the last one
 	 */
 	public boolean isLastNode() {
 		return node_count == 0 || (key_id == node_count) || (nested && key_id == nest_id);

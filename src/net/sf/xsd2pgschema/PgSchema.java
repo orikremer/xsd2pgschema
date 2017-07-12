@@ -45,11 +45,18 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.antlr.v4.runtime.tree.TerminalNodeImpl;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
+
+import com.github.antlr.grammars_v4.xpath.xpathParser.AbbreviatedStepContext;
+import com.github.antlr.grammars_v4.xpath.xpathParser.AxisSpecifierContext;
+import com.github.antlr.grammars_v4.xpath.xpathParser.NCNameContext;
+import com.github.antlr.grammars_v4.xpath.xpathParser.NameTestContext;
+import com.github.antlr.grammars_v4.xpath.xpathParser.NodeTestContext;
 
 /**
  * PostgreSQL schema constructor.
@@ -100,7 +107,7 @@ public class PgSchema {
 	/** The minimum word length for index. */
 	int min_word_len = PgSchemaUtil.min_word_len;
 
-	/** Whether if numeric index are stored in Lucene index. */
+	/** Whether numeric index are stored in Lucene index. */
 	boolean numeric_index = false;
 
 	/** The prefix of xs_namespace_uri. */
@@ -479,7 +486,7 @@ public class PgSchema {
 		if (root_schema != null)
 			return;
 
-		// whether if name collision occurs or not
+		// whether name collision occurs or not
 
 		conflicted = tables.stream().anyMatch(table -> table.conflict);
 
@@ -1805,7 +1812,7 @@ public class PgSchema {
 	 *
 	 * @param tables target PostgreSQL table list
 	 * @param table new table having table name at least
-	 * @return boolean whether if no name collision occurs
+	 * @return boolean whether no name collision occurs
 	 */
 	private boolean avoidTableDuplication(List<PgTable> tables, PgTable table) {
 
@@ -2597,7 +2604,7 @@ public class PgSchema {
 			if (f < fields.size() - 1)
 				System.out.println("," + (option.no_field_anno || field.anno == null || field.anno.isEmpty() ? "" : " -- " + field.anno));
 			else
-				System.out.print((option.no_field_anno || field.anno == null || field.anno.isEmpty() ? "" : " -- " + field.anno) + "\n");
+				System.out.println((option.no_field_anno || field.anno == null || field.anno.isEmpty() ? "" : " -- " + field.anno));
 
 		}
 
@@ -2607,7 +2614,7 @@ public class PgSchema {
 
 	// post XML editorial functions
 
-	/** Whether if filt-in option are resolved. */
+	/** Whether filt-in option are resolved. */
 	private boolean filt_in_resolved = false;
 
 	/**
@@ -2632,7 +2639,7 @@ public class PgSchema {
 			String[] key = key_val[0].split("\\.");
 
 			if (key_val.length != 1 || key.length > 2)
-				throw new PgSchemaException(filt_in + ": argument should be expressed by \"table_name.column_name");
+				throw new PgSchemaException(filt_in + ": argument should be expressed by \"table_name.column_name\".");
 
 			String table_name = key[0];
 			String field_name = key.length > 1 ? key[1] : null;
@@ -2708,7 +2715,7 @@ public class PgSchema {
 
 	}
 
-	/** Whether if filt-out option are resolved. */
+	/** Whether filt-out option are resolved. */
 	private boolean filt_out_resolved = false;
 
 	/**
@@ -2785,7 +2792,7 @@ public class PgSchema {
 
 	}
 
-	/** Whether if fill-this option are resolved. */
+	/** Whether fill-this option are resolved. */
 	private boolean fill_this_resolved = false;
 
 	/**
@@ -2849,7 +2856,7 @@ public class PgSchema {
 
 	}
 
-	/** Whether if selected attributes are resolved. */
+	/** Whether selected attributes are resolved. */
 	protected boolean attr_resolved = false;
 
 	/**
@@ -2929,7 +2936,7 @@ public class PgSchema {
 
 	}
 
-	/** Whether if selected fields are resolved. */
+	/** Whether selected fields are resolved. */
 	protected boolean field_resolved = false;
 
 	/**
@@ -3100,7 +3107,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Check whether if schema has root table.
+	 * Check whether schema has root table.
 	 *
 	 * @throws PgSchemaException the pg schema exception
 	 */
@@ -3180,7 +3187,7 @@ public class PgSchema {
 	/**
 	 * Initialize table lock objects.
 	 *
-	 * @param single_lock whether if single object no all objects
+	 * @param single_lock whether single object no all objects
 	 */
 	private void initTableLock(boolean single_lock) {
 
@@ -4155,11 +4162,11 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return whether if Sphinx attribute.
+	 * Return whether Sphinx attribute.
 	 *
 	 * @param table_name table name
 	 * @param field_name field name
-	 * @return boolean whether if Sphinx attribute
+	 * @return boolean whether Sphinx attribute
 	 */
 	public boolean isSphAttr(String table_name, String field_name) {
 
@@ -4181,11 +4188,11 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return whether if Sphinx multi-valued attribute.
+	 * Return whether Sphinx multi-valued attribute.
 	 *
 	 * @param table_name table name
 	 * @param field_name field name
-	 * @return boolean whether if Sphinx multi-valued attribute
+	 * @return boolean whether Sphinx multi-valued attribute
 	 */
 	public boolean isSphMVAttr(String table_name, String field_name) {
 
@@ -5275,6 +5282,1843 @@ public class PgSchema {
 
 		}
 
+	}
+
+	// Schema-aware XPath parser
+
+	/**
+	 * Validate XPath component list against schema.
+	 *
+	 * @param list XPath component list
+	 * @param ends_with_field whether XPath ends with either element or attribute
+	 * @param ends_with_text whether append text node in the ends, if possible
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void validateXPath(XPathCompList list, boolean ends_with_field, boolean ends_with_text) throws PgSchemaException {
+
+		hasRootTable();
+
+		for (int expr_id = 0; expr_id <= list.getLastExpr(); expr_id++) {
+
+			for (int step_id = 0; step_id <= list.getLastStep(expr_id); step_id++) {
+
+				XPathComp[] comps = list.getXPathComp(expr_id, step_id);
+
+				for (XPathComp comp : comps) {
+
+					Class<?> anyClass = comp.tree.getClass();
+
+					// TerminalNodeImpl node
+
+					if (anyClass.equals(TerminalNodeImpl.class))
+						list.validateTerminalNodeImpl(comp);
+
+					// AbbreviatedStepContext node
+
+					else if (anyClass.equals(AbbreviatedStepContext.class))
+						list.validateAbbreviateStepContext(comp);
+
+					// AxisSpecifierContext node
+
+					else if (anyClass.equals(AxisSpecifierContext.class))
+						list.validateAxisSpecifierContext(comp, comps);
+
+					// NCNameContext node
+
+					else if (anyClass.equals(NCNameContext.class))
+						validateNCNameContext(list, ends_with_field, comp, comps);
+
+					// NodeTestContext node
+
+					else if (anyClass.equals(NodeTestContext.class))
+						validateNodeTestContext(list, ends_with_field, comp, comps);
+
+					// NameTestContext node
+
+					else if (anyClass.equals(NameTestContext.class))
+						validateNameTestContext(list, ends_with_field, comp, comps);
+
+					else
+						throw new PgSchemaException(comp.tree);
+
+				}
+
+			}
+
+		}
+
+		list.applyUnionExpr();
+
+		if (ends_with_text && list.hasPathEndsWithoutTextNode()) {
+
+			list.removePathEndsWithTableNode();
+			list.appendTextNode();
+
+		}
+
+	}
+
+	/**
+	 * Validate XPath component with NCNameContext class.
+	 *
+	 * @param list XPath component list
+	 * @param ends_with_field whether test that XPath ends with either element or attribute
+	 * @param comp current XPath component
+	 * @param comps array of XPath component of the same step
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void validateNCNameContext(XPathCompList list, boolean ends_with_field, XPathComp comp, XPathComp[] comps) throws PgSchemaException {
+
+		boolean wild_card = false;
+
+		if (comps.length == 1)
+			validateNCNameContextWithChildAxis(list, ends_with_field, comp, list.isAbsolutePath(comp.expr_id), true, wild_card, null);
+
+		else {
+
+			boolean target_comp = false;
+
+			for (XPathComp _comp : comps) {
+
+				if (_comp.tree.getClass().equals(NCNameContext.class)) {
+
+					if (_comp.equals(comp))
+						target_comp = true;
+
+					break;
+				}
+
+			}
+
+			if (!target_comp)
+				return;
+
+			XPathComp first_comp = comps[0];
+
+			for (XPathComp _comp : comps) {
+
+				Class<?> _anyClass = _comp.tree.getClass();
+
+				if (_anyClass.equals(AxisSpecifierContext.class)) {
+
+					if (!_comp.equals(first_comp))
+						throw new PgSchemaException(_comp.tree);
+
+				}
+
+				else if (_anyClass.equals(TerminalNodeImpl.class))
+					wild_card = true;
+
+				else if (!_anyClass.equals(NCNameContext.class))
+					throw new PgSchemaException(_comp.tree);
+
+			}
+
+			String composite_text = null;
+
+			if (wild_card) {
+
+				StringBuilder sb = new StringBuilder();
+
+				for (XPathComp _comp : comps) {
+
+					Class<?> _anyClass = _comp.tree.getClass();
+
+					if (_anyClass.equals(NCNameContext.class))
+						sb.append(_comp.tree.getText());
+
+					else if (_anyClass.equals(TerminalNodeImpl.class)) // '*' -> regular expression '.*'
+						sb.append("." + _comp.tree.getText());
+
+					else if (!_anyClass.equals(AxisSpecifierContext.class))
+						throw new PgSchemaException(_comp.tree);
+
+				}
+
+				composite_text = sb.toString();
+
+				sb.setLength(0);
+
+			}
+
+			if (first_comp.tree.getClass().equals(AxisSpecifierContext.class)) {
+
+				switch (first_comp.tree.getText()) {
+				case "ancestor::":
+					list.validateNCNameContextWithAncestorAxis(comp, false, wild_card, composite_text);
+					break;
+				case "ancestor-or-self::":
+					list.validateNCNameContextWithAncestorAxis(comp, true, wild_card, composite_text);
+					break;
+				case "attribute::":
+				case "@":
+					validateNCNameContextWithAttributeAxis(list, ends_with_field, comp, wild_card, composite_text);
+					break;
+				case "child::":
+					validateNCNameContextWithChildAxis(list, ends_with_field, comp, list.isAbsolutePath(comp.expr_id), true, wild_card, composite_text);
+					break;
+				case "descendant::":
+					validateNCNameContextWithChildAxis(list, ends_with_field, comp, false, false, wild_card, composite_text);
+					break;
+				case "descendant-or-self::":
+					validateNCNameContextWithChildAxis(list, ends_with_field, comp, false, true, wild_card, composite_text);
+					break;
+				case "preceding-sibling::":	// non-sense in schema analysis
+				case "following-sibling::": // non-sense in schema analysis
+				case "self::":
+					validateNCNameContextWithChildAxis(list, ends_with_field, comp, true, true, wild_card, composite_text);
+					break;
+				case "following::": // non-sense in schema analysis
+				case "preceding::": // non-sense in schema analysis
+					validateNCNameContextWithChildAxis(list, ends_with_field, comp, false, true, wild_card, composite_text);
+					break;
+				case "parent::":
+					list.validateNCNameContextWithParentAxis(comp, wild_card, composite_text);
+					break;
+				default: // namespace
+					throw new PgSchemaException(first_comp.tree);
+				}
+
+			}
+
+			else
+				validateNCNameContextWithChildAxis(list, ends_with_field, comp, list.isAbsolutePath(comp.expr_id), true, wild_card, composite_text);
+
+		}
+
+	}
+
+	/**
+	 * Validate XPath component with NCNameContext class having child axis.
+	 *
+	 * @param list XPath component list
+	 * @param ends_with_field whether test that XPath ends with either element or attribute
+	 * @param comp current XPath component
+	 * @param boolean abs_path whether absolute location path or abbreviate location path
+	 * @param boolean inc_self whether include self node or not
+	 * @param boolean wild_card whether wild card follows or not
+	 * @param composite_text composite text including wild card
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void validateNCNameContextWithChildAxis(XPathCompList list, boolean ends_with_field, XPathComp comp, boolean abs_path, boolean inc_self, boolean wild_card, String composite_text) throws PgSchemaException {
+
+		String text = wild_card ? composite_text : comp.tree.getText();
+		int step_id = comp.step_id;
+
+		boolean init_path = list.paths.isEmpty();
+
+		// first NCNameContext node
+
+		if (init_path) {
+
+			if (abs_path) {
+
+				if (!matchesNodeName(root_table.name, text, wild_card))
+					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
+
+				if (inc_self)
+					list.add(getAbsXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
+
+			}
+
+			else {
+
+				tables.stream().filter(table -> matchesNodeName(table.name, text, wild_card) && !table.virtual).forEach(table -> {
+
+					String table_xpath = getAbsXPathOfTable(table, new StringBuilder());
+
+					if (table_xpath != null && inc_self)
+						list.add(table_xpath, XPathCompType.table);
+
+					if (table.fields.stream().anyMatch(field -> field.simple_cont)) {
+
+						String simple_cont_xpath = getAbsXPathOfSimpleContent(table);
+
+						if (simple_cont_xpath != null && inc_self)
+							list.add(simple_cont_xpath, XPathCompType.field);
+
+					}
+
+				});
+
+				for (PgTable table : tables) {
+
+					table.fields.stream().filter(field -> matchesNodeName(field.xname, text, wild_card) && field.element).forEach(field -> {
+
+						String elem_xpath = getAbsXPathOfElement(table, field.xname);
+
+						if (elem_xpath != null && inc_self)
+							list.add(elem_xpath, XPathCompType.field);
+
+					});
+
+				}
+
+				if (list.paths.size() == 0)
+					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
+
+			}
+
+		}
+
+		// succeeding NCNameContext node
+
+		else {
+
+			XPathCompList rep_listd = new XPathCompList();
+
+			list.paths.forEach(path -> {
+
+				XPathCompList _list = new XPathCompList();
+
+				String cur_table = getTableNameOfPath(path);
+
+				// not specified table
+
+				if (cur_table == null) {
+
+					if (abs_path) {
+
+						if (matchesNodeName(root_table.name, text, wild_card) && inc_self)
+							_list.add(getAbsXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
+
+					}
+
+					else {
+
+						tables.stream().filter(table -> matchesNodeName(table.name, text, wild_card) && !table.virtual).forEach(table -> {
+
+							String table_xpath = getAbsXPathOfTable(table, new StringBuilder());
+
+							if (table_xpath != null && inc_self)
+								_list.add(table_xpath, XPathCompType.table);
+
+							if (table.fields.stream().anyMatch(field -> field.simple_cont)) {
+
+								String simple_cont_xpath = getAbsXPathOfSimpleContent(table);
+
+								if (simple_cont_xpath != null && inc_self)
+									_list.add(simple_cont_xpath, XPathCompType.field);
+
+							}
+
+						});
+
+						for (PgTable table : tables) {
+
+							table.fields.stream().filter(field -> matchesNodeName(field.xname, text, wild_card) && field.element).forEach(field -> {
+
+								String elem_xpath = getAbsXPathOfElement(table, field.xname);
+
+								if (elem_xpath != null && inc_self)
+									_list.add(elem_xpath, XPathCompType.field);
+
+							});
+
+						}
+
+					}
+
+				}
+
+				// table was specified
+
+				else {
+
+					int table_id = getTableId(cur_table);
+
+					if (table_id == -1) {
+
+						XPathComp prev_comp = list.getPreviousStep(comp);
+
+						try {
+							throw new PgSchemaException(prev_comp.tree, def_schema_location);
+						} catch (PgSchemaException e) {
+							e.printStackTrace();
+							System.exit(1);
+						}
+
+					}
+
+					PgTable table = tables.get(table_id);
+
+					// check current element
+
+					table.fields.stream().filter(field -> field.element && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+
+						String elem_xpath = getXPathOfElement(field.xname);
+
+						if (elem_xpath != null && inc_self)
+							_list.add(path + "/" + elem_xpath, XPathCompType.field);
+
+					});
+
+					// check current nested_key
+
+					Integer[] foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					Integer[] _foreign_table_ids = null;
+
+					while (foreign_table_ids != null && foreign_table_ids.length > 0 && _list.paths.size() == 0) {
+
+						boolean first_nest = _foreign_table_ids == null;
+
+						for (Integer foreign_table_id : foreign_table_ids) {
+
+							PgTable foreign_table = tables.get(foreign_table_id);
+
+							// check foreign table
+
+							if (matchesNodeName(foreign_table.name, text, wild_card) && !foreign_table.virtual) {
+
+								String table_xpath = getAbsXPathOfTable(foreign_table, new StringBuilder());
+
+								if (table_xpath != null && (inc_self || first_nest))
+									_list.add(table_xpath, XPathCompType.table);
+
+								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont)) {
+
+									String simple_cont_xpath = getAbsXPathOfSimpleContent(foreign_table);
+
+									if (simple_cont_xpath != null && (inc_self || first_nest))
+										_list.add(simple_cont_xpath, XPathCompType.field);
+
+								}
+
+							}
+
+							// check foreign element
+
+							foreign_table.fields.stream().filter(field -> field.element && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+
+								String elem_xpath = getAbsXPathOfElement(foreign_table, field.xname);
+
+								if (elem_xpath != null && (inc_self || first_nest))
+									_list.add(elem_xpath, XPathCompType.field);
+
+							});
+
+							// check foreign nested_key
+
+							if (foreign_table.virtual || !abs_path) {
+
+								Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+
+								if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
+									_foreign_table_ids = __foreign_table_ids;
+
+							}
+
+						}
+
+						foreign_table_ids = _foreign_table_ids;
+
+					}
+
+				}
+
+				rep_listd.addAll(_list);
+
+				_list.clear();
+
+			});
+
+			if (rep_listd.paths.size() > 0)
+				list.replacePath(rep_listd);
+
+			else
+				throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
+
+			// check last component has text node
+
+			if (ends_with_field && step_id == list.getLastStep(comp.expr_id) && list.hasPathEndsWithTableNode()) {
+
+				if (list.removePathEndsWithTableNode() == 0)
+					throw new PgSchemaException(comp.tree);
+
+			}
+
+		}
+
+	}
+
+	/**
+	 * Validate XPath component with NCNameContext class having attribute axis.
+	 *
+	 * @param list XPath component list
+	 * @param ends_with_field whether test that XPath ends with either element or attribute
+	 * @param comp current XPath component
+	 * @param boolean wild_card whether wild card follows or not
+	 * @param composite_text composite text including wild card
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void validateNCNameContextWithAttributeAxis(XPathCompList list, boolean ends_with_field, XPathComp comp, boolean wild_card, String composite_text) throws PgSchemaException {
+
+		String text = wild_card ? composite_text : comp.tree.getText();
+		int step_id = comp.step_id;
+
+		boolean init_path = list.paths.isEmpty();
+
+		// first NCNameContext node
+
+		if (init_path) {
+
+			if (list.isAbsolutePath(comp.expr_id))
+				throw new PgSchemaException(comp.tree);
+
+			else {
+
+				for (PgTable table : tables) {
+
+					table.fields.stream().filter(field -> matchesNodeName(field.xname, text, wild_card) && field.attribute).forEach(field -> {
+
+						String attr_xpath = getAbsXPathOfAttribute(table, field.xname);
+
+						if (attr_xpath != null)
+							list.add(attr_xpath, XPathCompType.field);
+
+					});
+
+				}
+
+				if (list.paths.size() == 0)
+					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
+
+			}
+
+		}
+
+		// succeeding NCNameContext node
+
+		else {
+
+			boolean abs_location_path = list.isAbsolutePath(comp.expr_id);
+
+			XPathCompList rep_list = new XPathCompList();
+
+			list.paths.forEach(path -> {
+
+				XPathCompList _list = new XPathCompList();
+
+				String cur_table = getTableNameOfPath(path);
+
+				// not specified table
+
+				if (cur_table == null) {
+
+					if (abs_location_path) {
+
+						for (PgTable table : tables) {
+
+							table.fields.stream().filter(field -> matchesNodeName(field.xname, text, wild_card) && field.attribute).forEach(field -> {
+
+								String attr_xpath = getAbsXPathOfAttribute(table, field.xname);
+
+								if (attr_xpath != null)
+									_list.add(attr_xpath, XPathCompType.field);
+
+							});
+
+						}
+
+					}
+
+				}
+
+				// specified table
+
+				else {
+
+					int table_id = getTableId(cur_table);
+
+					if (table_id == -1) {
+
+						XPathComp prev_comp = list.getPreviousStep(comp);
+
+						try {
+							throw new PgSchemaException(prev_comp.tree, def_schema_location);
+						} catch (PgSchemaException e) {
+							e.printStackTrace();
+							System.exit(1);
+						}
+
+					}
+
+					PgTable table = tables.get(table_id);
+
+					// check current attribute
+
+					table.fields.stream().filter(field -> field.attribute && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+
+						String attr_xpath = getXPathOfAttribute(field.xname);
+
+						if (attr_xpath != null)
+							_list.add(path + "/" + attr_xpath, XPathCompType.field);
+
+					});
+
+					// check current nested_key
+
+					Integer[] foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					Integer[] _foreign_table_ids = null;
+
+					while (foreign_table_ids != null && foreign_table_ids.length > 0 && _list.paths.size() == 0) {
+
+						for (Integer foreign_table_id : foreign_table_ids) {
+
+							PgTable foreign_table = tables.get(foreign_table_id);
+
+							// check foreign attribute
+
+							foreign_table.fields.stream().filter(field -> field.attribute && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+
+								String attr_xpath = getAbsXPathOfAttribute(foreign_table, field.xname);
+
+								if (attr_xpath != null)
+									_list.add(attr_xpath, XPathCompType.field);
+
+							});
+
+							// check foreign nested_key
+
+							if (foreign_table.virtual || !abs_location_path) {
+
+								Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+
+								if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
+									_foreign_table_ids = __foreign_table_ids;
+
+							}
+
+						}
+
+						foreign_table_ids = _foreign_table_ids;
+
+					}
+
+				}
+
+				rep_list.addAll(_list);
+
+				_list.clear();
+
+			});
+
+			if (rep_list.paths.size() > 0)
+				list.replacePath(rep_list);
+
+			else
+				throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
+
+			// check last component has text node
+
+			if (ends_with_field && step_id == list.getLastStep(comp.expr_id) && list.hasPathEndsWithTableNode()) {
+
+				if (list.removePathEndsWithoutTableNode() == 0)
+					throw new PgSchemaException(comp.tree);
+
+			}
+
+		}
+
+	}
+
+	/**
+	 * Validate XPath component with NodeTestContext class.
+	 *
+	 * @param list XPath component list
+	 * @param ends_with_field whether test that XPath ends with either element or attribute
+	 * @param comp current XPath component
+	 * @param comps array of XPath component of the same step
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void validateNodeTestContext(XPathCompList list, boolean ends_with_field, XPathComp comp, XPathComp[] comps) throws PgSchemaException {
+
+		XPathComp first_comp = comps[0];
+
+		String text = comp.tree.getText();
+
+		if (comps.length == 1) {
+
+			switch (text) {
+			case "node()":
+				validateNodeTestContextWithChildAxis(list, ends_with_field, comp, list.isAbsolutePath(comp.expr_id), true);
+				break;
+			case "text()":
+				list.removePathEndsWithTableNode();
+
+				if (list.hasPathEndsWithTextNode())
+					throw new PgSchemaException(comp.tree);
+
+				list.appendTextNode();
+				break;
+			case "comment()":
+				if (list.hasPathEndsWithTextNode())
+					throw new PgSchemaException(comp.tree);
+
+				list.appendCommentNode();
+				break;
+			default:
+				if (text.startsWith("processing-instruction"))
+					list.appendProcessingInstructionNode(text);
+
+				else
+					throw new PgSchemaException(comp.tree);
+			}
+
+		}
+
+		else if (comps.length == 2 && first_comp.tree.getClass().equals(AxisSpecifierContext.class)) {
+
+			switch (text) {
+			case "node()":
+				switch (first_comp.tree.getText()) {
+				case "ancestor::":
+					list.validateNodeTestContextWithAncestorAxis(comp, false);
+					break;
+				case "ancestor-or-self::":
+					list.validateNodeTestContextWithAncestorAxis(comp, true);
+					break;
+				case "attribute::":
+				case "@":
+					validateNodeTestContextWithAttributeAxis(list, ends_with_field, comp);
+					break;
+				case "child::":
+					validateNodeTestContextWithChildAxis(list, ends_with_field, comp, list.isAbsolutePath(comp.expr_id), true);
+					break;
+				case "descendant::":
+					validateNodeTestContextWithChildAxis(list, ends_with_field, comp, false, false);
+					break;
+				case "descendant-or-self::":
+					validateNodeTestContextWithChildAxis(list, ends_with_field, comp, false, true);
+					break;
+				case "preceding-sibling::":	// non-sense in schema analysis
+				case "following-sibling::": // non-sense in schema analysis
+				case "self::":
+					validateNodeTestContextWithChildAxis(list, ends_with_field, comp, true, true);
+					break;
+				case "following::": // non-sense in schema analysis
+				case "preceding::": // non-sense in schema analysis
+					validateNodeTestContextWithChildAxis(list, ends_with_field, comp, false, true);
+					break;
+				case "parent::":
+					list.validateNodeTestContextWithParentAxis(comp);
+					break;
+				default: // namespace
+					throw new PgSchemaException(first_comp.tree);
+				}
+				break;
+			default:
+				throw new PgSchemaException(comp.tree, first_comp.tree);
+			}
+
+		}
+
+		else
+			throw new PgSchemaException(comp.tree);
+
+	}
+
+	/**
+	 * Validate XPath component with NodeTestContext class having child axis.
+	 *
+	 * @param list XPath component list
+	 * @param ends_with_field whether test that XPath ends with either element or attribute
+	 * @param comp current XPath component
+	 * @param boolean abs_path whether absolute location path or abbreviate location path
+	 * @param boolean inc_self whether include self node or not
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void validateNodeTestContextWithChildAxis(XPathCompList list, boolean ends_with_field, XPathComp comp, boolean abs_path, boolean inc_self) throws PgSchemaException {
+
+		int step_id = comp.step_id;
+
+		boolean init_path = list.paths.isEmpty();
+
+		// first NodeTestContext node
+
+		if (init_path) {
+
+			if (abs_path) {
+
+				if (inc_self)
+					list.add(getAbsXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
+
+			}
+
+			else {
+
+				tables.stream().filter(table -> !table.virtual).forEach(table -> {
+
+					String table_xpath = getAbsXPathOfTable(table, new StringBuilder());
+
+					if (table_xpath != null && inc_self)
+						list.add(table_xpath, XPathCompType.table);
+
+					if (table.fields.stream().anyMatch(field -> field.simple_cont)) {
+
+						String simple_cont_xpath = getAbsXPathOfSimpleContent(table);
+
+						if (simple_cont_xpath != null && inc_self)
+							list.add(simple_cont_xpath, XPathCompType.field);
+
+					}
+
+				});
+
+				for (PgTable table : tables) {
+
+					table.fields.stream().filter(field -> field.element).forEach(field -> {
+
+						String elem_xpath = getAbsXPathOfElement(table, field.xname);
+
+						if (elem_xpath != null && inc_self)
+							list.add(elem_xpath, XPathCompType.field);
+
+					});
+
+				}
+
+				if (list.paths.size() == 0)
+					throw new PgSchemaException(comp.tree, def_schema_location);
+
+			}
+
+		}
+
+		// succeeding NodeTestContext node
+
+		else {
+
+			XPathCompList rep_listd = new XPathCompList();
+
+			list.paths.forEach(path -> {
+
+				XPathCompList _list = new XPathCompList();
+
+				String cur_table = getTableNameOfPath(path);
+
+				// not specified table
+
+				if (cur_table == null) {
+
+					if (abs_path) {
+
+						if (inc_self)
+							_list.add(getAbsXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
+
+					}
+
+					else {
+
+						tables.stream().filter(table -> !table.virtual).forEach(table -> {
+
+							String table_xpath = getAbsXPathOfTable(table, new StringBuilder());
+
+							if (table_xpath != null && inc_self)
+								_list.add(table_xpath, XPathCompType.table);
+
+							table.fields.stream().filter(field -> field.simple_cont).forEach(field -> {
+
+								String simple_cont_xpath = getAbsXPathOfSimpleContent(table);
+
+								if (simple_cont_xpath != null && inc_self)
+									_list.add(simple_cont_xpath, XPathCompType.field);
+
+							});
+
+						});
+
+						for (PgTable table : tables) {
+
+							table.fields.stream().filter(field -> field.element).forEach(field -> {
+
+								String elem_xpath = getAbsXPathOfElement(table, field.xname);
+
+								if (elem_xpath != null && inc_self)
+									_list.add(elem_xpath, XPathCompType.field);
+
+							});
+
+						}
+
+					}
+
+				}
+
+				// table was specified
+
+				else {
+
+					int table_id = getTableId(cur_table);
+
+					if (table_id == -1) {
+
+						XPathComp prev_comp = list.getPreviousStep(comp);
+
+						try {
+							throw new PgSchemaException(prev_comp.tree, def_schema_location);
+						} catch (PgSchemaException e) {
+							e.printStackTrace();
+							System.exit(1);
+						}
+
+					}
+
+					PgTable table = tables.get(table_id);
+
+					// check current element
+
+					table.fields.stream().filter(field -> field.element).forEach(field -> {
+
+						String elem_xpath = getXPathOfElement(field.xname);
+
+						if (elem_xpath != null && inc_self)
+							_list.add(path + "/" + elem_xpath, XPathCompType.field);
+
+					});
+
+					// check current nested_key
+
+					Integer[] foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					Integer[] _foreign_table_ids = null;
+
+					while (foreign_table_ids != null && foreign_table_ids.length > 0 && _list.paths.size() == 0) {
+
+						boolean first_nest = _foreign_table_ids == null;
+
+						for (Integer foreign_table_id : foreign_table_ids) {
+
+							PgTable foreign_table = tables.get(foreign_table_id);
+
+							// check foreign table
+
+							if (!foreign_table.virtual) {
+
+								String table_xpath = getAbsXPathOfTable(foreign_table, new StringBuilder());
+
+								if (table_xpath != null && (inc_self || _foreign_table_ids == null))
+									_list.add(table_xpath, XPathCompType.table);
+
+								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont)) {
+
+									String simple_cont_xpath = getAbsXPathOfSimpleContent(foreign_table);
+
+									if (simple_cont_xpath != null && (inc_self || first_nest))
+										_list.add(simple_cont_xpath, XPathCompType.field);
+
+								}
+
+							}
+
+							// check foreign element
+
+							foreign_table.fields.stream().filter(field -> field.element).forEach(field -> {
+
+								String elem_xpath = getAbsXPathOfElement(foreign_table, field.xname);
+
+								if (elem_xpath != null && (inc_self || first_nest))
+									_list.add(elem_xpath, XPathCompType.field);
+
+							});
+
+							// check foreign nested_key
+
+							if (foreign_table.virtual || !abs_path) {
+
+								Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+
+								if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
+									_foreign_table_ids = __foreign_table_ids;
+
+							}
+
+						}
+
+						foreign_table_ids = _foreign_table_ids;
+
+					}
+
+				}
+
+				rep_listd.addAll(_list);
+
+				_list.clear();
+
+			});
+
+			if (rep_listd.paths.size() > 0)
+				list.replacePath(rep_listd);
+
+			else
+				throw new PgSchemaException(comp.tree, def_schema_location);
+
+			// check last component has text node
+
+			if (ends_with_field && step_id == list.getLastStep(comp.expr_id) && list.hasPathEndsWithTableNode()) {
+
+				if (list.removePathEndsWithTableNode() == 0)
+					throw new PgSchemaException(comp.tree);
+
+			}
+
+		}
+
+	}
+
+	/**
+	 * Validate XPath component with NodeTestContext class having attribute axis.
+	 *
+	 * @param list XPath component list
+	 * @param ends_with_field whether test that XPath ends with either element or attribute
+	 * @param comp current XPath component
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void validateNodeTestContextWithAttributeAxis(XPathCompList list, boolean ends_with_field, XPathComp comp) throws PgSchemaException {
+
+		int step_id = comp.step_id;
+
+		boolean init_path = list.paths.isEmpty();
+
+		// first NodeTestContext node
+
+		if (init_path) {
+
+			if (list.isAbsolutePath(comp.expr_id))
+				throw new PgSchemaException(comp.tree);
+
+			else {
+
+				for (PgTable table : tables) {
+
+					table.fields.stream().filter(field -> field.attribute).forEach(field -> {
+
+						String attr_xpath = getAbsXPathOfAttribute(table, field.xname);
+
+						if (attr_xpath != null)
+							list.add(attr_xpath, XPathCompType.field);
+
+					});
+
+				}
+
+				if (list.paths.size() == 0)
+					throw new PgSchemaException(comp.tree, def_schema_location);
+
+			}
+
+		}
+
+		// succeeding NodeTestContext node
+
+		else {
+
+			boolean abs_location_path = list.isAbsolutePath(comp.expr_id);
+
+			XPathCompList rep_list = new XPathCompList();
+
+			list.paths.forEach(path -> {
+
+				XPathCompList _list = new XPathCompList();
+
+				String cur_table = getTableNameOfPath(path);
+
+				// not specified table
+
+				if (cur_table == null) {
+
+					if (abs_location_path) {
+
+						for (PgTable table : tables) {
+
+							table.fields.stream().filter(field -> field.attribute).forEach(field -> {
+
+								String attr_xpath = getAbsXPathOfAttribute(table, field.xname);
+
+								if (attr_xpath != null)
+									_list.add(attr_xpath, XPathCompType.field);
+
+							});
+
+						}
+
+					}
+
+				}
+
+				// specified table
+
+				else {
+
+					int table_id = getTableId(cur_table);
+
+					if (table_id == -1) {
+
+						XPathComp prev_comp = list.getPreviousStep(comp);
+
+						try {
+							throw new PgSchemaException(prev_comp.tree, def_schema_location);
+						} catch (PgSchemaException e) {
+							e.printStackTrace();
+							System.exit(1);
+						}
+
+					}
+
+					PgTable table = tables.get(table_id);
+
+					// check current attribute
+
+					table.fields.stream().filter(field -> field.attribute).forEach(field -> {
+
+						String attr_xpath = getXPathOfAttribute(field.xname);
+
+						if (attr_xpath != null)
+							_list.add(path + "/" + attr_xpath, XPathCompType.field);
+
+					});
+
+					// check current nested_key
+
+					Integer[] foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					Integer[] _foreign_table_ids = null;
+
+					while (foreign_table_ids != null && foreign_table_ids.length > 0 && _list.paths.size() == 0) {
+
+						for (Integer foreign_table_id : foreign_table_ids) {
+
+							PgTable foreign_table = tables.get(foreign_table_id);
+
+							// check foreign attribute
+
+							foreign_table.fields.stream().filter(field -> field.attribute).forEach(field -> {
+
+								String attr_xpath = getAbsXPathOfAttribute(foreign_table, field.xname);
+
+								if (attr_xpath != null)
+									_list.add(attr_xpath, XPathCompType.field);
+
+							});
+
+							// check foreign nested_key
+
+							if (foreign_table.virtual || !abs_location_path) {
+
+								Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+
+								if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
+									_foreign_table_ids = __foreign_table_ids;
+
+							}
+
+						}
+
+						foreign_table_ids = _foreign_table_ids;
+
+					}
+
+				}
+
+				rep_list.addAll(_list);
+
+				_list.clear();
+
+			});
+
+			if (rep_list.paths.size() > 0)
+				list.replacePath(rep_list);
+
+			else
+				throw new PgSchemaException(comp.tree, def_schema_location);
+
+			// check last component has text node
+
+			if (ends_with_field && step_id == list.getLastStep(comp.expr_id) && list.hasPathEndsWithTableNode()) {
+
+				if (list.removePathEndsWithoutTableNode() == 0)
+					throw new PgSchemaException(comp.tree);
+
+			}
+
+		}
+
+	}
+
+	/**
+	 * Validate XPath component with NameTestContext class.
+	 *
+	 * @param list XPath component list
+	 * @param ends_with_field whether test that XPath ends with either element or attribute
+	 * @param comp current XPath component
+	 * @param comps array of XPath component of the same step
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void validateNameTestContext(XPathCompList list, boolean ends_with_field, XPathComp comp, XPathComp[] comps) throws PgSchemaException {
+
+		XPathComp first_comp = comps[0];
+
+		String text = comp.tree.getText();
+
+		if (comps.length == 1) {
+
+			if (text.endsWith("*")) {
+
+				String prefix = "";
+
+				if (text.contains(":"))
+					prefix = text.split(":")[0];
+
+				String namespace_uri = def_namespaces.get(prefix);	
+
+				if (namespace_uri == null || namespace_uri.isEmpty())
+					throw new PgSchemaException(comp.tree, def_schema_location, prefix);
+
+				validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, list.isAbsolutePath(comp.expr_id), true);
+
+			}
+
+			else
+				throw new PgSchemaException(comp.tree);
+
+		}
+
+		else if (comps.length == 2 && first_comp.tree.getClass().equals(AxisSpecifierContext.class)) {
+
+			if (text.endsWith("*")) {
+
+				String prefix = "";
+
+				if (text.contains(":"))
+					prefix = text.split(":")[0];
+
+				String namespace_uri = def_namespaces.get(prefix);	
+
+				if (namespace_uri == null || namespace_uri.isEmpty())
+					throw new PgSchemaException(comp.tree, def_schema_location, prefix);
+
+				switch (first_comp.tree.getText()) {
+				case "ancestor::":
+					list.validateNameTestContextWithAncestorAxis(comp, namespace_uri, this, false);
+					break;
+				case "ancestor-or-self::":
+					list.validateNameTestContextWithAncestorAxis(comp, namespace_uri, this, true);
+					break;
+				case "attribute::":
+				case "@":
+					validateNameTestContextWithAttributeAxis(list, ends_with_field, comp, prefix.isEmpty() ? PgSchemaUtil.xs_namespace_uri : namespace_uri);
+					break;
+				case "child::":
+					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, list.isAbsolutePath(comp.expr_id), true);
+					break;
+				case "descendant::":
+					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, false, false);
+					break;
+				case "descendant-or-self::":
+					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, false, true);
+					break;
+				case "preceding-sibling::":	// non-sense in schema analysis
+				case "following-sibling::": // non-sense in schema analysis
+				case "self::":
+					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, true, true);
+					break;
+				case "following::": // non-sense in schema analysis
+				case "preceding::": // non-sense in schema analysis
+					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, false, true);
+					break;
+				case "parent::":
+					list.validateNameTestContextWithParentAxis(comp, namespace_uri, this);
+					break;
+				default: // namespace
+					throw new PgSchemaException(first_comp.tree);
+				}
+
+			}
+
+			else
+				throw new PgSchemaException(comp.tree);
+
+		}
+
+		else
+			throw new PgSchemaException(comp.tree);
+
+	}
+
+	/**
+	 * Validate XPath component with NameTestContext class having child axis.
+	 *
+	 * @param list XPath component list
+	 * @param ends_with_field whether test that XPath ends with either element or attribute
+	 * @param comp current XPath component
+	 * @param namespace_uri current namespace URI
+	 * @param boolean abs_path whether absolute location path or abbreviate location path
+	 * @param boolean inc_self whether include self node or not
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void validateNameTestContextWithChildAxis(XPathCompList list, boolean ends_with_field, XPathComp comp, String namespace_uri, boolean abs_path, boolean inc_self) throws PgSchemaException {
+
+		int step_id = comp.step_id;
+
+		boolean init_path = list.paths.isEmpty();
+
+		// first NameTestContext node
+
+		if (init_path) {
+
+			if (abs_path) {
+
+				if (!root_table.target_namespace.contains(namespace_uri))
+					throw new PgSchemaException(comp.tree, def_schema_location);
+
+				if (inc_self)
+					list.add(getAbsXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
+
+			}
+
+			else {
+
+				tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri)).forEach(table -> {
+
+					String table_xpath = getAbsXPathOfTable(table, new StringBuilder());
+
+					if (table_xpath != null && inc_self)
+						list.add(table_xpath, XPathCompType.table);
+
+					if (table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(namespace_uri))) {
+
+						String simple_cont_xpath = getAbsXPathOfSimpleContent(table);
+
+						if (simple_cont_xpath != null && inc_self)
+							list.add(simple_cont_xpath, XPathCompType.field);
+
+					}
+
+				});
+
+				for (PgTable table : tables) {
+
+					table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+
+						String elem_xpath = getAbsXPathOfElement(table, field.xname);
+
+						if (elem_xpath != null && inc_self)
+							list.add(elem_xpath, XPathCompType.field);
+
+					});
+
+				}
+
+				if (list.paths.size() == 0)
+					throw new PgSchemaException(comp.tree, def_schema_location);
+
+			}
+
+		}
+
+		// succeeding NameTestContext node
+
+		else {
+
+			XPathCompList rep_listd = new XPathCompList();
+
+			list.paths.forEach(path -> {
+
+				XPathCompList _list = new XPathCompList();
+
+				String cur_table = getTableNameOfPath(path);
+
+				// not specified table
+
+				if (cur_table == null) {
+
+					if (abs_path) {
+
+						if (inc_self && root_table.target_namespace.contains(namespace_uri))
+							_list.add(getAbsXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
+
+					}
+
+					else {
+
+						tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri)).forEach(table -> {
+
+							String table_xpath = getAbsXPathOfTable(table, new StringBuilder());
+
+							if (table_xpath != null && inc_self)
+								_list.add(table_xpath, XPathCompType.table);
+
+							table.fields.stream().filter(field -> field.simple_cont && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+
+								String simple_cont_xpath = getAbsXPathOfSimpleContent(table);
+
+								if (simple_cont_xpath != null && inc_self)
+									_list.add(simple_cont_xpath, XPathCompType.field);
+
+							});
+
+						});
+
+						for (PgTable table : tables) {
+
+							table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+
+								String elem_xpath = getAbsXPathOfElement(table, field.xname);
+
+								if (elem_xpath != null && inc_self)
+									_list.add(elem_xpath, XPathCompType.field);
+
+							});
+
+						}
+
+					}
+
+				}
+
+				// table was specified
+
+				else {
+
+					int table_id = getTableId(cur_table);
+
+					if (table_id == -1) {
+
+						XPathComp prev_comp = list.getPreviousStep(comp);
+
+						try {
+							throw new PgSchemaException(prev_comp.tree, def_schema_location);
+						} catch (PgSchemaException e) {
+							e.printStackTrace();
+							System.exit(1);
+						}
+
+					}
+
+					PgTable table = tables.get(table_id);
+
+					// check current element
+
+					table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+
+						String elem_xpath = getXPathOfElement(field.xname);
+
+						if (elem_xpath != null && inc_self)
+							_list.add(path + "/" + elem_xpath, XPathCompType.field);
+
+					});
+
+					// check current nested_key
+
+					Integer[] foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					Integer[] _foreign_table_ids = null;
+
+					while (foreign_table_ids != null && foreign_table_ids.length > 0 && _list.paths.size() == 0) {
+
+						boolean first_nest = _foreign_table_ids == null;
+
+						for (Integer foreign_table_id : foreign_table_ids) {
+
+							PgTable foreign_table = tables.get(foreign_table_id);
+
+							// check foreign table
+
+							if (!foreign_table.virtual && foreign_table.target_namespace.contains(namespace_uri)) {
+
+								String table_xpath = getAbsXPathOfTable(foreign_table, new StringBuilder());
+
+								if (table_xpath != null && (inc_self || _foreign_table_ids == null))
+									_list.add(table_xpath, XPathCompType.table);
+
+								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(namespace_uri))) {
+
+									String simple_cont_xpath = getAbsXPathOfSimpleContent(foreign_table);
+
+									if (simple_cont_xpath != null && (inc_self || first_nest))
+										_list.add(simple_cont_xpath, XPathCompType.field);
+
+								}
+
+							}
+
+							// check foreign element
+
+							foreign_table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+
+								String elem_xpath = getAbsXPathOfElement(foreign_table, field.xname);
+
+								if (elem_xpath != null && (inc_self || first_nest))
+									_list.add(elem_xpath, XPathCompType.field);
+
+							});
+
+							// check foreign nested_key
+
+							if (foreign_table.virtual || !abs_path) {
+
+								Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+
+								if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
+									_foreign_table_ids = __foreign_table_ids;
+
+							}
+
+						}
+
+						foreign_table_ids = _foreign_table_ids;
+
+					}
+
+				}
+
+				rep_listd.addAll(_list);
+
+				_list.clear();
+
+			});
+
+			if (rep_listd.paths.size() > 0)
+				list.replacePath(rep_listd);
+
+			else
+				throw new PgSchemaException(comp.tree, def_schema_location);
+
+			// check last component has text node
+
+			if (ends_with_field && step_id == list.getLastStep(comp.expr_id) && list.hasPathEndsWithTableNode()) {
+
+				if (list.removePathEndsWithTableNode() == 0)
+					throw new PgSchemaException(comp.tree);
+
+			}
+
+		}
+
+	}
+
+	/**
+	 * Validate XPath component with NameTestContext class having attribute axis.
+	 *
+	 * @param list XPath component list
+	 * @param ends_with_field whether test that XPath ends with either element or attribute
+	 * @param comp current XPath component
+	 * @param namespace_uri current namespace URI
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void validateNameTestContextWithAttributeAxis(XPathCompList list, boolean ends_with_field, XPathComp comp, String namespace_uri) throws PgSchemaException {
+
+		int step_id = comp.step_id;
+
+		boolean init_path = list.paths.isEmpty();
+
+		// first NameTestContext node
+
+		if (init_path) {
+
+			if (list.isAbsolutePath(comp.expr_id))
+				throw new PgSchemaException(comp.tree);
+
+			else {
+
+				for (PgTable table : tables) {
+
+					table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+
+						String attr_xpath = getAbsXPathOfAttribute(table, field.xname);
+
+						if (attr_xpath != null)
+							list.add(attr_xpath, XPathCompType.field);
+
+					});
+
+				}
+
+				if (list.paths.size() == 0)
+					throw new PgSchemaException(comp.tree, def_schema_location);
+
+			}
+
+		}
+
+		// succeeding NameTestContext node
+
+		else {
+
+			boolean abs_location_path = list.isAbsolutePath(comp.expr_id);
+
+			XPathCompList rep_list = new XPathCompList();
+
+			list.paths.forEach(path -> {
+
+				XPathCompList _list = new XPathCompList();
+
+				String cur_table = getTableNameOfPath(path);
+
+				// not specified table
+
+				if (cur_table == null) {
+
+					if (abs_location_path) {
+
+						for (PgTable table : tables) {
+
+							table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+
+								String attr_xpath = getAbsXPathOfAttribute(table, field.xname);
+
+								if (attr_xpath != null)
+									_list.add(attr_xpath, XPathCompType.field);
+
+							});
+
+						}
+
+					}
+
+				}
+
+				// specified table
+
+				else {
+
+					int table_id = getTableId(cur_table);
+
+					if (table_id == -1) {
+
+						XPathComp prev_comp = list.getPreviousStep(comp);
+
+						try {
+							throw new PgSchemaException(prev_comp.tree, def_schema_location);
+						} catch (PgSchemaException e) {
+							e.printStackTrace();
+							System.exit(1);
+						}
+
+					}
+
+					PgTable table = tables.get(table_id);
+
+					// check current attribute
+
+					table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+
+						String attr_xpath = getXPathOfAttribute(field.xname);
+
+						if (attr_xpath != null)
+							_list.add(path + "/" + attr_xpath, XPathCompType.field);
+
+					});
+
+					// check current nested_key
+
+					Integer[] foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					Integer[] _foreign_table_ids = null;
+
+					while (foreign_table_ids != null && foreign_table_ids.length > 0 && _list.paths.size() == 0) {
+
+						for (Integer foreign_table_id : foreign_table_ids) {
+
+							PgTable foreign_table = tables.get(foreign_table_id);
+
+							// check foreign attribute
+
+							foreign_table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+
+								String attr_xpath = getAbsXPathOfAttribute(foreign_table, field.xname);
+
+								if (attr_xpath != null)
+									_list.add(attr_xpath, XPathCompType.field);
+
+							});
+
+							// check foreign nested_key
+
+							if (foreign_table.virtual || !abs_location_path) {
+
+								Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+
+								if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
+									_foreign_table_ids = __foreign_table_ids;
+
+							}
+
+						}
+
+						foreign_table_ids = _foreign_table_ids;
+
+					}
+
+				}
+
+				rep_list.addAll(_list);
+
+				_list.clear();
+
+			});
+
+			if (rep_list.paths.size() > 0)
+				list.replacePath(rep_list);
+
+			else
+				throw new PgSchemaException(comp.tree, def_schema_location);
+
+			// check last component has text node
+
+			if (ends_with_field && step_id == list.getLastStep(comp.expr_id) && list.hasPathEndsWithTableNode()) {
+
+				if (list.removePathEndsWithoutTableNode() == 0)
+					throw new PgSchemaException(comp.tree);
+
+			}
+
+		}
+
+	}
+
+	/**
+	 * Return whether node name matches.
+	 *
+	 * @param node_name node name
+	 * @param prefix prefix text
+	 * @param boolean wild_card whether wild card follows or not
+	 */
+	private boolean matchesNodeName(String node_name, String prefix, boolean wild_card) {
+
+		if (wild_card)
+			return node_name.matches(prefix);
+
+		return node_name.equals(prefix);
+	}
+
+	/**
+	 * Return table name of current path.
+	 *
+	 * @param path current path
+	 * @return String current table
+	 */
+	private String getTableNameOfPath(String path) {
+
+		String[] _path = path.replaceFirst("//$", "").split("/");
+
+		if (_path.length == 0)
+			return null;
+
+		return _path[_path.length - 1];
+	}
+
+	/**
+	 * Return absolute XPath expression of current table.
+	 *
+	 * @param table current table
+	 * @param sb StringBuilder to store path
+	 * @return String absolute XPath expression of current table
+	 */
+	private String getAbsXPathOfTable(PgTable table, StringBuilder sb) {
+
+		String table_name = table.name;
+
+		if (table.equals(root_table)) {
+
+			sb.append((sb.length() > 0 ? "/" : "") + table_name);
+
+			return getReversePath(sb.toString());
+		}
+
+		if (!table.virtual)
+			sb.append((sb.length() > 0 ? "/" : "") + table_name);
+
+		for (PgTable parent_table : tables) {
+
+			if (parent_table.nested_fields == 0)
+				continue;
+
+			if (parent_table.fields.stream().anyMatch(field -> field.nested_key && field.foreign_table.equals(table_name)))
+				return getAbsXPathOfTable(parent_table, sb);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Return absolute XPath expression of current attribute.
+	 *
+	 * @param table current table
+	 * @param text current attribute name
+	 * @return String absolute XPath expression of current attribute
+	 */
+	private String getAbsXPathOfAttribute(PgTable table, String text) {
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(getXPathOfAttribute(text));
+
+		return getAbsXPathOfTable(table, sb);
+	}
+
+	/**
+	 * Return absolute XPath expression of current element.
+	 *
+	 * @param table current table
+	 * @param text current element name
+	 * @return String absolute XPath expression of current attribute
+	 */
+	private String getAbsXPathOfElement(PgTable table, String text) {
+
+		StringBuilder sb = new StringBuilder();
+
+		sb.append(getXPathOfElement(text));
+
+		return getAbsXPathOfTable(table, sb);
+	}
+
+	/**
+	 * Return absolute XPath expression of current simple content.
+	 *
+	 * @param table current table
+	 * @return String absolute XPath expression of current attribute
+	 */
+	private String getAbsXPathOfSimpleContent(PgTable table) {
+
+		StringBuilder sb = new StringBuilder();
+
+		return getAbsXPathOfTable(table, sb);
+	}
+
+	/**
+	 * Return reversed path.
+	 *
+	 * @param path normal path
+	 * @return String reversed path
+	 */
+	private String getReversePath(String path) {
+
+		String[] _path = path.split("/");
+
+		StringBuilder sb = new StringBuilder();
+
+		for (int l = _path.length - 1; l >= 0; l--)
+			sb.append("/" + _path[l]);
+
+		return sb.toString();
+	}
+
+	/**
+	 * Return abbreviate XPath expression of current attribute.
+	 *
+	 * @param text current attribute name
+	 * @return String abbreviate XPath expression of current attribute
+	 */
+	private String getXPathOfAttribute(String text) {
+		return "@" + text;
+	}
+
+	/**
+	 * Return abbreviate XPath expression of current element.
+	 *
+	 * @param text current element name
+	 * @return String abbreviate XPath expression of current element
+	 */
+
+	private String getXPathOfElement(String text) {
+		return text;
 	}
 
 }

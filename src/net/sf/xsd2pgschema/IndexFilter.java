@@ -38,22 +38,22 @@ public class IndexFilter {
 	/** The minimum word length for indexing. */
 	public int min_word_len = PgSchemaUtil.min_word_len;
 
-	/** Whether if string values are stored as attribute */
+	/** Whether string values are stored as attribute. */
 	public boolean attr_string = false;
 
-	/** Whether if integer values are stored as attribute */
+	/** Whether integer values are stored as attribute. */
 	public boolean attr_integer = false;
 
-	/** Whether if float values are stored as attribute */
+	/** Whether float values are stored as attribute. */
 	public boolean attr_float = false;
 
-	/** Whether if date values are stored as attribute */
+	/** Whether date values are stored as attribute. */
 	public boolean attr_date = false;
 
-	/** Whether if time values are stored as attribute */
+	/** Whether time values are stored as attribute. */
 	public boolean attr_time = false;
 
-	/** Whether if numeric values are stored in Lucene index. */
+	/** Whether numeric values are stored in Lucene index. */
 	public boolean numeric_index = false;
 
 	/**

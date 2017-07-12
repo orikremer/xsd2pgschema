@@ -62,7 +62,7 @@ public abstract class PgSchemaNodeParser {
 	/** The number of nested fields. */
 	int nested_fields = 0;
 
-	/** Whether if list holder. */
+	/** Whether list holder. */
 	boolean[] list_holder = null;
 
 	/** The nested table id. */
@@ -71,16 +71,16 @@ public abstract class PgSchemaNodeParser {
 	/** The nested key name. */
 	String[] nested_key = null;
 
-	/** Whether if values were filled. */
+	/** Whether values were filled. */
 	boolean filled = true;
 
-	/** Whether if any content was written. */
+	/** Whether any content was written. */
 	boolean written = false;
 
-	/** Whether if any nested node was invoked. */
+	/** Whether any nested node was invoked. */
 	boolean invoked = false;
 
-	/** Whether if nested node. */
+	/** Whether nested node. */
 	boolean nested = false;
 
 	/** The processing node. */
@@ -229,11 +229,11 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Return whether if parent node's name matches.
+	 * Return whether parent node's name matches.
 	 *
 	 * @param proc_key processing key name
 	 * @param parent_node the parent node
-	 * @return boolean whether if parent node's name matches
+	 * @return boolean whether parent node's name matches
 	 */
 	private boolean matchesParentNode(final String proc_key, final String parent_node) {
 
@@ -262,8 +262,8 @@ public abstract class PgSchemaNodeParser {
 	 *
 	 * @param node current node
 	 * @param field current field
-	 * @param pg_enum_limit whether if PostgreSQL enumeration length limit is applied
-	 * @return boolean whether if content has value
+	 * @param pg_enum_limit whether PostgreSQL enumeration length limit is applied
+	 * @return boolean whether content has value
 	 */
 	public boolean setCont(final Node node, final PgField field, final boolean pg_enum_limit) {
 
@@ -309,7 +309,7 @@ public abstract class PgSchemaNodeParser {
 	 * Set simple content.
 	 *
 	 * @param node current node
-	 * @return boolean whether if simple content has value
+	 * @return boolean whether simple content has value
 	 */
 	private void setSimpleCont(final Node node) {
 
@@ -327,7 +327,7 @@ public abstract class PgSchemaNodeParser {
 	 *
 	 * @param node current node
 	 * @param field current field
-	 * @return boolean whether if element has value
+	 * @return boolean whether element has value
 	 */
 	private void setElement(final Node node, final PgField field) {
 
@@ -355,8 +355,8 @@ public abstract class PgSchemaNodeParser {
 	 * Apply content filter.
 	 *
 	 * @param field current field
-	 * @param pg_enum_limit whether if PostgreSQL enumeration length limit is applied
-	 * @return boolean whether if content passes filter
+	 * @param pg_enum_limit whether PostgreSQL enumeration length limit is applied
+	 * @return boolean whether content passes filter
 	 */
 	private boolean applyContFilter(final PgField field, boolean pg_enum_limit) {
 
@@ -399,7 +399,7 @@ public abstract class PgSchemaNodeParser {
 	 * Set any element.
 	 *
 	 * @param node current node
-	 * @return boolean whether if any element exists
+	 * @return boolean whether any element exists
 	 */
 	public boolean setAnyElement(Node node) {
 
@@ -440,7 +440,7 @@ public abstract class PgSchemaNodeParser {
 	 * Set any attribute.
 	 *
 	 * @param node current node
-	 * @return boolean whether if any attribute exists
+	 * @return boolean whether any attribute exists
 	 */
 	public boolean setAnyAttr(Node node) {
 
@@ -480,12 +480,12 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Return whether if nested node exists.
+	 * Return whether nested node exists.
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param nested_table nested table
 	 * @param node current node
-	 * @return boolean whether if nested node exists
+	 * @return boolean whether nested node exists
 	 */
 	public boolean existsNestedNode(final PgSchema schema, final PgTable nested_table, final Node node) {
 

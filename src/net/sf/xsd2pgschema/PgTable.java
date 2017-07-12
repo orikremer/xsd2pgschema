@@ -57,34 +57,34 @@ public class PgTable {
 	/** The number of nested field. */
 	int nested_fields = 0;
 
-	/** Whether if content holder. */
+	/** Whether content holder. */
 	boolean cont_holder = false;
 
-	/** Whether if list holder. */
+	/** Whether list holder. */
 	boolean list_holder = false;
 
-	/** Whether if bridge table. */
+	/** Whether bridge table. */
 	boolean bridge = false;
 
-	/** Whether if xs_type equals xs_admin_root. */
+	/** Whether xs_type equals xs_admin_root. */
 	boolean virtual = false;
 
-	/** Whether if bridge table or virtual table or not cont_holder. */
+	/** Whether bridge table or virtual table or not cont_holder. */
 	boolean relational = false;
 
-	/** Whether if name collision occurs or not. */
+	/** Whether name collision occurs or not. */
 	boolean conflict = false;
 
-	/** Whether if table is referred from child table. */
+	/** Whether table is referred from child table. */
 	boolean required = false;
 
-	/** Whether if table is subset of database (internal use only). */
+	/** Whether table is subset of database (internal use only). */
 	boolean filt_out = false;
 
 	/** The content writer. */
 	FileWriter filew = null;
 
-	/** Whether if JSON buffer of any field is not empty. */
+	/** Whether JSON buffer of any field is not empty. */
 	boolean jsonb_not_empty = false;
 
 	/** The Lucene document. */

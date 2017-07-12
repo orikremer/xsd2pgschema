@@ -49,10 +49,10 @@ public class luceneidx2ftxt {
 
 	/** The index directory name. */
 	public static String idx_dir_name = xml2luceneidx.idx_dir_name;
-	
+
 	/** The free text suggester directory name. */
 	public static String ftxt_dir_name = "lucene_ftxt";
-	
+
 	/** The dictionary file name. */
 	public static String dic_file_name = "dictionary";
 

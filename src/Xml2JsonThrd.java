@@ -40,16 +40,16 @@ public class Xml2JsonThrd implements Runnable {
 
 	/** The thread id. */
 	private int thrd_id;
-	
+
 	/** The max threads. */
 	private int max_thrds;
 
 	/** The document builder for reusing. */
 	private DocumentBuilder doc_builder;
-	
+
 	/** The PostgreSQL schema. */
 	private PgSchema schema = null;
-	
+
 	/** The XML validator. */
 	private XmlValidator validator = null;
 

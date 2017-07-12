@@ -1,3 +1,9 @@
+ Changes in xsd2pgschema 2.5.0 (release 2017-07-12)
+
+  Added xmlsplitter main class to split large XML file.
+  Implemented ANTLR v4 based XPath 1.0 parser for xmlsplitter.
+  Implemented StAX based parser for xmlsplitter.
+
  Changes in xsd2pgschema 2.4.4 (release 2017-05-11)
 
   Fixed primary/foreign hash key which caused unreachable relational data.

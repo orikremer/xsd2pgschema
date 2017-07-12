@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -45,6 +46,7 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -104,7 +106,7 @@ public class PgSchemaUtil {
 	/** The prefix of directory name for sharding. */
 	public final static String shard_dir_prefix = "part-";
 
-	/** The prefix of directory name for multi-threading */
+	/** The prefix of directory name for multi-threading. */
 	public final static String thrd_dir_prefix = "thrd-";
 
 	/** The Sphinx schema file name. */
@@ -119,8 +121,14 @@ public class PgSchemaUtil {
 	/** The Sphinx data source file name. */
 	public final static String sphinx_data_source_name = "data_source.xml";
 
-	/** The field name of Sphinx dictionary */
+	/** The field name of Sphinx dictionary. */
 	public final static String trigram_field_name = "trigrams";
+
+	/** The text node of XPath notation. */
+	public final static String text_node_name = "text()";
+
+	/** The comment node of XPath notation. */
+	public final static String comment_node_name = "comment()";
 
 	/** The PostgreSQL reserved words. */
 	public final static String[] reserved_words = { "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC", "AUTHORIZATION", "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLLATION", "COLUMN", "CONCURRENTLY", "CONSTRAINT", "CREATE", "CROSS", "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT", "DEFERRABLE", "DESC", "DISTINCT", "DO", "ELSE", "END", "EXCEPT", "FALSE", "FETCH", "FOR", "FOREIGN", "FREEZE", "FROM", "FULL", "GRANT", "GROUP", "HAVING", "ILIKE", "IN", "INITIALLY", "INNER", "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "LATERAL", "LEADING", "LEFT", "LIKE", "LIMIT", "LOCALTIME", "LOCALTIMESTAMP", "NATURAL", "NOT", "NOTNULL", "NULL", "OFFSET", "ON", "ONLY", "OR", "ORDER", "OUTER", "OVERLAPS", "PLACING", "PRIMARY", "REFERENCES", "RETURNING", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "TABLESAMPLE", "THEN", "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VARIADIC", "VERBOSE", "WHEN", "WHERE", "WINDOW", "WITH" };
@@ -130,6 +138,18 @@ public class PgSchemaUtil {
 
 	/** The PostgreSQL reserved operator codes escaping regular expression match. */
 	public final static String[] reserved_ops_rex = { "\\+", "-", "\\*", "/", "%", "\\^", "\\|/", "\\|\\|/", "!", "!!", "@", "\\&", "\\|", "#", "~", "<<", ">>" };
+
+	/**
+	 * Return input stream of file with gzip decompression.
+	 *
+	 * @param  file plane file or gzip compressed file
+	 * @return InputStream input stream of file
+	 * @throws IOException
+	 * @throws FileNotFoundException
+	 */
+	public static InputStream getInputStream(File file) throws FileNotFoundException, IOException {
+		return FilenameUtils.getExtension(file.getName()).equals("gz") ? new GZIPInputStream(new FileInputStream(file)) : new FileInputStream(file);
+	}
 
 	/**
 	 * Return input stream of schema location.

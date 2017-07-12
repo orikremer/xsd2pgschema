@@ -29,9 +29,9 @@ public enum PgHashSize {
 	/** The unsigned long 64 bit. */
 	unsigned_long_64,
 	/** The unsigned int 32 bit. */
-	unsigned_int_32, 
+	unsigned_int_32,
 	/** The native default bit. */
-	native_default, 
+	native_default,
 	/** The debug string (no hashing). */
 	debug_string;
 

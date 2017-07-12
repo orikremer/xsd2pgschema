@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2017 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -19,25 +19,37 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import org.antlr.v4.runtime.tree.ParseTree;
+
 /**
- * Enumerator of table type.
+ * XPath component.
  *
  * @author yokochi
  */
-public enum XsTableType {
+public class XPathComp {
 
-	/** The root table. */
-	xs_root,
-	/** The child table of the root table. */
-	xs_root_child,
-	/** The administrative root table. */
-	xs_admin_root,
-	/** The child table of the administrative table. */
-	xs_admin_child,
+	/** The expression id. */
+	public int expr_id = -1;
 
-	/** The attribute group. */
-	xs_attr_group,
-	/** The model group. */
-	xs_model_group
+	/** The step id. */
+	public int step_id = -1;
+
+	/** The XPath parse tree. */
+	public ParseTree tree = null;
+
+	/**
+	 * Instance of XPathComp.
+	 *
+	 * @param expr_id expression id
+	 * @param step_id step id
+	 * @param tree XPath parse tree
+	 */
+	public XPathComp(int expr_id, int step_id, ParseTree tree) {
+
+		this.expr_id = expr_id;
+		this.step_id = step_id;
+		this.tree = tree;
+
+	}
 
 }

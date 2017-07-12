@@ -45,28 +45,28 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 	/** The shard id. */
 	private int shard_id;
-	
+
 	/** The shard size. */
 	private int shard_size;
 
 	/** The thread id. */
 	private int thrd_id;
-	
+
 	/** The max threads. */
 	private int max_thrds;
 
 	/** The document builder for reusing. */
 	private DocumentBuilder doc_builder;
-	
+
 	/** The PostgreSQL schema. */
 	private PgSchema schema = null;
-	
+
 	/** The XML validator. */
 	private XmlValidator validator = null;
-	
+
 	/** The data source directory name. */
 	private String ds_dir_name = null;
-	
+
 	/** The Sphinx schema file. */
 	private File sphinx_schema = null;
 

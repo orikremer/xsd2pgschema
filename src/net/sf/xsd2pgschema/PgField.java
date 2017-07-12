@@ -56,40 +56,40 @@ public class PgField {
 	/** The XML Schema data type. */
 	XsDataType xs_type;
 
-	/** Whether if xs:element. */
+	/** Whether xs:element. */
 	boolean element = false;
 
-	/** Whether if xs:attribute. */
+	/** Whether xs:attribute. */
 	boolean attribute = false;
 
-	/** Whether if xs:simpleContent. */
+	/** Whether xs:simpleContent. */
 	boolean simple_cont = false;
 
-	/** Whether if xs:any. */
+	/** Whether xs:any. */
 	boolean any = false;
 
-	/** Whether if xs:anyAttribute. */
+	/** Whether xs:anyAttribute. */
 	boolean any_attribute = false;
 
-	/** Whether if primary key. */
+	/** Whether primary key. */
 	boolean primary_key = false;
 
-	/** Whether if unique key. */
+	/** Whether unique key. */
 	boolean unique_key = false;
 
-	/** Whether if foreign key. */
+	/** Whether foreign key. */
 	boolean foreign_key = false;
 
-	/** Whether if nested key. */
+	/** Whether nested key. */
 	boolean nested_key = false;
 
-	/** Whether if document key. */
+	/** Whether document key. */
 	boolean document_key = false;
 
-	/** Whether if serial key. */
+	/** Whether serial key. */
 	boolean serial_key = false;
 
-	/** Whether if XPath key. */
+	/** Whether XPath key. */
 	boolean xpath_key = false;
 
 	/** Whether it has any system's administrative key (primary_key || foreign_key || nested_key). */
@@ -98,25 +98,25 @@ public class PgField {
 	/** Whether it has any user's discretion key (document_key || serial_key || xpath_key). */
 	boolean user_key = false;
 
-	/** Whether if not @nillable. */
+	/** Whether not @nillable. */
 	boolean xrequired = false;
 
-	/** Whether if not @nillable, but mutable in PostgreSQL when conflict occurs. */
+	/** Whether not @nillable, but mutable in PostgreSQL when conflict occurs. */
 	boolean required = false;
 
-	/** Whether if @use is "prohibited". */
+	/** Whether @use is "prohibited". */
 	boolean prohibited = false;
 
-	/** Whether if @maxOccurs > 1 || @minOccurs > 1. */
+	/** Whether @maxOccurs > 1 || @minOccurs > 1. */
 	boolean list_holder = false;
 
-	/** Whether if representative field of substitution group. */
+	/** Whether representative field of substitution group. */
 	boolean rep_substitution_group = false;
 
-	/** Whether if Sphinx attribute. */
+	/** Whether Sphinx attribute. */
 	boolean sph_attr = false;
 
-	/** Whether if Sphinx multi-valued attribute. */
+	/** Whether Sphinx multi-valued attribute. */
 	boolean sph_mva = false;
 
 	/** Whether it is selected as field for partial index. */
@@ -140,16 +140,16 @@ public class PgField {
 	/** The parent node names. */
 	String parent_node = null;
 
-	/** Whether if @fixed. */
+	/** Whether @fixed. */
 	String fixed_value = null;
 
-	/** Whether if @default. */
+	/** Whether @default. */
 	String default_value = null;
 
-	/** Whether if @block. */
+	/** Whether @block. */
 	String block_value = null;
 
-	/** Whether if field has any restriction. */
+	/** Whether field has any restriction. */
 	boolean restriction = false;
 
 	/** The xs:enumeration. */
@@ -221,7 +221,7 @@ public class PgField {
 	/** The counter of Sphinx attribute. */
 	int sph_attr_occurs = 0;
 
-	/** Whether if JSON buffer is not empty. */
+	/** Whether JSON buffer is not empty. */
 	boolean jsonb_not_empty = false;
 
 	/** The size of JSON item in JSON buffer. */
@@ -1190,10 +1190,10 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether if string matches enumeration.
+	 * Return whether string matches enumeration.
 	 *
 	 * @param string string
-	 * @return boolean whether if string matches enumeration
+	 * @return boolean whether string matches enumeration
 	 */
 	public boolean matchesEnumeration(String string) {
 
@@ -1211,10 +1211,10 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether if string matches enumeration.
+	 * Return whether string matches enumeration.
 	 *
 	 * @param string string
-	 * @return boolean whether if string matches enumeration
+	 * @return boolean whether string matches enumeration
 	 */
 	public boolean matchesXEnumeration(String string) {
 
@@ -1232,10 +1232,10 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether if string matches out_pattern.
+	 * Return whether string matches out_pattern.
 	 *
 	 * @param string string
-	 * @return boolean whether if string matches out_pattern
+	 * @return boolean whether string matches out_pattern
 	 */
 	public boolean matchesOutPattern(String string) {
 
@@ -1256,10 +1256,10 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether if field is omitted.
+	 * Return whether field is omitted.
 	 *
 	 * @param schema PostgreSQL data model
-	 * @return boolean whether if field is omitted
+	 * @return boolean whether field is omitted
 	 */
 	public boolean isOmitted(PgSchema schema) {
 		return (!schema.option.document_key && document_key) ||
@@ -1269,17 +1269,17 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether if field is indexable.
+	 * Return whether field is indexable.
 	 *
 	 * @param schema PostgreSQL data model
-	 * @return boolean whether if field is indexable
+	 * @return boolean whether field is indexable
 	 */
 	public boolean isIndexable(PgSchema schema) {
 		return !schema.field_resolved || (schema.field_resolved && field_sel) || (schema.attr_resolved && attr_sel);
 	}
 
 	/**
-	 * Return whether if field is JSON convertible.
+	 * Return whether field is JSON convertible.
 	 *
 	 * @param schema PostgreSQL data model
 	 * @return boolean whether field is JSON convertible

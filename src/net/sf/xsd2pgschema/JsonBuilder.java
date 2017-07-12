@@ -51,16 +51,16 @@ public class JsonBuilder {
 	/** The line feed code in JSON document. */
 	String linefeed = "\n";
 
-	/** Whether if retain field annotation or not. */
+	/** Whether retain field annotation or not. */
 	boolean no_field_anno = false;
 
 	/** Use JSON array uniformly for descendants. */
 	boolean array_all = false;
 
-	/** Whether if discarded document key exists or not. */
+	/** Whether discarded document key exists or not. */
 	boolean has_discard_doc_key = false;
 
-	/** The length of the key_value_space */
+	/** The length of the key_value_space. */
 	int key_value_spaces = key_value_space.length();
 
 	/**

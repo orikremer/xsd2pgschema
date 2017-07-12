@@ -49,10 +49,10 @@ public class luceneidx2dic {
 
 	/** The index directory name. */
 	public static String idx_dir_name = xml2luceneidx.idx_dir_name;
-	
+
 	/** The dictionary directory name. */
 	public static String dic_dir_name = "lucene_dic";
-	
+
 	/** The dictionary file name. */
 	public static String dic_file_name = "dictionary";
 

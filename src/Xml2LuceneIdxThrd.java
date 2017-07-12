@@ -51,25 +51,25 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 	/** The shard id. */
 	private int shard_id;
-	
+
 	/** The shard size. */
 	private int shard_size;
 
 	/** The thread id. */
 	private int thrd_id;
-	
+
 	/** The max threads. */
 	private int max_thrds;
 
 	/** The doc builder for reusing. */
 	private DocumentBuilder doc_builder;
-	
+
 	/** The PostgreSQL schema. */
 	private PgSchema schema = null;
-	
+
 	/** The XML validator. */
 	private XmlValidator validator = null;
-	
+
 	/** The Lucene index writer. */
 	private IndexWriter writer = null;
 

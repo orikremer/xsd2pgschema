@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2017 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -20,24 +20,22 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * Enumerator of table type.
+ * Enumerator of XPath component.
  *
  * @author yokochi
  */
-public enum XsTableType {
+public enum XPathCompType {
 
-	/** The root table. */
-	xs_root,
-	/** The child table of the root table. */
-	xs_root_child,
-	/** The administrative root table. */
-	xs_admin_root,
-	/** The child table of the administrative table. */
-	xs_admin_child,
+	/** The table node. */
+	table,
+	/** The field node (include element, simple content and attribute). */
+	field,
 
-	/** The attribute group. */
-	xs_attr_group,
-	/** The model group. */
-	xs_model_group
+	/** The text node. */
+	text,
+	/** The comment node. */
+	comment,
+	/** The processing instruction node. */
+	processing_instruction
 
 }
