@@ -5380,7 +5380,12 @@ public class PgSchema {
 
 			for (XPathComp _comp : comps) {
 
-				if (_comp.tree.getClass().equals(NCNameContext.class)) {
+				Class<?> _anyClass = _comp.tree.getClass();
+
+				if (_anyClass.equals(NameTestContext.class))
+					break;
+
+				else if (_anyClass.equals(NCNameContext.class)) {
 
 					if (_comp.equals(comp))
 						target_comp = true;
@@ -5409,7 +5414,7 @@ public class PgSchema {
 				else if (_anyClass.equals(TerminalNodeImpl.class))
 					wild_card = true;
 
-				else if (!_anyClass.equals(NCNameContext.class))
+				else if (!_anyClass.equals(NCNameContext.class) && !_anyClass.equals(NameTestContext.class))
 					throw new PgSchemaException(_comp.tree);
 
 			}
@@ -5423,12 +5428,24 @@ public class PgSchema {
 				for (XPathComp _comp : comps) {
 
 					Class<?> _anyClass = _comp.tree.getClass();
+					String _text = _comp.tree.getText();
 
 					if (_anyClass.equals(NCNameContext.class))
-						sb.append(_comp.tree.getText());
+						sb.append(_text);
+
+					else if (_anyClass.equals(NameTestContext.class)) {
+
+						String local_part = _text;
+
+						if (local_part.contains(":"))
+							local_part = local_part.split(":")[1];
+
+						sb.append((local_part.equals("*") ? "." : "") + local_part); // '*' -> regular expression '.*'
+
+					}
 
 					else if (_anyClass.equals(TerminalNodeImpl.class)) // '*' -> regular expression '.*'
-						sb.append("." + _comp.tree.getText());
+						sb.append("." + _text);
 
 					else if (!_anyClass.equals(AxisSpecifierContext.class))
 						throw new PgSchemaException(_comp.tree);
@@ -6454,78 +6471,145 @@ public class PgSchema {
 	 */
 	private void validateNameTestContext(XPathCompList list, boolean ends_with_field, XPathComp comp, XPathComp[] comps) throws PgSchemaException {
 
-		XPathComp first_comp = comps[0];
+		boolean wild_card = false;
 
 		String text = comp.tree.getText();
 
 		if (comps.length == 1) {
 
-			if (text.endsWith("*")) {
+			String prefix = "";
+			String local_part = text;
 
-				String prefix = "";
+			if (text.contains(":")) {
 
-				if (text.contains(":"))
-					prefix = text.split(":")[0];
+				String[] _text = text.split(":");
 
-				String namespace_uri = def_namespaces.get(prefix);	
-
-				if (namespace_uri == null || namespace_uri.isEmpty())
-					throw new PgSchemaException(comp.tree, def_schema_location, prefix);
-
-				validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, list.isAbsolutePath(comp.expr_id), true);
+				prefix = _text[0];
+				local_part = _text[1];
 
 			}
 
-			else
-				throw new PgSchemaException(comp.tree);
+			String namespace_uri = def_namespaces.get(prefix);	
+
+			if (namespace_uri == null || namespace_uri.isEmpty())
+				throw new PgSchemaException(comp.tree, def_schema_location, prefix);
+
+			validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, local_part, list.isAbsolutePath(comp.expr_id), true, wild_card, null);
 
 		}
 
-		else if (comps.length == 2 && first_comp.tree.getClass().equals(AxisSpecifierContext.class)) {
+		else {
 
-			if (text.endsWith("*")) {
+			XPathComp first_comp = comps[0];
 
-				String prefix = "";
+			for (XPathComp _comp : comps) {
 
-				if (text.contains(":"))
-					prefix = text.split(":")[0];
+				Class<?> _anyClass = _comp.tree.getClass();
 
-				String namespace_uri = def_namespaces.get(prefix);	
+				if (_anyClass.equals(AxisSpecifierContext.class)) {
 
-				if (namespace_uri == null || namespace_uri.isEmpty())
-					throw new PgSchemaException(comp.tree, def_schema_location, prefix);
+					if (!_comp.equals(first_comp))
+						throw new PgSchemaException(_comp.tree);
+
+				}
+
+				else if (_anyClass.equals(TerminalNodeImpl.class))
+					wild_card = true;
+
+				else if (!_anyClass.equals(NCNameContext.class) && !_anyClass.equals(NameTestContext.class))
+					throw new PgSchemaException(_comp.tree);
+
+			}
+
+			String composite_text = null;
+
+			if (wild_card) {
+
+				StringBuilder sb = new StringBuilder();
+
+				for (XPathComp _comp : comps) {
+
+					Class<?> _anyClass = _comp.tree.getClass();
+					String _text = _comp.tree.getText();
+
+					if (_anyClass.equals(NCNameContext.class))
+						sb.append(_text);
+
+					else if (_anyClass.equals(NameTestContext.class)) {
+
+						String local_part = _text;
+
+						if (local_part.contains(":"))
+							local_part = local_part.split(":")[1];
+
+						sb.append((local_part.equals("*") ? "." : "") + local_part); // '*' -> regular expression '.*'
+
+					}
+
+					else if (_anyClass.equals(TerminalNodeImpl.class)) // '*' -> regular expression '.*'
+						sb.append("." + _text);
+
+					else if (!_anyClass.equals(AxisSpecifierContext.class))
+						throw new PgSchemaException(_comp.tree);
+
+				}
+
+				composite_text = sb.toString();
+
+				sb.setLength(0);
+
+			}
+
+			String prefix = "";
+			String local_part = text;
+
+			if (text.contains(":")) {
+
+				String[] _text = text.split(":");
+
+				prefix = _text[0];
+				local_part = _text[1];
+
+			}
+
+			String namespace_uri = def_namespaces.get(prefix);	
+
+			if (namespace_uri == null || namespace_uri.isEmpty())
+				throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location, prefix);
+
+			if (first_comp.tree.getClass().equals(AxisSpecifierContext.class)) {
 
 				switch (first_comp.tree.getText()) {
 				case "ancestor::":
-					list.validateNameTestContextWithAncestorAxis(comp, namespace_uri, this, false);
+					list.validateNameTestContextWithAncestorAxis(comp, namespace_uri, local_part, false, wild_card, composite_text, this);
 					break;
 				case "ancestor-or-self::":
-					list.validateNameTestContextWithAncestorAxis(comp, namespace_uri, this, true);
+					list.validateNameTestContextWithAncestorAxis(comp, namespace_uri, local_part, true, wild_card, composite_text, this);
 					break;
 				case "attribute::":
 				case "@":
-					validateNameTestContextWithAttributeAxis(list, ends_with_field, comp, prefix.isEmpty() ? PgSchemaUtil.xs_namespace_uri : namespace_uri);
+					validateNameTestContextWithAttributeAxis(list, ends_with_field, comp, prefix.isEmpty() ? PgSchemaUtil.xs_namespace_uri : namespace_uri, local_part, wild_card, composite_text);
 					break;
 				case "child::":
-					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, list.isAbsolutePath(comp.expr_id), true);
+					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, local_part, list.isAbsolutePath(comp.expr_id), true, wild_card, composite_text);
 					break;
 				case "descendant::":
-					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, false, false);
+					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, local_part, false, false, wild_card, composite_text);
 					break;
 				case "descendant-or-self::":
-					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, false, true);
+					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, local_part, false, true, wild_card, composite_text);
 					break;
 				case "preceding-sibling::":	// non-sense in schema analysis
 				case "following-sibling::": // non-sense in schema analysis
 				case "self::":
-					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, true, true);
+					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, local_part, true, true, wild_card, composite_text);
 					break;
 				case "following::": // non-sense in schema analysis
 				case "preceding::": // non-sense in schema analysis
-					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, false, true);
+					validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, local_part, false, true, wild_card, composite_text);
 					break;
 				case "parent::":
-					list.validateNameTestContextWithParentAxis(comp, namespace_uri, this);
+					list.validateNameTestContextWithParentAxis(comp, namespace_uri, local_part, wild_card, composite_text, this);
 					break;
 				default: // namespace
 					throw new PgSchemaException(first_comp.tree);
@@ -6534,12 +6618,9 @@ public class PgSchema {
 			}
 
 			else
-				throw new PgSchemaException(comp.tree);
+				validateNameTestContextWithChildAxis(list, ends_with_field, comp, namespace_uri, local_part, list.isAbsolutePath(comp.expr_id), true, wild_card, composite_text);
 
 		}
-
-		else
-			throw new PgSchemaException(comp.tree);
 
 	}
 
@@ -6549,13 +6630,17 @@ public class PgSchema {
 	 * @param list XPath component list
 	 * @param ends_with_field whether test that XPath ends with either element or attribute
 	 * @param comp current XPath component
-	 * @param namespace_uri current namespace URI
+	 * @param namespace_uri namespace URI of current QName
+	 * @param local_part local part name of current QName
 	 * @param boolean abs_path whether absolute location path or abbreviate location path
 	 * @param boolean inc_self whether include self node or not
+	 * @param boolean wild_card whether wild card follows or not
+	 * @param composite_text composite text including wild card
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void validateNameTestContextWithChildAxis(XPathCompList list, boolean ends_with_field, XPathComp comp, String namespace_uri, boolean abs_path, boolean inc_self) throws PgSchemaException {
+	private void validateNameTestContextWithChildAxis(XPathCompList list, boolean ends_with_field, XPathComp comp, String namespace_uri, String local_part, boolean abs_path, boolean inc_self, boolean wild_card, String composite_text) throws PgSchemaException {
 
+		String text = wild_card ? composite_text : comp.tree.getText();
 		int step_id = comp.step_id;
 
 		boolean init_path = list.paths.isEmpty();
@@ -6566,8 +6651,8 @@ public class PgSchema {
 
 			if (abs_path) {
 
-				if (!root_table.target_namespace.contains(namespace_uri))
-					throw new PgSchemaException(comp.tree, def_schema_location);
+				if (!root_table.target_namespace.contains(namespace_uri) || !matchesNodeName(root_table.name, text, wild_card))
+					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
 
 				if (inc_self)
 					list.add(getAbsXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
@@ -6576,14 +6661,14 @@ public class PgSchema {
 
 			else {
 
-				tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri)).forEach(table -> {
+				tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri) && matchesNodeName(table.name, text, wild_card)).forEach(table -> {
 
 					String table_xpath = getAbsXPathOfTable(table, new StringBuilder());
 
 					if (table_xpath != null && inc_self)
 						list.add(table_xpath, XPathCompType.table);
 
-					if (table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(namespace_uri))) {
+					if (table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && matchesNodeName(field.xname, text, wild_card))) {
 
 						String simple_cont_xpath = getAbsXPathOfSimpleContent(table);
 
@@ -6596,7 +6681,7 @@ public class PgSchema {
 
 				for (PgTable table : tables) {
 
-					table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+					table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 						String elem_xpath = getAbsXPathOfElement(table, field.xname);
 
@@ -6608,7 +6693,7 @@ public class PgSchema {
 				}
 
 				if (list.paths.size() == 0)
-					throw new PgSchemaException(comp.tree, def_schema_location);
+					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
 
 			}
 
@@ -6632,21 +6717,21 @@ public class PgSchema {
 
 					if (abs_path) {
 
-						if (inc_self && root_table.target_namespace.contains(namespace_uri))
+						if (inc_self && root_table.target_namespace.contains(namespace_uri) && matchesNodeName(root_table.name, text, wild_card))
 							_list.add(getAbsXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
 
 					}
 
 					else {
 
-						tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri)).forEach(table -> {
+						tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri) && matchesNodeName(table.name, text, wild_card)).forEach(table -> {
 
 							String table_xpath = getAbsXPathOfTable(table, new StringBuilder());
 
 							if (table_xpath != null && inc_self)
 								_list.add(table_xpath, XPathCompType.table);
 
-							table.fields.stream().filter(field -> field.simple_cont && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+							table.fields.stream().filter(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 								String simple_cont_xpath = getAbsXPathOfSimpleContent(table);
 
@@ -6659,7 +6744,7 @@ public class PgSchema {
 
 						for (PgTable table : tables) {
 
-							table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+							table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 								String elem_xpath = getAbsXPathOfElement(table, field.xname);
 
@@ -6697,7 +6782,7 @@ public class PgSchema {
 
 					// check current element
 
-					table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+					table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 						String elem_xpath = getXPathOfElement(field.xname);
 
@@ -6721,14 +6806,14 @@ public class PgSchema {
 
 							// check foreign table
 
-							if (!foreign_table.virtual && foreign_table.target_namespace.contains(namespace_uri)) {
+							if (!foreign_table.virtual && foreign_table.target_namespace.contains(namespace_uri) && matchesNodeName(foreign_table.name, text, wild_card)) {
 
 								String table_xpath = getAbsXPathOfTable(foreign_table, new StringBuilder());
 
 								if (table_xpath != null && (inc_self || _foreign_table_ids == null))
 									_list.add(table_xpath, XPathCompType.table);
 
-								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(namespace_uri))) {
+								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && matchesNodeName(field.xname, text, wild_card))) {
 
 									String simple_cont_xpath = getAbsXPathOfSimpleContent(foreign_table);
 
@@ -6741,7 +6826,7 @@ public class PgSchema {
 
 							// check foreign element
 
-							foreign_table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+							foreign_table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 								String elem_xpath = getAbsXPathOfElement(foreign_table, field.xname);
 
@@ -6779,7 +6864,7 @@ public class PgSchema {
 				list.replacePath(rep_listd);
 
 			else
-				throw new PgSchemaException(comp.tree, def_schema_location);
+				throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
 
 			// check last component has text node
 
@@ -6800,11 +6885,15 @@ public class PgSchema {
 	 * @param list XPath component list
 	 * @param ends_with_field whether test that XPath ends with either element or attribute
 	 * @param comp current XPath component
-	 * @param namespace_uri current namespace URI
+	 * @param namespace_uri namespace URI of current QName
+	 * @param local_part local part of current QName
+	 * @param boolean wild_card whether wild card follows or not
+	 * @param composite_text composite text including wild card
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void validateNameTestContextWithAttributeAxis(XPathCompList list, boolean ends_with_field, XPathComp comp, String namespace_uri) throws PgSchemaException {
+	private void validateNameTestContextWithAttributeAxis(XPathCompList list, boolean ends_with_field, XPathComp comp, String namespace_uri, String local_part, boolean wild_card, String composite_text) throws PgSchemaException {
 
+		String text = wild_card ? composite_text : comp.tree.getText();
 		int step_id = comp.step_id;
 
 		boolean init_path = list.paths.isEmpty();
@@ -6820,7 +6909,7 @@ public class PgSchema {
 
 				for (PgTable table : tables) {
 
-					table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+					table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 						String attr_xpath = getAbsXPathOfAttribute(table, field.xname);
 
@@ -6832,7 +6921,7 @@ public class PgSchema {
 				}
 
 				if (list.paths.size() == 0)
-					throw new PgSchemaException(comp.tree, def_schema_location);
+					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
 
 			}
 
@@ -6860,7 +6949,7 @@ public class PgSchema {
 
 						for (PgTable table : tables) {
 
-							table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+							table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 								String attr_xpath = getAbsXPathOfAttribute(table, field.xname);
 
@@ -6898,7 +6987,7 @@ public class PgSchema {
 
 					// check current attribute
 
-					table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+					table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 						String attr_xpath = getXPathOfAttribute(field.xname);
 
@@ -6920,7 +7009,7 @@ public class PgSchema {
 
 							// check foreign attribute
 
-							foreign_table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+							foreign_table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 								String attr_xpath = getAbsXPathOfAttribute(foreign_table, field.xname);
 
@@ -6958,7 +7047,7 @@ public class PgSchema {
 				list.replacePath(rep_list);
 
 			else
-				throw new PgSchemaException(comp.tree, def_schema_location);
+				throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
 
 			// check last component has text node
 
@@ -6980,12 +7069,12 @@ public class PgSchema {
 	 * @param prefix prefix text
 	 * @param boolean wild_card whether wild card follows or not
 	 */
-	private boolean matchesNodeName(String node_name, String prefix, boolean wild_card) {
+	public boolean matchesNodeName(String node_name, String prefix, boolean wild_card) {
 
 		if (wild_card)
 			return node_name.matches(prefix);
 
-		return node_name.equals(prefix);
+		return prefix.equals("*") || node_name.equals(prefix);
 	}
 
 	/**

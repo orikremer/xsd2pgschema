@@ -33,6 +33,7 @@ import com.github.antlr.grammars_v4.xpath.xpathParser;
 import com.github.antlr.grammars_v4.xpath.xpathParser.NCNameContext;
 import com.github.antlr.grammars_v4.xpath.xpathParser.NameTestContext;
 import com.github.antlr.grammars_v4.xpath.xpathParser.NodeTestContext;
+import com.github.antlr.grammars_v4.xpath.xpathParser.QNameContext;
 
 /**
  * XPath component list.
@@ -53,10 +54,10 @@ public class XPathCompList {
 	/** Whether UnionExprNoRootContext node exists or not. */
 	private boolean union_expr = false;
 
-	/** Instance of XML paths for stacking while UnionExprNoRootContext. */
+	/** Instance of XML paths for stacking while UnionExprNoRootContext node. */
 	private List<String> paths_union = null;
 
-	/** Terminal type of paths for stacking while UnionExprNoRootContext. */
+	/** Terminal type of paths for stacking while UnionExprNoRootContext node. */
 	private List<XPathCompType> termini_union = null;
 
 	/**
@@ -243,7 +244,21 @@ public class XPathCompList {
 
 			ParseTree child = tree.getChild(i);
 
-			if (isTerminalNode(child)) {
+			if (isQNameContext(child)) {
+
+				XPathComp comp = new XPathComp(expr_counter, step_counter, child);
+
+				comps.add(comp);
+
+				if (output)
+					System.out.print(" " + child.getClass().getSimpleName() + " '" + child.getText() + "'");
+
+				// no need to trace more
+
+				break;
+			}
+
+			else if (isTerminalNodeImpl(child)) {
 
 				XPathComp comp = new XPathComp(expr_counter, step_counter, child);
 
@@ -266,12 +281,32 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Return whether child node is TerminalNodeImpl.
+	 * Return whether child node is QNameContext node.
 	 *
 	 * @param tree XPath parse tree
-	 * @return boolean whether child node is TerminalNodeImpl or not
+	 * @return boolean whether child node is QNameContext node or not
 	 */
-	private boolean isTerminalNode(ParseTree tree) {
+	private boolean isQNameContext(ParseTree tree) {
+
+		for (int i = 0; i < tree.getChildCount(); i++) {
+
+			ParseTree child = tree.getChild(i);
+
+			if (child.getClass().equals(QNameContext.class))
+				return child.getChildCount() > 1;
+
+		}
+
+		return false;
+	}
+
+	/**
+	 * Return whether child node is TerminalNodeImpl node.
+	 *
+	 * @param tree XPath parse tree
+	 * @return boolean whether child node is TerminalNodeImpl node or not
+	 */
+	private boolean isTerminalNodeImpl(ParseTree tree) {
 
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
@@ -634,16 +669,20 @@ public class XPathCompList {
 	 * Validate XPath component with NameTestContext class having parent axis.
 	 *
 	 * @param comp current XPath component
-	 * @param namespace_uri current namespace URI
+	 * @param namespace_uri namespace URI of current QName
+	 * @param local_part local part of current QName
+	 * @param schema PostgreSQL data model
+	 * @param wild_card whether wild card follows or not
+	 * @param composite_text composite text including wild card
 	 * @param schema PostgreSQL data model
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void validateNameTestContextWithParentAxis(XPathComp comp, String namespace_uri, PgSchema schema) throws PgSchemaException {
+	public void validateNameTestContextWithParentAxis(XPathComp comp, String namespace_uri, String local_part, boolean wild_card, String composite_text, PgSchema schema) throws PgSchemaException {
 
 		if (selectParentPath() == 0)
 			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
 
-		validateNameTestContext(comp, namespace_uri, schema);
+		validateNameTestContext(comp, namespace_uri, local_part, wild_card, composite_text, schema);
 
 		if (paths.size() == 0)
 			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
@@ -654,12 +693,15 @@ public class XPathCompList {
 	 * Validate XPath component with NameTestContext class having ancestor axis.
 	 *
 	 * @param comp current XPath component
-	 * @param namespace_uri current namespace URI
-	 * @param schema PostgreSQL data model
+	 * @param namespace_uri namespace URI of current QName
+	 * @param local_part local part of current QName
 	 * @param inc_self whether include self node or not
+	 * @param wild_card whether wild card follows or not
+	 * @param composite_text composite text including wild card
+	 * @param schema PostgreSQL data model
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void validateNameTestContextWithAncestorAxis(XPathComp comp, String namespace_uri, PgSchema schema, boolean inc_self) throws PgSchemaException {
+	public void validateNameTestContextWithAncestorAxis(XPathComp comp, String namespace_uri, String local_part, boolean inc_self, boolean wild_card, String composite_text, PgSchema schema) throws PgSchemaException {
 
 		List<String> _paths = new ArrayList<String>();
 		List<XPathCompType> _termini = new ArrayList<XPathCompType>();
@@ -680,7 +722,7 @@ public class XPathCompList {
 
 		replacePath(_paths, _termini);
 
-		validateNameTestContext(comp, namespace_uri, schema);
+		validateNameTestContext(comp, namespace_uri, local_part, wild_card, composite_text, schema);
 
 		if (paths.size() == 0)
 			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
@@ -691,11 +733,16 @@ public class XPathCompList {
 	 * Validate XPath component with NameTestContext class.
 	 *
 	 * @param comp current XPath component
-	 * @param namespace_uri current namespace URI
+	 * @param namespace_uri namespace URI of current QName
+	 * @param local_part local part of current QName
+	 * @param wild_card whether wild card follows or not
+	 * @param composite_text composite text including wild card
 	 * @param schema PostgreSQL data model
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void validateNameTestContext(XPathComp comp, String namespace_uri, PgSchema schema) throws PgSchemaException {
+	private void validateNameTestContext(XPathComp comp, String namespace_uri, String local_part, boolean wild_card, String composite_text, PgSchema schema) throws PgSchemaException {
+
+		String text = wild_card ? composite_text : local_part;
 
 		Iterator<String> iter_path = paths.iterator();
 		Iterator<XPathCompType> iter_term = termini.iterator();
@@ -710,6 +757,8 @@ public class XPathCompList {
 			int len = name.length;
 			int t;
 
+			PgTable table;
+
 			switch (terminus) {
 			case table:
 
@@ -721,7 +770,9 @@ public class XPathCompList {
 				if (t < 0)
 					throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
 
-				if (!schema.getTable(t).target_namespace.equals(namespace_uri)) {
+				table = schema.getTable(t);
+
+				if (!table.target_namespace.equals(namespace_uri) || !schema.matchesNodeName(table.name, text, wild_card)) {
 
 					iter_path.remove();
 					iter_term.remove();
@@ -737,14 +788,16 @@ public class XPathCompList {
 				if (t < 0)
 					throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
 
-				PgTable table = schema.getTable(t);
+				table = schema.getTable(t);
 				String field_name = name[name.length - 1];
 
 				int f = table.getFieldId(field_name);
 
 				if (f >= 0) {
 
-					if (!table.fields.get(f).target_namespace.equals(namespace_uri)) {
+					PgField field = table.fields.get(f);
+
+					if (!field.target_namespace.equals(namespace_uri) || !schema.matchesNodeName(field.xname, text, wild_card)) {
 
 						iter_path.remove();
 						iter_term.remove();
@@ -765,11 +818,13 @@ public class XPathCompList {
 
 						PgTable foreign_table = schema.getTable(foreign_table_id);
 
-						f = table.getFieldId(field_name);
+						f = foreign_table.getFieldId(field_name);
 
 						if (f >= 0) {
 
-							if (!table.fields.get(f).target_namespace.equals(namespace_uri)) {
+							PgField foreign_field = foreign_table.fields.get(f);
+
+							if (!foreign_field.target_namespace.equals(namespace_uri) || !schema.matchesNodeName(foreign_field.xname, text, wild_card)) {
 
 								iter_path.remove();
 								iter_term.remove();

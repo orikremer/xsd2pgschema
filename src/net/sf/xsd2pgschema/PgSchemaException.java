@@ -124,4 +124,19 @@ public class PgSchemaException extends Exception {
 
 	}
 
+	/**
+	 * Instantiates a new pg schema exception.
+	 *
+	 * @param tree the parse tree
+	 * @param wild_card whether wild card follows or not
+	 * @param composite_text composite text including wild card
+	 * @param schema_location default schema location
+	 * @param prefix_ns_uri prefix of target namespace URI
+	 */
+	public PgSchemaException(ParseTree tree, boolean wild_card, String composite_text, String schema_location, String prefix_ns_uri) {
+
+		super("Not found prefix (" + prefix_ns_uri + ") of target namespace URL for XPath expression (" + tree.getSourceInterval().toString() + ": " + tree.getClass().getSimpleName() + " '" + (wild_card ? composite_text.replaceAll("\\.\\*", "\\*") : tree.getText()) + "') in XML Schema: " + schema_location);
+
+	}
+
 }
