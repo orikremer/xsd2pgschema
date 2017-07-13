@@ -342,7 +342,7 @@ public class xml2sphinxds {
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
 		System.err.println("        --append (append to existing data source files)");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
-		System.err.println("        --shard-size SHARD_SIZE (defalt=1)");
+		System.err.println("        --shard-size SHARD_SIZE (default=1)");
 		System.err.println("        --min-word-len MIN_WORD_LENGTH (default is " + PgSchemaUtil.min_word_len + ")");
 		System.err.println("Option: --ds-name DS_NAME (default name is determined by quoting XSD file name)");
 		System.err.println("        --attr  table_name.column_name");

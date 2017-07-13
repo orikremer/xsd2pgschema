@@ -323,7 +323,7 @@ public class xml2luceneidx {
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
 		System.err.println("        --append (append to existing index files)");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
-		System.err.println("        --shard-size SHARD_SIZE (defalt=1)");
+		System.err.println("        --shard-size SHARD_SIZE (default=1)");
 		System.err.println("        --min-word-len MIN_WORD_LENGTH (default is " + PgSchemaUtil.min_word_len + ")");
 		System.err.println("        --numeric-idx (allow to store numeric values in index)");
 		System.err.println("Option: --attr  table_name.column_name");

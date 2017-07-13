@@ -57,11 +57,17 @@ import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.XPathCompList;
 
 /**
- * Execute function for xmlsplitter.
+ * Implementation of xmlsplitter.
  *
  * @author yokochi
  */
-public class XmlSplitter {
+public class XmlSplitterImpl {
+
+	/** The shard id. */
+	private int shard_id = 0;
+
+	/** The shard size. */
+	private int shard_size = 1;
 
 	/** The PostgreSQL schema. */
 	private PgSchema schema = null;
@@ -105,9 +111,13 @@ public class XmlSplitter {
 	/** The XML event writer. */
 	private XMLEventWriter xml_writer = null;
 
+	/** The xml directory. */
+	private File[] xml_dir = null;
+
 	/**
-	 * Instance of XmlSplitter.
+	 * Instance of XmlSplitterImpl.
 	 *
+	 * @param shard_size shard size
 	 * @param is InputStream of XML Schema
 	 * @param option PostgreSQL schema option
 	 * @param parser XPath parser
@@ -118,7 +128,9 @@ public class XmlSplitter {
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws xpathListenerException the xpath listener exception
 	 */
-	public XmlSplitter(final InputStream is, final PgSchemaOption option, final xpathParser parser) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, xpathListenerException {
+	public XmlSplitterImpl(final int shard_size, final InputStream is, final PgSchemaOption option, final xpathParser parser) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, xpathListenerException {
+
+		this.shard_size = shard_size <= 0 ? 1 : shard_size;
 
 		// parse XSD document
 
@@ -138,6 +150,32 @@ public class XmlSplitter {
 		// XSD analysis
 
 		schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getName(xmlsplitter.schema_location), option);
+
+		// prepare shard directories
+
+		xml_dir = new File[shard_size];
+
+		if (shard_size == 1)
+			xml_dir[0] = new File(xmlsplitter.xml_dir_name);
+
+		else {
+
+			for (int shard_id = 0; shard_id < shard_size; shard_id++) {
+
+				String xml_dir_name = xmlsplitter.xml_dir_name + "/" + PgSchemaUtil.shard_dir_prefix + shard_id;
+
+				xml_dir[shard_id] = new File(xml_dir_name);
+
+				if (!xml_dir[shard_id].isDirectory()) {
+
+					if (!xml_dir[shard_id].mkdir())
+						throw new PgSchemaException("Couldn't create directory '" + xml_dir_name + "'.");
+
+				}
+
+			}
+
+		}
 
 		// check XPath expression with schema
 
@@ -193,7 +231,6 @@ public class XmlSplitter {
 		}
 
 		doc_unit_path = doc_unit.paths.get(0);
-
 		doc_key_path = doc_key.paths.get(0);
 
 		if (doc_key.hasPathEndsWithTextNode())
@@ -311,13 +348,11 @@ public class XmlSplitter {
 	private void prepareXMLEventWriter(String document_id) throws PgSchemaException, IOException, XMLStreamException {
 
 		if (document_id == null || document_id.isEmpty())
-			throw new PgSchemaException("Document key is empty.");
+			throw new PgSchemaException("Invalid document id.");
 
 		no_document_key = false;
 
-		String xml_file_name = xmlsplitter.xml_dir_name + document_id + ".xml";
-
-		File xml_file = new File(xml_file_name);
+		File xml_file = new File(xml_dir[shard_id++ % shard_size], document_id + ".xml");
 
 		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 
@@ -395,7 +430,7 @@ public class XmlSplitter {
 	class StartDocumentReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -419,7 +454,7 @@ public class XmlSplitter {
 	class EndDocumentReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -436,7 +471,7 @@ public class XmlSplitter {
 	class StartElementReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -526,7 +561,7 @@ public class XmlSplitter {
 	class EndElementReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -579,7 +614,7 @@ public class XmlSplitter {
 	class AttributeReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -611,7 +646,7 @@ public class XmlSplitter {
 	class NameSpaceReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -643,7 +678,7 @@ public class XmlSplitter {
 	class CharactersReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -688,7 +723,7 @@ public class XmlSplitter {
 	class SpaceReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -720,7 +755,7 @@ public class XmlSplitter {
 	class CDataReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -752,7 +787,7 @@ public class XmlSplitter {
 	class CommentReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -784,7 +819,7 @@ public class XmlSplitter {
 	class ProcessingInstructionReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -819,7 +854,7 @@ public class XmlSplitter {
 	class EntityReferenceReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -851,7 +886,7 @@ public class XmlSplitter {
 	class EntityDeclarationReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -883,7 +918,7 @@ public class XmlSplitter {
 	class DTDReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -915,7 +950,7 @@ public class XmlSplitter {
 	class NotationDeclarationReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitter.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {

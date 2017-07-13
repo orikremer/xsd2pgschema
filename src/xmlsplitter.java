@@ -64,6 +64,9 @@ public class xmlsplitter {
 	/**  The XPath pointing document key. */
 	public static String xpath_doc_key = "//entry/accession";
 
+	/** The shard size. */
+	public static int shard_size = 1;
+
 	/**
 	 * The main method.
 	 *
@@ -108,6 +111,15 @@ public class xmlsplitter {
 			else if (args[i].equals("--xpath-doc-key"))
 				xpath_doc_key = args[++i];
 
+			else if (args[i].equals("--shard-size")) {
+				shard_size = Integer.valueOf(args[++i]);
+
+				if (shard_size <= 0) {
+					System.err.println("Out of range (shard-size).");
+					showUsage();
+				}
+			}
+
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
 				showUsage();
@@ -151,7 +163,7 @@ public class xmlsplitter {
 
 		}
 
-		xml_dir_name = xml_dir_name.replaceFirst("/$", "") + "/";
+		xml_dir_name = xml_dir_name.replaceFirst("/$", "");
 
 		try {
 
@@ -165,11 +177,11 @@ public class xmlsplitter {
 			xpathParser parser = new xpathParser(tokens);
 			parser.addParseListener(new xpathBaseListener());
 
-			XmlSplitter splitter = new XmlSplitter(is, option, parser);
+			XmlSplitterImpl splitter = new XmlSplitterImpl(shard_size, is, option, parser);
 
 			splitter.exec();
 
-		} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException | xpathListenerException e) {
+		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
@@ -187,6 +199,7 @@ public class xmlsplitter {
 		System.err.println("        --xpath-doc-key XPATH_AS_DOC_KEY (default=\"" + xpath_doc_key + "\")");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");
+		System.err.println("        --shard-size SHARD_SIZE (default=1)");
 		System.exit(1);
 
 	}
