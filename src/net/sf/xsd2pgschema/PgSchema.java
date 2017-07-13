@@ -7069,7 +7069,7 @@ public class PgSchema {
 	 * @param prefix prefix text
 	 * @param wild_card whether wild card follows or not
 	 */
-	public boolean matchesNodeName(String node_name, String prefix, boolean wild_card) {
+	protected boolean matchesNodeName(String node_name, String prefix, boolean wild_card) {
 
 		if (wild_card)
 			return node_name.matches(prefix);

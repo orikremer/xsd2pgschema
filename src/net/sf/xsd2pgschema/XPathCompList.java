@@ -325,7 +325,7 @@ public class XPathCompList {
 	 *
 	 * @return int the last expression id
 	 */
-	public int getLastExpr() {
+	protected int getLastExpr() {
 		return comps.get(comps.size() - 1).expr_id;
 	}
 
@@ -335,7 +335,7 @@ public class XPathCompList {
 	 * @param expr_id expression id
 	 * @return int the last step id
 	 */
-	public int getLastStep(int expr_id) {
+	protected int getLastStep(int expr_id) {
 		return comps.stream().filter(comp -> comp.expr_id == expr_id).max(Comparator.comparingInt(comp -> comp.step_id)).get().step_id;
 	}
 
@@ -346,7 +346,7 @@ public class XPathCompList {
 	 * @param step_id current step id
 	 * @return XPathComp[] array of XPath component
 	 */
-	public XPathComp[] getXPathComp(int expr_id, int step_id) {
+	protected XPathComp[] getXPathComp(int expr_id, int step_id) {
 		return comps.stream().filter(comp -> comp.expr_id == expr_id && comp.step_id == step_id).toArray(XPathComp[]::new);
 	}
 
@@ -356,7 +356,7 @@ public class XPathCompList {
 	 * @param comp current XPath component in list
 	 * @return XPathComp parent XPath component
 	 */
-	public XPathComp getPreviousStep(XPathComp comp) {
+	protected XPathComp getPreviousStep(XPathComp comp) {
 
 		int step_id = comp.step_id - (comp.tree.getClass().equals(TerminalNodeImpl.class) ? 1 : 2);
 
@@ -377,7 +377,7 @@ public class XPathCompList {
 	 * @param path current path
 	 * @param terminus current terminus type of path
 	 */
-	public void add(String path, XPathCompType terminus) {
+	protected void add(String path, XPathCompType terminus) {
 
 		paths.add(path);
 		termini.add(terminus);
@@ -389,7 +389,7 @@ public class XPathCompList {
 	 *
 	 * @param list XPath component list
 	 */
-	public void addAll(XPathCompList list) {
+	protected void addAll(XPathCompList list) {
 
 		paths.addAll(list.paths);
 		termini.addAll(list.termini);
@@ -402,7 +402,7 @@ public class XPathCompList {
 	 * @param comp current XPath component
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void validateTerminalNodeImpl(XPathComp comp) throws PgSchemaException {
+	protected void validateTerminalNodeImpl(XPathComp comp) throws PgSchemaException {
 
 		String text = comp.tree.getText();
 		int step_id = comp.step_id;
@@ -478,7 +478,7 @@ public class XPathCompList {
 	 * @param comp current XPath component
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void validateAbbreviateStepContext(XPathComp comp) throws PgSchemaException {
+	protected void validateAbbreviateStepContext(XPathComp comp) throws PgSchemaException {
 
 		switch (comp.tree.getText()) {
 		case ".":
@@ -507,7 +507,7 @@ public class XPathCompList {
 	 * @param comps array of XPath component of the same step
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void validateAxisSpecifierContext(XPathComp comp, XPathComp[] comps) throws PgSchemaException {
+	protected void validateAxisSpecifierContext(XPathComp comp, XPathComp[] comps) throws PgSchemaException {
 
 		// delegate to succeeding predicate
 
@@ -533,7 +533,7 @@ public class XPathCompList {
 	 * @param composite_text composite text including wild card
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void validateNCNameContextWithParentAxis(XPathComp comp, boolean wild_card, String composite_text) throws PgSchemaException {
+	protected void validateNCNameContextWithParentAxis(XPathComp comp, boolean wild_card, String composite_text) throws PgSchemaException {
 
 		if (selectParentPath() == 0)
 			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
@@ -554,7 +554,7 @@ public class XPathCompList {
 	 * @param composite_text composite text including wild card
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void validateNCNameContextWithAncestorAxis(XPathComp comp, boolean inc_self, boolean wild_card, String composite_text) throws PgSchemaException {
+	protected void validateNCNameContextWithAncestorAxis(XPathComp comp, boolean inc_self, boolean wild_card, String composite_text) throws PgSchemaException {
 
 		List<String> _paths = new ArrayList<String>();
 		List<XPathCompType> _termini = new ArrayList<XPathCompType>();
@@ -625,7 +625,7 @@ public class XPathCompList {
 	 * @param comp current XPath component
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void validateNodeTestContextWithParentAxis(XPathComp comp) throws PgSchemaException {
+	protected void validateNodeTestContextWithParentAxis(XPathComp comp) throws PgSchemaException {
 
 		if (selectParentPath() == 0)
 			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
@@ -639,7 +639,7 @@ public class XPathCompList {
 	 * @param inc_self whether include self node or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void validateNodeTestContextWithAncestorAxis(XPathComp comp, boolean inc_self) throws PgSchemaException {
+	protected void validateNodeTestContextWithAncestorAxis(XPathComp comp, boolean inc_self) throws PgSchemaException {
 
 		List<String> _paths = new ArrayList<String>();
 		List<XPathCompType> _termini = new ArrayList<XPathCompType>();
@@ -677,7 +677,7 @@ public class XPathCompList {
 	 * @param schema PostgreSQL data model
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void validateNameTestContextWithParentAxis(XPathComp comp, String namespace_uri, String local_part, boolean wild_card, String composite_text, PgSchema schema) throws PgSchemaException {
+	protected void validateNameTestContextWithParentAxis(XPathComp comp, String namespace_uri, String local_part, boolean wild_card, String composite_text, PgSchema schema) throws PgSchemaException {
 
 		if (selectParentPath() == 0)
 			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
@@ -701,7 +701,7 @@ public class XPathCompList {
 	 * @param schema PostgreSQL data model
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void validateNameTestContextWithAncestorAxis(XPathComp comp, String namespace_uri, String local_part, boolean inc_self, boolean wild_card, String composite_text, PgSchema schema) throws PgSchemaException {
+	protected void validateNameTestContextWithAncestorAxis(XPathComp comp, String namespace_uri, String local_part, boolean inc_self, boolean wild_card, String composite_text, PgSchema schema) throws PgSchemaException {
 
 		List<String> _paths = new ArrayList<String>();
 		List<XPathCompType> _termini = new ArrayList<XPathCompType>();
@@ -898,7 +898,7 @@ public class XPathCompList {
 	 *
 	 * @return int the number of survived paths
 	 */
-	public int removePathEndsWithTableNode() {
+	protected int removePathEndsWithTableNode() {
 
 		Iterator<String> iter_path = paths.iterator();
 		Iterator<XPathCompType> iter_term = termini.iterator();
@@ -927,7 +927,7 @@ public class XPathCompList {
 	 *
 	 * @return int the number of survived paths
 	 */
-	public int removePathEndsWithFieldNode() {
+	protected int removePathEndsWithFieldNode() {
 
 		Iterator<String> iter_path = paths.iterator();
 		Iterator<XPathCompType> iter_term = termini.iterator();
@@ -956,7 +956,7 @@ public class XPathCompList {
 	 *
 	 * @return int the number of survived paths
 	 */
-	public int removePathEndsWithTextNode() {
+	protected int removePathEndsWithTextNode() {
 
 		Iterator<String> iter_path = paths.iterator();
 		Iterator<XPathCompType> iter_term = termini.iterator();
@@ -987,7 +987,7 @@ public class XPathCompList {
 	 *
 	 * @return int the number of survived paths
 	 */
-	public int removePathEndsWithoutTableNode() {
+	protected int removePathEndsWithoutTableNode() {
 
 		Iterator<String> iter_path = paths.iterator();
 		Iterator<XPathCompType> iter_term = termini.iterator();
@@ -1014,7 +1014,7 @@ public class XPathCompList {
 	 *
 	 * @return int the number of survived paths
 	 */
-	public int removePathEndsWithoutFieldNode() {
+	protected int removePathEndsWithoutFieldNode() {
 
 		Iterator<String> iter_path = paths.iterator();
 		Iterator<XPathCompType> iter_term = termini.iterator();
@@ -1041,7 +1041,7 @@ public class XPathCompList {
 	 *
 	 * @return int the number of survived paths
 	 */
-	public int removePathEndsWithoutTextNode() {
+	protected int removePathEndsWithoutTextNode() {
 
 		Iterator<String> iter_path = paths.iterator();
 		Iterator<XPathCompType> iter_term = termini.iterator();
@@ -1067,12 +1067,12 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Remove any orphan path.
+	 * Remove any orphaned path.
 	 *
 	 * @param parent_paths list of parental paths
 	 * @return int the number of survived paths
 	 */
-	public int removeOrphanPath(List<String> parent_paths) {
+	public int removeOrphanedPath(List<String> parent_paths) {
 
 		Iterator<String> iter_path = paths.iterator();
 		Iterator<XPathCompType> iter_term = termini.iterator();
@@ -1097,7 +1097,7 @@ public class XPathCompList {
 	/**
 	 * Append abbreviation path of all paths.
 	 */
-	public void appendAbbrevPath() {
+	protected void appendAbbrevPath() {
 
 		paths = paths.stream().map(path -> path + "//").collect(Collectors.toList());
 
@@ -1106,7 +1106,7 @@ public class XPathCompList {
 	/**
 	 * Append text node.
 	 */
-	public void appendTextNode() {
+	protected void appendTextNode() {
 
 		List<String> _paths = new ArrayList<String>();
 		List<XPathCompType> _termini = new ArrayList<XPathCompType>();
@@ -1149,7 +1149,7 @@ public class XPathCompList {
 	/**
 	 * Append comment node.
 	 */
-	public void appendCommentNode() {
+	protected void appendCommentNode() {
 
 		List<String> _paths = new ArrayList<String>();
 		List<XPathCompType> _termini = new ArrayList<XPathCompType>();
@@ -1194,7 +1194,7 @@ public class XPathCompList {
 	 *
 	 * @param expression expression of processing-instruction()
 	 */
-	public void appendProcessingInstructionNode(String expression) {
+	protected void appendProcessingInstructionNode(String expression) {
 
 		if (paths.isEmpty()) {
 
@@ -1251,7 +1251,7 @@ public class XPathCompList {
 	 * @param expr_id expression id
 	 * @return boolean whether absolute path used
 	 */
-	public boolean isAbsolutePath(int expr_id) {
+	protected boolean isAbsolutePath(int expr_id) {
 
 		if (paths.isEmpty()) {
 
@@ -1361,7 +1361,7 @@ public class XPathCompList {
 	/**
 	 * Apply union expression.
 	 */
-	public void applyUnionExpr() {
+	protected void applyUnionExpr() {
 
 		if (!union_expr)
 			return;
