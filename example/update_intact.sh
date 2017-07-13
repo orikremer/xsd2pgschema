@@ -46,7 +46,7 @@ fi
 rm -rf $XML_DIR
 
 if [ ! -e $DB_FTP/$ZIP_FILE ] ; then
- echo No found $DB_FTP/$ZIP_FILE
+ echo Not found $DB_FTP/$ZIP_FILE
  exit 1
 fi
 

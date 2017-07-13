@@ -21,7 +21,6 @@ package net.sf.xsd2pgschema;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -1067,12 +1066,12 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Remove any orphaned path.
+	 * Remove any orphan path.
 	 *
 	 * @param parent_paths list of parental paths
 	 * @return int the number of survived paths
 	 */
-	public int removeOrphanedPath(List<String> parent_paths) {
+	public int removeOrphanPath(List<String> parent_paths) {
 
 		Iterator<String> iter_path = paths.iterator();
 		Iterator<XPathCompType> iter_term = termini.iterator();
@@ -1092,6 +1091,59 @@ public class XPathCompList {
 		}
 
 		return paths.size();
+	}
+
+	/**
+	 * Remove any duplicate path.
+	 *
+	 * @return int the number of survived paths
+	 */
+	public int removeDuplicatePath() {
+
+		Iterator<String> iter_path = paths.iterator();
+		Iterator<XPathCompType> iter_term = termini.iterator();
+
+		boolean unified = false;
+
+		while (iter_path.hasNext() && iter_term.hasNext()) {
+
+			String _path = iter_path.next();
+			iter_term.next();
+
+			if (paths.stream().filter(path -> path.equals(_path)).count() > 1) {
+
+				iter_path.remove();
+				iter_term.remove();
+
+				unified = true;
+
+				break;
+			}
+
+		}
+
+		if (unified)
+			return removeDuplicatePath();
+
+		return paths.size();
+	}
+
+	/**
+	 * Return whether absolute path used.
+	 *
+	 * @param expr_id expression id
+	 * @return boolean whether absolute path used
+	 */
+	protected boolean isAbsolutePath(int expr_id) {
+
+		if (paths.isEmpty()) {
+
+			XPathComp first_comp = comps.stream().filter(comp -> comp.expr_id == expr_id && comp.step_id == 0).findFirst().get();
+
+			return first_comp.tree.getClass().equals(TerminalNodeImpl.class) && first_comp.tree.getText().equals("/");
+		}
+
+		return !paths.get(0).endsWith("//");
 	}
 
 	/**
@@ -1246,24 +1298,6 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Return whether absolute path used.
-	 *
-	 * @param expr_id expression id
-	 * @return boolean whether absolute path used
-	 */
-	protected boolean isAbsolutePath(int expr_id) {
-
-		if (paths.isEmpty()) {
-
-			XPathComp first_comp = comps.stream().filter(comp -> comp.expr_id == expr_id && comp.step_id == 0).findFirst().get();
-
-			return first_comp.tree.getClass().equals(TerminalNodeImpl.class) && first_comp.tree.getText().equals("/");
-		}
-
-		return !paths.get(0).endsWith("//");
-	}
-
-	/**
 	 * Select parent path.
 	 *
 	 * @return int the number of survived paths
@@ -1401,23 +1435,6 @@ public class XPathCompList {
 	public void showTerminus(String indent) {
 
 		termini.forEach(terminus -> System.out.println(indent + terminus.name()));
-
-	}
-
-	/**
-	 * Unify paths.
-	 */
-	public void unifyPath() {
-
-		HashSet<String> _paths = new HashSet<String>();
-
-		paths.forEach(path -> _paths.add(path));
-
-		paths.clear();
-
-		paths.addAll(_paths);
-
-		_paths.clear();
 
 	}
 

@@ -5,6 +5,7 @@
   Implemented StAX based parser for xmlsplitter.
   Added --shard-size option to enable sharding in xmlsplitter.
   Fixed XPath parser allows QNameContext node.
+  Added example scripts which perform splitting large XML file, database replication and full-text indexing for UniProtKB/Swiss-Prot database.
 
  Changes in xsd2pgschema 2.4.4 (release 2017-05-11)
 
@@ -83,7 +84,7 @@
   Internal code refactoring and class name revisions.
   Fixed java.util.ConcurrentModificationException while blocking substitution group.
   Added --numeric-idx option in xml2luceneidx to allow to store numeric values in index for backward compatibility.
-  
+
  Changes in xsd2pgschema 2.0.0.rc1 (release 2017-03-17)
 
   NOTICE: We recommend all users avoid to use 1.14.0 and 1.15.x.
@@ -145,7 +146,7 @@
   Fixed a potential bug in xml2pgcsv and xml2pgsql.
   Added truncation of constraint name to be less than 64 characters that reduces PostgreSQL warning message.
   Retrieved xs:attribute and xs:simpleContent declaration as comment in PostgreSQL DDL.
-  
+
  Changes in xsd2pgschema 1.14.0 (release 2017-02-02)
 
   Internal code refactoring.
@@ -167,7 +168,7 @@
   Enabled Sphinx full-text indexing including all attributes, then introduced --attr-all options like Lucene.
   Aligned option names in both Lucene and Sphinx full-text indexing; --attr, --field, --attr-all, --field-all options are common in both xml2luceneidx and xml2sphinxds.
   NOTICE: --sph-attr and --sph-field of xml2sphinxds are not valid. Please use --attr or --field instead.
-  
+
  Changes in xsd2pgschema 1.13.2 (release 2016-12-14)
 
   Allowed additional retrieval of Sphinx attribute by using --sph-attr option that enables to reduce size of Sphinx index. You can repeat --sph-attr options to select attributes.

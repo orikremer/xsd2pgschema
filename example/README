@@ -1,17 +1,38 @@
 
- Example scripts demonstrating XML->PostgreSQL migration using xsd2pgschema
+ Example scripts demonstrating PostgreSQL migration and full-text indexing
+
+A. Replication of IntAct
 
  A script (update_intact.sh) can replicate IntAct Molecular Interaction Database
 (http://www.ebi.ac.uk/intact) on your PostgreSQL DB (dbname: intact) from
 XML documents (downloaded from public FTP site) and its XML Schema (MIF254.xsd).
 
-Usage:
+ Usage:
 
- 1. Create PostgreSQL database (first time only)
+ A-1. Create PostgreSQL database (first time only)
 
     % createdb intact
 
- 2. Retrieve XML documents and update IntAct database.
+ A-2. Retrieve XML documents and update IntAct database.
 
     % ./update_intact.sh
+
+B. Replication of UniProtKB/Swiss-Prot
+
+ A script (update_uniprotkb.sh) can replicate UniProtKB/Swiss-Prot Database
+(http://www.uniprot.org/uniprot/) on your PostgreSQL DB (dbname: uniprotkb) from
+XML documents (downloaded from public FTP site) and its XML Schema (uniprot.xsd).
+ This script also shows a way to process single large XML file and allows you to
+create full-text index by either Apache Lucene and Sphinx Search, together.
+
+ Usage:
+
+ B-1. Create PostgreSQL database (first time only)
+
+    % createdb uniprotkb
+
+ B-2. Retrieve large XML document, then perform splitting into small XML files,
+      database replication and full-text indexing of UniProtKB/Swiss-Prot database.
+
+    % ./update_uniprotkb.sh
 

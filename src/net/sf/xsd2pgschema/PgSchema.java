@@ -5356,6 +5356,8 @@ public class PgSchema {
 
 		}
 
+		list.removeDuplicatePath();
+
 	}
 
 	/**

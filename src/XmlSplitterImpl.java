@@ -213,12 +213,12 @@ public class XmlSplitterImpl {
 
 		}
 
-		doc_unit.unifyPath();
+		doc_unit.removeDuplicatePath();
 
 		System.out.println("document unit:");
 		doc_unit.showPath(" ");
 
-		doc_key.removeOrphanedPath(doc_unit.paths);
+		doc_key.removeOrphanPath(doc_unit.paths);
 
 		System.out.println("document key:");
 		doc_key.showPath(" ");
