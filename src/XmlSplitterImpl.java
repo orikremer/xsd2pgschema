@@ -177,7 +177,7 @@ public class XmlSplitterImpl {
 
 		}
 
-		// check XPath expression with schema
+		// validate XPath expression with schema
 
 		MainContext main = parser.main();
 
@@ -187,7 +187,7 @@ public class XmlSplitterImpl {
 		if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		XPathCompList doc_key = new XPathCompList(tree, true); //
+		XPathCompList doc_key = new XPathCompList(tree, false);
 
 		if (doc_key.comps.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
@@ -204,7 +204,7 @@ public class XmlSplitterImpl {
 		if (doc_unit.selectParentPath() == 0)
 			throw new xpathListenerException("Cound not specify document unit from XPath expression. (" + main_text + ")");
 
-		// decide document unit
+		// decide node of document unit
 
 		while (!doc_unit.hasPathEndsWithTableNode()) {
 
@@ -241,7 +241,7 @@ public class XmlSplitterImpl {
 		if (attr_doc_key)
 			attr_doc_key_holder = doc_key_path.substring(0, doc_key_path.lastIndexOf("/"));
 
-		// prepare read handlers
+		// StAX read handlers
 
 		read_handlers = new HashMap<Integer, EventHandler>();
 
@@ -288,7 +288,7 @@ public class XmlSplitterImpl {
 
 				System.out.println("Splitting " + xml_file.getName() + "...");
 
-				// prepare XML event reader
+				// XML event reader of source XML file
 
 				XMLInputFactory in_factory = XMLInputFactory.newInstance();
 
@@ -296,12 +296,12 @@ public class XmlSplitterImpl {
 
 				XMLEventReader reader = in_factory.createXMLEventReader(in);
 
-				// prepare XML event writer of XML header
+				// XML event writer for XML header
 
 				header_start_events = new ArrayList<XMLEvent>();
 				header_end_events = new ArrayList<XMLEvent>();
 
-				// prepare XML event writer of interim XML content before xml_writer is prepared
+				// XML event writer for interim XML content before xml_writer is prepared
 
 				interim_events = new ArrayList<XMLEvent>();
 
@@ -338,14 +338,14 @@ public class XmlSplitterImpl {
 	}
 
 	/**
-	 * Prepare XML event writer.
+	 * Create XML event writer.
 	 *
 	 * @param document_id current document key
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	private void prepareXMLEventWriter(String document_id) throws PgSchemaException, IOException, XMLStreamException {
+	private void createXMLEventWriter(String document_id) throws PgSchemaException, IOException, XMLStreamException {
 
 		if (document_id == null || document_id.isEmpty())
 			throw new PgSchemaException("Invalid document id.");
@@ -355,6 +355,8 @@ public class XmlSplitterImpl {
 		File xml_file = new File(xml_dir[shard_id++ % shard_size], document_id + ".xml");
 
 		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
+
+		// XML event writer of split XML file
 
 		xml_writer = out_factory.createXMLEventWriter(new FileOutputStream(xml_file));
 
@@ -535,7 +537,7 @@ public class XmlSplitterImpl {
 
 							try {
 
-								prepareXMLEventWriter(attr.getValue().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", ""));
+								createXMLEventWriter(attr.getValue().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", ""));
 
 							} catch (PgSchemaException | IOException | XMLStreamException e) {
 								e.printStackTrace();
@@ -704,7 +706,7 @@ public class XmlSplitterImpl {
 
 				try {
 
-					prepareXMLEventWriter(element.asCharacters().getData().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", ""));
+					createXMLEventWriter(element.asCharacters().getData().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", ""));
 
 				} catch (PgSchemaException | IOException | XMLStreamException e) {
 					e.printStackTrace();
