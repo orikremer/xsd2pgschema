@@ -5511,9 +5511,9 @@ public class PgSchema {
 	 * @param list XPath component list
 	 * @param ends_with_field whether test that XPath ends with either element or attribute
 	 * @param comp current XPath component
-	 * @param boolean abs_path whether absolute location path or abbreviate location path
-	 * @param boolean inc_self whether include self node or not
-	 * @param boolean wild_card whether wild card follows or not
+	 * @param abs_path whether absolute location path or abbreviate location path
+	 * @param inc_self whether include self node or not
+	 * @param wild_card whether wild card follows or not
 	 * @param composite_text composite text including wild card
 	 * @throws PgSchemaException the pg schema exception
 	 */
@@ -5764,7 +5764,7 @@ public class PgSchema {
 	 * @param list XPath component list
 	 * @param ends_with_field whether test that XPath ends with either element or attribute
 	 * @param comp current XPath component
-	 * @param boolean wild_card whether wild card follows or not
+	 * @param wild_card whether wild card follows or not
 	 * @param composite_text composite text including wild card
 	 * @throws PgSchemaException the pg schema exception
 	 */
@@ -6041,8 +6041,8 @@ public class PgSchema {
 	 * @param list XPath component list
 	 * @param ends_with_field whether test that XPath ends with either element or attribute
 	 * @param comp current XPath component
-	 * @param boolean abs_path whether absolute location path or abbreviate location path
-	 * @param boolean inc_self whether include self node or not
+	 * @param abs_path whether absolute location path or abbreviate location path
+	 * @param inc_self whether include self node or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void validateNodeTestContextWithChildAxis(XPathCompList list, boolean ends_with_field, XPathComp comp, boolean abs_path, boolean inc_self) throws PgSchemaException {
@@ -6632,9 +6632,9 @@ public class PgSchema {
 	 * @param comp current XPath component
 	 * @param namespace_uri namespace URI of current QName
 	 * @param local_part local part name of current QName
-	 * @param boolean abs_path whether absolute location path or abbreviate location path
-	 * @param boolean inc_self whether include self node or not
-	 * @param boolean wild_card whether wild card follows or not
+	 * @param abs_path whether absolute location path or abbreviate location path
+	 * @param inc_self whether include self node or not
+	 * @param wild_card whether wild card follows or not
 	 * @param composite_text composite text including wild card
 	 * @throws PgSchemaException the pg schema exception
 	 */
@@ -6887,7 +6887,7 @@ public class PgSchema {
 	 * @param comp current XPath component
 	 * @param namespace_uri namespace URI of current QName
 	 * @param local_part local part of current QName
-	 * @param boolean wild_card whether wild card follows or not
+	 * @param wild_card whether wild card follows or not
 	 * @param composite_text composite text including wild card
 	 * @throws PgSchemaException the pg schema exception
 	 */
@@ -7067,7 +7067,7 @@ public class PgSchema {
 	 *
 	 * @param node_name node name
 	 * @param prefix prefix text
-	 * @param boolean wild_card whether wild card follows or not
+	 * @param wild_card whether wild card follows or not
 	 */
 	public boolean matchesNodeName(String node_name, String prefix, boolean wild_card) {
 
