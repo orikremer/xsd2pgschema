@@ -567,13 +567,7 @@ public class xpathParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_predicate; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof xpathListener )
-				try {
-					((xpathListener)listener).enterPredicate(this);
-				} catch (xpathListenerException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
+			if ( listener instanceof xpathListener ) ((xpathListener)listener).enterPredicate(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {
@@ -794,13 +788,7 @@ public class xpathParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_functionCall; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof xpathListener )
-				try {
-					((xpathListener)listener).enterFunctionCall(this);
-				} catch (xpathListenerException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
+			if ( listener instanceof xpathListener ) ((xpathListener)listener).enterFunctionCall(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {

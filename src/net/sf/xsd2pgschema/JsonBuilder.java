@@ -21,7 +21,7 @@ package net.sf.xsd2pgschema;
 
 import java.util.List;
 
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 /**
  * JSON builder.

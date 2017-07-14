@@ -60,7 +60,7 @@ public class XPathCompList {
 	private List<XPathCompType> termini_union = null;
 
 	/**
-	 * Serialize XPath parse tree to XPath component list.
+	 * Serialize XPath parse tree.
 	 *
 	 * @param tree XPath parse tree
 	 * @param output whether outputs result or not
@@ -83,7 +83,7 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Serialize XPath parse tree to XPath component list (temporary use only).
+	 * Serialize XPath parse tree (temporary use only).
 	 */
 	public XPathCompList() {
 
@@ -324,7 +324,7 @@ public class XPathCompList {
 	 *
 	 * @return int the last expression id
 	 */
-	protected int getLastExpr() {
+	protected int getLastExprId() {
 		return comps.get(comps.size() - 1).expr_id;
 	}
 
@@ -334,18 +334,18 @@ public class XPathCompList {
 	 * @param expr_id expression id
 	 * @return int the last step id
 	 */
-	protected int getLastStep(int expr_id) {
+	protected int getLastStepId(int expr_id) {
 		return comps.stream().filter(comp -> comp.expr_id == expr_id).max(Comparator.comparingInt(comp -> comp.step_id)).get().step_id;
 	}
 
 	/**
-	 * Return array of XPath component.
+	 * Return array of given XPath component.
 	 *
 	 * @param expr_id current expression id
 	 * @param step_id current step id
 	 * @return XPathComp[] array of XPath component
 	 */
-	protected XPathComp[] getXPathCompArray(int expr_id, int step_id) {
+	protected XPathComp[] arrayOf(int expr_id, int step_id) {
 		return comps.stream().filter(comp -> comp.expr_id == expr_id && comp.step_id == step_id).toArray(XPathComp[]::new);
 	}
 
@@ -419,7 +419,7 @@ public class XPathCompList {
 
 				if (hasPathEndsWithTextNode()) {
 
-					XPathComp[] child_comps = getXPathCompArray(comp.expr_id, step_id + 1);
+					XPathComp[] child_comps = arrayOf(comp.expr_id, step_id + 1);
 
 					if (child_comps == null || child_comps.length == 0) {
 
@@ -670,7 +670,6 @@ public class XPathCompList {
 	 * @param comp current XPath component
 	 * @param namespace_uri namespace URI of current QName
 	 * @param local_part local part of current QName
-	 * @param schema PostgreSQL data model
 	 * @param wild_card whether wild card follows or not
 	 * @param composite_text composite text including wild card
 	 * @param schema PostgreSQL data model
@@ -760,7 +759,6 @@ public class XPathCompList {
 
 			switch (terminus) {
 			case table:
-
 				if (len < 1)
 					throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 

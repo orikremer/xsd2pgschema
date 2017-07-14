@@ -194,8 +194,8 @@ public class PgField {
 	/** The xs:whiteSpace restriction. */
 	String white_space = null;
 
-	/** The xs:assertions restriction. (TODO) */
-	String assertions = null;
+	/** The xs:assertions restriction.
+	String assertions = null; */
 
 	/** The xs:explicitTimezone restriction. */
 	String explicit_timezone = null;
@@ -895,7 +895,7 @@ public class PgField {
 		fraction_digits = null; // xs:fractionDigits
 
 		white_space = null;
-		assertions = null;
+		// assertions = null;
 		explicit_timezone = null;
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
@@ -1101,8 +1101,8 @@ public class PgField {
 
 						if (value != null && !value.isEmpty()) {
 
-							//							restriction = true; // (TODO)
-							assertions = value;
+							// restriction = true;
+							// assertions = value;
 
 							break;
 						}

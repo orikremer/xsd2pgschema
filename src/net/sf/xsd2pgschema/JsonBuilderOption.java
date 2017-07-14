@@ -19,7 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 /**
  * JSON builder option.

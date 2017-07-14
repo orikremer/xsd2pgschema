@@ -101,11 +101,8 @@ public class xpathBaseListener implements xpathListener {
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
-	 * @throws xpathListenerException the xpath listener exception
 	 */
-	@Override public void enterPredicate(xpathParser.PredicateContext ctx) throws xpathListenerException {
-		throw new xpathListenerException("No implementation of Predicate for simplicity.");
-	}
+	@Override public void enterPredicate(xpathParser.PredicateContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -152,11 +149,8 @@ public class xpathBaseListener implements xpathListener {
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
-	 * @throws xpathListenerException the xpath listener exception
 	 */
-	@Override public void enterFunctionCall(xpathParser.FunctionCallContext ctx) throws xpathListenerException {
-		throw new xpathListenerException("No implementation of FunnctionCall for simplicity.");
-	}
+	@Override public void enterFunctionCall(xpathParser.FunctionCallContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

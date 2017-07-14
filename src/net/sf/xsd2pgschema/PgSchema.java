@@ -46,7 +46,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
 import org.w3c.dom.*;
@@ -5287,22 +5287,22 @@ public class PgSchema {
 	// Schema-aware XPath parser
 
 	/**
-	 * Validate XPath component list against schema.
+	 * Validate serialized XPath tree against schema.
 	 *
-	 * @param list XPath component list
+	 * @param list XPath component list as serialized XPath tree
 	 * @param ends_with_field whether XPath ends with either element or attribute
 	 * @param ends_with_text whether append text node in the ends, if possible
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void validateXPath(XPathCompList list, boolean ends_with_field, boolean ends_with_text) throws PgSchemaException {
+	public void validateXPathCompList(XPathCompList list, boolean ends_with_field, boolean ends_with_text) throws PgSchemaException {
 
 		hasRootTable();
 
-		for (int expr_id = 0; expr_id <= list.getLastExpr(); expr_id++) {
+		for (int expr_id = 0; expr_id <= list.getLastExprId(); expr_id++) {
 
-			for (int step_id = 0; step_id <= list.getLastStep(expr_id); step_id++) {
+			for (int step_id = 0; step_id <= list.getLastStepId(expr_id); step_id++) {
 
-				XPathComp[] comps = list.getXPathCompArray(expr_id, step_id);
+				XPathComp[] comps = list.arrayOf(expr_id, step_id);
 
 				for (XPathComp comp : comps) {
 
@@ -5665,7 +5665,7 @@ public class PgSchema {
 
 					table.fields.stream().filter(field -> field.element && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
-						String elem_xpath = getXPathOfElement(field.xname);
+						String elem_xpath = field.xname;
 
 						if (elem_xpath != null && inc_self)
 							_list.add(path + "/" + elem_xpath, XPathCompType.field);
@@ -5749,7 +5749,7 @@ public class PgSchema {
 
 			// check last component has text node
 
-			if (ends_with_field && step_id == list.getLastStep(comp.expr_id) && list.hasPathEndsWithTableNode()) {
+			if (ends_with_field && step_id == list.getLastStepId(comp.expr_id) && list.hasPathEndsWithTableNode()) {
 
 				if (list.removePathEndsWithTableNode() == 0)
 					throw new PgSchemaException(comp.tree);
@@ -5868,7 +5868,7 @@ public class PgSchema {
 
 					table.fields.stream().filter(field -> field.attribute && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
-						String attr_xpath = getXPathOfAttribute(field.xname);
+						String attr_xpath = "@" + field.xname;
 
 						if (attr_xpath != null)
 							_list.add(path + "/" + attr_xpath, XPathCompType.field);
@@ -5930,7 +5930,7 @@ public class PgSchema {
 
 			// check last component has text node
 
-			if (ends_with_field && step_id == list.getLastStep(comp.expr_id) && list.hasPathEndsWithTableNode()) {
+			if (ends_with_field && step_id == list.getLastStepId(comp.expr_id) && list.hasPathEndsWithTableNode()) {
 
 				if (list.removePathEndsWithoutTableNode() == 0)
 					throw new PgSchemaException(comp.tree);
@@ -6189,7 +6189,7 @@ public class PgSchema {
 
 					table.fields.stream().filter(field -> field.element).forEach(field -> {
 
-						String elem_xpath = getXPathOfElement(field.xname);
+						String elem_xpath = field.xname;
 
 						if (elem_xpath != null && inc_self)
 							_list.add(path + "/" + elem_xpath, XPathCompType.field);
@@ -6273,7 +6273,7 @@ public class PgSchema {
 
 			// check last component has text node
 
-			if (ends_with_field && step_id == list.getLastStep(comp.expr_id) && list.hasPathEndsWithTableNode()) {
+			if (ends_with_field && step_id == list.getLastStepId(comp.expr_id) && list.hasPathEndsWithTableNode()) {
 
 				if (list.removePathEndsWithTableNode() == 0)
 					throw new PgSchemaException(comp.tree);
@@ -6389,7 +6389,7 @@ public class PgSchema {
 
 					table.fields.stream().filter(field -> field.attribute).forEach(field -> {
 
-						String attr_xpath = getXPathOfAttribute(field.xname);
+						String attr_xpath = "@" + field.xname;
 
 						if (attr_xpath != null)
 							_list.add(path + "/" + attr_xpath, XPathCompType.field);
@@ -6451,7 +6451,7 @@ public class PgSchema {
 
 			// check last component has text node
 
-			if (ends_with_field && step_id == list.getLastStep(comp.expr_id) && list.hasPathEndsWithTableNode()) {
+			if (ends_with_field && step_id == list.getLastStepId(comp.expr_id) && list.hasPathEndsWithTableNode()) {
 
 				if (list.removePathEndsWithoutTableNode() == 0)
 					throw new PgSchemaException(comp.tree);
@@ -6786,7 +6786,7 @@ public class PgSchema {
 
 					table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
-						String elem_xpath = getXPathOfElement(field.xname);
+						String elem_xpath = field.xname;
 
 						if (elem_xpath != null && inc_self)
 							_list.add(path + "/" + elem_xpath, XPathCompType.field);
@@ -6870,7 +6870,7 @@ public class PgSchema {
 
 			// check last component has text node
 
-			if (ends_with_field && step_id == list.getLastStep(comp.expr_id) && list.hasPathEndsWithTableNode()) {
+			if (ends_with_field && step_id == list.getLastStepId(comp.expr_id) && list.hasPathEndsWithTableNode()) {
 
 				if (list.removePathEndsWithTableNode() == 0)
 					throw new PgSchemaException(comp.tree);
@@ -6991,7 +6991,7 @@ public class PgSchema {
 
 					table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
-						String attr_xpath = getXPathOfAttribute(field.xname);
+						String attr_xpath = "@" + field.xname;
 
 						if (attr_xpath != null)
 							_list.add(path + "/" + attr_xpath, XPathCompType.field);
@@ -7053,7 +7053,7 @@ public class PgSchema {
 
 			// check last component has text node
 
-			if (ends_with_field && step_id == list.getLastStep(comp.expr_id) && list.hasPathEndsWithTableNode()) {
+			if (ends_with_field && step_id == list.getLastStepId(comp.expr_id) && list.hasPathEndsWithTableNode()) {
 
 				if (list.removePathEndsWithoutTableNode() == 0)
 					throw new PgSchemaException(comp.tree);
@@ -7140,7 +7140,7 @@ public class PgSchema {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(getXPathOfAttribute(text));
+		sb.append("@" + text);
 
 		return getAbsoluteXPathOfTable(table, sb);
 	}
@@ -7156,7 +7156,7 @@ public class PgSchema {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(getXPathOfElement(text));
+		sb.append(text);
 
 		return getAbsoluteXPathOfTable(table, sb);
 	}
@@ -7168,10 +7168,7 @@ public class PgSchema {
 	 * @return String absolute XPath expression of current attribute
 	 */
 	private String getAbsoluteXPathOfSimpleContent(PgTable table) {
-
-		StringBuilder sb = new StringBuilder();
-
-		return getAbsoluteXPathOfTable(table, sb);
+		return getAbsoluteXPathOfTable(table, new StringBuilder());
 	}
 
 	/**
@@ -7190,27 +7187,6 @@ public class PgSchema {
 			sb.append("/" + _path[l]);
 
 		return sb.toString();
-	}
-
-	/**
-	 * Return abbreviate XPath expression of current attribute.
-	 *
-	 * @param text current attribute name
-	 * @return String abbreviate XPath expression of current attribute
-	 */
-	private String getXPathOfAttribute(String text) {
-		return "@" + text;
-	}
-
-	/**
-	 * Return abbreviate XPath expression of current element.
-	 *
-	 * @param text current element name
-	 * @return String abbreviate XPath expression of current element
-	 */
-
-	private String getXPathOfElement(String text) {
-		return text;
 	}
 
 }
