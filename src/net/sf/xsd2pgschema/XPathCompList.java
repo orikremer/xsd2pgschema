@@ -243,7 +243,7 @@ public class XPathCompList {
 
 			ParseTree child = tree.getChild(i);
 
-			if (isQNameContext(child)) {
+			if (isEffectiveQNameContext(child)) {
 
 				XPathComp comp = new XPathComp(expr_counter, step_counter, child);
 
@@ -280,12 +280,12 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Return whether child node is QNameContext node.
+	 * Return whether child node is effective QNameContext node.
 	 *
 	 * @param tree XPath parse tree
 	 * @return boolean whether child node is QNameContext node or not
 	 */
-	private boolean isQNameContext(ParseTree tree) {
+	private boolean isEffectiveQNameContext(ParseTree tree) {
 
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
@@ -345,7 +345,7 @@ public class XPathCompList {
 	 * @param step_id current step id
 	 * @return XPathComp[] array of XPath component
 	 */
-	protected XPathComp[] getXPathComp(int expr_id, int step_id) {
+	protected XPathComp[] getXPathCompArray(int expr_id, int step_id) {
 		return comps.stream().filter(comp -> comp.expr_id == expr_id && comp.step_id == step_id).toArray(XPathComp[]::new);
 	}
 
@@ -355,7 +355,7 @@ public class XPathCompList {
 	 * @param comp current XPath component in list
 	 * @return XPathComp parent XPath component
 	 */
-	protected XPathComp getPreviousStep(XPathComp comp) {
+	protected XPathComp previousOf(XPathComp comp) {
 
 		int step_id = comp.step_id - (comp.tree.getClass().equals(TerminalNodeImpl.class) ? 1 : 2);
 
@@ -419,12 +419,12 @@ public class XPathCompList {
 
 				if (hasPathEndsWithTextNode()) {
 
-					XPathComp[] child_comps = getXPathComp(comp.expr_id, step_id + 1);
+					XPathComp[] child_comps = getXPathCompArray(comp.expr_id, step_id + 1);
 
 					if (child_comps == null || child_comps.length == 0) {
 
 						if (removePathEndsWithTextNode() == 0)
-							throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+							throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 					}
 
@@ -435,7 +435,7 @@ public class XPathCompList {
 						if (!child_last_comp.tree.getClass().equals(NodeTestContext.class) || !child_last_comp.tree.getText().equals("text()")) {
 
 							if (removePathEndsWithTextNode() == 0)
-								throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+								throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 						}
 
@@ -485,7 +485,7 @@ public class XPathCompList {
 		case "..":
 			if (selectParentPath() == 0) {
 
-				XPathComp prev_comp = getPreviousStep(comp);
+				XPathComp prev_comp = previousOf(comp);
 
 				if (prev_comp != null)
 					throw new PgSchemaException(comp.tree, prev_comp.tree);
@@ -535,12 +535,12 @@ public class XPathCompList {
 	protected void validateNCNameContextWithParentAxis(XPathComp comp, boolean wild_card, String composite_text) throws PgSchemaException {
 
 		if (selectParentPath() == 0)
-			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+			throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 		validateNCNameContext(comp, wild_card, composite_text);
 
 		if (paths.size() == 0)
-			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+			throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 	}
 
@@ -577,7 +577,7 @@ public class XPathCompList {
 		validateNCNameContext(comp, wild_card, composite_text);
 
 		if (paths.size() == 0)
-			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+			throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 	}
 
@@ -614,7 +614,7 @@ public class XPathCompList {
 		}
 
 		if (paths.size() == 0)
-			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+			throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 	}
 
@@ -627,7 +627,7 @@ public class XPathCompList {
 	protected void validateNodeTestContextWithParentAxis(XPathComp comp) throws PgSchemaException {
 
 		if (selectParentPath() == 0)
-			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+			throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 	}
 
@@ -660,7 +660,7 @@ public class XPathCompList {
 		replacePath(_paths, _termini);
 
 		if (paths.size() == 0)
-			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+			throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 	}
 
@@ -679,12 +679,12 @@ public class XPathCompList {
 	protected void validateNameTestContextWithParentAxis(XPathComp comp, String namespace_uri, String local_part, boolean wild_card, String composite_text, PgSchema schema) throws PgSchemaException {
 
 		if (selectParentPath() == 0)
-			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+			throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 		validateNameTestContext(comp, namespace_uri, local_part, wild_card, composite_text, schema);
 
 		if (paths.size() == 0)
-			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+			throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 	}
 
@@ -724,7 +724,7 @@ public class XPathCompList {
 		validateNameTestContext(comp, namespace_uri, local_part, wild_card, composite_text, schema);
 
 		if (paths.size() == 0)
-			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+			throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 	}
 
@@ -762,12 +762,12 @@ public class XPathCompList {
 			case table:
 
 				if (len < 1)
-					throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+					throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 				t = schema.getTableId(name[name.length - 1]);
 
 				if (t < 0)
-					throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+					throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 				table = schema.getTable(t);
 
@@ -780,12 +780,12 @@ public class XPathCompList {
 				break;
 			case field:
 				if (len < 2)
-					throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+					throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 				t = schema.getTableId(name[name.length - 2]);
 
 				if (t < 0)
-					throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+					throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 				table = schema.getTable(t);
 				String field_name = name[name.length - 1];
@@ -851,17 +851,17 @@ public class XPathCompList {
 				}
 
 				if (!found_field)
-					throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+					throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 				break;
 			default:
-				throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+				throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 			}
 
 		}
 
 		if (paths.size() == 0)
-			throw new PgSchemaException(comp.tree, getPreviousStep(comp).tree);
+			throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
 	}
 

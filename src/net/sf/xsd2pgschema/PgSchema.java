@@ -779,7 +779,7 @@ public class PgSchema {
 
 		if (root_element) {
 
-			addOrphanedRootItem(node, table);
+			addRootOrphanItem(node, table);
 
 			for (int t = 0; t < tables.size(); t++) {
 
@@ -800,12 +800,12 @@ public class PgSchema {
 	}
 
 	/**
-	 * Add orphaned item of root element.
+	 * Add orphan item of root element.
 	 *
 	 * @param node current node
 	 * @param table root table
 	 */
-	private void addOrphanedRootItem(Node node, PgTable table) {
+	private void addRootOrphanItem(Node node, PgTable table) {
 
 		PgField dummy = new PgField();
 
@@ -5302,7 +5302,7 @@ public class PgSchema {
 
 			for (int step_id = 0; step_id <= list.getLastStep(expr_id); step_id++) {
 
-				XPathComp[] comps = list.getXPathComp(expr_id, step_id);
+				XPathComp[] comps = list.getXPathCompArray(expr_id, step_id);
 
 				for (XPathComp comp : comps) {
 
@@ -5536,7 +5536,7 @@ public class PgSchema {
 					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
 
 				if (inc_self)
-					list.add(getAbsXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
+					list.add(getAbsoluteXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
 
 			}
 
@@ -5544,14 +5544,14 @@ public class PgSchema {
 
 				tables.stream().filter(table -> matchesNodeName(table.name, text, wild_card) && !table.virtual).forEach(table -> {
 
-					String table_xpath = getAbsXPathOfTable(table, new StringBuilder());
+					String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
 
 					if (table_xpath != null && inc_self)
 						list.add(table_xpath, XPathCompType.table);
 
 					if (table.fields.stream().anyMatch(field -> field.simple_cont)) {
 
-						String simple_cont_xpath = getAbsXPathOfSimpleContent(table);
+						String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(table);
 
 						if (simple_cont_xpath != null && inc_self)
 							list.add(simple_cont_xpath, XPathCompType.field);
@@ -5564,7 +5564,7 @@ public class PgSchema {
 
 					table.fields.stream().filter(field -> matchesNodeName(field.xname, text, wild_card) && field.element).forEach(field -> {
 
-						String elem_xpath = getAbsXPathOfElement(table, field.xname);
+						String elem_xpath = getAbsoluteXPathOfElement(table, field.xname);
 
 						if (elem_xpath != null && inc_self)
 							list.add(elem_xpath, XPathCompType.field);
@@ -5599,7 +5599,7 @@ public class PgSchema {
 					if (abs_path) {
 
 						if (matchesNodeName(root_table.name, text, wild_card) && inc_self)
-							_list.add(getAbsXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
+							_list.add(getAbsoluteXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
 
 					}
 
@@ -5607,14 +5607,14 @@ public class PgSchema {
 
 						tables.stream().filter(table -> matchesNodeName(table.name, text, wild_card) && !table.virtual).forEach(table -> {
 
-							String table_xpath = getAbsXPathOfTable(table, new StringBuilder());
+							String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
 
 							if (table_xpath != null && inc_self)
 								_list.add(table_xpath, XPathCompType.table);
 
 							if (table.fields.stream().anyMatch(field -> field.simple_cont)) {
 
-								String simple_cont_xpath = getAbsXPathOfSimpleContent(table);
+								String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(table);
 
 								if (simple_cont_xpath != null && inc_self)
 									_list.add(simple_cont_xpath, XPathCompType.field);
@@ -5627,7 +5627,7 @@ public class PgSchema {
 
 							table.fields.stream().filter(field -> matchesNodeName(field.xname, text, wild_card) && field.element).forEach(field -> {
 
-								String elem_xpath = getAbsXPathOfElement(table, field.xname);
+								String elem_xpath = getAbsoluteXPathOfElement(table, field.xname);
 
 								if (elem_xpath != null && inc_self)
 									_list.add(elem_xpath, XPathCompType.field);
@@ -5648,7 +5648,7 @@ public class PgSchema {
 
 					if (table_id == -1) {
 
-						XPathComp prev_comp = list.getPreviousStep(comp);
+						XPathComp prev_comp = list.previousOf(comp);
 
 						try {
 							throw new PgSchemaException(prev_comp.tree, def_schema_location);
@@ -5689,14 +5689,14 @@ public class PgSchema {
 
 							if (matchesNodeName(foreign_table.name, text, wild_card) && !foreign_table.virtual) {
 
-								String table_xpath = getAbsXPathOfTable(foreign_table, new StringBuilder());
+								String table_xpath = getAbsoluteXPathOfTable(foreign_table, new StringBuilder());
 
 								if (table_xpath != null && (inc_self || first_nest))
 									_list.add(table_xpath, XPathCompType.table);
 
 								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont)) {
 
-									String simple_cont_xpath = getAbsXPathOfSimpleContent(foreign_table);
+									String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(foreign_table);
 
 									if (simple_cont_xpath != null && (inc_self || first_nest))
 										_list.add(simple_cont_xpath, XPathCompType.field);
@@ -5709,7 +5709,7 @@ public class PgSchema {
 
 							foreign_table.fields.stream().filter(field -> field.element && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
-								String elem_xpath = getAbsXPathOfElement(foreign_table, field.xname);
+								String elem_xpath = getAbsoluteXPathOfElement(foreign_table, field.xname);
 
 								if (elem_xpath != null && (inc_self || first_nest))
 									_list.add(elem_xpath, XPathCompType.field);
@@ -5790,7 +5790,7 @@ public class PgSchema {
 
 					table.fields.stream().filter(field -> matchesNodeName(field.xname, text, wild_card) && field.attribute).forEach(field -> {
 
-						String attr_xpath = getAbsXPathOfAttribute(table, field.xname);
+						String attr_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
 
 						if (attr_xpath != null)
 							list.add(attr_xpath, XPathCompType.field);
@@ -5830,7 +5830,7 @@ public class PgSchema {
 
 							table.fields.stream().filter(field -> matchesNodeName(field.xname, text, wild_card) && field.attribute).forEach(field -> {
 
-								String attr_xpath = getAbsXPathOfAttribute(table, field.xname);
+								String attr_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
 
 								if (attr_xpath != null)
 									_list.add(attr_xpath, XPathCompType.field);
@@ -5851,7 +5851,7 @@ public class PgSchema {
 
 					if (table_id == -1) {
 
-						XPathComp prev_comp = list.getPreviousStep(comp);
+						XPathComp prev_comp = list.previousOf(comp);
 
 						try {
 							throw new PgSchemaException(prev_comp.tree, def_schema_location);
@@ -5890,7 +5890,7 @@ public class PgSchema {
 
 							foreign_table.fields.stream().filter(field -> field.attribute && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
-								String attr_xpath = getAbsXPathOfAttribute(foreign_table, field.xname);
+								String attr_xpath = getAbsoluteXPathOfAttribute(foreign_table, field.xname);
 
 								if (attr_xpath != null)
 									_list.add(attr_xpath, XPathCompType.field);
@@ -6060,7 +6060,7 @@ public class PgSchema {
 			if (abs_path) {
 
 				if (inc_self)
-					list.add(getAbsXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
+					list.add(getAbsoluteXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
 
 			}
 
@@ -6068,14 +6068,14 @@ public class PgSchema {
 
 				tables.stream().filter(table -> !table.virtual).forEach(table -> {
 
-					String table_xpath = getAbsXPathOfTable(table, new StringBuilder());
+					String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
 
 					if (table_xpath != null && inc_self)
 						list.add(table_xpath, XPathCompType.table);
 
 					if (table.fields.stream().anyMatch(field -> field.simple_cont)) {
 
-						String simple_cont_xpath = getAbsXPathOfSimpleContent(table);
+						String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(table);
 
 						if (simple_cont_xpath != null && inc_self)
 							list.add(simple_cont_xpath, XPathCompType.field);
@@ -6088,7 +6088,7 @@ public class PgSchema {
 
 					table.fields.stream().filter(field -> field.element).forEach(field -> {
 
-						String elem_xpath = getAbsXPathOfElement(table, field.xname);
+						String elem_xpath = getAbsoluteXPathOfElement(table, field.xname);
 
 						if (elem_xpath != null && inc_self)
 							list.add(elem_xpath, XPathCompType.field);
@@ -6123,7 +6123,7 @@ public class PgSchema {
 					if (abs_path) {
 
 						if (inc_self)
-							_list.add(getAbsXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
+							_list.add(getAbsoluteXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
 
 					}
 
@@ -6131,14 +6131,14 @@ public class PgSchema {
 
 						tables.stream().filter(table -> !table.virtual).forEach(table -> {
 
-							String table_xpath = getAbsXPathOfTable(table, new StringBuilder());
+							String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
 
 							if (table_xpath != null && inc_self)
 								_list.add(table_xpath, XPathCompType.table);
 
 							table.fields.stream().filter(field -> field.simple_cont).forEach(field -> {
 
-								String simple_cont_xpath = getAbsXPathOfSimpleContent(table);
+								String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(table);
 
 								if (simple_cont_xpath != null && inc_self)
 									_list.add(simple_cont_xpath, XPathCompType.field);
@@ -6151,7 +6151,7 @@ public class PgSchema {
 
 							table.fields.stream().filter(field -> field.element).forEach(field -> {
 
-								String elem_xpath = getAbsXPathOfElement(table, field.xname);
+								String elem_xpath = getAbsoluteXPathOfElement(table, field.xname);
 
 								if (elem_xpath != null && inc_self)
 									_list.add(elem_xpath, XPathCompType.field);
@@ -6172,7 +6172,7 @@ public class PgSchema {
 
 					if (table_id == -1) {
 
-						XPathComp prev_comp = list.getPreviousStep(comp);
+						XPathComp prev_comp = list.previousOf(comp);
 
 						try {
 							throw new PgSchemaException(prev_comp.tree, def_schema_location);
@@ -6213,14 +6213,14 @@ public class PgSchema {
 
 							if (!foreign_table.virtual) {
 
-								String table_xpath = getAbsXPathOfTable(foreign_table, new StringBuilder());
+								String table_xpath = getAbsoluteXPathOfTable(foreign_table, new StringBuilder());
 
 								if (table_xpath != null && (inc_self || _foreign_table_ids == null))
 									_list.add(table_xpath, XPathCompType.table);
 
 								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont)) {
 
-									String simple_cont_xpath = getAbsXPathOfSimpleContent(foreign_table);
+									String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(foreign_table);
 
 									if (simple_cont_xpath != null && (inc_self || first_nest))
 										_list.add(simple_cont_xpath, XPathCompType.field);
@@ -6233,7 +6233,7 @@ public class PgSchema {
 
 							foreign_table.fields.stream().filter(field -> field.element).forEach(field -> {
 
-								String elem_xpath = getAbsXPathOfElement(foreign_table, field.xname);
+								String elem_xpath = getAbsoluteXPathOfElement(foreign_table, field.xname);
 
 								if (elem_xpath != null && (inc_self || first_nest))
 									_list.add(elem_xpath, XPathCompType.field);
@@ -6311,7 +6311,7 @@ public class PgSchema {
 
 					table.fields.stream().filter(field -> field.attribute).forEach(field -> {
 
-						String attr_xpath = getAbsXPathOfAttribute(table, field.xname);
+						String attr_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
 
 						if (attr_xpath != null)
 							list.add(attr_xpath, XPathCompType.field);
@@ -6351,7 +6351,7 @@ public class PgSchema {
 
 							table.fields.stream().filter(field -> field.attribute).forEach(field -> {
 
-								String attr_xpath = getAbsXPathOfAttribute(table, field.xname);
+								String attr_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
 
 								if (attr_xpath != null)
 									_list.add(attr_xpath, XPathCompType.field);
@@ -6372,7 +6372,7 @@ public class PgSchema {
 
 					if (table_id == -1) {
 
-						XPathComp prev_comp = list.getPreviousStep(comp);
+						XPathComp prev_comp = list.previousOf(comp);
 
 						try {
 							throw new PgSchemaException(prev_comp.tree, def_schema_location);
@@ -6411,7 +6411,7 @@ public class PgSchema {
 
 							foreign_table.fields.stream().filter(field -> field.attribute).forEach(field -> {
 
-								String attr_xpath = getAbsXPathOfAttribute(foreign_table, field.xname);
+								String attr_xpath = getAbsoluteXPathOfAttribute(foreign_table, field.xname);
 
 								if (attr_xpath != null)
 									_list.add(attr_xpath, XPathCompType.field);
@@ -6657,7 +6657,7 @@ public class PgSchema {
 					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
 
 				if (inc_self)
-					list.add(getAbsXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
+					list.add(getAbsoluteXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
 
 			}
 
@@ -6665,14 +6665,14 @@ public class PgSchema {
 
 				tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri) && matchesNodeName(table.name, text, wild_card)).forEach(table -> {
 
-					String table_xpath = getAbsXPathOfTable(table, new StringBuilder());
+					String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
 
 					if (table_xpath != null && inc_self)
 						list.add(table_xpath, XPathCompType.table);
 
 					if (table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && matchesNodeName(field.xname, text, wild_card))) {
 
-						String simple_cont_xpath = getAbsXPathOfSimpleContent(table);
+						String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(table);
 
 						if (simple_cont_xpath != null && inc_self)
 							list.add(simple_cont_xpath, XPathCompType.field);
@@ -6685,7 +6685,7 @@ public class PgSchema {
 
 					table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
-						String elem_xpath = getAbsXPathOfElement(table, field.xname);
+						String elem_xpath = getAbsoluteXPathOfElement(table, field.xname);
 
 						if (elem_xpath != null && inc_self)
 							list.add(elem_xpath, XPathCompType.field);
@@ -6720,7 +6720,7 @@ public class PgSchema {
 					if (abs_path) {
 
 						if (inc_self && root_table.target_namespace.contains(namespace_uri) && matchesNodeName(root_table.name, text, wild_card))
-							_list.add(getAbsXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
+							_list.add(getAbsoluteXPathOfTable(root_table, new StringBuilder()), XPathCompType.table);
 
 					}
 
@@ -6728,14 +6728,14 @@ public class PgSchema {
 
 						tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri) && matchesNodeName(table.name, text, wild_card)).forEach(table -> {
 
-							String table_xpath = getAbsXPathOfTable(table, new StringBuilder());
+							String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
 
 							if (table_xpath != null && inc_self)
 								_list.add(table_xpath, XPathCompType.table);
 
 							table.fields.stream().filter(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
-								String simple_cont_xpath = getAbsXPathOfSimpleContent(table);
+								String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(table);
 
 								if (simple_cont_xpath != null && inc_self)
 									_list.add(simple_cont_xpath, XPathCompType.field);
@@ -6748,7 +6748,7 @@ public class PgSchema {
 
 							table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
-								String elem_xpath = getAbsXPathOfElement(table, field.xname);
+								String elem_xpath = getAbsoluteXPathOfElement(table, field.xname);
 
 								if (elem_xpath != null && inc_self)
 									_list.add(elem_xpath, XPathCompType.field);
@@ -6769,7 +6769,7 @@ public class PgSchema {
 
 					if (table_id == -1) {
 
-						XPathComp prev_comp = list.getPreviousStep(comp);
+						XPathComp prev_comp = list.previousOf(comp);
 
 						try {
 							throw new PgSchemaException(prev_comp.tree, def_schema_location);
@@ -6810,14 +6810,14 @@ public class PgSchema {
 
 							if (!foreign_table.virtual && foreign_table.target_namespace.contains(namespace_uri) && matchesNodeName(foreign_table.name, text, wild_card)) {
 
-								String table_xpath = getAbsXPathOfTable(foreign_table, new StringBuilder());
+								String table_xpath = getAbsoluteXPathOfTable(foreign_table, new StringBuilder());
 
 								if (table_xpath != null && (inc_self || _foreign_table_ids == null))
 									_list.add(table_xpath, XPathCompType.table);
 
 								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && matchesNodeName(field.xname, text, wild_card))) {
 
-									String simple_cont_xpath = getAbsXPathOfSimpleContent(foreign_table);
+									String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(foreign_table);
 
 									if (simple_cont_xpath != null && (inc_self || first_nest))
 										_list.add(simple_cont_xpath, XPathCompType.field);
@@ -6830,7 +6830,7 @@ public class PgSchema {
 
 							foreign_table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
-								String elem_xpath = getAbsXPathOfElement(foreign_table, field.xname);
+								String elem_xpath = getAbsoluteXPathOfElement(foreign_table, field.xname);
 
 								if (elem_xpath != null && (inc_self || first_nest))
 									_list.add(elem_xpath, XPathCompType.field);
@@ -6913,7 +6913,7 @@ public class PgSchema {
 
 					table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
-						String attr_xpath = getAbsXPathOfAttribute(table, field.xname);
+						String attr_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
 
 						if (attr_xpath != null)
 							list.add(attr_xpath, XPathCompType.field);
@@ -6953,7 +6953,7 @@ public class PgSchema {
 
 							table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
-								String attr_xpath = getAbsXPathOfAttribute(table, field.xname);
+								String attr_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
 
 								if (attr_xpath != null)
 									_list.add(attr_xpath, XPathCompType.field);
@@ -6974,7 +6974,7 @@ public class PgSchema {
 
 					if (table_id == -1) {
 
-						XPathComp prev_comp = list.getPreviousStep(comp);
+						XPathComp prev_comp = list.previousOf(comp);
 
 						try {
 							throw new PgSchemaException(prev_comp.tree, def_schema_location);
@@ -7013,7 +7013,7 @@ public class PgSchema {
 
 							foreign_table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
-								String attr_xpath = getAbsXPathOfAttribute(foreign_table, field.xname);
+								String attr_xpath = getAbsoluteXPathOfAttribute(foreign_table, field.xname);
 
 								if (attr_xpath != null)
 									_list.add(attr_xpath, XPathCompType.field);
@@ -7070,6 +7070,7 @@ public class PgSchema {
 	 * @param node_name node name
 	 * @param prefix prefix text
 	 * @param wild_card whether wild card follows or not
+	 * @return boolean whether node name matches
 	 */
 	protected boolean matchesNodeName(String node_name, String prefix, boolean wild_card) {
 
@@ -7083,7 +7084,7 @@ public class PgSchema {
 	 * Return table name of current path.
 	 *
 	 * @param path current path
-	 * @return String current table
+	 * @return String current table name
 	 */
 	private String getTableNameOfPath(String path) {
 
@@ -7102,7 +7103,7 @@ public class PgSchema {
 	 * @param sb StringBuilder to store path
 	 * @return String absolute XPath expression of current table
 	 */
-	private String getAbsXPathOfTable(PgTable table, StringBuilder sb) {
+	private String getAbsoluteXPathOfTable(PgTable table, StringBuilder sb) {
 
 		String table_name = table.name;
 
@@ -7110,7 +7111,7 @@ public class PgSchema {
 
 			sb.append((sb.length() > 0 ? "/" : "") + table_name);
 
-			return getReversePath(sb.toString());
+			return getReversedPath(sb.toString());
 		}
 
 		if (!table.virtual)
@@ -7122,7 +7123,7 @@ public class PgSchema {
 				continue;
 
 			if (parent_table.fields.stream().anyMatch(field -> field.nested_key && field.foreign_table.equals(table_name)))
-				return getAbsXPathOfTable(parent_table, sb);
+				return getAbsoluteXPathOfTable(parent_table, sb);
 		}
 
 		return null;
@@ -7135,13 +7136,13 @@ public class PgSchema {
 	 * @param text current attribute name
 	 * @return String absolute XPath expression of current attribute
 	 */
-	private String getAbsXPathOfAttribute(PgTable table, String text) {
+	private String getAbsoluteXPathOfAttribute(PgTable table, String text) {
 
 		StringBuilder sb = new StringBuilder();
 
 		sb.append(getXPathOfAttribute(text));
 
-		return getAbsXPathOfTable(table, sb);
+		return getAbsoluteXPathOfTable(table, sb);
 	}
 
 	/**
@@ -7151,13 +7152,13 @@ public class PgSchema {
 	 * @param text current element name
 	 * @return String absolute XPath expression of current attribute
 	 */
-	private String getAbsXPathOfElement(PgTable table, String text) {
+	private String getAbsoluteXPathOfElement(PgTable table, String text) {
 
 		StringBuilder sb = new StringBuilder();
 
 		sb.append(getXPathOfElement(text));
 
-		return getAbsXPathOfTable(table, sb);
+		return getAbsoluteXPathOfTable(table, sb);
 	}
 
 	/**
@@ -7166,11 +7167,11 @@ public class PgSchema {
 	 * @param table current table
 	 * @return String absolute XPath expression of current attribute
 	 */
-	private String getAbsXPathOfSimpleContent(PgTable table) {
+	private String getAbsoluteXPathOfSimpleContent(PgTable table) {
 
 		StringBuilder sb = new StringBuilder();
 
-		return getAbsXPathOfTable(table, sb);
+		return getAbsoluteXPathOfTable(table, sb);
 	}
 
 	/**
@@ -7179,7 +7180,7 @@ public class PgSchema {
 	 * @param path normal path
 	 * @return String reversed path
 	 */
-	private String getReversePath(String path) {
+	private String getReversedPath(String path) {
 
 		String[] _path = path.split("/");
 

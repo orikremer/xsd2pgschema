@@ -99,10 +99,10 @@ public class XmlSplitterImpl {
 	/** Whether no document key has appeared in document unit. */
 	private boolean no_document_key;
 
-	/** The list of XML start event of XML header. */
+	/** The list of XML start event for XML header. */
 	private List<XMLEvent> header_start_events = null;
 
-	/** The list of XML end event of XML header. */
+	/** The list of XML end event for XML header. */
 	private List<XMLEvent> header_end_events = null;
 
 	/** The list of XML event of interim XML content before xml_writer is prepared. */
@@ -111,7 +111,7 @@ public class XmlSplitterImpl {
 	/** The XML event writer. */
 	private XMLEventWriter xml_writer = null;
 
-	/** The xml directory. */
+	/** The XML directory. */
 	private File[] xml_dir = null;
 
 	/**
@@ -204,7 +204,7 @@ public class XmlSplitterImpl {
 		if (doc_unit.selectParentPath() == 0)
 			throw new xpathListenerException("Cound not specify document unit from XPath expression. (" + main_text + ")");
 
-		// decide node of document unit
+		// decide path of document unit
 
 		while (!doc_unit.hasPathEndsWithTableNode()) {
 
@@ -217,6 +217,8 @@ public class XmlSplitterImpl {
 
 		System.out.println("document unit:");
 		doc_unit.showPath(" ");
+
+		// decide path of document key
 
 		doc_key.removeOrphanPath(doc_unit.paths);
 
@@ -241,7 +243,7 @@ public class XmlSplitterImpl {
 		if (attr_doc_key)
 			attr_doc_key_holder = doc_key_path.substring(0, doc_key_path.lastIndexOf("/"));
 
-		// StAX read handlers
+		// StAX read event handlers
 
 		read_handlers = new HashMap<Integer, EventHandler>();
 
@@ -251,24 +253,24 @@ public class XmlSplitterImpl {
 		read_handlers.put(XMLEvent.START_ELEMENT, new StartElementReadHandler());
 		read_handlers.put(XMLEvent.END_ELEMENT, new EndElementReadHandler());
 
-		read_handlers.put(XMLEvent.ATTRIBUTE, new AttributeReadHandler());
+		read_handlers.put(XMLEvent.ATTRIBUTE, new CommonReadHandler());
 
-		read_handlers.put(XMLEvent.NAMESPACE, new NameSpaceReadHandler());
+		read_handlers.put(XMLEvent.NAMESPACE, new CommonReadHandler());
 
 		read_handlers.put(XMLEvent.CHARACTERS, new CharactersReadHandler());
-		read_handlers.put(XMLEvent.SPACE, new SpaceReadHandler());
-		read_handlers.put(XMLEvent.CDATA, new CDataReadHandler());
+		read_handlers.put(XMLEvent.SPACE, new CommonReadHandler());
+		read_handlers.put(XMLEvent.CDATA, new CommonReadHandler());
 
-		read_handlers.put(XMLEvent.COMMENT, new CommentReadHandler());
+		read_handlers.put(XMLEvent.COMMENT, new CommonReadHandler());
 
-		read_handlers.put(XMLEvent.PROCESSING_INSTRUCTION, new ProcessingInstructionReadHandler());
+		read_handlers.put(XMLEvent.PROCESSING_INSTRUCTION, new CommonReadHandler());
 
-		read_handlers.put(XMLEvent.ENTITY_REFERENCE, new EntityReferenceReadHandler());
-		read_handlers.put(XMLEvent.ENTITY_DECLARATION, new EntityDeclarationReadHandler());
+		read_handlers.put(XMLEvent.ENTITY_REFERENCE, new CommonReadHandler());
+		read_handlers.put(XMLEvent.ENTITY_DECLARATION, new CommonReadHandler());
 
-		read_handlers.put(XMLEvent.DTD, new DTDReadHandler());
+		read_handlers.put(XMLEvent.DTD, new CommonReadHandler());
 
-		read_handlers.put(XMLEvent.NOTATION_DECLARATION, new NotationDeclarationReadHandler());
+		read_handlers.put(XMLEvent.NOTATION_DECLARATION, new CommonReadHandler());
 
 	}
 
@@ -334,82 +336,6 @@ public class XmlSplitterImpl {
 			e.printStackTrace();
 			System.exit(1);
 		}
-
-	}
-
-	/**
-	 * Create XML event writer.
-	 *
-	 * @param document_id current document key
-	 * @throws PgSchemaException the pg schema exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws XMLStreamException the XML stream exception
-	 */
-	private void createXMLEventWriter(String document_id) throws PgSchemaException, IOException, XMLStreamException {
-
-		if (document_id == null || document_id.isEmpty())
-			throw new PgSchemaException("Invalid document id.");
-
-		no_document_key = false;
-
-		File xml_file = new File(xml_dir[shard_id++ % shard_size], document_id + ".xml");
-
-		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
-
-		// XML event writer of split XML file
-
-		xml_writer = out_factory.createXMLEventWriter(new FileOutputStream(xml_file));
-
-		header_start_events.forEach(event -> {
-
-			try {
-				xml_writer.add(event);
-			} catch (XMLStreamException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-
-		});
-
-		if (!interim_events.isEmpty()) {
-
-			interim_events.forEach(event -> {
-				try {
-					xml_writer.add(event);
-				} catch (XMLStreamException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
-			});
-
-			interim_events.clear();
-
-		}
-
-	}
-
-	/**
-	 * Close XML event writer.
-	 *
-	 * @throws XMLStreamException the XML stream exception
-	 */
-	private void closeXMLEventWriter() throws XMLStreamException {
-
-		header_end_events.forEach(event -> {
-
-			try {
-				xml_writer.add(event);
-			} catch (XMLStreamException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-
-		});
-
-		xml_writer.close();
-
-		xml_writer = null;
 
 	}
 
@@ -493,13 +419,9 @@ public class XmlSplitterImpl {
 
 				header_start_events.add(element);
 
-				QName qname = start_elem.getName();
-
-				header_end_events.add(xml_event_factory.createEndElement(qname.getPrefix(), qname.getNamespaceURI(), qname.getLocalPart()));
-
 				if (doc_unit) {
 
-					// reverse order
+					// reverse order of end events
 
 					Collections.reverse(header_end_events);
 
@@ -507,10 +429,53 @@ public class XmlSplitterImpl {
 
 				}
 
+				else {
+
+					// append end event
+
+					QName qname = start_elem.getName();
+
+					header_end_events.add(xml_event_factory.createEndElement(qname.getPrefix(), qname.getNamespaceURI(), qname.getLocalPart()));
+
+				}
+
 			}
 
-			else if (xml_writer == null)
+			else if (xml_writer == null) {
+
 				interim_events.add(element);
+
+				if (attr_doc_key && _cur_path.equals(attr_doc_key_holder)) {
+
+					Iterator<?> iter_attr = start_elem.getAttributes();
+
+					if (iter_attr != null) {
+
+						while (iter_attr.hasNext()) {
+
+							javax.xml.stream.events.Attribute attr = (Attribute) iter_attr.next();
+
+							if (doc_key_path.equals(attr_doc_key_holder + "/@" + attr.getName())) {
+
+								try {
+
+									createXMLEventWriter(attr.getValue().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", ""));
+
+								} catch (PgSchemaException | IOException | XMLStreamException e) {
+									e.printStackTrace();
+									System.exit(1);
+								}
+
+								break;
+							}
+
+						}
+
+					}
+
+				}
+
+			}
 
 			else {
 
@@ -523,36 +488,6 @@ public class XmlSplitterImpl {
 
 			}
 
-			if (attr_doc_key && _cur_path.equals(attr_doc_key_holder)) {
-
-				Iterator<?> iter_attr = start_elem.getAttributes();
-
-				if (iter_attr != null) {
-
-					while (iter_attr.hasNext()) {
-
-						javax.xml.stream.events.Attribute attr = (Attribute) iter_attr.next();
-
-						if (doc_key_path.equals(attr_doc_key_holder + "/@" + attr.getName())) {
-
-							try {
-
-								createXMLEventWriter(attr.getValue().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", ""));
-
-							} catch (PgSchemaException | IOException | XMLStreamException e) {
-								e.printStackTrace();
-								System.exit(1);
-							}
-
-							break;
-						}
-
-					}
-
-				}
-
-			}
-
 		}
 
 	}
@@ -561,59 +496,6 @@ public class XmlSplitterImpl {
 	 * The Class EndElementReadHandler.
 	 */
 	class EndElementReadHandler implements EventHandler {
-
-		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
-		 */
-		@Override
-		public void handleEvent(XMLEvent element) {
-
-			boolean doc_unit = cur_path.toString().equals(doc_unit_path);
-
-			if (doc_unit) {
-
-				try {
-					closeXMLEventWriter();
-				} catch (XMLStreamException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
-			}
-
-			else {
-
-				if (no_header)
-					header_start_events.add(element);
-
-				else if (xml_writer == null)
-					interim_events.add(element);
-
-				else {
-
-					try {
-						xml_writer.add(element);
-					} catch (XMLStreamException e) {
-						e.printStackTrace();
-						System.exit(1);
-					}
-
-				}
-
-			}
-
-			int len = cur_path.length() - element.asEndElement().getName().getLocalPart().length() - 1;
-
-			cur_path.setLength(len);
-
-		}
-
-	}
-
-	/**
-	 * The Class AttributeReadHandler.
-	 */
-	class AttributeReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
 		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
@@ -638,14 +520,31 @@ public class XmlSplitterImpl {
 
 			}
 
+			boolean doc_unit = cur_path.toString().equals(doc_unit_path);
+
+			if (doc_unit) {
+
+				try {
+					closeXMLEventWriter();
+				} catch (XMLStreamException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			}
+
+			int len = cur_path.length() - element.asEndElement().getName().getLocalPart().length() - 1;
+
+			cur_path.setLength(len);
+
 		}
 
 	}
 
 	/**
-	 * The Class NameSpaceReadHandler.
+	 * The Class CommonReadHandler.
 	 */
-	class NameSpaceReadHandler implements EventHandler {
+	class CommonReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
 		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
@@ -688,53 +587,24 @@ public class XmlSplitterImpl {
 			if (no_header)
 				header_start_events.add(element);
 
-			else if (xml_writer == null)
+			else if (xml_writer == null) {
+
 				interim_events.add(element);
 
-			else {
+				if (no_document_key && !attr_doc_key && cur_path.toString().equals(doc_key_path)) {
 
-				try {
-					xml_writer.add(element);
-				} catch (XMLStreamException e) {
-					e.printStackTrace();
-					System.exit(1);
+					try {
+
+						createXMLEventWriter(element.asCharacters().getData().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", ""));
+
+					} catch (PgSchemaException | IOException | XMLStreamException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+
 				}
 
 			}
-
-			if (no_document_key && !attr_doc_key && doc_key_path.equals(cur_path.toString())) {
-
-				try {
-
-					createXMLEventWriter(element.asCharacters().getData().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", ""));
-
-				} catch (PgSchemaException | IOException | XMLStreamException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
-			}
-
-		}
-
-	}
-
-	/**
-	 * The Class SpaceReadHandler.
-	 */
-	class SpaceReadHandler implements EventHandler {
-
-		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
-		 */
-		@Override
-		public void handleEvent(XMLEvent element) {
-
-			if (no_header)
-				header_start_events.add(element);
-
-			else if (xml_writer == null)
-				interim_events.add(element);
 
 			else {
 
@@ -752,229 +622,78 @@ public class XmlSplitterImpl {
 	}
 
 	/**
-	 * The Class CDataReadHandler.
+	 * Create XML event writer.
+	 *
+	 * @param document_id current document key
+	 * @throws PgSchemaException the pg schema exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws XMLStreamException the XML stream exception
 	 */
-	class CDataReadHandler implements EventHandler {
+	private void createXMLEventWriter(String document_id) throws PgSchemaException, IOException, XMLStreamException {
 
-		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
-		 */
-		@Override
-		public void handleEvent(XMLEvent element) {
+		if (document_id == null || document_id.isEmpty())
+			throw new PgSchemaException("Invalid document id.");
 
-			if (no_header)
-				header_start_events.add(element);
+		no_document_key = false;
 
-			else if (xml_writer == null)
-				interim_events.add(element);
+		File xml_file = new File(xml_dir[shard_id++ % shard_size], document_id + ".xml");
 
-			else {
+		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 
+		// XML event writer of split XML file
+
+		xml_writer = out_factory.createXMLEventWriter(new FileOutputStream(xml_file));
+
+		header_start_events.forEach(event -> {
+
+			try {
+				xml_writer.add(event);
+			} catch (XMLStreamException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+
+		});
+
+		if (!interim_events.isEmpty()) {
+
+			interim_events.forEach(event -> {
 				try {
-					xml_writer.add(element);
+					xml_writer.add(event);
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
 					System.exit(1);
 				}
 
-			}
+			});
+
+			interim_events.clear();
 
 		}
 
 	}
 
 	/**
-	 * The Class CommentReadHandler.
+	 * Close XML event writer.
+	 *
+	 * @throws XMLStreamException the XML stream exception
 	 */
-	class CommentReadHandler implements EventHandler {
+	private void closeXMLEventWriter() throws XMLStreamException {
 
-		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
-		 */
-		@Override
-		public void handleEvent(XMLEvent element) {
+		header_end_events.forEach(event -> {
 
-			if (no_header)
-				header_start_events.add(element);
-
-			else if (xml_writer == null)
-				interim_events.add(element);
-
-			else {
-
-				try {
-					xml_writer.add(element);
-				} catch (XMLStreamException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
+			try {
+				xml_writer.add(event);
+			} catch (XMLStreamException e) {
+				e.printStackTrace();
+				System.exit(1);
 			}
 
-		}
+		});
 
-	}
+		xml_writer.close();
 
-	/**
-	 * The Class ProcessingInstructionReadHandler.
-	 */
-	class ProcessingInstructionReadHandler implements EventHandler {
-
-		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
-		 */
-		@Override
-		public void handleEvent(XMLEvent element) {
-
-			if (no_header)
-				header_start_events.add(element);
-
-			if (no_header)
-				header_start_events.add(element);
-
-			else if (xml_writer == null)
-				interim_events.add(element);
-
-			else {
-
-				try {
-					xml_writer.add(element);
-				} catch (XMLStreamException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
-			}
-
-		}
-
-	}
-
-	/**
-	 * The Class EntityReferenceReadHandler.
-	 */
-	class EntityReferenceReadHandler implements EventHandler {
-
-		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
-		 */
-		@Override
-		public void handleEvent(XMLEvent element) {
-
-			if (no_header)
-				header_start_events.add(element);
-
-			else if (xml_writer == null)
-				interim_events.add(element);
-
-			else {
-
-				try {
-					xml_writer.add(element);
-				} catch (XMLStreamException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
-			}
-
-		}
-
-	}
-
-	/**
-	 * The Class EntityDeclarationReadHandler.
-	 */
-	class EntityDeclarationReadHandler implements EventHandler {
-
-		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
-		 */
-		@Override
-		public void handleEvent(XMLEvent element) {
-
-			if (no_header)
-				header_start_events.add(element);
-
-			else if (xml_writer == null)
-				interim_events.add(element);
-
-			else {
-
-				try {
-					xml_writer.add(element);
-				} catch (XMLStreamException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
-			}
-
-		}
-
-	}
-
-	/**
-	 * The Class DTDReadHandler.
-	 */
-	class DTDReadHandler implements EventHandler {
-
-		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
-		 */
-		@Override
-		public void handleEvent(XMLEvent element) {
-
-			if (no_header)
-				header_start_events.add(element);
-
-			else if (xml_writer == null)
-				interim_events.add(element);
-
-			else {
-
-				try {
-					xml_writer.add(element);
-				} catch (XMLStreamException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
-			}
-
-		}
-
-	}
-
-	/**
-	 * The Class NotationDeclarationReadHandler.
-	 */
-	class NotationDeclarationReadHandler implements EventHandler {
-
-		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
-		 */
-		@Override
-		public void handleEvent(XMLEvent element) {
-
-			if (no_header)
-				header_start_events.add(element);
-
-			else if (xml_writer == null)
-				interim_events.add(element);
-
-			else {
-
-				try {
-					xml_writer.add(element);
-				} catch (XMLStreamException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
-			}
-
-		}
+		xml_writer = null;
 
 	}
 
