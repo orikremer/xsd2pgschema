@@ -42,10 +42,14 @@ import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import com.github.antlr.grammars_v4.xpath.xpathBaseListener;
+import com.github.antlr.grammars_v4.xpath.xpathLexer;
 import com.github.antlr.grammars_v4.xpath.xpathListenerException;
 import com.github.antlr.grammars_v4.xpath.xpathParser;
 import com.github.antlr.grammars_v4.xpath.xpathParser.MainContext;
@@ -63,8 +67,8 @@ import net.sf.xsd2pgschema.XPathCompList;
  */
 public class XmlSplitterImpl {
 
-	/** The shard id. */
-	private int shard_id = 0;
+	/** The proc id. */
+	private int proc_id = 0;
 
 	/** The shard size. */
 	private int shard_size = 1;
@@ -120,7 +124,7 @@ public class XmlSplitterImpl {
 	 * @param shard_size shard size
 	 * @param is InputStream of XML Schema
 	 * @param option PostgreSQL schema option
-	 * @param parser XPath parser
+	 * @param xpath_doc_key XPath expression pointing document key
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
 	 * @throws IOException Signals that an I/O exception has occurred.
@@ -128,7 +132,7 @@ public class XmlSplitterImpl {
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws xpathListenerException the xpath listener exception
 	 */
-	public XmlSplitterImpl(final int shard_size, final InputStream is, final PgSchemaOption option, final xpathParser parser) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, xpathListenerException {
+	public XmlSplitterImpl(final int shard_size, final InputStream is, final PgSchemaOption option, final String xpath_doc_key) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, xpathListenerException {
 
 		this.shard_size = shard_size <= 0 ? 1 : shard_size;
 
@@ -179,6 +183,15 @@ public class XmlSplitterImpl {
 
 		// validate XPath expression with schema
 
+		boolean verbose = xmlsplitter.verbose;
+
+		xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_doc_key));
+
+		CommonTokenStream tokens = new CommonTokenStream(lexer);
+
+		xpathParser parser = new xpathParser(tokens);
+		parser.addParseListener(new xpathBaseListener());
+
 		MainContext main = parser.main();
 
 		ParseTree tree = main.children.get(0);
@@ -187,19 +200,19 @@ public class XmlSplitterImpl {
 		if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		XPathCompList doc_key = new XPathCompList(tree, false);
+		XPathCompList doc_key = new XPathCompList(tree, main_text, verbose);
 
 		if (doc_key.comps.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		schema.validateXPathCompList(doc_key, true, true);
+		schema.testXPathNodes(doc_key, true, verbose);
 
-		if (doc_key.paths.size() == 0)
+		if (doc_key.path_exprs.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
 		XPathCompList doc_unit = new XPathCompList();
 
-		doc_unit.replacePath(doc_key);
+		doc_unit.replacePathExprs(doc_key);
 
 		if (doc_unit.selectParentPath() == 0)
 			throw new xpathListenerException("Cound not specify document unit from XPath expression. (" + main_text + ")");
@@ -215,25 +228,25 @@ public class XmlSplitterImpl {
 
 		doc_unit.removeDuplicatePath();
 
-		System.out.println("document unit:");
-		doc_unit.showPath(" ");
+		System.out.println("Path for document unit:");
+		doc_unit.showPathExprs(" ");
 
 		// decide path of document key
 
-		doc_key.removeOrphanPath(doc_unit.paths);
+		doc_key.removeOrphanPath(doc_unit.path_exprs);
 
-		System.out.println("document key:");
-		doc_key.showPath(" ");
+		System.out.println("Path for document key:");
+		doc_key.showPathExprs(" ");
 
-		switch (doc_key.paths.size()) {
+		switch (doc_key.path_exprs.size()) {
 		case 1:
 			break;
 		default:
 			throw new xpathListenerException("Cound not specify document key from XPath expression. (" + main_text + ")");
 		}
 
-		doc_unit_path = doc_unit.paths.get(0);
-		doc_key_path = doc_key.paths.get(0);
+		doc_unit_path = doc_unit.path_exprs.get(0).path;
+		doc_key_path = doc_key.path_exprs.get(0).path;
 
 		if (doc_key.hasPathEndsWithTextNode())
 			doc_key_path = doc_key_path.substring(0, doc_key_path.lastIndexOf("/"));
@@ -331,6 +344,8 @@ public class XmlSplitterImpl {
 				System.out.println("Done.");
 
 			}
+
+			System.out.println("Generated " + proc_id + " XML documents.");
 
 		} catch (IOException | XMLStreamException e) {
 			e.printStackTrace();
@@ -636,7 +651,7 @@ public class XmlSplitterImpl {
 
 		no_document_key = false;
 
-		File xml_file = new File(xml_dir[shard_id++ % shard_size], document_id + ".xml");
+		File xml_file = new File(xml_dir[proc_id++ % shard_size], document_id + ".xml");
 
 		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 

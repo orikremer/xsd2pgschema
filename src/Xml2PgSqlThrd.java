@@ -104,6 +104,10 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.password);
 
+		// validate PostgreSQL data model with schema
+
+		schema.testPgSqlSchema(db_conn);
+
 	}
 
 	/* (non-Javadoc)

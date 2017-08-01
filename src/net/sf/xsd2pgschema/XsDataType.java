@@ -22,7 +22,6 @@ package net.sf.xsd2pgschema;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLXML;
@@ -36,7 +35,6 @@ import java.util.TimeZone;
 
 import javax.xml.bind.DatatypeConverter;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.lucene.document.DateTools;
@@ -2620,6 +2618,10 @@ public enum XsDataType {
 	public static String normalize(PgField field, String value) {
 
 		switch (field.xs_type) {
+		case xs_hexBinary:
+			return "E'\\\\x" + value + "'";
+		case xs_base64Binary:
+			return "decode('" + value + "','base64')";
 		case xs_date:
 		case xs_gYearMonth:
 		case xs_gYear:
@@ -2656,6 +2658,9 @@ public enum XsDataType {
 			}
 
 			return value;
+		case xs_any:
+		case xs_anyAttribute:
+			return "XMLPARSE (CONTENT '" + value + "')";
 		default:
 			if (!field.restriction)
 				return value;
@@ -2678,7 +2683,8 @@ public enum XsDataType {
 	}
 
 	/**
-	 * java.sql.Types mapping
+	 * java.sql.Types mapping.
+	 *
 	 * @param field PostgreSQL field
 	 * @return int java.sqlTypes
 	 */
@@ -2762,6 +2768,93 @@ public enum XsDataType {
 	}
 
 	/**
+	 * Return SQL predicate of given value.
+	 *
+	 * @param field PostgreSQL field
+	 * @param value content
+	 * @return String SQL predicate
+	 */
+	public static String getSqlPredicate(PgField field, String value) {
+
+		XsDataType xs_type = field.enum_name == null ? field.xs_type : xs_string;
+
+		switch (xs_type) {
+		case xs_hexBinary:
+			return "E'\\\\x" + value + "'";
+		case xs_base64Binary:
+			return "decode('" + value + "','base64')";
+		case xs_boolean:
+		case xs_bigserial:
+		case xs_long:
+		case xs_bigint:
+		case xs_unsignedLong:
+		case xs_serial:
+		case xs_integer:
+		case xs_int:
+		case xs_nonPositiveInteger:
+		case xs_negativeInteger:
+		case xs_nonNegativeInteger:
+		case xs_positiveInteger:
+		case xs_unsignedInt:
+		case xs_float:
+		case xs_double:
+		case xs_decimal:
+		case xs_short:
+		case xs_byte:
+		case xs_unsignedShort:
+		case xs_unsignedByte:
+			return value;
+		case xs_dateTime:
+			if (!field.restriction || (field.explicit_timezone != null && !field.explicit_timezone.equals("required")))
+				return "TIMESTAMP '" + value + "'";
+			else
+				return "TIMESTAMP WITH TIME ZONE '" + value + "'";
+		case xs_time:
+			if (!field.restriction || (field.explicit_timezone != null && !field.explicit_timezone.equals("required")))
+				return "TIME '" + value + "'";
+			else
+				return "TIME WITH TIME ZONE '" + value + "'";
+		case xs_date:
+		case xs_gYearMonth:
+		case xs_gYear:
+			return "DATE '" + value + "'";
+		case xs_gMonthDay:
+		case xs_gMonth:
+		case xs_gDay:
+		case xs_duration:
+		case xs_anyType:
+		case xs_string:
+		case xs_normalizedString:
+		case xs_token:
+		case xs_NMTOKEN:
+		case xs_NMTOKENS:
+		case xs_IDREFS:
+		case xs_ENTITIES:
+		case xs_NOTATION:
+		case xs_language:
+		case xs_Name:
+		case xs_QName:
+		case xs_NCName:
+		case xs_anyURI:
+		case xs_ID:
+		case xs_IDREF:
+		case xs_ENTITY:
+			if (field.enum_name == null)
+				return "'" + value.replaceAll("'", "''") + "'";
+			else {
+				if (value.length() > PgSchemaUtil.max_enum_len)
+					value = value.substring(0, PgSchemaUtil.max_enum_len);
+				return "'" + value.replaceAll("'", "''") + "'";
+			}
+		case xs_any:
+		case xs_anyAttribute:
+			return "XMLPARSE (CONTENT '" + value + "')";
+		}
+
+		return null;
+	}
+
+	/**
 	 * Set value via PreparedStatement.
 	 *
 	 * @param field PostgreSQL field
@@ -2779,8 +2872,10 @@ public enum XsDataType {
 			ps.setBoolean(par_idx, Boolean.valueOf(value));
 			break;
 		case xs_hexBinary:
+			ps.setBytes(par_idx, DatatypeConverter.parseHexBinary(value));
+			break;
 		case xs_base64Binary:
-			ps.setBinaryStream(par_idx, IOUtils.toInputStream(value, Charset.forName("UTF-8")));
+			ps.setBytes(par_idx, DatatypeConverter.parseBase64Binary(value));
 			break;
 		case xs_bigserial:
 		case xs_long:
@@ -3299,7 +3394,7 @@ public enum XsDataType {
 	// Type dependent attribute selection of full-text indexing
 
 	/**
-	 * Append field as attribute of index
+	 * Append field as attribute of index.
 	 *
 	 * @param table PosgtreSQL table
 	 * @param field PostgreSQL field
@@ -3325,7 +3420,7 @@ public enum XsDataType {
 		case xs_short:
 		case xs_byte:
 		case xs_unsignedShort:
-		case xs_unsignedByte:	
+		case xs_unsignedByte:
 			if (index_filter.attr_integer)
 				index_filter.addAttr(table.name + "." + field.name);
 			break;
@@ -3388,7 +3483,7 @@ public enum XsDataType {
 	};
 
 	/**
-	 * Parse string as java.util.Date
+	 * Parse string as java.util.Date.
 	 *
 	 * @param value content
 	 * @return Date java.util.Date

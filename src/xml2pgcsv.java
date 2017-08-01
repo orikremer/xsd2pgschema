@@ -36,7 +36,7 @@ import org.xml.sax.SAXException;
 
 /**
  * CSV conversion and PostgreSQL data migration.
- * 
+ *
  * @author yokochi
  */
 public class xml2pgcsv {

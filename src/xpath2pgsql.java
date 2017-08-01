@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2017 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -19,28 +19,23 @@ limitations under the License.
 
 import net.sf.xsd2pgschema.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 
-import javax.xml.parsers.*;
+import javax.xml.parsers.ParserConfigurationException;
 
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import com.github.antlr.grammars_v4.xpath.xpathListenerException;
+
 /**
- * PostgreSQL data migration from CSV file.
+ * Query translator from XPath to SQL.
  *
  * @author yokochi
  */
-public class csv2pgsql {
-
-	/** The CSV directory name. */
-	public static String csv_dir_name = xml2pgcsv.csv_dir_name;
+public class xpath2pgsql {
 
 	/** The schema location. */
 	public static String schema_location = "";
@@ -51,6 +46,12 @@ public class csv2pgsql {
 	/** The PostgreSQL option. */
 	public static PgOption pg_option = new PgOption();
 
+	/** The XPath query. */
+	public static String xpath_query = "";
+
+	/** The verbose mode. */
+	public static boolean verbose = false;
+
 	/**
 	 * The main method.
 	 *
@@ -58,15 +59,13 @@ public class csv2pgsql {
 	 */
 	public static void main(String[] args) {
 
-		Connection db_conn = null;
-
 		boolean _document_key = false;
 		boolean _no_document_key = false;
 
 		for (int i = 0; i < args.length; i++) {
 
 			if (args[i].equals("--no-rel"))
-				option.cancelRelModelExt();
+				option.cancelRelDataExt();
 
 			else if (args[i].equals("--no-wild-card"))
 				option.wild_card = false;
@@ -103,9 +102,6 @@ public class csv2pgsql {
 			else if (args[i].equals("--xsd"))
 				schema_location = args[++i];
 
-			else if (args[i].equals("--csv-dir"))
-				csv_dir_name = args[++i];
-
 			else if (args[i].matches("^--db-?host.*"))
 				pg_option.host = args[++i];
 
@@ -120,6 +116,21 @@ public class csv2pgsql {
 
 			else if (args[i].matches("^--db-?pass.*"))
 				pg_option.password = args[++i];
+
+			else if (args[i].equals("--hash-by"))
+				option.hash_algorithm = args[++i];
+
+			else if (args[i].equals("--hash-size"))
+				option.hash_size = PgHashSize.getPgHashSize(args[++i]);
+
+			else if (args[i].equals("--ser-size"))
+				option.ser_size = PgSerSize.getPgSerSize(args[++i]);
+
+			else if (args[i].equals("--xpath-query"))
+				xpath_query = args[++i];
+
+			else if (args[i].equals("--verbose"))
+				verbose = true;
 
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
@@ -144,50 +155,16 @@ public class csv2pgsql {
 		if (is == null)
 			showUsage();
 
-		File csv_dir = new File(csv_dir_name);
-
-		if (!csv_dir.isDirectory()) {
-
-			if (!csv_dir.mkdir()) {
-				System.err.println("Couldn't create directory '" + csv_dir_name + "'.");
-				System.exit(1);
-			}
-
-		}
-
-		csv_dir_name = csv_dir_name.replaceFirst("/$", "") + "/";
-
-		if (pg_option.database.isEmpty()) {
-			System.err.println("Database name is empty.");
-			showUsage();
-		}
-
 		try {
 
-			// parse XSD document
+			XPath2PgSqlImpl xpath2pgsql = new XPath2PgSqlImpl(is, option, pg_option);
 
-			DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
-			doc_builder_fac.setNamespaceAware(true);
-			DocumentBuilder	doc_builder = doc_builder_fac.newDocumentBuilder();
+			xpath2pgsql.translate(xpath_query);
 
-			Document xsd_doc = doc_builder.parse(is);
+			if (!pg_option.database.isEmpty())
+				xpath2pgsql.execute();
 
-			is.close();
-
-			doc_builder.reset();
-
-			// XSD analysis
-
-			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getName(schema_location), option);
-
-			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.password);
-
-			if (!schema.pgCsv2PgSql(db_conn, csv_dir_name))
-				System.exit(1);
-
-			System.out.println("Done csv -> db (" + pg_option.database + ").");
-
-		} catch (ParserConfigurationException | SAXException | IOException | SQLException | NoSuchAlgorithmException | PgSchemaException e) {
+		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException | SQLException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
@@ -199,17 +176,22 @@ public class csv2pgsql {
 	 */
 	private static void showUsage() {
 
-		System.err.println("csv2pgsql: CSV -> PostgreSQL data migration");
-		System.err.println("Usage:  --xsd SCHEMA_LOCATION --csv-dir DIRECTORY (default=\"" + csv_dir_name + "\") --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
+		System.err.println("xpath2pgsql: Qeury translator from XPath to SQL");
+		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
+		System.err.println("        --xpath-query XPATH_QUERY");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + PgSchemaUtil.document_key_name + " column in all relations, default with relational model extension)");
 		System.err.println("        --no-doc-key (remove " + PgSchemaUtil.document_key_name + " column from all relations, effective only with relational model extension)");
 		System.err.println("        --ser-key (append " + PgSchemaUtil.serial_key_name + " column in child relation of list holder)");
 		System.err.println("        --xpath-key (append " + PgSchemaUtil.xpath_key_name + " column in all relations)");
-		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
+		System.err.println("        --case-insensitive (all table and column names are lowercase)");
+		System.err.println("Option: --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
+		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
+		System.err.println("        --ser-size BIT_SIZE [short (16bit); | int (32bit, default)]");
+		System.err.println("        --verbose");
 		System.exit(1);
 
 	}

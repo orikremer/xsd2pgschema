@@ -42,7 +42,7 @@ import org.apache.lucene.store.OutputStreamDataOutput;
 
 /**
  * Generate Lucene dictionary from index.
- * 
+ *
  * @author yokochi
  */
 public class luceneidx2dic {

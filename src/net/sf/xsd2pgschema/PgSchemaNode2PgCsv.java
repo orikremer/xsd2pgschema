@@ -224,7 +224,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 					transformer.transform(source, result);
 
-					values[f] = StringEscapeUtils.escapeCsv(writer.toString());
+					values[f] = StringEscapeUtils.escapeCsv(XsDataType.normalize(field, writer.toString()));
 
 					writer.close();
 

@@ -89,6 +89,19 @@ public class PgSchemaException extends Exception {
 	 * Instantiates a new pg schema exception.
 	 *
 	 * @param tree the parse tree
+	 * @param key_name the concerned key name
+	 * @param status the status of the key
+	 */
+	public PgSchemaException(ParseTree tree, String key_name, boolean status) {
+
+		super("Unexpected XPath expression (" + tree.getSourceInterval().toString() + ": " + tree.getClass().getSimpleName() + " '" + tree.getText() + "', but " + key_name + " has been turned " + (status ? "on" : "off") + ") .");
+
+	}
+
+	/**
+	 * Instantiates a new pg schema exception.
+	 *
+	 * @param tree the parse tree
 	 * @param schema_location default schema location
 	 */
 	public PgSchemaException(ParseTree tree, String schema_location) {

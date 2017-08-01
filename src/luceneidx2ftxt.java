@@ -42,7 +42,7 @@ import org.apache.lucene.store.OutputStreamDataOutput;
 
 /**
  * Generate Lucene free text suggester from index.
- * 
+ *
  * @author yokochi
  */
 public class luceneidx2ftxt {

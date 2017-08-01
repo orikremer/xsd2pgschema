@@ -35,7 +35,7 @@ import org.xml.sax.SAXException;
 
 /**
  * Lucene full-text indexing.
- * 
+ *
  * @author yokochi
  */
 public class xml2luceneidx {

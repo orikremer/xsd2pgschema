@@ -35,7 +35,7 @@ import org.xml.sax.SAXException;
 
 /**
  * JSON Schema translation.
- * 
+ *
  * @author yokochi
  */
 public class xsd2jsonschema {

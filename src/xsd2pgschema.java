@@ -32,7 +32,7 @@ import org.w3c.dom.Document;
 
 /**
  * PostgreSQL DDL translation.
- * 
+ *
  * @author yokochi
  */
 public class xsd2pgschema {

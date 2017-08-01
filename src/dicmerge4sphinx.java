@@ -33,7 +33,7 @@ import org.apache.commons.text.StringEscapeUtils;
 
 /**
  * Merge Sphinx dictionary index.
- * 
+ *
  * @author yokochi
  */
 public class dicmerge4sphinx {

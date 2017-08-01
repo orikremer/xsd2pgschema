@@ -28,8 +28,8 @@ import org.antlr.v4.runtime.tree.ParseTree;
  */
 public class XPathComp {
 
-	/** The expression id. */
-	public int expr_id = -1;
+	/** The union id. */
+	public int union_id = -1;
 
 	/** The step id. */
 	public int step_id = -1;
@@ -40,13 +40,13 @@ public class XPathComp {
 	/**
 	 * Instance of XPathComp.
 	 *
-	 * @param expr_id expression id
+	 * @param union_id union id
 	 * @param step_id step id
 	 * @param tree XPath parse tree
 	 */
-	public XPathComp(int expr_id, int step_id, ParseTree tree) {
+	public XPathComp(int union_id, int step_id, ParseTree tree) {
 
-		this.expr_id = expr_id;
+		this.union_id = union_id;
 		this.step_id = step_id;
 		this.tree = tree;
 

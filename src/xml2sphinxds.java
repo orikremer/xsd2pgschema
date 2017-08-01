@@ -35,7 +35,7 @@ import org.xml.sax.SAXException;
 
 /**
  * Sphinx full-text indexing.
- * 
+ *
  * @author yokochi
  */
 public class xml2sphinxds {

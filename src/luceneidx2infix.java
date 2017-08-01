@@ -39,7 +39,7 @@ import org.apache.lucene.store.FSDirectory;
 
 /**
  * Generate Lucene analyzed infix suggester from index.
- * 
+ *
  * @author yokochi
  */
 public class luceneidx2infix {

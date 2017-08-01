@@ -28,8 +28,12 @@ public enum XPathCompType {
 
 	/** The table node. */
 	table,
-	/** The field node (include element, simple content and attribute). */
-	field,
+	/** The element node. */
+	element,
+	/** The simple content node. */
+	simple_content,
+	/** The attribute node. */
+	attribute,
 
 	/** The text node. */
 	text,

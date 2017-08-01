@@ -37,7 +37,7 @@ import org.xml.sax.SAXException;
 
 /**
  * Merge Sphinx data sources.
- * 
+ *
  * @author yokochi
  */
 public class dsmerge4sphinx {

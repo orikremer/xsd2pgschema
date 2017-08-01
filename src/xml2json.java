@@ -35,7 +35,7 @@ import org.xml.sax.SAXException;
 
 /**
  * JSON conversion.
- * 
+ *
  * @author yokochi
  */
 public class xml2json {

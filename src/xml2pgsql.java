@@ -36,7 +36,7 @@ import org.xml.sax.SAXException;
 
 /**
  * PostgreSQL data migration.
- * 
+ *
  * @author yokochi
  */
 public class xml2pgsql {

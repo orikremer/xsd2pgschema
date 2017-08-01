@@ -241,8 +241,9 @@ public interface xpathListener extends ParseTreeListener {
 	/**
 	 * Enter a parse tree produced by {@link xpathParser#functionName}.
 	 * @param ctx the parse tree
+	 * @throws xpathListenerException the XPath listener exception
 	 */
-	void enterFunctionName(xpathParser.FunctionNameContext ctx);
+	void enterFunctionName(xpathParser.FunctionNameContext ctx) throws xpathListenerException;
 	/**
 	 * Exit a parse tree produced by {@link xpathParser#functionName}.
 	 * @param ctx the parse tree
@@ -251,8 +252,9 @@ public interface xpathListener extends ParseTreeListener {
 	/**
 	 * Enter a parse tree produced by {@link xpathParser#variableReference}.
 	 * @param ctx the parse tree
+	 * @throws xpathListenerException the XPath listener exception
 	 */
-	void enterVariableReference(xpathParser.VariableReferenceContext ctx);
+	void enterVariableReference(xpathParser.VariableReferenceContext ctx) throws xpathListenerException;
 	/**
 	 * Exit a parse tree produced by {@link xpathParser#variableReference}.
 	 * @param ctx the parse tree
