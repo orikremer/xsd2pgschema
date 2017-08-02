@@ -252,9 +252,8 @@ public interface xpathListener extends ParseTreeListener {
 	/**
 	 * Enter a parse tree produced by {@link xpathParser#variableReference}.
 	 * @param ctx the parse tree
-	 * @throws xpathListenerException the XPath listener exception
 	 */
-	void enterVariableReference(xpathParser.VariableReferenceContext ctx) throws xpathListenerException;
+	void enterVariableReference(xpathParser.VariableReferenceContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link xpathParser#variableReference}.
 	 * @param ctx the parse tree

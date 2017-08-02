@@ -132,7 +132,7 @@ public class XPathSqlExpr {
 		default:
 		}
 
-		validatePredicate(schema);
+		validatePredicate();
 
 	}
 
@@ -175,7 +175,7 @@ public class XPathSqlExpr {
 		default:
 		}
 
-		validatePredicate(schema);
+		validatePredicate();
 
 	}
 
@@ -190,12 +190,10 @@ public class XPathSqlExpr {
 		if (table_name == null)
 			return;
 
-		int table_id = schema.getTableId(table_name);
+		PgTable table = schema.getTable(table_name);
 
-		if (table_id < 0)
+		if (table == null)
 			throw new PgSchemaException(current_tree);
-
-		table = schema.getTable(table_id);
 
 	}
 
@@ -232,27 +230,22 @@ public class XPathSqlExpr {
 			throw new PgSchemaException(current_tree);
 		}
 
-		int field_id = table.getFieldId(column_name);
+		field = table.getField(column_name);
 
-		if (field_id < 0)
+		if (field == null)
 			throw new PgSchemaException(current_tree);
-
-		field = table.fields.get(field_id);
 
 	}
 
 	/**
 	 * Validate predicate expression.
 	 *
-	 * @param schema PostgreSQL data model
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void validatePredicate(PgSchema schema) throws PgSchemaException {
+	private void validatePredicate() throws PgSchemaException {
 
 		if (predicate == null)
 			return;
-
-		decideField(schema);
 
 		if (field == null)
 			return;

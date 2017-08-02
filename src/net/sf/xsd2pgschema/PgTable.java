@@ -446,6 +446,19 @@ public class PgTable {
 	}
 
 	/**
+	 * Return PostgreSQL field.
+	 *
+	 * @param field_name name of field
+	 * @return PgField PostgreSQL field
+	 */
+	public PgField getField(String field_name) {
+
+		int f = getFieldId(field_name);
+
+		return f < 0 ? null : fields.get(f);
+	}
+
+	/**
 	 * Return field id.
 	 *
 	 * @param field_name name of field
@@ -470,34 +483,26 @@ public class PgTable {
 	 */
 	public void appendSubstitutionGroup(String field_name) {
 
-		int f = getFieldId(field_name);
+		PgField field = getField(field_name);
 
-		if (f < 0)
+		if (field == null)
 			return;
-
-		PgField field = fields.get(f);
 
 		if (field.substitution_group == null || field.substitution_group.isEmpty())
 			return;
 
-		int g = getFieldId(field.substitution_group);
+		PgField rep_field = getField(field.substitution_group);
 
-		if (g < 0)
+		if (rep_field == null)
 			return;
-
-		PgField rep_field = fields.get(g);
 
 		if (field.type == null || field.type.isEmpty())
 			field.type = rep_field.type;
 
 		if (!rep_field.rep_substitution_group) {
 
-			if (rep_field.block_value == null || !rep_field.block_value.equals("substitution")) {
-
+			if (rep_field.block_value == null || !rep_field.block_value.equals("substitution"))
 				rep_field.rep_substitution_group = true;
-				fields.set(g, rep_field);
-
-			}
 
 		}
 

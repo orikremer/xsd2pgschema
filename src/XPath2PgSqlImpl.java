@@ -28,6 +28,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -110,11 +111,12 @@ public class XPath2PgSqlImpl {
 	 * Translate XPath to SQL.
 	 *
 	 * @param xpath_query XPath query
+	 * @param variables XPath variable reference
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws xpathListenerException the xpath listener exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void translate(String xpath_query) throws IOException, xpathListenerException, PgSchemaException {
+	public void translate(String xpath_query, HashMap<String, String> variables) throws IOException, xpathListenerException, PgSchemaException {
 
 		xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_query));
 
@@ -135,7 +137,7 @@ public class XPath2PgSqlImpl {
 		if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		xpath_comp_list = new XPathCompList(tree, main_text, verbose);
+		xpath_comp_list = new XPathCompList(schema, tree, variables, verbose);
 
 		if (xpath_comp_list.comps.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
@@ -153,7 +155,7 @@ public class XPath2PgSqlImpl {
 
 		// translate XPath to SQL
 
-		xpath_comp_list.path2Sql(schema, verbose);
+		xpath_comp_list.path2Sql(verbose);
 
 		System.out.println("\nSQL translation:");
 		xpath_comp_list.showSql(" ");

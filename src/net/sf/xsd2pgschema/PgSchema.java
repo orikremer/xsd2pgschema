@@ -612,12 +612,10 @@ public class PgSchema {
 
 				for (String parent_node : parent_nodes) {
 
-					int t = getTableId(parent_node);
+					PgTable parent_table = getTable(parent_node);
 
-					if (t < 0)
+					if (parent_table == null)
 						continue;
-
-					PgTable parent_table = tables.get(t);
 
 					boolean has_content = false;
 					boolean has_foreign_key = false;
@@ -686,13 +684,17 @@ public class PgSchema {
 
 		foreign_keys.forEach(foreign_key -> {
 
-			int t;
+			PgTable table;
 
-			if ((t = getTableId(foreign_key.child_table)) >= 0)
-				tables.get(t).required = true;
+			table = getTable(foreign_key.child_table);
 
-			if ((t = getTableId(foreign_key.parent_table)) >= 0)
-				tables.get(t).required = true;
+			if (table != null)
+				table.required = true;
+
+			table = getTable(foreign_key.parent_table);
+
+			if (table != null)
+				table.required = true;
 
 		});
 
@@ -915,11 +917,9 @@ public class PgSchema {
 
 			if (table.anno != null && !table.anno.isEmpty()) {
 
-				int known_t = getTableId(table.name);
+				PgTable known_table = getTable(table.name);
 
-				if (known_t >= 0) {
-
-					PgTable known_table = tables.get(known_t);
+				if (known_table != null) {
 
 					if ((known_table.anno == null || known_table.anno.isEmpty()) && table.anno != null && !table.anno.isEmpty())
 						known_table.anno = table.anno;
@@ -1868,9 +1868,9 @@ public class PgSchema {
 
 		for (PgField field : fields) {
 
-			int f = known_table.getFieldId(field.name);
+			PgField known_field = known_table.getField(field.name);
 
-			if (f < 0) { // append new field to known table
+			if (known_field == null) { // append new field to known table
 
 				changed = true;
 
@@ -1882,8 +1882,6 @@ public class PgSchema {
 			}
 
 			else { // update field
-
-				PgField known_field = known_fields.get(f);
 
 				// append target namespace if available
 
@@ -1959,16 +1957,6 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return PostgreSQL table.
-	 *
-	 * @param table_id table id
-	 * @return PostgreSQL table
-	 */
-	protected PgTable getTable(int table_id) {
-		return tables.get(table_id);
-	}
-
-	/**
 	 * Return namespace URI.
 	 *
 	 * @param prefix prefix of namespace URI
@@ -1979,12 +1967,36 @@ public class PgSchema {
 	}
 
 	/**
+	 * Return PostgreSQL table.
+	 *
+	 * @param table_id table id
+	 * @return PgTable PostgreSQL table
+	 */
+	protected PgTable getTable(int table_id) {
+
+		if (table_id < 0 || table_id >= tables.size())
+			return null;
+
+		return tables.get(table_id);
+	}
+
+	/**
+	 * Return PostgreSQL table.
+	 *
+	 * @param table_name table name
+	 * @return PgTable PostgreSQL table
+	 */
+	protected PgTable getTable(String table_name) {
+		return getTable(getTableId(table_name));
+	}
+
+	/**
 	 * Return table id from table name.
 	 *
 	 * @param table_name table name
 	 * @return int table id, -1 represents not found
 	 */
-	protected int getTableId(final String table_name) {
+	private int getTableId(String table_name) {
 
 		for (int t = 0; t < tables.size(); t++) {
 
@@ -2002,7 +2014,7 @@ public class PgSchema {
 	 * @param table_name table name
 	 * @return int table id, -1 represents not found
 	 */
-	protected int getAttributeGroupId(final String table_name) {
+	private int getAttributeGroupId(String table_name) {
 
 		for (int t = 0; t < attr_groups.size(); t++) {
 
@@ -2020,7 +2032,7 @@ public class PgSchema {
 	 * @param table_name table name
 	 * @return int table id, -1 represents not found
 	 */
-	protected int getModelGroupId(final String table_name) {
+	private int getModelGroupId(String table_name) {
 
 		for (int t = 0; t < model_groups.size(); t++) {
 
@@ -2259,20 +2271,18 @@ public class PgSchema {
 			if (!unique)
 				continue;
 
-			int t;
+			PgTable table = getTable(foreign_key.parent_table);
 
-			if ((t = getTableId(foreign_key.parent_table)) >= 0) {
-
-				PgTable table = tables.get(t);
+			if (table != null) {
 
 				if (!option.rel_data_ext && table.relational)
 					unique = false;
 
-				int f;
+				PgField field = table.getField(foreign_key.parent_fields);
 
-				if ((f = table.getFieldId(foreign_key.parent_fields)) >= 0) {
+				if (field != null) {
 
-					if (table.fields.get(f).primary_key)
+					if (field.primary_key)
 						unique = false;
 
 				}
@@ -2297,28 +2307,18 @@ public class PgSchema {
 
 			boolean relational = false;
 
-			int ct = getTableId(foreign_key.child_table);
+			PgTable child_table = getTable(foreign_key.child_table);
 
-			if (ct >= 0) {
-
-				PgTable child_table = tables.get(ct);
-
+			if (child_table != null)
 				relational = child_table.relational;
-
-			}
 
 			if (!option.rel_data_ext && relational)
 				continue;
 
-			int pt = getTableId(foreign_key.parent_table);
+			PgTable parent_table = getTable(foreign_key.parent_table);
 
-			if (pt >= 0) {
-
-				PgTable parent_table = tables.get(pt);
-
+			if (parent_table != null)
 				relational = parent_table.relational;
-
-			}
 
 			if (!option.rel_data_ext && relational)
 				continue;
@@ -2587,11 +2587,9 @@ public class PgSchema {
 
 					PgTable foreign_table = tables.get(field.foreign_table_id);
 
-					int ff = foreign_table.getFieldId(field.foreign_field);
+					PgField foreign_field = foreign_table.getField(field.foreign_field);
 
-					if (ff > 0) {
-
-						PgField foreign_field = foreign_table.fields.get(ff);
+					if (foreign_field != null) {
 
 						if (foreign_field.unique_key)
 							System.out.print("CONSTRAINT " + field.constraint_name + " REFERENCES " + PgSchemaUtil.avoidPgReservedWords(field.foreign_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " ) ");
@@ -2645,12 +2643,10 @@ public class PgSchema {
 			String table_name = key[0];
 			String field_name = key.length > 1 ? key[1] : null;
 
-			int t = getTableId(table_name);
+			PgTable table = getTable(table_name);
 
-			if (t < 0)
+			if (table == null)
 				throw new PgSchemaException("Not found " + table_name + " table.");
-
-			PgTable table = tables.get(t);
 
 			if (field_name != null && !field_name.isEmpty()) {
 
@@ -2747,25 +2743,19 @@ public class PgSchema {
 			String field_name = key.length > 1 ? key[1] : null;
 			String[] regex_pattern = key_val.length > 2 ? key_val[1].split("\\|") : null;
 
-			int t = getTableId(table_name);
+			PgTable table = getTable(table_name);
 
-			if (t < 0)
+			if (table == null)
 				throw new PgSchemaException("Not found " + table_name + " table.");
-
-			PgTable table = tables.get(t);
 
 			if (table.xs_type.equals(XsTableType.xs_root))
 				throw new PgSchemaException(table_name + " table is unselectable (root table).");
 
-			List<PgField> fields = table.fields;
-
 			if (field_name != null && !field_name.isEmpty()) {
 
-				int f;
+				PgField field = table.getField(field_name);
 
-				if ((f = table.getFieldId(field_name)) >= 0) {
-
-					PgField field = fields.get(f);
+				if (field != null) {
 
 					if (field.system_key || field.user_key)
 						throw new PgSchemaException(field_name + " field of " + table_name + " table is administrative key).");
@@ -2780,7 +2770,7 @@ public class PgSchema {
 
 			} else {
 
-				fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
+				table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
 
 					field.filt_out = true;
 					field.out_pattern = regex_pattern;
@@ -2824,23 +2814,17 @@ public class PgSchema {
 			String field_name = key[1];
 			String filled_text = key_val.length == 2 ? key_val[1] : "";
 
-			int t = getTableId(table_name);
+			PgTable table = getTable(table_name);
 
-			if (t < 0)
+			if (table == null)
 				throw new PgSchemaException("Not found " + table_name + " table.");
-
-			PgTable table = tables.get(t);
 
 			if (table.xs_type.equals(XsTableType.xs_root))
 				throw new PgSchemaException(table_name + " table is unselectable (root table).");
 
-			List<PgField> fields = table.fields;
+			PgField field = table.getField(field_name);
 
-			int f;
-
-			if ((f = table.getFieldId(field_name)) >= 0) {
-
-				PgField field = fields.get(f);
+			if (field != null) {
 
 				if (field.system_key || field.user_key)
 					throw new PgSchemaException(field_name + " field of " + table_name + " table is administrative key).");
@@ -2866,7 +2850,7 @@ public class PgSchema {
 	 * @param index_filter index filter
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void applyAttr(final IndexFilter index_filter) throws PgSchemaException {
+	private void applyAttr(IndexFilter index_filter) throws PgSchemaException {
 
 		if (attr_resolved)
 			return;
@@ -2900,25 +2884,19 @@ public class PgSchema {
 			String table_name = key[0];
 			String field_name = key.length > 1 ? key[1] : null;
 
-			int t = getTableId(table_name);
+			PgTable table = getTable(table_name);
 
-			if (t < 0)
+			if (table == null)
 				throw new PgSchemaException("Not found " + table_name + " table.");
-
-			PgTable table = tables.get(t);
 
 			if (table.xs_type.equals(XsTableType.xs_root))
 				throw new PgSchemaException(table_name + " table is unselectable (root table).");
 
-			List<PgField> fields = table.fields;
-
 			if (field_name != null && !field_name.isEmpty()) {
 
-				int f;
+				PgField field = table.getField(field_name);
 
-				if ((f = table.getFieldId(field_name)) >= 0) {
-
-					PgField field = fields.get(f);
+				if (field != null) {
 
 					if (field.system_key || field.user_key)
 						throw new PgSchemaException(field_name + " field of " + table_name + " table is administrative key).");
@@ -2931,7 +2909,7 @@ public class PgSchema {
 					throw new PgSchemaException("Not found " + field_name + " field in " + table_name + " table.");
 
 			} else
-				fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true);
+				table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true);
 
 		}
 
@@ -2946,7 +2924,7 @@ public class PgSchema {
 	 * @param index_filer index filter
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void applyField(final IndexFilter index_filter) throws PgSchemaException {
+	private void applyField(IndexFilter index_filter) throws PgSchemaException {
 
 		if (field_resolved)
 			return;
@@ -2966,25 +2944,19 @@ public class PgSchema {
 			String table_name = key[0];
 			String field_name = key.length > 1 ? key[1] : null;
 
-			int t = getTableId(table_name);
+			PgTable _table = getTable(table_name);
 
-			if (t < 0)
+			if (_table == null)
 				throw new PgSchemaException("Not found " + table_name + " table.");
-
-			PgTable _table = tables.get(t);
 
 			if (_table.xs_type.equals(XsTableType.xs_root))
 				throw new PgSchemaException(table_name + " table is unselectable (root table).");
 
-			List<PgField> _fields = _table.fields;
-
 			if (field_name != null && !field_name.isEmpty()) {
 
-				int f;
+				PgField _field = _table.getField(field_name);
 
-				if ((f = _table.getFieldId(field_name)) >= 0) {
-
-					PgField _field = _fields.get(f);
+				if (_field != null) {
 
 					if (_field.system_key || _field.user_key)
 						throw new PgSchemaException(field_name + " field of " + table_name + " table is administrative key).");
@@ -2997,7 +2969,7 @@ public class PgSchema {
 					throw new PgSchemaException("Not found " + field_name + " field in " + table_name + " table.");
 
 			} else
-				_fields.stream().filter(_field -> !_field.system_key && !_field.user_key).forEach(_field -> _field.field_sel = true);
+				_table.fields.stream().filter(_field -> !_field.system_key && !_field.user_key).forEach(_field -> _field.field_sel = true);
 
 		}
 
@@ -3036,7 +3008,7 @@ public class PgSchema {
 	 * @param key_name source string
 	 * @return String hash key
 	 */
-	public synchronized String getHashKeyString(final String key_name) {
+	public synchronized String getHashKeyString(String key_name) {
 
 		if (message_digest == null) // debug mode
 			return key_name;
@@ -3066,7 +3038,7 @@ public class PgSchema {
 	 * @param key_name source string
 	 * @return bytes[] hash key
 	 */
-	synchronized protected byte[] getHashKeyBytes(final String key_name) {
+	synchronized protected byte[] getHashKeyBytes(String key_name) {
 
 		message_digest.reset();
 
@@ -3079,7 +3051,7 @@ public class PgSchema {
 	 * @param key_name source string
 	 * @return int hash key
 	 */
-	synchronized protected int getHashKeyInt(final String key_name) {
+	synchronized protected int getHashKeyInt(String key_name) {
 
 		message_digest.reset();
 
@@ -3096,7 +3068,7 @@ public class PgSchema {
 	 * @param key_name source string
 	 * @return long hash key
 	 */
-	synchronized protected long getHashKeyLong(final String key_name) {
+	synchronized protected long getHashKeyLong(String key_name) {
 
 		message_digest.reset();
 
@@ -3853,19 +3825,15 @@ public class PgSchema {
 					String table_name = name_attr[0];
 					String field_name = name_attr[1];
 
-					int t = getTableId(table_name);
+					PgTable table = getTable(table_name);
 
-					if (t < 0)
+					if (table == null)
 						throw new PgSchemaException("Not found " + table_name + " table.");
 
-					PgTable table = tables.get(t);
+					PgField field = table.getField(field_name);
 
-					int f = table.getFieldId(field_name);
-
-					if (f < 0)
+					if (field == null)
 						throw new PgSchemaException("Not found " + field_name + " field.");
-
-					PgField field = table.fields.get(f);
 
 					field.sph_attr = sph_attr;
 
@@ -4255,19 +4223,15 @@ public class PgSchema {
 	 */
 	public boolean isSphAttr(String table_name, String field_name) {
 
-		int t = getTableId(table_name);
+		PgTable table = getTable(table_name);
 
-		if (t < 0)
+		if (table == null)
 			return false;
 
-		PgTable table = tables.get(t);
+		PgField field = table.getField(field_name);
 
-		int f = table.getFieldId(field_name);
-
-		if (f < 0)
+		if (field == null)
 			return false;
-
-		PgField field = table.fields.get(f);
 
 		return field.sph_attr;
 	}
@@ -4281,19 +4245,15 @@ public class PgSchema {
 	 */
 	public boolean isSphMVAttr(String table_name, String field_name) {
 
-		int t = getTableId(table_name);
+		PgTable table = getTable(table_name);
 
-		if (t < 0)
+		if (table == null)
 			return false;
 
-		PgTable table = tables.get(t);
+		PgField field = table.getField(field_name);
 
-		int f = table.getFieldId(field_name);
-
-		if (f < 0)
+		if (field == null)
 			return false;
-
-		PgField field = table.fields.get(f);
 
 		if (!field.sph_attr)
 			return false;
@@ -5743,9 +5703,9 @@ public class PgSchema {
 
 				else {
 
-					int table_id = getTableId(cur_table);
+					PgTable table = getTable(cur_table);
 
-					if (table_id == -1) {
+					if (table == null) {
 
 						XPathComp prev_comp = list.previousOf(comp);
 
@@ -5762,8 +5722,6 @@ public class PgSchema {
 						}
 
 					}
-
-					PgTable table = tables.get(table_id);
 
 					// check current element
 
@@ -5942,9 +5900,9 @@ public class PgSchema {
 
 				else {
 
-					int table_id = getTableId(cur_table);
+					PgTable table = getTable(cur_table);
 
-					if (table_id == -1) {
+					if (table == null) {
 
 						XPathComp prev_comp = list.previousOf(comp);
 
@@ -5961,8 +5919,6 @@ public class PgSchema {
 						}
 
 					}
-
-					PgTable table = tables.get(table_id);
 
 					// check current attribute
 
@@ -6258,9 +6214,9 @@ public class PgSchema {
 
 				else {
 
-					int table_id = getTableId(cur_table);
+					PgTable table = getTable(cur_table);
 
-					if (table_id == -1) {
+					if (table == null) {
 
 						XPathComp prev_comp = list.previousOf(comp);
 
@@ -6277,8 +6233,6 @@ public class PgSchema {
 						}
 
 					}
-
-					PgTable table = tables.get(table_id);
 
 					// check current element
 
@@ -6453,9 +6407,9 @@ public class PgSchema {
 
 				else {
 
-					int table_id = getTableId(cur_table);
+					PgTable table = getTable(cur_table);
 
-					if (table_id == -1) {
+					if (table == null) {
 
 						XPathComp prev_comp = list.previousOf(comp);
 
@@ -6472,8 +6426,6 @@ public class PgSchema {
 						}
 
 					}
-
-					PgTable table = tables.get(table_id);
 
 					// check current attribute
 
@@ -6668,10 +6620,10 @@ public class PgSchema {
 
 				switch (first_comp.tree.getText()) {
 				case "ancestor::":
-					list.testNameTestContextWithAncestorAxis(comp, namespace_uri, local_part, false, wild_card, composite_text, predicate, this);
+					list.testNameTestContextWithAncestorAxis(comp, namespace_uri, local_part, false, wild_card, composite_text, predicate);
 					break;
 				case "ancestor-or-self::":
-					list.testNameTestContextWithAncestorAxis(comp, namespace_uri, local_part, true, wild_card, composite_text, predicate, this);
+					list.testNameTestContextWithAncestorAxis(comp, namespace_uri, local_part, true, wild_card, composite_text, predicate);
 					break;
 				case "attribute::":
 				case "@":
@@ -6696,7 +6648,7 @@ public class PgSchema {
 					testNameTestContextWithChildAxis(list, comp, namespace_uri, local_part, false, true, wild_card, composite_text, predicate);
 					break;
 				case "parent::":
-					list.testNameTestContextWithParentAxis(comp, namespace_uri, local_part, wild_card, composite_text, predicate, this);
+					list.testNameTestContextWithParentAxis(comp, namespace_uri, local_part, wild_card, composite_text, predicate);
 					break;
 				default: // namespace
 					throw new PgSchemaException(first_comp.tree);
@@ -6849,9 +6801,9 @@ public class PgSchema {
 
 				else {
 
-					int table_id = getTableId(cur_table);
+					PgTable table = getTable(cur_table);
 
-					if (table_id == -1) {
+					if (table == null) {
 
 						XPathComp prev_comp = list.previousOf(comp);
 
@@ -6868,8 +6820,6 @@ public class PgSchema {
 						}
 
 					}
-
-					PgTable table = tables.get(table_id);
 
 					// check current element
 
@@ -7050,9 +7000,9 @@ public class PgSchema {
 
 				else {
 
-					int table_id = getTableId(cur_table);
+					PgTable table = getTable(cur_table);
 
-					if (table_id == -1) {
+					if (table == null) {
 
 						XPathComp prev_comp = list.previousOf(comp);
 
@@ -7069,8 +7019,6 @@ public class PgSchema {
 						}
 
 					}
-
-					PgTable table = tables.get(table_id);
 
 					// check current attribute
 
@@ -7156,7 +7104,7 @@ public class PgSchema {
 
 		int pred_size = list.predicates.size();
 
-		XPathCompList pred_list = new XPathCompList(comp.tree, comp.tree.getText(), verbose);
+		XPathCompList pred_list = new XPathCompList(this, comp.tree, list.variables, verbose);
 
 		int path_expr_size = pred_list.sizeOfPathExpr();
 
@@ -7332,12 +7280,10 @@ public class PgSchema {
 			return null;
 		}
 
-		int table_id = getTableId(table_name);
+		PgTable table = getTable(table_name);
 
-		if (table_id < 0)
+		if (table == null)
 			return null;
-
-		PgTable table = tables.get(table_id);
 
 		try {
 

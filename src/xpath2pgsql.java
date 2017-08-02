@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
+import java.util.HashMap;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -48,6 +49,9 @@ public class xpath2pgsql {
 
 	/** The XPath query. */
 	public static String xpath_query = "";
+
+	/** The XPath variable reference. */
+	public static HashMap<String, String> variables = new HashMap<String, String>();
 
 	/** The verbose mode. */
 	public static boolean verbose = false;
@@ -129,6 +133,15 @@ public class xpath2pgsql {
 			else if (args[i].equals("--xpath-query"))
 				xpath_query = args[++i];
 
+			else if (args[i].equals("--xpath-var")) {
+				String[] variable = args[++i].split("=");
+				if (variable.length != 2) {
+					System.err.println("Invalid variable definition.");
+					showUsage();
+				}
+				variables.put(variable[0], variable[1]);
+			}
+
 			else if (args[i].equals("--verbose"))
 				verbose = true;
 
@@ -159,7 +172,7 @@ public class xpath2pgsql {
 
 			XPath2PgSqlImpl xpath2pgsql = new XPath2PgSqlImpl(is, option, pg_option);
 
-			xpath2pgsql.translate(xpath_query);
+			xpath2pgsql.translate(xpath_query, variables);
 
 			if (!pg_option.database.isEmpty())
 				xpath2pgsql.execute();
@@ -181,6 +194,7 @@ public class xpath2pgsql {
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
 		System.err.println("        --xpath-query XPATH_QUERY");
+		System.err.println("        --xpath-var KEY=VALUE");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + PgSchemaUtil.document_key_name + " column in all relations, default with relational model extension)");

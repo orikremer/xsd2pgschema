@@ -1638,13 +1638,7 @@ public class xpathParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_variableReference; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof xpathListener )
-				try {
-					((xpathListener)listener).enterVariableReference(this);
-				} catch (xpathListenerException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
+			if ( listener instanceof xpathListener ) ((xpathListener)listener).enterVariableReference(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {

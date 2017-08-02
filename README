@@ -1,9 +1,10 @@
- Changes in xsd2pgschema 2.6.0 (release 2017-08-01)
+ Changes in xsd2pgschema 2.6.0 (release 2017-08-02)
 
   Added XML Schema aware XPath parser enabled XPath->SQL translation via xpath2pgsql main class.
   Fixed data migration of xs:hexBinary and xs:base64Binary.
-  Revised XPath parser, which allowed XPath 1.0 except for variable reference and function call.
+  Revised XPath parser, which allowed XPath 1.0 except for XPath 1.0 function call.
   Updated dependency (commons-text, instead of commns-lang3).
+  Added --xpath-var option to enable variable reference in XPath->SQL translation.
 
  Changes in xsd2pgschema 2.5.0 (release 2017-07-13)
 
