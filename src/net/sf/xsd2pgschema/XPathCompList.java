@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -36,6 +37,7 @@ import com.github.antlr.grammars_v4.xpath.xpathParser.AbsoluteLocationPathNoroot
 import com.github.antlr.grammars_v4.xpath.xpathParser.AdditiveExprContext;
 import com.github.antlr.grammars_v4.xpath.xpathParser.AndExprContext;
 import com.github.antlr.grammars_v4.xpath.xpathParser.EqualityExprContext;
+import com.github.antlr.grammars_v4.xpath.xpathParser.FunctionCallContext;
 import com.github.antlr.grammars_v4.xpath.xpathParser.MultiplicativeExprContext;
 import com.github.antlr.grammars_v4.xpath.xpathParser.NCNameContext;
 import com.github.antlr.grammars_v4.xpath.xpathParser.NameTestContext;
@@ -78,10 +80,13 @@ public class XPathCompList {
 	/** Whether retain case sensitive name in PostgreSQL DDL. */
 	private boolean case_sense = true;
 
+	/** Whether single table expression or not. */
+	private boolean single = true;
+
 	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
-	/** Instance of path expression for stacking while UnionExprNoRootContext node. */
+	/** Instance of path expression for UnionExprNoRootContext node. */
 	private List<XPathExpr> path_exprs_union = null;
 
 	/**
@@ -1545,11 +1550,11 @@ public class XPathCompList {
 
 				path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.table_name != null).forEach(sql_expr -> target_tables.put(sql_expr.table_name, sql_expr.terminus.equals(XPathCompType.table) ? sql_expr.path : getParentPath(sql_expr.path)));
 
-				boolean single = target_tables.size() == 1;
+				single = target_tables.size() == 1;
 
 				sb.append("SELECT ");
 
-				appendSqlColumnName(single, path_expr.sql_subject, sb);
+				appendSqlColumnName(path_expr.sql_subject, sb);
 
 				sb.append(" FROM ");
 
@@ -1563,7 +1568,7 @@ public class XPathCompList {
 
 					for (XPathComp src_comp : src_comps) {
 
-						translatePredicateTree2SqlImpl(src_comp, path_expr, single, sb);
+						translatePredicateTree2SqlImpl(src_comp, path_expr, sb);
 						sb.append(" AND ");
 
 					}
@@ -1621,11 +1626,10 @@ public class XPathCompList {
 	/**
 	 * Append SQL column name.
 	 *
-	 * @param single whether single table expression
 	 * @param sql_expr SQL expression
 	 * @param sb StringBuilder to store SQL expression
 	 */
-	private void appendSqlColumnName(boolean single, XPathSqlExpr sql_expr, StringBuilder sb) {
+	private void appendSqlColumnName(XPathSqlExpr sql_expr, StringBuilder sb) {
 
 		if (sql_expr.unary_oprator != null)
 			sb.append(sql_expr.unary_oprator);
@@ -1661,12 +1665,11 @@ public class XPathCompList {
 	/**
 	 * Append SQL column name.
 	 *
-	 * @param single whether single table expression
 	 * @param table_name SQL table name
 	 * @param column_name SQL column name
 	 * @param sb StringBuilder to store SQL expression
 	 */
-	private void appendSqlColumnName(boolean single, String table_name, String column_name, StringBuilder sb) {
+	private void appendSqlColumnName(String table_name, String column_name, StringBuilder sb) {
 
 		if (!single) {
 
@@ -1769,37 +1772,41 @@ public class XPathCompList {
 				// PrimaryExprContext node
 
 				else if (currentClass.equals(PrimaryExprContext.class))
-					testPrimaryExprContext(src_comp, src_path_expr, parent, tree);
+					testPrimaryExprContext(src_path_expr, parent, tree);
 
 				// VariableReferenceContext node
 
 				else if (currentClass.equals(VariableReferenceContext.class))
-					testVariableReferenceContext(src_comp, src_path_expr, parent, tree);
+					testVariableReferenceContext(src_path_expr, parent, tree);
 
 				// EqualityExprContext node
 
 				else if (currentClass.equals(EqualityExprContext.class))
-					testEqualityExprContext(src_comp, src_path_expr, parent, tree);
+					testEqualityExprContext(src_path_expr, parent, tree);
 
 				// RelationalExprContext node
 
 				else if (currentClass.equals(RelationalExprContext.class))
-					testRelationalExprContext(src_comp, src_path_expr, parent, tree);
+					testRelationalExprContext(src_path_expr, parent, tree);
 
 				// AdditiveExprContext node
 
 				else if (currentClass.equals(AdditiveExprContext.class))
-					testAdditiveExprContext(src_comp, src_path_expr, parent, tree, 0);
+					testAdditiveExprContext(src_path_expr, parent, tree, 0);
 
 				// MultiplicativeExprContext node
 
 				else if (currentClass.equals(MultiplicativeExprContext.class))
-					testMultiplicativeExprContext(src_comp, src_path_expr, parent, tree);
+					testMultiplicativeExprContext(src_path_expr, parent, tree);
 
 				// UnaryExprNoRootContext node
 
 				else if (currentClass.equals(UnaryExprNoRootContext.class))
-					testUnaryExprNoRootContext(src_comp, src_path_expr, parent, tree);
+					testUnaryExprNoRootContext(src_path_expr, parent, tree);
+
+				// FunctionCallContext node
+				else if (currentClass.equals(FunctionCallContext.class))
+					testFunctionCallContext(src_path_expr, parent, tree);
 
 				if (verbose)
 					System.out.println(indent + tree.getClass().getSimpleName() + " <- " + parent.getClass().getSimpleName() + " '" + tree.getText() + "' " + tree.getSourceInterval().toString());
@@ -1889,13 +1896,12 @@ public class XPathCompList {
 	/**
 	 * Test PrimaryExprContext node.
 	 *
-	 * @param src_comp XPath component of source predicate
 	 * @param src_path_expr path expression of source predicate
 	 * @param parent XPath parse tree of parent
 	 * @param tree current XPath parse tree
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void testPrimaryExprContext(XPathComp src_comp, XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
+	private void testPrimaryExprContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
 
 		src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, tree.getText(), XPathCompType.text, parent, tree));
 
@@ -1904,20 +1910,31 @@ public class XPathCompList {
 	/**
 	 * Test VariableReferenceContext node.
 	 *
-	 * @param src_comp XPath component of source predicate
 	 * @param src_path_expr path expression of source predicate
 	 * @param parent XPath parse tree of parent
 	 * @param tree current XPath parse tree
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void testVariableReferenceContext(XPathComp src_comp, XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
+	private void testVariableReferenceContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
 
-		String text = tree.getText();
-
-		if (variables == null || !text.startsWith("$"))
+		if (variables == null)
 			throw new PgSchemaException(tree);
 
-		String value = variables.get(text.substring(1));
+		String var_name = null;
+
+		for (int i = 0; i < tree.getChildCount(); i++) {
+
+			ParseTree child = tree.getChild(i);
+
+			if (child.getClass().equals(TerminalNodeImpl.class))
+				continue;
+
+			var_name = child.getText();
+
+			break;
+		}
+
+		String value = variables.get(var_name);
 
 		if (value == null)
 			throw new PgSchemaException(tree);
@@ -1929,13 +1946,12 @@ public class XPathCompList {
 	/**
 	 * Test EqualityExprContext node.
 	 *
-	 * @param src_comp XPath component of source predicate
 	 * @param src_path_expr path expression of source predicate
 	 * @param parent XPath parse tree of parent
 	 * @param tree current XPath parse tree
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void testEqualityExprContext(XPathComp src_comp, XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
+	private void testEqualityExprContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
 
 		List<XPathSqlExpr> sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
 
@@ -1988,13 +2004,12 @@ public class XPathCompList {
 	/**
 	 * Test RelationalExprContext node.
 	 *
-	 * @param src_comp XPath component of source predicate
 	 * @param src_path_expr path expression of source predicate
 	 * @param parent XPath parse tree of parent
 	 * @param tree current XPath parse tree
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void testRelationalExprContext(XPathComp src_comp, XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
+	private void testRelationalExprContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
 
 		List<XPathSqlExpr> sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
 
@@ -2098,14 +2113,13 @@ public class XPathCompList {
 	/**
 	 * Test AdditiveExprContext node.
 	 *
-	 * @param src_comp XPath component of source predicate
 	 * @param src_path_expr path expression of source predicate
 	 * @param parent XPath parse tree of parent
 	 * @param tree current XPath parse tree
 	 * @param offset offset id
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void testAdditiveExprContext(XPathComp src_comp, XPathExpr src_path_expr, ParseTree parent, ParseTree tree, int offset) throws PgSchemaException {
+	private void testAdditiveExprContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree, int offset) throws PgSchemaException {
 
 		List<XPathSqlExpr> sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
 
@@ -2177,7 +2191,7 @@ public class XPathCompList {
 
 			// find next successive predicates
 
-			testAdditiveExprContext(src_comp, src_path_expr, parent, tree, end_id);
+			testAdditiveExprContext(src_path_expr, parent, tree, end_id);
 
 		}
 
@@ -2186,13 +2200,12 @@ public class XPathCompList {
 	/**
 	 * Test MultiplicativeExprContext node.
 	 *
-	 * @param src_comp XPath component of source predicate
 	 * @param src_path_expr path expression of source predicate
 	 * @param parent XPath parse tree of parent
 	 * @param tree current XPath parse tree
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void testMultiplicativeExprContext(XPathComp src_comp, XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
+	private void testMultiplicativeExprContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
 
 		List<XPathSqlExpr> sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
 
@@ -2245,13 +2258,12 @@ public class XPathCompList {
 	/**
 	 * Test UnaryExprNoRootContext node.
 	 *
-	 * @param src_comp XPath component of source predicate
 	 * @param src_path_expr path expression of source predicate
 	 * @param parent XPath parse tree of parent
 	 * @param tree current XPath parse tree
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void testUnaryExprNoRootContext(XPathComp src_comp, XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
+	private void testUnaryExprNoRootContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
 
 		List<XPathSqlExpr> sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
 
@@ -2298,6 +2310,50 @@ public class XPathCompList {
 			}
 
 		}
+
+	}
+
+	/**
+	 * Test FunctionCallContext node.
+	 *
+	 * @param src_path_expr path expression of source predicate
+	 * @param parent XPath parse tree of parent
+	 * @param tree current XPath parse tree
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void testFunctionCallContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
+
+		List<XPathSqlExpr> sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
+
+		if (sql_predicates.size() != 0) // delegate to translateFunctionCallContext
+			return;
+
+		String func_name = null;
+
+		for (int i = 0; i < tree.getChildCount(); i++) {
+
+			ParseTree child = tree.getChild(i);
+
+			if (child.getClass().equals(TerminalNodeImpl.class))
+				continue;
+
+			func_name = child.getText();
+
+			break;
+		}
+
+		switch (func_name) {
+		case "true":
+			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, "TRUE", XPathCompType.text, parent, tree));
+			break;
+		case "false":
+			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, "FALSE", XPathCompType.text, parent, tree));
+			break;
+		default:
+			return;
+		}
+
+		src_path_expr.sql_predicates.removeIf(_sql_expr -> _sql_expr.parent_tree.equals(tree));
 
 	}
 
@@ -2384,44 +2440,50 @@ public class XPathCompList {
 	 *
 	 * @param src_comp XPath component of source predicate
 	 * @param src_path_expr source path expression
-	 * @param single whether single table expression
 	 * @param sb StringBuilder to store SQL expression
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void translatePredicateTree2SqlImpl(XPathComp src_comp, XPathExpr src_path_expr, boolean single, StringBuilder sb) throws PgSchemaException {
+	private void translatePredicateTree2SqlImpl(XPathComp src_comp, XPathExpr src_path_expr, StringBuilder sb) throws PgSchemaException {
 
-		translatePredicateTree(src_comp, src_path_expr, src_comp.tree, false, single, sb);
+		LinkedList<StringBuilder> sb_list = new LinkedList<StringBuilder>();
 
-		translatePredicateContext(src_comp, src_path_expr, src_comp.tree, single, sb);
+		translatePredicateTree(src_path_expr, src_comp.tree, false, sb, sb_list);
+
+		translatePredicateContext(src_path_expr, src_comp.tree, sb);
+
+		sb_list.clear();
 
 	}
 
 	/**
 	 * Return whether XPath parse tree of predicate is effective.
 	 *
-	 * @param src_comp XPath component of source predicate
 	 * @param src_path_expr path expression of source predicate
 	 * @param tree current XPath parse tree
 	 * @param has_children whether parent has children or not
-	 * @param single whether single table expression
 	 * @param sb StringBuilder to store SQL expression
+	 * @param sb_list LinkedList<StringBuilder> for each function call context
 	 * @return boolean whether valid predicate or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private boolean translatePredicateTree(XPathComp src_comp, XPathExpr src_path_expr, ParseTree tree, boolean has_children, boolean single, StringBuilder sb) throws PgSchemaException {
+	private boolean translatePredicateTree(XPathExpr src_path_expr, ParseTree tree, boolean has_children, StringBuilder sb, LinkedList<StringBuilder> sb_list) throws PgSchemaException {
 
 		boolean valid = false;
 
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
 			ParseTree child = tree.getChild(i);
+			Class<?> childClass = child.getClass();
 
-			if (child.getClass().equals(TerminalNodeImpl.class))
+			if (childClass.equals(TerminalNodeImpl.class))
 				continue;
+
+			else if (childClass.equals(FunctionCallContext.class))
+				sb_list.addFirst(new StringBuilder());
 
 			boolean _has_children = !child.getText().isEmpty() && (hasEffectiveChildren(child) || hasChildOfTerminalNodeImpl(child));
 
-			if (translatePredicateTree(src_comp, src_path_expr, child, _has_children, single, sb) || _has_children)
+			if (translatePredicateTree(src_path_expr, child, _has_children, sb, sb_list) || _has_children)
 				valid = true;
 
 		}
@@ -2441,23 +2503,32 @@ public class XPathCompList {
 
 				Class<?> currentClass = tree.getClass();
 
+				// OrExprContext node
+
 				if (currentClass.equals(OrExprContext.class))
-					translateOrExprContext(src_comp, src_path_expr, parent, tree, single, sb);
+					translateOrExprContext(src_path_expr, parent, tree, sb_list.size() == 0 ? sb : sb_list.peek());
 
 				// AndExprContext node
 
 				else if (currentClass.equals(AndExprContext.class))
-					translateAndExprContext(src_comp, src_path_expr, parent, tree, single, sb);
+					translateAndExprContext(src_path_expr, parent, tree, sb_list.size() == 0 ? sb : sb_list.peek());
 
 				// AdditiveExprContext node
 
 				else if (currentClass.equals(AdditiveExprContext.class))
-					translateAdditiveExprContext(src_comp, src_path_expr, parent, tree, single, sb);
+					translateAdditiveExprContext(src_path_expr, parent, tree, sb_list.size() == 0 ? sb : sb_list.peek());
 
 				// MultiplicativeExprContext node
 
 				else if (currentClass.equals(MultiplicativeExprContext.class))
-					translateMultiplicativeExprContext(src_comp, src_path_expr, parent, tree, single, sb);
+					translateMultiplicativeExprContext(src_path_expr, parent, tree, sb_list.size() == 0 ? sb : sb_list.peek());
+
+				// FunctionCallContext node
+
+				else if (currentClass.equals(FunctionCallContext.class)) {
+					translateFunctionCallContext(src_path_expr, parent, tree, sb_list.size() > 1 ? sb_list.get(1) : sb, sb_list.peek());
+					sb_list.removeFirst();
+				}
 
 			}
 
@@ -2469,15 +2540,13 @@ public class XPathCompList {
 	/**
 	 * Translate OrExprContext node.
 	 *
-	 * @param src_comp XPath component of source predicate
 	 * @param src_path_expr path expression of source predicate
 	 * @param parent XPath parse tree of parent
 	 * @param tree current XPath parse tree
-	 * @param single whether single table expression
 	 * @param sb StringBuilder to store SQL expression
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void translateOrExprContext(XPathComp src_comp, XPathExpr src_path_expr, ParseTree parent, ParseTree tree, boolean single, StringBuilder sb) throws PgSchemaException {
+	private void translateOrExprContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree, StringBuilder sb) throws PgSchemaException {
 
 		List<XPathSqlExpr> sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
 
@@ -2491,7 +2560,7 @@ public class XPathCompList {
 
 		sql_predicates.forEach(sql_expr -> {
 
-			appendSqlColumnName(single, sql_expr, sb);
+			appendSqlColumnName(sql_expr, sb);
 			sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 
 			sb.append(" OR ");
@@ -2505,15 +2574,13 @@ public class XPathCompList {
 	/**
 	 * Translate AndExprContext node.
 	 *
-	 * @param src_comp XPath component of source predicate
 	 * @param src_path_expr path expression of source predicate
 	 * @param parent XPath parse tree of parent
 	 * @param tree current XPath parse tree
-	 * @param single whether single table expression
 	 * @param sb StringBuilder to store SQL expression
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void translateAndExprContext(XPathComp src_comp, XPathExpr src_path_expr, ParseTree parent, ParseTree tree, boolean single, StringBuilder sb) throws PgSchemaException {
+	private void translateAndExprContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree, StringBuilder sb) throws PgSchemaException {
 
 		List<XPathSqlExpr> sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
 
@@ -2531,7 +2598,7 @@ public class XPathCompList {
 			case element:
 			case simple_content:
 			case attribute:
-				appendSqlColumnName(single, sql_expr, sb);
+				appendSqlColumnName(sql_expr, sb);
 				sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 				break;
 			case text:
@@ -2545,7 +2612,7 @@ public class XPathCompList {
 				String table_name = schema.getTableNameOfPath(src_path_expr.path);
 				if (!case_sense)
 					table_name = table_name.toLowerCase();
-				appendSqlColumnName(single, table_name, PgSchemaUtil.serial_key_name, sb);
+				appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
 				sb.append(" = " + sql_expr.predicate);
 				break;
 			default:
@@ -2568,15 +2635,13 @@ public class XPathCompList {
 	/**
 	 * Translate AdditiveExprContext node.
 	 *
-	 * @param src_comp XPath component of source predicate
 	 * @param src_path_expr path expression of source predicate
 	 * @param parent XPath parse tree of parent
 	 * @param tree current XPath parse tree
-	 * @param single whether single table expression
 	 * @param sb StringBuilder to store SQL expression
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void translateAdditiveExprContext(XPathComp src_comp, XPathExpr src_path_expr, ParseTree parent, ParseTree tree, boolean single, StringBuilder sb) throws PgSchemaException {
+	private void translateAdditiveExprContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree, StringBuilder sb) throws PgSchemaException {
 
 		List<XPathSqlExpr> sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
 
@@ -2592,7 +2657,7 @@ public class XPathCompList {
 			String table_name = schema.getTableNameOfPath(src_path_expr.path);
 			if (!case_sense)
 				table_name = table_name.toLowerCase();
-			appendSqlColumnName(single, table_name, PgSchemaUtil.serial_key_name, sb);
+			appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
 			sb.append(" = ");
 
 		}
@@ -2605,7 +2670,7 @@ public class XPathCompList {
 			case element:
 			case simple_content:
 			case attribute:
-				appendSqlColumnName(single, sql_expr, sb);
+				appendSqlColumnName(sql_expr, sb);
 				break;
 			case text:
 				if (!sql_expr.predicate.equals("0")) {
@@ -2650,15 +2715,13 @@ public class XPathCompList {
 	/**
 	 * Translate MultiplicativeExprContext node.
 	 *
-	 * @param src_comp XPath component of source predicate
 	 * @param src_path_expr path expression of source predicate
 	 * @param parent XPath parse tree of parent
 	 * @param tree current XPath parse tree
-	 * @param single whether single table expression
 	 * @param sb StringBuilder to store SQL expression
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void translateMultiplicativeExprContext(XPathComp src_comp, XPathExpr src_path_expr, ParseTree parent, ParseTree tree, boolean single, StringBuilder sb) throws PgSchemaException {
+	private void translateMultiplicativeExprContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree, StringBuilder sb) throws PgSchemaException {
 
 		List<XPathSqlExpr> sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
 
@@ -2674,7 +2737,7 @@ public class XPathCompList {
 			String table_name = schema.getTableNameOfPath(src_path_expr.path);
 			if (!case_sense)
 				table_name = table_name.toLowerCase();
-			appendSqlColumnName(single, table_name, PgSchemaUtil.serial_key_name, sb);
+			appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
 			sb.append(" = ");
 
 		}
@@ -2687,7 +2750,7 @@ public class XPathCompList {
 			case element:
 			case simple_content:
 			case attribute:
-				appendSqlColumnName(single, sql_expr, sb);
+				appendSqlColumnName(sql_expr, sb);
 				break;
 			case text:
 				if (!serial_key) {
@@ -2731,16 +2794,142 @@ public class XPathCompList {
 	}
 
 	/**
+	 * Translate FunctionCallContext node.
+	 *
+	 * @param src_path_expr path expression of source predicate
+	 * @param parent XPath parse tree of parent
+	 * @param tree current XPath parse tree
+	 * @param sb StringBuilder to store SQL expression
+	 * @param sb_func_call StringBuilder for function call context
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void translateFunctionCallContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree, StringBuilder sb, StringBuilder sb_func_call) throws PgSchemaException {
+
+		try {
+
+			List<XPathSqlExpr> sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
+
+			String func_name = null;
+
+			for (int i = 0; i < tree.getChildCount(); i++) {
+
+				ParseTree child = tree.getChild(i);
+
+				if (child.getClass().equals(TerminalNodeImpl.class))
+					continue;
+
+				func_name = child.getText();
+
+				break;
+			}
+
+			int pred_size = sql_predicates.size();
+
+			if (pred_size == 0) {
+
+				switch (func_name) {
+				case "not":
+					if (sb.length() > 0 && parent.getClass().equals(OrExprContext.class))
+						sb.append(" OR ");
+
+					if (sb.length() > 0 && parent.getClass().equals(AndExprContext.class))
+						sb.append(" AND ");
+
+					switch (sb_func_call.toString()) {
+					case "TRUE":
+						sb.append("FALSE");
+						break;
+					case "FALSE":
+						sb.append("TRUE");
+						break;
+					default:
+						sb.append("NOT ( " + sb_func_call + " )");
+					}
+					break;
+				case "true": // nothing to do
+				case "false":
+				case "lang":
+					break;
+				default:
+					throw new PgSchemaException(tree);
+				}
+
+				return;
+			}
+
+			if (pred_size != 1)
+				throw new PgSchemaException(tree);
+
+			XPathSqlExpr sql_expr = sql_predicates.get(0);
+
+			switch (func_name) {
+			case "not":
+				if (sb.length() > 0 && parent.getClass().equals(OrExprContext.class))
+					sb.append(" OR ");
+
+				if (sb.length() > 0 && parent.getClass().equals(AndExprContext.class))
+					sb.append(" AND ");
+
+				sb.append("NOT ( ");
+
+				switch (sql_expr.terminus) {
+				case element:
+				case simple_content:
+				case attribute:
+					appendSqlColumnName(sql_expr, sb);
+					sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
+					break;
+				case text:
+					if (!serial_key) {
+						try {
+							throw new PgSchemaException(tree, "serial key", serial_key);
+						} catch (PgSchemaException e) {
+							e.printStackTrace();
+						}
+					}
+					String table_name = schema.getTableNameOfPath(src_path_expr.path);
+					if (!case_sense)
+						table_name = table_name.toLowerCase();
+					appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
+					sb.append(" = " + sql_expr.predicate);
+					break;
+				default:
+					throw new PgSchemaException(tree);
+				}
+
+				sb.append(" )");
+				break;
+			case "true": // nothing to do
+			case "false":
+				break;
+			case "lang":
+				if (sb.length() > 0 && parent.getClass().equals(OrExprContext.class))
+					sb.append(" OR ");
+
+				if (sb.length() > 0 && parent.getClass().equals(AndExprContext.class))
+					sb.append(" AND ");
+
+				sb.append("TRUE");
+				break;
+			default:
+				throw new PgSchemaException(tree);
+			}
+
+		} finally {
+			sb_func_call.setLength(0);
+		}
+
+	}
+
+	/**
 	 * Translate PredicateContext node.
 	 *
-	 * @param src_comp XPath component of source predicate
 	 * @param src_path_expr path expression of source predicate
 	 * @param tree current XPath parse tree
-	 * @param single whether single table expression
 	 * @param sb StringBuilder to stor:e SQL expression
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void translatePredicateContext(XPathComp src_comp, XPathExpr src_path_expr, ParseTree tree, boolean single, StringBuilder sb) throws PgSchemaException {
+	private void translatePredicateContext(XPathExpr src_path_expr, ParseTree tree, StringBuilder sb) throws PgSchemaException {
 
 		List<XPathSqlExpr> sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
 
@@ -2758,7 +2947,7 @@ public class XPathCompList {
 		case element:
 		case simple_content:
 		case attribute:
-			appendSqlColumnName(single, sql_expr, sb);
+			appendSqlColumnName(sql_expr, sb);
 			sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 			break;
 		case text:
@@ -2772,7 +2961,7 @@ public class XPathCompList {
 			String table_name = schema.getTableNameOfPath(src_path_expr.path);
 			if (!case_sense)
 				table_name = table_name.toLowerCase();
-			appendSqlColumnName(single, table_name, PgSchemaUtil.serial_key_name, sb);
+			appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
 			sb.append(" = " + sql_expr.predicate);
 			break;
 		default:
@@ -2964,11 +3153,11 @@ public class XPathCompList {
 
 			PgField nested_key = src_table.fields.stream().filter(field -> field.nested_key && field.foreign_table.equals(dst_table.name)).findFirst().get();
 
-			appendSqlColumnName(false, src_table.name, nested_key.name, sb);
+			appendSqlColumnName(src_table.name, nested_key.name, sb);
 
 			sb.append(" = ");
 
-			appendSqlColumnName(false, nested_key.foreign_table, nested_key.foreign_field, sb);
+			appendSqlColumnName(nested_key.foreign_table, nested_key.foreign_field, sb);
 
 			sb.append(" AND ");
 
