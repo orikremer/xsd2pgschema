@@ -142,7 +142,7 @@ public class XPath2PgSqlImpl {
 		if (xpath_comp_list.comps.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		schema.testXPathNodes(xpath_comp_list, false, verbose);
+		schema.testXPathExpr(xpath_comp_list, false, verbose);
 
 		if (xpath_comp_list.path_exprs.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");

@@ -5332,14 +5332,14 @@ public class PgSchema {
 	// Schema-aware XPath parser
 
 	/**
-	 * Test nodes of XPath tree against schema.
+	 * Test XPath expression against schema.
 	 *
 	 * @param list XPath component list as serialized XPath tree
 	 * @param ends_with_text whether append text node in the ends, if possible
 	 * @param verbose whether output parse tree for predicate or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void testXPathNodes(XPathCompList list, boolean ends_with_text, boolean verbose) throws PgSchemaException {
+	public void testXPathExpr(XPathCompList list, boolean ends_with_text, boolean verbose) throws PgSchemaException {
 
 		hasRootTable();
 

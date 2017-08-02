@@ -63,7 +63,7 @@ public class XPathCompList {
 	/** Instance of path expression. */
 	public List<XPathExpr> path_exprs = null;
 
-	/** Instance of XPath predicate expression. */
+	/** Instance of predicate expression. */
 	public List<XPathPredicateExpr> predicates = null;
 
 	/** XPath variable reference. */

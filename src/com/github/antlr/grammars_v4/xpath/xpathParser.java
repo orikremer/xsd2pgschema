@@ -1593,13 +1593,7 @@ public class xpathParser extends Parser {
 		@Override public int getRuleIndex() { return RULE_functionName; }
 		@Override
 		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof xpathListener )
-				try {
-					((xpathListener)listener).enterFunctionName(this);
-				} catch (xpathListenerException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
+			if ( listener instanceof xpathListener ) ((xpathListener)listener).enterFunctionName(this);
 		}
 		@Override
 		public void exitRule(ParseTreeListener listener) {

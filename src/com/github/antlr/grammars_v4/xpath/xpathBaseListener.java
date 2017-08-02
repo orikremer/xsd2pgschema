@@ -293,13 +293,8 @@ public class xpathBaseListener implements xpathListener {
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
-	 * @throws xpathListenerException the XPath listener exception
 	 */
-	@Override public void enterFunctionName(xpathParser.FunctionNameContext ctx) throws xpathListenerException { 
-
-		throw new xpathListenerException("Not implimented FunctionName for simplicity.");
-
-	}
+	@Override public void enterFunctionName(xpathParser.FunctionNameContext ctx) { } 
 	/**
 	 * {@inheritDoc}
 	 *

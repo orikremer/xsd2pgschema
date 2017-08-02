@@ -205,7 +205,7 @@ public class XmlSplitterImpl {
 		if (doc_key.comps.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		schema.testXPathNodes(doc_key, true, verbose);
+		schema.testXPathExpr(doc_key, true, verbose);
 
 		if (doc_key.path_exprs.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
@@ -255,6 +255,9 @@ public class XmlSplitterImpl {
 
 		if (attr_doc_key)
 			attr_doc_key_holder = doc_key_path.substring(0, doc_key_path.lastIndexOf("/"));
+
+		doc_unit.clear();
+		doc_key.clear();
 
 		// StAX read event handlers
 
