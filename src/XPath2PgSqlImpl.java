@@ -142,7 +142,7 @@ public class XPath2PgSqlImpl {
 		if (xpath_comp_list.comps.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		schema.testXPathExpr(xpath_comp_list, false, verbose);
+		xpath_comp_list.validate(false, verbose);
 
 		if (xpath_comp_list.path_exprs.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
@@ -155,10 +155,10 @@ public class XPath2PgSqlImpl {
 
 		// translate XPath to SQL
 
-		xpath_comp_list.path2Sql(verbose);
+		xpath_comp_list.translateToSqlExpr(verbose);
 
-		System.out.println("\nSQL translation:");
-		xpath_comp_list.showSql(" ");
+		System.out.println("\nSQL expression:");
+		xpath_comp_list.showSqlExpr(" ");
 
 	}
 

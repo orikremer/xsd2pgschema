@@ -205,7 +205,7 @@ public class XmlSplitterImpl {
 		if (doc_key.comps.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		schema.testXPathExpr(doc_key, true, verbose);
+		doc_key.validate(true, verbose);
 
 		if (doc_key.path_exprs.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
