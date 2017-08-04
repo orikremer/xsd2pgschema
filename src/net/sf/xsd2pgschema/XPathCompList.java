@@ -20,6 +20,7 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -2332,456 +2333,572 @@ public class XPathCompList {
 			break;
 		}
 
-		StringBuilder sb;
-
-		XPathSqlExpr sql_expr_str;
-		XPathSqlExpr sql_expr_sub;
-
 		switch (func_name) {
+		case "not":
 		case "true":
-			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, "TRUE", XPathCompType.text, parent, tree));
-			break;
 		case "false":
-			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, "FALSE", XPathCompType.text, parent, tree));
+		case "lang":
+			switch (func_name) {
+			case "true":
+				src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, "TRUE", XPathCompType.text, parent, tree));
+				break;
+			case "false":
+				src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, "FALSE", XPathCompType.text, parent, tree));
+				break;
+			}
 			break;
 		case "string":
-			if (pred_size > 1)
-				throw new PgSchemaException(tree);
-
-			sb = new StringBuilder();
-
-			if (sql_predicates == null)
-				sb.append("''");
-
-			else {
-
-				sql_expr_str = sql_predicates.get(0);
-
-				if (sql_expr_str.predicate != null)
-					sb.append(sql_expr_str.predicate);
-
-				else
-					appendSqlColumnName(sql_expr_str, sb);
-
-			}
-
-			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, sb.toString(), XPathCompType.text, parent, tree));
-
-			sb.setLength(0);
-			break;
 		case "concat":
-			sb = new StringBuilder();
+		case "starts-with":
+		case "contains":
+		case "substring-before":
+		case "substring-after":
+		case "substring":
+		case "string-length":
+		case "normalize-space":
+		case "translate":
+			StringBuilder sb = new StringBuilder();
 
-			if (pred_size == sizeOfPredicate(sql_predicates)) {
+			XPathSqlExpr sql_expr_str;
+			XPathSqlExpr sql_expr_sub;
 
-				sb.append("'");
-				sql_predicates.forEach(sql_expr -> sb.append(sql_expr.predicate.substring(1, sql_expr.predicate.length() - 1)));
-				sb.append("'");
+			switch (func_name) {
+			case "string":
+				if (pred_size > 1)
+					throw new PgSchemaException(tree);
 
-			} else {
+				if (sql_predicates == null)
+					sb.append("''");
 
-				sb.append("concat( ");
+				else {
 
-				sql_predicates.forEach(sql_expr -> {
+					sql_expr_str = sql_predicates.get(0);
 
-					if (sql_expr.predicate != null) {
+					if (sql_expr_str.predicate != null)
+						sb.append(sql_expr_str.predicate);
 
-						if (sb.substring(sb.length() - 3).equals("', ")) {
+					else
+						appendSqlColumnName(sql_expr_str, sb);
 
-							sb.setLength(sb.length() - 3);
-							sb.append(sql_expr.predicate.substring(1));
+				}
+				break;
+			case "concat":
+				if (pred_size == sizeOfPredicate(sql_predicates)) {
+
+					sb.append("'");
+					sql_predicates.forEach(sql_expr -> sb.append(sql_expr.predicate.substring(1, sql_expr.predicate.length() - 1)));
+					sb.append("'");
+
+				} else {
+
+					sb.append("concat( ");
+
+					sql_predicates.forEach(sql_expr -> {
+
+						if (sql_expr.predicate != null) {
+
+							if (sb.substring(sb.length() - 3).equals("', ")) {
+
+								sb.setLength(sb.length() - 3);
+								sb.append(sql_expr.predicate.substring(1));
+
+							}
+
+							else
+								sb.append(sql_expr.predicate);
 
 						}
 
 						else
-							sb.append(sql_expr.predicate);
+							appendSqlColumnName(sql_expr, sb);
 
-					}
+						sb.append(", ");
 
-					else
-						appendSqlColumnName(sql_expr, sb);
+					});
 
-					sb.append(", ");
-
-				});
-
-				sb.setLength(sb.length() - 2); // remove last ", "
-
-				sb.append(" )");
-
-			}
-
-			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, sb.toString(), XPathCompType.text, parent, tree));
-
-			sb.setLength(0);
-			break;
-		case "starts-with":
-			if (pred_size != 2)
-				throw new PgSchemaException(tree);
-
-			sql_expr_str = sql_predicates.get(0);
-			sql_expr_sub = sql_predicates.get(1);
-
-			sb = new StringBuilder();
-
-			if (pred_size == sizeOfPredicate(sql_predicates)) {
-
-				String first_arg = sql_expr_str.predicate;
-				first_arg = first_arg.substring(1, first_arg.length() - 1);
-
-				String second_arg = sql_expr_sub.predicate;
-				second_arg = second_arg.substring(1, second_arg.length() - 1);
-
-				sb.append(first_arg.startsWith(second_arg) ? "TRUE" : "FALSE");
-
-			}
-
-			else {
-
-				sb.append("( substr( ");
-
-				if (sql_expr_str.predicate != null)
-					sb.append(sql_expr_str.predicate);
-				else
-					appendSqlColumnName(sql_expr_str, sb);
-
-				sb.append(", 1, ");
-
-				if (sql_expr_sub.predicate != null)
-					sb.append(sql_expr_sub.predicate.length() - 2);
-
-				else {
-
-					sb.append("length( ");
-
-					appendSqlColumnName(sql_expr_sub, sb);
+					sb.setLength(sb.length() - 2); // remove last ", "
 
 					sb.append(" )");
 
 				}
+				break;
+			case "starts-with":
+				if (pred_size != 2)
+					throw new PgSchemaException(tree);
 
-				sb.append(" ) = ");
+				sql_expr_str = sql_predicates.get(0);
+				sql_expr_sub = sql_predicates.get(1);
 
-				if (sql_expr_sub.predicate != null)
-					sb.append(sql_expr_sub.predicate);
-				else
-					appendSqlColumnName(sql_expr_sub, sb);
+				if (pred_size == sizeOfPredicate(sql_predicates)) {
 
-				sb.append(" )");
+					String first_arg = sql_expr_str.predicate;
+					first_arg = first_arg.substring(1, first_arg.length() - 1);
 
-			}
+					String second_arg = sql_expr_sub.predicate;
+					second_arg = second_arg.substring(1, second_arg.length() - 1);
 
-			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, sb.toString(), XPathCompType.text, parent, tree));
-
-			sb.setLength(0);	
-			break;
-		case "contains":
-			if (pred_size != 2)
-				throw new PgSchemaException(tree);
-
-			sql_expr_str = sql_predicates.get(0);
-			sql_expr_sub = sql_predicates.get(1);
-
-			sb = new StringBuilder();
-
-			if (pred_size == sizeOfPredicate(sql_predicates)) {
-
-				String first_arg = sql_expr_str.predicate;
-				first_arg = first_arg.substring(1, first_arg.length() - 1);
-
-				String second_arg = sql_expr_sub.predicate;
-				second_arg = second_arg.substring(1, second_arg.length() - 1);
-
-				sb.append(first_arg.contains(second_arg) ? "TRUE" : "FALSE");
-
-			}
-
-			else {
-
-				sb.append("( strpos( ");
-
-				if (sql_expr_str.predicate != null)
-					sb.append(sql_expr_str.predicate);
-				else
-					appendSqlColumnName(sql_expr_str, sb);
-
-				sb.append(", ");
-
-				if (sql_expr_sub.predicate != null)
-					sb.append(sql_expr_sub.predicate);
-				else
-					appendSqlColumnName(sql_expr_sub, sb);
-
-				sb.append(" ) > 0 ");
-
-				sb.append(" )");
-
-			}
-
-			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, sb.toString(), XPathCompType.text, parent, tree));
-
-			sb.setLength(0);	
-			break;
-		case "string-before":
-		case "string-after":
-			if (pred_size != 2)
-				throw new PgSchemaException(tree);
-
-			sql_expr_str = sql_predicates.get(0);
-			sql_expr_sub = sql_predicates.get(1);
-
-			sb = new StringBuilder();
-
-			if (pred_size == sizeOfPredicate(sql_predicates)) {
-
-				String first_arg = sql_expr_str.predicate;
-				first_arg = first_arg.substring(1, first_arg.length() - 1);
-
-				String second_arg = sql_expr_sub.predicate;
-				second_arg = second_arg.substring(1, second_arg.length() - 1);
-
-				if (first_arg.contains(second_arg)) {
-
-					switch (func_name) {
-					case "string-before":
-						first_arg = first_arg.substring(0, first_arg.indexOf(second_arg));
-						break;
-					case "string-after":
-						first_arg = first_arg.substring(first_arg.indexOf(second_arg) + 1, first_arg.length());
-						break;
-					}
+					sb.append(first_arg.startsWith(second_arg) ? "TRUE" : "FALSE");
 
 				}
 
-				else
-					first_arg = "";
+				else {
 
-				sb.append("'" + first_arg + "'");
-
-			}
-
-			else {
-
-				switch (func_name) {
-				case "string-before":
-					sb.append("left( ");
-					break;
-				case "string-after":
-					sb.append("right( ");
-					break;
-				}
-
-				if (sql_expr_str.predicate != null)
-					sb.append(sql_expr_str.predicate);
-				else
-					appendSqlColumnName(sql_expr_str, sb);
-
-				sb.append(", ");
-
-				if (func_name.equals("string-after")) {
-
-					sb.append("length( ");
+					sb.append("( substr( ");
 
 					if (sql_expr_str.predicate != null)
 						sb.append(sql_expr_str.predicate);
 					else
 						appendSqlColumnName(sql_expr_str, sb);
 
-					sb.append(" ) + 1 - ");
+					sb.append(", 1, ");
 
-				}
+					if (sql_expr_sub.predicate != null)
+						sb.append(sql_expr_sub.predicate.length() - 2);
 
-				sb.append("strpos( ");
+					else {
 
-				if (sql_expr_str.predicate != null)
-					sb.append(sql_expr_str.predicate);
-				else
-					appendSqlColumnName(sql_expr_str, sb);
+						sb.append("length( ");
 
-				sb.append(", ");
+						appendSqlColumnName(sql_expr_sub, sb);
 
-				if (sql_expr_sub.predicate != null)
-					sb.append(sql_expr_sub.predicate);
-				else
-					appendSqlColumnName(sql_expr_sub, sb);
+						sb.append(" )");
 
-				sb.append(" ) )");
+					}
 
-			}
+					sb.append(" ) = ");
 
-			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, sb.toString(), XPathCompType.text, parent, tree));
-
-			sb.setLength(0);
-			break;
-		case "string-length":
-			if (pred_size > 1)
-				throw new PgSchemaException(tree);
-
-			sb = new StringBuilder();
-
-			if (sql_predicates == null) {
-
-				sb.append("length( ");
-
-				appendSqlColumnName(schema.getXPathSqlExprOfPath(src_path_expr.path, src_path_expr.terminus), sb);
-
-				sb.append(" )");
-
-			}
-
-			else {
-
-				sql_expr_str = sql_predicates.get(0);
-
-				if (sql_expr_str.predicate != null) {
-
-					String first_arg = sql_expr_str.predicate;
-					first_arg = first_arg.substring(1, first_arg.length() - 1);
-
-					sb.append(first_arg.length());
-
-				}
-
-				else {
-
-					sb.append("length( ");
-
-					appendSqlColumnName(sql_expr_str, sb);
+					if (sql_expr_sub.predicate != null)
+						sb.append(sql_expr_sub.predicate);
+					else
+						appendSqlColumnName(sql_expr_sub, sb);
 
 					sb.append(" )");
 
 				}
-
-			}
-
-			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, sb.toString(), XPathCompType.text, parent, tree));
-
-			sb.setLength(0);
-			break;
-		case "normalize-space":
-			if (pred_size > 1)
-				throw new PgSchemaException(tree);
-
-			sb = new StringBuilder();
-
-			if (sql_predicates == null) {
-
-				sb.append("regexp_replace( regexp_replace( btrim( ");
-
-				appendSqlColumnName(schema.getXPathSqlExprOfPath(src_path_expr.path, src_path_expr.terminus), sb);
-
-				sb.append(" ), E'[\\t\\n\\r]+', ' ', 'g' ), E'\\s+', ' ', 'g' )");
-
-			}
-
-			else {
+				break;
+			case "contains":
+				if (pred_size != 2)
+					throw new PgSchemaException(tree);
 
 				sql_expr_str = sql_predicates.get(0);
+				sql_expr_sub = sql_predicates.get(1);
 
-				if (sql_expr_str.predicate != null) {
+				if (pred_size == sizeOfPredicate(sql_predicates)) {
 
 					String first_arg = sql_expr_str.predicate;
 					first_arg = first_arg.substring(1, first_arg.length() - 1);
 
-					sb.append("'" + first_arg.trim().replaceAll("[\t\n\r]", " ").replaceAll("\\s+", " ") + "'");
+					String second_arg = sql_expr_sub.predicate;
+					second_arg = second_arg.substring(1, second_arg.length() - 1);
+
+					sb.append(first_arg.contains(second_arg) ? "TRUE" : "FALSE");
 
 				}
 
 				else {
 
-					sb.append("regexp_replace( regexp_replace( btrim( ");
+					sb.append("( strpos( ");
 
-					appendSqlColumnName(sql_expr_str, sb);
+					if (sql_expr_str.predicate != null)
+						sb.append(sql_expr_str.predicate);
+					else
+						appendSqlColumnName(sql_expr_str, sb);
 
-					sb.append(" ), E'[\\t\\n\\r]+', ' ', 'g' ), E'\\s+', ' ', 'g' )");
+					sb.append(", ");
+
+					if (sql_expr_sub.predicate != null)
+						sb.append(sql_expr_sub.predicate);
+					else
+						appendSqlColumnName(sql_expr_sub, sb);
+
+					sb.append(" ) > 0 ");
+
+					sb.append(" )");
 
 				}
+				break;
+			case "substring-before":
+			case "substring-after":
+				if (pred_size != 2)
+					throw new PgSchemaException(tree);
 
-			}
+				sql_expr_str = sql_predicates.get(0);
+				sql_expr_sub = sql_predicates.get(1);
 
-			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, sb.toString(), XPathCompType.text, parent, tree));
+				if (pred_size == sizeOfPredicate(sql_predicates)) {
 
-			sb.setLength(0);
-			break;
-		case "translate":
-			if (pred_size != 3)
-				throw new PgSchemaException(tree);
+					String first_arg = sql_expr_str.predicate;
+					first_arg = first_arg.substring(1, first_arg.length() - 1);
 
-			sql_expr_str = sql_predicates.get(0);
-			XPathSqlExpr sql_expr_from = sql_predicates.get(1);
-			XPathSqlExpr sql_expr_to = sql_predicates.get(2);
+					String second_arg = sql_expr_sub.predicate;
+					second_arg = second_arg.substring(1, second_arg.length() - 1);
 
-			sb = new StringBuilder();
+					if (first_arg.contains(second_arg)) {
 
-			if (pred_size == sizeOfPredicate(sql_predicates)) {
-
-				sb.append("'");
-
-				String first_arg = sql_expr_str.predicate;
-				first_arg = first_arg.substring(1, first_arg.length() - 1);
-
-				String second_arg = sql_expr_from.predicate;
-				second_arg = second_arg.substring(1, second_arg.length() - 1);
-
-				String third_arg = sql_expr_to.predicate;
-				third_arg = third_arg.substring(1, third_arg.length() - 1);
-
-				char[] srcs = first_arg.toCharArray();
-				char[] froms = second_arg.toCharArray();
-				char[] tos = third_arg.toCharArray();
-
-				for (int l = 0; l < srcs.length; l++) {
-
-					char src = srcs[l];
-
-					for (int m = 0; m < froms.length; m++) {
-
-						if (src == froms[m]) {
-
-							if (m < tos.length)
-								src = tos[m];
-							else
-								src = 0;
-
+						switch (func_name) {
+						case "substring-before":
+							first_arg = first_arg.substring(0, first_arg.indexOf(second_arg));
+							break;
+						case "substring-after":
+							first_arg = first_arg.substring(first_arg.indexOf(second_arg) + second_arg.length(), first_arg.length());
 							break;
 						}
 
 					}
 
-					if (src != 0)
-						sb.append(src);
+					else
+						first_arg = "";
+
+					sb.append("'" + first_arg + "'");
 
 				}
 
-				sb.append("'");
+				else {
 
-			}
+					String first_arg = sql_expr_str.predicate;
+					if (first_arg != null)
+						first_arg = first_arg.substring(1, first_arg.length() - 1);
 
-			else {
+					String second_arg = sql_expr_sub.predicate;
+					if (second_arg != null)
+						second_arg = second_arg.substring(1, second_arg.length() - 1);
 
-				sb.append("translate( ");
+					switch (func_name) {
+					case "substring-before":
+						sb.append("left( ");
+						break;
+					case "substring-after":
+						sb.append("right( ");
+						break;
+					}
 
-				if (sql_expr_str.predicate != null)
-					sb.append(sql_expr_str.predicate);
-				else
-					appendSqlColumnName(sql_expr_str, sb);
+					if (sql_expr_str.predicate != null)
+						sb.append(sql_expr_str.predicate);
+					else
+						appendSqlColumnName(sql_expr_str, sb);
 
-				sb.append(", ");
+					sb.append(", ");
 
-				if (sql_expr_from.predicate != null)
-					sb.append(sql_expr_from.predicate);
-				else
-					appendSqlColumnName(sql_expr_from, sb);
+					if (func_name.equals("substring-after")) {
 
-				sb.append(", ");
+						if (sql_expr_str.predicate != null)
+							sb.append(first_arg.length());
 
-				if (sql_expr_to.predicate != null)
-					sb.append(sql_expr_to.predicate);
-				else
-					appendSqlColumnName(sql_expr_to, sb);
+						else {
 
-				sb.append(" )");
+							sb.append("length( ");
+							appendSqlColumnName(sql_expr_str, sb);
+							sb.append(" )");
 
+						}
+
+						sb.append(" - ");
+
+						if (sql_expr_sub.predicate != null)
+							sb.append(second_arg.length());
+
+						else {
+
+							sb.append("length( ");
+							appendSqlColumnName(sql_expr_sub, sb);
+							sb.append(" )");
+
+						}
+
+						sb.append(" + 1 - ");
+
+					}
+
+					sb.append("strpos( ");
+
+					if (sql_expr_str.predicate != null)
+						sb.append(sql_expr_str.predicate);
+					else
+						appendSqlColumnName(sql_expr_str, sb);
+
+					sb.append(", ");
+
+					if (sql_expr_sub.predicate != null)
+						sb.append(sql_expr_sub.predicate);
+					else
+						appendSqlColumnName(sql_expr_sub, sb);
+
+					sb.append(" )");
+
+					if (func_name.equals("substring-before"))
+						sb.append(" - 1");
+
+					sb.append(" )");
+
+				}
+				break;
+			case "substring":
+				if (pred_size < 2 || pred_size > 3)
+					throw new PgSchemaException(tree);
+
+				sql_expr_str = sql_predicates.get(0);
+				XPathSqlExpr sql_expr_start = sql_predicates.get(1);
+				XPathSqlExpr sql_expr_length = pred_size < 3 ? null : sql_predicates.get(2);
+
+				if (pred_size == sizeOfPredicate(sql_predicates)) {
+
+					String first_arg = sql_expr_str.predicate;
+					first_arg = first_arg.substring(1, first_arg.length() - 1);
+
+					try {
+
+						BigDecimal start_value = new BigDecimal(sql_expr_start.predicate);
+						int start = start_value.setScale(0, RoundingMode.HALF_EVEN).toBigInteger().intValue() - 1;
+
+						if (pred_size < 3)
+							first_arg = first_arg.substring(start < 0 ? 0 : start);
+
+						else {
+
+							BigDecimal length_value = new BigDecimal(sql_expr_length.predicate);
+							int length = length_value.setScale(0, RoundingMode.HALF_EVEN).toBigInteger().intValue();
+							int end = start + length;
+
+							first_arg = first_arg.substring(start < 0 ? 0 : start, end < 0 ? 0 : end > first_arg.length() ? first_arg.length() : end);
+
+						}
+
+						sb.append("'" + first_arg + "'");
+
+					} catch (NumberFormatException e) {
+						throw new PgSchemaException(tree);
+					}
+
+				}
+
+				else {
+
+					sb.append("substr( ");
+
+					if (sql_expr_str.predicate != null)
+						sb.append(sql_expr_str.predicate);
+					else
+						appendSqlColumnName(sql_expr_str, sb);
+
+					sb.append(", ");
+
+					if (sql_expr_start.predicate != null) {
+
+						try {
+
+							BigDecimal start_value = new BigDecimal(sql_expr_start.predicate);
+							int start = start_value.setScale(0, RoundingMode.HALF_EVEN).toBigInteger().intValue();
+
+							sb.append(start);
+
+						} catch (NumberFormatException e) {
+							throw new PgSchemaException(tree);
+						}
+
+					}
+
+					else {
+
+						sb.append("round( ");
+
+						appendSqlColumnName(sql_expr_start, sb);
+
+						sb.append(" )");
+
+					}
+
+					if (sql_expr_length != null) {
+
+						sb.append(", ");
+
+						if (sql_expr_length.predicate != null) {
+
+							try {
+
+								BigDecimal length_value = new BigDecimal(sql_expr_length.predicate);
+								int length = length_value.setScale(0, RoundingMode.HALF_EVEN).toBigInteger().intValue();
+
+								sb.append(length);
+
+							} catch (NumberFormatException e) {
+								throw new PgSchemaException(tree);
+							}
+
+						}
+
+						else {
+
+							sb.append("round( ");
+
+							appendSqlColumnName(sql_expr_length, sb);
+
+							sb.append(" )");
+
+						}
+
+					}
+
+					sb.append(" )");
+
+				}
+				break;
+			case "string-length":
+				if (pred_size > 1)
+					throw new PgSchemaException(tree);
+
+				if (sql_predicates == null) {
+
+					sb.append("length( ");
+
+					appendSqlColumnName(schema.getXPathSqlExprOfPath(src_path_expr.path, src_path_expr.terminus), sb);
+
+					sb.append(" )");
+
+				}
+
+				else {
+
+					sql_expr_str = sql_predicates.get(0);
+
+					if (sql_expr_str.predicate != null) {
+
+						String first_arg = sql_expr_str.predicate;
+						first_arg = first_arg.substring(1, first_arg.length() - 1);
+
+						sb.append(first_arg.length());
+
+					}
+
+					else {
+
+						sb.append("length( ");
+
+						appendSqlColumnName(sql_expr_str, sb);
+
+						sb.append(" )");
+
+					}
+
+				}
+				break;
+			case "normalize-space":
+				if (pred_size > 1)
+					throw new PgSchemaException(tree);
+
+				if (sql_predicates == null) {
+
+					sb.append("regexp_replace( regexp_replace( btrim( ");
+
+					appendSqlColumnName(schema.getXPathSqlExprOfPath(src_path_expr.path, src_path_expr.terminus), sb);
+
+					sb.append(" ), E'[\\t\\n\\r]+', ' ', 'g' ), E'\\s+', ' ', 'g' )");
+
+				}
+
+				else {
+
+					sql_expr_str = sql_predicates.get(0);
+
+					if (sql_expr_str.predicate != null) {
+
+						String first_arg = sql_expr_str.predicate;
+						first_arg = first_arg.substring(1, first_arg.length() - 1);
+
+						sb.append("'" + first_arg.trim().replaceAll("[\\t\\n\\r]", " ").replaceAll("\\s+", " ") + "'");
+
+					}
+
+					else {
+
+						sb.append("regexp_replace( regexp_replace( btrim( ");
+
+						appendSqlColumnName(sql_expr_str, sb);
+
+						sb.append(" ), E'[\\t\\n\\r]+', ' ', 'g' ), E'\\s+', ' ', 'g' )");
+
+					}
+
+				}
+				break;
+			case "translate":
+				if (pred_size != 3)
+					throw new PgSchemaException(tree);
+
+				sql_expr_str = sql_predicates.get(0);
+				XPathSqlExpr sql_expr_from = sql_predicates.get(1);
+				XPathSqlExpr sql_expr_to = sql_predicates.get(2);
+
+				if (pred_size == sizeOfPredicate(sql_predicates)) {
+
+					sb.append("'");
+
+					String first_arg = sql_expr_str.predicate;
+					first_arg = first_arg.substring(1, first_arg.length() - 1);
+
+					String second_arg = sql_expr_from.predicate;
+					second_arg = second_arg.substring(1, second_arg.length() - 1);
+
+					String third_arg = sql_expr_to.predicate;
+					third_arg = third_arg.substring(1, third_arg.length() - 1);
+
+					char[] srcs = first_arg.toCharArray();
+					char[] froms = second_arg.toCharArray();
+					char[] tos = third_arg.toCharArray();
+
+					for (int l = 0; l < srcs.length; l++) {
+
+						char src = srcs[l];
+
+						for (int m = 0; m < froms.length; m++) {
+
+							if (src == froms[m]) {
+
+								if (m < tos.length)
+									src = tos[m];
+								else
+									src = 0;
+
+								break;
+							}
+
+						}
+
+						if (src != 0)
+							sb.append(src);
+
+					}
+
+					sb.append("'");
+
+				}
+
+				else {
+
+					sb.append("translate( ");
+
+					if (sql_expr_str.predicate != null)
+						sb.append(sql_expr_str.predicate);
+					else
+						appendSqlColumnName(sql_expr_str, sb);
+
+					sb.append(", ");
+
+					if (sql_expr_from.predicate != null)
+						sb.append(sql_expr_from.predicate);
+					else
+						appendSqlColumnName(sql_expr_from, sb);
+
+					sb.append(", ");
+
+					if (sql_expr_to.predicate != null)
+						sb.append(sql_expr_to.predicate);
+					else
+						appendSqlColumnName(sql_expr_to, sb);
+
+					sb.append(" )");
+
+				}
+				break;
 			}
 
 			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, sb.toString(), XPathCompType.text, parent, tree));
@@ -3041,14 +3158,16 @@ public class XPathCompList {
 				sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 				break;
 			case text:
+				String table_name = schema.getTableNameOfPath(getParentPath(src_path_expr.path));
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
 					} catch (PgSchemaException e) {
 						e.printStackTrace();
+						if (!schema.getTable(table_name).list_holder)
+							System.exit(1);
 					}
 				}
-				String table_name = schema.getTableNameOfPath(src_path_expr.path);
 				if (!case_sense)
 					table_name = table_name.toLowerCase();
 				appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
@@ -3113,11 +3232,14 @@ public class XPathCompList {
 				break;
 			case text:
 				if (!sql_expr.predicate.equals("0")) {
+					String table_name = schema.getTableNameOfPath(getParentPath(src_path_expr.path));
 					if (!serial_key) {
 						try {
 							throw new PgSchemaException(tree, "serial key", serial_key);
 						} catch (PgSchemaException e) {
 							e.printStackTrace();
+							if (!schema.getTable(table_name).list_holder)
+								System.exit(1);
 						}
 					}
 					sb.append(sql_expr.predicate);
@@ -3192,11 +3314,14 @@ public class XPathCompList {
 				appendSqlColumnName(sql_expr, sb);
 				break;
 			case text:
+				String table_name = schema.getTableNameOfPath(getParentPath(src_path_expr.path));
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
 					} catch (PgSchemaException e) {
 						e.printStackTrace();
+						if (!schema.getTable(table_name).list_holder)
+							System.exit(1);
 					}
 				}
 				sb.append(sql_expr.predicate);
@@ -3292,8 +3417,9 @@ public class XPathCompList {
 				case "concat":
 				case "starts-with":
 				case "contains":
-				case "string-before":
-				case "string-after":
+				case "substring-before":
+				case "substring-after":
+				case "substring":
 				case "string-length":
 				case "normalize-space":
 				case "translate":
@@ -3328,14 +3454,16 @@ public class XPathCompList {
 					sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 					break;
 				case text:
+					String table_name = schema.getTableNameOfPath(getParentPath(src_path_expr.path));
 					if (!serial_key) {
 						try {
 							throw new PgSchemaException(tree, "serial key", serial_key);
 						} catch (PgSchemaException e) {
 							e.printStackTrace();
+							if (!schema.getTable(table_name).list_holder)
+								System.exit(1);
 						}
 					}
-					String table_name = schema.getTableNameOfPath(src_path_expr.path);
 					if (!case_sense)
 						table_name = table_name.toLowerCase();
 					appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
@@ -3399,14 +3527,16 @@ public class XPathCompList {
 			sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 			break;
 		case text:
+			String table_name = schema.getTableNameOfPath(getParentPath(src_path_expr.path));
 			if (!serial_key) {
 				try {
 					throw new PgSchemaException(tree, "serial key", serial_key);
 				} catch (PgSchemaException e) {
 					e.printStackTrace();
+					if (!schema.getTable(table_name).list_holder)
+						System.exit(1);
 				}
 			}
-			String table_name = schema.getTableNameOfPath(src_path_expr.path);
 			if (!case_sense)
 				table_name = table_name.toLowerCase();
 			appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);

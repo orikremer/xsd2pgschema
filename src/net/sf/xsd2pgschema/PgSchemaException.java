@@ -94,7 +94,7 @@ public class PgSchemaException extends Exception {
 	 */
 	public PgSchemaException(ParseTree tree, String key_name, boolean status) {
 
-		super("Unexpected XPath expression (" + tree.getSourceInterval().toString() + ": " + tree.getClass().getSimpleName() + " '" + tree.getText() + "', but " + key_name + " has been turned " + (status ? "on" : "off") + ") .");
+		super("Unexpected XPath expression (" + tree.getSourceInterval().toString() + ": " + tree.getClass().getSimpleName() + " '" + tree.getText() + "', but " + key_name + " has been turned " + (status ? "on" : "off") + ").");
 
 	}
 
