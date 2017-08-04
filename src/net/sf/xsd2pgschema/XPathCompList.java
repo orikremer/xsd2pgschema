@@ -75,6 +75,9 @@ public class XPathCompList {
 	/** Whether UnionExprNoRootContext node exists or not. */
 	private boolean union_expr = false;
 
+	/** Whether add document key in PostgreSQL DDL. */
+	public boolean document_key = true;
+
 	/** Whether add serial key in PostgreSQL DDL. */
 	private boolean serial_key = false;
 
@@ -99,6 +102,7 @@ public class XPathCompList {
 
 		this.schema = schema;
 
+		document_key = schema.option.document_key;
 		serial_key = schema.option.serial_key;
 		case_sense = schema.option.case_sense;
 
@@ -1468,6 +1472,12 @@ public class XPathCompList {
 
 	}
 
+	/** Alias name of tables in SQL main query. */
+	HashMap<String, String> main_aliases = null; // key = table name, value = alias name
+
+	/** Alias id of tables in SQL sub query. */
+	int sub_alias_id = 0;
+
 	/**
 	 * Translate to XPath expression to SQL expression.
 	 *
@@ -1554,12 +1564,16 @@ public class XPathCompList {
 
 			try {
 
+				main_aliases = new HashMap<String, String>();
+				sub_alias_id = 0;
+
 				HashMap<String, String> target_tables = new HashMap<String, String>(); // key = table name, value = table path
 				HashMap<String, String> joined_tables = new HashMap<String, String>();
 
 				target_tables.put(path_expr.sql_subject.table_name, path_expr.terminus.equals(XPathCompType.table) ? path_expr.sql_subject.path : getParentPath(path_expr.sql_subject.path));
 
-				path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.table_name != null).forEach(sql_expr -> target_tables.put(sql_expr.table_name, sql_expr.terminus.equals(XPathCompType.table) ? sql_expr.path : getParentPath(sql_expr.path)));
+				if (path_expr.sql_predicates != null)
+					path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.table_name != null).forEach(sql_expr -> target_tables.put(sql_expr.table_name, sql_expr.terminus.equals(XPathCompType.table) ? sql_expr.path : getParentPath(sql_expr.path)));
 
 				boolean single = target_tables.size() == 1;
 
@@ -1595,6 +1609,8 @@ public class XPathCompList {
 
 				}
 
+				main_aliases.clear();
+
 				target_tables.clear();
 				joined_tables.clear();
 
@@ -1612,12 +1628,16 @@ public class XPathCompList {
 				if (path_expr.sql.endsWith(" WHERE "))
 					path_expr.sql = path_expr.sql.replaceFirst(" WHERE $", "");
 
+				if (sub_alias_id == 0)
+					path_expr.sql = path_expr.sql.replaceAll(" as t[1-9]", "");
+
 			} catch (PgSchemaException e) {
 				e.printStackTrace();
 				System.exit(1);
 			} finally {
 				sb.setLength(0);
-				path_expr.sql_predicates.clear();
+				if (path_expr.sql_predicates != null)
+					path_expr.sql_predicates.clear();
 			}
 
 		});
@@ -1632,7 +1652,14 @@ public class XPathCompList {
 	 */
 	private void appendSqlTableName(String table_name, StringBuilder sb) {
 
-		sb.append(PgSchemaUtil.avoidPgReservedWords(table_name) + ", ");
+		String alias_name = main_aliases.get(table_name);
+
+		if (alias_name == null)
+			alias_name = "t" + (main_aliases.size() + 1);
+
+		main_aliases.put(table_name, alias_name);
+
+		sb.append(PgSchemaUtil.avoidPgReservedWords(table_name) + " as " + alias_name + ", ");
 
 	}
 
@@ -1664,8 +1691,14 @@ public class XPathCompList {
 
 	}
 
-	/** path expression counter in predicate. */
-	private int path_expr_counter;
+	/** Path expression counter in predicate. */
+	private int path_expr_counter = 0;
+
+	/** Class of child node under PredicateContext node. */
+	private Class<?> _predicateContextClass = null;
+
+	/** Whether PredicateContext node has Boolean FunctionCallContext node. */
+	private boolean _predicateContextHasBooleanFunc = false;
 
 	/**
 	 * Translate predicate expression to SQL expression.
@@ -1773,6 +1806,40 @@ public class XPathCompList {
 
 				else if (currentClass.equals(FunctionCallContext.class))
 					testFunctionCallContext(src_path_expr, parent, tree);
+
+				if (parent.getClass().equals(PredicateContext.class)) {
+
+					_predicateContextClass = currentClass;
+					_predicateContextHasBooleanFunc = false;
+
+					if (currentClass.equals(FunctionCallContext.class)) {
+
+						String func_name = null;
+
+						for (int i = 0; i < tree.getChildCount(); i++) {
+
+							ParseTree child = tree.getChild(i);
+
+							if (child.getClass().equals(TerminalNodeImpl.class))
+								continue;
+
+							func_name = child.getText();
+
+							break;
+						}
+
+						switch (func_name) {
+						case "boolean":
+						case "not":
+						case "true":
+						case "false":
+						case "lang":
+							_predicateContextHasBooleanFunc = true;
+						}
+
+					}
+
+				}
 
 				if (verbose)
 					System.out.println(indent + tree.getClass().getSimpleName() + " <- " + parent.getClass().getSimpleName() + " '" + tree.getText() + "' " + tree.getSourceInterval().toString());
@@ -2309,15 +2376,8 @@ public class XPathCompList {
 
 		List<XPathSqlExpr> sql_predicates = null;
 
-		int pred_size = 0;
-
-		if (src_path_expr.sql_predicates != null && src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).count() > 0) {
-
+		if (src_path_expr.sql_predicates != null && src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).count() > 0)
 			sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
-
-			pred_size = sql_predicates.size();
-
-		}
 
 		String func_name = null;
 
@@ -2334,18 +2394,13 @@ public class XPathCompList {
 		}
 
 		switch (func_name) {
+		case "boolean":
 		case "not":
 		case "true":
 		case "false":
 		case "lang":
-			switch (func_name) {
-			case "true":
-				src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, "TRUE", XPathCompType.text, parent, tree));
-				break;
-			case "false":
-				src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, "FALSE", XPathCompType.text, parent, tree));
-				break;
-			}
+			if (testBooleanFunctionCallContext(src_path_expr, parent, tree, func_name, sql_predicates))
+				return;
 			break;
 		case "string":
 		case "concat":
@@ -2357,7 +2412,113 @@ public class XPathCompList {
 		case "string-length":
 		case "normalize-space":
 		case "translate":
-			StringBuilder sb = new StringBuilder();
+			if (testStringFunctionCallContext(src_path_expr, parent, tree, func_name, sql_predicates))
+				return;
+			break;
+		case "number":
+		case "sum":
+		case "floor":
+		case "ceiling":
+		case "round":
+			if (testNumberFunctionCallContext(src_path_expr, parent, tree, func_name, sql_predicates))
+				return;
+			break;
+		default:
+			throw new PgSchemaException(tree);
+		}
+
+		src_path_expr.sql_predicates.removeIf(sql_expr -> sql_expr.parent_tree.equals(tree));
+
+	}
+
+	/**
+	 * Test BooleanFunctionCallContext node.
+	 *
+	 * @param src_path_expr path expression of source predicate
+	 * @param parent XPath parse tree of parent
+	 * @param tree current XPath parse tree
+	 * @param func_name function name
+	 * @param sql_predicates list of SQL expression of current node
+	 * @return boolean whether delegate to other function or not
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private boolean testBooleanFunctionCallContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree, String func_name, List<XPathSqlExpr> sql_predicates) throws PgSchemaException {
+
+		int pred_size = sql_predicates != null ? sql_predicates.size() : 0;
+
+		switch (func_name) {
+		case "boolean":
+			if (sql_predicates == null)
+				src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, "FALSE", XPathCompType.text, parent, tree));
+
+			if (pred_size != 1)
+				throw new PgSchemaException(tree);
+
+			XPathSqlExpr sql_expr_str = sql_predicates.get(0);
+
+			if (sql_expr_str.predicate != null) {
+
+				String first_arg = sql_expr_str.predicate;
+
+				if (((first_arg.startsWith("'") && first_arg.endsWith("'")) ||
+						(first_arg.startsWith("\"") && first_arg.endsWith("\""))))
+					first_arg = first_arg.substring(1, first_arg.length() - 1);
+
+				src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, first_arg.isEmpty() ? "FALSE" : "TRUE", XPathCompType.text, parent, tree));
+
+			}
+
+			else {
+
+				StringBuilder sb = new StringBuilder();
+
+				sb.append("( ");
+
+				appendSqlColumnName(sql_expr_str, sb);
+
+				sb.append(" IS NOT NULL )");
+
+				src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, sb.toString(), XPathCompType.text, parent, tree));
+
+				sb.setLength(0);
+
+			}
+			break;
+		case "not":
+			return true;
+		case "true":
+			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, "TRUE", XPathCompType.text, parent, tree));
+			break;
+		case "false":
+			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, "FALSE", XPathCompType.text, parent, tree));
+			break;
+		case "lang":
+			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, "TRUE", XPathCompType.text, parent, tree));
+		default:
+			throw new PgSchemaException(tree);
+		}
+
+		return false;
+	}
+
+	/**
+	 * Test StringFunctionCallContext node.
+	 *
+	 * @param src_path_expr path expression of source predicate
+	 * @param parent XPath parse tree of parent
+	 * @param tree current XPath parse tree
+	 * @param func_name function name
+	 * @param sql_predicates list of SQL expression of current node
+	 * @return boolean whether delegate to other function or not
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private boolean testStringFunctionCallContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree, String func_name, List<XPathSqlExpr> sql_predicates) throws PgSchemaException {
+
+		int pred_size = sql_predicates != null ? sql_predicates.size() : 0;
+
+		StringBuilder sb = new StringBuilder();
+
+		try {
 
 			XPathSqlExpr sql_expr_str;
 			XPathSqlExpr sql_expr_sub;
@@ -2899,18 +3060,174 @@ public class XPathCompList {
 
 				}
 				break;
+			default:
+				throw new PgSchemaException(tree);
 			}
 
 			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, sb.toString(), XPathCompType.text, parent, tree));
 
+		} finally {
 			sb.setLength(0);
-			break;
-		default:
-			throw new PgSchemaException(tree);
 		}
 
-		src_path_expr.sql_predicates.removeIf(sql_expr -> sql_expr.parent_tree.equals(tree));
+		return false;
+	}
 
+	/**
+	 * Test NumberFunctionCallContext node.
+	 *
+	 * @param src_path_expr path expression of source predicate
+	 * @param parent XPath parse tree of parent
+	 * @param tree current XPath parse tree
+	 * @param func_name function name
+	 * @param sql_predicates list of SQL expression of current node
+	 * @return boolean whether delegate to other function or not
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private boolean testNumberFunctionCallContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree, String func_name, List<XPathSqlExpr> sql_predicates) throws PgSchemaException {
+
+		int pred_size = sql_predicates != null ? sql_predicates.size() : 0;
+
+		StringBuilder sb = new StringBuilder();
+
+		try {
+
+			XPathSqlExpr sql_expr_str;
+
+			switch (func_name) {
+			case "number":
+				if (pred_size > 1)
+					throw new PgSchemaException(tree);
+
+				if (sql_predicates == null)
+					sb.append("'NaN'");
+
+				else {
+
+					sql_expr_str = sql_predicates.get(0);
+
+					if (sql_expr_str.predicate != null) {
+
+						String first_arg = sql_expr_str.predicate;
+
+						if (first_arg.equals("TRUE"))
+							sb.append(1);
+						else if (first_arg.equals("FALSE"))
+							sb.append(0);
+
+						else {
+
+							if (((first_arg.startsWith("'") && first_arg.endsWith("'")) ||
+									(first_arg.startsWith("\"") && first_arg.endsWith("\""))))
+								first_arg = first_arg.substring(1, first_arg.length() - 1).trim();
+
+							try {
+
+								BigDecimal value = new BigDecimal(first_arg.trim());
+								sb.append(value.toString());
+
+							} catch (NumberFormatException e) {
+								sb.append("'NaN'");
+							}
+
+						}
+
+					}
+
+					else
+						appendSqlColumnName(sql_expr_str, sb);
+
+				}
+				break;
+			case "sum":
+				if (pred_size != 1)
+					throw new PgSchemaException(tree);
+
+				sql_expr_str = sql_predicates.get(0);
+
+				if (sql_expr_str.predicate != null)
+					throw new PgSchemaException(tree);
+
+				if (!document_key) {
+					try {
+						throw new PgSchemaException(tree, "document key", document_key);
+					} catch (PgSchemaException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+				}
+
+				sb.append("( SELECT sum( ");
+
+				appendSqlColumnName(sql_expr_str, sb);
+
+				sb.append(" ) FROM ");
+
+				String alias_name = "s" + (++sub_alias_id);
+
+				sb.append(PgSchemaUtil.avoidPgReservedWords(sql_expr_str.table_name) + " as " + alias_name);
+
+				sb.append(" WHERE " + alias_name + "." + PgSchemaUtil.document_key_name + " = t1." + PgSchemaUtil.document_key_name);
+
+				sb.append(" )");
+				break;
+			case "floor":
+			case "ceiling":
+			case "round":
+				if (pred_size != 1)
+					throw new PgSchemaException(tree);
+
+				sql_expr_str = sql_predicates.get(0);
+
+				if (sql_expr_str.predicate != null) {
+
+					BigDecimal value = new BigDecimal(sql_expr_str.predicate);
+
+					switch (func_name) {
+					case "floor":
+						sb.append(value.setScale(0, RoundingMode.FLOOR).toBigInteger().intValue());
+						break;
+					case "ceiling":
+						sb.append(value.setScale(0, RoundingMode.CEILING).toBigInteger().intValue());
+						break;
+					case "round":
+						sb.append(value.setScale(0, RoundingMode.HALF_EVEN).toBigInteger().intValue());
+						break;
+					}
+
+				}
+
+				else {
+
+					switch (func_name) {
+					case "floor":
+						sb.append("floor( ");
+						break;
+					case "ceiling":
+						sb.append("ceiling( ");
+						break;
+					case "round":
+						sb.append("round( ");
+						break;
+					}
+
+					appendSqlColumnName(sql_expr_str, sb);
+
+					sb.append(" )");
+
+				}
+				break;
+			default:
+				throw new PgSchemaException(tree);
+			}
+
+			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, sb.toString(), XPathCompType.text, parent, tree));
+
+		} finally {
+			sb.setLength(0);
+		}
+
+		return false;
 	}
 
 	/**
@@ -3410,7 +3727,8 @@ public class XPathCompList {
 						sb.append("NOT ( " + sb_func_call + " )");
 					}
 					break;
-				case "true": // nothing to do
+				case "boolean":
+				case "true":
 				case "false":
 				case "lang":
 				case "string":
@@ -3423,6 +3741,11 @@ public class XPathCompList {
 				case "string-length":
 				case "normalize-space":
 				case "translate":
+				case "number":
+				case "sum":
+				case "floor":
+				case "ceiling":
+				case "round":
 					break;
 				default:
 					throw new PgSchemaException(tree);
@@ -3437,6 +3760,8 @@ public class XPathCompList {
 			XPathSqlExpr sql_expr = sql_predicates.get(0);
 
 			switch (func_name) {
+			case "boolean":
+				return;
 			case "not":
 				if (sb.length() > 0 && parent.getClass().equals(OrExprContext.class))
 					sb.append(" OR ");
@@ -3475,18 +3800,25 @@ public class XPathCompList {
 
 				sb.append(" )");
 				break;
-			case "true": // nothing to do
+			case "true":
 			case "false":
-				break;
 			case "lang":
-				if (sb.length() > 0 && parent.getClass().equals(OrExprContext.class))
-					sb.append(" OR ");
-
-				if (sb.length() > 0 && parent.getClass().equals(AndExprContext.class))
-					sb.append(" AND ");
-
-				sb.append("TRUE");
-				break;
+			case "string":
+			case "concat":
+			case "starts-with":
+			case "contains":
+			case "substring-before":
+			case "substring-after":
+			case "substring":
+			case "string-length":
+			case "normalize-space":
+			case "translate":
+			case "number":
+			case "sum":
+			case "floor":
+			case "ceiling":
+			case "round":
+				return;
 			default:
 				throw new PgSchemaException(tree);
 			}
@@ -3527,20 +3859,25 @@ public class XPathCompList {
 			sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 			break;
 		case text:
-			String table_name = schema.getTableNameOfPath(getParentPath(src_path_expr.path));
-			if (!serial_key) {
-				try {
-					throw new PgSchemaException(tree, "serial key", serial_key);
-				} catch (PgSchemaException e) {
-					e.printStackTrace();
-					if (!schema.getTable(table_name).list_holder)
-						System.exit(1);
+			if (_predicateContextClass != null && (_predicateContextClass.equals(EqualityExprContext.class) || _predicateContextClass.equals(RelationalExprContext.class) || _predicateContextHasBooleanFunc))
+				sb.append(sql_expr.predicate);
+
+			else {
+				String table_name = schema.getTableNameOfPath(getParentPath(src_path_expr.path));
+				if (!serial_key) {
+					try {
+						throw new PgSchemaException(tree, "serial key", serial_key);
+					} catch (PgSchemaException e) {
+						e.printStackTrace();
+						if (!schema.getTable(table_name).list_holder)
+							System.exit(1);
+					}
 				}
+				if (!case_sense)
+					table_name = table_name.toLowerCase();
+				appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
+				sb.append(" = " + sql_expr.predicate);
 			}
-			if (!case_sense)
-				table_name = table_name.toLowerCase();
-			appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
-			sb.append(" = " + sql_expr.predicate);
 			break;
 		default:
 			throw new PgSchemaException(tree);

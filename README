@@ -6,7 +6,8 @@
   Updated dependency (commons-text, instead of commons-lang3).
   Added --xpath-var option to enable variable reference in XPath->SQL translation.
   Implemented boolean functions of XPath 1.0.
-  Implemented string functions of XPath 1.0 (not yet for node set and number functions).
+  Implemented string functions of XPath 1.0.
+  Implemented number functions of XPath 1.0 (not yet for node set functions).
 
  Changes in xsd2pgschema 2.5.0 (release 2017-07-13)
 
