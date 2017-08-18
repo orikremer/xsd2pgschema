@@ -1967,6 +1967,16 @@ public class PgSchema {
 	}
 
 	/**
+	 * Return prefix of namespace URI.
+	 * 
+	 * @param namespace_uri namespace URI
+	 * @return String prefix of namespace URI
+	 */
+	protected String getPrefixOf(String namespace_uri) {
+		return def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri)).findFirst().get().getKey();
+	}
+
+	/**
 	 * Return PostgreSQL table.
 	 *
 	 * @param table_id table id

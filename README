@@ -1,3 +1,7 @@
+ Changes in xsd2pgschema 2.6.1 (release 2017-08-18)
+
+  Implemented all XPath 1.0 function calls.
+
  Changes in xsd2pgschema 2.6.0 (release 2017-08-04)
 
   Added XML Schema aware XPath parser enabled XPath->SQL translation via xpath2pgsql main class.
