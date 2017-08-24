@@ -19,8 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 
 /**
  * XML post editor.
@@ -30,22 +29,22 @@ import java.util.List;
 public class XmlPostEditor {
 
 	/** The filt-in option. */
-	List<String> filt_ins = null;
+	HashSet<String> filt_ins = null;
 
 	/** The filt-out option. */
-	List<String> filt_outs = null;
+	HashSet<String> filt_outs = null;
 
 	/** The fill-this option. */
-	List<String> fill_these = null;
+	HashSet<String> fill_these = null;
 
 	/**
 	 * Instance of XmlPostEditor.
 	 */
 	public XmlPostEditor() {
 
-		filt_ins = new ArrayList<String>();
-		filt_outs = new ArrayList<String>();
-		fill_these = new ArrayList<String>();
+		filt_ins = new HashSet<String>();
+		filt_outs = new HashSet<String>();
+		fill_these = new HashSet<String>();
 
 	}
 

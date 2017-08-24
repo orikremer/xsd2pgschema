@@ -2632,7 +2632,7 @@ public class PgSchema {
 	 * @param filt_ins filt-in option
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void applyFiltIn(List<String> filt_ins) throws PgSchemaException {
+	private void applyFiltIn(HashSet<String> filt_ins) throws PgSchemaException {
 
 		if (filt_in_resolved)
 			return;
@@ -2731,7 +2731,7 @@ public class PgSchema {
 	 * @param filt_outs filt-out option
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void applyFiltOut(List<String> filt_outs) throws PgSchemaException {
+	private void applyFiltOut(HashSet<String> filt_outs) throws PgSchemaException {
 
 		if (filt_out_resolved)
 			return;
@@ -2802,7 +2802,7 @@ public class PgSchema {
 	 * @param fill_these fill-this option
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void applyFillThis(List<String> fill_these) throws PgSchemaException {
+	private void applyFillThis(HashSet<String> fill_these) throws PgSchemaException {
 
 		if (fill_this_resolved)
 			return;
@@ -3048,7 +3048,7 @@ public class PgSchema {
 	 * @param key_name source string
 	 * @return bytes[] hash key
 	 */
-	synchronized protected byte[] getHashKeyBytes(String key_name) {
+	protected synchronized byte[] getHashKeyBytes(String key_name) {
 
 		message_digest.reset();
 
@@ -3061,7 +3061,7 @@ public class PgSchema {
 	 * @param key_name source string
 	 * @return int hash key
 	 */
-	synchronized protected int getHashKeyInt(String key_name) {
+	protected synchronized int getHashKeyInt(String key_name) {
 
 		message_digest.reset();
 
@@ -3078,7 +3078,7 @@ public class PgSchema {
 	 * @param key_name source string
 	 * @return long hash key
 	 */
-	synchronized protected long getHashKeyLong(String key_name) {
+	protected synchronized long getHashKeyLong(String key_name) {
 
 		message_digest.reset();
 
@@ -3609,7 +3609,7 @@ public class PgSchema {
 	 * @param db_conn Database connection
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void testPgSqlSchema(Connection db_conn) throws PgSchemaException {
+	public void testPgSql(Connection db_conn) throws PgSchemaException {
 
 		try {
 
@@ -7472,9 +7472,14 @@ public class PgSchema {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append("@" + text);
+		try {
 
-		return getAbsoluteXPathOfTable(table, sb);
+			sb.append("@" + text);
+
+			return getAbsoluteXPathOfTable(table, sb);
+		} finally {
+			sb.setLength(0);
+		}
 	}
 
 	/**
@@ -7488,9 +7493,14 @@ public class PgSchema {
 
 		StringBuilder sb = new StringBuilder();
 
-		sb.append(text);
+		try {
 
-		return getAbsoluteXPathOfTable(table, sb);
+			sb.append(text);
+
+			return getAbsoluteXPathOfTable(table, sb);
+		} finally {
+			sb.setLength(0);
+		}
 	}
 
 	/**
@@ -7515,10 +7525,15 @@ public class PgSchema {
 
 		StringBuilder sb = new StringBuilder();
 
-		for (int l = _path.length - 1; l >= 0; l--)
-			sb.append("/" + _path[l]);
+		try {
 
-		return sb.toString();
+			for (int l = _path.length - 1; l >= 0; l--)
+				sb.append("/" + _path[l]);
+
+			return sb.toString();
+		} finally {
+			sb.setLength(0);
+		}
 	}
 
 }

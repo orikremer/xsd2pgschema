@@ -1384,10 +1384,15 @@ public class XPathCompList {
 
 		StringBuilder sb = new StringBuilder();
 
-		for (int i = 1; i < _path.length - 1; i++)
-			sb.append("/" + _path[i]);
+		try {
 
-		return sb.toString();
+			for (int i = 1; i < _path.length - 1; i++)
+				sb.append("/" + _path[i]);
+
+			return sb.toString();
+		} finally {
+			sb.setLength(0);
+		}
 	}
 
 	/**

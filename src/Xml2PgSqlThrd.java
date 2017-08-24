@@ -106,7 +106,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		// validate PostgreSQL data model with schema
 
-		schema.testPgSqlSchema(db_conn);
+		schema.testPgSql(db_conn);
 
 	}
 

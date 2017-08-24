@@ -19,8 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 
 /**
  * Full-text index filter.
@@ -30,10 +29,10 @@ import java.util.List;
 public class IndexFilter {
 
 	/** The attributes for filtering index. */
-	public List<String> attrs = null;
+	public HashSet<String> attrs = null;
 
 	/** The fields to be stored. */
-	public List<String> fields = null;
+	public HashSet<String> fields = null;
 
 	/** The minimum word length for indexing. */
 	public int min_word_len = PgSchemaUtil.min_word_len;
@@ -61,8 +60,8 @@ public class IndexFilter {
 	 */
 	public IndexFilter() {
 
-		attrs = new ArrayList<String>();
-		fields = new ArrayList<String>();
+		attrs = new HashSet<String>();
+		fields = new HashSet<String>();
 
 	}
 
@@ -74,17 +73,12 @@ public class IndexFilter {
 	 */
 	public boolean addAttr(String attr) {
 
-		if (attrs != null) {
-
-			if (attrs.contains(attr))
-				return false;
-
+		if (attrs != null)
 			return attrs.add(attr);
-		}
 
 		else {
 
-			attrs = new ArrayList<String>();
+			attrs = new HashSet<String>();
 
 			return attrs.add(attr);
 		}
@@ -98,10 +92,6 @@ public class IndexFilter {
 	 * @return boolean result of addition
 	 */
 	public boolean addField(String field) {
-
-		if (fields.contains(field))
-			return false;
-
 		return fields.add(field);
 	}
 

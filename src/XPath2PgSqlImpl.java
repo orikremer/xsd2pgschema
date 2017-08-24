@@ -101,7 +101,7 @@ public class XPath2PgSqlImpl {
 
 			// validate PostgreSQL data model with schema
 
-			schema.testPgSqlSchema(db_conn);
+			schema.testPgSql(db_conn);
 
 		}
 
