@@ -1817,6 +1817,7 @@ public enum XsDataType {
 			}
 
 			return sb.toString();
+
 		} finally {
 			sb.setLength(0);
 			sb = null;
@@ -2402,10 +2403,12 @@ public enum XsDataType {
 						sb.append("1");
 
 						return sb.toString();
+
 					} finally {
 						sb.setLength(0);
 						sb = null;
 					}
+
 				}
 
 			} catch (NumberFormatException e) {

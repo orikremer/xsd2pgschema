@@ -50,7 +50,7 @@ public class XPathSqlExpr {
 	public ParseTree parent_tree = null;
 
 	/** The current tree. */
-	public ParseTree current_tree= null;
+	public ParseTree current_tree = null;
 
 	/** The unary operator. */
 	public String unary_oprator = null;

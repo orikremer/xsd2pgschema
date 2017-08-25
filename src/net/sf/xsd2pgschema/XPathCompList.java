@@ -1390,6 +1390,7 @@ public class XPathCompList {
 				sb.append("/" + _path[i]);
 
 			return sb.toString();
+
 		} finally {
 			sb.setLength(0);
 		}

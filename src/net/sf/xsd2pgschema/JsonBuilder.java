@@ -122,6 +122,7 @@ public class JsonBuilder {
 
 		if (builder == null)
 			builder = new StringBuilder();
+
 		else if (builder.length() > 0)
 			builder.setLength(0);
 

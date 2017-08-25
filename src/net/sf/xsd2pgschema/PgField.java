@@ -39,10 +39,10 @@ public class PgField {
 	String name = "";
 
 	/** The data type. */
-	String type = "";
+	String type = null;
 
 	/** The substitution group. */
-	String substitution_group = "";
+	String substitution_group = null;
 
 	/** The @maxOccurs. */
 	String maxoccurs = "1";
@@ -50,8 +50,11 @@ public class PgField {
 	/** The @minOccurs. */
 	String minoccurs = "1";
 
+	/** The xs:annotation/xs:documentation (as is). */
+	String xanno_doc = null;
+
 	/** The xs:annotation. */
-	String anno = "";
+	String anno = null;
 
 	/** The XML Schema data type. */
 	XsDataType xs_type;

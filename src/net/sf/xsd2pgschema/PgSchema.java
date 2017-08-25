@@ -124,10 +124,14 @@ public class PgSchema {
 	private String def_anno = null;
 
 	/** The top level xs:annotation/xs:appinfo. */
-	private String def_appinfo = null;
+	private String def_anno_appinfo = null;
 
 	/** The top level xs:annotation/xs:documentation. */
-	private String def_doc = null;
+	private String def_anno_doc = null;
+
+	/** The top level xs:annotation/xs:documentation (as is).*/
+	@SuppressWarnings("unused")
+	private String def_xanno_doc = null;
 
 	/** The default attributes. */
 	private String def_attrs = null;
@@ -194,8 +198,10 @@ public class PgSchema {
 		// retrieve top level schema annotation
 
 		def_anno = PgSchemaUtil.extractAnnotation(this, root_node, true);
-		def_appinfo = PgSchemaUtil.extractAppinfo(this, root_node);
-		def_doc = PgSchemaUtil.extractDocumentation(this, root_node);
+		def_anno_appinfo = PgSchemaUtil.extractAppinfo(this, root_node);
+
+		if ((def_anno_doc = PgSchemaUtil.extractDocumentation(this, root_node, true)) != null)
+			def_xanno_doc = PgSchemaUtil.extractDocumentation(this, root_node, false);
 
 		def_stat_msg = new StringBuilder();
 
@@ -749,7 +755,8 @@ public class PgSchema {
 
 		table.required = true;
 
-		table.anno = PgSchemaUtil.extractAnnotation(this, node, true);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(this, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
 
 		table.xs_type = root_element ? XsTableType.xs_root : XsTableType.xs_admin_root;
 
@@ -860,7 +867,8 @@ public class PgSchema {
 
 					table.required = child_table.required = true;
 
-					child_table.anno = PgSchemaUtil.extractAnnotation(this, node, true);
+					if ((child_table.anno = PgSchemaUtil.extractAnnotation(this, node, true)) != null)
+						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
 
 					child_table.xs_type = XsTableType.xs_admin_root;
 
@@ -911,7 +919,8 @@ public class PgSchema {
 		if (table.name.isEmpty())
 			return;
 
-		table.anno = PgSchemaUtil.extractAnnotation(this, node, true);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(this, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
 
 		if (annotation) {
 
@@ -921,8 +930,12 @@ public class PgSchema {
 
 				if (known_table != null) {
 
-					if ((known_table.anno == null || known_table.anno.isEmpty()) && table.anno != null && !table.anno.isEmpty())
+					if ((known_table.anno == null || known_table.anno.isEmpty()) && table.anno != null && !table.anno.isEmpty()) {
+
 						known_table.anno = table.anno;
+						known_table.xanno_doc = table.xanno_doc;
+
+					}
 
 				}
 
@@ -979,7 +992,8 @@ public class PgSchema {
 		if (table.name.isEmpty())
 			return;
 
-		table.anno = PgSchemaUtil.extractAnnotation(this, node, true);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(this, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
 
 		table.xs_type = XsTableType.xs_attr_group;
 
@@ -1018,7 +1032,8 @@ public class PgSchema {
 		if (table.name.isEmpty())
 			return;
 
-		table.anno = PgSchemaUtil.extractAnnotation(this, node, true);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(this, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
 
 		table.xs_type = XsTableType.xs_model_group;
 
@@ -1188,7 +1203,9 @@ public class PgSchema {
 		field.extractMinOccurs(this, node);
 
 		field.name = field.xname = table.avoidFieldDuplication(this, PgSchemaUtil.any_elem_name);
-		field.anno = PgSchemaUtil.extractAnnotation(this, node, false);
+
+		if ((field.anno = PgSchemaUtil.extractAnnotation(this, node, false)) != null)
+			field.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
 
 		field.xs_type = XsDataType.xs_any;
 		field.type = field.xs_type.name();
@@ -1213,7 +1230,9 @@ public class PgSchema {
 		field.any_attribute = true;
 
 		field.name = field.xname = table.avoidFieldDuplication(this, PgSchemaUtil.any_attr_name);
-		field.anno = PgSchemaUtil.extractAnnotation(this, node, false);
+
+		if ((field.anno = PgSchemaUtil.extractAnnotation(this, node, false)) != null)
+			field.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
 
 		field.xs_type = XsDataType.xs_anyAttribute;
 		field.type = field.xs_type.name();
@@ -1281,7 +1300,9 @@ public class PgSchema {
 
 			field.xname = getUnqualifiedName(name);
 			field.name = table.avoidFieldDuplication(this, field.xname);
-			field.anno = PgSchemaUtil.extractAnnotation(this, node, false);
+
+			if ((field.anno = PgSchemaUtil.extractAnnotation(this, node, false)) != null)
+				field.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
 
 			field.extractType(this, node);
 			field.extractNamespace(this, node); // require type definition
@@ -1354,7 +1375,8 @@ public class PgSchema {
 
 					table.required = child_table.required = true;
 
-					child_table.anno = PgSchemaUtil.extractAnnotation(this, node, true);
+					if ((child_table.anno = PgSchemaUtil.extractAnnotation(this, node, true)) != null)
+						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
 
 					child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
@@ -1402,7 +1424,9 @@ public class PgSchema {
 
 						field.xname = getUnqualifiedName(name);
 						field.name = table.avoidFieldDuplication(this, field.xname);
-						field.anno = PgSchemaUtil.extractAnnotation(this, child, false);
+
+						if ((field.anno = PgSchemaUtil.extractAnnotation(this, child, false)) != null)
+							field.xanno_doc = PgSchemaUtil.extractDocumentation(this, child, false);
 
 						field.extractType(this, child);
 						field.extractNamespace(this, child); // require type definition
@@ -1475,7 +1499,8 @@ public class PgSchema {
 
 								table.required = child_table.required = true;
 
-								child_table.anno = PgSchemaUtil.extractAnnotation(this, child, true);
+								if ((child_table.anno = PgSchemaUtil.extractAnnotation(this, child, true)) != null)
+									child_table.xanno_doc = PgSchemaUtil.extractDocumentation(this, child, false);
 
 								child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
@@ -1549,7 +1574,8 @@ public class PgSchema {
 
 		table.required = true;
 
-		table.anno = PgSchemaUtil.extractAnnotation(this, node, true);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(this, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
 
 		table.fields = new ArrayList<PgField>();
 
@@ -1648,7 +1674,9 @@ public class PgSchema {
 		field.simple_cont = true;
 		field.xname = getUnqualifiedName(name);
 		field.name = table.avoidFieldDuplication(this, field.xname);
-		field.anno = PgSchemaUtil.extractAnnotation(this, node, false);
+
+		if ((field.anno = PgSchemaUtil.extractAnnotation(this, node, false)) != null)
+			field.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
 
 		field.extractType(this, node);
 		field.extractNamespace(this, node); // require type definition
@@ -1837,8 +1865,12 @@ public class PgSchema {
 
 		// copy annotation if available
 
-		if ((known_table.anno == null || known_table.anno.isEmpty()) && table.anno != null && !table.anno.isEmpty())
+		if ((known_table.anno == null || known_table.anno.isEmpty()) && table.anno != null && !table.anno.isEmpty()) {
+
 			known_table.anno = table.anno;
+			known_table.xanno_doc = table.xanno_doc;
+
+		}
 
 		// append target namespace if available
 
@@ -1968,7 +2000,7 @@ public class PgSchema {
 
 	/**
 	 * Return prefix of namespace URI.
-	 * 
+	 *
 	 * @param namespace_uri namespace URI
 	 * @return String prefix of namespace URI
 	 */
@@ -4359,25 +4391,25 @@ public class PgSchema {
 
 		}
 
-		if (def_appinfo != null) {
+		if (def_anno_appinfo != null) {
 
-			String _def_appinfo = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_appinfo).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
+			String _def_anno_appinfo = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_anno_appinfo).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
 
-			if (!_def_appinfo.startsWith("\""))
-				_def_appinfo = "\"" + _def_appinfo + "\"";
+			if (!_def_anno_appinfo.startsWith("\""))
+				_def_anno_appinfo = "\"" + _def_anno_appinfo + "\"";
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_appinfo + "," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_anno_appinfo + "," + jsonb.linefeed);
 
 		}
 
-		if (def_doc != null) {
+		if (def_anno_doc != null) {
 
-			String _def_doc = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_doc).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
+			String _def_anno_doc = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_anno_doc).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
 
-			if (!_def_doc.startsWith("\""))
-				_def_doc = "\"" + _def_doc + "\"";
+			if (!_def_anno_doc.startsWith("\""))
+				_def_anno_doc = "\"" + _def_anno_doc + "\"";
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_doc + "," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_anno_doc + "," + jsonb.linefeed);
 
 		}
 
@@ -4728,25 +4760,25 @@ public class PgSchema {
 
 		}
 
-		if (def_appinfo != null) {
+		if (def_anno_appinfo != null) {
 
-			String _def_appinfo = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_appinfo).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
+			String _def_anno_appinfo = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_anno_appinfo).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
 
-			if (!_def_appinfo.startsWith("\""))
-				_def_appinfo = "\"" + _def_appinfo + "\"";
+			if (!_def_anno_appinfo.startsWith("\""))
+				_def_anno_appinfo = "\"" + _def_anno_appinfo + "\"";
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_appinfo + "," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_anno_appinfo + "," + jsonb.linefeed);
 
 		}
 
-		if (def_doc != null) {
+		if (def_anno_doc != null) {
 
-			String _def_doc = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_doc).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
+			String _def_anno_doc = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_anno_doc).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
 
-			if (!_def_doc.startsWith("\""))
-				_def_doc = "\"" + _def_doc + "\"";
+			if (!_def_anno_doc.startsWith("\""))
+				_def_anno_doc = "\"" + _def_anno_doc + "\"";
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_doc + "," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_anno_doc + "," + jsonb.linefeed);
 
 		}
 
@@ -5053,25 +5085,25 @@ public class PgSchema {
 
 		}
 
-		if (def_appinfo != null) {
+		if (def_anno_appinfo != null) {
 
-			String _def_appinfo = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_appinfo).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
+			String _def_anno_appinfo = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_anno_appinfo).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
 
-			if (!_def_appinfo.startsWith("\""))
-				_def_appinfo = "\"" + _def_appinfo + "\"";
+			if (!_def_anno_appinfo.startsWith("\""))
+				_def_anno_appinfo = "\"" + _def_anno_appinfo + "\"";
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_appinfo + "," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_anno_appinfo + "," + jsonb.linefeed);
 
 		}
 
-		if (def_doc != null) {
+		if (def_anno_doc != null) {
 
-			String _def_doc = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_doc).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
+			String _def_anno_doc = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_anno_doc).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
 
-			if (!_def_doc.startsWith("\""))
-				_def_doc = "\"" + _def_doc + "\"";
+			if (!_def_anno_doc.startsWith("\""))
+				_def_anno_doc = "\"" + _def_anno_doc + "\"";
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_doc + "," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_anno_doc + "," + jsonb.linefeed);
 
 		}
 
@@ -7477,6 +7509,7 @@ public class PgSchema {
 			sb.append("@" + text);
 
 			return getAbsoluteXPathOfTable(table, sb);
+
 		} finally {
 			sb.setLength(0);
 		}
@@ -7498,6 +7531,7 @@ public class PgSchema {
 			sb.append(text);
 
 			return getAbsoluteXPathOfTable(table, sb);
+
 		} finally {
 			sb.setLength(0);
 		}
@@ -7531,6 +7565,7 @@ public class PgSchema {
 				sb.append("/" + _path[l]);
 
 			return sb.toString();
+
 		} finally {
 			sb.setLength(0);
 		}

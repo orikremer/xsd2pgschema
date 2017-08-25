@@ -42,8 +42,11 @@ public class PgTable {
 	/** The table name in PostgreSQL. */
 	String name = "";
 
+	/** The xs:annotation/xs:documentation (as is). */
+	String xanno_doc = null;
+
 	/** The xs:annotation. */
-	String anno = "";
+	String anno = null;
 
 	/** The table type classified by xs_root (root node), xs_root_child (children node of root node), xs_admin_root (administrative root node), xs_admin_child (children node of administrative node). */
 	XsTableType xs_type;
