@@ -128,7 +128,7 @@ public class Xml2JsonThrd implements Runnable {
 						schema.xml2ObjJson(xml_parser, json_file_name, xml2json.xml_post_editor);
 						break;
 					case relational:
-						schema.xml2RelJson(xml_parser, json_file_name, xml2json.xml_post_editor);
+						schema.xml2Json(xml_parser, json_file_name, xml2json.xml_post_editor);
 						break;
 					}
 

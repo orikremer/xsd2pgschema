@@ -168,7 +168,7 @@ public class xsd2jsonschema {
 				schema.realizeObjJsonSchema();
 				break;
 			case relational:
-				schema.realizeRelJsonSchema();
+				schema.realizeJsonSchema();
 				break;
 			}
 

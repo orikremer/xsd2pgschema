@@ -4336,6 +4336,7 @@ public class PgSchema {
 
 				if (field.jsonb == null)
 					field.jsonb = new StringBuilder();
+
 				else if (field.jsonb.length() > 0)
 					field.jsonb.setLength(0);
 
@@ -5068,7 +5069,7 @@ public class PgSchema {
 	 *
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void realizeRelJsonSchema() throws PgSchemaException {
+	public void realizeJsonSchema() throws PgSchemaException {
 
 		hasRootTable();
 
@@ -5123,7 +5124,7 @@ public class PgSchema {
 					if (has_category)
 						System.out.print("," + jsonb.linefeed);
 
-					realizeRelJsonSchema(table, 1);
+					realizeJsonSchema(table, 1);
 
 					has_category = true;
 
@@ -5145,7 +5146,7 @@ public class PgSchema {
 	 * @param table current table
 	 * @param json_indent_level current indent level
 	 */
-	private void realizeRelJsonSchema(final PgTable table, final int json_indent_level) {
+	private void realizeJsonSchema(final PgTable table, final int json_indent_level) {
 
 		List<PgField> fields = table.fields;
 
@@ -5215,7 +5216,7 @@ public class PgSchema {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2RelJson(XmlParser xml_parser, String json_file_name, XmlPostEditor xml_post_editor) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
+	public void xml2Json(XmlParser xml_parser, String json_file_name, XmlPostEditor xml_post_editor) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
 		Node node = getRootNode(xml_parser, xml_post_editor);
 
