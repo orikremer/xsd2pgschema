@@ -1,6 +1,7 @@
- Changes in xsd2pgschema 2.6.1 (release 2017-08-18)
+ Changes in xsd2pgschema 2.6.1 (release 2017-08-25)
 
   Implemented all XPath 1.0 function calls.
+  Fixed database replication error occurred in 2.6.0 and previous 2.6.1 released before 2017-08-24.
 
  Changes in xsd2pgschema 2.6.0 (release 2017-08-04)
 

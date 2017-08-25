@@ -3493,7 +3493,7 @@ public class PgSchema {
 
 						for (String db_table_name : table_list) {
 
-							if (option.case_sense ? db_table_name.equals(db_table_name) : db_table_name.equalsIgnoreCase(table_name)) {
+							if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
 
 								has_db_table = true;
 
@@ -3571,7 +3571,7 @@ public class PgSchema {
 
 						for (String db_table_name : table_list) {
 
-							if (option.case_sense ? db_table_name.equals(db_table_name) : db_table_name.equalsIgnoreCase(table_name)) {
+							if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
 
 								has_db_table = true;
 
@@ -3647,7 +3647,7 @@ public class PgSchema {
 
 							int found_columns = 0;
 
-							if (option.case_sense ? db_table_name.equals(db_table_name) : db_table_name.equalsIgnoreCase(table_name)) {
+							if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
 
 								ResultSet rset_col = meta.getColumns(null, null, db_table_name, null);
 
