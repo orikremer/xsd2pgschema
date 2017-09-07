@@ -931,7 +931,6 @@ public class PgField {
 							restriction = true;
 							length = value;
 
-							break;
 						}
 
 					}
@@ -947,7 +946,6 @@ public class PgField {
 							restriction = true;
 							min_length = value;
 
-							break;
 						}
 
 					}
@@ -963,7 +961,6 @@ public class PgField {
 							restriction = true;
 							max_length = value;
 
-							break;
 						}
 
 					}
@@ -979,7 +976,6 @@ public class PgField {
 							restriction = true;
 							pattern = value;
 
-							break;
 						}
 
 					}
@@ -995,7 +991,6 @@ public class PgField {
 							restriction = true;
 							max_inclusive = value;
 
-							break;
 						}
 
 					}
@@ -1011,7 +1006,6 @@ public class PgField {
 							restriction = true;
 							max_exclusive = value;
 
-							break;
 						}
 
 					}
@@ -1027,7 +1021,6 @@ public class PgField {
 							restriction = true;
 							min_exclusive = value;
 
-							break;
 						}
 
 					}
@@ -1043,7 +1036,6 @@ public class PgField {
 							restriction = true;
 							min_inclusive = value;
 
-							break;
 						}
 
 					}
@@ -1059,7 +1051,6 @@ public class PgField {
 							restriction = true;
 							total_digits = value;
 
-							break;
 						}
 
 					}
@@ -1075,7 +1066,6 @@ public class PgField {
 							restriction = true;
 							fraction_digits = value;
 
-							break;
 						}
 
 					}
@@ -1091,7 +1081,6 @@ public class PgField {
 							restriction = true;
 							white_space = value;
 
-							break;
 						}
 
 					}
@@ -1107,7 +1096,6 @@ public class PgField {
 							// restriction = true;
 							// assertions = value;
 
-							break;
 						}
 
 					}
@@ -1123,7 +1111,6 @@ public class PgField {
 							restriction = true;
 							explicit_timezone = value;
 
-							break;
 						}
 
 					}
