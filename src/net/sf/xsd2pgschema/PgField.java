@@ -19,6 +19,8 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.math.BigDecimal;
+
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -928,8 +930,24 @@ public class PgField {
 
 						if (value != null && !value.isEmpty()) {
 
-							restriction = true;
-							length = value;
+							try {
+
+								int i = Integer.parseInt(value);
+
+								if (i > 0) {
+
+									restriction = true;
+
+									if (length == null)
+										length = value;
+
+									else if (i > Integer.valueOf(length))
+										length = value;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
 
 						}
 
@@ -943,8 +961,24 @@ public class PgField {
 
 						if (value != null && !value.isEmpty()) {
 
-							restriction = true;
-							min_length = value;
+							try {
+
+								int i = Integer.parseInt(value);
+
+								if (i > 0) {
+
+									restriction = true;
+
+									if (min_length == null)
+										min_length = value;
+
+									else if (i < Integer.valueOf(min_length))
+										min_length = value;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
 
 						}
 
@@ -958,8 +992,24 @@ public class PgField {
 
 						if (value != null && !value.isEmpty()) {
 
-							restriction = true;
-							max_length = value;
+							try {
+
+								int i = Integer.parseInt(value);
+
+								if (i > 0) {
+
+									restriction = true;
+
+									if (max_length == null)
+										max_length = value;
+
+									else if (i > Integer.valueOf(max_length))
+										max_length = value;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
 
 						}
 
@@ -988,8 +1038,36 @@ public class PgField {
 
 						if (value != null && !value.isEmpty()) {
 
-							restriction = true;
-							max_inclusive = value;
+							try {
+
+								BigDecimal new_value = new BigDecimal(value);
+
+								restriction = true;
+
+								if (max_inclusive == null)
+									max_inclusive = value;
+
+								else {
+
+									BigDecimal old_value = new BigDecimal(max_inclusive);
+
+									if (new_value.compareTo(old_value) > 0)
+										max_inclusive = value;
+
+								}
+
+								if (max_exclusive != null) {
+
+									BigDecimal inc_value = new BigDecimal(max_inclusive);
+									BigDecimal exc_value = new BigDecimal(max_exclusive);
+
+									if (inc_value.compareTo(exc_value) < 0)
+										max_inclusive = null;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
 
 						}
 
@@ -1003,8 +1081,36 @@ public class PgField {
 
 						if (value != null && !value.isEmpty()) {
 
-							restriction = true;
-							max_exclusive = value;
+							try {
+
+								BigDecimal new_value = new BigDecimal(value);
+
+								restriction = true;
+
+								if (max_exclusive == null)
+									max_exclusive = value;
+
+								else {
+
+									BigDecimal old_value = new BigDecimal(max_inclusive);
+
+									if (new_value.compareTo(old_value) > 0)
+										max_exclusive = value;
+
+								}
+
+								if (max_inclusive != null) {
+
+									BigDecimal inc_value = new BigDecimal(max_inclusive);
+									BigDecimal exc_value = new BigDecimal(max_exclusive);
+
+									if (exc_value.compareTo(inc_value) < 0)
+										max_exclusive = null;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
 
 						}
 
@@ -1018,8 +1124,36 @@ public class PgField {
 
 						if (value != null && !value.isEmpty()) {
 
-							restriction = true;
-							min_exclusive = value;
+							try {
+
+								BigDecimal new_value = new BigDecimal(value);
+
+								restriction = true;
+
+								if (min_exclusive == null)
+									min_exclusive = value;
+
+								else {
+
+									BigDecimal old_value = new BigDecimal(max_inclusive);
+
+									if (new_value.compareTo(old_value) < 0)
+										min_exclusive = value;
+
+								}
+
+								if (min_inclusive != null) {
+
+									BigDecimal inc_value = new BigDecimal(min_inclusive);
+									BigDecimal exc_value = new BigDecimal(min_exclusive);
+
+									if (exc_value.compareTo(inc_value) > 0)
+										min_exclusive = null;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
 
 						}
 
@@ -1033,8 +1167,36 @@ public class PgField {
 
 						if (value != null && !value.isEmpty()) {
 
-							restriction = true;
-							min_inclusive = value;
+							try {
+
+								BigDecimal new_value = new BigDecimal(value);
+
+								restriction = true;
+
+								if (min_inclusive == null)
+									min_inclusive = value;
+
+								else {
+
+									BigDecimal old_value = new BigDecimal(max_inclusive);
+
+									if (new_value.compareTo(old_value) < 0)
+										min_inclusive = value;
+
+								}
+
+								if (min_exclusive != null) {
+
+									BigDecimal inc_value = new BigDecimal(min_inclusive);
+									BigDecimal exc_value = new BigDecimal(min_exclusive);
+
+									if (inc_value.compareTo(exc_value) > 0)
+										min_inclusive = null;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
 
 						}
 
@@ -1048,8 +1210,24 @@ public class PgField {
 
 						if (value != null && !value.isEmpty()) {
 
-							restriction = true;
-							total_digits = value;
+							try {
+
+								int i = Integer.parseInt(value);
+
+								if (i > 0) {
+
+									restriction = true;
+
+									if (total_digits == null)
+										total_digits = value;
+
+									else if (i > Integer.valueOf(total_digits))
+										total_digits = value;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
 
 						}
 
@@ -1063,8 +1241,24 @@ public class PgField {
 
 						if (value != null && !value.isEmpty()) {
 
-							restriction = true;
-							fraction_digits = value;
+							try {
+
+								int i = Integer.parseInt(value);
+
+								if (i >= 0) {
+
+									restriction = true;
+
+									if (fraction_digits == null)
+										fraction_digits = value;
+
+									else if (i > Integer.valueOf(fraction_digits))
+										fraction_digits = value;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
 
 						}
 
@@ -1078,8 +1272,12 @@ public class PgField {
 
 						if (value != null && !value.isEmpty()) {
 
-							restriction = true;
-							white_space = value;
+							if (value.equals("replace") || value.equals("collapse")) {
+
+								restriction = true;
+								white_space = value;
+
+							}
 
 						}
 

@@ -605,26 +605,26 @@ public enum XsDataType {
 
 				}
 
-				if (field.max_exclusive != null) {
-
-					try {
-
-						float f = Float.parseFloat(field.max_exclusive);
-
-						check.append(name + " < " + f + " AND ");
-
-					} catch (NumberFormatException e) {
-					}
-
-				}
-
-				else if (field.max_inclusive != null) {
+				if (field.max_inclusive != null) {
 
 					try {
 
 						float f = Float.parseFloat(field.max_inclusive);
 
 						check.append(name + " <= " + f + " AND ");
+
+					} catch (NumberFormatException e) {
+					}
+
+				}
+
+				else if (field.max_exclusive != null) {
+
+					try {
+
+						float f = Float.parseFloat(field.max_exclusive);
+
+						check.append(name + " < " + f + " AND ");
 
 					} catch (NumberFormatException e) {
 					}
@@ -669,26 +669,26 @@ public enum XsDataType {
 
 				}
 
-				if (field.max_exclusive != null) {
-
-					try {
-
-						double d = Double.parseDouble(field.max_exclusive);
-
-						check.append(name + " < " + d + " AND ");
-
-					} catch (NumberFormatException e) {
-					}
-
-				}
-
-				else if (field.max_inclusive != null) {
+				if (field.max_inclusive != null) {
 
 					try {
 
 						double d = Double.parseDouble(field.max_inclusive);
 
 						check.append(name + " <= " + d + " AND ");
+
+					} catch (NumberFormatException e) {
+					}
+
+				}
+
+				else if (field.max_exclusive != null) {
+
+					try {
+
+						double d = Double.parseDouble(field.max_exclusive);
+
+						check.append(name + " < " + d + " AND ");
 
 					} catch (NumberFormatException e) {
 					}
@@ -733,26 +733,26 @@ public enum XsDataType {
 
 				}
 
-				if (field.max_exclusive != null) {
-
-					try {
-
-						BigDecimal bd = new BigDecimal(field.max_exclusive);
-
-						check.append(name + " < " + bd + " AND ");
-
-					} catch (NumberFormatException e) {
-					}
-
-				}
-
-				else if (field.max_inclusive != null) {
+				if (field.max_inclusive != null) {
 
 					try {
 
 						BigDecimal bd = new BigDecimal(field.max_inclusive);
 
 						check.append(name + " <= " + bd + " AND ");
+
+					} catch (NumberFormatException e) {
+					}
+
+				}
+
+				else if (field.max_exclusive != null) {
+
+					try {
+
+						BigDecimal bd = new BigDecimal(field.max_exclusive);
+
+						check.append(name + " < " + bd + " AND ");
 
 					} catch (NumberFormatException e) {
 					}
@@ -798,26 +798,26 @@ public enum XsDataType {
 
 				}
 
-				if (field.max_exclusive != null) {
-
-					try {
-
-						int i = Integer.parseInt(field.max_exclusive);
-
-						check.append(name + " < " + i + " AND ");
-
-					} catch (NumberFormatException e) {
-					}
-
-				}
-
-				else if (field.max_inclusive != null) {
+				if (field.max_inclusive != null) {
 
 					try {
 
 						int i = Integer.parseInt(field.max_inclusive);
 
 						check.append(name + " <= " + i + " AND ");
+
+					} catch (NumberFormatException e) {
+					}
+
+				}
+
+				else if (field.max_exclusive != null) {
+
+					try {
+
+						int i = Integer.parseInt(field.max_exclusive);
+
+						check.append(name + " < " + i + " AND ");
 
 					} catch (NumberFormatException e) {
 					}
@@ -877,26 +877,26 @@ public enum XsDataType {
 
 				}
 
-				if (field.max_exclusive != null) {
-
-					try {
-
-						long l = Long.parseLong(field.max_exclusive);
-
-						check.append(name + " < " + l + " AND ");
-
-					} catch (NumberFormatException e) {
-					}
-
-				}
-
-				else if (field.max_inclusive != null) {
+				if (field.max_inclusive != null) {
 
 					try {
 
 						long l = Long.parseLong(field.max_inclusive);
 
 						check.append(name + " <= " + l + " AND ");
+
+					} catch (NumberFormatException e) {
+					}
+
+				}
+
+				else if (field.max_exclusive != null) {
+
+					try {
+
+						long l = Long.parseLong(field.max_exclusive);
+
+						check.append(name + " < " + l + " AND ");
 
 					} catch (NumberFormatException e) {
 					}
@@ -956,26 +956,26 @@ public enum XsDataType {
 
 				}
 
-				if (field.max_exclusive != null) {
-
-					try {
-
-						short s = Short.parseShort(field.max_exclusive);
-
-						check.append(name + " < " + s + " AND ");
-
-					} catch (NumberFormatException e) {
-					}
-
-				}
-
-				else if (field.max_inclusive != null) {
+				if (field.max_inclusive != null) {
 
 					try {
 
 						short s = Short.parseShort(field.max_inclusive);
 
 						check.append(name + " <= " + s + " AND ");
+
+					} catch (NumberFormatException e) {
+					}
+
+				}
+
+				else if (field.max_exclusive != null) {
+
+					try {
+
+						short s = Short.parseShort(field.max_exclusive);
+
+						check.append(name + " < " + s + " AND ");
 
 					} catch (NumberFormatException e) {
 					}
@@ -1036,14 +1036,14 @@ public enum XsDataType {
 
 					}
 
-					if (field.max_exclusive != null) {
+					if (field.max_inclusive != null) {
 
 						try {
 
-							int i = Integer.parseInt(field.max_exclusive);
+							int i = Integer.parseInt(field.max_inclusive);
 
-							if (i < 1)
-								check.append(name + " < " + i + " AND ");
+							if (i < 0)
+								check.append(name + " <= " + i + " AND ");
 							else
 								check.append(name + " <= 0 AND ");
 
@@ -1053,14 +1053,14 @@ public enum XsDataType {
 
 					}
 
-					else if (field.max_inclusive != null) {
+					else if (field.max_exclusive != null) {
 
 						try {
 
-							int i = Integer.parseInt(field.max_inclusive);
+							int i = Integer.parseInt(field.max_exclusive);
 
-							if (i < 0)
-								check.append(name + " <= " + i + " AND ");
+							if (i < 1)
+								check.append(name + " < " + i + " AND ");
 							else
 								check.append(name + " <= 0 AND ");
 
@@ -1112,14 +1112,14 @@ public enum XsDataType {
 
 					}
 
-					if (field.max_exclusive != null) {
+					if (field.max_inclusive != null) {
 
 						try {
 
-							int i = Integer.parseInt(field.max_exclusive);
+							int i = Integer.parseInt(field.max_inclusive);
 
-							if (i < 0)
-								check.append(name + " < " + i + " AND ");
+							if (i < -1)
+								check.append(name + " <= " + i + " AND ");
 							else
 								check.append(name + " < 0 AND ");
 
@@ -1129,14 +1129,14 @@ public enum XsDataType {
 
 					}
 
-					else if (field.max_inclusive != null) {
+					else if (field.max_exclusive != null) {
 
 						try {
 
-							int i = Integer.parseInt(field.max_inclusive);
+							int i = Integer.parseInt(field.max_exclusive);
 
-							if (i < -1)
-								check.append(name + " <= " + i + " AND ");
+							if (i < 0)
+								check.append(name + " < " + i + " AND ");
 							else
 								check.append(name + " < 0 AND ");
 
@@ -1200,26 +1200,26 @@ public enum XsDataType {
 					else
 						check.append(name + " >= 0 AND ");
 
-					if (field.max_exclusive != null) {
-
-						try {
-
-							int i = Integer.parseInt(field.max_exclusive);
-
-							check.append(name + " < " + i + " AND ");
-
-						} catch (NumberFormatException e) {
-						}
-
-					}
-
-					else if (field.max_inclusive != null) {
+					if (field.max_inclusive != null) {
 
 						try {
 
 							int i = Integer.parseInt(field.max_inclusive);
 
 							check.append(name + " <= " + i + " AND ");
+
+						} catch (NumberFormatException e) {
+						}
+
+					}
+
+					else if (field.max_exclusive != null) {
+
+						try {
+
+							int i = Integer.parseInt(field.max_exclusive);
+
+							check.append(name + " < " + i + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -1290,26 +1290,26 @@ public enum XsDataType {
 					else
 						check.append(name + " > 0 AND ");
 
-					if (field.max_exclusive != null) {
-
-						try {
-
-							int i = Integer.parseInt(field.max_exclusive);
-
-							check.append(name + " < " + i + " AND ");
-
-						} catch (NumberFormatException e) {
-						}
-
-					}
-
-					else if (field.max_inclusive != null) {
+					if (field.max_inclusive != null) {
 
 						try {
 
 							int i = Integer.parseInt(field.max_inclusive);
 
 							check.append(name + " <= " + i + " AND ");
+
+						} catch (NumberFormatException e) {
+						}
+
+					}
+
+					else if (field.max_exclusive != null) {
+
+						try {
+
+							int i = Integer.parseInt(field.max_exclusive);
+
+							check.append(name + " < " + i + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -1380,26 +1380,26 @@ public enum XsDataType {
 					else
 						check.append(name + " >= 0 AND ");
 
-					if (field.max_exclusive != null) {
-
-						try {
-
-							long l = Long.parseLong(field.max_exclusive);
-
-							check.append(name + " < " + l + " AND ");
-
-						} catch (NumberFormatException e) {
-						}
-
-					}
-
-					else if (field.max_inclusive != null) {
+					if (field.max_inclusive != null) {
 
 						try {
 
 							long l = Long.parseLong(field.max_inclusive);
 
 							check.append(name + " <= " + l + " AND ");
+
+						} catch (NumberFormatException e) {
+						}
+
+					}
+
+					else if (field.max_exclusive != null) {
+
+						try {
+
+							long l = Long.parseLong(field.max_exclusive);
+
+							check.append(name + " < " + l + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -1471,26 +1471,26 @@ public enum XsDataType {
 					else
 						check.append(name + " >= 0 AND ");
 
-					if (field.max_exclusive != null) {
-
-						try {
-
-							short s = Short.parseShort(field.max_exclusive);
-
-							check.append(name + " < " + s + " AND ");
-
-						} catch (NumberFormatException e) {
-						}
-
-					}
-
-					else if (field.max_inclusive != null) {
+					if (field.max_inclusive != null) {
 
 						try {
 
 							short s = Short.parseShort(field.max_inclusive);
 
 							check.append(name + " <= " + s + " AND ");
+
+						} catch (NumberFormatException e) {
+						}
+
+					}
+
+					else if (field.max_exclusive != null) {
+
+						try {
+
+							short s = Short.parseShort(field.max_exclusive);
+
+							check.append(name + " < " + s + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -1845,16 +1845,33 @@ public enum XsDataType {
 		case xs_bigint:
 		case xs_short:
 		case xs_byte:
-			if (field.max_exclusive != null)
-				return field.max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
-			else if (field.max_inclusive != null)
+			if (field.max_inclusive != null)
 				return field.max_inclusive;
+			else if (field.max_exclusive != null)
+				return field.max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
 			break;
 		case xs_nonPositiveInteger:
 			if (!field.restriction)
 				return "0";
 
-			if (field.max_exclusive != null) {
+			if (field.max_inclusive != null) {
+
+				try {
+
+					int i = Integer.parseInt(field.max_inclusive);
+
+					if (i < 0)
+						return field.max_inclusive;
+					else
+						return "0";
+
+				} catch (NumberFormatException e) {
+					return "0";
+				}
+
+			}
+
+			else if (field.max_exclusive != null) {
 
 				try {
 
@@ -1871,47 +1888,13 @@ public enum XsDataType {
 
 			}
 
-			else if (field.max_inclusive != null) {
-
-				try {
-
-					int i = Integer.parseInt(field.max_inclusive);
-
-					if (i < 0)
-						return field.max_inclusive;
-					else
-						return "0";
-
-				} catch (NumberFormatException e) {
-					return "0";
-				}
-
-			}
-
 			else
 				return "0";
 		case xs_negativeInteger:
 			if (!field.restriction)
 				return "0," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
 
-			if (field.max_exclusive != null) {
-
-				try {
-
-					int i = Integer.parseInt(field.max_exclusive);
-
-					if (i < 0)
-						return i + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
-					else
-						return "0," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
-
-				} catch (NumberFormatException e) {
-					return "0," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
-				}
-
-			}
-
-			else if (field.max_inclusive != null) {
+			if (field.max_inclusive != null) {
 
 				try {
 
@@ -1928,6 +1911,23 @@ public enum XsDataType {
 
 			}
 
+			else if (field.max_exclusive != null) {
+
+				try {
+
+					int i = Integer.parseInt(field.max_exclusive);
+
+					if (i < 0)
+						return i + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+					else
+						return "0," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+
+				} catch (NumberFormatException e) {
+					return "0," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+				}
+
+			}
+
 			else
 				return "0," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
 		case xs_nonNegativeInteger:
@@ -1935,26 +1935,26 @@ public enum XsDataType {
 			if (!field.restriction)
 				return null;
 
-			if (field.max_exclusive != null) {
-
-				try {
-
-					Integer.parseInt(field.max_exclusive);
-
-					return field.max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
-
-				} catch (NumberFormatException e) {
-				}
-
-			}
-
-			else if (field.max_inclusive != null) {
+			if (field.max_inclusive != null) {
 
 				try {
 
 					Integer.parseInt(field.max_inclusive);
 
 					return field.max_inclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			else if (field.max_exclusive != null) {
+
+				try {
+
+					Integer.parseInt(field.max_exclusive);
+
+					return field.max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
 
 				} catch (NumberFormatException e) {
 				}
@@ -1979,26 +1979,26 @@ public enum XsDataType {
 			if (!field.restriction)
 				return null;
 
-			if (field.max_exclusive != null) {
-
-				try {
-
-					Integer.parseInt(field.max_exclusive);
-
-					return field.max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
-
-				} catch (NumberFormatException e) {
-				}
-
-			}
-
-			else if (field.max_inclusive != null) {
+			if (field.max_inclusive != null) {
 
 				try {
 
 					Integer.parseInt(field.max_inclusive);
 
 					return field.max_inclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			else if (field.max_exclusive != null) {
+
+				try {
+
+					Integer.parseInt(field.max_exclusive);
+
+					return field.max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
 
 				} catch (NumberFormatException e) {
 				}
@@ -2023,26 +2023,26 @@ public enum XsDataType {
 			if (!field.restriction)
 				return null;
 
-			if (field.max_exclusive != null) {
-
-				try {
-
-					Long.parseLong(field.max_exclusive);
-
-					return field.max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
-
-				} catch (NumberFormatException e) {
-				}
-
-			}
-
-			else if (field.max_inclusive != null) {
+			if (field.max_inclusive != null) {
 
 				try {
 
 					Long.parseLong(field.max_inclusive);
 
 					return field.max_inclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			else if (field.max_exclusive != null) {
+
+				try {
+
+					Long.parseLong(field.max_exclusive);
+
+					return field.max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
 
 				} catch (NumberFormatException e) {
 				}
@@ -2068,26 +2068,26 @@ public enum XsDataType {
 			if (!field.restriction)
 				return null;
 
-			if (field.max_exclusive != null) {
-
-				try {
-
-					Short.parseShort(field.max_exclusive);
-
-					return field.max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
-
-				} catch (NumberFormatException e) {
-				}
-
-			}
-
-			else if (field.max_inclusive != null) {
+			if (field.max_inclusive != null) {
 
 				try {
 
 					Short.parseShort(field.max_inclusive);
 
 					return field.max_inclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			else if (field.max_exclusive != null) {
+
+				try {
+
+					Short.parseShort(field.max_exclusive);
+
+					return field.max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
 
 				} catch (NumberFormatException e) {
 				}
@@ -2447,6 +2447,13 @@ public enum XsDataType {
 	 * @return boolean whether content is valid
 	 */
 	public static boolean isValid(PgField field, String value) {
+
+		if (field.restriction && field.min_length != null) {
+
+			if (value.length() < Integer.valueOf(field.min_length))
+				return false;
+
+		}
 
 		switch (field.xs_type) {
 		case xs_boolean:
