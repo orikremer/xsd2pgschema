@@ -468,7 +468,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			break;
 		default:
 			ps.setString(param_id, key_name);
-			break;
 		}
 
 		occupied[field_id] = true;

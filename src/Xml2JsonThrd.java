@@ -89,13 +89,13 @@ public class Xml2JsonThrd implements Runnable {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getName(xml2json.schema_location), option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(xml2json.schema_location), option);
 
 		schema.initJsonBuilder(jsonb_option);
 
 		// prepare XML validator
 
-		validator = option.validate ? new XmlValidator(PgSchemaUtil.getFile(xml2json.schema_location, null)) : null;
+		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2json.schema_location, null)) : null;
 
 	}
 

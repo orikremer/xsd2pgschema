@@ -96,11 +96,11 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getName(xml2pgsql.schema_location), option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(xml2pgsql.schema_location), option);
 
 		// prepare XML validator
 
-		validator = option.validate ? new XmlValidator(PgSchemaUtil.getFile(xml2pgsql.schema_location, null)) : null;
+		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2pgsql.schema_location, null)) : null;
 
 		db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.password);
 

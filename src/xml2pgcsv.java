@@ -219,7 +219,7 @@ public class xml2pgcsv {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getInputStream(schema_location, null);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
 		if (is == null)
 			showUsage();
@@ -268,7 +268,7 @@ public class xml2pgcsv {
 			try {
 
 				if (thrd_id > 0)
-					is = PgSchemaUtil.getInputStream(schema_location, null);
+					is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
 				proc_thrd[thrd_id] = new Xml2PgCsvThrd(thrd_id, max_thrds, is, csv_dir_name, option, pg_option);
 

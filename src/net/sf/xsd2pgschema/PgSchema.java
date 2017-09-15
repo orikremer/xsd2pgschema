@@ -234,13 +234,13 @@ public class PgSchema {
 
 		PgSchema _root_schema = root_schema == null ? this : root_schema;
 
-		def_schema_parent = root_schema == null ? PgSchemaUtil.getParent(def_schema_location) : root_schema.def_schema_parent;
+		def_schema_parent = root_schema == null ? PgSchemaUtil.getSchemaParent(def_schema_location) : root_schema.def_schema_parent;
 
 		this.def_schema_location = def_schema_location;
 
 		schema_locations = new HashSet<String>();
 
-		schema_locations.add(PgSchemaUtil.getFileName(def_schema_location));
+		schema_locations.add(PgSchemaUtil.getSchemaFileName(def_schema_location));
 
 		attr_groups = new ArrayList<PgTable>();
 
@@ -259,7 +259,7 @@ public class PgSchema {
 				Element e = (Element) child;
 
 				String schema_location = e.getAttribute("schemaLocation");
-				String schema_file_name = PgSchemaUtil.getFileName(schema_location);
+				String schema_file_name = PgSchemaUtil.getSchemaFileName(schema_location);
 
 				if (schema_location != null && !schema_location.isEmpty()) {
 
@@ -270,11 +270,11 @@ public class PgSchema {
 
 					_root_schema.schema_locations.add(schema_file_name);
 
-					PgSchemaUtil.copyFileIfNotExist(schema_location, def_schema_parent);
+					PgSchemaUtil.copySchemaFileIfNotExist(schema_location, def_schema_parent);
 
 					// local XML Schema file
 
-					InputStream is2 = PgSchemaUtil.getInputStream(schema_location, def_schema_parent);
+					InputStream is2 = PgSchemaUtil.getSchemaInputStream(schema_location, def_schema_parent);
 
 					if (is2 == null)
 						throw new PgSchemaException("Could not access to schema location: " + schema_location);
@@ -287,7 +287,7 @@ public class PgSchema {
 
 						// referred XML Schema (xs:include|xs:import/@schemaLocation) analysis
 
-						PgSchema schema2 = new PgSchema(doc_builder, doc2, _root_schema, PgSchemaUtil.getName(schema_location), option);
+						PgSchema schema2 = new PgSchema(doc_builder, doc2, _root_schema, PgSchemaUtil.getSchemaName(schema_location), option);
 
 						// add schema location to prevent infinite cyclic reference
 
@@ -5634,7 +5634,7 @@ public class PgSchema {
 
 			if (abs_path) {
 
-				if (!matchesNodeName(root_table.name, text, wild_card))
+				if (!PgSchemaUtil.matchesNodeName(root_table.name, text, wild_card))
 					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
 
 				if (inc_self)
@@ -5644,7 +5644,7 @@ public class PgSchema {
 
 			else {
 
-				tables.stream().filter(table -> matchesNodeName(table.name, text, wild_card) && !table.virtual).forEach(table -> {
+				tables.stream().filter(table -> PgSchemaUtil.matchesNodeName(table.name, text, wild_card) && !table.virtual).forEach(table -> {
 
 					String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
 
@@ -5664,7 +5664,7 @@ public class PgSchema {
 
 				for (PgTable table : tables) {
 
-					table.fields.stream().filter(field -> matchesNodeName(field.xname, text, wild_card) && field.element).forEach(field -> {
+					table.fields.stream().filter(field -> PgSchemaUtil.matchesNodeName(field.xname, text, wild_card) && field.element).forEach(field -> {
 
 						String elem_xpath = getAbsoluteXPathOfElement(table, field.xname);
 
@@ -5692,7 +5692,7 @@ public class PgSchema {
 
 				XPathCompList _list = new XPathCompList();
 
-				String cur_table = getTableNameOfPath(path_expr.path);
+				String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
 
 				// not specified table
 
@@ -5700,14 +5700,14 @@ public class PgSchema {
 
 					if (abs_path) {
 
-						if (matchesNodeName(root_table.name, text, wild_card) && inc_self)
+						if (PgSchemaUtil.matchesNodeName(root_table.name, text, wild_card) && inc_self)
 							_list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, new StringBuilder()), XPathCompType.table));
 
 					}
 
 					else {
 
-						tables.stream().filter(table -> matchesNodeName(table.name, text, wild_card) && !table.virtual).forEach(table -> {
+						tables.stream().filter(table -> PgSchemaUtil.matchesNodeName(table.name, text, wild_card) && !table.virtual).forEach(table -> {
 
 							String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
 
@@ -5727,7 +5727,7 @@ public class PgSchema {
 
 						for (PgTable table : tables) {
 
-							table.fields.stream().filter(field -> matchesNodeName(field.xname, text, wild_card) && field.element).forEach(field -> {
+							table.fields.stream().filter(field -> PgSchemaUtil.matchesNodeName(field.xname, text, wild_card) && field.element).forEach(field -> {
 
 								String elem_xpath = getAbsoluteXPathOfElement(table, field.xname);
 
@@ -5768,7 +5768,7 @@ public class PgSchema {
 
 					// check current element
 
-					table.fields.stream().filter(field -> field.element && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+					table.fields.stream().filter(field -> field.element && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 						String elem_xpath = field.xname;
 
@@ -5792,7 +5792,7 @@ public class PgSchema {
 
 							// check foreign table
 
-							if (matchesNodeName(foreign_table.name, text, wild_card) && !foreign_table.virtual) {
+							if (PgSchemaUtil.matchesNodeName(foreign_table.name, text, wild_card) && !foreign_table.virtual) {
 
 								String table_xpath = getAbsoluteXPathOfTable(foreign_table, new StringBuilder());
 
@@ -5812,7 +5812,7 @@ public class PgSchema {
 
 							// check foreign element
 
-							foreign_table.fields.stream().filter(field -> field.element && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+							foreign_table.fields.stream().filter(field -> field.element && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 								String elem_xpath = getAbsoluteXPathOfElement(foreign_table, field.xname);
 
@@ -5884,7 +5884,7 @@ public class PgSchema {
 
 				for (PgTable table : tables) {
 
-					table.fields.stream().filter(field -> matchesNodeName(field.xname, text, wild_card) && field.attribute).forEach(field -> {
+					table.fields.stream().filter(field -> PgSchemaUtil.matchesNodeName(field.xname, text, wild_card) && field.attribute).forEach(field -> {
 
 						String attr_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
 
@@ -5914,7 +5914,7 @@ public class PgSchema {
 
 				XPathCompList _list = new XPathCompList();
 
-				String cur_table = getTableNameOfPath(path_expr.path);
+				String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
 
 				// not specified table
 
@@ -5924,7 +5924,7 @@ public class PgSchema {
 
 						for (PgTable table : tables) {
 
-							table.fields.stream().filter(field -> matchesNodeName(field.xname, text, wild_card) && field.attribute).forEach(field -> {
+							table.fields.stream().filter(field -> PgSchemaUtil.matchesNodeName(field.xname, text, wild_card) && field.attribute).forEach(field -> {
 
 								String attr_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
 
@@ -5965,7 +5965,7 @@ public class PgSchema {
 
 					// check current attribute
 
-					table.fields.stream().filter(field -> field.attribute && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+					table.fields.stream().filter(field -> field.attribute && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 						String attr_xpath = "@" + field.xname;
 
@@ -5987,7 +5987,7 @@ public class PgSchema {
 
 							// check foreign attribute
 
-							foreign_table.fields.stream().filter(field -> field.attribute && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+							foreign_table.fields.stream().filter(field -> field.attribute && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 								String attr_xpath = getAbsoluteXPathOfAttribute(foreign_table, field.xname);
 
@@ -6203,7 +6203,7 @@ public class PgSchema {
 
 				XPathCompList _list = new XPathCompList();
 
-				String cur_table = getTableNameOfPath(path_expr.path);
+				String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
 
 				// not specified table
 
@@ -6421,7 +6421,7 @@ public class PgSchema {
 
 				XPathCompList _list = new XPathCompList();
 
-				String cur_table = getTableNameOfPath(path_expr.path);
+				String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
 
 				// not specified table
 
@@ -6732,7 +6732,7 @@ public class PgSchema {
 
 			if (abs_path) {
 
-				if (!root_table.target_namespace.contains(namespace_uri) || !matchesNodeName(root_table.name, text, wild_card))
+				if (!root_table.target_namespace.contains(namespace_uri) || !PgSchemaUtil.matchesNodeName(root_table.name, text, wild_card))
 					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
 
 				if (inc_self)
@@ -6742,14 +6742,14 @@ public class PgSchema {
 
 			else {
 
-				tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri) && matchesNodeName(table.name, text, wild_card)).forEach(table -> {
+				tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(table.name, text, wild_card)).forEach(table -> {
 
 					String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
 
 					if (table_xpath != null && inc_self)
 						list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
-					if (table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && matchesNodeName(field.xname, text, wild_card))) {
+					if (table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card))) {
 
 						String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(table);
 
@@ -6762,7 +6762,7 @@ public class PgSchema {
 
 				for (PgTable table : tables) {
 
-					table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+					table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 						String elem_xpath = getAbsoluteXPathOfElement(table, field.xname);
 
@@ -6790,7 +6790,7 @@ public class PgSchema {
 
 				XPathCompList _list = new XPathCompList();
 
-				String cur_table = getTableNameOfPath(path_expr.path);
+				String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
 
 				// not specified table
 
@@ -6798,21 +6798,21 @@ public class PgSchema {
 
 					if (abs_path) {
 
-						if (inc_self && root_table.target_namespace.contains(namespace_uri) && matchesNodeName(root_table.name, text, wild_card))
+						if (inc_self && root_table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(root_table.name, text, wild_card))
 							_list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, new StringBuilder()), XPathCompType.table));
 
 					}
 
 					else {
 
-						tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri) && matchesNodeName(table.name, text, wild_card)).forEach(table -> {
+						tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(table.name, text, wild_card)).forEach(table -> {
 
 							String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
 
 							if (table_xpath != null && inc_self)
 								_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
-							table.fields.stream().filter(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+							table.fields.stream().filter(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 								String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(table);
 
@@ -6825,7 +6825,7 @@ public class PgSchema {
 
 						for (PgTable table : tables) {
 
-							table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+							table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 								String elem_xpath = getAbsoluteXPathOfElement(table, field.xname);
 
@@ -6866,7 +6866,7 @@ public class PgSchema {
 
 					// check current element
 
-					table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+					table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 						String elem_xpath = field.xname;
 
@@ -6890,14 +6890,14 @@ public class PgSchema {
 
 							// check foreign table
 
-							if (!foreign_table.virtual && foreign_table.target_namespace.contains(namespace_uri) && matchesNodeName(foreign_table.name, text, wild_card)) {
+							if (!foreign_table.virtual && foreign_table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(foreign_table.name, text, wild_card)) {
 
 								String table_xpath = getAbsoluteXPathOfTable(foreign_table, new StringBuilder());
 
 								if (table_xpath != null && (inc_self || _foreign_table_ids == null))
 									_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
-								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && matchesNodeName(field.xname, text, wild_card))) {
+								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card))) {
 
 									String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(foreign_table);
 
@@ -6910,7 +6910,7 @@ public class PgSchema {
 
 							// check foreign element
 
-							foreign_table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+							foreign_table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 								String elem_xpath = getAbsoluteXPathOfElement(foreign_table, field.xname);
 
@@ -6984,7 +6984,7 @@ public class PgSchema {
 
 				for (PgTable table : tables) {
 
-					table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+					table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 						String attr_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
 
@@ -7014,7 +7014,7 @@ public class PgSchema {
 
 				XPathCompList _list = new XPathCompList();
 
-				String cur_table = getTableNameOfPath(path_expr.path);
+				String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
 
 				// not specified table
 
@@ -7024,7 +7024,7 @@ public class PgSchema {
 
 						for (PgTable table : tables) {
 
-							table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+							table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 								String attr_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
 
@@ -7065,7 +7065,7 @@ public class PgSchema {
 
 					// check current attribute
 
-					table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+					table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 						String attr_xpath = "@" + field.xname;
 
@@ -7087,7 +7087,7 @@ public class PgSchema {
 
 							// check foreign attribute
 
-							foreign_table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
+							foreign_table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 								String attr_xpath = getAbsoluteXPathOfAttribute(foreign_table, field.xname);
 
@@ -7247,40 +7247,6 @@ public class PgSchema {
 		if (pred_size == list.predicates.size()) // invalid predicate
 			throw new PgSchemaException(comp.tree, def_schema_location);
 
-	}
-
-	/**
-	 * Return whether node name matches.
-	 *
-	 * @param node_name node name
-	 * @param prefix prefix text
-	 * @param wild_card whether wild card follows or not
-	 * @return boolean whether node name matches
-	 */
-	protected boolean matchesNodeName(String node_name, String prefix, boolean wild_card) {
-
-		if (wild_card)
-			return node_name.matches(prefix);
-
-		return prefix.equals("*") || node_name.equals(prefix);
-	}
-
-	/**
-	 * Return table name of current path.
-	 *
-	 * @param path current path
-	 * @return String current table name
-	 */
-	protected String getTableNameOfPath(String path) {
-
-		String[] _path = path.replaceFirst("//$", "").split("/");
-
-		int position = _path.length - 1;
-
-		if (position < 0)
-			return null;
-
-		return _path[position];
 	}
 
 	/**
@@ -7482,13 +7448,16 @@ public class PgSchema {
 		if (!table.virtual)
 			sb.append((sb.length() > 0 ? "/" : "") + table_name);
 
-		for (PgTable parent_table : tables) {
+		for (PgForeignKey foreign_key : foreign_keys) {
 
-			if (parent_table.nested_fields == 0)
+			if (!foreign_key.child_table.equals(table_name))
 				continue;
 
-			if (parent_table.fields.stream().anyMatch(field -> field.nested_key && field.foreign_table.equals(table_name)))
+			PgTable parent_table = getTable(foreign_key.parent_table);
+
+			if (parent_table != null)
 				return getAbsoluteXPathOfTable(parent_table, sb);
+
 		}
 
 		return null;

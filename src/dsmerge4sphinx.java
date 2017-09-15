@@ -87,7 +87,7 @@ public class dsmerge4sphinx {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getInputStream(schema_location, null);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
 		if (is == null)
 			showUsage();
@@ -165,7 +165,7 @@ public class dsmerge4sphinx {
 
 		if (ds_name.isEmpty()) {
 
-			ds_name = PgSchemaUtil.getFileName(schema_location);
+			ds_name = PgSchemaUtil.getSchemaFileName(schema_location);
 
 			String xsd_file_ext = FilenameUtils.getExtension(ds_name);
 
@@ -204,7 +204,7 @@ public class dsmerge4sphinx {
 
 			// XSD analysis
 
-			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getName(schema_location), new PgSchemaOption(false));
+			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(schema_location), new PgSchemaOption(false));
 
 			for (String src_ds_dir_name : src_ds_dir_list) {
 

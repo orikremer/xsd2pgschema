@@ -191,7 +191,7 @@ public class xml2json {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getInputStream(schema_location, null);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
 		if (is == null)
 			showUsage();
@@ -240,7 +240,7 @@ public class xml2json {
 			try {
 
 				if (thrd_id > 0)
-					is = PgSchemaUtil.getInputStream(schema_location, null);
+					is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
 				proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, max_thrds, is, option, jsonb_option);
 

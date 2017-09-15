@@ -93,7 +93,7 @@ public class XPath2PgSqlImpl {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getName(xpath2pgsql.schema_location), option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(xpath2pgsql.schema_location), option);
 
 		if (!pg_option.database.isEmpty()) {
 
@@ -150,7 +150,7 @@ public class XPath2PgSqlImpl {
 		System.out.println("Input XPath query:");
 		System.out.println(" " + main_text);
 
-		System.out.println("\nTarget path in XML Schema: " + PgSchemaUtil.getName(xpath2pgsql.schema_location));
+		System.out.println("\nTarget path in XML Schema: " + PgSchemaUtil.getSchemaName(xpath2pgsql.schema_location));
 		xpath_comp_list.showPathExprs(" ");
 
 		// translate XPath to SQL

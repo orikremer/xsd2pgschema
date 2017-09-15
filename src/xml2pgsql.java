@@ -216,7 +216,7 @@ public class xml2pgsql {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getInputStream(schema_location, null);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
 		if (is == null)
 			showUsage();
@@ -257,7 +257,7 @@ public class xml2pgsql {
 			try {
 
 				if (thrd_id > 0)
-					is = PgSchemaUtil.getInputStream(schema_location, null);
+					is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
 				proc_thrd[thrd_id] = new Xml2PgSqlThrd(thrd_id, max_thrds, is, option, pg_option);
 

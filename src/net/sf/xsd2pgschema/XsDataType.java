@@ -3124,7 +3124,6 @@ public enum XsDataType {
 		default:
 			if (field.attr_sel || xs_type.equals(xs_ID))
 				lucene_doc.add(new TextField(name, value, Field.Store.YES));
-			break;
 		}
 
 		if (min_word_len_filter)
@@ -3273,7 +3272,6 @@ public enum XsDataType {
 						return;
 					writer.write("<" + attr_name + ">" + value + "</" + attr_name + ">\n");
 				}
-				break;
 			}
 
 			if (min_word_len_filter)
@@ -3339,7 +3337,6 @@ public enum XsDataType {
 				break;
 			default:
 				field.jsonb.append(value == null ? "null" : "\"\"");
-				break;
 			}
 
 			field.jsonb.append("," + json_key_value_space);
@@ -3393,7 +3390,6 @@ public enum XsDataType {
 				field.jsonb.append(value);
 			else
 				field.jsonb.append("\"" + value + "\"");
-			break;
 		}
 
 		field.jsonb.append("," + json_key_value_space);
@@ -3457,7 +3453,6 @@ public enum XsDataType {
 		default:
 			if (index_filter.attr_string)
 				index_filter.addAttr(table.name + "." + field.name);
-			break;
 		}
 
 	}

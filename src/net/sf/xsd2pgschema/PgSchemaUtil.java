@@ -140,13 +140,13 @@ public class PgSchemaUtil {
 	public final static String[] reserved_ops_rex = { "\\+", "-", "\\*", "/", "%", "\\^", "\\|/", "\\|\\|/", "!", "!!", "@", "\\&", "\\|", "#", "~", "<<", ">>" };
 
 	/**
-	 * Return input stream of file with gzip decompression.
+	 * Return input stream of XSD file with gzip decompression.
 	 *
 	 * @param  file plane file or gzip compressed file
 	 * @return InputStream input stream of file
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public static InputStream getInputStream(File file) throws IOException {
+	public static InputStream getSchemaInputStream(File file) throws IOException {
 		return FilenameUtils.getExtension(file.getName()).equals("gz") ? new GZIPInputStream(new FileInputStream(file)) : new FileInputStream(file);
 	}
 
@@ -157,7 +157,7 @@ public class PgSchemaUtil {
 	 * @param schema_parent parent of schema location
 	 * @return InputStream input stream of schema location
 	 */
-	public static InputStream getInputStream(String schema_location, String schema_parent) {
+	public static InputStream getSchemaInputStream(String schema_location, String schema_parent) {
 
 		// local XML Schema file
 
@@ -166,7 +166,7 @@ public class PgSchemaUtil {
 			File schema_file = new File(schema_location);
 
 			if (!schema_file.exists() && schema_parent != null)
-				return getInputStream(schema_parent + "/" + getFileName(schema_location), null);
+				return getSchemaInputStream(schema_parent + "/" + getSchemaFileName(schema_location), null);
 
 			try {
 
@@ -252,25 +252,25 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Return file of schema location.
+	 * Return XSD file of schema location.
 	 *
 	 * @param schema_location schema location
 	 * @param schema_parent parent of schema location
 	 * @return File file of schema location
 	 */
-	public static File getFile(String schema_location, String schema_parent) {
+	public static File getSchemaFile(String schema_location, String schema_parent) {
 
 		if (!schema_location.startsWith("http:") && !schema_location.startsWith("https:"))
 			return new File(schema_location);
 
-		String schema_file_name = getFileName(schema_location);
+		String schema_file_name = getSchemaFileName(schema_location);
 
 		File schema_file = new File(schema_file_name);
 
 		if (schema_file.exists())
 			return schema_file;
 
-		InputStream is = getInputStream(schema_location, schema_parent);
+		InputStream is = getSchemaInputStream(schema_location, schema_parent);
 
 		if (is == null)
 			return null;
@@ -289,22 +289,22 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Copy file of schema location in current directory if not exist.
+	 * Copy XSD file of schema location in current directory if not exist.
 	 *
 	 * @param schema_location schema location
 	 * @param schema_parent parent of schema location
 	 * @return File file of schema location
 	 */
-	public static File copyFileIfNotExist(String schema_location, String schema_parent) {
+	public static File copySchemaFileIfNotExist(String schema_location, String schema_parent) {
 
-		String schema_file_name = getFileName(schema_location);
+		String schema_file_name = getSchemaFileName(schema_location);
 
 		File schema_file = new File(schema_file_name);
 
 		if (schema_file.exists())
 			return schema_file;
 
-		InputStream is = getInputStream(schema_location, schema_parent);
+		InputStream is = getSchemaInputStream(schema_location, schema_parent);
 
 		if (is == null)
 			return null;
@@ -322,12 +322,12 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Return name of schema location.
+	 * Return XSD name of schema location.
 	 *
 	 * @param schema_location schema location
 	 * @return String schema location
 	 */
-	public static String getName(String schema_location) {
+	public static String getSchemaName(String schema_location) {
 
 		if (schema_location.startsWith("http:") || schema_location.startsWith("https:"))
 			return schema_location;
@@ -338,12 +338,12 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Return file name of schema location.
+	 * Return XSD file name of schema location.
 	 *
 	 * @param schema_location schema location
 	 * @return String file name of schema location
 	 */
-	public static String getFileName(String schema_location) {
+	public static String getSchemaFileName(String schema_location) {
 
 		if (schema_location.startsWith("http:") || schema_location.startsWith("https:")) {
 
@@ -370,7 +370,7 @@ public class PgSchemaUtil {
 	 * @param schema_location schema location
 	 * @return String parent name of schema location
 	 */
-	public static String getParent(String schema_location) {
+	public static String getSchemaParent(String schema_location) {
 
 		if (schema_location.startsWith("http:") || schema_location.startsWith("https:")) {
 
@@ -611,6 +611,40 @@ public class PgSchemaUtil {
 		});
 
 		return (File[]) files.toArray(new File[0]);
+	}
+
+	/**
+	 * Return whether node name matches.
+	 *
+	 * @param node_name node name
+	 * @param prefix prefix text
+	 * @param wild_card whether wild card follows or not
+	 * @return boolean whether node name matches
+	 */
+	public static boolean matchesNodeName(String node_name, String prefix, boolean wild_card) {
+
+		if (wild_card)
+			return node_name.matches(prefix);
+
+		return prefix.equals("*") || node_name.equals(prefix);
+	}
+
+	/**
+	 * Return last name of current path.
+	 *
+	 * @param path current path
+	 * @return String last name of the path
+	 */
+	public static String getLastNameOfPath(String path) {
+
+		String[] _path = path.replaceFirst("//$", "").split("/");
+
+		int position = _path.length - 1;
+
+		if (position < 0)
+			return null;
+
+		return _path[position];
 	}
 
 }

@@ -120,7 +120,7 @@ public class xsd2jsonschema {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getInputStream(schema_location, null);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
 		if (is == null)
 			showUsage();
@@ -156,7 +156,7 @@ public class xsd2jsonschema {
 
 			// XSD analysis
 
-			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getName(schema_location), option);
+			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(schema_location), option);
 
 			schema.initJsonBuilder(jsonb_option);
 

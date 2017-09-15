@@ -1,3 +1,7 @@
+ Changes in xsd2pgschema 2.6.2 (release 2017-09-15)
+
+  Removed duplicating plugin in pom.xml.
+
  Changes in xsd2pgschema 2.6.1 (release 2017-09-08)
 
   Implemented all XPath 1.0 function calls.

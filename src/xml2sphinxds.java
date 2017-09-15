@@ -213,7 +213,7 @@ public class xml2sphinxds {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getInputStream(schema_location, null);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
 		if (is == null)
 			showUsage();
@@ -249,7 +249,7 @@ public class xml2sphinxds {
 
 		if (ds_name.isEmpty()) {
 
-			ds_name = PgSchemaUtil.getFileName(schema_location);
+			ds_name = PgSchemaUtil.getSchemaFileName(schema_location);
 
 			String xsd_file_ext = FilenameUtils.getExtension(ds_name);
 
@@ -282,7 +282,7 @@ public class xml2sphinxds {
 				try {
 
 					if (shard_id > 0 || thrd_id > 0)
-						is = PgSchemaUtil.getInputStream(schema_location, null);
+						is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
 					proc_thrd[_thrd_id] = new Xml2SphinxDsThrd(shard_id, shard_size, thrd_id, max_thrds, is, option);
 

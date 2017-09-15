@@ -134,7 +134,7 @@ public class xsd2pgschema {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getInputStream(schema_location, null);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
 		if (is == null)
 			showUsage();
@@ -170,7 +170,7 @@ public class xsd2pgschema {
 
 			// XSD analysis
 
-			new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getName(schema_location), option);
+			new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(schema_location), option);
 
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -207,7 +207,7 @@ public class xml2luceneidx {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getInputStream(schema_location, null);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
 		if (is == null)
 			showUsage();
@@ -262,7 +262,7 @@ public class xml2luceneidx {
 				try {
 
 					if (shard_id > 0 || thrd_id > 0)
-						is = PgSchemaUtil.getInputStream(schema_location, null);
+						is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
 					proc_thrd[_thrd_id] = new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, max_thrds, is, option);
 

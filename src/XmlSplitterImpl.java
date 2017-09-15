@@ -153,7 +153,7 @@ public class XmlSplitterImpl {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getName(xmlsplitter.schema_location), option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(xmlsplitter.schema_location), option);
 
 		// prepare shard directories
 
@@ -310,7 +310,7 @@ public class XmlSplitterImpl {
 
 				XMLInputFactory in_factory = XMLInputFactory.newInstance();
 
-				InputStream in = PgSchemaUtil.getInputStream(xml_file);
+				InputStream in = PgSchemaUtil.getSchemaInputStream(xml_file);
 
 				XMLEventReader reader = in_factory.createXMLEventReader(in);
 

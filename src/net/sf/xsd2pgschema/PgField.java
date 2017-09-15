@@ -199,11 +199,11 @@ public class PgField {
 	/** The xs:whiteSpace restriction. */
 	String white_space = null;
 
-	/** The xs:assertions restriction.
-	String assertions = null; */
-
 	/** The xs:explicitTimezone restriction. */
 	String explicit_timezone = null;
+
+	/** The xs:assertions restriction.
+	String assertions = null; */
 
 	/** Whether xs:list. */
 	boolean _list = false;
@@ -891,17 +891,21 @@ public class PgField {
 		length = null; // xs:length
 		min_length = null; // xs:minLength
 		max_length = null; // xs:maxLength
+
 		pattern = null; // xs:pattern
+
 		max_inclusive = null; // xs:maxInclusive
 		max_exclusive = null; // xs:maxExclusive
 		min_exclusive = null; // xs:minExclusive
 		min_inclusive = null; // xs:minInclusive
+
 		total_digits = null; // xs:totalDigits
 		fraction_digits = null; // xs:fractionDigits
 
 		white_space = null;
-		// assertions = null;
 		explicit_timezone = null;
+
+		// assertions = null;
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -1283,21 +1287,6 @@ public class PgField {
 
 					}
 
-					else if (enum_node.getNodeName().equals(xs_prefix_ + "assertions")) {
-
-						Element e = (Element) enum_node;
-
-						String value = e.getAttribute("value");
-
-						if (value != null && !value.isEmpty()) {
-
-							// restriction = true;
-							// assertions = value;
-
-						}
-
-					}
-
 					else if (enum_node.getNodeName().equals(xs_prefix_ + "explicitTimezone")) {
 
 						Element e = (Element) enum_node;
@@ -1308,6 +1297,21 @@ public class PgField {
 
 							restriction = true;
 							explicit_timezone = value;
+
+						}
+
+					}
+
+					else if (enum_node.getNodeName().equals(xs_prefix_ + "assertions")) {
+
+						Element e = (Element) enum_node;
+
+						String value = e.getAttribute("value");
+
+						if (value != null && !value.isEmpty()) {
+
+							// restriction = true;
+							// assertions = value;
 
 						}
 
@@ -1350,7 +1354,6 @@ public class PgField {
 		default:
 			type = xs_prefix_ + "string";
 			xs_type = XsDataType.xs_string;
-			break;
 		}
 
 	}
