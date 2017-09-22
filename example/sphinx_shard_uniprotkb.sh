@@ -62,13 +62,17 @@ for dic_name in ${DIC_NAMES[@]} ; do
 
  err_file=$ERR_DIR/all_err
 
- java -classpath ../xsd2pgschema.jar xml2sphinxds --xsd $XSD_SCHEMA --xml $XML_DIR --ds-dir $WORK_DIR --ds-name $PREFIX $attrs $fields --no-valid --shard-size $SHARD_SIZE 2> $err_file
+ java -classpath ../xsd2pgschema.jar xml2sphinxds --xsd $XSD_SCHEMA --xml $XML_DIR --ds-dir $WORK_DIR --ds-name $PREFIX $attrs $fields --shard-size $SHARD_SIZE 2> $err_file
 
  if [ $? = 0 ] && [ ! -s $err_file ] ; then
+
   rm -f $err_file
+
  else
+
   echo "$0 aborted."
   exit 1
+
  fi
 
  red='\e[0;31m'
@@ -85,17 +89,23 @@ for dic_name in ${DIC_NAMES[@]} ; do
    _proc_id=`expr $proc_id - 1`
 
    if [ $dic_name = "all" ] ; then
+
     mkdir -p $IDX_DIR/"part-"$_proc_id -m 777
     indexer $PREFIX"_p"$_proc_id
     indexer $PREFIX"_p"$_proc_id --buildstops $WORK_DIR/dictionary_p$_proc_id.txt 100000 --buildfreqs
+
    else
+
     indexer $PREFIX"_"$dic_name"_p"$_proc_id
     indexer $PREFIX"_"$dic_name"_p"$_proc_id --buildstops $WORK_DIR/dictionary_p$_proc_id.txt 100000 --buildfreqs
+
    fi
 
    if [ $? != 0 ] ; then
+
     echo "$0 aborted."
     exit 1
+
    fi
 
   done
