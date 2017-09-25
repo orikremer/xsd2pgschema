@@ -1,3 +1,7 @@
+ Changes in xsd2pgschema 2.6.3 (release 2017-09-25)
+
+  Updated to support Apache Lucene 7.0.0 or later.
+
  Changes in xsd2pgschema 2.6.2 (release 2017-09-15)
 
   Removed duplicating plugin in pom.xml.

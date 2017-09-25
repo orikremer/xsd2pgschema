@@ -28,7 +28,6 @@ import java.util.List;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.Fields;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.search.spell.Dictionary;
@@ -130,20 +129,19 @@ public class luceneidx2infix {
 
 				for (LeafReaderContext leaf : leaves) {
 
-					Fields fields_in = leaf.reader().fields();
+					for (String field_in : fields) {
 
-					for (String field_in : fields_in) {
+						if (leaf.reader().getDocCount(field_in) > 0) {
 
-						if (!fields.contains(field_in))
-							continue;
+							System.out.println("field: " + field_in);
 
-						System.out.println("field: " + field_in);
+							contains[fields.indexOf(field_in)] = true;
 
-						contains[fields.indexOf(field_in)] = true;
+							Dictionary dictionary = new LuceneDictionary(reader, field_in);
 
-						Dictionary dictionary = new LuceneDictionary(reader, field_in);
+							iters.add(dictionary.getEntryIterator());
 
-						iters.add(dictionary.getEntryIterator());
+						}
 
 					}
 
