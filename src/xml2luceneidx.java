@@ -293,16 +293,6 @@ public class xml2luceneidx {
 
 			}
 
-			try {
-
-				if (max_thrds > 1)
-					proc_thrd[shard_id * max_thrds].merge();
-
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-
 		}
 
 	}

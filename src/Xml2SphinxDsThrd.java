@@ -33,6 +33,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.TransformerException;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -201,68 +202,73 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		schema.closeXml2SphDs();
 
-	}
-
-	/**
-	 * Merge Sphinx data source files.
-	 *
-	 * @param filter file name filter
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws SAXException the SAX exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void merge(final FilenameFilter filter) throws ParserConfigurationException, SAXException, IOException, PgSchemaException {
-
 		if (thrd_id != 0)
 			return;
 
-		// Sphinx xmlpipe2 writer
+		FilenameFilter filter = new FilenameFilter() {
 
-		File sphinx_data_source = new File(ds_dir_name, PgSchemaUtil.sphinx_data_source_name);
-		schema.writeSphSchema(sphinx_data_source, true);
-
-		FileWriter filew = new FileWriter(sphinx_data_source, true);
-
-		SAXParserFactory spf = SAXParserFactory.newInstance();
-		SAXParser sax_parser = spf.newSAXParser();
-
-		System.out.println("Merging" + (shard_size == 1 ? "" : (" " + (shard_id + 1) + " of " + shard_size + " ")) + "...");
-
-		File ds_dir = new File(ds_dir_name);
-
-		for (File sph_doc_file : ds_dir.listFiles(filter)) {
-
-			if (!sph_doc_file.isFile())
-				continue;
-
-			SphDsSAXHandler handler = new SphDsSAXHandler(schema, filew);
-
-			try {
-
-				sax_parser.parse(sph_doc_file, handler);
-
-			} catch (SAXException | IOException e) {
-				e.printStackTrace();
+			public boolean accept(File dir, String name) {
+				return FilenameUtils.getExtension(name).equals("xml") &&
+						name.startsWith(PgSchemaUtil.sphinx_document_prefix) &&
+						!name.equals(PgSchemaUtil.sphinx_schema_name) &&
+						!name.equals(PgSchemaUtil.sphinx_data_source_name);
 			}
 
-			sph_doc_file.delete();
+		};
 
+		// Sphinx xmlpipe2 writer
+
+		try {
+
+			File sphinx_data_source = new File(ds_dir_name, PgSchemaUtil.sphinx_data_source_name);
+			schema.writeSphSchema(sphinx_data_source, true);
+
+			FileWriter filew = new FileWriter(sphinx_data_source, true);
+
+			SAXParserFactory spf = SAXParserFactory.newInstance();
+			SAXParser sax_parser = spf.newSAXParser();
+
+			System.out.println("Merging" + (shard_size == 1 ? "" : (" " + (shard_id + 1) + " of " + shard_size + " ")) + "...");
+
+			File ds_dir = new File(ds_dir_name);
+
+			for (File sph_doc_file : ds_dir.listFiles(filter)) {
+
+				if (!sph_doc_file.isFile())
+					continue;
+
+				SphDsSAXHandler handler = new SphDsSAXHandler(schema, filew);
+
+				try {
+
+					sax_parser.parse(sph_doc_file, handler);
+
+				} catch (SAXException | IOException e) {
+					e.printStackTrace();
+				}
+
+				sph_doc_file.delete();
+
+			}
+
+			filew.write("</sphinx:docset>\n");
+			filew.close();
+
+			System.out.println("Done" + (shard_size == 1 ? "" : (" " + (shard_id + 1) + " of " + shard_size + " ")) + ".");
+
+			// Sphinx schema writer for next update or merge
+
+			schema.writeSphSchema(sphinx_schema, false);
+
+			// Sphinx configuration writer
+
+			File sphinx_conf = new File(ds_dir_name, PgSchemaUtil.sphinx_conf_name);
+			schema.writeSphConf(sphinx_conf, xml2sphinxds.ds_name, sphinx_data_source);
+
+		} catch (PgSchemaException | IOException | ParserConfigurationException | SAXException e) {
+			e.printStackTrace();
+			System.exit(1);
 		}
-
-		filew.write("</sphinx:docset>\n");
-		filew.close();
-
-		System.out.println("Done" + (shard_size == 1 ? "" : (" " + (shard_id + 1) + " of " + shard_size + " ")) + ".");
-
-		// Sphinx schema writer for next update or merge
-
-		schema.writeSphSchema(sphinx_schema, false);
-
-		// Sphinx configuration writer
-
-		File sphinx_conf = new File(ds_dir_name, PgSchemaUtil.sphinx_conf_name);
-		schema.writeSphConf(sphinx_conf, xml2sphinxds.ds_name, sphinx_data_source);
 
 	}
 

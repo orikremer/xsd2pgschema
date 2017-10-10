@@ -295,17 +295,6 @@ public class xml2sphinxds {
 
 		}
 
-		filename_filter = new FilenameFilter() {
-
-			public boolean accept(File dir, String name) {
-				return FilenameUtils.getExtension(name).equals("xml") &&
-						name.startsWith(PgSchemaUtil.sphinx_document_prefix) &&
-						!name.equals(PgSchemaUtil.sphinx_schema_name) &&
-						!name.equals(PgSchemaUtil.sphinx_data_source_name);
-			}
-
-		};
-
 		for (int shard_id = 0; shard_id < shard_size; shard_id++) {
 
 			for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
@@ -322,15 +311,6 @@ public class xml2sphinxds {
 					System.exit(1);
 				}
 
-			}
-
-			try {
-
-				proc_thrd[shard_id * max_thrds].merge(filename_filter);
-
-			} catch (ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
-				e.printStackTrace();
-				System.exit(1);
 			}
 
 		}
