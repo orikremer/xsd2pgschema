@@ -228,7 +228,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 			SAXParserFactory spf = SAXParserFactory.newInstance();
 			SAXParser sax_parser = spf.newSAXParser();
 
-			System.out.println("Merging" + (shard_size == 1 ? "" : (" " + (shard_id + 1) + " of " + shard_size + " ")) + "...");
+			System.out.println("Merging" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
 
 			File ds_dir = new File(ds_dir_name);
 
@@ -254,7 +254,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 			filew.write("</sphinx:docset>\n");
 			filew.close();
 
-			System.out.println("Done" + (shard_size == 1 ? "" : (" " + (shard_id + 1) + " of " + shard_size + " ")) + ".");
+			System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
 
 			// Sphinx schema writer for next update or merge
 

@@ -239,22 +239,23 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 			}
 
-			System.out.println("Merging" + (shard_size == 1 ? "" : (" " + (shard_id + 1) + " of " + shard_size + " ")) + "...");
+			System.out.println("Merging" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
 
 			writer.addIndexes(src_idx);
 
-			System.out.println("Full merge" + (shard_size == 1 ? "" : (" " + (shard_id + 1) + " of " + shard_size + " ")) + "...");
+			System.out.println("Full merge" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
 
 			writer.forceMerge(1);
 			writer.close();
 
-			System.out.println("Done" + (shard_size == 1 ? "" : (" " + (shard_id + 1) + " of " + shard_size + " ")) + ".");
+			System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
 
 			for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++)
 				FileUtils.deleteDirectory(new File(src_idx_dir_name[thrd_id]));
 
 		} catch (IOException e) {
 			e.printStackTrace();
+			System.exit(1);
 		}
 
 	}
