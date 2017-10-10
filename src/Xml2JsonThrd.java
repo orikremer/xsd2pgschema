@@ -41,9 +41,6 @@ public class Xml2JsonThrd implements Runnable {
 	/** The thread id. */
 	private int thrd_id;
 
-	/** The max threads. */
-	private int max_thrds;
-
 	/** The document builder for reusing. */
 	private DocumentBuilder doc_builder;
 
@@ -57,7 +54,6 @@ public class Xml2JsonThrd implements Runnable {
 	 * Instance of Xml2JsonThrd.
 	 *
 	 * @param thrd_id thread id
-	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
 	 * @param option PostgreSQL schema option
 	 * @param jsonb_option JsonBuilder option
@@ -67,10 +63,9 @@ public class Xml2JsonThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2JsonThrd(final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2JsonThrd(final int thrd_id, final InputStream is, final PgSchemaOption option, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
-		this.max_thrds = max_thrds;
 
 		// parse XSD document
 
@@ -105,44 +100,40 @@ public class Xml2JsonThrd implements Runnable {
 	@Override
 	public void run() {
 
-		int proc_id = thrd_id + 1;
 		int total = xml2json.xml_file_queue.size();
 
 		File xml_file;
 
 		while ((xml_file = xml2json.xml_file_queue.poll()) != null) {
 
-			if (xml_file.isFile()) {
+			if (!xml_file.isFile())
+				continue;
 
-				try {
+			try {
 
-					XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2json.xml_file_filter);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2json.xml_file_filter);
 
-					String json_file_name = xml2json.json_dir_name + xml_parser.basename + "json";
+				String json_file_name = xml2json.json_dir_name + xml_parser.basename + "json";
 
-					switch (xml2json.json_type) {
-					case column:
-						schema.xml2ColJson(xml_parser, json_file_name, xml2json.xml_post_editor);
-						break;
-					case object:
-						schema.xml2ObjJson(xml_parser, json_file_name, xml2json.xml_post_editor);
-						break;
-					case relational:
-						schema.xml2Json(xml_parser, json_file_name, xml2json.xml_post_editor);
-						break;
-					}
-
-				} catch (Exception e) {
-					e.printStackTrace();
-					System.exit(1);
+				switch (xml2json.json_type) {
+				case column:
+					schema.xml2ColJson(xml_parser, json_file_name, xml2json.xml_post_editor);
+					break;
+				case object:
+					schema.xml2ObjJson(xml_parser, json_file_name, xml2json.xml_post_editor);
+					break;
+				case relational:
+					schema.xml2Json(xml_parser, json_file_name, xml2json.xml_post_editor);
+					break;
 				}
 
-				if (thrd_id == 0)
-					System.out.print("\rConverted " + proc_id + " of " + total + " ...");
-
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.exit(1);
 			}
 
-			proc_id += max_thrds;
+			if (thrd_id == 0)
+				System.out.print("\rConverted " + (total - xml2json.xml_file_queue.size()) + " of " + total + " ...");
 
 		}
 

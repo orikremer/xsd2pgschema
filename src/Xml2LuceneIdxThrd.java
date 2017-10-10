@@ -58,12 +58,8 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/** The thread id. */
 	private int thrd_id;
 
-	/** The max threads. */
-	private int max_thrds;
-
 	/** The doc builder for reusing. */
 	private DocumentBuilder doc_builder;
-
 
 	/** The PostgreSQL schema. */
 	private PgSchema schema = null;
@@ -95,7 +91,6 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		this.shard_size = shard_size;
 
 		this.thrd_id = thrd_id;
-		this.max_thrds = max_thrds;
 
 		// parse XSD document
 
@@ -172,40 +167,34 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	@Override
 	public void run() {
 
-		int block_size = shard_size * max_thrds;
-
-		int proc_id = thrd_id + 1;
 		int total = xml2luceneidx.xml_file_queue.size();
 
 		File xml_file;
 
 		while ((xml_file = xml2luceneidx.xml_file_queue.poll()) != null) {
 
-			if (xml_file.isFile()) {
+			if (!xml_file.isFile())
+				continue;
 
-				try {
+			try {
 
-					XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2luceneidx.xml_file_filter);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2luceneidx.xml_file_filter);
 
-					org.apache.lucene.document.Document lucene_doc = new org.apache.lucene.document.Document();
+				org.apache.lucene.document.Document lucene_doc = new org.apache.lucene.document.Document();
 
-					lucene_doc.add(new StringField(PgSchemaUtil.document_key_name, xml_parser.document_id, Field.Store.YES));
+				lucene_doc.add(new StringField(PgSchemaUtil.document_key_name, xml_parser.document_id, Field.Store.YES));
 
-					schema.xml2LucIdx(xml_parser, lucene_doc, xml2luceneidx.xml_post_editor, xml2luceneidx.index_filter);
+				schema.xml2LucIdx(xml_parser, lucene_doc, xml2luceneidx.xml_post_editor, xml2luceneidx.index_filter);
 
-					writer.addDocument(lucene_doc);
+				writer.addDocument(lucene_doc);
 
-				} catch (Exception e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
-				if (shard_id == 0 && thrd_id == 0)
-					System.out.print("\rIndexed " + proc_id + " of " + total + " ...");
-
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.exit(1);
 			}
 
-			proc_id += block_size;
+			if (shard_id == 0 && thrd_id == 0)
+				System.out.print("\rIndexed " + (total - xml2luceneidx.xml_file_queue.size()) + " of " + total + " ...");
 
 		}
 
@@ -223,11 +212,12 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	}
 
 	/**
-	 * Merge Lecene indexes.
+	 * Merge Lucene indexes.
 	 *
+	 * @param max_thrds max threads
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public void merge() throws IOException {
+	public void merge(final int max_thrds) throws IOException {
 
 		if (thrd_id != 0 || max_thrds == 1)
 			return;

@@ -44,9 +44,6 @@ public class Xml2PgSqlThrd implements Runnable {
 	/** The thread id. */
 	private int thrd_id;
 
-	/** The max threads. */
-	private int max_thrds;
-
 	/** The document builder for reusing. */
 	private DocumentBuilder doc_builder;
 
@@ -77,7 +74,6 @@ public class Xml2PgSqlThrd implements Runnable {
 	public Xml2PgSqlThrd(final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
-		this.max_thrds = max_thrds;
 
 		// parse XSD document
 
@@ -116,7 +112,6 @@ public class Xml2PgSqlThrd implements Runnable {
 	@Override
 	public void run() {
 
-		int proc_id = thrd_id + 1;
 		int total = xml2pgsql.xml_file_queue.size();
 
 		int queue = 0;
@@ -125,27 +120,24 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		while ((xml_file = xml2pgsql.xml_file_queue.poll()) != null) {
 
-			if (xml_file.isFile()) {
+			if (!xml_file.isFile())
+				continue;
 
-				try {
+			try {
 
-					XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2pgsql.xml_file_filter);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2pgsql.xml_file_filter);
 
-					schema.xml2PgSql(xml_parser, db_conn, xml2pgsql.xml_post_editor, xml2pgsql.pg_option.update);
+				schema.xml2PgSql(xml_parser, db_conn, xml2pgsql.xml_post_editor, xml2pgsql.pg_option.update);
 
-					++queue;
-
-				} catch (Exception e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
-				if (thrd_id == 0)
-					System.out.print("\rMigrated " + proc_id + " of " + total + " ...");
-
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.exit(1);
 			}
 
-			proc_id += max_thrds;
+			++queue;
+
+			if (thrd_id == 0)
+				System.out.print("\rMigrated " + (total - xml2pgsql.xml_file_queue.size()) + " of " + total + " ...");
 
 		}
 

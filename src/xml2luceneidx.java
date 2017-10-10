@@ -295,7 +295,7 @@ public class xml2luceneidx {
 
 			try {
 
-				proc_thrd[shard_id * max_thrds].merge();
+				proc_thrd[shard_id * max_thrds].merge(max_thrds);
 
 			} catch (IOException e) {
 				e.printStackTrace();

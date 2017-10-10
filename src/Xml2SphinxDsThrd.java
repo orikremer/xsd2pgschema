@@ -53,9 +53,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 	/** The thread id. */
 	private int thrd_id;
 
-	/** The max threads. */
-	private int max_thrds;
-
 	/** The document builder for reusing. */
 	private DocumentBuilder doc_builder;
 
@@ -77,7 +74,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @param shard_id shard id
 	 * @param shard_size shard size
 	 * @param thrd_id thread id
-	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
 	 * @param option PostgreSQL schema option
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -86,13 +82,12 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final PgSchemaOption option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.shard_id = shard_id;
 		this.shard_size = shard_size;
 
 		this.thrd_id = thrd_id;
-		this.max_thrds = max_thrds;
 
 		// parse XSD document
 
@@ -166,47 +161,41 @@ public class Xml2SphinxDsThrd implements Runnable {
 	@Override
 	public void run() {
 
-		int block_size = shard_size * max_thrds;
-
-		int proc_id = thrd_id + 1;
 		int total = xml2sphinxds.xml_file_queue.size();
 
 		File xml_file;
 
 		while ((xml_file = xml2sphinxds.xml_file_queue.poll()) != null) {
 
-			if (xml_file.isFile()) {
+			if (!xml_file.isFile())
+				continue;
 
-				String sph_doc_name = PgSchemaUtil.sphinx_document_prefix + xml_file.getName().split("\\.")[0] + ".xml";
-				File sph_doc_fiole = new File(ds_dir_name, sph_doc_name);
+			String sph_doc_name = PgSchemaUtil.sphinx_document_prefix + xml_file.getName().split("\\.")[0] + ".xml";
+			File sph_doc_fiole = new File(ds_dir_name, sph_doc_name);
 
-				try {
+			try {
 
-					FileWriter writer = new FileWriter(sph_doc_fiole);
+				FileWriter writer = new FileWriter(sph_doc_fiole);
 
-					XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2sphinxds.xml_file_filter);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2sphinxds.xml_file_filter);
 
-					writer.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-					writer.write("<sphinx:document id=\"" + schema.getHashKeyString(xml_parser.document_id) + "\">\n");
-					writer.write("<" + PgSchemaUtil.document_key_name + ">" + StringEscapeUtils.escapeXml10(xml_parser.document_id) + "</" + PgSchemaUtil.document_key_name + ">\n");
+				writer.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+				writer.write("<sphinx:document id=\"" + schema.getHashKeyString(xml_parser.document_id) + "\">\n");
+				writer.write("<" + PgSchemaUtil.document_key_name + ">" + StringEscapeUtils.escapeXml10(xml_parser.document_id) + "</" + PgSchemaUtil.document_key_name + ">\n");
 
-					schema.xml2SphDs(xml_parser, writer, xml2sphinxds.xml_post_editor, xml2sphinxds.index_filter);
+				schema.xml2SphDs(xml_parser, writer, xml2sphinxds.xml_post_editor, xml2sphinxds.index_filter);
 
-					writer.write("</sphinx:document>\n");
+				writer.write("</sphinx:document>\n");
 
-					writer.close();
+				writer.close();
 
-				} catch (IOException | SAXException | ParserConfigurationException | TransformerException | PgSchemaException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
-				if (shard_id == 0 && thrd_id == 0)
-					System.out.print("\rExtracted " + proc_id + " of " + total + " ...");
-
+			} catch (IOException | SAXException | ParserConfigurationException | TransformerException | PgSchemaException e) {
+				e.printStackTrace();
+				System.exit(1);
 			}
 
-			proc_id += block_size;
+			if (shard_id == 0 && thrd_id == 0)
+				System.out.print("\rExtracted " + (total - xml2sphinxds.xml_file_queue.size()) + " of " + total + " ...");
 
 		}
 
@@ -223,7 +212,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void merge(FilenameFilter filter) throws ParserConfigurationException, SAXException, IOException, PgSchemaException {
+	public void merge(final FilenameFilter filter) throws ParserConfigurationException, SAXException, IOException, PgSchemaException {
 
 		if (thrd_id != 0)
 			return;
@@ -244,21 +233,20 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		for (File sph_doc_file : ds_dir.listFiles(filter)) {
 
-			if (sph_doc_file.isFile()) {
+			if (!sph_doc_file.isFile())
+				continue;
 
-				SphDsSAXHandler handler = new SphDsSAXHandler(schema, filew);
+			SphDsSAXHandler handler = new SphDsSAXHandler(schema, filew);
 
-				try {
+			try {
 
-					sax_parser.parse(sph_doc_file, handler);
+				sax_parser.parse(sph_doc_file, handler);
 
-				} catch (SAXException | IOException e) {
-					e.printStackTrace();
-				}
-
-				sph_doc_file.delete();
-
+			} catch (SAXException | IOException e) {
+				e.printStackTrace();
 			}
+
+			sph_doc_file.delete();
 
 		}
 

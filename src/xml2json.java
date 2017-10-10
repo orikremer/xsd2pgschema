@@ -238,7 +238,7 @@ public class xml2json {
 				if (thrd_id > 0)
 					is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
-				proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, max_thrds, is, option, jsonb_option);
+				proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, is, option, jsonb_option);
 
 			} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 				e.printStackTrace();
