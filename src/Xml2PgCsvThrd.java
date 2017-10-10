@@ -134,17 +134,18 @@ public class Xml2PgCsvThrd implements Runnable {
 	@Override
 	public void run() {
 
+		int proc_id = thrd_id + 1;
+		int total = xml2pgcsv.xml_file_queue.size();
+
 		int queue = 0;
-		int proc_id = 0;
 
 		boolean first_csv = true;
 
-		for (File xml_file : xml2pgcsv.xml_files) {
+		File xml_file;
+
+		while ((xml_file = xml2pgcsv.xml_file_queue.poll()) != null) {
 
 			if (xml_file.isFile()) {
-
-				if (proc_id++ % max_thrds != thrd_id)
-					continue;
 
 				try {
 
@@ -163,9 +164,11 @@ public class Xml2PgCsvThrd implements Runnable {
 					first_csv = false;
 
 				if (thrd_id == 0)
-					System.out.print("\rConverted " + proc_id + " of " + xml2pgcsv.xml_files.length + " ...");
+					System.out.print("\rConverted " + proc_id + " of " + total + " ...");
 
 			}
+
+			proc_id += max_thrds;
 
 		}
 

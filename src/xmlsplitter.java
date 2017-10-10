@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -52,8 +53,8 @@ public class xmlsplitter {
 	/** The XML file filter. */
 	public static XmlFileFilter xml_file_filter = new XmlFileFilter();
 
-	/** The source XML files. */
-	public static File[] xml_files = null;
+	/** The source XML file queue. */
+	public static LinkedBlockingQueue<File> xml_file_queue = null;
 
 	/** The XPath expression pointing document key. */
 	public static String xpath_doc_key = "";
@@ -150,7 +151,7 @@ public class xmlsplitter {
 
 		};
 
-		xml_files = PgSchemaUtil.getTargetFiles(xml_file_names, filename_filter);
+		xml_file_queue = PgSchemaUtil.getTargetFileQueue(xml_file_names, filename_filter);
 
 		File xml_dir = new File(xml_dir_name);
 

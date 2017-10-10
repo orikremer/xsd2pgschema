@@ -21,6 +21,7 @@ import net.sf.xsd2pgschema.*;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
@@ -165,25 +166,23 @@ public class Xml2SphinxDsThrd implements Runnable {
 	@Override
 	public void run() {
 
-		int proc_sid = 0;
-		int proc_tid = 0;
+		int block_size = shard_size * max_thrds;
 
-		for (File xml_file : xml2sphinxds.xml_files) {
+		int proc_id = thrd_id + 1;
+		int total = xml2sphinxds.xml_file_queue.size();
 
-			if (proc_sid++ % shard_size != shard_id)
-				continue;
+		File xml_file;
 
-			if (proc_tid++ % max_thrds != thrd_id)
-				continue;
+		while ((xml_file = xml2sphinxds.xml_file_queue.poll()) != null) {
 
 			if (xml_file.isFile()) {
 
 				String sph_doc_name = PgSchemaUtil.sphinx_document_prefix + xml_file.getName().split("\\.")[0] + ".xml";
-				File sph_doc = new File(ds_dir_name, sph_doc_name);
+				File sph_doc_fiole = new File(ds_dir_name, sph_doc_name);
 
 				try {
 
-					FileWriter writer = new FileWriter(sph_doc);
+					FileWriter writer = new FileWriter(sph_doc_fiole);
 
 					XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2sphinxds.xml_file_filter);
 
@@ -203,9 +202,11 @@ public class Xml2SphinxDsThrd implements Runnable {
 				}
 
 				if (shard_id == 0 && thrd_id == 0)
-					System.out.print("\rExtracted " + proc_sid + " of " + xml2sphinxds.xml_files.length + " ...");
+					System.out.print("\rExtracted " + proc_id + " of " + total + " ...");
 
 			}
+
+			proc_id += block_size;
 
 		}
 
@@ -216,12 +217,13 @@ public class Xml2SphinxDsThrd implements Runnable {
 	/**
 	 * Merge Sphinx data source files.
 	 *
+	 * @param filter file name filter
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void merge() throws ParserConfigurationException, SAXException, IOException, PgSchemaException {
+	public void merge(FilenameFilter filter) throws ParserConfigurationException, SAXException, IOException, PgSchemaException {
 
 		if (thrd_id != 0)
 			return;
@@ -238,33 +240,23 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		System.out.println("Merging" + (shard_size == 1 ? "" : (" " + (shard_id + 1) + " of " + shard_size + " ")) + "...");
 
-		int proc_sid = 0;
+		File ds_dir = new File(ds_dir_name);
 
-		for (File xml_file : xml2sphinxds.xml_files) {
+		for (File sph_doc_file : ds_dir.listFiles(filter)) {
 
-			if (proc_sid++ % shard_size != shard_id)
-				continue;
+			if (sph_doc_file.isFile()) {
 
-			if (xml_file.isFile()) {
+				SphDsSAXHandler handler = new SphDsSAXHandler(schema, filew);
 
-				String sph_doc_name = PgSchemaUtil.sphinx_document_prefix + xml_file.getName().split("\\.")[0] + ".xml";
-				File sph_doc = new File(ds_dir_name, sph_doc_name);
+				try {
 
-				if (sph_doc.exists()) {
+					sax_parser.parse(sph_doc_file, handler);
 
-					SphDsSAXHandler handler = new SphDsSAXHandler(schema, filew);
-
-					try {
-
-						sax_parser.parse(sph_doc, handler);
-
-					} catch (SAXException | IOException e) {
-						e.printStackTrace();
-					}
-
-					sph_doc.delete();
-
+				} catch (SAXException | IOException e) {
+					e.printStackTrace();
 				}
+
+				sph_doc_file.delete();
 
 			}
 

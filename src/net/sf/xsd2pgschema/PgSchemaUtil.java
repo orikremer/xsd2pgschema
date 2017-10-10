@@ -33,10 +33,9 @@ import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.zip.GZIPInputStream;
 
 import javax.net.ssl.HostnameVerifier;
@@ -579,15 +578,15 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Return array of target file.
+	 * Return blocking queue of target files.
 	 *
 	 * @param file_names list of file name
 	 * @param filter file name filter
-	 * @return File[] array of target file
+	 * @return LinkedBlockingQueue blocking queue of target files
 	 */
-	public static File[] getTargetFiles(HashSet<String> file_names, FilenameFilter filter) {
+	public static LinkedBlockingQueue<File> getTargetFileQueue(HashSet<String> file_names, FilenameFilter filter) {
 
-		List<File> files = new ArrayList<File>();
+		LinkedBlockingQueue<File> queue = new LinkedBlockingQueue<File>();
 
 		file_names.forEach(file_name -> {
 
@@ -601,16 +600,16 @@ public class PgSchemaUtil {
 			if (file.isFile()) {
 
 				if (filter.accept(null, file_name))
-					files.add(file);
+					queue.add(file);
 
 			}
 
 			else if (file.isDirectory())
-				files.addAll(Arrays.asList(file.listFiles(filter)));
+				queue.addAll(Arrays.asList(file.listFiles(filter)));
 
 		});
 
-		return (File[]) files.toArray(new File[0]);
+		return queue;
 	}
 
 	/**

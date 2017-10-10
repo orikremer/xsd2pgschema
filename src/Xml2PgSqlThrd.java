@@ -116,15 +116,16 @@ public class Xml2PgSqlThrd implements Runnable {
 	@Override
 	public void run() {
 
-		int queue = 0;
-		int proc_id = 0;
+		int proc_id = thrd_id + 1;
+		int total = xml2pgsql.xml_file_queue.size();
 
-		for (File xml_file : xml2pgsql.xml_files) {
+		int queue = 0;
+
+		File xml_file;
+
+		while ((xml_file = xml2pgsql.xml_file_queue.poll()) != null) {
 
 			if (xml_file.isFile()) {
-
-				if (proc_id++ % max_thrds != thrd_id)
-					continue;
 
 				try {
 
@@ -140,9 +141,11 @@ public class Xml2PgSqlThrd implements Runnable {
 				}
 
 				if (thrd_id == 0)
-					System.out.print("\rMigrated " + proc_id + " of " + xml2pgsql.xml_files.length + " ...");
+					System.out.print("\rMigrated " + proc_id + " of " + total + " ...");
 
 			}
+
+			proc_id += max_thrds;
 
 		}
 

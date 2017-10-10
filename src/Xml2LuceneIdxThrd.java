@@ -64,6 +64,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/** The doc builder for reusing. */
 	private DocumentBuilder doc_builder;
 
+
 	/** The PostgreSQL schema. */
 	private PgSchema schema = null;
 
@@ -171,18 +172,16 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	@Override
 	public void run() {
 
-		int proc_sid = 0;
-		int proc_tid = 0;
+		int block_size = shard_size * max_thrds;
 
-		for (File xml_file : xml2luceneidx.xml_files) {
+		int proc_id = thrd_id + 1;
+		int total = xml2luceneidx.xml_file_queue.size();
+
+		File xml_file;
+
+		while ((xml_file = xml2luceneidx.xml_file_queue.poll()) != null) {
 
 			if (xml_file.isFile()) {
-
-				if (proc_sid++ % shard_size != shard_id)
-					continue;
-
-				if (proc_tid++ % max_thrds != thrd_id)
-					continue;
 
 				try {
 
@@ -202,9 +201,11 @@ public class Xml2LuceneIdxThrd implements Runnable {
 				}
 
 				if (shard_id == 0 && thrd_id == 0)
-					System.out.print("\rIndexed " + proc_sid + " of " + xml2luceneidx.xml_files.length + " ...");
+					System.out.print("\rIndexed " + proc_id + " of " + total + " ...");
 
 			}
+
+			proc_id += block_size;
 
 		}
 

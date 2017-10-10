@@ -24,13 +24,12 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.parsers.*;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.comparator.SizeFileComparator;
 import org.xml.sax.SAXException;
 
 /**
@@ -61,8 +60,8 @@ public class xml2sphinxds {
 	/** The index filter. */
 	public static IndexFilter index_filter = new IndexFilter();
 
-	/** The XML files. */
-	public static File[] xml_files = null;
+	/** The XML file queue. */
+	public static LinkedBlockingQueue<File> xml_file_queue = null;
 
 	/** The shard size. */
 	public static int shard_size = 1;
@@ -234,18 +233,15 @@ public class xml2sphinxds {
 
 		};
 
-		xml_files = PgSchemaUtil.getTargetFiles(xml_file_names, filename_filter);
+		xml_file_queue = PgSchemaUtil.getTargetFileQueue(xml_file_names, filename_filter);
 
-		if (xml_files.length < shard_size)
-			shard_size = xml_files.length;
+		if (xml_file_queue.size() < shard_size)
+			shard_size = xml_file_queue.size();
 
 		max_thrds = max_thrds / shard_size; // number of thread per a shard
 
 		if (max_thrds == 0)
 			max_thrds = 1;
-
-		if ((shard_size > 1 || max_thrds > 1) && xml_files.length < PgSchemaUtil.max_sort_xml_files)
-			Arrays.sort(xml_files, SizeFileComparator.SIZE_COMPARATOR);
 
 		if (ds_name.isEmpty()) {
 
@@ -299,6 +295,17 @@ public class xml2sphinxds {
 
 		}
 
+		filename_filter = new FilenameFilter() {
+
+			public boolean accept(File dir, String name) {
+				return FilenameUtils.getExtension(name).equals("xml") &&
+						name.startsWith(PgSchemaUtil.sphinx_document_prefix) &&
+						!name.equals(PgSchemaUtil.sphinx_schema_name) &&
+						!name.equals(PgSchemaUtil.sphinx_data_source_name);
+			}
+
+		};
+
 		for (int shard_id = 0; shard_id < shard_size; shard_id++) {
 
 			for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
@@ -319,7 +326,7 @@ public class xml2sphinxds {
 
 			try {
 
-				proc_thrd[shard_id * max_thrds].merge();
+				proc_thrd[shard_id * max_thrds].merge(filename_filter);
 
 			} catch (ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 				e.printStackTrace();

@@ -25,13 +25,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.parsers.*;
 
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.comparator.SizeFileComparator;
 import org.xml.sax.SAXException;
 
 /**
@@ -59,8 +58,8 @@ public class xml2pgcsv {
 	/** The XML post editor. */
 	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
-	/** The XML files. */
-	public static File[] xml_files = null;
+	/** The XML file queue. */
+	public static LinkedBlockingQueue<File> xml_file_queue = null;
 
 	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
@@ -237,13 +236,10 @@ public class xml2pgcsv {
 
 		};
 
-		xml_files = PgSchemaUtil.getTargetFiles(xml_file_names, filename_filter);
+		xml_file_queue = PgSchemaUtil.getTargetFileQueue(xml_file_names, filename_filter);
 
-		if (xml_files.length < max_thrds)
-			max_thrds = xml_files.length;
-
-		if (max_thrds > 1 && xml_files.length < PgSchemaUtil.max_sort_xml_files)
-			Arrays.sort(xml_files, SizeFileComparator.SIZE_COMPARATOR);
+		if (xml_file_queue.size() < max_thrds)
+			max_thrds = xml_file_queue.size();
 
 		File csv_dir = new File(csv_dir_name);
 

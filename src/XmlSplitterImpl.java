@@ -299,7 +299,9 @@ public class XmlSplitterImpl {
 
 			xml_event_factory = XMLEventFactory.newInstance();
 
-			for (File xml_file : xmlsplitter.xml_files) {
+			File xml_file;
+
+			while ((xml_file = xmlsplitter.xml_file_queue.poll()) != null) {
 
 				if (!xml_file.isFile())
 					continue;
