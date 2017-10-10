@@ -58,6 +58,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/** The thread id. */
 	private int thrd_id;
 
+	/** The max threads. */
+	private int max_thrds;
+
 	/** The doc builder for reusing. */
 	private DocumentBuilder doc_builder;
 
@@ -91,6 +94,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		this.shard_size = shard_size;
 
 		this.thrd_id = thrd_id;
+		this.max_thrds = max_thrds;
 
 		// parse XSD document
 
@@ -214,12 +218,11 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/**
 	 * Merge Lucene indexes.
 	 *
-	 * @param max_thrds max threads
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public void merge(final int max_thrds) throws IOException {
+	public void merge() throws IOException {
 
-		if (thrd_id != 0 || max_thrds == 1)
+		if (thrd_id != 0 || max_thrds < 2)
 			return;
 
 		String dst_idx_dir_name = xml2luceneidx.idx_dir_name;

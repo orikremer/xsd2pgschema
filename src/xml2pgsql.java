@@ -255,7 +255,7 @@ public class xml2pgsql {
 				if (thrd_id > 0)
 					is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
 
-				proc_thrd[thrd_id] = new Xml2PgSqlThrd(thrd_id, max_thrds, is, option, pg_option);
+				proc_thrd[thrd_id] = new Xml2PgSqlThrd(thrd_id, is, option, pg_option);
 
 			} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | SQLException | PgSchemaException e) {
 				e.printStackTrace();

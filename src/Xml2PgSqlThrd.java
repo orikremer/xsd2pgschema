@@ -60,7 +60,6 @@ public class Xml2PgSqlThrd implements Runnable {
 	 * Instance of Xml2PgSqlThrd.
 	 *
 	 * @param thrd_id thread id
-	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
 	 * @param option PostgreSQL schema option
 	 * @param pg_option PostgreSQL option
@@ -71,7 +70,7 @@ public class Xml2PgSqlThrd implements Runnable {
 	 * @throws SQLException the SQL exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2PgSqlThrd(final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
+	public Xml2PgSqlThrd(final int thrd_id, final InputStream is, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
 
