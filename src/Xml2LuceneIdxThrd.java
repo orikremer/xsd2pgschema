@@ -213,6 +213,15 @@ public class Xml2LuceneIdxThrd implements Runnable {
 			e.printStackTrace();
 		}
 
+	}
+
+	/**
+	 * Merge Lucene indices.
+	 * 
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public void merge() throws IOException {
+
 		if (thrd_id != 0 || max_thrds < 2)
 			return;
 
@@ -221,42 +230,35 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		if (shard_size > 1)
 			dst_idx_dir_name += "/" + PgSchemaUtil.shard_dir_prefix + shard_id;
 
-		try {
+		FSDirectory dst_idx = FSDirectory.open(Paths.get(dst_idx_dir_name));
 
-			FSDirectory dst_idx = FSDirectory.open(Paths.get(dst_idx_dir_name));
+		IndexWriter writer = new IndexWriter(dst_idx, new IndexWriterConfig(null).setOpenMode(OpenMode.CREATE));
 
-			IndexWriter writer = new IndexWriter(dst_idx, new IndexWriterConfig(null).setOpenMode(OpenMode.CREATE));
+		String[] src_idx_dir_name = new String[max_thrds];
+		Directory[] src_idx = new Directory[max_thrds];
 
-			String[] src_idx_dir_name = new String[max_thrds];
-			Directory[] src_idx = new Directory[max_thrds];
+		for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
 
-			for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
+			src_idx_dir_name[thrd_id] = dst_idx_dir_name + "/" + PgSchemaUtil.thrd_dir_prefix + thrd_id;
 
-				src_idx_dir_name[thrd_id] = dst_idx_dir_name + "/" + PgSchemaUtil.thrd_dir_prefix + thrd_id;
+			// try to use hardlinks if possible
+			src_idx[thrd_id] = new HardlinkCopyDirectoryWrapper(FSDirectory.open(Paths.get(src_idx_dir_name[thrd_id])));
 
-				// try to use hardlinks if possible
-				src_idx[thrd_id] = new HardlinkCopyDirectoryWrapper(FSDirectory.open(Paths.get(src_idx_dir_name[thrd_id])));
-
-			}
-
-			System.out.println("Merging" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
-
-			writer.addIndexes(src_idx);
-
-			System.out.println("Full merge" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
-
-			writer.forceMerge(1);
-			writer.close();
-
-			System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
-
-			for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++)
-				FileUtils.deleteDirectory(new File(src_idx_dir_name[thrd_id]));
-
-		} catch (IOException e) {
-			e.printStackTrace();
-			System.exit(1);
 		}
+
+		System.out.println("Merging" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
+
+		writer.addIndexes(src_idx);
+
+		System.out.println("Full merge" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
+
+		writer.forceMerge(1);
+		writer.close();
+
+		System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
+
+		for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++)
+			FileUtils.deleteDirectory(new File(src_idx_dir_name[thrd_id]));
 
 	}
 

@@ -54,6 +54,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 	/** The thread id. */
 	private int thrd_id;
 
+	/** The max threads. */
+	private int max_thrds;
+
 	/** The document builder for reusing. */
 	private DocumentBuilder doc_builder;
 
@@ -75,6 +78,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @param shard_id shard id
 	 * @param shard_size shard size
 	 * @param thrd_id thread id
+	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
 	 * @param option PostgreSQL schema option
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -83,12 +87,13 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final PgSchemaOption option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.shard_id = shard_id;
 		this.shard_size = shard_size;
 
 		this.thrd_id = thrd_id;
+		this.max_thrds = max_thrds;
 
 		// parse XSD document
 
@@ -202,6 +207,31 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		schema.closeXml2SphDs();
 
+		if (max_thrds == 1) {
+
+			try {
+
+				merge();
+
+			} catch (PgSchemaException | IOException | ParserConfigurationException | SAXException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+
+		}
+
+	}
+
+	/**
+	 * Merge Sphinx data source files
+	 * 
+	 * @throws PgSchemaException the pg schema exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws ParserConfigurationException
+	 * @throws SAXException the SAX exception
+	 */
+	public void merge() throws PgSchemaException, IOException, ParserConfigurationException, SAXException {
+
 		if (thrd_id != 0)
 			return;
 
@@ -218,57 +248,50 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		// Sphinx xmlpipe2 writer
 
-		try {
+		File sphinx_data_source = new File(ds_dir_name, PgSchemaUtil.sphinx_data_source_name);
+		schema.writeSphSchema(sphinx_data_source, true);
 
-			File sphinx_data_source = new File(ds_dir_name, PgSchemaUtil.sphinx_data_source_name);
-			schema.writeSphSchema(sphinx_data_source, true);
+		FileWriter filew = new FileWriter(sphinx_data_source, true);
 
-			FileWriter filew = new FileWriter(sphinx_data_source, true);
+		SAXParserFactory spf = SAXParserFactory.newInstance();
+		SAXParser sax_parser = spf.newSAXParser();
 
-			SAXParserFactory spf = SAXParserFactory.newInstance();
-			SAXParser sax_parser = spf.newSAXParser();
+		System.out.println("Merging" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
 
-			System.out.println("Merging" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
+		File ds_dir = new File(ds_dir_name);
 
-			File ds_dir = new File(ds_dir_name);
+		for (File sph_doc_file : ds_dir.listFiles(filter)) {
 
-			for (File sph_doc_file : ds_dir.listFiles(filter)) {
+			if (!sph_doc_file.isFile())
+				continue;
 
-				if (!sph_doc_file.isFile())
-					continue;
+			SphDsSAXHandler handler = new SphDsSAXHandler(schema, filew);
 
-				SphDsSAXHandler handler = new SphDsSAXHandler(schema, filew);
+			try {
 
-				try {
+				sax_parser.parse(sph_doc_file, handler);
 
-					sax_parser.parse(sph_doc_file, handler);
-
-				} catch (SAXException | IOException e) {
-					e.printStackTrace();
-				}
-
-				sph_doc_file.delete();
-
+			} catch (SAXException | IOException e) {
+				e.printStackTrace();
 			}
 
-			filew.write("</sphinx:docset>\n");
-			filew.close();
+			sph_doc_file.delete();
 
-			System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
-
-			// Sphinx schema writer for next update or merge
-
-			schema.writeSphSchema(sphinx_schema, false);
-
-			// Sphinx configuration writer
-
-			File sphinx_conf = new File(ds_dir_name, PgSchemaUtil.sphinx_conf_name);
-			schema.writeSphConf(sphinx_conf, xml2sphinxds.ds_name, sphinx_data_source);
-
-		} catch (PgSchemaException | IOException | ParserConfigurationException | SAXException e) {
-			e.printStackTrace();
-			System.exit(1);
 		}
+
+		filew.write("</sphinx:docset>\n");
+		filew.close();
+
+		System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
+
+		// Sphinx schema writer for next update or merge
+
+		schema.writeSphSchema(sphinx_schema, false);
+
+		// Sphinx configuration writer
+
+		File sphinx_conf = new File(ds_dir_name, PgSchemaUtil.sphinx_conf_name);
+		schema.writeSphConf(sphinx_conf, xml2sphinxds.ds_name, sphinx_data_source);
 
 	}
 
