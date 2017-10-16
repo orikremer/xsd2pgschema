@@ -5535,7 +5535,7 @@ public class PgSchema {
 					if (_anyClass.equals(PredicateContext.class))
 						break;
 
-					else if (_anyClass.equals(NCNameContext.class))
+					if (_anyClass.equals(NCNameContext.class))
 						sb.append(_text);
 
 					else if (_anyClass.equals(NameTestContext.class)) {
@@ -5638,7 +5638,7 @@ public class PgSchema {
 					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
 
 				if (inc_self)
-					list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, new StringBuilder()), XPathCompType.table));
+					list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, null), XPathCompType.table));
 
 			}
 
@@ -5646,14 +5646,14 @@ public class PgSchema {
 
 				tables.stream().filter(table -> PgSchemaUtil.matchesNodeName(table.name, text, wild_card) && !table.virtual).forEach(table -> {
 
-					String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
+					String table_xpath = getAbsoluteXPathOfTable(table, null);
 
 					if (table_xpath != null && inc_self)
 						list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
 					if (table.fields.stream().anyMatch(field -> field.simple_cont)) {
 
-						String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(table);
+						String simple_cont_xpath = getAbsoluteXPathOfTable(table, null);
 
 						if (simple_cont_xpath != null && inc_self)
 							list.add(new XPathExpr(simple_cont_xpath, XPathCompType.simple_content));
@@ -5701,7 +5701,7 @@ public class PgSchema {
 					if (abs_path) {
 
 						if (PgSchemaUtil.matchesNodeName(root_table.name, text, wild_card) && inc_self)
-							_list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, new StringBuilder()), XPathCompType.table));
+							_list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, null), XPathCompType.table));
 
 					}
 
@@ -5709,14 +5709,14 @@ public class PgSchema {
 
 						tables.stream().filter(table -> PgSchemaUtil.matchesNodeName(table.name, text, wild_card) && !table.virtual).forEach(table -> {
 
-							String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
+							String table_xpath = getAbsoluteXPathOfTable(table, null);
 
 							if (table_xpath != null && inc_self)
 								_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
 							if (table.fields.stream().anyMatch(field -> field.simple_cont)) {
 
-								String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(table);
+								String simple_cont_xpath = getAbsoluteXPathOfTable(table, null);
 
 								if (simple_cont_xpath != null && inc_self)
 									_list.add(new XPathExpr(simple_cont_xpath, XPathCompType.simple_content));
@@ -5794,14 +5794,14 @@ public class PgSchema {
 
 							if (PgSchemaUtil.matchesNodeName(foreign_table.name, text, wild_card) && !foreign_table.virtual) {
 
-								String table_xpath = getAbsoluteXPathOfTable(foreign_table, new StringBuilder());
+								String table_xpath = getAbsoluteXPathOfTable(foreign_table, null);
 
 								if (table_xpath != null && (inc_self || first_nest))
 									_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
 								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont)) {
 
-									String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(foreign_table);
+									String simple_cont_xpath = getAbsoluteXPathOfTable(foreign_table, null);
 
 									if (simple_cont_xpath != null && (inc_self || first_nest))
 										_list.add(new XPathExpr(simple_cont_xpath, XPathCompType.simple_content));
@@ -6149,7 +6149,7 @@ public class PgSchema {
 			if (abs_path) {
 
 				if (inc_self)
-					list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, new StringBuilder()), XPathCompType.table));
+					list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, null), XPathCompType.table));
 
 			}
 
@@ -6157,14 +6157,14 @@ public class PgSchema {
 
 				tables.stream().filter(table -> !table.virtual).forEach(table -> {
 
-					String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
+					String table_xpath = getAbsoluteXPathOfTable(table, null);
 
 					if (table_xpath != null && inc_self)
 						list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
 					if (table.fields.stream().anyMatch(field -> field.simple_cont)) {
 
-						String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(table);
+						String simple_cont_xpath = getAbsoluteXPathOfTable(table, null);
 
 						if (simple_cont_xpath != null && inc_self)
 							list.add(new XPathExpr(simple_cont_xpath, XPathCompType.simple_content));
@@ -6212,7 +6212,7 @@ public class PgSchema {
 					if (abs_path) {
 
 						if (inc_self)
-							_list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, new StringBuilder()), XPathCompType.table));
+							_list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, null), XPathCompType.table));
 
 					}
 
@@ -6220,14 +6220,14 @@ public class PgSchema {
 
 						tables.stream().filter(table -> !table.virtual).forEach(table -> {
 
-							String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
+							String table_xpath = getAbsoluteXPathOfTable(table, null);
 
 							if (table_xpath != null && inc_self)
 								_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
 							table.fields.stream().filter(field -> field.simple_cont).forEach(field -> {
 
-								String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(table);
+								String simple_cont_xpath = getAbsoluteXPathOfTable(table, null);
 
 								if (simple_cont_xpath != null && inc_self)
 									_list.add(new XPathExpr(simple_cont_xpath, XPathCompType.simple_content));
@@ -6305,14 +6305,14 @@ public class PgSchema {
 
 							if (!foreign_table.virtual) {
 
-								String table_xpath = getAbsoluteXPathOfTable(foreign_table, new StringBuilder());
+								String table_xpath = getAbsoluteXPathOfTable(foreign_table, null);
 
 								if (table_xpath != null && (inc_self || _foreign_table_ids == null))
 									_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
 								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont)) {
 
-									String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(foreign_table);
+									String simple_cont_xpath = getAbsoluteXPathOfTable(foreign_table, null);
 
 									if (simple_cont_xpath != null && (inc_self || first_nest))
 										_list.add(new XPathExpr(simple_cont_xpath, XPathCompType.simple_content));
@@ -6736,7 +6736,7 @@ public class PgSchema {
 					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
 
 				if (inc_self)
-					list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, new StringBuilder()), XPathCompType.table));
+					list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, null), XPathCompType.table));
 
 			}
 
@@ -6744,14 +6744,14 @@ public class PgSchema {
 
 				tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(table.name, text, wild_card)).forEach(table -> {
 
-					String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
+					String table_xpath = getAbsoluteXPathOfTable(table, null);
 
 					if (table_xpath != null && inc_self)
 						list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
 					if (table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card))) {
 
-						String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(table);
+						String simple_cont_xpath = getAbsoluteXPathOfTable(table, null);
 
 						if (simple_cont_xpath != null && inc_self)
 							list.add(new XPathExpr(simple_cont_xpath, XPathCompType.simple_content));
@@ -6799,7 +6799,7 @@ public class PgSchema {
 					if (abs_path) {
 
 						if (inc_self && root_table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(root_table.name, text, wild_card))
-							_list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, new StringBuilder()), XPathCompType.table));
+							_list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, null), XPathCompType.table));
 
 					}
 
@@ -6807,14 +6807,14 @@ public class PgSchema {
 
 						tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(table.name, text, wild_card)).forEach(table -> {
 
-							String table_xpath = getAbsoluteXPathOfTable(table, new StringBuilder());
+							String table_xpath = getAbsoluteXPathOfTable(table, null);
 
 							if (table_xpath != null && inc_self)
 								_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
 							table.fields.stream().filter(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
-								String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(table);
+								String simple_cont_xpath = getAbsoluteXPathOfTable(table, null);
 
 								if (simple_cont_xpath != null && inc_self)
 									_list.add(new XPathExpr(simple_cont_xpath, XPathCompType.simple_content));
@@ -6892,14 +6892,14 @@ public class PgSchema {
 
 							if (!foreign_table.virtual && foreign_table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(foreign_table.name, text, wild_card)) {
 
-								String table_xpath = getAbsoluteXPathOfTable(foreign_table, new StringBuilder());
+								String table_xpath = getAbsoluteXPathOfTable(foreign_table, null);
 
 								if (table_xpath != null && (inc_self || _foreign_table_ids == null))
 									_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
 								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card))) {
 
-									String simple_cont_xpath = getAbsoluteXPathOfSimpleContent(foreign_table);
+									String simple_cont_xpath = getAbsoluteXPathOfTable(foreign_table, null);
 
 									if (simple_cont_xpath != null && (inc_self || first_nest))
 										_list.add(new XPathExpr(simple_cont_xpath, XPathCompType.simple_content));
@@ -7436,13 +7436,30 @@ public class PgSchema {
 	 */
 	private String getAbsoluteXPathOfTable(PgTable table, StringBuilder sb) {
 
+		if (sb == null)
+			sb = new StringBuilder();
+
 		String table_name = table.name;
 
 		if (table.equals(root_table)) {
 
 			sb.append((sb.length() > 0 ? "/" : "") + table_name);
 
-			return getReversedPath(sb.toString());
+			String[] path = sb.toString().split("/");
+
+			sb.setLength(0);
+
+			for (int l = path.length - 1; l >= 0; l--)
+				sb.append("/" + path[l]);
+
+			try {
+
+				return sb.toString();
+
+			} finally {
+				sb.setLength(0);
+			}
+
 		}
 
 		if (!table.virtual)
@@ -7474,15 +7491,9 @@ public class PgSchema {
 
 		StringBuilder sb = new StringBuilder();
 
-		try {
+		sb.append("@" + text);
 
-			sb.append("@" + text);
-
-			return getAbsoluteXPathOfTable(table, sb);
-
-		} finally {
-			sb.setLength(0);
-		}
+		return getAbsoluteXPathOfTable(table, sb);
 	}
 
 	/**
@@ -7496,49 +7507,9 @@ public class PgSchema {
 
 		StringBuilder sb = new StringBuilder();
 
-		try {
+		sb.append(text);
 
-			sb.append(text);
-
-			return getAbsoluteXPathOfTable(table, sb);
-
-		} finally {
-			sb.setLength(0);
-		}
-	}
-
-	/**
-	 * Return absolute XPath expression of current simple content.
-	 *
-	 * @param table current table
-	 * @return String absolute XPath expression of current attribute
-	 */
-	private String getAbsoluteXPathOfSimpleContent(PgTable table) {
-		return getAbsoluteXPathOfTable(table, new StringBuilder());
-	}
-
-	/**
-	 * Return reversed path.
-	 *
-	 * @param path normal path
-	 * @return String reversed path
-	 */
-	private String getReversedPath(String path) {
-
-		String[] _path = path.split("/");
-
-		StringBuilder sb = new StringBuilder();
-
-		try {
-
-			for (int l = _path.length - 1; l >= 0; l--)
-				sb.append("/" + _path[l]);
-
-			return sb.toString();
-
-		} finally {
-			sb.setLength(0);
-		}
+		return getAbsoluteXPathOfTable(table, sb);
 	}
 
 }

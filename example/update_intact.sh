@@ -9,13 +9,6 @@ WGET_LOG=wget.log
 
 XML_DIR=pmid
 
-if [ -d $WORD_DIR ] ; then
-
- rm -rf $DB_FTP
- rm -rf $XML_DIR
-
-fi
-
 wget -c -m http://$DB_FTP/$ZIP_FILE -o $WGET_LOG
 
 if [ $? != 0 ] ; then
