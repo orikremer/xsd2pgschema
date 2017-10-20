@@ -191,6 +191,15 @@ public class xml2pgcsv {
 			else if (args[i].equals("--ser-size"))
 				option.ser_size = PgSerSize.getPgSerSize(args[++i]);
 
+			else if (args[i].equals("--doc-key-name"))
+				option.setDocumentKeyName(args[++i]);
+
+			else if (args[i].equals("--ser-key-name"))
+				option.setSerialKeyName(args[++i]);
+
+			else if (args[i].equals("--xpath-key-name"))
+				option.setXPathKeyName(args[++i]);
+
 			else if (args[i].equals("--max-thrds")) {
 				max_thrds = Integer.valueOf(args[++i]);
 
@@ -305,10 +314,10 @@ public class xml2pgcsv {
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --append (append to existing CSV files)");
-		System.err.println("        --doc-key (append " + PgSchemaUtil.document_key_name + " column in all relations, default with relational model extension)");
-		System.err.println("        --no-doc-key (remove " + PgSchemaUtil.document_key_name + " column from all relations, effective only with relational model extension)");
-		System.err.println("        --ser-key (append " + PgSchemaUtil.serial_key_name + " column in child relation of list holder)");
-		System.err.println("        --xpath-key (append " + PgSchemaUtil.xpath_key_name + " column in all relations)");
+		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");
+		System.err.println("        --no-doc-key (remove " + option.document_key_name + " column from all relations, effective only with relational model extension)");
+		System.err.println("        --ser-key (append " + option.serial_key_name + " column in child relation of list holder)");
+		System.err.println("        --xpath-key (append " + option.xpath_key_name + " column in all relations)");
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --validate (turn on XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
@@ -324,6 +333,13 @@ public class xml2pgcsv {
 		System.err.println("        --filt-in   table_name.column_name");
 		System.err.println("        --filt-out  table_name.column_name:regex_pattern(|regex_pattern...)");
 		System.err.println("        --fill-this table_name.column_name:filling_text");
+
+		option.setDefaultUserKeys();
+
+		System.err.println("        --doc-key-name DOC_KEY_NAME (default=\"" + option.document_key_name + "\")");
+		System.err.println("        --ser-key-name SER_KEY_NAME (default=\"" + option.serial_key_name + "\")");
+		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.xpath_key_name + "\")");
+
 		System.err.println("        --max-thrds MAX_THRDS (default is number of available processors)");
 		System.exit(1);
 

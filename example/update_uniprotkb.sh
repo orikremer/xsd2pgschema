@@ -33,6 +33,8 @@ if [ ! -e $XSD_SCHEMA ] ; then
 
 fi
 
+date
+
 ./split_uniprotkb.sh
 
 ./clone_uniprotkb.sh

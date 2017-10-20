@@ -1453,10 +1453,7 @@ public class PgField {
 	 * @return boolean whether field is omitted
 	 */
 	public boolean isOmitted(PgSchema schema) {
-		return (!schema.option.document_key && document_key) ||
-				(!schema.option.serial_key && serial_key) ||
-				(!schema.option.xpath_key && xpath_key) ||
-				(!schema.option.rel_data_ext && system_key);
+		return (!schema.option.document_key && document_key) || (!schema.option.serial_key && serial_key) || (!schema.option.xpath_key && xpath_key) || (!schema.option.rel_data_ext && system_key);
 	}
 
 	/**

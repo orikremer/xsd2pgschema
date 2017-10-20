@@ -1,3 +1,7 @@
+ Changes in xsd2pgschema 2.6.4 (release 2017-10-20)
+
+  Name of user key (document_key, serial_key and xpath_key) is adjustable via --doc-key-name, --ser-key-name and -xpath-key-name option, respectively.
+
  Changes in xsd2pgschema 2.6.3 (release 2017-10-10)
 
   Updated to support Apache Lucene 7.0.0 or later.

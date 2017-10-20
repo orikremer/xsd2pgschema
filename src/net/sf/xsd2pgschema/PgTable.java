@@ -232,7 +232,7 @@ public class PgTable {
 
 			PgField field = new PgField();
 
-			field.name = field.xname = PgSchemaUtil.document_key_name;
+			field.name = field.xname = schema.option.document_key_name;
 			field.type = xs_prefix_ + "string";
 			field.xs_type = XsDataType.xs_string;
 			field.document_key = true;
@@ -420,7 +420,7 @@ public class PgTable {
 
 		PgField field = new PgField();
 
-		field.name = field.xname = avoidFieldDuplication(schema, PgSchemaUtil.serial_key_name);
+		field.name = field.xname = avoidFieldDuplication(schema, schema.option.serial_key_name);
 		field.setSerKeyType(schema);
 		field.serial_key = true;
 
@@ -440,7 +440,7 @@ public class PgTable {
 
 		PgField field = new PgField();
 
-		field.name = field.xname = avoidFieldDuplication(schema, PgSchemaUtil.xpath_key_name);
+		field.name = field.xname = avoidFieldDuplication(schema, schema.option.xpath_key_name);
 		field.setHashKeyType(schema);
 		field.xpath_key = true;
 

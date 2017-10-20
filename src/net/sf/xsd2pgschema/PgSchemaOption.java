@@ -62,6 +62,24 @@ public class PgSchemaOption {
 	/** Whether append to existing data. */
 	public boolean append = false;
 
+	/** The default document key name in PostgreSQL DDL. */
+	private final String def_document_key_name = "document_id";
+
+	/** The default serial key name in PostgreSQL DDL. */
+	private final String def_serial_key_name = "serial_id";
+
+	/** The default XPath key name in PostgreSQL DDL. */
+	private final String def_xpath_key_name = "xpath_id";
+
+	/** The document key name in PostgreSQL DDL. */
+	public String document_key_name = def_document_key_name;
+
+	/** The serial key name in PostgreSQL DDL. */
+	public String serial_key_name = def_serial_key_name;
+
+	/** The XPath key name in PostgreSQL DDL. */
+	public String xpath_key_name = def_xpath_key_name;
+
 	/** The name of hash algorithm. */
 	public String hash_algorithm = PgSchemaUtil.def_hash_algorithm;
 
@@ -131,6 +149,86 @@ public class PgSchemaOption {
 	 */
 	public int getMinimumSizeOfField() {
 		return (rel_model_ext ? 1 : 0) + (document_key ? 1 : 0);
+	}
+
+	/**
+	 * Set document key name.
+	 * 
+	 * @param document_key_name document key name
+	 */
+	public void setDocumentKeyName(String document_key_name) {
+
+		if (document_key_name == null || document_key_name.isEmpty())
+			return;
+
+		this.document_key_name = document_key_name;
+
+	}
+
+	/**
+	 * Set serial key name.
+	 * 
+	 * @param serial_key_name serial key name
+	 */
+	public void setSerialKeyName(String serial_key_name) {
+
+		if (serial_key_name == null || serial_key_name.isEmpty())
+			return;
+
+		this.serial_key_name = serial_key_name;
+
+	}
+
+	/**
+	 * Set XPath key name.
+	 * 
+	 * @param xpath_key_name xpath key name
+	 */
+	public void setXPathKeyName(String xpath_key_name) {
+
+		if (xpath_key_name == null || xpath_key_name.isEmpty())
+			return;
+
+		this.xpath_key_name = xpath_key_name;
+
+	}
+
+	/**
+	 * Set default user key names.
+	 */
+	public void setDefaultUserKeys() {
+
+		setDefaultDocumentKey();
+		setDefaultSerialKey();
+		setDefaultXPathKey();
+
+	}
+
+	/**
+	 * Set default document key name.
+	 */
+	public void setDefaultDocumentKey() {
+
+		document_key_name = def_document_key_name; 
+
+	}
+
+	/**
+	 * Set default serial key name.
+	 */
+	public void setDefaultSerialKey() {
+
+		serial_key_name = def_serial_key_name; 
+
+	}
+
+	/**
+	 * Set default XPath key name.
+	 */
+	public void setDefaultXPathKey() {
+
+		xpath_key_name = def_xpath_key_name; 
+
 	}
 
 }

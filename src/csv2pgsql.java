@@ -121,6 +121,15 @@ public class csv2pgsql {
 			else if (args[i].matches("^--db-?pass.*"))
 				pg_option.password = args[++i];
 
+			else if (args[i].equals("--doc-key-name"))
+				option.setDocumentKeyName(args[++i]);
+
+			else if (args[i].equals("--ser-key-name"))
+				option.setSerialKeyName(args[++i]);
+
+			else if (args[i].equals("--xpath-key-name"))
+				option.setXPathKeyName(args[++i]);
+
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
 				showUsage();
@@ -205,11 +214,18 @@ public class csv2pgsql {
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
-		System.err.println("        --doc-key (append " + PgSchemaUtil.document_key_name + " column in all relations, default with relational model extension)");
-		System.err.println("        --no-doc-key (remove " + PgSchemaUtil.document_key_name + " column from all relations, effective only with relational model extension)");
-		System.err.println("        --ser-key (append " + PgSchemaUtil.serial_key_name + " column in child relation of list holder)");
-		System.err.println("        --xpath-key (append " + PgSchemaUtil.xpath_key_name + " column in all relations)");
+		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");
+		System.err.println("        --no-doc-key (remove " + option.document_key_name + " column from all relations, effective only with relational model extension)");
+		System.err.println("        --ser-key (append " + option.serial_key_name + " column in child relation of list holder)");
+		System.err.println("        --xpath-key (append " + option.xpath_key_name + " column in all relations)");
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
+
+		option.setDefaultUserKeys();
+
+		System.err.println("        --doc-key-name DOC_KEY_NAME (default=\"" + option.document_key_name + "\")");
+		System.err.println("        --ser-key-name SER_KEY_NAME (default=\"" + option.serial_key_name + "\")");
+		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.xpath_key_name + "\")");
+
 		System.exit(1);
 
 	}

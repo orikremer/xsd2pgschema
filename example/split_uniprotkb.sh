@@ -27,3 +27,5 @@ XSD_SCHEMA=uniprot.xsd
 
 java -classpath ../xsd2pgschema.jar xmlsplitter --xsd $XSD_SCHEMA --xml $DB_XML --xml-dir $XML_DIR --xpath-doc-key /uniprot/entry/accession
 
+date
+

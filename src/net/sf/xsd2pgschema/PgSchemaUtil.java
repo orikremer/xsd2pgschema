@@ -63,16 +63,7 @@ public class PgSchemaUtil {
 	/** The namespace URI representing JSON Schema. */
 	public final static String json_schema_def = "http://json-schema.org/schema#";
 
-	/** The document key name in PostgreSQL. */
-	public final static String document_key_name = "document_id";
-
-	/** The serial key name in PostgreSQL. */
-	public final static String serial_key_name = "serial_id";
-
-	/** The XPath key name in PostgreSQL. */
-	public final static String xpath_key_name = "xpath_id";
-
-	/** The name of xs;simpleContent in PostgreSQL. */
+	/** The name of xs:simpleContent in PostgreSQL. */
 	public final static String simple_cont_name = "content";
 
 	/** The name of xs:any in PostgreSQL. */

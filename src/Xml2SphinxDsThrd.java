@@ -187,7 +187,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 				writer.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 				writer.write("<sphinx:document id=\"" + schema.getHashKeyString(xml_parser.document_id) + "\">\n");
-				writer.write("<" + PgSchemaUtil.document_key_name + ">" + StringEscapeUtils.escapeXml10(xml_parser.document_id) + "</" + PgSchemaUtil.document_key_name + ">\n");
+				writer.write("<" + schema.option.document_key_name + ">" + StringEscapeUtils.escapeXml10(xml_parser.document_id) + "</" + schema.option.document_key_name + ">\n");
 
 				schema.xml2SphDs(xml_parser, writer, xml2sphinxds.xml_post_editor, xml2sphinxds.index_filter);
 

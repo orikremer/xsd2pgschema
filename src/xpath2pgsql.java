@@ -142,6 +142,15 @@ public class xpath2pgsql {
 				variables.put(variable[0], variable[1]);
 			}
 
+			else if (args[i].equals("--doc-key-name"))
+				option.setDocumentKeyName(args[++i]);
+
+			else if (args[i].equals("--ser-key-name"))
+				option.setSerialKeyName(args[++i]);
+
+			else if (args[i].equals("--xpath-key-name"))
+				option.setXPathKeyName(args[++i]);
+
 			else if (args[i].equals("--verbose"))
 				verbose = true;
 
@@ -197,14 +206,21 @@ public class xpath2pgsql {
 		System.err.println("        --xpath-var KEY=VALUE");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
-		System.err.println("        --doc-key (append " + PgSchemaUtil.document_key_name + " column in all relations, default with relational model extension)");
-		System.err.println("        --no-doc-key (remove " + PgSchemaUtil.document_key_name + " column from all relations, effective only with relational model extension)");
-		System.err.println("        --ser-key (append " + PgSchemaUtil.serial_key_name + " column in child relation of list holder)");
-		System.err.println("        --xpath-key (append " + PgSchemaUtil.xpath_key_name + " column in all relations)");
+		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");
+		System.err.println("        --no-doc-key (remove " + option.document_key_name + " column from all relations, effective only with relational model extension)");
+		System.err.println("        --ser-key (append " + option.serial_key_name + " column in child relation of list holder)");
+		System.err.println("        --xpath-key (append " + option.xpath_key_name + " column in all relations)");
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("Option: --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
 		System.err.println("        --ser-size BIT_SIZE [short (16bit); | int (32bit, default)]");
+
+		option.setDefaultUserKeys();
+
+		System.err.println("        --doc-key-name DOC_KEY_NAME (default=\"" + option.document_key_name + "\")");
+		System.err.println("        --ser-key-name SER_KEY_NAME (default=\"" + option.serial_key_name + "\")");
+		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.xpath_key_name + "\")");
+
 		System.err.println("        --verbose");
 		System.exit(1);
 

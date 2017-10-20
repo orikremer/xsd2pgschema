@@ -91,7 +91,7 @@ public class PgSchema {
 	private List<PgForeignKey> foreign_keys = null;
 
 	/** The PostgreSQL schema option. */
-	PgSchemaOption option = null;
+	public PgSchemaOption option = null;
 
 	/** Whether name collision occurs or not. */
 	private boolean conflicted = false;
@@ -3529,7 +3529,7 @@ public class PgSchema {
 
 								has_db_table = true;
 
-								String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + PgSchemaUtil.document_key_name + "='" + document_id + "'";
+								String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + option.document_key_name + "='" + document_id + "'";
 
 								stat.execute(sql);
 
@@ -3914,7 +3914,7 @@ public class PgSchema {
 
 			if (data_source) {
 
-				filew.write("<sphinx:attr name=\"" + PgSchemaUtil.document_key_name + "\" type=\"string\"/>\n"); // default attr
+				filew.write("<sphinx:attr name=\"" + option.document_key_name + "\" type=\"string\"/>\n"); // default attr
 				filew.write("<sphinx:field name=\"" + PgSchemaUtil.simple_cont_name + "\"/>\n"); // default field
 
 			}
@@ -4054,7 +4054,7 @@ public class PgSchema {
 			filew.write("source " + idx_name + "\n{\n");
 			filew.write("\ttype                    = xmlpipe2\n");
 			filew.write("\txmlpipe_command         = cat " + data_source.getAbsolutePath() + "\n");
-			filew.write("\txmlpipe_attr_string     = " + PgSchemaUtil.document_key_name + "\n");
+			filew.write("\txmlpipe_attr_string     = " + option.document_key_name + "\n");
 			filew.write("\txmlpipe_field           = " + PgSchemaUtil.simple_cont_name + "\n");
 
 			tables.forEach(table -> table.fields.stream().filter(field -> field.sph_attr).forEach(field -> {

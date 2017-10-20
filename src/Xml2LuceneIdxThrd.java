@@ -186,7 +186,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 				org.apache.lucene.document.Document lucene_doc = new org.apache.lucene.document.Document();
 
-				lucene_doc.add(new StringField(PgSchemaUtil.document_key_name, xml_parser.document_id, Field.Store.YES));
+				lucene_doc.add(new StringField(schema.option.document_key_name, xml_parser.document_id, Field.Store.YES));
 
 				schema.xml2LucIdx(xml_parser, lucene_doc, xml2luceneidx.xml_post_editor, xml2luceneidx.index_filter);
 

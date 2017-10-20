@@ -81,6 +81,12 @@ public class XPathCompList {
 	/** Whether add serial key in PostgreSQL DDL. */
 	private boolean serial_key = false;
 
+	/** The document key name in PostgreSQL. */
+	private String document_key_name = "document_id";
+
+	/** The serial key name in PostgreSQL. */
+	private String serial_key_name = "serial_id";
+
 	/** Whether retain case sensitive name in PostgreSQL DDL. */
 	private boolean case_sense = true;
 
@@ -104,7 +110,11 @@ public class XPathCompList {
 
 		document_key = schema.option.document_key;
 		serial_key = schema.option.serial_key;
+
 		case_sense = schema.option.case_sense;
+
+		document_key_name = schema.option.document_key_name;
+		serial_key_name = schema.option.serial_key_name;
 
 		comps = new ArrayList<XPathComp>();
 
@@ -2496,7 +2506,7 @@ public class XPathCompList {
 
 				sb.append("( SELECT max( ");
 
-				appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
+				appendSqlColumnName(table_name, serial_key_name, sb);
 
 				sb.append(" ) FROM ");
 
@@ -2504,7 +2514,7 @@ public class XPathCompList {
 
 				sb.append(PgSchemaUtil.avoidPgReservedWords(table_name) + " as " + alias_name);
 
-				sb.append(" WHERE " + alias_name + "." + PgSchemaUtil.document_key_name + " = t1." + PgSchemaUtil.document_key_name);
+				sb.append(" WHERE " + alias_name + "." + document_key_name + " = t1." + document_key_name);
 
 				sb.append(" )");
 
@@ -2523,7 +2533,7 @@ public class XPathCompList {
 				if (!case_sense)
 					table_name = table_name.toLowerCase();
 
-				appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
+				appendSqlColumnName(table_name, serial_key_name, sb);
 				break;
 			case "count":
 				if (pred_size != 1)
@@ -2553,7 +2563,7 @@ public class XPathCompList {
 
 				sb.append(PgSchemaUtil.avoidPgReservedWords(sql_expr.table_name) + " as " + alias_name);
 
-				sb.append(" WHERE " + alias_name + "." + PgSchemaUtil.document_key_name + " = t1." + PgSchemaUtil.document_key_name);
+				sb.append(" WHERE " + alias_name + "." + document_key_name + " = t1." + document_key_name);
 
 				sb.append(" )");
 				break;
@@ -3437,7 +3447,7 @@ public class XPathCompList {
 
 				sb.append(PgSchemaUtil.avoidPgReservedWords(sql_expr_str.table_name) + " as " + alias_name);
 
-				sb.append(" WHERE " + alias_name + "." + PgSchemaUtil.document_key_name + " = t1." + PgSchemaUtil.document_key_name);
+				sb.append(" WHERE " + alias_name + "." + document_key_name + " = t1." + document_key_name);
 
 				sb.append(" )");
 				break;
@@ -3757,7 +3767,7 @@ public class XPathCompList {
 				}
 				if (!case_sense)
 					table_name = table_name.toLowerCase();
-				appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
+				appendSqlColumnName(table_name, serial_key_name, sb);
 				sb.append(" = " + sql_expr.predicate);
 				break;
 			default:
@@ -3802,7 +3812,7 @@ public class XPathCompList {
 			String table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.path);
 			if (!case_sense)
 				table_name = table_name.toLowerCase();
-			appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
+			appendSqlColumnName(table_name, serial_key_name, sb);
 			sb.append(" = ");
 
 		}
@@ -3885,7 +3895,7 @@ public class XPathCompList {
 			String table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.path);
 			if (!case_sense)
 				table_name = table_name.toLowerCase();
-			appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
+			appendSqlColumnName(table_name, serial_key_name, sb);
 			sb.append(" = ");
 
 		}
@@ -4038,7 +4048,7 @@ public class XPathCompList {
 					}
 					if (!case_sense)
 						table_name = table_name.toLowerCase();
-					appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
+					appendSqlColumnName(table_name, serial_key_name, sb);
 					sb.append(" = " + sql_expr.predicate);
 					break;
 				default:
@@ -4102,7 +4112,7 @@ public class XPathCompList {
 				}
 				if (!case_sense)
 					table_name = table_name.toLowerCase();
-				appendSqlColumnName(table_name, PgSchemaUtil.serial_key_name, sb);
+				appendSqlColumnName(table_name, serial_key_name, sb);
 				sb.append(" = " + sql_expr.predicate);
 			}
 			break;

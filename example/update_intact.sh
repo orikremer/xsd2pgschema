@@ -45,7 +45,7 @@ fi
 
 unzip $DB_FTP/$ZIP_FILE -d $XML_DIR
 
-echo done.
+date
 
 ./clone_intact.sh
 

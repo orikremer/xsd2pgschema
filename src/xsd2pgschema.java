@@ -37,6 +37,9 @@ import org.w3c.dom.Document;
  */
 public class xsd2pgschema {
 
+	/** The schema option. */
+	public static PgSchemaOption option = new PgSchemaOption(true);
+
 	/**
 	 * The main method.
 	 *
@@ -44,7 +47,6 @@ public class xsd2pgschema {
 	 */
 	public static void main(String[] args) {
 
-		PgSchemaOption option = new PgSchemaOption(true);
 		option.ddl_output = true; // output PostgreSQL DDL
 
 		boolean _document_key = false;
@@ -115,6 +117,15 @@ public class xsd2pgschema {
 
 			else if (args[i].equals("--ser-size"))
 				option.ser_size = PgSerSize.getPgSerSize(args[++i]);
+
+			else if (args[i].equals("--doc-key-name"))
+				option.setDocumentKeyName(args[++i]);
+
+			else if (args[i].equals("--ser-key-name"))
+				option.setSerialKeyName(args[++i]);
+
+			else if (args[i].equals("--xpath-key-name"))
+				option.setXPathKeyName(args[++i]);
 
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
@@ -188,10 +199,10 @@ public class xsd2pgschema {
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --ddl DDL_FILE (default=stdout)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
-		System.err.println("        --doc-key (append " + PgSchemaUtil.document_key_name + " column in all relations, default with relational model extension)");
-		System.err.println("        --no-doc-key (remove " + PgSchemaUtil.document_key_name + " column from all relations, effective only with relational model extension)");
-		System.err.println("        --ser-key (append " + PgSchemaUtil.serial_key_name + " column in child relation of list holder)");
-		System.err.println("        --xpath-key (append " + PgSchemaUtil.xpath_key_name + " column in all relations)");
+		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");
+		System.err.println("        --no-doc-key (remove " + option.document_key_name + " column from all relations, effective only with relational model extension)");
+		System.err.println("        --ser-key (append " + option.serial_key_name + " column in child relation of list holder)");
+		System.err.println("        --xpath-key (append " + option.xpath_key_name + " column in all relations)");
 		System.err.println("        --no-key (turn off constraint of primary key/foreign key)");
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --field-annotation (retrieve field annotation)");
@@ -199,6 +210,13 @@ public class xsd2pgschema {
 		System.err.println("        --hash-by ASSUMED_ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
 		System.err.println("        --ser-size BIT_SIZE [short (16bit); | int (32bit, default)]");
+
+		option.setDefaultUserKeys();
+
+		System.err.println("        --doc-key-name DOC_KEY_NAME (default=\"" + option.document_key_name + "\")");
+		System.err.println("        --ser-key-name SER_KEY_NAME (default=\"" + option.serial_key_name + "\")");
+		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.xpath_key_name + "\")");
+
 		System.exit(1);
 
 	}

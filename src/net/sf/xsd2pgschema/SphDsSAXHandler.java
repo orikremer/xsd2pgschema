@@ -105,11 +105,12 @@ public class SphDsSAXHandler extends DefaultHandler {
 
 		else {
 
-			switch (qName) {
-			case PgSchemaUtil.document_key_name:
+			if (qName.equals(schema.option.document_key_name)) {
 				document_id = true;
 				return;
-			case PgSchemaUtil.simple_cont_name:
+			}
+
+			if (qName.equals(PgSchemaUtil.simple_cont_name)) {
 				content = true;
 				return;
 			}
@@ -175,11 +176,12 @@ public class SphDsSAXHandler extends DefaultHandler {
 
 		else {
 
-			switch (qName) {
-			case PgSchemaUtil.document_key_name:
+			if (qName.equals(schema.option.document_key_name)) {
 				document_id = false;
 				return;
-			case PgSchemaUtil.simple_cont_name:
+			}
+
+			if (qName.equals(PgSchemaUtil.simple_cont_name)) {
 				content = false;
 				return;
 			}
@@ -205,7 +207,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 		else if (document_id) {
 
 			try {
-				writer.write("<" + PgSchemaUtil.document_key_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + PgSchemaUtil.document_key_name + ">\n");
+				writer.write("<" + schema.option.document_key_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + schema.option.document_key_name + ">\n");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
