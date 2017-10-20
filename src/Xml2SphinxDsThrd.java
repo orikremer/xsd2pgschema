@@ -227,7 +227,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * 
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws ParserConfigurationException
+	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
 	 */
 	public void merge() throws PgSchemaException, IOException, ParserConfigurationException, SAXException {
