@@ -1,6 +1,7 @@
- Changes in xsd2pgschema 2.6.4 (release 2017-10-20)
+ Changes in xsd2pgschema 2.6.4 (release 2017-10-24)
 
   Name of user key (document_key, serial_key and xpath_key) is adjustable via --doc-key-name, --ser-key-name and -xpath-key-name option, respectively.
+  Allowed to locate referred XSDs into directory of the primary XSD.
 
  Changes in xsd2pgschema 2.6.3 (release 2017-10-10)
 

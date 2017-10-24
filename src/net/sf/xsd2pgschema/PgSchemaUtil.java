@@ -155,7 +155,7 @@ public class PgSchemaUtil {
 
 			File schema_file = new File(schema_location);
 
-			if (!schema_file.exists() && schema_parent != null)
+			if (!schema_file.exists() && schema_parent != null) // schema_parent indicates either URL or file path
 				return getSchemaInputStream(schema_parent + "/" + getSchemaFileName(schema_location), null);
 
 			try {
@@ -250,15 +250,21 @@ public class PgSchemaUtil {
 	 */
 	public static File getSchemaFile(String schema_location, String schema_parent) {
 
-		if (!schema_location.startsWith("http:") && !schema_location.startsWith("https:"))
-			return new File(schema_location);
-
 		String schema_file_name = getSchemaFileName(schema_location);
 
 		File schema_file = new File(schema_file_name);
 
 		if (schema_file.exists())
 			return schema_file;
+
+		if (schema_parent != null && !schema_parent.startsWith("http:") && !schema_parent.startsWith("https:")) { // schema_parent indicates file path
+
+			schema_file = new File(schema_parent + "/" + schema_file_name);
+
+			if (schema_file.exists())
+				return schema_file;
+
+		}
 
 		InputStream is = getSchemaInputStream(schema_location, schema_parent);
 
@@ -273,39 +279,6 @@ public class PgSchemaUtil {
 
 		} catch (IOException e) {
 			e.printStackTrace();
-			return null;
-		}
-
-	}
-
-	/**
-	 * Copy XSD file of schema location in current directory if not exist.
-	 *
-	 * @param schema_location schema location
-	 * @param schema_parent parent of schema location
-	 * @return File file of schema location
-	 */
-	public static File copySchemaFileIfNotExist(String schema_location, String schema_parent) {
-
-		String schema_file_name = getSchemaFileName(schema_location);
-
-		File schema_file = new File(schema_file_name);
-
-		if (schema_file.exists())
-			return schema_file;
-
-		InputStream is = getSchemaInputStream(schema_location, schema_parent);
-
-		if (is == null)
-			return null;
-
-		try {
-
-			IOUtils.copy(is, new FileOutputStream(schema_file));
-
-			return schema_file;
-
-		} catch (IOException e) {
 			return null;
 		}
 
