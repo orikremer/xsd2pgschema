@@ -113,7 +113,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(xml2luceneidx.schema_location), option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, xml2luceneidx.schema_location, option);
 
 		// prepare XML validator
 

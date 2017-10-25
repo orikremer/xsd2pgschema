@@ -93,7 +93,7 @@ public class XPath2PgSqlImpl {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(xpath2pgsql.schema_location), option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, xpath2pgsql.schema_location, option);
 
 		if (!pg_option.database.isEmpty()) {
 

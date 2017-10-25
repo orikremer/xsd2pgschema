@@ -96,7 +96,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(xml2pgcsv.schema_location), option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, xml2pgcsv.schema_location, option);
 
 		// prepare XML validator
 

@@ -204,7 +204,7 @@ public class dsmerge4sphinx {
 
 			// XSD analysis
 
-			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(schema_location), new PgSchemaOption(false));
+			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, schema_location, new PgSchemaOption(false));
 
 			for (String src_ds_dir_name : src_ds_dir_list) {
 

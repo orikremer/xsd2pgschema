@@ -112,7 +112,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(xml2sphinxds.schema_location), option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, xml2sphinxds.schema_location, option);
 
 		// prepare XML validator
 

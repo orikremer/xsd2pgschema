@@ -156,7 +156,7 @@ public class xsd2jsonschema {
 
 			// XSD analysis
 
-			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(schema_location), option);
+			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, schema_location, option);
 
 			schema.initJsonBuilder(jsonb_option);
 

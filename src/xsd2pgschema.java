@@ -181,7 +181,7 @@ public class xsd2pgschema {
 
 			// XSD analysis
 
-			new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(schema_location), option);
+			new PgSchema(doc_builder, xsd_doc, null, schema_location, option);
 
 		} catch (Exception e) {
 			e.printStackTrace();

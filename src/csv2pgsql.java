@@ -187,7 +187,7 @@ public class csv2pgsql {
 
 			// XSD analysis
 
-			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, PgSchemaUtil.getSchemaName(schema_location), option);
+			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, schema_location, option);
 
 			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.password);
 
