@@ -1417,7 +1417,7 @@ public class PgSchema {
 
 					name = e.getAttribute("name");
 
-					if (name.equals(ref)) {
+					if (name.equals(getUnqualifiedName(ref))) {
 
 						if (attribute)
 							field.attribute = true;
@@ -2149,19 +2149,23 @@ public class PgSchema {
 
 		// administrative tables ordered by level
 
-		int max_child_level = tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child)).max(Comparator.comparingInt(table -> table.level)).get().level;
+		if (tables.stream().anyMatch(table -> table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child))) {
 
-		for (int l = 1; l <= max_child_level; l++) {
+			int max_child_level = tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child)).max(Comparator.comparingInt(table -> table.level)).get().level;
 
-			for (int t = 0; t < tables.size(); t++) {
+			for (int l = 1; l <= max_child_level; l++) {
 
-				PgTable table = tables.get(t);
+				for (int t = 0; t < tables.size(); t++) {
 
-				if ((table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child))&& table.level == l) {
+					PgTable table = tables.get(t);
 
-					realizeAdmin(table, false);
+					if ((table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child))&& table.level == l) {
 
-					realize(table, t, false);
+						realizeAdmin(table, false);
+
+						realize(table, t, false);
+
+					}
 
 				}
 
@@ -7479,7 +7483,7 @@ public class PgSchema {
 
 		}
 
-		return null;
+		return getAbsoluteXPathOfTable(tables.stream().filter(foreign_table -> foreign_table.nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key && field.foreign_table.equals(table.name))).findFirst().get(), sb);
 	}
 
 	/**

@@ -210,9 +210,9 @@ public class XmlSplitterImpl {
 		if (doc_key.path_exprs.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		XPathCompList doc_unit = new XPathCompList();
+		XPathCompList doc_unit = new XPathCompList(schema, tree, null, false);
 
-		doc_unit.replacePathExprs(doc_key);
+		doc_unit.validate(true, verbose);
 
 		if (doc_unit.selectParentPath() == 0)
 			throw new xpathListenerException("Cound not specify document unit from XPath expression. (" + main_text + ")");
@@ -463,7 +463,8 @@ public class XmlSplitterImpl {
 
 			else if (xml_writer == null) {
 
-				interim_events.add(element);
+				if (!doc_unit)
+					interim_events.add(element);
 
 				if (attr_doc_key && _cur_path.equals(attr_doc_key_holder)) {
 
@@ -523,11 +524,17 @@ public class XmlSplitterImpl {
 		@Override
 		public void handleEvent(XMLEvent element) {
 
+			boolean doc_unit = cur_path.toString().equals(doc_unit_path);
+
 			if (no_header)
 				header_start_events.add(element);
 
-			else if (xml_writer == null)
-				interim_events.add(element);
+			else if (xml_writer == null) {
+
+				if (!doc_unit)
+					interim_events.add(element);
+
+			}
 
 			else {
 
@@ -539,8 +546,6 @@ public class XmlSplitterImpl {
 				}
 
 			}
-
-			boolean doc_unit = cur_path.toString().equals(doc_unit_path);
 
 			if (doc_unit) {
 
@@ -575,8 +580,12 @@ public class XmlSplitterImpl {
 			if (no_header)
 				header_start_events.add(element);
 
-			else if (xml_writer == null)
-				interim_events.add(element);
+			else if (xml_writer == null) {
+
+				if (!cur_path.toString().equals(doc_unit_path))
+					interim_events.add(element);
+
+			}
 
 			else {
 
@@ -609,7 +618,8 @@ public class XmlSplitterImpl {
 
 			else if (xml_writer == null) {
 
-				interim_events.add(element);
+				if (!cur_path.toString().equals(doc_unit_path))
+					interim_events.add(element);
 
 				if (no_document_key && !attr_doc_key && cur_path.toString().equals(doc_key_path)) {
 

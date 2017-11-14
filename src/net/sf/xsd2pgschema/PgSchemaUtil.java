@@ -90,9 +90,6 @@ public class PgSchemaUtil {
 	/** The default length of indent spaces. */
 	public final static int indent_spaces = 2;
 
-	/** The maximum number of XML files to be sorted for balancing data. */
-	public final static int max_sort_xml_files = 65536;
-
 	/** The prefix of directory name for sharding. */
 	public final static String shard_dir_prefix = "part-";
 
