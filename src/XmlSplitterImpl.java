@@ -212,7 +212,7 @@ public class XmlSplitterImpl {
 
 		XPathCompList doc_unit = new XPathCompList(schema, tree, null, false);
 
-		doc_unit.validate(true, verbose);
+		doc_unit.validate(true, false);
 
 		if (doc_unit.selectParentPath() == 0)
 			throw new xpathListenerException("Cound not specify document unit from XPath expression. (" + main_text + ")");
@@ -346,11 +346,9 @@ public class XmlSplitterImpl {
 
 				in.close();
 
-				System.out.println("Done.");
+				System.out.println("\nDone.");
 
 			}
-
-			System.out.println("Generated " + proc_id + " XML documents.");
 
 		} catch (IOException | XMLStreamException e) {
 			e.printStackTrace();
@@ -724,6 +722,8 @@ public class XmlSplitterImpl {
 		xml_writer.close();
 
 		xml_writer = null;
+
+		System.out.print("\rGenerated " + proc_id + " XML documents.");
 
 	}
 

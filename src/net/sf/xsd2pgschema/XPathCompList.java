@@ -24,6 +24,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -1029,14 +1030,21 @@ public class XPathCompList {
 					continue;
 				}
 
-				Integer[] foreign_table_ids = table.fields.stream().filter(_field -> _field.nested_key).map(_field -> _field.foreign_table_id).toArray(Integer[]::new);
-				Integer[] _foreign_table_ids = null;
+				HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
+
+				Integer[] ft_ids = table.fields.stream().filter(_field -> _field.nested_key).map(_field -> _field.foreign_table_id).toArray(Integer[]::new);
+				Integer[] _ft_ids = null;
 
 				boolean found_field = false;
 
-				while (foreign_table_ids != null && foreign_table_ids.length > 0 && !found_field) {
+				while (ft_ids != null && ft_ids.length > 0 && !found_field) {
 
-					for (Integer foreign_table_id : foreign_table_ids) {
+					int _touched_size = touched_ft_ids.size();
+
+					for (Integer foreign_table_id : ft_ids) {
+
+						if (!touched_ft_ids.add(foreign_table_id))
+							continue;
 
 						PgTable foreign_table = schema.getTable(foreign_table_id);
 
@@ -1054,18 +1062,23 @@ public class XPathCompList {
 
 						if (foreign_table.virtual && !found_field) {
 
-							Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(_field -> _field.nested_key).map(_field -> _field.foreign_table_id).toArray(Integer[]::new);
+							Integer[] __ft_ids = foreign_table.fields.stream().filter(_field -> _field.nested_key).map(_field -> _field.foreign_table_id).toArray(Integer[]::new);
 
-							if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
-								_foreign_table_ids = __foreign_table_ids;
+							if (__ft_ids != null && __ft_ids.length > 0)
+								_ft_ids = __ft_ids;
 
 						}
 
 					}
 
-					foreign_table_ids = _foreign_table_ids;
+					ft_ids = _ft_ids;
+
+					if (touched_ft_ids.size() == _touched_size)
+						break;
 
 				}
+
+				touched_ft_ids.clear();
 
 				if (!found_field)
 					throw new PgSchemaException(comp.tree, previousOf(comp).tree);
@@ -4259,14 +4272,21 @@ public class XPathCompList {
 		List<String> table_path = new ArrayList<String>();
 		table_path.add(src_table_name);
 
-		Integer[] foreign_table_ids = src_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-		Integer[] _foreign_table_ids = null;
+		HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
+
+		Integer[] ft_ids = src_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+		Integer[] _ft_ids = null;
 
 		boolean found_table = false;
 
-		while (foreign_table_ids != null && foreign_table_ids.length > 0 && !found_table) {
+		while (ft_ids != null && ft_ids.length > 0 && !found_table) {
 
-			for (Integer foreign_table_id : foreign_table_ids) {
+			int _touched_size = touched_ft_ids.size();
+
+			for (Integer foreign_table_id : ft_ids) {
+
+				if (!touched_ft_ids.add(foreign_table_id))
+					continue;
 
 				PgTable foreign_table = schema.getTable(foreign_table_id);
 
@@ -4283,18 +4303,23 @@ public class XPathCompList {
 
 					table_path.add(foreign_table.name);
 
-					Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
-					if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
-						_foreign_table_ids = __foreign_table_ids;
+					if (__ft_ids != null && __ft_ids.length > 0)
+						_ft_ids = __ft_ids;
 
 				}
 
 			}
 
-			foreign_table_ids = _foreign_table_ids;
+			ft_ids = _ft_ids;
+
+			if (touched_ft_ids.size() == _touched_size)
+				break;
 
 		}
+
+		touched_ft_ids.clear();
 
 		if (!found_table)
 			throw new PgSchemaException("Not found path from " + src_table_name + " to " + dst_table_name + ".");

@@ -1,9 +1,9 @@
  Changes in xsd2pgschema 2.6.6 (release 2017-11-14)
 
-  Updated PostgreSQL 10 reserved words.
-  Fixed implementation on QName ref attribute.
+  Updated PostgreSQL 10's reserved words.
+  Fixed implementation on 'ref' attribute with QName.
   Fixed getAbsoluteXPathOfTable() which caused an infinite loop in XPath parser.
-  Fixed xmlsplitter which generated duplicated document unit.
+  Fixed xmlsplitter which generated duplicating document unit.
 
  Changes in xsd2pgschema 2.6.5 (release 2017-10-25)
 

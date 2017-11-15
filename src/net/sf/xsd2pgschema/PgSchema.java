@@ -265,10 +265,8 @@ public class PgSchema {
 
 					// prevent infinite cyclic reference which is allowed in XML Schema 1.1
 
-					if (_root_schema.schema_locations.contains(schema_file_name))
+					if (!_root_schema.schema_locations.add(schema_file_name))
 						continue;
-
-					_root_schema.schema_locations.add(schema_file_name);
 
 					// copy XML Schema if not exists
 
@@ -5785,14 +5783,20 @@ public class PgSchema {
 
 					// check current nested_key
 
-					Integer[] foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-					Integer[] _foreign_table_ids = null;
+					HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-					while (foreign_table_ids != null && foreign_table_ids.length > 0 && _list.path_exprs.size() == 0) {
+					Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					Integer[] _ft_ids = null;
 
-						boolean first_nest = _foreign_table_ids == null;
+					while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
-						for (Integer foreign_table_id : foreign_table_ids) {
+						boolean first_nest = _ft_ids == null;
+						int _touched_size = touched_ft_ids.size();
+
+						for (Integer foreign_table_id : ft_ids) {
+
+							if (!touched_ft_ids.add(foreign_table_id))
+								continue;
 
 							PgTable foreign_table = tables.get(foreign_table_id);
 
@@ -5831,18 +5835,23 @@ public class PgSchema {
 
 							if (foreign_table.virtual || !abs_path) {
 
-								Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+								Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
-								if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
-									_foreign_table_ids = __foreign_table_ids;
+								if (__ft_ids != null && __ft_ids.length > 0)
+									_ft_ids = __ft_ids;
 
 							}
 
 						}
 
-						foreign_table_ids = _foreign_table_ids;
+						ft_ids = _ft_ids;
+
+						if (touched_ft_ids.size() == _touched_size)
+							break;
 
 					}
+
+					touched_ft_ids.clear();
 
 				}
 
@@ -5982,12 +5991,19 @@ public class PgSchema {
 
 					// check current nested_key
 
-					Integer[] foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-					Integer[] _foreign_table_ids = null;
+					HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-					while (foreign_table_ids != null && foreign_table_ids.length > 0 && _list.path_exprs.size() == 0) {
+					Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					Integer[] _ft_ids = null;
 
-						for (Integer foreign_table_id : foreign_table_ids) {
+					while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
+
+						int _touched_size = touched_ft_ids.size();
+
+						for (Integer foreign_table_id : ft_ids) {
+
+							if (!touched_ft_ids.add(foreign_table_id))
+								continue;
 
 							PgTable foreign_table = tables.get(foreign_table_id);
 
@@ -6006,18 +6022,23 @@ public class PgSchema {
 
 							if (foreign_table.virtual || !abs_location_path) {
 
-								Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+								Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
-								if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
-									_foreign_table_ids = __foreign_table_ids;
+								if (__ft_ids != null && __ft_ids.length > 0)
+									_ft_ids = __ft_ids;
 
 							}
 
 						}
 
-						foreign_table_ids = _foreign_table_ids;
+						ft_ids = _ft_ids;
+
+						if (touched_ft_ids.size() == _touched_size)
+							break;
 
 					}
+
+					touched_ft_ids.clear();
 
 				}
 
@@ -6296,14 +6317,20 @@ public class PgSchema {
 
 					// check current nested_key
 
-					Integer[] foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-					Integer[] _foreign_table_ids = null;
+					HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-					while (foreign_table_ids != null && foreign_table_ids.length > 0 && _list.path_exprs.size() == 0) {
+					Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					Integer[] _ft_ids = null;
 
-						boolean first_nest = _foreign_table_ids == null;
+					while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
-						for (Integer foreign_table_id : foreign_table_ids) {
+						boolean first_nest = _ft_ids == null;
+						int _touched_size = touched_ft_ids.size();
+
+						for (Integer foreign_table_id : ft_ids) {
+
+							if (!touched_ft_ids.add(foreign_table_id))
+								continue;
 
 							PgTable foreign_table = tables.get(foreign_table_id);
 
@@ -6313,7 +6340,7 @@ public class PgSchema {
 
 								String table_xpath = getAbsoluteXPathOfTable(foreign_table, null);
 
-								if (table_xpath != null && (inc_self || _foreign_table_ids == null))
+								if (table_xpath != null && (inc_self || _ft_ids == null))
 									_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
 								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont)) {
@@ -6342,18 +6369,23 @@ public class PgSchema {
 
 							if (foreign_table.virtual || !abs_path) {
 
-								Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+								Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
-								if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
-									_foreign_table_ids = __foreign_table_ids;
+								if (__ft_ids != null && __ft_ids.length > 0)
+									_ft_ids = __ft_ids;
 
 							}
 
 						}
 
-						foreign_table_ids = _foreign_table_ids;
+						ft_ids = _ft_ids;
+
+						if (touched_ft_ids.size() == _touched_size)
+							break;
 
 					}
+
+					touched_ft_ids.clear();
 
 				}
 
@@ -6489,12 +6521,19 @@ public class PgSchema {
 
 					// check current nested_key
 
-					Integer[] foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-					Integer[] _foreign_table_ids = null;
+					HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-					while (foreign_table_ids != null && foreign_table_ids.length > 0 && _list.path_exprs.size() == 0) {
+					Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					Integer[] _ft_ids = null;
 
-						for (Integer foreign_table_id : foreign_table_ids) {
+					while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
+
+						int _touched_size = touched_ft_ids.size();
+
+						for (Integer foreign_table_id : ft_ids) {
+
+							if (!touched_ft_ids.add(foreign_table_id))
+								continue;
 
 							PgTable foreign_table = tables.get(foreign_table_id);
 
@@ -6513,18 +6552,23 @@ public class PgSchema {
 
 							if (foreign_table.virtual || !abs_location_path) {
 
-								Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+								Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
-								if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
-									_foreign_table_ids = __foreign_table_ids;
+								if (__ft_ids != null && __ft_ids.length > 0)
+									_ft_ids = __ft_ids;
 
 							}
 
 						}
 
-						foreign_table_ids = _foreign_table_ids;
+						ft_ids = _ft_ids;
+
+						if (touched_ft_ids.size() == _touched_size)
+							break;
 
 					}
+
+					touched_ft_ids.clear();
 
 				}
 
@@ -6883,14 +6927,20 @@ public class PgSchema {
 
 					// check current nested_key
 
-					Integer[] foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-					Integer[] _foreign_table_ids = null;
+					HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-					while (foreign_table_ids != null && foreign_table_ids.length > 0 && _list.path_exprs.size() == 0) {
+					Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					Integer[] _ft_ids = null;
 
-						boolean first_nest = _foreign_table_ids == null;
+					while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
-						for (Integer foreign_table_id : foreign_table_ids) {
+						boolean first_nest = _ft_ids == null;
+						int _touched_size = touched_ft_ids.size();
+
+						for (Integer foreign_table_id : ft_ids) {
+
+							if (!touched_ft_ids.add(foreign_table_id))
+								continue;
 
 							PgTable foreign_table = tables.get(foreign_table_id);
 
@@ -6900,7 +6950,7 @@ public class PgSchema {
 
 								String table_xpath = getAbsoluteXPathOfTable(foreign_table, null);
 
-								if (table_xpath != null && (inc_self || _foreign_table_ids == null))
+								if (table_xpath != null && (inc_self || _ft_ids == null))
 									_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
 								if (foreign_table.fields.stream().anyMatch(field -> field.simple_cont && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card))) {
@@ -6929,18 +6979,23 @@ public class PgSchema {
 
 							if (foreign_table.virtual || !abs_path) {
 
-								Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+								Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
-								if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
-									_foreign_table_ids = __foreign_table_ids;
+								if (__ft_ids != null && __ft_ids.length > 0)
+									_ft_ids = __ft_ids;
 
 							}
 
 						}
 
-						foreign_table_ids = _foreign_table_ids;
+						ft_ids = _ft_ids;
+
+						if (touched_ft_ids.size() == _touched_size)
+							break;
 
 					}
+
+					touched_ft_ids.clear();
 
 				}
 
@@ -7082,12 +7137,19 @@ public class PgSchema {
 
 					// check current nested_key
 
-					Integer[] foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-					Integer[] _foreign_table_ids = null;
+					HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-					while (foreign_table_ids != null && foreign_table_ids.length > 0 && _list.path_exprs.size() == 0) {
+					Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					Integer[] _ft_ids = null;
 
-						for (Integer foreign_table_id : foreign_table_ids) {
+					while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
+
+						int _touched_size = touched_ft_ids.size();
+
+						for (Integer foreign_table_id : ft_ids) {
+
+							if (!touched_ft_ids.add(foreign_table_id))
+								continue;
 
 							PgTable foreign_table = tables.get(foreign_table_id);
 
@@ -7106,18 +7168,23 @@ public class PgSchema {
 
 							if (foreign_table.virtual || !abs_location_path) {
 
-								Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+								Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
-								if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
-									_foreign_table_ids = __foreign_table_ids;
+								if (__ft_ids != null && __ft_ids.length > 0)
+									_ft_ids = __ft_ids;
 
 							}
 
 						}
 
-						foreign_table_ids = _foreign_table_ids;
+						ft_ids = _ft_ids;
+
+						if (touched_ft_ids.size() == _touched_size)
+							break;
 
 					}
+
+					touched_ft_ids.clear();
 
 				}
 
@@ -7306,17 +7373,26 @@ public class PgSchema {
 
 		} catch (PgSchemaException e) {
 
-			Integer[] foreign_table_ids = null;
-			Integer[] _foreign_table_ids = null;
+			HashSet<Integer> touched_ft_ids = null;
+
+			Integer[] ft_ids = null;
+			Integer[] _ft_ids = null;
 
 			switch (terminus) {
 			case element:
-				foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-				_foreign_table_ids = null;
+				touched_ft_ids = new HashSet<Integer>();
 
-				while (foreign_table_ids != null && foreign_table_ids.length > 0) {
+				ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+				_ft_ids = null;
 
-					for (Integer foreign_table_id : foreign_table_ids) {
+				while (ft_ids != null && ft_ids.length > 0) {
+
+					int _touched_size = touched_ft_ids.size();
+
+					for (Integer foreign_table_id : ft_ids) {
+
+						if (!touched_ft_ids.add(foreign_table_id))
+							continue;
 
 						PgTable foreign_table = tables.get(foreign_table_id);
 
@@ -7335,26 +7411,38 @@ public class PgSchema {
 
 						if (foreign_table.virtual) {
 
-							Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
-							if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
-								_foreign_table_ids = __foreign_table_ids;
+							if (__ft_ids != null && __ft_ids.length > 0)
+								_ft_ids = __ft_ids;
 
 						}
 
 					}
 
-					foreign_table_ids = _foreign_table_ids;
+					ft_ids = _ft_ids;
+
+					if (touched_ft_ids.size() == _touched_size)
+						break;
 
 				}
+
+				touched_ft_ids.clear();
 				break;
 			case simple_content:
-				foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-				_foreign_table_ids = null;
+				touched_ft_ids = new HashSet<Integer>();
 
-				while (foreign_table_ids != null && foreign_table_ids.length > 0) {
+				ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+				_ft_ids = null;
 
-					for (Integer foreign_table_id : foreign_table_ids) {
+				while (ft_ids != null && ft_ids.length > 0) {
+
+					int _touched_size = touched_ft_ids.size();
+
+					for (Integer foreign_table_id : ft_ids) {
+
+						if (!touched_ft_ids.add(foreign_table_id))
+							continue;
 
 						PgTable foreign_table = tables.get(foreign_table_id);
 
@@ -7373,26 +7461,38 @@ public class PgSchema {
 
 						if (foreign_table.virtual) {
 
-							Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
-							if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
-								_foreign_table_ids = __foreign_table_ids;
+							if (__ft_ids != null && __ft_ids.length > 0)
+								_ft_ids = __ft_ids;
 
 						}
 
 					}
 
-					foreign_table_ids = _foreign_table_ids;
+					ft_ids = _ft_ids;
+
+					if (touched_ft_ids.size() == _touched_size)
+						break;
 
 				}
+
+				touched_ft_ids.clear();
 				break;
 			case attribute:
-				foreign_table_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-				_foreign_table_ids = null;
+				touched_ft_ids = new HashSet<Integer>();
 
-				while (foreign_table_ids != null && foreign_table_ids.length > 0) {
+				ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+				_ft_ids = null;
 
-					for (Integer foreign_table_id : foreign_table_ids) {
+				while (ft_ids != null && ft_ids.length > 0) {
+
+					int _touched_size = touched_ft_ids.size();
+
+					for (Integer foreign_table_id : ft_ids) {
+
+						if (!touched_ft_ids.add(foreign_table_id))
+							continue;
 
 						PgTable foreign_table = tables.get(foreign_table_id);
 
@@ -7411,18 +7511,23 @@ public class PgSchema {
 
 						if (foreign_table.virtual) {
 
-							Integer[] __foreign_table_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
-							if (__foreign_table_ids != null && __foreign_table_ids.length > 0)
-								_foreign_table_ids = __foreign_table_ids;
+							if (__ft_ids != null && __ft_ids.length > 0)
+								_ft_ids = __ft_ids;
 
 						}
 
 					}
 
-					foreign_table_ids = _foreign_table_ids;
+					ft_ids = _ft_ids;
+
+					if (touched_ft_ids.size() == _touched_size)
+						break;
 
 				}
+
+				touched_ft_ids.clear();
 				break;
 			default:
 				return null;

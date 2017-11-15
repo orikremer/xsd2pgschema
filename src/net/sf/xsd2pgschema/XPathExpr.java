@@ -38,7 +38,7 @@ public class XPathExpr {
 	/** The previous terminus type. */
 	public XPathCompType prev_term = null;
 
-	/** The realized SQL sentence. */
+	/** The realized SQL statement. */
 	public String sql = null;
 
 	/** The subject SQL expression. */
