@@ -2502,7 +2502,7 @@ public class PgSchema {
 			return;
 
 		System.out.println("--");
-		System.out.println("-- " + (table.anno != null ? table.anno : "No annotation is avaiable"));
+		System.out.println("-- " + (table.anno != null ? table.anno : "No annotation is available"));
 		System.out.println("-- xmlns: " + table.target_namespace + ", schema location: " + table.schema_location);
 		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replaceAll("_",  " ") + ", content: " + table.cont_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (conflicted ? ", name collision: " + table.conflict : ""));
 		System.out.println("--");
