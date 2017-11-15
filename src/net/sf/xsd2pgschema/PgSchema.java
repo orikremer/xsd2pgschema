@@ -197,11 +197,11 @@ public class PgSchema {
 
 		// retrieve top level schema annotation
 
-		def_anno = PgSchemaUtil.extractAnnotation(this, root_node, true);
-		def_anno_appinfo = PgSchemaUtil.extractAppinfo(this, root_node);
+		def_anno = PgSchemaUtil.extractAnnotation(xs_prefix_, root_node, true);
+		def_anno_appinfo = PgSchemaUtil.extractAppinfo(xs_prefix_, root_node);
 
-		if ((def_anno_doc = PgSchemaUtil.extractDocumentation(this, root_node, true)) != null)
-			def_xanno_doc = PgSchemaUtil.extractDocumentation(this, root_node, false);
+		if ((def_anno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, root_node, true)) != null)
+			def_xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, root_node, false);
 
 		def_stat_msg = new StringBuilder();
 
@@ -597,6 +597,23 @@ public class PgSchema {
 
 		});
 
+		// append annotation of nested tables if possible
+
+		tables.stream().filter(table -> table.virtual && table.anno != null).forEach(table -> {
+
+			table.fields.stream().filter(field -> field.nested_key).forEach(field -> {
+
+				PgTable nested_table = getTable(field.foreign_table);
+
+				if (nested_table != null && nested_table.anno == null) {
+					nested_table.anno = table.anno;
+					nested_table.xanno_doc = table.xanno_doc;
+				}
+
+			});
+
+		});
+
 		// cancel unique key constraint if parent table is list holder
 
 		tables.stream().filter(table -> table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> tables.get(field.foreign_table_id).cancelUniqueKey()));
@@ -755,8 +772,8 @@ public class PgSchema {
 
 		table.required = true;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(this, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
 
 		table.xs_type = root_element ? XsTableType.xs_root : XsTableType.xs_admin_root;
 
@@ -867,8 +884,8 @@ public class PgSchema {
 
 					table.required = child_table.required = true;
 
-					if ((child_table.anno = PgSchemaUtil.extractAnnotation(this, node, true)) != null)
-						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
+					if ((child_table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, true)) != null)
+						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
 
 					child_table.xs_type = XsTableType.xs_admin_root;
 
@@ -919,8 +936,8 @@ public class PgSchema {
 		if (table.name.isEmpty())
 			return;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(this, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
 
 		if (annotation) {
 
@@ -992,8 +1009,8 @@ public class PgSchema {
 		if (table.name.isEmpty())
 			return;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(this, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
 
 		table.xs_type = XsTableType.xs_attr_group;
 
@@ -1032,8 +1049,8 @@ public class PgSchema {
 		if (table.name.isEmpty())
 			return;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(this, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
 
 		table.xs_type = XsTableType.xs_model_group;
 
@@ -1204,8 +1221,8 @@ public class PgSchema {
 
 		field.name = field.xname = table.avoidFieldDuplication(this, PgSchemaUtil.any_elem_name);
 
-		if ((field.anno = PgSchemaUtil.extractAnnotation(this, node, false)) != null)
-			field.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
+		if ((field.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, false)) != null)
+			field.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
 
 		field.xs_type = XsDataType.xs_any;
 		field.type = field.xs_type.name();
@@ -1231,8 +1248,8 @@ public class PgSchema {
 
 		field.name = field.xname = table.avoidFieldDuplication(this, PgSchemaUtil.any_attr_name);
 
-		if ((field.anno = PgSchemaUtil.extractAnnotation(this, node, false)) != null)
-			field.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
+		if ((field.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, false)) != null)
+			field.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
 
 		field.xs_type = XsDataType.xs_anyAttribute;
 		field.type = field.xs_type.name();
@@ -1301,8 +1318,8 @@ public class PgSchema {
 			field.xname = getUnqualifiedName(name);
 			field.name = table.avoidFieldDuplication(this, field.xname);
 
-			if ((field.anno = PgSchemaUtil.extractAnnotation(this, node, false)) != null)
-				field.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
+			if ((field.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, false)) != null)
+				field.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
 
 			field.extractType(this, node);
 			field.extractNamespace(this, node); // require type definition
@@ -1375,8 +1392,8 @@ public class PgSchema {
 
 					table.required = child_table.required = true;
 
-					if ((child_table.anno = PgSchemaUtil.extractAnnotation(this, node, true)) != null)
-						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
+					if ((child_table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, true)) != null)
+						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
 
 					child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
@@ -1425,8 +1442,8 @@ public class PgSchema {
 						field.xname = getUnqualifiedName(name);
 						field.name = table.avoidFieldDuplication(this, field.xname);
 
-						if ((field.anno = PgSchemaUtil.extractAnnotation(this, child, false)) != null)
-							field.xanno_doc = PgSchemaUtil.extractDocumentation(this, child, false);
+						if ((field.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, child, false)) != null)
+							field.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, child, false);
 
 						field.extractType(this, child);
 						field.extractNamespace(this, child); // require type definition
@@ -1499,8 +1516,8 @@ public class PgSchema {
 
 								table.required = child_table.required = true;
 
-								if ((child_table.anno = PgSchemaUtil.extractAnnotation(this, child, true)) != null)
-									child_table.xanno_doc = PgSchemaUtil.extractDocumentation(this, child, false);
+								if ((child_table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, child, true)) != null)
+									child_table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, child, false);
 
 								child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
@@ -1574,8 +1591,8 @@ public class PgSchema {
 
 		table.required = true;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(this, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
 
 		table.fields = new ArrayList<PgField>();
 
@@ -1675,8 +1692,8 @@ public class PgSchema {
 		field.xname = getUnqualifiedName(name);
 		field.name = table.avoidFieldDuplication(this, field.xname);
 
-		if ((field.anno = PgSchemaUtil.extractAnnotation(this, node, false)) != null)
-			field.xanno_doc = PgSchemaUtil.extractDocumentation(this, node, false);
+		if ((field.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, false)) != null)
+			field.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
 
 		field.extractType(this, node);
 		field.extractNamespace(this, node); // require type definition
@@ -2502,7 +2519,7 @@ public class PgSchema {
 			return;
 
 		System.out.println("--");
-		System.out.println("-- " + (table.anno != null ? table.anno : "No annotation is available"));
+		System.out.println("-- " + (table.anno != null && !table.anno.isEmpty() ? table.anno : "No annotation is available"));
 		System.out.println("-- xmlns: " + table.target_namespace + ", schema location: " + table.schema_location);
 		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replaceAll("_",  " ") + ", content: " + table.cont_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (conflicted ? ", name collision: " + table.conflict : ""));
 		System.out.println("--");

@@ -403,14 +403,12 @@ public class PgSchemaUtil {
 	/**
 	 * Extract one-liner annotation from xs:annotation/xs:appinfo|xs:documentation.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param xs_prefix_ prefix of xs_namespace_uri
 	 * @param node current node
 	 * @param is_table the is table
 	 * @return String annotation
 	 */
-	public static String extractAnnotation(PgSchema schema, Node node, boolean is_table) {
-
-		String xs_prefix_ = schema.xs_prefix_;
+	public static String extractAnnotation(String xs_prefix_, Node node, boolean is_table) {
 
 		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
 
@@ -425,14 +423,14 @@ public class PgSchemaUtil {
 
 				if (child_name.equals(xs_prefix_ + "appinfo")) {
 
-					annotation = child.getTextContent().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
+					annotation += child.getTextContent().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
 
 					Element e = (Element) child;
 
 					String src = e.getAttribute("source");
 
-					annotation = (src == null || src.isEmpty() ? annotation : annotation + (is_table ? "\n-- " : ", ") + "URI-reference = " + src) + (is_table ? "\n-- " : ", ");
-
+					if (src != null && !src.isEmpty())
+						annotation += (is_table ? "\n-- " : ", ") + "URI-reference = " + src + (is_table ? "\n-- " : ", ");
 				}
 
 				else if (child_name.equals(xs_prefix_ + "documentation")) {
@@ -443,11 +441,14 @@ public class PgSchemaUtil {
 
 					String src = e.getAttribute("source");
 
-					return (src == null || src.isEmpty() ? annotation : annotation + (is_table ? "\n-- " : ", ") + "URI-reference = " + src);
+					if (src != null && !src.isEmpty())
+						annotation += (is_table ? "\n-- " : ", ") + "URI-reference = " + src;
 				}
 
 			}
 
+			if (annotation != null && !annotation.isEmpty())
+				return annotation;
 		}
 
 		return null;
@@ -456,13 +457,11 @@ public class PgSchemaUtil {
 	/**
 	 * Extract one-liner annotation from xs:annotation/xs:appinfo.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param xs_prefix_ prefix of xs_namespace_uri
 	 * @param node current node
 	 * @return String appinfo of annotation
 	 */
-	public static String extractAppinfo(PgSchema schema, Node node) {
-
-		String xs_prefix_ = schema.xs_prefix_;
+	public static String extractAppinfo(String xs_prefix_, Node node) {
 
 		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
 
@@ -481,7 +480,11 @@ public class PgSchemaUtil {
 
 					String src = e.getAttribute("source");
 
-					return (src == null || src.isEmpty() ? annotation : annotation + ", URI-reference = " + src);
+					if (src != null && !src.isEmpty())
+						annotation += ", URI-reference = " + src;
+
+					if (annotation != null && !annotation.isEmpty())
+						return annotation;
 				}
 
 			}
@@ -494,14 +497,12 @@ public class PgSchemaUtil {
 	/**
 	 * Extract annotation from xs:annotation/xs:documentation.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param xs_prefix_ prefix of xs_namespace_uri
 	 * @param node current node
 	 * @param one_liner whether return one-liner annotation or exact one
 	 * @return String documentation of annotation
 	 */
-	public static String extractDocumentation(PgSchema schema, Node node, boolean one_liner) {
-
-		String xs_prefix_ = schema.xs_prefix_;
+	public static String extractDocumentation(String xs_prefix_, Node node, boolean one_liner) {
 
 		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
 
@@ -524,10 +525,14 @@ public class PgSchemaUtil {
 
 						String src = e.getAttribute("source");
 
-						return (src == null || src.isEmpty() ? annotation : annotation + ", URI-reference = " + src);
+						if (src != null && !src.isEmpty())
+							annotation += ", URI-reference = " + src;
+
+						if (annotation != null && !annotation.isEmpty())
+							return annotation;
 					}
 
-					else
+					else if (text != null && !text.isEmpty())
 						return text;
 				}
 
