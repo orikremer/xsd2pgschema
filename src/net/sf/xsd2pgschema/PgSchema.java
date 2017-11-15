@@ -418,10 +418,10 @@ public class PgSchema {
 
 			def_namespaces.entrySet().stream().map(arg -> arg.getValue()).forEach(arg -> namespace_uri.add(arg));
 
-			namespace_uri.forEach(arg -> sb.append(arg + ", "));
+			namespace_uri.forEach(arg -> sb.append(arg + " (" + (getPrefixOf(arg).isEmpty() ? "default" : getPrefixOf(arg)) + "), "));
 			namespace_uri.clear();
 
-			_root_schema.def_stat_msg.append("--   Namespaces:\n");
+			_root_schema.def_stat_msg.append("--   Namespaces (prefix):\n");
 			_root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
 
 			sb.setLength(0);
@@ -857,7 +857,7 @@ public class PgSchema {
 
 					level++;
 
-					PgTable child_table = new PgTable(def_namespaces.get(""), def_schema_location);
+					PgTable child_table = new PgTable(getNamespaceURIOfQName(dummy.type), def_schema_location);
 
 					Element child_e = (Element) node;
 
@@ -1365,7 +1365,7 @@ public class PgSchema {
 
 					level++;
 
-					PgTable child_table = new PgTable(def_namespaces.get(""), def_schema_location);
+					PgTable child_table = new PgTable(getNamespaceURIOfQName(field.type), def_schema_location);
 
 					Element child_e = (Element) node;
 
@@ -1415,7 +1415,7 @@ public class PgSchema {
 
 					name = e.getAttribute("name");
 
-					if (name.equals(getUnqualifiedName(ref))) {
+					if (name.equals(getUnqualifiedName(ref)) && table.target_namespace.equals(getNamespaceURIOfQName(ref))) {
 
 						if (attribute)
 							field.attribute = true;
@@ -1489,7 +1489,7 @@ public class PgSchema {
 
 								level++;
 
-								PgTable child_table = new PgTable(def_namespaces.get(""), def_schema_location);
+								PgTable child_table = new PgTable(getNamespaceURIOfQName(field.type), def_schema_location);
 
 								Element child_e = (Element) child;
 
@@ -1546,7 +1546,7 @@ public class PgSchema {
 	 */
 	private void addChildItem(Node node, PgTable foreign_table) {
 
-		PgTable table = new PgTable(def_namespaces.get(""), def_schema_location);
+		PgTable table = new PgTable(foreign_table.target_namespace, def_schema_location);
 
 		Element e = (Element) node;
 
@@ -2089,23 +2089,36 @@ public class PgSchema {
 	/**
 	 * Return unqualified name.
 	 *
-	 * @param name qualified name or unqualified name
+	 * @param qname qualified name
 	 * @return String unqualified name
 	 */
-	protected String getUnqualifiedName(String name) {
+	protected String getUnqualifiedName(String qname) {
 
-		if (name == null)
+		if (qname == null)
 			return null;
 
-		if (name.contains(" "))
-			name = name.trim();
+		if (qname.contains(" "))
+			qname = qname.trim();
 
 		if (!option.case_sense)
-			name = name.toLowerCase();
+			qname = qname.toLowerCase();
 
-		int last_pos = name.lastIndexOf(':');
+		int last_pos = qname.lastIndexOf(':');
 
-		return last_pos == -1 ? name : name.substring(last_pos + 1);
+		return last_pos == -1 ? qname : qname.substring(last_pos + 1);
+	}
+
+	/**
+	 * Return namespace URI of qualified name.
+	 * 
+	 * @param qname qualified name
+	 * @return String namespace URI
+	 */
+	protected String getNamespaceURIOfQName(String qname) {
+
+		String name = getUnqualifiedName(qname);
+
+		return getNamespaceURI(name.equals(qname) ? "" : qname.substring(0, qname.length() - name.length() - 1));
 	}
 
 	/**
@@ -2489,7 +2502,7 @@ public class PgSchema {
 			return;
 
 		System.out.println("--");
-		System.out.println("-- " + table.anno);
+		System.out.println("-- " + (table.anno != null ? table.anno : "No annotation is avaiable"));
 		System.out.println("-- xmlns: " + table.target_namespace + ", schema location: " + table.schema_location);
 		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replaceAll("_",  " ") + ", content: " + table.cont_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (conflicted ? ", name collision: " + table.conflict : ""));
 		System.out.println("--");

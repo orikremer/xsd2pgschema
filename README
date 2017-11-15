@@ -1,4 +1,4 @@
- Changes in xsd2pgschema 2.6.6 (release 2017-11-14)
+ Changes in xsd2pgschema 2.6.6 (release 2017-11-15)
 
   Updated PostgreSQL 10's reserved words.
   Fixed implementation on 'ref' attribute with QName.
