@@ -612,8 +612,8 @@ public class PgSchema {
 				PgTable nested_table = getTable(field.foreign_table);
 
 				if (nested_table != null && nested_table.anno == null) {
-					nested_table.anno = "(quated from " + table.name + ")\n-- " + table.anno;
-					nested_table.xanno_doc = "(quated from " + table.name + ")\n" + table.xanno_doc;
+					nested_table.anno = "(quoted from " + table.name + ")\n-- " + table.anno;
+					nested_table.xanno_doc = "(quoted from " + table.name + ")\n" + table.xanno_doc;
 				}
 
 			});
