@@ -52,7 +52,7 @@ import com.github.antlr.grammars_v4.xpath.xpathParser.MainContext;
  */
 public class XPath2PgSqlImpl {
 
-	/** The PostgreSQL schema. */
+	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
 	/** The database connection. */
@@ -65,7 +65,7 @@ public class XPath2PgSqlImpl {
 	 * Instance of XPath2PgSqlImpl.
 	 *
 	 * @param is InputStream of XML Schema
-	 * @param option PostgreSQL schema option
+	 * @param option PostgreSQL data model option
 	 * @param pg_option PostgreSQL option
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception

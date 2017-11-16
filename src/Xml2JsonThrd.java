@@ -44,7 +44,7 @@ public class Xml2JsonThrd implements Runnable {
 	/** The document builder for reusing. */
 	private DocumentBuilder doc_builder;
 
-	/** The PostgreSQL schema. */
+	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
 	/** The XML validator. */
@@ -55,7 +55,7 @@ public class Xml2JsonThrd implements Runnable {
 	 *
 	 * @param thrd_id thread id
 	 * @param is InputStream of XML Schema
-	 * @param option PostgreSQL schema option
+	 * @param option PostgreSQL data model option
 	 * @param jsonb_option JsonBuilder option
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception

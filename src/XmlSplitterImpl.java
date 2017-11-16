@@ -73,7 +73,7 @@ public class XmlSplitterImpl {
 	/** The shard size. */
 	private int shard_size = 1;
 
-	/** The PostgreSQL schema. */
+	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
 	/** The StAX read event handlers. */
@@ -123,7 +123,7 @@ public class XmlSplitterImpl {
 	 *
 	 * @param shard_size shard size
 	 * @param is InputStream of XML Schema
-	 * @param option PostgreSQL schema option
+	 * @param option PostgreSQL data model option
 	 * @param xpath_doc_key XPath expression pointing document key
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception

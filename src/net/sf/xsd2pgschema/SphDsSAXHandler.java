@@ -35,7 +35,7 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class SphDsSAXHandler extends DefaultHandler {
 
-	/** The PostgreSQL schema. */
+	/** The PostgreSQL data model. */
 	PgSchema schema;
 
 	/** The Sphinx data source writer. */

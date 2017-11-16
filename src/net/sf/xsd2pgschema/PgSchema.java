@@ -90,7 +90,7 @@ public class PgSchema {
 	/** The PostgreSQL foreign keys. */
 	private List<PgForeignKey> foreign_keys = null;
 
-	/** The PostgreSQL schema option. */
+	/** The PostgreSQL data model option. */
 	public PgSchemaOption option = null;
 
 	/** Whether name collision occurs or not. */
@@ -161,7 +161,7 @@ public class PgSchema {
 	 * @param doc XML Schema document
 	 * @param root_schema root schema object (should be null at first)
 	 * @param def_schema_location default schema location
-	 * @param option PostgreSQL schema option
+	 * @param option PostgreSQL data model option
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
@@ -2038,12 +2038,7 @@ public class PgSchema {
 	 * @return String prefix of namespace URI
 	 */
 	protected String getAbsolutePrefixOf(String namespace_uri) {
-
-		if (def_namespaces.entrySet().stream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()))
-			return def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey();
-
-		else
-			return "default";
+		return def_namespaces.entrySet().stream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()) ? def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey() : "default";
 	}
 
 	/**
@@ -2053,11 +2048,7 @@ public class PgSchema {
 	 * @return PgTable PostgreSQL table
 	 */
 	protected PgTable getTable(int table_id) {
-
-		if (table_id < 0 || table_id >= tables.size())
-			return null;
-
-		return tables.get(table_id);
+		return table_id < 0 || table_id >= tables.size() ? null : tables.get(table_id);
 	}
 
 	/**

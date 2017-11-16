@@ -47,7 +47,7 @@ public class Xml2PgSqlThrd implements Runnable {
 	/** The document builder for reusing. */
 	private DocumentBuilder doc_builder;
 
-	/** The PostgreSQL schema. */
+	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
 	/** The XML validator. */
@@ -61,7 +61,7 @@ public class Xml2PgSqlThrd implements Runnable {
 	 *
 	 * @param thrd_id thread id
 	 * @param is InputStream of XML Schema
-	 * @param option PostgreSQL schema option
+	 * @param option PostgreSQL data model option
 	 * @param pg_option PostgreSQL option
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception

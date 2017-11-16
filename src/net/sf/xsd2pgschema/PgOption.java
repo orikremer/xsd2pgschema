@@ -20,7 +20,7 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * PostgreSQL option.
+ * PostgreSQL schema constructor option.
  *
  * @author yokochi
  */

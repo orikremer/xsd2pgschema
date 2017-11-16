@@ -64,7 +64,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/** The doc builder for reusing. */
 	private DocumentBuilder doc_builder;
 
-	/** The PostgreSQL schema. */
+	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
 	/** The XML validator. */
@@ -81,7 +81,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	 * @param thrd_id thread id
 	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
-	 * @param option PostgreSQL schema option
+	 * @param option PostgreSQL data model option
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
 	 * @throws IOException Signals that an I/O exception has occurred.

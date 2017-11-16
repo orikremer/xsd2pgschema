@@ -47,7 +47,7 @@ public class Xml2PgCsvThrd implements Runnable {
 	/** The document builder for reusing. */
 	private DocumentBuilder doc_builder;
 
-	/** The PostgreSQL schema. */
+	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
 	/** The XML validator. */

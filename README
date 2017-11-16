@@ -1,12 +1,12 @@
  Changes in xsd2pgschema 2.6.6 (release 2017-11-16)
 
   Updated PostgreSQL 10's reserved words.
-  Fixed implementation on 'ref' attribute with QName.
+  Fixed issue in handling 'ref' attribute with QName which caused exception while schema analysis.
   Fixed getAbsoluteXPathOfTable() which caused an infinite loop in XPath parser.
   Fixed xmlsplitter which generated duplicating document unit.
   Retrieved prefix of namespace URI in PostgreSQL DDL.
   Retrieved annotation of nested table in PostgreSQL DDL and JSON Schema, if possible.
-  Fixed schema statistics in case that relational model extension turned off.
+  Fixed schema statistics in case that relational model extension was turned off.
 
  Changes in xsd2pgschema 2.6.5 (release 2017-10-25)
 

@@ -41,7 +41,7 @@ import org.w3c.dom.Node;
  */
 public abstract class PgSchemaNodeParser {
 
-	/** The PostgreSQL schema. */
+	/** The PostgreSQL data model. */
 	PgSchema schema = null;
 
 	/** The relational data extension. */
