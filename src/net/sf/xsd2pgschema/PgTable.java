@@ -266,10 +266,10 @@ public class PgTable {
 	public boolean addNestedKey(PgSchema schema, String name, Node node) {
 
 		String xs_prefix_ = schema.xs_prefix_;
-/*
+		/* not required for annotation retrieval if relational model extension turns off 
 		if (!schema.option.rel_model_ext)
 			return false;
-*/
+		 */ 
 		if (name == null || name.isEmpty())
 			return false;
 
@@ -347,10 +347,10 @@ public class PgTable {
 	 * @param foreign_table name of foreign table
 	 */
 	public void addNestedKey(PgSchema schema, String foreign_table) {
-/*
+
 		if (!schema.option.rel_model_ext)
 			return;
-*/
+
 		if (foreign_table == null || foreign_table.isEmpty())
 			return;
 

@@ -405,8 +405,14 @@ public class PgSchema {
 
 		}
 
-		else
-			_root_schema.def_stat_msg.append("--  " + (root_schema == null ? "Generated" : "Found") + " " + tables.size() + " tables (" + tables.stream().map(table -> table.fields.size()).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups " + (root_schema == null ? "in total" : "in XML Schema: " + def_schema_location) + "\n");
+		else {
+
+			if (!option.rel_model_ext)
+				tables.forEach(table -> table.classify());
+
+			_root_schema.def_stat_msg.append("--  " + (root_schema == null ? "Generated" : "Found") + " " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.stream().map(table -> option.rel_model_ext || !table.relational ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups " + (root_schema == null ? "in total" : "in XML Schema: " + def_schema_location) + "\n");
+
+		}
 
 		// statistics on this schema
 
@@ -434,25 +440,25 @@ public class PgSchema {
 			sb.setLength(0);
 
 			_root_schema.def_stat_msg.append("--   Table types:\n");
-			_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_root)).count() + " root, ");
-			_root_schema.def_stat_msg.append(tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child)).count() + " root children, ");
-			_root_schema.def_stat_msg.append(tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root)).count() + " admin roots, ");
-			_root_schema.def_stat_msg.append(tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_child)).count() + " admin children\n");
+			_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_root) && (option.rel_model_ext || !table.relational)).count() + " root, ");
+			_root_schema.def_stat_msg.append(tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) && (option.rel_model_ext || !table.relational)).count() + " root children, ");
+			_root_schema.def_stat_msg.append(tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root) && (option.rel_model_ext || !table.relational)).count() + " admin roots, ");
+			_root_schema.def_stat_msg.append(tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_child) && (option.rel_model_ext || !table.relational)).count() + " admin children\n");
 			_root_schema.def_stat_msg.append("--   System keys:\n");
-			_root_schema.def_stat_msg.append("--    " + tables.stream().map(table -> table.fields.stream().filter(field -> field.primary_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " primary keys (" + tables.stream().map(table -> table.fields.stream().filter(field -> field.unique_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " unique constraints), ");
-			_root_schema.def_stat_msg.append(tables.stream().map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys (" + foreign_keys.size() + " key references), ");
-			_root_schema.def_stat_msg.append(tables.stream().map(table -> table.fields.stream().filter(field -> field.nested_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " nested keys\n");
+			_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.primary_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " primary keys (" + tables.stream().map(table -> table.fields.stream().filter(field -> field.unique_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " unique constraints), ");
+			_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys (" + foreign_keys.size() + " key references), ");
+			_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.nested_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " nested keys\n");
 			_root_schema.def_stat_msg.append("--   User keys:\n");
-			_root_schema.def_stat_msg.append("--    " + tables.stream().map(table -> table.fields.stream().filter(field -> field.document_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " document keys, ");
-			_root_schema.def_stat_msg.append(tables.stream().map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
-			_root_schema.def_stat_msg.append(tables.stream().map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
+			_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.document_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " document keys, ");
+			_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
+			_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
 			_root_schema.def_stat_msg.append("--   Contents:\n");
-			_root_schema.def_stat_msg.append("--    " + tables.stream().map(table -> table.fields.stream().filter(field -> field.attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes, ");
-			_root_schema.def_stat_msg.append(tables.stream().map(table -> table.fields.stream().filter(field -> field.element).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements, ");
-			_root_schema.def_stat_msg.append(tables.stream().map(table -> table.fields.stream().filter(field -> field.simple_cont).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents\n");
+			_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes, ");
+			_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements, ");
+			_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.simple_cont).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents\n");
 			_root_schema.def_stat_msg.append("--   Wild cards:\n");
-			_root_schema.def_stat_msg.append("--    " + tables.stream().map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
-			_root_schema.def_stat_msg.append(tables.stream().map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
+			_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
+			_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
 
 		}
 
@@ -606,8 +612,8 @@ public class PgSchema {
 				PgTable nested_table = getTable(field.foreign_table);
 
 				if (nested_table != null && nested_table.anno == null) {
-					nested_table.anno = table.anno;
-					nested_table.xanno_doc = table.xanno_doc;
+					nested_table.anno = "(quated from " + table.name + ")\n-- " + table.anno;
+					nested_table.xanno_doc = "(quated from " + table.name + ")\n" + table.xanno_doc;
 				}
 
 			});

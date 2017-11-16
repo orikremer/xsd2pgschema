@@ -1,10 +1,11 @@
- Changes in xsd2pgschema 2.6.6 (release 2017-11-15)
+ Changes in xsd2pgschema 2.6.6 (release 2017-11-16)
 
   Updated PostgreSQL 10's reserved words.
   Fixed implementation on 'ref' attribute with QName.
   Fixed getAbsoluteXPathOfTable() which caused an infinite loop in XPath parser.
   Fixed xmlsplitter which generated duplicating document unit.
-  Retrieve annotaion of nested table, if possible.
+  Retrieve annotation of nested table, if possible.
+  Fixed schema statistics in case that relational model extension turned off.
 
  Changes in xsd2pgschema 2.6.5 (release 2017-10-25)
 
