@@ -424,10 +424,10 @@ public class PgSchema {
 
 			def_namespaces.entrySet().stream().map(arg -> arg.getValue()).forEach(arg -> namespace_uri.add(arg));
 
-			namespace_uri.forEach(arg -> sb.append(arg + " (" + (getPrefixOf(arg).isEmpty() ? "default" : getPrefixOf(arg)) + "), "));
+			namespace_uri.forEach(arg -> sb.append(arg + " (" + getAbsolutePrefixOf(arg) + "), "));
 			namespace_uri.clear();
 
-			_root_schema.def_stat_msg.append("--   Namespaces (prefix):\n");
+			_root_schema.def_stat_msg.append("--   Namespaces:\n");
 			_root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
 
 			sb.setLength(0);
@@ -2032,6 +2032,21 @@ public class PgSchema {
 	}
 
 	/**
+	 * Return absolute prefix of namespace URI.
+	 *
+	 * @param namespace_uri namespace URI
+	 * @return String prefix of namespace URI
+	 */
+	protected String getAbsolutePrefixOf(String namespace_uri) {
+
+		if (def_namespaces.entrySet().stream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()))
+			return def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey();
+
+		else
+			return "default";
+	}
+
+	/**
 	 * Return PostgreSQL table.
 	 *
 	 * @param table_id table id
@@ -2526,9 +2541,17 @@ public class PgSchema {
 
 		System.out.println("--");
 		System.out.println("-- " + (table.anno != null && !table.anno.isEmpty() ? table.anno : "No annotation is available"));
-		System.out.println("-- xmlns: " + table.target_namespace + ", schema location: " + table.schema_location);
+
+		StringBuilder sb = new StringBuilder();
+
+		for (String namespace_uri : table.target_namespace.split(" "))
+			sb.append(namespace_uri + " (" + getAbsolutePrefixOf(namespace_uri) + "), ");
+
+		System.out.println("-- xmlns: " + sb.toString() + "schema location: " + table.schema_location);
 		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replaceAll("_",  " ") + ", content: " + table.cont_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (conflicted ? ", name collision: " + table.conflict : ""));
 		System.out.println("--");
+
+		sb.setLength(0);
 
 		List<PgField> fields = table.fields;
 

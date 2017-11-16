@@ -4,7 +4,8 @@
   Fixed implementation on 'ref' attribute with QName.
   Fixed getAbsoluteXPathOfTable() which caused an infinite loop in XPath parser.
   Fixed xmlsplitter which generated duplicating document unit.
-  Retrieve annotation of nested table, if possible.
+  Retrieved prefix of namespace URI in PostgreSQL DDL.
+  Retrieved annotation of nested table in PostgreSQL DDL and JSON Schema, if possible.
   Fixed schema statistics in case that relational model extension turned off.
 
  Changes in xsd2pgschema 2.6.5 (release 2017-10-25)
