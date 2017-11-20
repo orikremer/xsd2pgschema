@@ -244,11 +244,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			}
 
-			// attribute, simple_cont, element
+			// attribute, simple_content, element
 
-			else if (field.attribute || field.simple_cont || field.element) {
+			else if (field.attribute || field.simple_content || field.element) {
 
-				if (setCont(proc_node, field, true)) {
+				if (setContent(proc_node, field, true)) {
 
 					if (ps != null)
 						setValue(f, param_id, XsDataType.normalize(field, content));
@@ -264,7 +264,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else if ((field.any || field.any_attribute) && ps != null) {
 
-				if (field.any ? setAnyElement(proc_node) : setAnyAttr(proc_node)) {
+				if (field.any ? setAny(proc_node) : setAnyAttribute(proc_node)) {
 
 					doc.appendChild(doc_root);
 

@@ -95,7 +95,7 @@ public abstract class PgSchemaNodeParser {
 	/** The length of document id. */
 	int document_id_len;
 
-	/** The common content holder for attribute, simple_cont and element. */
+	/** The common content holder for element, simple_content and attribute. */
 	String content;
 
 	/** The document builder for xs:any and xs:anyAttribute. */
@@ -265,20 +265,20 @@ public abstract class PgSchemaNodeParser {
 	 * @param pg_enum_limit whether PostgreSQL enumeration length limit is applied
 	 * @return boolean whether content has value
 	 */
-	public boolean setCont(final Node node, final PgField field, final boolean pg_enum_limit) {
+	public boolean setContent(final Node node, final PgField field, final boolean pg_enum_limit) {
 
 		content = null;
 
 		if (field.attribute)
-			setAttr(node, field);
+			setAttribute(node, field);
 
-		else if (field.simple_cont)
-			setSimpleCont(node);
+		else if (field.simple_content)
+			setSimpleContent(node);
 
 		else if (field.element)
 			setElement(node, field);
 
-		if (applyContFilter(field, pg_enum_limit)) {
+		if (applyContentFilter(field, pg_enum_limit)) {
 
 			if (content != null && XsDataType.isValid(field, content))
 				return true;
@@ -294,7 +294,7 @@ public abstract class PgSchemaNodeParser {
 	 * @param node current node
 	 * @param field current field
 	 */
-	private void setAttr(final Node node, final PgField field) {
+	private void setAttribute(final Node node, final PgField field) {
 
 		if (!node.hasAttributes())
 			return;
@@ -311,7 +311,7 @@ public abstract class PgSchemaNodeParser {
 	 * @param node current node
 	 * @return boolean whether simple content has value
 	 */
-	private void setSimpleCont(final Node node) {
+	private void setSimpleContent(final Node node) {
 
 		Node child = node.getFirstChild();
 
@@ -358,7 +358,7 @@ public abstract class PgSchemaNodeParser {
 	 * @param pg_enum_limit whether PostgreSQL enumeration length limit is applied
 	 * @return boolean whether content passes filter
 	 */
-	private boolean applyContFilter(final PgField field, boolean pg_enum_limit) {
+	private boolean applyContentFilter(final PgField field, boolean pg_enum_limit) {
 
 		if (field.default_value != null && (content == null || content.isEmpty()))
 			content = field.default_value;
@@ -396,12 +396,12 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Set any element.
+	 * Set any.
 	 *
 	 * @param node current node
 	 * @return boolean whether any element exists
 	 */
-	public boolean setAnyElement(Node node) {
+	public boolean setAny(Node node) {
 
 		boolean has_any = false;
 
@@ -442,7 +442,7 @@ public abstract class PgSchemaNodeParser {
 	 * @param node current node
 	 * @return boolean whether any attribute exists
 	 */
-	public boolean setAnyAttr(Node node) {
+	public boolean setAnyAttribute(Node node) {
 
 		boolean has_any_attr = false;
 

@@ -118,9 +118,9 @@ public class luceneidx2dic {
 
 			if (fields.size() == 0) {
 
-				System.out.println("field: " + PgSchemaUtil.simple_cont_name);
+				System.out.println("field: " + PgSchemaUtil.simple_content_name);
 
-				Dictionary dictionary = new LuceneDictionary(reader, PgSchemaUtil.simple_cont_name);
+				Dictionary dictionary = new LuceneDictionary(reader, PgSchemaUtil.simple_content_name);
 				suggester.build(dictionary);
 
 			}
@@ -189,7 +189,7 @@ public class luceneidx2dic {
 
 		System.err.println("luceneidx2dic: Lucene index -> Lucene dictionary");
 		System.err.println("Usage:  --idx-dir DIRECTORY (default=\"" + xml2luceneidx.idx_dir_name + "\") --dic-dir DIRECTORY (default=\"" + dic_dir_name + "\") --dic DIC_FILE (default=\"" + dic_file_name + "\")");
-		System.err.println("Option: --field FIELD_NAME (default=\"" + PgSchemaUtil.simple_cont_name + "\")");
+		System.err.println("Option: --field FIELD_NAME (default=\"" + PgSchemaUtil.simple_content_name + "\")");
 		System.exit(1);
 
 	}

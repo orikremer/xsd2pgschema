@@ -194,11 +194,11 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			}
 
-			// attribute, simple_cont, element
+			// attribute, simple_content, element
 
-			else if (field.attribute || field.simple_cont || field.element) {
+			else if (field.attribute || field.simple_content || field.element) {
 
-				if (setCont(proc_node, field, true)) {
+				if (setContent(proc_node, field, true)) {
 
 					if (table.filew != null)
 						values[f] = StringEscapeUtils.escapeCsv(XsDataType.normalize(field, content));
@@ -214,7 +214,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			else if ((field.any || field.any_attribute) && table.filew != null) {
 
-				if (field.any ? setAnyElement(proc_node) : setAnyAttr(proc_node)) {
+				if (field.any ? setAny(proc_node) : setAnyAttribute(proc_node)) {
 
 					doc.appendChild(doc_root);
 

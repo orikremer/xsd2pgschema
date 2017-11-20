@@ -141,11 +141,11 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			}
 
-			// attribute, simple_cont, element
+			// attribute, simple_content, element
 
-			else if (field.attribute || field.simple_cont || field.element) {
+			else if (field.attribute || field.simple_content || field.element) {
 
-				if (setCont(proc_node, field, false))
+				if (setContent(proc_node, field, false))
 					values[f] = content;
 
 				else if (field.required) {
@@ -159,7 +159,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			else if (field.any || field.any_attribute) {
 
-				if (field.any ? setAnyElement(proc_node) : setAnyAttr(proc_node)) {
+				if (field.any ? setAny(proc_node) : setAnyAttribute(proc_node)) {
 
 					doc.appendChild(doc_root);
 

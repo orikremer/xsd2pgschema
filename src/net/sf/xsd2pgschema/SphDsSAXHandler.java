@@ -110,7 +110,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 				return;
 			}
 
-			if (qName.equals(PgSchemaUtil.simple_cont_name)) {
+			if (qName.equals(PgSchemaUtil.simple_content_name)) {
 				content = true;
 				return;
 			}
@@ -156,7 +156,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 
 				if (len > 0) {
 
-					writer.write("<" + PgSchemaUtil.simple_cont_name + ">" + StringEscapeUtils.escapeXml10(sb.substring(0, len - 1)) + "</" + PgSchemaUtil.simple_cont_name + ">\n");
+					writer.write("<" + PgSchemaUtil.simple_content_name + ">" + StringEscapeUtils.escapeXml10(sb.substring(0, len - 1)) + "</" + PgSchemaUtil.simple_content_name + ">\n");
 					sb.setLength(0);
 
 				}
@@ -181,7 +181,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 				return;
 			}
 
-			if (qName.equals(PgSchemaUtil.simple_cont_name)) {
+			if (qName.equals(PgSchemaUtil.simple_content_name)) {
 				content = false;
 				return;
 			}

@@ -118,9 +118,9 @@ public class luceneidx2ftxt {
 
 			if (fields.size() == 0) {
 
-				System.out.println("field: " + PgSchemaUtil.simple_cont_name);
+				System.out.println("field: " + PgSchemaUtil.simple_content_name);
 
-				Dictionary dictionary = new LuceneDictionary(reader, PgSchemaUtil.simple_cont_name);
+				Dictionary dictionary = new LuceneDictionary(reader, PgSchemaUtil.simple_content_name);
 				suggester.build(dictionary);
 
 			}

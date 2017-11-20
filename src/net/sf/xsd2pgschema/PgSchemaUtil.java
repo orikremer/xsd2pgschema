@@ -64,13 +64,13 @@ public class PgSchemaUtil {
 	public final static String json_schema_def = "http://json-schema.org/schema#";
 
 	/** The name of xs:simpleContent in PostgreSQL. */
-	public final static String simple_cont_name = "content";
+	public final static String simple_content_name = "content";
 
 	/** The name of xs:any in PostgreSQL. */
-	public final static String any_elem_name = "any_element";
+	public final static String any_name = "any_element";
 
 	/** The name of xs:anyAttribute in PostgreSQL. */
-	public final static String any_attr_name = "any_attribute";
+	public final static String any_attribute_name = "any_attribute";
 
 	/** The default hash algorithm. */
 	public final static String def_hash_algorithm = "SHA-1";
@@ -423,7 +423,10 @@ public class PgSchemaUtil {
 
 				if (child_name.equals(xs_prefix_ + "appinfo")) {
 
-					annotation += child.getTextContent().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
+					annotation = child.getTextContent().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
+
+					if (!annotation.isEmpty())
+						annotation += "\n-- ";
 
 					Element e = (Element) child;
 
@@ -602,7 +605,7 @@ public class PgSchemaUtil {
 	 */
 	public static String getLastNameOfPath(String path) {
 
-		String[] _path = path.replaceFirst("//$", "").split("/");
+		String[] _path = path.split(" ").length < 2 ? path.replaceFirst("//$", "").split("/") : path.replaceFirst("//$", "").split(" ");
 
 		int position = _path.length - 1;
 

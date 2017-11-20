@@ -19,6 +19,9 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
@@ -36,6 +39,9 @@ public class XPathSqlExpr {
 
 	/** The column name. */
 	public String column_name = null;
+
+	/** The PostgreSQL XPath code. */
+	public String pg_xpath_code = null;
 
 	/** The predicate of XPath. */
 	public String predicate = null;
@@ -71,11 +77,12 @@ public class XPathSqlExpr {
 	 * @param path current path
 	 * @param table_name table name
 	 * @param column_name column name
+	 * @param pg_xpath_code PostgreSQL XPath code
 	 * @param predicate predicate
 	 * @param terminus terminus type
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public XPathSqlExpr(PgSchema schema, String path, String table_name, String column_name, String predicate, XPathCompType terminus) throws PgSchemaException {
+	public XPathSqlExpr(PgSchema schema, String path, String table_name, String column_name, String pg_xpath_code, String predicate, XPathCompType terminus) throws PgSchemaException {
 
 		this.path = path;
 		this.table_name = table_name;
@@ -84,6 +91,9 @@ public class XPathSqlExpr {
 		this.terminus = terminus;
 
 		switch (terminus) {
+		case any_element:
+		case any_attribute:
+			this.pg_xpath_code = pg_xpath_code;
 		case element:
 		case simple_content:
 		case attribute:
@@ -104,13 +114,14 @@ public class XPathSqlExpr {
 	 * @param path current path
 	 * @param table_name table name
 	 * @param column_name column name
+	 * @param pg_xpath_code PostgreSQL XPath code
 	 * @param predicate predicate
 	 * @param terminus terminus type
 	 * @param parent_tree parent parse tree
 	 * @param current_tree current parse tree
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public XPathSqlExpr(PgSchema schema, String path, String table_name, String column_name, String predicate, XPathCompType terminus, ParseTree parent_tree, ParseTree current_tree) throws PgSchemaException {
+	public XPathSqlExpr(PgSchema schema, String path, String table_name, String column_name, String pg_xpath_code, String predicate, XPathCompType terminus, ParseTree parent_tree, ParseTree current_tree) throws PgSchemaException {
 
 		this.path = path;
 		this.table_name = table_name;
@@ -121,6 +132,9 @@ public class XPathSqlExpr {
 		this.current_tree = current_tree;
 
 		switch (terminus) {
+		case any_element:
+		case any_attribute:
+			this.pg_xpath_code = pg_xpath_code;
 		case element:
 		case simple_content:
 		case attribute:
@@ -143,6 +157,7 @@ public class XPathSqlExpr {
 	 * @param path current path
 	 * @param table_name table name
 	 * @param column_name column name
+	 * @param pg_xpath_code PostgreSQL XPath code
 	 * @param predicate predicate
 	 * @param terminus terminus type
 	 * @param parent_tree parent parse tree
@@ -151,7 +166,7 @@ public class XPathSqlExpr {
 	 * @param binary_operator binary operator code
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public XPathSqlExpr(PgSchema schema, String path, String table_name, String column_name, String predicate, XPathCompType terminus, ParseTree parent_tree, ParseTree current_tree, String unary_operator, String binary_operator) throws PgSchemaException {
+	public XPathSqlExpr(PgSchema schema, String path, String table_name, String column_name, String pg_xpath_code, String predicate, XPathCompType terminus, ParseTree parent_tree, ParseTree current_tree, String unary_operator, String binary_operator) throws PgSchemaException {
 
 		this.path = path;
 		this.table_name = table_name;
@@ -164,6 +179,9 @@ public class XPathSqlExpr {
 		this.binary_operator = binary_operator;
 
 		switch (terminus) {
+		case any_element:
+		case any_attribute:		
+			this.pg_xpath_code = pg_xpath_code;
 		case element:
 		case simple_content:
 		case attribute:
@@ -219,11 +237,19 @@ public class XPathSqlExpr {
 				throw new PgSchemaException(current_tree);
 			break;
 		case simple_content:
-			if (!table.fields.stream().anyMatch(field -> field.simple_cont && field.xname.equals(column_name)))
+			if (!table.fields.stream().anyMatch(field -> field.simple_content && field.xname.equals(column_name)))
 				throw new PgSchemaException(current_tree);
 			break;
 		case attribute:
 			if (!table.fields.stream().anyMatch(field -> field.attribute && field.xname.equals(column_name)))
+				throw new PgSchemaException(current_tree);
+			break;
+		case any_element:
+			if (!table.fields.stream().anyMatch(field -> field.any && field.xname.equals(column_name)))
+				throw new PgSchemaException(current_tree);
+			break;
+		case any_attribute:
+			if (!table.fields.stream().anyMatch(field -> field.any_attribute && field.xname.equals(column_name)))
 				throw new PgSchemaException(current_tree);
 			break;
 		default:
@@ -280,7 +306,30 @@ public class XPathSqlExpr {
 		if (isEmptyRelation() || sql_expr.isEmptyRelation())
 			return false;
 
-		return table_name.equals(sql_expr.table_name) && column_name.equals(sql_expr.column_name);
+		if (!terminus.equals(sql_expr.terminus))
+			return false;
+
+		if (!table_name.equals(sql_expr.table_name) || !column_name.equals(sql_expr.column_name))
+			return false;
+
+		return pg_xpath_code == null ? true : pg_xpath_code.equals(sql_expr.pg_xpath_code);
+	}
+
+	/**
+	 * Return fragment of XPath expression
+	 *
+	 * @return String fragment of XPath expression
+	 */
+	public String getXPathFragment() {
+
+		if (pg_xpath_code == null)
+			return null;
+
+		Pattern pattern = Pattern.compile("^xpath\\(\\'\\/" + table_name + "\\/(.*)\\', .*\\)$");
+
+		Matcher matcher = pattern.matcher(pg_xpath_code);
+
+		return matcher.find() ? matcher.group(1) : null;
 	}
 
 }

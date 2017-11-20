@@ -3127,7 +3127,7 @@ public enum XsDataType {
 		}
 
 		if (min_word_len_filter)
-			lucene_doc.add(new VecTextField(PgSchemaUtil.simple_cont_name, value, Field.Store.NO));
+			lucene_doc.add(new VecTextField(PgSchemaUtil.simple_content_name, value, Field.Store.NO));
 
 	}
 
@@ -3275,7 +3275,7 @@ public enum XsDataType {
 			}
 
 			if (min_word_len_filter)
-				writer.write("<" + PgSchemaUtil.simple_cont_name + ">" + value + "</" + PgSchemaUtil.simple_cont_name + ">\n");
+				writer.write("<" + PgSchemaUtil.simple_content_name + ">" + value + "</" + PgSchemaUtil.simple_content_name + ">\n");
 
 		} catch (IOException e) {
 			e.printStackTrace();

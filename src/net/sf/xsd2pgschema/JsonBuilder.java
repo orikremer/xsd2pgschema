@@ -37,10 +37,10 @@ public class JsonBuilder {
 	String attr_prefix = "";
 
 	/** The JSON item name of xs:simpleContent. */
-	String simple_cont_key = PgSchemaUtil.simple_cont_name;
+	String simple_content_key = PgSchemaUtil.simple_content_name;
 
 	/** The discarded JSON item name stands for document key. */
-	String discard_doc_key = "";
+	String discarded_document_key = "";
 
 	/** The unit of indent space. */
 	String indent_space = "  ";
@@ -58,7 +58,7 @@ public class JsonBuilder {
 	boolean array_all = false;
 
 	/** Whether discarded document key exists or not. */
-	boolean has_discard_doc_key = false;
+	boolean has_discarded_document_key = false;
 
 	/** The length of the key_value_space. */
 	int key_value_spaces = key_value_space.length();
@@ -103,13 +103,13 @@ public class JsonBuilder {
 		if ((attr_prefix = option.attr_prefix) == null)
 			attr_prefix = "";
 
-		if ((simple_cont_key = option.simple_cont_key) == null)
-			simple_cont_key = PgSchemaUtil.simple_cont_name;
+		if ((simple_content_key = option.simple_content_key) == null)
+			simple_content_key = PgSchemaUtil.simple_content_name;
 
-		if ((discard_doc_key = option.discard_doc_key) == null)
-			discard_doc_key = "";
+		if ((discarded_document_key = option.discarded_document_key) == null)
+			discarded_document_key = "";
 
-		has_discard_doc_key = !discard_doc_key.isEmpty();
+		has_discarded_document_key = !discarded_document_key.isEmpty();
 
 		clear();
 
@@ -263,7 +263,7 @@ public class JsonBuilder {
 
 		builder.append(getIndentSpaces(indent_level) + "\"$ref\":" + key_value_space + "\"" + XsDataType.getJsonSchemaRef(field) + "\"," + linefeed);
 
-		builder.append(getIndentSpaces(indent_level) + "\"title\":" + key_value_space + "\"" + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_cont ? simple_cont_key : field.xname) + "\"," + linefeed);
+		builder.append(getIndentSpaces(indent_level) + "\"title\":" + key_value_space + "\"" + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_content ? simple_content_key : field.xname) + "\"," + linefeed);
 
 		if (field.xs_type.equals(XsDataType.xs_anyURI))
 			builder.append(getIndentSpaces(indent_level) + "\"format\":" + key_value_space + "\"uri\"," + linefeed);
@@ -329,7 +329,7 @@ public class JsonBuilder {
 			}
 
 			else if (!field_anno)
-				builder.append(getIndentSpaces(indent_level) + "\"description\":" + key_value_space + "\"array of previous object: " + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_cont ? simple_cont_key : field.xname) + "\"" + "," + linefeed);
+				builder.append(getIndentSpaces(indent_level) + "\"description\":" + key_value_space + "\"array of previous object: " + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_content ? simple_content_key : field.xname) + "\"" + "," + linefeed);
 
 		}
 
@@ -450,7 +450,7 @@ public class JsonBuilder {
 				if (has_field)
 					builder.append("," + linefeed);
 
-				builder.append(getIndentSpaces(indent_level) + "\"" + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_cont ? simple_cont_key : field.xname) + "\":" + key_value_space + (array_field ? "[" : ""));
+				builder.append(getIndentSpaces(indent_level) + "\"" + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_content ? simple_content_key : field.xname) + "\":" + key_value_space + (array_field ? "[" : ""));
 
 				field.jsonb.setLength(field.jsonb.length() - (key_value_spaces + 1));
 				builder.append(field.jsonb);

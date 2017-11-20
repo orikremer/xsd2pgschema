@@ -1,3 +1,7 @@
+ Changes in xsd2pgschema 2.7.0 (release 2017-11-20)
+
+  Added XPath->SQL translation for wild cards.
+
  Changes in xsd2pgschema 2.6.6 (release 2017-11-16)
 
   Updated PostgreSQL 10's reserved words.

@@ -61,7 +61,7 @@ public class PgTable {
 	int nested_fields = 0;
 
 	/** Whether content holder. */
-	boolean cont_holder = false;
+	boolean content_holder = false;
 
 	/** Whether list holder. */
 	boolean list_holder = false;
@@ -72,8 +72,14 @@ public class PgTable {
 	/** Whether xs_type equals xs_admin_root. */
 	boolean virtual = false;
 
-	/** Whether bridge table or virtual table or not cont_holder. */
+	/** Whether bridge table or virtual table or not content_holder. */
 	boolean relational = false;
+
+	/** Whether table has any element. */
+	boolean has_any = false;
+
+	/** Whether table has any attribute. */
+	boolean has_any_attribute = false;
 
 	/** Whether name collision occurs or not. */
 	boolean conflict = false;
@@ -107,24 +113,26 @@ public class PgTable {
 	}
 
 	/**
-	 * Classify table type: cont_holder, list_holder, bridge, hub, virtual.
+	 * Classify table type: content_holder, list_holder, bridge, hub, virtual.
 	 */
 	public void classify() {
 
-		testContHolder();
+		testContentHolder();
 		testListHolder();
 		testBridge();
 		testVirtual();
+		testHasAny();
+		testHasAnyAttribute();
 
 	}
 
 	/**
 	 * Determine content holder table having one of arbitrary content field such as attribute, element, simple content.
 	 */
-	private void testContHolder() {
+	private void testContentHolder() {
 
-		cont_holder = fields.stream().anyMatch(arg -> !arg.document_key && !arg.primary_key && !arg.foreign_key && !arg.nested_key && !arg.serial_key && !arg.xpath_key);
-		relational = bridge || virtual || !cont_holder;
+		content_holder = fields.stream().anyMatch(arg -> !arg.document_key && !arg.primary_key && !arg.foreign_key && !arg.nested_key && !arg.serial_key && !arg.xpath_key);
+		relational = bridge || virtual || !content_holder;
 
 	}
 
@@ -167,7 +175,7 @@ public class PgTable {
 		}
 
 		bridge = (has_primary_key && has_nested_key);
-		relational = bridge || virtual || !cont_holder;
+		relational = bridge || virtual || !content_holder;
 
 	}
 
@@ -177,8 +185,22 @@ public class PgTable {
 	private void testVirtual() {
 
 		virtual = xs_type.equals(XsTableType.xs_admin_root);
-		relational = bridge || virtual || !cont_holder;
+		relational = bridge || virtual || !content_holder;
 
+	}
+
+	/**
+	 * Determine table has any element.
+	 */
+	private void testHasAny() {
+		has_any = fields.stream().anyMatch(arg -> arg.any);
+	}
+
+	/**
+	 * Determine table has any attribute.
+	 */
+	private void testHasAnyAttribute() {
+		has_any_attribute = fields.stream().anyMatch(arg -> arg.any_attribute);
 	}
 
 	/**

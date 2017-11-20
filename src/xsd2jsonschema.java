@@ -94,7 +94,7 @@ public class xsd2jsonschema {
 				jsonb_option.setAttrPrefix(args[++i]);
 
 			else if (args[i].equals("--simple-cont-json-key"))
-				jsonb_option.setSimpleContKey(args[++i]);
+				jsonb_option.setSimpleContentKey(args[++i]);
 
 			else if (args[i].equals("--json-indent-spaces"))
 				jsonb_option.setIndentSpaces(args[++i]);
@@ -196,8 +196,8 @@ public class xsd2jsonschema {
 		System.err.println("        --field-annotation (retrieve field annotation, default)");
 		System.err.println("        --no-field-annotation (do not retrieve field annotation)");
 		System.err.println("        --attr-json-prefix ATTR_PREFIX_CODE (default=\"" + jsonb_option.attr_prefix + "\")");
-		System.err.println("        --simple-cont-json-key SIMPLE_CONTENT_NAME (default=\"" + jsonb_option.simple_cont_key + "\")");
-		System.err.println("        --discard-json-doc-key DISCARDED_DOC_KEY_NAME (default=\"" + jsonb_option.discard_doc_key + "\")");
+		System.err.println("        --simple-cont-json-key SIMPLE_CONTENT_NAME (default=\"" + jsonb_option.simple_content_key + "\")");
+		System.err.println("        --discard-json-doc-key DISCARDED_DOCUMENT_KEY_NAME (default=\"" + jsonb_option.discarded_document_key + "\")");
 		System.err.println("        --json-indent-spaces INTEGER (default=" + jsonb_option.indent_spaces + ", min=0, max=4)");
 		System.err.println("        --json-key-value-spaces INTEGER (default=" + jsonb_option.key_value_spaces + ", min=0, max=1)");
 		System.err.println("        --json-no-linefeed (avoid to use linefeed code)");

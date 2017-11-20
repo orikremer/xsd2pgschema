@@ -32,10 +32,10 @@ public class JsonBuilderOption {
 	public String attr_prefix = "";
 
 	/** The JSON item name of xs:simpleContent. */
-	public String simple_cont_key = PgSchemaUtil.simple_cont_name;
+	public String simple_content_key = PgSchemaUtil.simple_content_name;
 
 	/** The JSON item name of discarded document key. */
-	public String discard_doc_key = "";
+	public String discarded_document_key = "";
 
 	/** The length of white spaces for indent. */
 	public int indent_spaces = PgSchemaUtil.indent_spaces;
@@ -69,28 +69,28 @@ public class JsonBuilderOption {
 	/**
 	 * Set item name in JSON document of xs:simpleContent.
 	 *
-	 * @param simple_cont_key argument value
+	 * @param simple_content_key argument value
 	 */
-	public void setSimpleContKey(String simple_cont_key) {
+	public void setSimpleContentKey(String simple_content_key) {
 
-		if (simple_cont_key == null)
-			simple_cont_key= PgSchemaUtil.simple_cont_name;
+		if (simple_content_key == null)
+			simple_content_key= PgSchemaUtil.simple_content_name;
 
-		this.simple_cont_key = simple_cont_key;
+		this.simple_content_key = simple_content_key;
 
 	}
 
 	/**
 	 * Set discarded item name stands for document key.
 	 *
-	 * @param discard_doc_key argument value
+	 * @param discarded_document_key argument value
 	 */
-	public void setDiscardDocKey(String discard_doc_key) {
+	public void setDiscardDocKey(String discarded_document_key) {
 
-		if (discard_doc_key == null)
-			discard_doc_key = "";
+		if (discarded_document_key == null)
+			discarded_document_key = "";
 
-		this.discard_doc_key = discard_doc_key;
+		this.discarded_document_key = discarded_document_key;
 
 	}
 

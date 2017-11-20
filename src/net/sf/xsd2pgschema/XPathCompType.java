@@ -35,11 +35,54 @@ public enum XPathCompType {
 	/** The attribute node. */
 	attribute,
 
+	/** The any node. */
+	any_element,
+	/** The any attribute node. */
+	any_attribute,
+
 	/** The text node. */
 	text,
 	/** The comment node. */
 	comment,
 	/** The processing instruction node. */
-	processing_instruction
+	processing_instruction;
+
+	/**
+	 * Return whether XPath component represents field node.
+	 *
+	 * @return boolean whether XPath component represents field node
+	 */
+	boolean isField() {
+
+		switch (this) {
+		case element:
+		case simple_content:
+		case attribute:
+		case any_element:
+		case any_attribute:
+			return true;
+		default:
+			return false;
+		}
+
+	}
+
+	/**
+	 * Return whether XPath component represents text node.
+	 * 
+	 * @return boolean whether XPath component represents text node
+	 */
+	boolean isText() {
+
+		switch (this) {
+		case text:
+		case comment:
+		case processing_instruction:
+			return true;
+		default:
+			return false;
+		}
+
+	}
 
 }

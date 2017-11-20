@@ -111,9 +111,9 @@ public class luceneidx2infix {
 
 			if (fields.size() == 0) {
 
-				System.out.println("field: " + PgSchemaUtil.simple_cont_name);
+				System.out.println("field: " + PgSchemaUtil.simple_content_name);
 
-				Dictionary dictionary = new LuceneDictionary(reader, PgSchemaUtil.simple_cont_name);
+				Dictionary dictionary = new LuceneDictionary(reader, PgSchemaUtil.simple_content_name);
 				suggester.build(dictionary);
 
 			}
@@ -179,7 +179,7 @@ public class luceneidx2infix {
 
 		System.err.println("luceneidx2infix: Lucene index -> Lucene analyzed infix suggester");
 		System.err.println("Usage:  --idx-dir DIRECTORY (default=\"" + xml2luceneidx.idx_dir_name + "\") --infix-dir DIRECTORY (default=\"" + infix_dir_name + "\")");
-		System.err.println("Option: --field FIELD_NAME (default=\"" + PgSchemaUtil.simple_cont_name + "\")");
+		System.err.println("Option: --field FIELD_NAME (default=\"" + PgSchemaUtil.simple_content_name + "\")");
 		System.exit(1);
 
 	}

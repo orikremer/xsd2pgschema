@@ -68,7 +68,7 @@ public class PgField {
 	boolean attribute = false;
 
 	/** Whether xs:simpleContent. */
-	boolean simple_cont = false;
+	boolean simple_content = false;
 
 	/** Whether xs:any. */
 	boolean any = false;
@@ -1474,7 +1474,7 @@ public class PgField {
 	 */
 	public boolean isJsonable(PgSchema schema) {
 
-		if (schema.jsonb.has_discard_doc_key && xname.equals(schema.jsonb.discard_doc_key))
+		if (schema.jsonb.has_discarded_document_key && xname.equals(schema.jsonb.discarded_document_key))
 			return false;
 
 		return !schema.field_resolved || (schema.field_resolved && field_sel);

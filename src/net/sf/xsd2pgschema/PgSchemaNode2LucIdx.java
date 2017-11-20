@@ -167,11 +167,11 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			}
 
-			// attribute, simple_cont, element
+			// attribute, simple_content, element
 
-			else if (field.attribute || field.simple_cont || field.element) {
+			else if (field.attribute || field.simple_content || field.element) {
 
-				if (setCont(proc_node, field, false)) {
+				if (setContent(proc_node, field, false)) {
 
 					if (table.lucene_doc != null)
 						values[f] = content;
@@ -187,7 +187,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			else if ((field.any || field.any_attribute) && table.lucene_doc != null) {
 
-				if (field.any ? setAnyElement(proc_node) : setAnyAttr(proc_node)) {
+				if (field.any ? setAny(proc_node) : setAnyAttribute(proc_node)) {
 
 					doc.appendChild(doc_root);
 
