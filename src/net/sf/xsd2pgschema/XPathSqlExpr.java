@@ -316,6 +316,37 @@ public class XPathSqlExpr {
 	}
 
 	/**
+	 * Return parent path.
+	 *
+	 * @return String parent path
+	 */
+	public String getParentPath() {
+
+		String _path_ = path;
+
+		switch (terminus) {
+		case any_element:
+			if (path.split(" ").length > 1)
+				_path_ = path.split(" ")[0];
+		default:
+			String[] _path = _path_.split("/");
+
+			StringBuilder sb = new StringBuilder();
+
+			try {
+
+				for (int i = 1; i < _path.length - 1; i++)
+					sb.append("/" + _path[i]);
+
+				return sb.toString();
+
+			} finally {
+				sb.setLength(0);
+			}
+		}
+	}
+
+	/**
 	 * Return fragment of XPath expression
 	 *
 	 * @return String fragment of XPath expression

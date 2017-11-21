@@ -217,7 +217,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 	/**
 	 * Merge Lucene indices.
-	 * 
+	 *
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public void merge() throws IOException {

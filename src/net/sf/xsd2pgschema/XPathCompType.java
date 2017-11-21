@@ -69,7 +69,7 @@ public enum XPathCompType {
 
 	/**
 	 * Return whether XPath component represents text node.
-	 * 
+	 *
 	 * @return boolean whether XPath component represents text node
 	 */
 	boolean isText() {

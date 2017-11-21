@@ -288,10 +288,10 @@ public class PgTable {
 	public boolean addNestedKey(PgSchema schema, String name, Node node) {
 
 		String xs_prefix_ = schema.xs_prefix_;
-		/* not required for annotation retrieval if relational model extension turns off 
+		/* not required for annotation retrieval if relational model extension turns off
 		if (!schema.option.rel_model_ext)
 			return false;
-		 */ 
+		 */
 		if (name == null || name.isEmpty())
 			return false;
 

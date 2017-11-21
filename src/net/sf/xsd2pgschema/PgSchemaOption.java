@@ -153,7 +153,7 @@ public class PgSchemaOption {
 
 	/**
 	 * Set document key name.
-	 * 
+	 *
 	 * @param document_key_name document key name
 	 */
 	public void setDocumentKeyName(String document_key_name) {
@@ -167,7 +167,7 @@ public class PgSchemaOption {
 
 	/**
 	 * Set serial key name.
-	 * 
+	 *
 	 * @param serial_key_name serial key name
 	 */
 	public void setSerialKeyName(String serial_key_name) {
@@ -181,7 +181,7 @@ public class PgSchemaOption {
 
 	/**
 	 * Set XPath key name.
-	 * 
+	 *
 	 * @param xpath_key_name xpath key name
 	 */
 	public void setXPathKeyName(String xpath_key_name) {
@@ -209,7 +209,7 @@ public class PgSchemaOption {
 	 */
 	public void setDefaultDocumentKey() {
 
-		document_key_name = def_document_key_name; 
+		document_key_name = def_document_key_name;
 
 	}
 
@@ -218,7 +218,7 @@ public class PgSchemaOption {
 	 */
 	public void setDefaultSerialKey() {
 
-		serial_key_name = def_serial_key_name; 
+		serial_key_name = def_serial_key_name;
 
 	}
 
@@ -227,7 +227,7 @@ public class PgSchemaOption {
 	 */
 	public void setDefaultXPathKey() {
 
-		xpath_key_name = def_xpath_key_name; 
+		xpath_key_name = def_xpath_key_name;
 
 	}
 

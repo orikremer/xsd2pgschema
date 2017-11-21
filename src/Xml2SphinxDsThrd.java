@@ -224,7 +224,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 	/**
 	 * Merge Sphinx data source files
-	 * 
+	 *
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws ParserConfigurationException the parser configuration exception

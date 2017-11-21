@@ -123,6 +123,50 @@ public class XPathExpr {
 	}
 
 	/**
+	 * Return parent path.
+	 *
+	 * @return String parent path
+	 */
+	public String getParentPath() {
+
+		String[] _path;
+
+		StringBuilder sb = new StringBuilder();
+
+		switch (terminus) {
+		case any_element:
+			if (path.split(" ").length > 1) {
+
+				_path = path.split(" ");
+
+				try {
+
+					for (int i = 0; i < _path.length - 1; i++)
+						sb.append(_path[i] + " ");
+
+					return sb.toString().trim();
+
+				} finally {
+					sb.setLength(0);
+				}
+			}
+		default:
+			_path = path.split("/");
+
+			try {
+
+				for (int i = 1; i < _path.length - 1; i++)
+					sb.append("/" + _path[i]);
+
+				return sb.toString();
+
+			} finally {
+				sb.setLength(0);
+			}
+		}
+	}
+
+	/**
 	 * Return readable path.
 	 *
 	 * @return String readable XPath
@@ -130,5 +174,28 @@ public class XPathExpr {
 	public String getReadablePath() {
 		return path.replaceAll(" ", "/");
 	}
+
+	/**
+	 * Return parent terminus.
+	 *
+	 * @return XPathCompType parent terminus type
+	 */
+	public XPathCompType getParentTerminus() {
+
+		switch (terminus) {
+		case table:
+		case element:
+		case simple_content:
+		case attribute:
+		case any_attribute:
+			return XPathCompType.table;
+		case any_element:
+			return path.split(" ").length < 2 ? XPathCompType.table : XPathCompType.any_element;
+		default:
+			return prev_term;
+		}
+
+	}
+
 
 }

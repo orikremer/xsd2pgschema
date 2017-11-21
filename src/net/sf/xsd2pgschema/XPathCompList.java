@@ -968,7 +968,7 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Test NameTestContext node.nnn
+	 * Test NameTestContext node.
 	 *
 	 * @param comp current XPath component
 	 * @param namespace_uri namespace URI of current QName
@@ -1408,112 +1408,14 @@ public class XPathCompList {
 
 		path_exprs.forEach(path_expr -> {
 
-			path_expr.path = getParentPath(path_expr);
-			path_expr.terminus = getParentTerminus(path_expr);
+			path_expr.path = path_expr.getParentPath();
+			path_expr.terminus = path_expr.getParentTerminus();
 
 		});
 
 		path_exprs.removeIf(path_expr -> path_expr.path.isEmpty());
 
 		return path_exprs.size();
-	}
-
-	/**
-	 * Return parent path.
-	 *
-	 * @param path_expr current path expression
-	 * @return String parent path
-	 */
-	private String getParentPath(XPathExpr path_expr) {
-
-		String[] _path;
-
-		StringBuilder sb = new StringBuilder();
-
-		switch (path_expr.terminus) {
-		case any_element:
-			if (path_expr.path.split(" ").length > 1) {
-
-				_path = path_expr.path.split(" ");
-
-				try {
-
-					for (int i = 0; i < _path.length - 1; i++)
-						sb.append(_path[i] + " ");
-
-					return sb.toString().trim();
-
-				} finally {
-					sb.setLength(0);
-				}
-			}
-		default:
-			_path = path_expr.path.split("/");
-
-			try {
-
-				for (int i = 1; i < _path.length - 1; i++)
-					sb.append("/" + _path[i]);
-
-				return sb.toString();
-
-			} finally {
-				sb.setLength(0);
-			}
-		}
-	}
-
-	/**
-	 * Return relationally parent path.
-	 *
-	 * @param sql_expr current SQL expression
-	 * @return String parent path
-	 */
-	private String getRelationallyParentPath(XPathSqlExpr sql_expr) {
-
-		switch (sql_expr.terminus) {
-		case any_element:
-			if (sql_expr.path.split(" ").length > 1)
-				return sql_expr.path.split(" ")[0];
-		default:
-			String[] _path = sql_expr.path.split("/");
-
-			StringBuilder sb = new StringBuilder();
-
-			try {
-
-				for (int i = 1; i < _path.length - 1; i++)
-					sb.append("/" + _path[i]);
-
-				return sb.toString();
-
-			} finally {
-				sb.setLength(0);
-			}
-		}
-	}
-
-	/**
-	 * Return parent terminus.
-	 *
-	 * @param path_expr current path expression
-	 * @return XPathCompType parent terminus type
-	 */
-	private XPathCompType getParentTerminus(XPathExpr path_expr) {
-
-		switch (path_expr.terminus) {
-		case table:
-		case element:
-		case simple_content:
-		case attribute:
-		case any_attribute:
-			return XPathCompType.table;
-		case any_element:
-			return path_expr.path.split(" ").length < 2 ? XPathCompType.table : XPathCompType.any_element;
-		default:
-			return path_expr.prev_term;
-		}
-
 	}
 
 	/**
@@ -1602,8 +1504,8 @@ public class XPathCompList {
 
 			switch (terminus) {
 			case text:
-				path = getParentPath(path_expr);
-				terminus = getParentTerminus(path_expr);
+				path = path_expr.getParentPath();
+				terminus = path_expr.getParentTerminus();
 			case element:
 			case simple_content:
 			case attribute:
@@ -1682,10 +1584,10 @@ public class XPathCompList {
 				HashMap<String, String> target_tables = new HashMap<String, String>(); // key = table name, value = table path
 				HashMap<String, String> joined_tables = new HashMap<String, String>();
 
-				target_tables.put(path_expr.sql_subject.table_name, path_expr.terminus.equals(XPathCompType.table) ? path_expr.sql_subject.path : getRelationallyParentPath(path_expr.sql_subject));
+				target_tables.put(path_expr.sql_subject.table_name, path_expr.terminus.equals(XPathCompType.table) ? path_expr.sql_subject.path : path_expr.sql_subject.getParentPath());
 
 				if (path_expr.sql_predicates != null)
-					path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.table_name != null).forEach(sql_expr -> target_tables.put(sql_expr.table_name, sql_expr.terminus.equals(XPathCompType.table) ? sql_expr.path : getRelationallyParentPath(sql_expr)));
+					path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.table_name != null).forEach(sql_expr -> target_tables.put(sql_expr.table_name, sql_expr.terminus.equals(XPathCompType.table) ? sql_expr.path : sql_expr.getParentPath()));
 
 				boolean single = target_tables.size() == 1;
 
@@ -2001,8 +1903,8 @@ public class XPathCompList {
 
 			switch (terminus) {
 			case text:
-				path = getParentPath(path_expr);
-				terminus = getParentTerminus(path_expr);
+				path = path_expr.getParentPath();
+				terminus = path_expr.getParentTerminus();
 			case element:
 			case simple_content:
 			case attribute:
@@ -2756,7 +2658,7 @@ public class XPathCompList {
 						case attribute:
 						case any_element:
 						case any_attribute:
-							table_name = PgSchemaUtil.getLastNameOfPath(getRelationallyParentPath(sql_expr));
+							table_name = PgSchemaUtil.getLastNameOfPath(sql_expr.getParentPath());
 							table = schema.getTable(table_name);
 							PgField field = table.getField(sql_expr.column_name);
 
@@ -2801,7 +2703,7 @@ public class XPathCompList {
 						case attribute:
 						case any_element:
 						case any_attribute:
-							table_name = PgSchemaUtil.getLastNameOfPath(getRelationallyParentPath(sql_expr));
+							table_name = PgSchemaUtil.getLastNameOfPath(sql_expr.getParentPath());
 							table = schema.getTable(table_name);
 							PgField field = table.getField(sql_expr.column_name);
 							prefix = schema.getPrefixOf(field.target_namespace != null ? field.target_namespace.split(" ")[0] : "");
@@ -3885,7 +3787,7 @@ public class XPathCompList {
 				sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 				break;
 			case text:
-				String table_name = PgSchemaUtil.getLastNameOfPath(getParentPath(src_path_expr));
+				String table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.getParentPath());
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
@@ -3961,7 +3863,7 @@ public class XPathCompList {
 				break;
 			case text:
 				if (!sql_expr.predicate.equals("0")) {
-					String table_name = PgSchemaUtil.getLastNameOfPath(getParentPath(src_path_expr));
+					String table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.getParentPath());
 					if (!serial_key) {
 						try {
 							throw new PgSchemaException(tree, "serial key", serial_key);
@@ -4045,7 +3947,7 @@ public class XPathCompList {
 				appendSqlColumnName(sql_expr, sb);
 				break;
 			case text:
-				String table_name = PgSchemaUtil.getLastNameOfPath(getParentPath(src_path_expr));
+				String table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.getParentPath());
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
@@ -4172,7 +4074,7 @@ public class XPathCompList {
 					sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 					break;
 				case text:
-					String table_name = PgSchemaUtil.getLastNameOfPath(getParentPath(src_path_expr));
+					String table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.getParentPath());
 					if (!serial_key) {
 						try {
 							throw new PgSchemaException(tree, "serial key", serial_key);
@@ -4238,7 +4140,7 @@ public class XPathCompList {
 				sb.append(sql_expr.predicate);
 
 			else {
-				String table_name = PgSchemaUtil.getLastNameOfPath(getParentPath(src_path_expr));
+				String table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.getParentPath());
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
