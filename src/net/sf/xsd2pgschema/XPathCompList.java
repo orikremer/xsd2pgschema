@@ -968,7 +968,7 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Test NameTestContext node.
+	 * Test NameTestContext node.nnn
 	 *
 	 * @param comp current XPath component
 	 * @param namespace_uri namespace URI of current QName
@@ -1004,7 +1004,7 @@ public class XPathCompList {
 				if (table == null)
 					throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
-				if (!table.target_namespace.equals(namespace_uri) || !PgSchemaUtil.matchesNodeName(table.name, text, wild_card))
+				if (table.target_namespace == null || !table.target_namespace.equals(namespace_uri) || !PgSchemaUtil.matchesNodeName(table.name, text, wild_card))
 					iter.remove();
 				break;
 			case element:
@@ -1432,7 +1432,7 @@ public class XPathCompList {
 
 		switch (path_expr.terminus) {
 		case any_element:
-			if (path_expr.path.split(" ").length > 0) {
+			if (path_expr.path.split(" ").length > 1) {
 
 				_path = path_expr.path.split(" ");
 
@@ -1441,7 +1441,7 @@ public class XPathCompList {
 					for (int i = 0; i < _path.length - 1; i++)
 						sb.append(_path[i] + " ");
 
-					return sb.substring(0, sb.length() - 1);
+					return sb.toString().trim();
 
 				} finally {
 					sb.setLength(0);
@@ -1473,7 +1473,7 @@ public class XPathCompList {
 
 		switch (sql_expr.terminus) {
 		case any_element:
-			if (sql_expr.path.split(" ").length > 0)
+			if (sql_expr.path.split(" ").length > 1)
 				return sql_expr.path.split(" ")[0];
 		default:
 			String[] _path = sql_expr.path.split("/");
@@ -1574,7 +1574,7 @@ public class XPathCompList {
 	 */
 	public void showPathExprs(String indent) {
 
-		path_exprs.forEach(path_expr -> System.out.println(indent + path_expr.path.replaceAll(" ", "/") + " (terminus type: " + path_expr.terminus.name() + ")"));
+		path_exprs.forEach(path_expr -> System.out.println(indent + path_expr.getReadablePath() + " (terminus type: " + path_expr.terminus.name() + ")"));
 
 	}
 
@@ -4509,7 +4509,7 @@ public class XPathCompList {
 	 */
 	public void showSqlExpr(String indent) {
 
-		path_exprs.forEach(path_expr -> System.out.println(indent + path_expr.path + " (terminus type: " + path_expr.terminus.name() + ") -> " + indent + path_expr.sql));
+		path_exprs.forEach(path_expr -> System.out.println(indent + path_expr.getReadablePath() + " (terminus type: " + path_expr.terminus.name() + ") -> " + indent + path_expr.sql));
 
 	}
 

@@ -122,4 +122,13 @@ public class XPathExpr {
 
 	}
 
+	/**
+	 * Return readable path.
+	 *
+	 * @return String readable XPath
+	 */
+	public String getReadablePath() {
+		return path.replaceAll(" ", "/");
+	}
+
 }

@@ -1438,7 +1438,7 @@ public class PgSchema {
 
 					name = e.getAttribute("name");
 
-					if (name.equals(getUnqualifiedName(ref)) && table.target_namespace.equals(getNamespaceURIOfQName(ref))) {
+					if (name.equals(getUnqualifiedName(ref)) && table.target_namespace != null && table.target_namespace.equals(getNamespaceURIOfQName(ref))) {
 
 						if (attribute)
 							field.attribute = true;
@@ -2139,7 +2139,7 @@ public class PgSchema {
 
 	/**
 	 * Return namespace URI of qualified name.
-	 * 
+	 *
 	 * @param qname qualified name
 	 * @return String namespace URI
 	 */
@@ -2535,8 +2535,13 @@ public class PgSchema {
 
 		StringBuilder sb = new StringBuilder();
 
-		for (String namespace_uri : table.target_namespace.split(" "))
-			sb.append(namespace_uri + " (" + getAbsolutePrefixOf(namespace_uri) + "), ");
+		if (table.target_namespace != null && !table.target_namespace.isEmpty()) {
+
+			for (String namespace_uri : table.target_namespace.split(" "))
+				sb.append(namespace_uri + " (" + getAbsolutePrefixOf(namespace_uri) + "), ");
+
+		} else
+			sb.append("null, ");
 
 		System.out.println("-- xmlns: " + sb.toString() + "schema location: " + table.schema_location);
 		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replaceAll("_",  " ") + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (conflicted ? ", name collision: " + table.conflict : ""));
@@ -5761,101 +5766,101 @@ public class PgSchema {
 
 				XPathCompList _list = new XPathCompList();
 
-				String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
+				// inside any element
 
-				// not specified table
-
-				if (cur_table == null) {
-
-					if (abs_path) {
-
-						if (PgSchemaUtil.matchesNodeName(root_table.name, text, wild_card) && inc_self)
-							_list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, null), XPathCompType.table));
-
-					}
-
-					else if (!path_expr.terminus.equals(XPathCompType.any_element)) {
-
-						tables.stream().filter(table -> PgSchemaUtil.matchesNodeName(table.name, text, wild_card) && !table.virtual).forEach(table -> {
-
-							String table_xpath = getAbsoluteXPathOfTable(table, null);
-
-							if (table_xpath != null && inc_self)
-								_list.add(new XPathExpr(table_xpath, XPathCompType.table));
-
-							if (table.fields.stream().anyMatch(field -> field.simple_content)) {
-
-								String simple_content_xpath = getAbsoluteXPathOfTable(table, null);
-
-								if (simple_content_xpath != null && inc_self)
-									_list.add(new XPathExpr(simple_content_xpath, XPathCompType.simple_content));
-
-							}
-
-						});
-
-						for (PgTable table : tables) {
-
-							int _path_exprs_size = _list.path_exprs.size();
-
-							table.fields.stream().filter(field -> PgSchemaUtil.matchesNodeName(field.xname, text, wild_card) && field.element).forEach(field -> {
-
-								String element_xpath = getAbsoluteXPathOfElement(table, field.xname);
-
-								if (element_xpath != null && inc_self)
-									_list.add(new XPathExpr(element_xpath, XPathCompType.element));
-
-							});
-
-							if (table.has_any && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
-
-								table.fields.stream().filter(field -> field.element).forEach(field -> {
-
-									String element_xpath = getAbsoluteXPathOfElement(table, text);
-
-									if (element_xpath != null && inc_self)
-										_list.add(new XPathExpr(element_xpath, XPathCompType.any_element));
-
-								});
-
-							}
-
-						}
-
-					}
-
-					// inside any element
-
-					else
-						_list.add(new XPathExpr(path_expr.path + " " + text, XPathCompType.any_element));
-
-				}
-
-				// specified table
+				if (path_expr.terminus.equals(XPathCompType.any_element))
+					_list.add(new XPathExpr(path_expr.path + " " + text, XPathCompType.any_element));
 
 				else {
 
-					PgTable table = getTable(cur_table);
+					String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
 
-					if (table == null) {
+					// not specified table
 
-						XPathComp prev_comp = list.previousOf(comp);
+					if (cur_table == null) {
 
-						try {
+						if (abs_path) {
 
-							if (prev_comp != null)
-								throw new PgSchemaException(comp.tree, prev_comp.tree);
-							else
-								throw new PgSchemaException(comp.tree);
+							if (PgSchemaUtil.matchesNodeName(root_table.name, text, wild_card) && inc_self)
+								_list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, null), XPathCompType.table));
 
-						} catch (PgSchemaException e) {
-							e.printStackTrace();
-							System.exit(1);
+						}
+
+						else {
+
+							tables.stream().filter(table -> PgSchemaUtil.matchesNodeName(table.name, text, wild_card) && !table.virtual).forEach(table -> {
+
+								String table_xpath = getAbsoluteXPathOfTable(table, null);
+
+								if (table_xpath != null && inc_self)
+									_list.add(new XPathExpr(table_xpath, XPathCompType.table));
+
+								if (table.fields.stream().anyMatch(field -> field.simple_content)) {
+
+									String simple_content_xpath = getAbsoluteXPathOfTable(table, null);
+
+									if (simple_content_xpath != null && inc_self)
+										_list.add(new XPathExpr(simple_content_xpath, XPathCompType.simple_content));
+
+								}
+
+							});
+
+							for (PgTable table : tables) {
+
+								int _path_exprs_size = _list.path_exprs.size();
+
+								table.fields.stream().filter(field -> PgSchemaUtil.matchesNodeName(field.xname, text, wild_card) && field.element).forEach(field -> {
+
+									String element_xpath = getAbsoluteXPathOfElement(table, field.xname);
+
+									if (element_xpath != null && inc_self)
+										_list.add(new XPathExpr(element_xpath, XPathCompType.element));
+
+								});
+
+								if (table.has_any && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
+
+									table.fields.stream().filter(field -> field.element).forEach(field -> {
+
+										String element_xpath = getAbsoluteXPathOfElement(table, text);
+
+										if (element_xpath != null && inc_self)
+											_list.add(new XPathExpr(element_xpath, XPathCompType.any_element));
+
+									});
+
+								}
+
+							}
+
 						}
 
 					}
 
-					if (!path_expr.terminus.equals(XPathCompType.any_element)) {
+					// specified table
+
+					else {
+
+						PgTable table = getTable(cur_table);
+
+						if (table == null) {
+
+							XPathComp prev_comp = list.previousOf(comp);
+
+							try {
+
+								if (prev_comp != null)
+									throw new PgSchemaException(comp.tree, prev_comp.tree);
+								else
+									throw new PgSchemaException(comp.tree);
+
+							} catch (PgSchemaException e) {
+								e.printStackTrace();
+								System.exit(1);
+							}
+
+						}
 
 						// check current element
 
@@ -5884,6 +5889,8 @@ public class PgSchema {
 						}
 
 						// check current nested_key
+
+						boolean has_any = false;
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
@@ -5924,8 +5931,6 @@ public class PgSchema {
 
 								// check foreign element
 
-								_path_exprs_size = _list.path_exprs.size();
-
 								foreign_table.fields.stream().filter(field -> field.element && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 									String element_xpath = getAbsoluteXPathOfElement(foreign_table, field.xname);
@@ -5935,18 +5940,8 @@ public class PgSchema {
 
 								});
 
-								if (foreign_table.has_any && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
-
-									foreign_table.fields.stream().filter(field -> field.any).forEach(field -> {
-
-										String element_xpath = getAbsoluteXPathOfElement(foreign_table, text);
-
-										if (element_xpath != null && (inc_self || first_nest))
-											_list.add(new XPathExpr(element_xpath, XPathCompType.any_element));
-
-									});
-
-								}
+								if (foreign_table.has_any)
+									has_any = true;
 
 								// check foreign nested_key
 
@@ -5970,12 +5965,61 @@ public class PgSchema {
 
 						touched_ft_ids.clear();
 
+						if (has_any && _path_exprs_size == _list.path_exprs.size()) {
+
+							ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							_ft_ids = null;
+
+							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
+
+								boolean first_nest = _ft_ids == null;
+								int _touched_size = touched_ft_ids.size();
+
+								for (Integer foreign_table_id : ft_ids) {
+
+									if (!touched_ft_ids.add(foreign_table_id))
+										continue;
+
+									PgTable foreign_table = tables.get(foreign_table_id);
+
+									if (foreign_table.has_any && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
+
+										foreign_table.fields.stream().filter(field -> field.any).forEach(field -> {
+
+											String element_xpath = getAbsoluteXPathOfElement(foreign_table, text);
+
+											if (element_xpath != null && (inc_self || first_nest))
+												_list.add(new XPathExpr(element_xpath, XPathCompType.any_element));
+
+										});
+
+									}
+
+									// check foreign nested_key
+
+									if (foreign_table.virtual || !abs_path) {
+
+										Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+
+										if (__ft_ids != null && __ft_ids.length > 0)
+											_ft_ids = __ft_ids;
+
+									}
+
+								}
+
+								ft_ids = _ft_ids;
+
+								if (touched_ft_ids.size() == _touched_size)
+									break;
+
+							}
+
+							touched_ft_ids.clear();
+
+						}
+
 					}
-
-					// inside any element
-
-					else
-						_list.add(new XPathExpr(path_expr.path + " " + text, XPathCompType.any_element));
 
 				}
 
@@ -6068,39 +6112,48 @@ public class PgSchema {
 
 				XPathCompList _list = new XPathCompList();
 
-				String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
+				// inside any element
 
-				// not specified table
+				if (path_expr.terminus.equals(XPathCompType.any_element))
+					_list.add(new XPathExpr(path_expr.path + " @" + text, XPathCompType.any_attribute));
 
-				if (cur_table == null) {
+				else {
 
-					if (abs_location_path) {
+					String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
 
-						if (!path_expr.terminus.equals(XPathCompType.any_element)) {
+					// not specified table
 
-							for (PgTable table : tables) {
+					if (cur_table == null) {
 
-								int _path_exprs_size = _list.path_exprs.size();
+						if (abs_location_path) {
 
-								table.fields.stream().filter(field -> PgSchemaUtil.matchesNodeName(field.xname, text, wild_card) && field.attribute).forEach(field -> {
+							if (!path_expr.terminus.equals(XPathCompType.any_element)) {
 
-									String attribute_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
+								for (PgTable table : tables) {
 
-									if (attribute_xpath != null)
-										_list.add(new XPathExpr(attribute_xpath, XPathCompType.attribute));
+									int _path_exprs_size = _list.path_exprs.size();
 
-								});
+									table.fields.stream().filter(field -> PgSchemaUtil.matchesNodeName(field.xname, text, wild_card) && field.attribute).forEach(field -> {
 
-								if (table.has_any_attribute && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
-
-									table.fields.stream().filter(field -> field.any_attribute).forEach(field -> {
-
-										String attribute_xpath = getAbsoluteXPathOfAttribute(table, text);
+										String attribute_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
 
 										if (attribute_xpath != null)
-											_list.add(new XPathExpr(attribute_xpath, XPathCompType.any_attribute));
+											_list.add(new XPathExpr(attribute_xpath, XPathCompType.attribute));
 
 									});
+
+									if (table.has_any_attribute && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
+
+										table.fields.stream().filter(field -> field.any_attribute).forEach(field -> {
+
+											String attribute_xpath = getAbsoluteXPathOfAttribute(table, text);
+
+											if (attribute_xpath != null)
+												_list.add(new XPathExpr(attribute_xpath, XPathCompType.any_attribute));
+
+										});
+
+									}
 
 								}
 
@@ -6108,40 +6161,31 @@ public class PgSchema {
 
 						}
 
-						// inside any element
-
-						else
-							_list.add(new XPathExpr(path_expr.path + " @" + text, XPathCompType.any_element));
-
 					}
 
-				}
+					// specified table
 
-				// specified table
+					else {
 
-				else {
+						PgTable table = getTable(cur_table);
 
-					PgTable table = getTable(cur_table);
+						if (table == null) {
 
-					if (table == null) {
+							XPathComp prev_comp = list.previousOf(comp);
 
-						XPathComp prev_comp = list.previousOf(comp);
+							try {
 
-						try {
+								if (prev_comp != null)
+									throw new PgSchemaException(comp.tree, prev_comp.tree);
+								else
+									throw new PgSchemaException(comp.tree);
 
-							if (prev_comp != null)
-								throw new PgSchemaException(comp.tree, prev_comp.tree);
-							else
-								throw new PgSchemaException(comp.tree);
+							} catch (PgSchemaException e) {
+								e.printStackTrace();
+								System.exit(1);
+							}
 
-						} catch (PgSchemaException e) {
-							e.printStackTrace();
-							System.exit(1);
 						}
-
-					}
-
-					if (!path_expr.terminus.equals(XPathCompType.any_element)) {
 
 						// check current attribute
 
@@ -6171,6 +6215,8 @@ public class PgSchema {
 
 						// check current nested_key
 
+						boolean has_any_attribute = false;
+
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
 						Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
@@ -6189,8 +6235,6 @@ public class PgSchema {
 
 								// check foreign attribute
 
-								_path_exprs_size = _list.path_exprs.size();
-
 								foreign_table.fields.stream().filter(field -> field.attribute && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 									String attribute_xpath = getAbsoluteXPathOfAttribute(foreign_table, field.xname);
@@ -6200,14 +6244,8 @@ public class PgSchema {
 
 								});
 
-								if (foreign_table.has_any_attribute && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
-
-									String attribute_xpath = getAbsoluteXPathOfAttribute(foreign_table, text);
-
-									if (attribute_xpath != null)
-										_list.add(new XPathExpr(attribute_xpath, XPathCompType.any_attribute));
-
-								}
+								if (foreign_table.has_any_attribute)
+									has_any_attribute = true;
 
 								// check foreign nested_key
 
@@ -6231,12 +6269,58 @@ public class PgSchema {
 
 						touched_ft_ids.clear();
 
+						if (has_any_attribute && _path_exprs_size == _list.path_exprs.size()) {
+
+							ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							_ft_ids = null;
+
+							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
+
+								int _touched_size = touched_ft_ids.size();
+
+								for (Integer foreign_table_id : ft_ids) {
+
+									if (!touched_ft_ids.add(foreign_table_id))
+										continue;
+
+									PgTable foreign_table = tables.get(foreign_table_id);
+
+									// check foreign attribute
+
+									if (foreign_table.has_any_attribute && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
+
+										String attribute_xpath = getAbsoluteXPathOfAttribute(foreign_table, text);
+
+										if (attribute_xpath != null)
+											_list.add(new XPathExpr(attribute_xpath, XPathCompType.any_attribute));
+
+									}
+
+									// check foreign nested_key
+
+									if (foreign_table.virtual || !abs_location_path) {
+
+										Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+
+										if (__ft_ids != null && __ft_ids.length > 0)
+											_ft_ids = __ft_ids;
+
+									}
+
+								}
+
+								ft_ids = _ft_ids;
+
+								if (touched_ft_ids.size() == _touched_size)
+									break;
+
+							}
+
+							touched_ft_ids.clear();
+
+						}
+
 					}
-
-					// inside any element
-
-					else
-						_list.add(new XPathExpr(path_expr.path + " @" + text, XPathCompType.any_element));
 
 				}
 
@@ -6400,6 +6484,8 @@ public class PgSchema {
 
 				for (PgTable table : tables) {
 
+					int _path_exprs_size = list.path_exprs.size();
+
 					table.fields.stream().filter(field -> field.element).forEach(field -> {
 
 						String element_xpath = getAbsoluteXPathOfElement(table, field.xname);
@@ -6409,14 +6495,18 @@ public class PgSchema {
 
 					});
 
-					table.fields.stream().filter(field -> field.any).forEach(field -> {
+					if (table.has_any && _path_exprs_size == list.path_exprs.size()) {
 
-						String element_xpath = getAbsoluteXPathOfElement(table, "*");
+						table.fields.stream().filter(field -> field.any).forEach(field -> {
 
-						if (element_xpath != null && inc_self)
-							list.add(new XPathExpr(element_xpath, XPathCompType.any_element));
+							String element_xpath = getAbsoluteXPathOfElement(table, "*");
 
-					});
+							if (element_xpath != null && inc_self)
+								list.add(new XPathExpr(element_xpath, XPathCompType.any_element));
+
+						});
+
+					}
 
 				}
 
@@ -6437,22 +6527,27 @@ public class PgSchema {
 
 				XPathCompList _list = new XPathCompList();
 
-				String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
+				// inside any element
 
-				// not specified table
+				if (path_expr.terminus.equals(XPathCompType.any_element))
+					_list.add(new XPathExpr(path_expr.path + " *", XPathCompType.any_element));
 
-				if (cur_table == null) {
+				else {
 
-					if (abs_path) {
+					String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
 
-						if (inc_self)
-							_list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, null), XPathCompType.table));
+					// not specified table
 
-					}
+					if (cur_table == null) {
 
-					else {
+						if (abs_path) {
 
-						if (!path_expr.terminus.equals(XPathCompType.any_element)) {
+							if (inc_self)
+								_list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, null), XPathCompType.table));
+
+						}
+
+						else {
 
 							tables.stream().filter(table -> !table.virtual).forEach(table -> {
 
@@ -6474,6 +6569,8 @@ public class PgSchema {
 
 							for (PgTable table : tables) {
 
+								int _path_exprs_size = _list.path_exprs.size();
+
 								table.fields.stream().filter(field -> field.element).forEach(field -> {
 
 									String element_xpath = getAbsoluteXPathOfElement(table, field.xname);
@@ -6483,7 +6580,7 @@ public class PgSchema {
 
 								});
 
-								if (table.has_any) {
+								if (table.has_any && (_path_exprs_size == _list.path_exprs.size())) {
 
 									table.fields.stream().filter(field -> field.any).forEach(field -> {
 
@@ -6500,42 +6597,35 @@ public class PgSchema {
 
 						}
 
-						// inside any element
-
-						else
-							_list.add(new XPathExpr(path_expr.path + " *", XPathCompType.any_element));
-
 					}
 
-				}
+					// specified table
 
-				// specified table
+					else {
 
-				else {
+						PgTable table = getTable(cur_table);
 
-					PgTable table = getTable(cur_table);
+						if (table == null) {
 
-					if (table == null) {
+							XPathComp prev_comp = list.previousOf(comp);
 
-						XPathComp prev_comp = list.previousOf(comp);
+							try {
 
-						try {
+								if (prev_comp != null)
+									throw new PgSchemaException(comp.tree, prev_comp.tree);
+								else
+									throw new PgSchemaException(comp.tree);
 
-							if (prev_comp != null)
-								throw new PgSchemaException(comp.tree, prev_comp.tree);
-							else
-								throw new PgSchemaException(comp.tree);
+							} catch (PgSchemaException e) {
+								e.printStackTrace();
+								System.exit(1);
+							}
 
-						} catch (PgSchemaException e) {
-							e.printStackTrace();
-							System.exit(1);
 						}
 
-					}
-
-					if (!path_expr.terminus.equals(XPathCompType.any_element)) {
-
 						// check current element
+
+						int _path_exprs_size = _list.path_exprs.size();
 
 						table.fields.stream().filter(field -> field.element).forEach(field -> {
 
@@ -6546,7 +6636,7 @@ public class PgSchema {
 
 						});
 
-						if (table.has_any) {
+						if (table.has_any && _path_exprs_size == _list.path_exprs.size()) {
 
 							table.fields.stream().filter(field -> field.any).forEach(field -> {
 
@@ -6560,6 +6650,8 @@ public class PgSchema {
 						}
 
 						// check current nested_key
+
+						boolean has_any = false;
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
@@ -6609,18 +6701,8 @@ public class PgSchema {
 
 								});
 
-								if (foreign_table.has_any) {
-
-									foreign_table.fields.stream().filter(field -> field.any).forEach(field -> {
-
-										String element_xpath = getAbsoluteXPathOfElement(foreign_table, "*");
-
-										if (element_xpath != null && (inc_self || first_nest))
-											_list.add(new XPathExpr(element_xpath, XPathCompType.any_element));
-
-									});
-
-								}
+								if (foreign_table.has_any)
+									has_any = true;
 
 								// check foreign nested_key
 
@@ -6644,12 +6726,61 @@ public class PgSchema {
 
 						touched_ft_ids.clear();
 
+						if (has_any && (_path_exprs_size == _list.path_exprs.size())) {
+
+							ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							_ft_ids = null;
+
+							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
+
+								boolean first_nest = _ft_ids == null;
+								int _touched_size = touched_ft_ids.size();
+
+								for (Integer foreign_table_id : ft_ids) {
+
+									if (!touched_ft_ids.add(foreign_table_id))
+										continue;
+
+									PgTable foreign_table = tables.get(foreign_table_id);
+
+									if (foreign_table.has_any && _path_exprs_size == _list.path_exprs.size()) {
+
+										foreign_table.fields.stream().filter(field -> field.any).forEach(field -> {
+
+											String element_xpath = getAbsoluteXPathOfElement(foreign_table, "*");
+
+											if (element_xpath != null && (inc_self || first_nest))
+												_list.add(new XPathExpr(element_xpath, XPathCompType.any_element));
+
+										});
+
+									}
+
+									// check foreign nested_key
+
+									if (foreign_table.virtual || !abs_path) {
+
+										Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+
+										if (__ft_ids != null && __ft_ids.length > 0)
+											_ft_ids = __ft_ids;
+
+									}
+
+								}
+
+								ft_ids = _ft_ids;
+
+								if (touched_ft_ids.size() == _touched_size)
+									break;
+
+							}
+
+							touched_ft_ids.clear();
+
+						}
+
 					}
-
-					// inside any element
-
-					else
-						_list.add(new XPathExpr(path_expr.path + " *", XPathCompType.any_element));
 
 				}
 
@@ -6693,6 +6824,8 @@ public class PgSchema {
 
 				for (PgTable table : tables) {
 
+					int _path_exprs_size = list.path_exprs.size();
+
 					table.fields.stream().filter(field -> field.attribute).forEach(field -> {
 
 						String attribute_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
@@ -6702,7 +6835,7 @@ public class PgSchema {
 
 					});
 
-					if (table.has_any_attribute) {
+					if (table.has_any_attribute && _path_exprs_size == list.path_exprs.size()) {
 
 						String attribute_xpath = getAbsoluteXPathOfAttribute(table, "*");
 
@@ -6732,33 +6865,42 @@ public class PgSchema {
 
 				XPathCompList _list = new XPathCompList();
 
-				String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
+				if (path_expr.terminus.equals(XPathCompType.any_element))
+					_list.add(new XPathExpr(path_expr.path + " @*", XPathCompType.any_attribute));
 
-				// not specified table
+				else {
 
-				if (cur_table == null) {
+					String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
 
-					if (abs_location_path) {
+					// not specified table
 
-						if (!path_expr.terminus.equals(XPathCompType.any_element)) {
+					if (cur_table == null) {
 
-							for (PgTable table : tables) {
+						if (abs_location_path) {
 
-								table.fields.stream().filter(field -> field.attribute).forEach(field -> {
+							if (!path_expr.terminus.equals(XPathCompType.any_element)) {
 
-									String attribute_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
+								for (PgTable table : tables) {
 
-									if (attribute_xpath != null)
-										_list.add(new XPathExpr(attribute_xpath, XPathCompType.attribute));
+									int _path_exprs_size = _list.path_exprs.size();
 
-								});
+									table.fields.stream().filter(field -> field.attribute).forEach(field -> {
 
-								if (table.has_any_attribute) {
+										String attribute_xpath = getAbsoluteXPathOfAttribute(table, field.xname);
 
-									String attribute_xpath = getAbsoluteXPathOfAttribute(table, "*");
+										if (attribute_xpath != null)
+											_list.add(new XPathExpr(attribute_xpath, XPathCompType.attribute));
 
-									if (attribute_xpath != null)
-										_list.add(new XPathExpr(attribute_xpath, XPathCompType.any_attribute));
+									});
+
+									if (table.has_any_attribute && (_path_exprs_size == _list.path_exprs.size())) {
+
+										String attribute_xpath = getAbsoluteXPathOfAttribute(table, "*");
+
+										if (attribute_xpath != null)
+											_list.add(new XPathExpr(attribute_xpath, XPathCompType.any_attribute));
+
+									}
 
 								}
 
@@ -6766,42 +6908,35 @@ public class PgSchema {
 
 						}
 
-						// inside any element
-
-						else
-							_list.add(new XPathExpr(path_expr.path + " @*", XPathCompType.any_element));
-
 					}
 
-				}
+					// specified table
 
-				// specified table
+					else {
 
-				else {
+						PgTable table = getTable(cur_table);
 
-					PgTable table = getTable(cur_table);
+						if (table == null) {
 
-					if (table == null) {
+							XPathComp prev_comp = list.previousOf(comp);
 
-						XPathComp prev_comp = list.previousOf(comp);
+							try {
 
-						try {
+								if (prev_comp != null)
+									throw new PgSchemaException(comp.tree, prev_comp.tree);
+								else
+									throw new PgSchemaException(comp.tree);
 
-							if (prev_comp != null)
-								throw new PgSchemaException(comp.tree, prev_comp.tree);
-							else
-								throw new PgSchemaException(comp.tree);
+							} catch (PgSchemaException e) {
+								e.printStackTrace();
+								System.exit(1);
+							}
 
-						} catch (PgSchemaException e) {
-							e.printStackTrace();
-							System.exit(1);
 						}
 
-					}
-
-					if (!path_expr.terminus.equals(XPathCompType.any_element)) {
-
 						// check current attribute
+
+						int _path_exprs_size = _list.path_exprs.size();
 
 						table.fields.stream().filter(field -> field.attribute).forEach(field -> {
 
@@ -6812,7 +6947,7 @@ public class PgSchema {
 
 						});
 
-						if (table.has_any_attribute) {
+						if (table.has_any_attribute && _path_exprs_size == _list.path_exprs.size()) {
 
 							String attribute_xpath = "@*";
 
@@ -6822,6 +6957,8 @@ public class PgSchema {
 						}
 
 						// check current nested_key
+
+						boolean has_any_attribute = false;
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
@@ -6850,14 +6987,8 @@ public class PgSchema {
 
 								});
 
-								if (foreign_table.has_any_attribute) {
-
-									String attribute_xpath = getAbsoluteXPathOfAttribute(foreign_table, "*");
-
-									if (attribute_xpath != null)
-										_list.add(new XPathExpr(attribute_xpath, XPathCompType.any_attribute));
-
-								}
+								if (foreign_table.has_any_attribute)
+									has_any_attribute = true;
 
 								// check foreign nested_key
 
@@ -6881,12 +7012,56 @@ public class PgSchema {
 
 						touched_ft_ids.clear();
 
+						if (has_any_attribute && (_path_exprs_size == _list.path_exprs.size())) {
+
+							ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							_ft_ids = null;
+
+							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
+
+								int _touched_size = touched_ft_ids.size();
+
+								for (Integer foreign_table_id : ft_ids) {
+
+									if (!touched_ft_ids.add(foreign_table_id))
+										continue;
+
+									PgTable foreign_table = tables.get(foreign_table_id);
+
+									if (foreign_table.has_any_attribute && _path_exprs_size == _list.path_exprs.size()) {
+
+										String attribute_xpath = getAbsoluteXPathOfAttribute(foreign_table, "*");
+
+										if (attribute_xpath != null)
+											_list.add(new XPathExpr(attribute_xpath, XPathCompType.any_attribute));
+
+									}
+
+									// check foreign nested_key
+
+									if (foreign_table.virtual || !abs_location_path) {
+
+										Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+
+										if (__ft_ids != null && __ft_ids.length > 0)
+											_ft_ids = __ft_ids;
+
+									}
+
+								}
+
+								ft_ids = _ft_ids;
+
+								if (touched_ft_ids.size() == _touched_size)
+									break;
+
+							}
+
+							touched_ft_ids.clear();
+
+						}
+
 					}
-
-					// inside any element
-
-					else
-						_list.add(new XPathExpr(path_expr.path + " @*", XPathCompType.any_element));
 
 				}
 
@@ -7100,7 +7275,7 @@ public class PgSchema {
 
 			if (abs_path) {
 
-				if (!root_table.target_namespace.contains(namespace_uri) || !PgSchemaUtil.matchesNodeName(root_table.name, text, wild_card))
+				if (root_table.target_namespace == null || !root_table.target_namespace.contains(namespace_uri) || !PgSchemaUtil.matchesNodeName(root_table.name, text, wild_card))
 					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
 
 				if (inc_self)
@@ -7110,7 +7285,7 @@ public class PgSchema {
 
 			else {
 
-				tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(table.name, text, wild_card)).forEach(table -> {
+				tables.stream().filter(table -> !table.virtual && table.target_namespace != null && table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(table.name, text, wild_card)).forEach(table -> {
 
 					String table_xpath = getAbsoluteXPathOfTable(table, null);
 
@@ -7173,24 +7348,27 @@ public class PgSchema {
 
 				XPathCompList _list = new XPathCompList();
 
-				String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
+				if (path_expr.terminus.equals(XPathCompType.any_element))
+					_list.add(new XPathExpr(path_expr.path + " " + text, XPathCompType.any_element));
 
-				// not specified table
+				else {
 
-				if (cur_table == null) {
+					String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
 
-					if (abs_path) {
+					// not specified table
 
-						if (inc_self && root_table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(root_table.name, text, wild_card))
-							_list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, null), XPathCompType.table));
+					if (cur_table == null) {
 
-					}
+						if (abs_path) {
 
-					else {
+							if (inc_self && root_table.target_namespace != null && root_table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(root_table.name, text, wild_card))
+								_list.add(new XPathExpr(getAbsoluteXPathOfTable(root_table, null), XPathCompType.table));
 
-						if (!path_expr.terminus.equals(XPathCompType.any_element)) {
+						}
 
-							tables.stream().filter(table -> !table.virtual && table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(table.name, text, wild_card)).forEach(table -> {
+						else {
+
+							tables.stream().filter(table -> !table.virtual && table.target_namespace != null && table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(table.name, text, wild_card)).forEach(table -> {
 
 								String table_xpath = getAbsoluteXPathOfTable(table, null);
 
@@ -7238,40 +7416,31 @@ public class PgSchema {
 
 						}
 
-						// inside any element
-
-						else
-							_list.add(new XPathExpr(path_expr.path + " " + text, XPathCompType.any_element));
-
 					}
 
-				}
+					// specified table
 
-				// specified table
+					else {
 
-				else {
+						PgTable table = getTable(cur_table);
 
-					PgTable table = getTable(cur_table);
+						if (table == null) {
 
-					if (table == null) {
+							XPathComp prev_comp = list.previousOf(comp);
 
-						XPathComp prev_comp = list.previousOf(comp);
+							try {
 
-						try {
+								if (prev_comp != null)
+									throw new PgSchemaException(comp.tree, prev_comp.tree);
+								else
+									throw new PgSchemaException(comp.tree);
 
-							if (prev_comp != null)
-								throw new PgSchemaException(comp.tree, prev_comp.tree);
-							else
-								throw new PgSchemaException(comp.tree);
+							} catch (PgSchemaException e) {
+								e.printStackTrace();
+								System.exit(1);
+							}
 
-						} catch (PgSchemaException e) {
-							e.printStackTrace();
-							System.exit(1);
 						}
-
-					}
-
-					if (!path_expr.terminus.equals(XPathCompType.any_element)) {
 
 						// check current element
 
@@ -7301,6 +7470,8 @@ public class PgSchema {
 
 						// check current nested_key
 
+						boolean has_any = false;
+
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
 						Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
@@ -7320,7 +7491,7 @@ public class PgSchema {
 
 								// check foreign table
 
-								if (!foreign_table.virtual && foreign_table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(foreign_table.name, text, wild_card)) {
+								if (!foreign_table.virtual && foreign_table.target_namespace != null && foreign_table.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(foreign_table.name, text, wild_card)) {
 
 									String table_xpath = getAbsoluteXPathOfTable(foreign_table, null);
 
@@ -7340,8 +7511,6 @@ public class PgSchema {
 
 								// check foreign element
 
-								_path_exprs_size = _list.path_exprs.size();
-
 								foreign_table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 									String element_xpath = getAbsoluteXPathOfElement(foreign_table, field.xname);
@@ -7351,18 +7520,8 @@ public class PgSchema {
 
 								});
 
-								if (foreign_table.has_any && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
-
-									foreign_table.fields.stream().filter(field -> field.any && field.target_namespace.contains(namespace_uri)).forEach(field -> {
-
-										String element_xpath = getAbsoluteXPathOfElement(foreign_table, text);
-
-										if (element_xpath != null && (inc_self || first_nest))
-											_list.add(new XPathExpr(element_xpath, XPathCompType.any_element));
-
-									});
-
-								}
+								if (foreign_table.has_any)
+									has_any = true;
 
 								// check foreign nested_key
 
@@ -7386,12 +7545,61 @@ public class PgSchema {
 
 						touched_ft_ids.clear();
 
+						if (has_any && _path_exprs_size == _list.path_exprs.size()) {
+
+							ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							_ft_ids = null;
+
+							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
+
+								boolean first_nest = _ft_ids == null;
+								int _touched_size = touched_ft_ids.size();
+
+								for (Integer foreign_table_id : ft_ids) {
+
+									if (!touched_ft_ids.add(foreign_table_id))
+										continue;
+
+									PgTable foreign_table = tables.get(foreign_table_id);
+
+									if (foreign_table.has_any && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
+
+										foreign_table.fields.stream().filter(field -> field.any && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+
+											String element_xpath = getAbsoluteXPathOfElement(foreign_table, text);
+
+											if (element_xpath != null && (inc_self || first_nest))
+												_list.add(new XPathExpr(element_xpath, XPathCompType.any_element));
+
+										});
+
+									}
+
+									// check foreign nested_key
+
+									if (foreign_table.virtual || !abs_path) {
+
+										Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+
+										if (__ft_ids != null && __ft_ids.length > 0)
+											_ft_ids = __ft_ids;
+
+									}
+
+								}
+
+								ft_ids = _ft_ids;
+
+								if (touched_ft_ids.size() == _touched_size)
+									break;
+
+							}
+
+							touched_ft_ids.clear();
+
+						}
+
 					}
-
-					// inside any element
-
-					else
-						_list.add(new XPathExpr(path_expr.path + " " + text, XPathCompType.any_element));
 
 				}
 
@@ -7486,15 +7694,18 @@ public class PgSchema {
 
 				XPathCompList _list = new XPathCompList();
 
-				String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
+				if (path_expr.terminus.equals(XPathCompType.any_element))
+					_list.add(new XPathExpr(path_expr.path + " @" + text, XPathCompType.any_attribute));
 
-				// not specified table
+				else {
 
-				if (cur_table == null) {
+					String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
 
-					if (abs_location_path) {
+					// not specified table
 
-						if (!path_expr.terminus.equals(XPathCompType.any_element)) {
+					if (cur_table == null) {
+
+						if (abs_location_path) {
 
 							for (PgTable table : tables) {
 
@@ -7526,38 +7737,31 @@ public class PgSchema {
 
 						}
 
-						else
-							_list.add(new XPathExpr(path_expr.path + " @" + text, XPathCompType.any_element));
-
 					}
 
-				}
+					// specified table
 
-				// specified table
+					else {
 
-				else {
+						PgTable table = getTable(cur_table);
 
-					PgTable table = getTable(cur_table);
+						if (table == null) {
 
-					if (table == null) {
+							XPathComp prev_comp = list.previousOf(comp);
 
-						XPathComp prev_comp = list.previousOf(comp);
+							try {
 
-						try {
+								if (prev_comp != null)
+									throw new PgSchemaException(comp.tree, prev_comp.tree);
+								else
+									throw new PgSchemaException(comp.tree);
 
-							if (prev_comp != null)
-								throw new PgSchemaException(comp.tree, prev_comp.tree);
-							else
-								throw new PgSchemaException(comp.tree);
+							} catch (PgSchemaException e) {
+								e.printStackTrace();
+								System.exit(1);
+							}
 
-						} catch (PgSchemaException e) {
-							e.printStackTrace();
-							System.exit(1);
 						}
-
-					}
-
-					if (!path_expr.terminus.equals(XPathCompType.any_element)) {
 
 						// check current attribute
 
@@ -7587,6 +7791,8 @@ public class PgSchema {
 
 						// check current nested_key
 
+						boolean has_any_attribute = false;
+
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
 						Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
@@ -7605,8 +7811,6 @@ public class PgSchema {
 
 								// check foreign attribute
 
-								_path_exprs_size = _list.path_exprs.size();
-
 								foreign_table.fields.stream().filter(field -> field.attribute && field.target_namespace.contains(namespace_uri) && PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)).forEach(field -> {
 
 									String attribute_xpath = getAbsoluteXPathOfAttribute(foreign_table, field.xname);
@@ -7616,18 +7820,8 @@ public class PgSchema {
 
 								});
 
-								if (foreign_table.has_any_attribute && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
-
-									foreign_table.fields.stream().filter(field -> field.any_attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
-
-										String attribute_xpath = getAbsoluteXPathOfAttribute(foreign_table, text);
-
-										if (attribute_xpath != null)
-											_list.add(new XPathExpr(attribute_xpath, XPathCompType.any_attribute));
-
-									});
-
-								}
+								if (foreign_table.has_any_attribute)
+									has_any_attribute = true;
 
 								// check foreign nested_key
 
@@ -7651,10 +7845,60 @@ public class PgSchema {
 
 						touched_ft_ids.clear();
 
-					}
+						if (has_any_attribute && (_path_exprs_size == _list.path_exprs.size())) {
 
-					else
-						_list.add(new XPathExpr(path_expr.path + " @" + text, XPathCompType.any_element));
+							ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							_ft_ids = null;
+
+							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
+
+								int _touched_size = touched_ft_ids.size();
+
+								for (Integer foreign_table_id : ft_ids) {
+
+									if (!touched_ft_ids.add(foreign_table_id))
+										continue;
+
+									PgTable foreign_table = tables.get(foreign_table_id);
+
+									if (foreign_table.has_any_attribute && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
+
+										foreign_table.fields.stream().filter(field -> field.any_attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+
+											String attribute_xpath = getAbsoluteXPathOfAttribute(foreign_table, text);
+
+											if (attribute_xpath != null)
+												_list.add(new XPathExpr(attribute_xpath, XPathCompType.any_attribute));
+
+										});
+
+									}
+
+									// check foreign nested_key
+
+									if (foreign_table.virtual || !abs_location_path) {
+
+										Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+
+										if (__ft_ids != null && __ft_ids.length > 0)
+											_ft_ids = __ft_ids;
+
+									}
+
+								}
+
+								ft_ids = _ft_ids;
+
+								if (touched_ft_ids.size() == _touched_size)
+									break;
+
+							}
+
+							touched_ft_ids.clear();
+
+						}
+
+					}
 
 				}
 
@@ -7835,12 +8079,13 @@ public class PgSchema {
 			table_name = _path[position - 1];
 			field_name = PgSchemaUtil.any_name;
 			pg_xpath_code = "xpath('/" + table_name + "/" + _path[position].replaceAll(" ", "/") + "', " + PgSchemaUtil.avoidPgReservedWords(table_name) + "." + PgSchemaUtil.avoidPgReservedWords(field_name) + ")";
+			break;
 		case any_attribute:
 			if (position - 1 < 0)
 				return null;
 			table_name = _path[position - 1];
 			field_name = PgSchemaUtil.any_attribute_name;
-			pg_xpath_code = "xpath('/" + table_name + "/" + _path[position] + "', " + PgSchemaUtil.avoidPgReservedWords(table_name) + "." + PgSchemaUtil.avoidPgReservedWords(field_name) + ")";
+			pg_xpath_code = "xpath('/" + table_name + "/" + _path[position].replaceAll(" ", "/") + "', " + PgSchemaUtil.avoidPgReservedWords(table_name) + "." + PgSchemaUtil.avoidPgReservedWords(field_name) + ")";
 			break;
 		default:
 			return null;
@@ -8088,7 +8333,7 @@ public class PgSchema {
 
 						if (foreign_table.fields.stream().anyMatch(field -> field.any_attribute)) {
 
-							pg_xpath_code = "xpath('/" + foreign_table.name + "/" + _path[position] + "', " + PgSchemaUtil.avoidPgReservedWords(foreign_table.name) + "." + PgSchemaUtil.avoidPgReservedWords(_field_name) + ")";
+							pg_xpath_code = "xpath('/" + foreign_table.name + "/" + _path[position].replaceAll(" ", "/") + "', " + PgSchemaUtil.avoidPgReservedWords(foreign_table.name) + "." + PgSchemaUtil.avoidPgReservedWords(_field_name) + ")";
 
 							try {
 								return new XPathSqlExpr(this, path, foreign_table.name, _field_name, pg_xpath_code, null, terminus);

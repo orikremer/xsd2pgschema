@@ -245,8 +245,8 @@ public class XmlSplitterImpl {
 			throw new xpathListenerException("Cound not specify document key from XPath expression. (" + main_text + ")");
 		}
 
-		doc_unit_path = doc_unit.path_exprs.get(0).path;
-		doc_key_path = doc_key.path_exprs.get(0).path;
+		doc_unit_path = doc_unit.path_exprs.get(0).getReadablePath();
+		doc_key_path = doc_key.path_exprs.get(0).getReadablePath();
 
 		if (doc_key.hasPathEndsWithTextNode())
 			doc_key_path = doc_key_path.substring(0, doc_key_path.lastIndexOf("/"));

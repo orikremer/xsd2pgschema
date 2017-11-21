@@ -1,6 +1,7 @@
- Changes in xsd2pgschema 2.7.0 (release 2017-11-20)
+ Changes in xsd2pgschema 2.7.0 (release 2017-11-21)
 
   Added XPath->SQL translation for wild cards.
+  Allowed XML Schema without namespace declaration, which caused null pointer exception.
 
  Changes in xsd2pgschema 2.6.6 (release 2017-11-16)
 

@@ -180,7 +180,7 @@ public class XPathSqlExpr {
 
 		switch (terminus) {
 		case any_element:
-		case any_attribute:		
+		case any_attribute:
 			this.pg_xpath_code = pg_xpath_code;
 		case element:
 		case simple_content:
