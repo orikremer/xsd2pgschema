@@ -36,3 +36,6 @@ create full-text index by either Apache Lucene and Sphinx Search, together.
 
     % ./update_uniprotkb.sh
 
+ NOTE: Please edit '<path_to_here>' in sphinx.conf and locate the configuration
+       file to /etc/sphinx/sphinx.conf before full-text indexing by Sphinx Search. 
+
