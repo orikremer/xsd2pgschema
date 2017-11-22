@@ -1471,12 +1471,10 @@ public class XPathCompList {
 
 	/**
 	 * Show path expressions.
-	 *
-	 * @param indent indent code for output
 	 */
-	public void showPathExprs(String indent) {
+	public void showPathExprs() {
 
-		path_exprs.forEach(path_expr -> System.out.println(indent + path_expr.getReadablePath() + " (terminus type: " + path_expr.terminus.name() + ")"));
+		path_exprs.forEach(path_expr -> System.out.println(path_expr.getReadablePath() + " (terminus type: " + path_expr.terminus.name() + ")"));
 
 	}
 
@@ -4406,12 +4404,10 @@ public class XPathCompList {
 
 	/**
 	 * Show SQL string expressions.
-	 *
-	 * @param indent indent code for output
 	 */
-	public void showSqlExpr(String indent) {
+	public void showSqlExpr() {
 
-		path_exprs.forEach(path_expr -> System.out.println(indent + path_expr.getReadablePath() + " (terminus type: " + path_expr.terminus.name() + ") -> " + indent + path_expr.sql));
+		path_exprs.forEach(path_expr -> System.out.println(path_expr.getReadablePath() + " (terminus type: " + path_expr.terminus.name() + ") -> " + path_expr.sql));
 
 	}
 

@@ -151,14 +151,14 @@ public class XPath2PgSqlImpl {
 		System.out.println(" " + main_text);
 
 		System.out.println("\nTarget path in XML Schema: " + PgSchemaUtil.getSchemaName(xpath2pgsql.schema_location));
-		xpath_comp_list.showPathExprs(" ");
+		xpath_comp_list.showPathExprs();
 
 		// translate XPath to SQL
 
 		xpath_comp_list.translateToSqlExpr(verbose);
 
 		System.out.println("\nSQL expression:");
-		xpath_comp_list.showSqlExpr(" ");
+		xpath_comp_list.showSqlExpr();
 
 	}
 

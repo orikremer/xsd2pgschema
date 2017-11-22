@@ -229,14 +229,14 @@ public class XmlSplitterImpl {
 		doc_unit.removeDuplicatePath();
 
 		System.out.println("Path for document unit:");
-		doc_unit.showPathExprs(" ");
+		doc_unit.showPathExprs();
 
 		// decide path of document key
 
 		doc_key.removeOrphanPath(doc_unit.path_exprs);
 
 		System.out.println("Path for document key:");
-		doc_key.showPathExprs(" ");
+		doc_key.showPathExprs();
 
 		switch (doc_key.path_exprs.size()) {
 		case 1:
