@@ -19,6 +19,8 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.util.HashSet;
+
 import org.apache.commons.text.StringEscapeUtils;
 
 /**
@@ -34,8 +36,8 @@ public class JsonBuilderOption {
 	/** The JSON item name of xs:simpleContent. */
 	public String simple_content_key = PgSchemaUtil.simple_content_name;
 
-	/** The JSON item name of discarded document key. */
-	public String discarded_document_key = "";
+	/** The JSON item list of discarded document key. */
+	public HashSet<String> discarded_document_keys = null;
 
 	/** The length of white spaces for indent. */
 	public int indent_spaces = PgSchemaUtil.indent_spaces;
@@ -55,7 +57,7 @@ public class JsonBuilderOption {
 	/**
 	 * Set prefix in JSON document of xs:attribute.
 	 *
-	 * @param attr_prefix argument value
+	 * @param attr_prefix prefix code of xs:attribute in JSON document
 	 */
 	public void setAttrPrefix(String attr_prefix) {
 
@@ -69,7 +71,7 @@ public class JsonBuilderOption {
 	/**
 	 * Set item name in JSON document of xs:simpleContent.
 	 *
-	 * @param simple_content_key argument value
+	 * @param simple_content_key item name of xs:simpleContent in JSON document
 	 */
 	public void setSimpleContentKey(String simple_content_key) {
 
@@ -81,23 +83,26 @@ public class JsonBuilderOption {
 	}
 
 	/**
-	 * Set discarded item name stands for document key.
+	 * Add discarded item name stands for document key.
 	 *
-	 * @param discarded_document_key argument value
+	 * @param discarded_document_key discarded item name of document key in JSON document
+	 * @return result of addition
 	 */
-	public void setDiscardDocKey(String discarded_document_key) {
+	public boolean addDiscardDocKey(String discarded_document_key) {
 
-		if (discarded_document_key == null)
-			discarded_document_key = "";
+		if (discarded_document_key == null || discarded_document_key.isEmpty())
+			return false;
 
-		this.discarded_document_key = discarded_document_key;
+		if (discarded_document_keys == null)
+			discarded_document_keys = new HashSet<String>();
 
+		return discarded_document_keys.add(discarded_document_key);
 	}
 
 	/**
 	 * Set length of indent spaces.
 	 *
-	 * @param indent_spaces argument value
+	 * @param indent_spaces length of indent spaces in JSON document
 	 */
 	public void setIndentSpaces(String indent_spaces) {
 
@@ -113,7 +118,7 @@ public class JsonBuilderOption {
 	/**
 	 * Set length of key-value spaces.
 	 *
-	 * @param key_value_spaces argument value
+	 * @param key_value_spaces length of key-value spaces in JSON document
 	 */
 	public void setKeyValueSpaces(String key_value_spaces) {
 

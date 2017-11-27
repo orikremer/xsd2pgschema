@@ -1474,7 +1474,7 @@ public class PgField {
 	 */
 	public boolean isJsonable(PgSchema schema) {
 
-		if (schema.jsonb.has_discarded_document_key && xname.equals(schema.jsonb.discarded_document_key))
+		if (schema.jsonb.has_discarded_document_key && schema.jsonb.discarded_document_keys.contains(xname))
 			return false;
 
 		return !schema.field_resolved || (schema.field_resolved && field_sel);
