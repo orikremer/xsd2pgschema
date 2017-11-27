@@ -1,6 +1,7 @@
  Changes in xsd2pgschema 2.7.1 (release 2017-11-27)
 
   Allowed multiple --discard-json-doc-key options in xml2json.
+  Added --discard-doc-key option in almost all main classes.
 
  Changes in xsd2pgschema 2.7.0 (release 2017-11-22)
 

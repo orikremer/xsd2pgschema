@@ -168,6 +168,9 @@ public class xml2sphinxds {
 
 			else if (args[i].equals("--attr-time"))
 				index_filter.attr_time = true;
+			
+			else if (args[i].equals("--discard-doc-key"))
+				option.addDiscardDocKey(args[++i]);
 
 			else if (args[i].equals("--min-word-len"))
 				index_filter.setMinWordLen(args[++i]);
@@ -354,6 +357,7 @@ public class xml2sphinxds {
 		System.err.println("        --attr-float (all float values are stored as attribute)");
 		System.err.println("        --attr-date (all date values are stored as attribute)");
 		System.err.println("        --attr-time (all time values are stored as attribute)");
+		System.err.println("        --discard-doc-key DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int | long (default) | native | debug]");
 		System.err.println("        --xml-file-prerix-digest DIGESTIBLE_PREFIX (default=\"\")");

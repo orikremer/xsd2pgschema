@@ -582,22 +582,6 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Return whether node name matches.
-	 *
-	 * @param node_name node name
-	 * @param prefix prefix text
-	 * @param wild_card whether wild card follows or not
-	 * @return boolean whether node name matches
-	 */
-	public static boolean matchesNodeName(String node_name, String prefix, boolean wild_card) {
-
-		if (wild_card)
-			return node_name.matches(prefix);
-
-		return prefix.equals("*") || node_name.equals(prefix);
-	}
-
-	/**
 	 * Return last name of current path.
 	 *
 	 * @param path current path

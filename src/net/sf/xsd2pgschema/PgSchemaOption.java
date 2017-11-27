@@ -19,6 +19,8 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.util.HashSet;
+
 /**
  * PostgreSQL schema construction option.
  *
@@ -80,6 +82,9 @@ public class PgSchemaOption {
 	/** The XPath key name in PostgreSQL DDL. */
 	public String xpath_key_name = def_xpath_key_name;
 
+	/** The list of discarded document key. */
+	public HashSet<String> discarded_document_keys = null;
+
 	/** The name of hash algorithm. */
 	public String hash_algorithm = PgSchemaUtil.def_hash_algorithm;
 
@@ -98,6 +103,8 @@ public class PgSchemaOption {
 
 		this.document_key = document_key;
 
+		discarded_document_keys = new HashSet<String>();
+
 	}
 
 	/**
@@ -108,6 +115,8 @@ public class PgSchemaOption {
 	public PgSchemaOption(JsonType json_type) {
 
 		setDefaultForJsonSchema(json_type);
+
+		discarded_document_keys = new HashSet<String>();
 
 	}
 
@@ -229,6 +238,23 @@ public class PgSchemaOption {
 
 		xpath_key_name = def_xpath_key_name;
 
+	}
+
+	/**
+	 * Add discarded document key.
+	 *
+	 * @param discarded_document_key discarded document key
+	 * @return result of addition
+	 */
+	public boolean addDiscardDocKey(String discarded_document_key) {
+
+		if (discarded_document_key == null || discarded_document_key.isEmpty())
+			return false;
+
+		if (discarded_document_keys == null)
+			discarded_document_keys = new HashSet<String>();
+
+		return discarded_document_keys.add(discarded_document_key);
 	}
 
 }

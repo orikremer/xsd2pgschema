@@ -1004,7 +1004,7 @@ public class XPathCompList {
 				if (table == null)
 					throw new PgSchemaException(comp.tree, previousOf(comp).tree);
 
-				if (table.target_namespace == null || !table.target_namespace.equals(namespace_uri) || !PgSchemaUtil.matchesNodeName(table.name, text, wild_card))
+				if (table.target_namespace == null || !table.target_namespace.equals(namespace_uri) || !table.matchesNodeName(text, wild_card))
 					iter.remove();
 				break;
 			case element:
@@ -1037,7 +1037,7 @@ public class XPathCompList {
 
 				if (field != null) {
 
-					if (!field.target_namespace.equals(namespace_uri) || (!path_expr.terminus.equals(XPathCompType.any_element) && !path_expr.terminus.equals(XPathCompType.any_attribute) && !PgSchemaUtil.matchesNodeName(field.xname, text, wild_card)))
+					if (!field.target_namespace.equals(namespace_uri) || (!path_expr.terminus.equals(XPathCompType.any_element) && !path_expr.terminus.equals(XPathCompType.any_attribute) && !field.matchesNodeName(schema.option, text, wild_card)))
 						iter.remove();
 
 					continue;
@@ -1067,7 +1067,7 @@ public class XPathCompList {
 
 							found_field = true;
 
-							if (!foreign_field.target_namespace.equals(namespace_uri) || (!path_expr.terminus.equals(XPathCompType.any_element) && !path_expr.terminus.equals(XPathCompType.any_attribute) && !PgSchemaUtil.matchesNodeName(foreign_field.xname, text, wild_card)))
+							if (!foreign_field.target_namespace.equals(namespace_uri) || (!path_expr.terminus.equals(XPathCompType.any_element) && !path_expr.terminus.equals(XPathCompType.any_attribute) && !foreign_field.matchesNodeName(schema.option, text, wild_card)))
 								iter.remove();
 
 							break;

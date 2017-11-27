@@ -75,8 +75,8 @@ public class xsd2jsonschema {
 			else if (args[i].equals("--json"))
 				json_file_name = args[++i];
 
-			else if (args[i].equals("--discard-json-doc-key"))
-				jsonb_option.addDiscardDocKey(args[++i]);
+			else if (args[i].equals("--discard-json-doc-key") || args[i].equals("--discard-doc-key"))
+				option.addDiscardDocKey(args[++i]);
 
 			else if (args[i].equals("--obj-json"))
 				option.setDefaultForJsonSchema(json_type = JsonType.object);
@@ -197,12 +197,12 @@ public class xsd2jsonschema {
 		System.err.println("        --no-field-annotation (do not retrieve field annotation)");
 		System.err.println("        --attr-json-prefix ATTR_PREFIX_CODE (default=\"" + jsonb_option.attr_prefix + "\")");
 		System.err.println("        --simple-cont-json-key SIMPLE_CONTENT_NAME (default=\"" + jsonb_option.simple_content_key + "\")");
-		System.err.println("        --discard-json-doc-key DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --json-indent-spaces INTEGER (default=" + jsonb_option.indent_spaces + ", min=0, max=4)");
 		System.err.println("        --json-key-value-spaces INTEGER (default=" + jsonb_option.key_value_spaces + ", min=0, max=1)");
 		System.err.println("        --json-no-linefeed (avoid to use linefeed code)");
 		System.err.println("        --json-compact (equals to set --json-indent-spaces 0 --json-key-value-spaces 0 --json-no-linefeed)");
 		System.err.println("        --json-array-all (use JSON array uniformly for descendants, effective only in column- and relational-oriented JSON format)");
+		System.err.println("        --discard-doc-key DISCARDED_DOCUMENT_KEY_NAME");
 		System.exit(1);
 
 	}

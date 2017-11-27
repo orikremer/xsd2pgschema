@@ -1449,11 +1449,15 @@ public class PgField {
 	/**
 	 * Return whether field is omitted.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @return boolean whether field is omitted
 	 */
-	public boolean isOmitted(PgSchema schema) {
-		return (!schema.option.document_key && document_key) || (!schema.option.serial_key && serial_key) || (!schema.option.xpath_key && xpath_key) || (!schema.option.rel_data_ext && system_key);
+	public boolean isOmitted(PgSchemaOption option) {
+
+		if ((element || attribute) && option.discarded_document_keys.contains(xname))
+			return true;
+
+		return (!option.document_key && document_key) || (!option.serial_key && serial_key) || (!option.xpath_key && xpath_key) || (!option.rel_data_ext && system_key);
 	}
 
 	/**
@@ -1463,6 +1467,10 @@ public class PgField {
 	 * @return boolean whether field is indexable
 	 */
 	public boolean isIndexable(PgSchema schema) {
+
+		if ((element || attribute) && schema.option.discarded_document_keys.contains(xname))
+			return false;
+
 		return !schema.field_resolved || (schema.field_resolved && field_sel) || (schema.attr_resolved && attr_sel);
 	}
 
@@ -1474,10 +1482,29 @@ public class PgField {
 	 */
 	public boolean isJsonable(PgSchema schema) {
 
-		if (schema.jsonb.has_discarded_document_key && schema.jsonb.discarded_document_keys.contains(xname))
+		if ((element || attribute) && schema.option.discarded_document_keys.contains(xname))
 			return false;
 
 		return !schema.field_resolved || (schema.field_resolved && field_sel);
+	}
+
+	/**
+	 * Return whether node name matches.
+	 *
+	 * @param option PostgreSQL data model option
+	 * @param prefix prefix text
+	 * @param wild_card whether wild card follows or not
+	 * @return boolean whether node name matches
+	 */
+	public boolean matchesNodeName(PgSchemaOption option, String prefix, boolean wild_card) {
+
+		if ((element || attribute) && option.discarded_document_keys.contains(xname))
+			return false;
+
+		if (wild_card)
+			return xname.matches(prefix);
+
+		return prefix.equals("*") || xname.equals(prefix);
 	}
 
 }

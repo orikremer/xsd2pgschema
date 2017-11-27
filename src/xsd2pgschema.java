@@ -127,6 +127,9 @@ public class xsd2pgschema {
 			else if (args[i].equals("--xpath-key-name"))
 				option.setXPathKeyName(args[++i]);
 
+			else if (args[i].equals("--discard-doc-key"))
+				option.addDiscardDocKey(args[++i]);
+
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
 				showUsage();
@@ -216,6 +219,7 @@ public class xsd2pgschema {
 		System.err.println("        --doc-key-name DOC_KEY_NAME (default=\"" + option.document_key_name + "\")");
 		System.err.println("        --ser-key-name SER_KEY_NAME (default=\"" + option.serial_key_name + "\")");
 		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.xpath_key_name + "\")");
+		System.err.println("        --discard-doc-key DISCARDED_DOCUMENT_KEY_NAME");
 
 		System.exit(1);
 

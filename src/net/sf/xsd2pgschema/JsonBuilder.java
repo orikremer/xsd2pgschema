@@ -19,7 +19,6 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.util.HashSet;
 import java.util.List;
 
 import org.apache.commons.text.StringEscapeUtils;
@@ -40,9 +39,6 @@ public class JsonBuilder {
 	/** The JSON item name of xs:simpleContent. */
 	String simple_content_key = PgSchemaUtil.simple_content_name;
 
-	/** The JSON item list of discarded document key. */
-	HashSet<String> discarded_document_keys = null;
-
 	/** The unit of indent space. */
 	String indent_space = "  ";
 
@@ -57,9 +53,6 @@ public class JsonBuilder {
 
 	/** Use JSON array uniformly for descendants. */
 	boolean array_all = false;
-
-	/** Whether discarded document key exists or not. */
-	boolean has_discarded_document_key = false;
 
 	/** The length of the key_value_space. */
 	int key_value_spaces = key_value_space.length();
@@ -106,11 +99,6 @@ public class JsonBuilder {
 
 		if ((simple_content_key = option.simple_content_key) == null)
 			simple_content_key = PgSchemaUtil.simple_content_name;
-
-		if ((discarded_document_keys = option.discarded_document_keys) == null)
-			discarded_document_keys = new HashSet<String>();
-
-		has_discarded_document_key = discarded_document_keys.size() > 0;
 
 		clear();
 

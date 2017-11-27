@@ -588,4 +588,19 @@ public class PgTable {
 
 	}
 
+	/**
+	 * Return whether node name matches.
+	 *
+	 * @param prefix prefix text
+	 * @param wild_card whether wild card follows or not
+	 * @return boolean whether node name matches
+	 */
+	public boolean matchesNodeName(String prefix, boolean wild_card) {
+
+		if (wild_card)
+			return name.matches(prefix);
+
+		return prefix.equals("*") || name.equals(prefix);
+	}
+
 }
