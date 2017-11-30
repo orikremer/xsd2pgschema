@@ -206,13 +206,13 @@ public class PgTable {
 	/**
 	 * Suggest new name for a given field name avoiding name collision with current ones.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param field_name candidate name of new field
 	 * @return String field name without name collision
 	 */
-	public String avoidFieldDuplication(PgSchema schema, String field_name) {
+	public String avoidFieldDuplication(PgSchemaOption option, String field_name) {
 
-		if (!schema.option.rel_model_ext)
+		if (!option.rel_model_ext)
 			return field_name;
 
 		boolean duplicate;
@@ -242,19 +242,19 @@ public class PgTable {
 	/**
 	 * Add primary key.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param name name of primary key
 	 * @param unique_key whether primary key should be unique
 	 */
-	public void addPrimaryKey(PgSchema schema, String name, boolean unique_key) {
+	public void addPrimaryKey(PgSchemaOption option, String name, boolean unique_key) {
 
-		String xs_prefix_ = schema.xs_prefix_;
+		String xs_prefix_ = option.xs_prefix_;
 
-		if (schema.option.document_key) {
+		if (option.document_key) {
 
 			PgField field = new PgField();
 
-			field.name = field.xname = schema.option.document_key_name;
+			field.name = field.xname = option.document_key_name;
 			field.type = xs_prefix_ + "string";
 			field.xs_type = XsDataType.xs_string;
 			field.document_key = true;
@@ -263,13 +263,13 @@ public class PgTable {
 
 		}
 
-		if (!schema.option.rel_model_ext)
+		if (!option.rel_model_ext)
 			return;
 
 		PgField field = new PgField();
 
 		field.name = field.xname = name + "_id";
-		field.setHashKeyType(schema);
+		field.setHashKeyType(option);
 		field.primary_key = true;
 		field.unique_key = unique_key;
 
@@ -280,14 +280,14 @@ public class PgTable {
 	/**
 	 * Add a nested key.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param name name of nested key
 	 * @param node current node
 	 * @return boolean whether success or not
 	 */
-	public boolean addNestedKey(PgSchema schema, String name, Node node) {
+	public boolean addNestedKey(PgSchemaOption option, String name, Node node) {
 
-		String xs_prefix_ = schema.xs_prefix_;
+		String xs_prefix_ = option.xs_prefix_;
 		/* not required for annotation retrieval if relational model extension turns off
 		if (!schema.option.rel_model_ext)
 			return false;
@@ -295,12 +295,12 @@ public class PgTable {
 		if (name == null || name.isEmpty())
 			return false;
 
-		name = schema.getUnqualifiedName(name);
+		name = option.getUnqualifiedName(name);
 
 		PgField field = new PgField();
 
 		field.name = field.xname = name + "_id";
-		field.setHashKeyType(schema);
+		field.setHashKeyType(option);
 		field.nested_key = true;
 		field.constraint_name = "FK_" + name;
 		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
@@ -309,8 +309,8 @@ public class PgTable {
 		field.foreign_table = name;
 		field.foreign_field = field.name;
 
-		field.extractMaxOccurs(schema, node);
-		field.extractMinOccurs(schema, node);
+		field.extractMaxOccurs(option, node);
+		field.extractMinOccurs(option, node);
 
 		Node parent_node = node.getParentNode();
 
@@ -365,12 +365,12 @@ public class PgTable {
 	/**
 	 * Add a nested key from foreign table.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param foreign_table name of foreign table
 	 */
-	public void addNestedKey(PgSchema schema, String foreign_table) {
+	public void addNestedKey(PgSchemaOption option, String foreign_table) {
 
-		if (!schema.option.rel_model_ext)
+		if (!option.rel_model_ext)
 			return;
 
 		if (foreign_table == null || foreign_table.isEmpty())
@@ -379,7 +379,7 @@ public class PgTable {
 		PgField field = new PgField();
 
 		field.name = field.xname = foreign_table + "_id";
-		field.setHashKeyType(schema);
+		field.setHashKeyType(option);
 		field.nested_key = true;
 		field.constraint_name = "FK_" + foreign_table;
 		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
@@ -395,12 +395,12 @@ public class PgTable {
 	/**
 	 * Add a foreign key from foreign table.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param foreign_table foreign table
 	 */
-	public void addForeignKey(PgSchema schema, PgTable foreign_table) {
+	public void addForeignKey(PgSchemaOption option, PgTable foreign_table) {
 
-		if (!schema.option.rel_model_ext)
+		if (!option.rel_model_ext)
 			return;
 
 		if (name.equals(foreign_table.name))
@@ -411,7 +411,7 @@ public class PgTable {
 			PgField field = new PgField();
 
 			field.name = field.xname = arg.name;
-			field.setHashKeyType(schema);
+			field.setHashKeyType(option);
 			field.foreign_key = true;
 			field.constraint_name = "FK_" + name + "_" + foreign_table.name;
 			if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
@@ -430,11 +430,11 @@ public class PgTable {
 	/**
 	 * Add a serial key.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 */
-	public void addSerialKey(PgSchema schema) {
+	public void addSerialKey(PgSchemaOption option) {
 
-		if (!schema.option.rel_model_ext)
+		if (!option.rel_model_ext)
 			return;
 
 		if (fields.stream().anyMatch(arg -> arg.serial_key)) // already has a serial key
@@ -442,8 +442,8 @@ public class PgTable {
 
 		PgField field = new PgField();
 
-		field.name = field.xname = avoidFieldDuplication(schema, schema.option.serial_key_name);
-		field.setSerKeyType(schema);
+		field.name = field.xname = avoidFieldDuplication(option, option.serial_key_name);
+		field.setSerKeyType(option);
 		field.serial_key = true;
 
 		fields.add(field);
@@ -453,17 +453,17 @@ public class PgTable {
 	/**
 	 * Add an XPath key.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 */
-	public void addXPathKey(PgSchema schema) {
+	public void addXPathKey(PgSchemaOption option) {
 
 		if (fields.stream().anyMatch(arg -> arg.xpath_key)) // already has an xpath key
 			return;
 
 		PgField field = new PgField();
 
-		field.name = field.xname = avoidFieldDuplication(schema, schema.option.xpath_key_name);
-		field.setHashKeyType(schema);
+		field.name = field.xname = avoidFieldDuplication(option, option.xpath_key_name);
+		field.setHashKeyType(option);
 		field.xpath_key = true;
 
 		fields.add(field);

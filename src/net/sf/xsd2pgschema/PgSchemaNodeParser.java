@@ -339,7 +339,7 @@ public abstract class PgSchemaNodeParser {
 			String child_name;
 
 			if ((child_name = child.getLocalName()) == null)
-				child_name = schema.getUnqualifiedName(child.getNodeName());
+				child_name = schema.option.getUnqualifiedName(child.getNodeName());
 
 			if (!child_name.equals(field.xname))
 				continue;
@@ -413,7 +413,7 @@ public abstract class PgSchemaNodeParser {
 			String child_name;
 
 			if ((child_name = child.getLocalName()) == null)
-				child_name = schema.getUnqualifiedName(child.getNodeName());
+				child_name = schema.option.getUnqualifiedName(child.getNodeName());
 
 			String _child_name = child_name;
 
@@ -482,12 +482,11 @@ public abstract class PgSchemaNodeParser {
 	/**
 	 * Return whether nested node exists.
 	 *
-	 * @param schema PostgreSQL data model
 	 * @param nested_table nested table
 	 * @param node current node
 	 * @return boolean whether nested node exists
 	 */
-	public boolean existsNestedNode(final PgSchema schema, final PgTable nested_table, final Node node) {
+	public boolean existsNestedNode(final PgTable nested_table, final Node node) {
 
 		if (!nested_table.virtual) {
 
@@ -499,7 +498,7 @@ public abstract class PgSchemaNodeParser {
 				String child_name;
 
 				if ((child_name = child.getLocalName()) == null)
-					child_name = schema.getUnqualifiedName(child.getNodeName());
+					child_name = schema.option.getUnqualifiedName(child.getNodeName());
 
 				if (!child_name.equals(nested_table.name))
 					continue;

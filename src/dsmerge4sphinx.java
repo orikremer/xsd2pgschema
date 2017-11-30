@@ -262,9 +262,9 @@ public class dsmerge4sphinx {
 	/**
 	 * Merge data source.
 	 *
-	 * @param schema the schema
-	 * @param filew the filew
-	 * @param sph_doc the sph doc
+	 * @param schema PostgreSQL data model
+	 * @param filew Sphinx data source file writer
+	 * @param sph_doc Sphinx data source file
 	 */
 	private static void mergeDataSource(PgSchema schema, FileWriter filew, File sph_doc) {
 

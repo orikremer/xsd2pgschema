@@ -381,7 +381,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			PgTable nested_table = schema.getTable(nested_table_id[n]);
 
-			boolean exists = existsNestedNode(schema, nested_table, node_test.proc_node);
+			boolean exists = existsNestedNode(nested_table, node_test.proc_node);
 
 			schema.parseChildNode2PgSql(exists || nested ? node_test.proc_node : proc_node, table, nested_table, node_test.primary_key, nested_key[n], list_holder[n], !exists, exists ? 0 : node_test.key_id, db_conn);
 
@@ -407,7 +407,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			PgTable nested_table = schema.getTable(nested_table_id[n]);
 
-			if (existsNestedNode(schema, nested_table, proc_node))
+			if (existsNestedNode(nested_table, proc_node))
 				schema.parseChildNode2PgSql(proc_node, table, nested_table, current_key, nested_key[n], list_holder[n], false, 0, db_conn);
 
 		}

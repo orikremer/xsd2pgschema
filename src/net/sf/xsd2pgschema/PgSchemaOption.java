@@ -94,6 +94,18 @@ public class PgSchemaOption {
 	/** The size of serial key. */
 	public PgSerSize ser_size = PgSerSize.defaultSize();
 
+	/** The prefix of xs_namespace_uri. */
+	protected String xs_prefix = null;
+
+	/** The xs_prefix.isEmpty() ? "" : xs_prefix + ":". */
+	protected String xs_prefix_ = null;
+
+	/** Whether selected fields are resolved. */
+	protected boolean field_resolved = false;
+
+	/** Whether selected attributes are resolved. */
+	protected boolean attr_resolved = false;
+
 	/**
 	 * Instance of PostgreSQL data modeling option.
 	 *
@@ -158,6 +170,28 @@ public class PgSchemaOption {
 	 */
 	public int getMinimumSizeOfField() {
 		return (rel_model_ext ? 1 : 0) + (document_key ? 1 : 0);
+	}
+
+	/**
+	 * Return unqualified name.
+	 *
+	 * @param qname qualified name
+	 * @return String unqualified name
+	 */
+	public String getUnqualifiedName(String qname) {
+
+		if (qname == null)
+			return null;
+
+		if (qname.contains(" "))
+			qname = qname.trim();
+
+		if (!case_sense)
+			qname = qname.toLowerCase();
+
+		int last_pos = qname.lastIndexOf(':');
+
+		return last_pos == -1 ? qname : qname.substring(last_pos + 1);
 	}
 
 	/**

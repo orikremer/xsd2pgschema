@@ -213,7 +213,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			if (field.system_key)
 				continue;
 
-			if (field.isJsonable(schema)) {
+			if (field.isJsonable(schema.option)) {
 
 				if (XsDataType.setValue(field, values[f], schema.jsonb.key_value_space))
 					not_empty = true;
@@ -301,7 +301,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			PgTable nested_table = schema.getTable(nested_table_id[n]);
 
-			boolean exists = existsNestedNode(schema, nested_table, node_test.proc_node);
+			boolean exists = existsNestedNode(nested_table, node_test.proc_node);
 
 			schema.parseChildNode2ObjJson(exists || nested ? node_test.proc_node : proc_node, table, nested_table, node_test.primary_key, nested_key[n], list_holder[n], !exists, exists ? 0 : node_test.key_id, json_indent_level + (table.relational ? 0 : 1));
 
@@ -329,7 +329,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			PgTable nested_table = schema.getTable(nested_table_id[n]);
 
-			boolean exists = existsNestedNode(schema, nested_table, node_test.proc_node);
+			boolean exists = existsNestedNode(nested_table, node_test.proc_node);
 
 			schema.parseChildNode2ColJson(exists || nested ? node_test.proc_node : proc_node, table, nested_table, node_test.primary_key, nested_key[n], list_holder[n], !exists, exists ? 0 : node_test.key_id, json_indent_level + (table.virtual ? 0 : 1));
 
@@ -357,7 +357,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			PgTable nested_table = schema.getTable(nested_table_id[n]);
 
-			boolean exists = existsNestedNode(schema, nested_table, node_test.proc_node);
+			boolean exists = existsNestedNode(nested_table, node_test.proc_node);
 
 			schema.parseChildNode2Json(exists || nested ? node_test.proc_node : proc_node, table, nested_table, node_test.primary_key, nested_key[n], list_holder[n], !exists, exists ? 0 : node_test.key_id);
 
@@ -382,7 +382,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			PgTable nested_table = schema.getTable(nested_table_id[n]);
 
-			if (existsNestedNode(schema, nested_table, proc_node))
+			if (existsNestedNode(nested_table, proc_node))
 				schema.parseChildNode2ObjJson(proc_node, table, nested_table, current_key, nested_key[n], list_holder[n], false, 0, json_indent_level + (table.relational ? 0 : 1));
 
 		}
@@ -406,7 +406,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			PgTable nested_table = schema.getTable(nested_table_id[n]);
 
-			if (existsNestedNode(schema, nested_table, proc_node))
+			if (existsNestedNode(nested_table, proc_node))
 				schema.parseChildNode2ColJson(proc_node, table, nested_table, current_key, nested_key[n], list_holder[n], false, 0, json_indent_level + (table.virtual ? 0 : 1));
 
 		}
@@ -430,7 +430,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			PgTable nested_table = schema.getTable(nested_table_id[n]);
 
-			if (existsNestedNode(schema, nested_table, proc_node))
+			if (existsNestedNode(nested_table, proc_node))
 				schema.parseChildNode2Json(proc_node, table, nested_table, current_key, nested_key[n], list_holder[n], false, 0);
 
 		}

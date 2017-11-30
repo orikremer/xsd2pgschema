@@ -66,7 +66,7 @@ public class Xml2PgCsvThrd implements Runnable {
 	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
 	 * @param csv_dir_name directory name of CSV files
-	 * @param option PosgreSQL schema option
+	 * @param option PostgreSQL data model option
 	 * @param pg_option PostgreSQL option
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception

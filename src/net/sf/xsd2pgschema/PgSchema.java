@@ -111,12 +111,6 @@ public class PgSchema {
 	/** Whether numeric index are stored in Lucene index. */
 	boolean numeric_index = false;
 
-	/** The prefix of xs_namespace_uri. */
-	String xs_prefix = null;
-
-	/** The xs_prefix.isEmpty() ? "" : xs_prefix + ":". */
-	String xs_prefix_ = null;
-
 	/** The default namespace (key=prefix, value=namespace_uri). */
 	private HashMap<String, String> def_namespaces = null;
 
@@ -183,25 +177,25 @@ public class PgSchema {
 
 		Node xs_namespace_uri_node = node_list.item(0);
 
-		xs_prefix = xs_namespace_uri_node != null ? xs_namespace_uri_node.getPrefix() : null;
+		option.xs_prefix = xs_namespace_uri_node != null ? xs_namespace_uri_node.getPrefix() : null;
 
-		if (xs_prefix == null || xs_prefix.isEmpty())
-			xs_prefix_ = xs_prefix = "";
+		if (option.xs_prefix == null || option.xs_prefix.isEmpty())
+			option.xs_prefix_ = option.xs_prefix = "";
 		else
-			xs_prefix_ = xs_prefix + ":";
+			option.xs_prefix_ = option.xs_prefix + ":";
 
 		// check root element name
 
-		if (!root_node.getNodeName().equals(xs_prefix_ + "schema"))
-			throw new PgSchemaException("Not found " + xs_prefix_ + "schema root element in XML Schema: " + def_schema_location);
+		if (!root_node.getNodeName().equals(option.xs_prefix_ + "schema"))
+			throw new PgSchemaException("Not found " + option.xs_prefix_ + "schema root element in XML Schema: " + def_schema_location);
 
 		// retrieve top level schema annotation
 
-		def_anno = PgSchemaUtil.extractAnnotation(xs_prefix_, root_node, true);
-		def_anno_appinfo = PgSchemaUtil.extractAppinfo(xs_prefix_, root_node);
+		def_anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, root_node, true);
+		def_anno_appinfo = PgSchemaUtil.extractAppinfo(option.xs_prefix_, root_node);
 
-		if ((def_anno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, root_node, true)) != null)
-			def_xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, root_node, false);
+		if ((def_anno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, root_node, true)) != null)
+			def_xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, root_node, false);
 
 		def_stat_msg = new StringBuilder();
 
@@ -254,7 +248,7 @@ public class PgSchema {
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			if (child.getNodeName().equals(xs_prefix_ + "include") || child.getNodeName().equals(xs_prefix_ + "import")) {
+			if (child.getNodeName().equals(option.xs_prefix_ + "include") || child.getNodeName().equals(option.xs_prefix_ + "import")) {
 
 				Element e = (Element) child;
 
@@ -300,7 +294,7 @@ public class PgSchema {
 
 						if ((schema2.tables == null || schema2.tables.size() == 0) && (schema2.attr_groups == null || schema2.attr_groups.size() == 0) && (schema2.model_groups == null || schema2.model_groups.size() == 0)) {
 
-							_root_schema.def_stat_msg.append("--  Not found any root element (/" + xs_prefix_ + "schema/" + xs_prefix_ + "element) or administrative elements (/" + xs_prefix_ + "schema/[" + xs_prefix_ + "complexType | " + xs_prefix_ + "simpleType | " + xs_prefix_ + "attributeGroup | " + xs_prefix_ + "group]) in XML Schema: " + schema_location + "\n");
+							_root_schema.def_stat_msg.append("--  Not found any root element (/" + option.xs_prefix_ + "schema/" + option.xs_prefix_ + "element) or administrative elements (/" + option.xs_prefix_ + "schema/[" + option.xs_prefix_ + "complexType | " + option.xs_prefix_ + "simpleType | " + option.xs_prefix_ + "attributeGroup | " + option.xs_prefix_ + "group]) in XML Schema: " + schema_location + "\n");
 
 							continue;
 						}
@@ -346,7 +340,7 @@ public class PgSchema {
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			if (child.getNodeName().equals(xs_prefix_ + "attributeGroup"))
+			if (child.getNodeName().equals(option.xs_prefix_ + "attributeGroup"))
 				extractAdminAttributeGroup(child);
 
 		}
@@ -355,7 +349,7 @@ public class PgSchema {
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			if (child.getNodeName().equals(xs_prefix_ + "group"))
+			if (child.getNodeName().equals(option.xs_prefix_ + "group"))
 				extractAdminModelGroup(child);
 
 		}
@@ -366,7 +360,7 @@ public class PgSchema {
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			if (child.getNodeName().equals(xs_prefix_ + "element")) {
+			if (child.getNodeName().equals(option.xs_prefix_ + "element")) {
 
 				Element e = (Element) child;
 
@@ -390,10 +384,10 @@ public class PgSchema {
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			if (child.getNodeName().equals(xs_prefix_ + "complexType"))
+			if (child.getNodeName().equals(option.xs_prefix_ + "complexType"))
 				extractAdminElement(child, true, false);
 
-			else if (child.getNodeName().equals(xs_prefix_ + "simpleType"))
+			else if (child.getNodeName().equals(option.xs_prefix_ + "simpleType"))
 				extractAdminElement(child, false, false);
 
 		}
@@ -401,7 +395,7 @@ public class PgSchema {
 		if (tables.size() == 0) {
 
 			if (root_schema == null)
-				throw new PgSchemaException("Not found any root element (/" + xs_prefix_ + "schema/" + xs_prefix_ + "element) or administrative elements (/" + xs_prefix_ + "schema/[" + xs_prefix_ + "complexType | " + xs_prefix_ + "simpleType]) in XML Schema: " + def_schema_location);
+				throw new PgSchemaException("Not found any root element (/" + option.xs_prefix_ + "schema/" + option.xs_prefix_ + "element) or administrative elements (/" + option.xs_prefix_ + "schema/[" + option.xs_prefix_ + "complexType | " + option.xs_prefix_ + "simpleType]) in XML Schema: " + def_schema_location);
 
 		}
 
@@ -414,59 +408,11 @@ public class PgSchema {
 
 		}
 
-		// statistics on this schema
-
-		if (root_schema == null) {
-
-			StringBuilder sb = new StringBuilder();
-
-			HashSet<String> namespace_uri = new HashSet<String>();
-
-			def_namespaces.entrySet().stream().map(arg -> arg.getValue()).forEach(arg -> namespace_uri.add(arg));
-
-			namespace_uri.forEach(arg -> sb.append(arg + " (" + getAbsolutePrefixOf(arg) + "), "));
-			namespace_uri.clear();
-
-			_root_schema.def_stat_msg.append("--   Namespaces:\n");
-			_root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
-
-			sb.setLength(0);
-
-			schema_locations.forEach(arg -> sb.append(arg + ", "));
-
-			_root_schema.def_stat_msg.append("--   Schema locations:\n");
-			_root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
-
-			sb.setLength(0);
-
-			_root_schema.def_stat_msg.append("--   Table types:\n");
-			_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_root) && (option.rel_model_ext || !table.relational)).count() + " root, ");
-			_root_schema.def_stat_msg.append(tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) && (option.rel_model_ext || !table.relational)).count() + " root children, ");
-			_root_schema.def_stat_msg.append(tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root) && (option.rel_model_ext || !table.relational)).count() + " admin roots, ");
-			_root_schema.def_stat_msg.append(tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_child) && (option.rel_model_ext || !table.relational)).count() + " admin children\n");
-			_root_schema.def_stat_msg.append("--   System keys:\n");
-			_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.primary_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " primary keys (" + tables.stream().map(table -> table.fields.stream().filter(field -> field.unique_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " unique constraints), ");
-			_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys (" + foreign_keys.size() + " key references), ");
-			_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.nested_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " nested keys\n");
-			_root_schema.def_stat_msg.append("--   User keys:\n");
-			_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.document_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " document keys, ");
-			_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
-			_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
-			_root_schema.def_stat_msg.append("--   Contents:\n");
-			_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_keys.contains(field.xname)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes, ");
-			_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_keys.contains(field.xname)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements, ");
-			_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.simple_content).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents\n");
-			_root_schema.def_stat_msg.append("--   Wild cards:\n");
-			_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
-			_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
-
-		}
-
 		// append annotation of root table if possible
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			if (child.getNodeName().equals(xs_prefix_ + "element")) {
+			if (child.getNodeName().equals(option.xs_prefix_ + "element")) {
 
 				Element e = (Element) child;
 
@@ -488,10 +434,10 @@ public class PgSchema {
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			if (child.getNodeName().equals(xs_prefix_ + "complexType"))
+			if (child.getNodeName().equals(option.xs_prefix_ + "complexType"))
 				extractAdminElement(child, true, true);
 
-			else if (child.getNodeName().equals(xs_prefix_ + "simpleType"))
+			else if (child.getNodeName().equals(option.xs_prefix_ + "simpleType"))
 				extractAdminElement(child, false, true);
 
 		}
@@ -730,12 +676,12 @@ public class PgSchema {
 		// add serial key if parent table is list holder
 
 		if (option.serial_key)
-			tables.stream().filter(table -> table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> tables.get(field.foreign_table_id).addSerialKey(this)));
+			tables.stream().filter(table -> table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> tables.get(field.foreign_table_id).addSerialKey(option)));
 
 		// add XPath key
 
 		if (option.xpath_key)
-			tables.forEach(table -> table.addXPathKey(this));
+			tables.forEach(table -> table.addXPathKey(option));
 
 		// update system key flag and user key flag
 
@@ -750,6 +696,50 @@ public class PgSchema {
 
 		if (!option.hash_algorithm.isEmpty() && !option.hash_size.equals(PgHashSize.debug_string))
 			message_digest = MessageDigest.getInstance(option.hash_algorithm);
+
+		// statistics
+
+		StringBuilder sb = new StringBuilder();
+
+		HashSet<String> namespace_uri = new HashSet<String>();
+
+		def_namespaces.entrySet().stream().map(arg -> arg.getValue()).forEach(arg -> namespace_uri.add(arg));
+
+		namespace_uri.forEach(arg -> sb.append(arg + " (" + getAbsolutePrefixOf(arg) + "), "));
+		namespace_uri.clear();
+
+		_root_schema.def_stat_msg.append("--   Namespaces:\n");
+		_root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
+
+		sb.setLength(0);
+
+		schema_locations.forEach(arg -> sb.append(arg + ", "));
+
+		_root_schema.def_stat_msg.append("--   Schema locations:\n");
+		_root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
+
+		sb.setLength(0);
+
+		_root_schema.def_stat_msg.append("--   Table types:\n");
+		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_root) && (option.rel_model_ext || !table.relational)).count() + " root, ");
+		_root_schema.def_stat_msg.append(tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) && (option.rel_model_ext || !table.relational)).count() + " root children, ");
+		_root_schema.def_stat_msg.append(tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root) && (option.rel_model_ext || !table.relational)).count() + " admin roots, ");
+		_root_schema.def_stat_msg.append(tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_child) && (option.rel_model_ext || !table.relational)).count() + " admin children\n");
+		_root_schema.def_stat_msg.append("--   System keys:\n");
+		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.primary_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " primary keys (" + tables.stream().map(table -> table.fields.stream().filter(field -> field.unique_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " unique constraints), ");
+		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys (" + foreign_keys.size() + " key references), ");
+		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.nested_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " nested keys\n");
+		_root_schema.def_stat_msg.append("--   User keys:\n");
+		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.document_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " document keys, ");
+		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
+		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
+		_root_schema.def_stat_msg.append("--   Contents:\n");
+		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_keys.contains(field.xname)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes, ");
+		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_keys.contains(field.xname)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements, ");
+		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.simple_content).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents\n");
+		_root_schema.def_stat_msg.append("--   Wild cards:\n");
+		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
+		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
 
 		// realize PostgreSQL DDL
 
@@ -771,15 +761,15 @@ public class PgSchema {
 
 		String name = e.getAttribute("name");
 
-		table.name = getUnqualifiedName(name);
+		table.name = option.getUnqualifiedName(name);
 
 		if (table.name.isEmpty())
 			return;
 
 		table.required = true;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
 
 		table.xs_type = root_element ? XsTableType.xs_root : XsTableType.xs_admin_root;
 
@@ -787,16 +777,16 @@ public class PgSchema {
 
 		table.level = level = 0;
 
-		table.addPrimaryKey(this, table.name, true);
+		table.addPrimaryKey(option, table.name, true);
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 			String child_name = child.getNodeName();
 
-			if (child_name.equals(xs_prefix_ + "complexType") || child_name.equals(xs_prefix_ + "simpleType"))
+			if (child_name.equals(option.xs_prefix_ + "complexType") || child_name.equals(option.xs_prefix_ + "simpleType"))
 				extractField(child, table);
 
-			else if (child_name.equals(xs_prefix_ + "keyref"))
+			else if (child_name.equals(option.xs_prefix_ + "keyref"))
 				extractForeignKeyRef(child, node);
 
 		}
@@ -848,7 +838,7 @@ public class PgSchema {
 
 		if (name != null && !name.isEmpty()) {
 
-			dummy.extractType(this, node);
+			dummy.extractType(option, node);
 
 			if (dummy.type == null || dummy.type.isEmpty()) {
 
@@ -868,7 +858,7 @@ public class PgSchema {
 
 				// primitive data type
 
-				if (type.length != 0 && type[0].equals(xs_prefix)) {
+				if (type.length != 0 && type[0].equals(option.xs_prefix)) {
 
 				}
 
@@ -876,7 +866,7 @@ public class PgSchema {
 
 				else {
 
-					boolean unique_key = table.addNestedKey(this, e.getAttribute("name"), node);
+					boolean unique_key = table.addNestedKey(option, e.getAttribute("name"), node);
 
 					level++;
 
@@ -886,12 +876,12 @@ public class PgSchema {
 
 					String child_name = child_e.getAttribute("name");
 
-					child_table.name = getUnqualifiedName(child_name);
+					child_table.name = option.getUnqualifiedName(child_name);
 
 					table.required = child_table.required = true;
 
-					if ((child_table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, true)) != null)
-						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
+					if ((child_table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, true)) != null)
+						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
 
 					child_table.xs_type = XsTableType.xs_admin_root;
 
@@ -899,8 +889,8 @@ public class PgSchema {
 
 					child_table.level = level;
 
-					child_table.addPrimaryKey(this, child_table.name, unique_key);
-					if (!child_table.addNestedKey(this, dummy.type, node))
+					child_table.addPrimaryKey(option, child_table.name, unique_key);
+					if (!child_table.addNestedKey(option, dummy.type, node))
 						child_table.cancelUniqueKey();
 
 					child_table.removeProhibitedAttrs();
@@ -937,13 +927,13 @@ public class PgSchema {
 
 		String name = e.getAttribute("name");
 
-		table.name = getUnqualifiedName(name);
+		table.name = option.getUnqualifiedName(name);
 
 		if (table.name.isEmpty())
 			return;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
 
 		if (annotation) {
 
@@ -973,7 +963,7 @@ public class PgSchema {
 
 		table.level = 0;
 
-		table.addPrimaryKey(this, table.name, true);
+		table.addPrimaryKey(option, table.name, true);
 
 		if (complex_type) {
 
@@ -1010,13 +1000,13 @@ public class PgSchema {
 
 		String name = e.getAttribute("name");
 
-		table.name = getUnqualifiedName(name);
+		table.name = option.getUnqualifiedName(name);
 
 		if (table.name.isEmpty())
 			return;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
 
 		table.xs_type = XsTableType.xs_attr_group;
 
@@ -1050,13 +1040,13 @@ public class PgSchema {
 
 		String name = e.getAttribute("name");
 
-		table.name = getUnqualifiedName(name);
+		table.name = option.getUnqualifiedName(name);
 
 		if (table.name.isEmpty())
 			return;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
 
 		table.xs_type = XsTableType.xs_model_group;
 
@@ -1086,42 +1076,42 @@ public class PgSchema {
 
 		String node_name = node.getNodeName();
 
-		if (node_name.equals(xs_prefix_ + "any")) {
+		if (node_name.equals(option.xs_prefix_ + "any")) {
 			extractAny(node, table);
 			return;
 		}
 
-		else if (node_name.equals(xs_prefix_ + "anyAttribute")) {
+		else if (node_name.equals(option.xs_prefix_ + "anyAttribute")) {
 			extractAnyAttribute(node, table);
 			return;
 		}
 
-		else if (node_name.equals(xs_prefix_ + "attribute")) {
+		else if (node_name.equals(option.xs_prefix_ + "attribute")) {
 			extractAttribute(node, table);
 			return;
 		}
 
-		else if (node_name.equals(xs_prefix_ + "attributeGroup")) {
+		else if (node_name.equals(option.xs_prefix_ + "attributeGroup")) {
 			extractAttributeGroup(node, table);
 			return;
 		}
 
-		else if (node_name.equals(xs_prefix_ + "element")) {
+		else if (node_name.equals(option.xs_prefix_ + "element")) {
 			extractElement(node, table);
 			return;
 		}
 
-		else if (node_name.equals(xs_prefix_ + "group")) {
+		else if (node_name.equals(option.xs_prefix_ + "group")) {
 			extractModelGroup(node, table);
 			return;
 		}
 
-		else if (node_name.equals(xs_prefix_ + "simpleContent")) {
+		else if (node_name.equals(option.xs_prefix_ + "simpleContent")) {
 			extractSimpleContent(node, table);
 			return;
 		}
 
-		else if (node_name.equals(xs_prefix_ + "complexContent")) {
+		else if (node_name.equals(option.xs_prefix_ + "complexContent")) {
 			extractComplexContent(node, table);
 			return;
 		}
@@ -1130,31 +1120,31 @@ public class PgSchema {
 
 			String child_name = child.getNodeName();
 
-			if (child_name.equals(xs_prefix_ + "annotation"))
+			if (child_name.equals(option.xs_prefix_ + "annotation"))
 				continue;
 
-			else if (child_name.equals(xs_prefix_ + "any"))
+			else if (child_name.equals(option.xs_prefix_ + "any"))
 				extractAny(child, table);
 
-			else if (child_name.equals(xs_prefix_ + "anyAttribute"))
+			else if (child_name.equals(option.xs_prefix_ + "anyAttribute"))
 				extractAnyAttribute(child, table);
 
-			else if (child_name.equals(xs_prefix_ + "attribute"))
+			else if (child_name.equals(option.xs_prefix_ + "attribute"))
 				extractAttribute(child, table);
 
-			else if (child_name.equals(xs_prefix_ + "attributeGroup"))
+			else if (child_name.equals(option.xs_prefix_ + "attributeGroup"))
 				extractAttributeGroup(child, table);
 
-			else if (child_name.equals(xs_prefix_ + "element"))
+			else if (child_name.equals(option.xs_prefix_ + "element"))
 				extractElement(child, table);
 
-			else if (child_name.equals(xs_prefix_ + "group"))
+			else if (child_name.equals(option.xs_prefix_ + "group"))
 				extractModelGroup(child, table);
 
-			else if (child_name.equals(xs_prefix_ + "simpleContent"))
+			else if (child_name.equals(option.xs_prefix_ + "simpleContent"))
 				extractSimpleContent(child, table);
 
-			else if (child_name.equals(xs_prefix_ + "complexContent"))
+			else if (child_name.equals(option.xs_prefix_ + "complexContent"))
 				extractComplexContent(child, table);
 
 			else
@@ -1180,28 +1170,28 @@ public class PgSchema {
 		if (name == null || name.isEmpty() || refer == null || refer.isEmpty() || !refer.contains(":"))
 			return;
 
-		String key_name = getUnqualifiedName(refer);
+		String key_name = option.getUnqualifiedName(refer);
 
 		PgForeignKey foreign_key = new PgForeignKey();
 
 		foreign_key.name = name;
 
-		foreign_key.extractChildTable(this, node);
+		foreign_key.extractChildTable(option, node);
 
 		if (foreign_key.child_table == null || foreign_key.child_table.isEmpty())
 			return;
 
-		foreign_key.extractParentTable(this, parent_node, key_name);
+		foreign_key.extractParentTable(option, parent_node, key_name);
 
 		if (foreign_key.parent_table == null || foreign_key.parent_table.isEmpty())
 			return;
 
-		foreign_key.extractChildFields(this, node);
+		foreign_key.extractChildFields(option, node);
 
 		if (foreign_key.child_fields == null || foreign_key.child_fields.isEmpty())
 			return;
 
-		foreign_key.extractParentFields(this, parent_node, key_name);
+		foreign_key.extractParentFields(option, parent_node, key_name);
 
 		if (foreign_key.parent_fields == null || foreign_key.parent_fields.isEmpty())
 			return;
@@ -1222,13 +1212,13 @@ public class PgSchema {
 
 		field.any = true;
 
-		field.extractMaxOccurs(this, node);
-		field.extractMinOccurs(this, node);
+		field.extractMaxOccurs(option, node);
+		field.extractMinOccurs(option, node);
 
-		field.name = field.xname = table.avoidFieldDuplication(this, PgSchemaUtil.any_name);
+		field.name = field.xname = table.avoidFieldDuplication(option, PgSchemaUtil.any_name);
 
-		if ((field.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, false)) != null)
-			field.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
+		if ((field.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, false)) != null)
+			field.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
 
 		field.xs_type = XsDataType.xs_any;
 		field.type = field.xs_type.name();
@@ -1252,10 +1242,10 @@ public class PgSchema {
 
 		field.any_attribute = true;
 
-		field.name = field.xname = table.avoidFieldDuplication(this, PgSchemaUtil.any_attribute_name);
+		field.name = field.xname = table.avoidFieldDuplication(option, PgSchemaUtil.any_attribute_name);
 
-		if ((field.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, false)) != null)
-			field.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
+		if ((field.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, false)) != null)
+			field.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
 
 		field.xs_type = XsDataType.xs_anyAttribute;
 		field.type = field.xs_type.name();
@@ -1314,27 +1304,27 @@ public class PgSchema {
 
 			field.element = true;
 
-			field.extractMaxOccurs(this, node);
-			field.extractMinOccurs(this, node);
+			field.extractMaxOccurs(option, node);
+			field.extractMinOccurs(option, node);
 
 		}
 
 		if (name != null && !name.isEmpty()) {
 
-			field.xname = getUnqualifiedName(name);
-			field.name = table.avoidFieldDuplication(this, field.xname);
+			field.xname = option.getUnqualifiedName(name);
+			field.name = table.avoidFieldDuplication(option, field.xname);
 
-			if ((field.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, false)) != null)
-				field.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
+			if ((field.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, false)) != null)
+				field.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
 
-			field.extractType(this, node);
+			field.extractType(option, node);
 			field.extractNamespace(this, node); // require type definition
 			field.extractRequired(node);
 			field.extractFixedValue(node);
 			field.extractDefaultValue(node);
 			field.extractBlockValue(node);
-			field.extractEnumeration(this, node);
-			field.extractRestriction(this, node);
+			field.extractEnumeration(option, node);
+			field.extractRestriction(option, node);
 
 			if (field.substitution_group != null && !field.substitution_group.isEmpty())
 				table.appendSubstitutionGroup(field.name);
@@ -1350,7 +1340,7 @@ public class PgSchema {
 
 			if (field.type == null || field.type.isEmpty()) {
 
-				if (!table.addNestedKey(this, e.getAttribute("name"), node))
+				if (!table.addNestedKey(option, e.getAttribute("name"), node))
 					table.cancelUniqueKey();
 
 				level++;
@@ -1369,7 +1359,7 @@ public class PgSchema {
 
 				// primitive data type
 
-				if (type.length != 0 && type[0].equals(xs_prefix)) {
+				if (type.length != 0 && type[0].equals(option.xs_prefix)) {
 
 					field.xs_type = XsDataType.valueOf("xs_" + type[1]);
 
@@ -1381,7 +1371,7 @@ public class PgSchema {
 
 				else {
 
-					boolean unique_key = table.addNestedKey(this, e.getAttribute("name"), node);
+					boolean unique_key = table.addNestedKey(option, e.getAttribute("name"), node);
 
 					if (!unique_key)
 						table.cancelUniqueKey();
@@ -1394,12 +1384,12 @@ public class PgSchema {
 
 					String child_name = child_e.getAttribute("name");
 
-					child_table.name = getUnqualifiedName(child_name);
+					child_table.name = option.getUnqualifiedName(child_name);
 
 					table.required = child_table.required = true;
 
-					if ((child_table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, true)) != null)
-						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
+					if ((child_table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, true)) != null)
+						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
 
 					child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
@@ -1407,8 +1397,8 @@ public class PgSchema {
 
 					child_table.level = level;
 
-					child_table.addPrimaryKey(this, child_table.name, unique_key);
-					if (!child_table.addNestedKey(this, field.type, node))
+					child_table.addPrimaryKey(option, child_table.name, unique_key);
+					if (!child_table.addNestedKey(option, field.type, node))
 						child_table.cancelUniqueKey();
 
 					child_table.removeProhibitedAttrs();
@@ -1432,33 +1422,33 @@ public class PgSchema {
 
 			for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-				if (child.getNodeName().equals(attribute ? xs_prefix_ + "attribute" : xs_prefix_ + "element")) {
+				if (child.getNodeName().equals(attribute ? option.xs_prefix_ + "attribute" : option.xs_prefix_ + "element")) {
 
 					e = (Element) child;
 
 					name = e.getAttribute("name");
 
-					if (name.equals(getUnqualifiedName(ref)) && table.target_namespace != null && table.target_namespace.equals(getNamespaceURIOfQName(ref))) {
+					if (name.equals(option.getUnqualifiedName(ref)) && table.target_namespace != null && table.target_namespace.equals(getNamespaceURIOfQName(ref))) {
 
 						if (attribute)
 							field.attribute = true;
 						else
 							field.element = true;
 
-						field.xname = getUnqualifiedName(name);
-						field.name = table.avoidFieldDuplication(this, field.xname);
+						field.xname = option.getUnqualifiedName(name);
+						field.name = table.avoidFieldDuplication(option, field.xname);
 
-						if ((field.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, child, false)) != null)
-							field.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, child, false);
+						if ((field.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, child, false)) != null)
+							field.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, child, false);
 
-						field.extractType(this, child);
+						field.extractType(option, child);
 						field.extractNamespace(this, child); // require type definition
 						field.extractRequired(child);
 						field.extractFixedValue(child);
 						field.extractDefaultValue(child);
 						field.extractBlockValue(child);
-						field.extractEnumeration(this, child);
-						field.extractRestriction(this, child);
+						field.extractEnumeration(option, child);
+						field.extractRestriction(option, child);
 
 						if (field.substitution_group != null && !field.substitution_group.isEmpty())
 							table.appendSubstitutionGroup(field.name);
@@ -1474,7 +1464,7 @@ public class PgSchema {
 
 						if (field.type == null || field.type.isEmpty()) {
 
-							if (!table.addNestedKey(this, e.getAttribute("name"), child))
+							if (!table.addNestedKey(option, e.getAttribute("name"), child))
 								table.cancelUniqueKey();
 
 							level++;
@@ -1493,7 +1483,7 @@ public class PgSchema {
 
 							// primitive data type
 
-							if (type.length != 0 && type[0].equals(xs_prefix)) {
+							if (type.length != 0 && type[0].equals(option.xs_prefix)) {
 
 								field.xs_type = XsDataType.valueOf("xs_" + type[1]);
 
@@ -1505,7 +1495,7 @@ public class PgSchema {
 
 							else {
 
-								boolean unique_key = table.addNestedKey(this, e.getAttribute("name"), child);
+								boolean unique_key = table.addNestedKey(option, e.getAttribute("name"), child);
 
 								if (!unique_key)
 									table.cancelUniqueKey();
@@ -1518,12 +1508,12 @@ public class PgSchema {
 
 								String child_name = child_e.getAttribute("name");
 
-								child_table.name = getUnqualifiedName(child_name);
+								child_table.name = option.getUnqualifiedName(child_name);
 
 								table.required = child_table.required = true;
 
-								if ((child_table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, child, true)) != null)
-									child_table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, child, false);
+								if ((child_table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, child, true)) != null)
+									child_table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, child, false);
 
 								child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
@@ -1531,8 +1521,8 @@ public class PgSchema {
 
 								child_table.level = level;
 
-								child_table.addPrimaryKey(this, child_table.name, unique_key);
-								if (!child_table.addNestedKey(this, field.type, child))
+								child_table.addPrimaryKey(option, child_table.name, unique_key);
+								if (!child_table.addNestedKey(option, field.type, child))
 									child_table.cancelUniqueKey();
 
 								child_table.removeProhibitedAttrs();
@@ -1579,7 +1569,7 @@ public class PgSchema {
 
 			String name = e.getAttribute("name");
 
-			table.name = getUnqualifiedName(name);
+			table.name = option.getUnqualifiedName(name);
 			table.xs_type = foreign_table.xs_type.equals(XsTableType.xs_root) || foreign_table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
 
@@ -1587,7 +1577,7 @@ public class PgSchema {
 
 		else {
 
-			table.name = getUnqualifiedName(type);
+			table.name = option.getUnqualifiedName(type);
 			table.xs_type = XsTableType.xs_admin_root;
 
 		}
@@ -1597,15 +1587,15 @@ public class PgSchema {
 
 		table.required = true;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
+		if ((table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, true)) != null)
+			table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
 
 		table.fields = new ArrayList<PgField>();
 
 		table.level = level;
 
-		table.addPrimaryKey(this, table.name, true);
-		table.addForeignKey(this, foreign_table);
+		table.addPrimaryKey(option, table.name, true);
+		table.addForeignKey(option, foreign_table);
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling())
 			extractField(child, table);
@@ -1649,7 +1639,7 @@ public class PgSchema {
 			return;
 		}
 
-		int t = getAttributeGroupId(getUnqualifiedName(ref));
+		int t = getAttributeGroupId(option.getUnqualifiedName(ref));
 
 		if (t < 0)
 			return;
@@ -1673,7 +1663,7 @@ public class PgSchema {
 		if (ref == null || ref.isEmpty())
 			return;
 
-		int t = getModelGroupId(getUnqualifiedName(ref));
+		int t = getModelGroupId(option.getUnqualifiedName(ref));
 
 		if (t < 0)
 			return;
@@ -1695,20 +1685,20 @@ public class PgSchema {
 		String name = PgSchemaUtil.simple_content_name; // anonymous simple content
 
 		field.simple_content = true;
-		field.xname = getUnqualifiedName(name);
-		field.name = table.avoidFieldDuplication(this, field.xname);
+		field.xname = option.getUnqualifiedName(name);
+		field.name = table.avoidFieldDuplication(option, field.xname);
 
-		if ((field.anno = PgSchemaUtil.extractAnnotation(xs_prefix_, node, false)) != null)
-			field.xanno_doc = PgSchemaUtil.extractDocumentation(xs_prefix_, node, false);
+		if ((field.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, false)) != null)
+			field.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
 
-		field.extractType(this, node);
+		field.extractType(option, node);
 		field.extractNamespace(this, node); // require type definition
 		field.extractRequired(node);
 		field.extractFixedValue(node);
 		field.extractDefaultValue(node);
 		field.extractBlockValue(node);
-		field.extractEnumeration(this, node);
-		field.extractRestriction(this, node);
+		field.extractEnumeration(option, node);
+		field.extractRestriction(option, node);
 
 		if (field.substitution_group != null && !field.substitution_group.isEmpty())
 			table.appendSubstitutionGroup(field.name);
@@ -1726,7 +1716,7 @@ public class PgSchema {
 
 		// primitive data type
 
-		if (type.length != 0 && type[0].equals(xs_prefix)) {
+		if (type.length != 0 && type[0].equals(option.xs_prefix)) {
 
 			field.xs_type = XsDataType.valueOf("xs_" + type[1]);
 
@@ -1734,17 +1724,17 @@ public class PgSchema {
 
 			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-				if (!child.getNodeName().equals(xs_prefix_ + "extension"))
+				if (!child.getNodeName().equals(option.xs_prefix_ + "extension"))
 					continue;
 
 				for (Node subchild = child.getFirstChild(); subchild != null; subchild = subchild.getNextSibling()) {
 
 					String subchild_name = subchild.getNodeName();
 
-					if (subchild_name.equals(xs_prefix_ + "attribute"))
+					if (subchild_name.equals(option.xs_prefix_ + "attribute"))
 						extractAttribute(subchild, table);
 
-					else if (subchild_name.equals(xs_prefix_ + "attributeGroup"))
+					else if (subchild_name.equals(option.xs_prefix_ + "attributeGroup"))
 						extractAttributeGroup(subchild, table);
 
 				}
@@ -1771,13 +1761,13 @@ public class PgSchema {
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			if (child.getNodeName().equals(xs_prefix_ + "extension")) {
+			if (child.getNodeName().equals(option.xs_prefix_ + "extension")) {
 
 				Element e = (Element) child;
 
-				String type = getUnqualifiedName(e.getAttribute("base"));
+				String type = option.getUnqualifiedName(e.getAttribute("base"));
 
-				table.addNestedKey(this, type);
+				table.addNestedKey(option, type);
 
 				extractComplexContentExt(child, table);
 
@@ -1797,32 +1787,32 @@ public class PgSchema {
 
 		String node_name = node.getNodeName();
 
-		if (node_name.equals(xs_prefix_ + "any")) {
+		if (node_name.equals(option.xs_prefix_ + "any")) {
 			extractAny(node, table);
 			return;
 		}
 
-		else if (node_name.equals(xs_prefix_ + "anyAttribute")) {
+		else if (node_name.equals(option.xs_prefix_ + "anyAttribute")) {
 			extractAnyAttribute(node, table);
 			return;
 		}
 
-		else if (node_name.equals(xs_prefix_ + "attribute")) {
+		else if (node_name.equals(option.xs_prefix_ + "attribute")) {
 			extractAttribute(node, table);
 			return;
 		}
 
-		else if (node_name.equals(xs_prefix_ + "attributeGroup")) {
+		else if (node_name.equals(option.xs_prefix_ + "attributeGroup")) {
 			extractAttributeGroup(node, table);
 			return;
 		}
 
-		else if (node_name.equals(xs_prefix_ + "element")) {
+		else if (node_name.equals(option.xs_prefix_ + "element")) {
 			extractElement(node, table);
 			return;
 		}
 
-		else if (node_name.equals(xs_prefix_ + "group")) {
+		else if (node_name.equals(option.xs_prefix_ + "group")) {
 			extractModelGroup(node, table);
 			return;
 		}
@@ -1831,25 +1821,25 @@ public class PgSchema {
 
 			String child_name = child.getNodeName();
 
-			if (child_name.equals(xs_prefix_ + "annotation"))
+			if (child_name.equals(option.xs_prefix_ + "annotation"))
 				continue;
 
-			else if (child_name.equals(xs_prefix_ + "any"))
+			else if (child_name.equals(option.xs_prefix_ + "any"))
 				extractAny(child, table);
 
-			else if (child_name.equals(xs_prefix_ + "anyAttribute"))
+			else if (child_name.equals(option.xs_prefix_ + "anyAttribute"))
 				extractAnyAttribute(child, table);
 
-			else if (child_name.equals(xs_prefix_ + "attribute"))
+			else if (child_name.equals(option.xs_prefix_ + "attribute"))
 				extractAttribute(child, table);
 
-			else if (child_name.equals(xs_prefix_ + "attributeGroup"))
+			else if (child_name.equals(option.xs_prefix_ + "attributeGroup"))
 				extractAttributeGroup(child, table);
 
-			else if (child_name.equals(xs_prefix_ + "element"))
+			else if (child_name.equals(option.xs_prefix_ + "element"))
 				extractElement(child, table);
 
-			else if (child_name.equals(xs_prefix_ + "group"))
+			else if (child_name.equals(option.xs_prefix_ + "group"))
 				extractModelGroup(child, table);
 
 			else
@@ -2012,13 +2002,26 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return namespace URI.
+	 * Return namespace URI of prefix.
 	 *
 	 * @param prefix prefix of namespace URI
 	 * @return String namespace URI
 	 */
 	protected String getNamespaceURI(String prefix) {
 		return def_namespaces.get(prefix);
+	}
+
+	/**
+	 * Return namespace URI of qualified name.
+	 *
+	 * @param qname qualified name
+	 * @return String namespace URI
+	 */
+	protected String getNamespaceURIOfQName(String qname) {
+
+		String name = option.getUnqualifiedName(qname);
+
+		return getNamespaceURI(name.equals(qname) ? "" : qname.substring(0, qname.length() - name.length() - 1));
 	}
 
 	/**
@@ -2113,41 +2116,6 @@ public class PgSchema {
 		}
 
 		return -1;
-	}
-
-	/**
-	 * Return unqualified name.
-	 *
-	 * @param qname qualified name
-	 * @return String unqualified name
-	 */
-	protected String getUnqualifiedName(String qname) {
-
-		if (qname == null)
-			return null;
-
-		if (qname.contains(" "))
-			qname = qname.trim();
-
-		if (!option.case_sense)
-			qname = qname.toLowerCase();
-
-		int last_pos = qname.lastIndexOf(':');
-
-		return last_pos == -1 ? qname : qname.substring(last_pos + 1);
-	}
-
-	/**
-	 * Return namespace URI of qualified name.
-	 *
-	 * @param qname qualified name
-	 * @return String namespace URI
-	 */
-	protected String getNamespaceURIOfQName(String qname) {
-
-		String name = getUnqualifiedName(qname);
-
-		return getNamespaceURI(name.equals(qname) ? "" : qname.substring(0, qname.length() - name.length() - 1));
 	}
 
 	/**
@@ -2950,9 +2918,6 @@ public class PgSchema {
 
 	}
 
-	/** Whether selected attributes are resolved. */
-	protected boolean attr_resolved = false;
-
 	/**
 	 * Apply attr option for full-text indexing.
 	 *
@@ -2961,10 +2926,10 @@ public class PgSchema {
 	 */
 	private void applyAttr(IndexFilter index_filter) throws PgSchemaException {
 
-		if (attr_resolved)
+		if (option.attr_resolved)
 			return;
 
-		attr_resolved = true;
+		option.attr_resolved = true;
 
 		// type dependent attribute selection
 
@@ -3024,9 +2989,6 @@ public class PgSchema {
 
 	}
 
-	/** Whether selected fields are resolved. */
-	protected boolean field_resolved = false;
-
 	/**
 	 * Apply field option for full-text indexing.
 	 *
@@ -3035,13 +2997,13 @@ public class PgSchema {
 	 */
 	private void applyField(IndexFilter index_filter) throws PgSchemaException {
 
-		if (field_resolved)
+		if (option.field_resolved)
 			return;
 
 		if (index_filter.fields.size() == 0)
 			return;
 
-		field_resolved = true;
+		option.field_resolved = true;
 
 		for (String field : index_filter.fields) {
 
@@ -3426,7 +3388,7 @@ public class PgSchema {
 			if (node.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			PgSchemaNodeTester node_test = new PgSchemaNodeTester(this, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
+			PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
 			if (node_test.omitted)
 				continue;
@@ -3524,7 +3486,7 @@ public class PgSchema {
 			if (node.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			PgSchemaNodeTester node_test = new PgSchemaNodeTester(this, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
+			PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
 			if (node_test.omitted)
 				continue;
@@ -3869,7 +3831,7 @@ public class PgSchema {
 			if (node.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			PgSchemaNodeTester node_test = new PgSchemaNodeTester(this, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
+			PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
 			if (node_test.omitted)
 				continue;
@@ -4295,7 +4257,7 @@ public class PgSchema {
 			if (node.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			PgSchemaNodeTester node_test = new PgSchemaNodeTester(this, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
+			PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
 			if (node_test.omitted)
 				continue;
@@ -4378,7 +4340,7 @@ public class PgSchema {
 	/**
 	 * Initialize JSON builder.
 	 *
-	 * @param option the option
+	 * @param option JSON builder option
 	 */
 	public void initJsonBuilder(JsonBuilderOption option) {
 
@@ -4727,7 +4689,7 @@ public class PgSchema {
 			if (node.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			PgSchemaNodeTester node_test = new PgSchemaNodeTester(this, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
+			PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
 			if (node_test.omitted)
 				continue;
@@ -5084,7 +5046,7 @@ public class PgSchema {
 			if (node.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			PgSchemaNodeTester node_test = new PgSchemaNodeTester(this, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
+			PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
 			if (node_test.omitted)
 				continue;
@@ -5411,7 +5373,7 @@ public class PgSchema {
 			if (node.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			PgSchemaNodeTester node_test = new PgSchemaNodeTester(this, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
+			PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
 			if (node_test.omitted)
 				continue;

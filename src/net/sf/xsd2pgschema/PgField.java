@@ -241,13 +241,13 @@ public class PgField {
 	/**
 	 * Extract @type, @itemType, @memberTypes or @base and set type.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	public void extractType(PgSchema schema, Node node) {
+	public void extractType(PgSchemaOption option, Node node) {
 
-		String xs_prefix = schema.xs_prefix;
-		String xs_prefix_ = schema.xs_prefix_;
+		String xs_prefix = option.xs_prefix;
+		String xs_prefix_ = option.xs_prefix_;
 
 		type = null;
 
@@ -348,7 +348,7 @@ public class PgField {
 				}
 
 				if (child.hasChildNodes())
-					extractType(schema, child);
+					extractType(option, child);
 
 			}
 
@@ -429,12 +429,12 @@ public class PgField {
 	/**
 	 * Extract @maxOccurs.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	public void extractMaxOccurs(PgSchema schema, Node node) {
+	public void extractMaxOccurs(PgSchemaOption option, Node node) {
 
-		String xs_prefix_ = schema.xs_prefix_;
+		String xs_prefix_ = option.xs_prefix_;
 
 		if (node.hasAttributes()) {
 
@@ -517,7 +517,7 @@ public class PgField {
 			}
 
 			if (child.hasChildNodes())
-				extractMaxOccurs(schema, child);
+				extractMaxOccurs(option, child);
 
 		}
 
@@ -526,12 +526,12 @@ public class PgField {
 	/**
 	 * Extract @minOccurs.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	public void extractMinOccurs(PgSchema schema, Node node) {
+	public void extractMinOccurs(PgSchemaOption option, Node node) {
 
-		String xs_prefix_ = schema.xs_prefix_;
+		String xs_prefix_ = option.xs_prefix_;
 
 		if (node.hasAttributes()) {
 
@@ -614,7 +614,7 @@ public class PgField {
 			}
 
 			if (child.hasChildNodes())
-				extractMinOccurs(schema, child);
+				extractMinOccurs(option, child);
 
 		}
 
@@ -726,12 +726,12 @@ public class PgField {
 	/**
 	 * Extract xs:restriction/xs:enumeration@value.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	public void extractEnumeration(PgSchema schema, Node node) {
+	public void extractEnumeration(PgSchemaOption option, Node node) {
 
-		String xs_prefix_ = schema.xs_prefix_;
+		String xs_prefix_ = option.xs_prefix_;
 
 		enumeration = xenumeration = null;
 
@@ -872,7 +872,7 @@ public class PgField {
 			}
 
 			if (child.hasChildNodes())
-				extractEnumeration(schema, child);
+				extractEnumeration(option, child);
 
 		}
 
@@ -881,12 +881,12 @@ public class PgField {
 	/**
 	 * Extract xs:restriction/xs:any@value.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	public void extractRestriction(PgSchema schema, Node node) {
+	public void extractRestriction(PgSchemaOption option, Node node) {
 
-		String xs_prefix_ = schema.xs_prefix_;
+		String xs_prefix_ = option.xs_prefix_;
 
 		length = null; // xs:length
 		min_length = null; // xs:minLength
@@ -1323,7 +1323,7 @@ public class PgField {
 			}
 
 			if (child.hasChildNodes())
-				extractRestriction(schema, child);
+				extractRestriction(option, child);
 
 		}
 
@@ -1332,13 +1332,13 @@ public class PgField {
 	/**
 	 * Set hash key type.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 */
-	public void setHashKeyType(PgSchema schema) {
+	public void setHashKeyType(PgSchemaOption option) {
 
-		String xs_prefix_ = schema.xs_prefix_;
+		String xs_prefix_ = option.xs_prefix_;
 
-		switch (schema.option.hash_size) {
+		switch (option.hash_size) {
 		case native_default:
 			type = xs_prefix_ + "hexBinary";
 			xs_type = XsDataType.xs_hexBinary;
@@ -1361,13 +1361,13 @@ public class PgField {
 	/**
 	 * Set serial key type.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 */
-	public void setSerKeyType(PgSchema schema) {
+	public void setSerKeyType(PgSchemaOption option) {
 
-		String xs_prefix_ = schema.xs_prefix_;
+		String xs_prefix_ = option.xs_prefix_;
 
-		switch (schema.option.ser_size) {
+		switch (option.ser_size) {
 		case unsigned_int_32:
 			type = xs_prefix_ + "unsignedInt";
 			xs_type = XsDataType.xs_unsignedInt;
@@ -1463,29 +1463,29 @@ public class PgField {
 	/**
 	 * Return whether field is indexable.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @return boolean whether field is indexable
 	 */
-	public boolean isIndexable(PgSchema schema) {
+	public boolean isIndexable(PgSchemaOption option) {
 
-		if ((element || attribute) && schema.option.discarded_document_keys.contains(xname))
+		if ((element || attribute) && option.discarded_document_keys.contains(xname))
 			return false;
 
-		return !schema.field_resolved || (schema.field_resolved && field_sel) || (schema.attr_resolved && attr_sel);
+		return !option.field_resolved || (option.field_resolved && field_sel) || (option.attr_resolved && attr_sel);
 	}
 
 	/**
 	 * Return whether field is JSON convertible.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @return boolean whether field is JSON convertible
 	 */
-	public boolean isJsonable(PgSchema schema) {
+	public boolean isJsonable(PgSchemaOption option) {
 
-		if ((element || attribute) && schema.option.discarded_document_keys.contains(xname))
+		if ((element || attribute) && option.discarded_document_keys.contains(xname))
 			return false;
 
-		return !schema.field_resolved || (schema.field_resolved && field_sel);
+		return !option.field_resolved || (option.field_resolved && field_sel);
 	}
 
 	/**

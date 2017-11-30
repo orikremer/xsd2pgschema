@@ -47,25 +47,25 @@ public class PgForeignKey {
 	/**
 	 * Set child table name.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	public void extractChildTable(PgSchema schema, Node node) {
+	public void extractChildTable(PgSchemaOption option, Node node) {
 
-		child_table = extractTable(schema, node);
+		child_table = extractTable(option, node);
 
 	}
 
 	/**
 	 * Set parent table name from xs:key/@name.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 * @param key_name the key name
 	 */
-	public void extractParentTable(PgSchema schema, Node node, String key_name) {
+	public void extractParentTable(PgSchemaOption option, Node node, String key_name) {
 
-		String xs_prefix_ = schema.xs_prefix_;
+		String xs_prefix_ = option.xs_prefix_;
 
 		parent_table = null;
 
@@ -79,7 +79,7 @@ public class PgForeignKey {
 			if (!key_name.equals(e.getAttribute("name")))
 				continue;
 
-			parent_table = extractTable(schema, child);
+			parent_table = extractTable(option, child);
 
 			break;
 		}
@@ -89,13 +89,13 @@ public class PgForeignKey {
 	/**
 	 * Extract child field names from xs:field/@xpath.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 * @return child field names separated by comma
 	 */
-	private String extractFields(PgSchema schema, Node node) {
+	private String extractFields(PgSchemaOption option, Node node) {
 
-		String xs_prefix_ = schema.xs_prefix_;
+		String xs_prefix_ = option.xs_prefix_;
 
 		String fields = "";
 
@@ -121,25 +121,25 @@ public class PgForeignKey {
 	/**
 	 * Set child field names.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	public void extractChildFields(PgSchema schema, Node node) {
+	public void extractChildFields(PgSchemaOption option, Node node) {
 
-		child_fields = extractFields(schema, node);
+		child_fields = extractFields(option, node);
 
 	}
 
 	/**
 	 * Set parent field names from xs:key/@name.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 * @param key_name key name
 	 */
-	public void extractParentFields(PgSchema schema, Node node, String key_name) {
+	public void extractParentFields(PgSchemaOption option, Node node, String key_name) {
 
-		String xs_prefix_ = schema.xs_prefix_;
+		String xs_prefix_ = option.xs_prefix_;
 
 		parent_fields = null;
 
@@ -153,7 +153,7 @@ public class PgForeignKey {
 			if (!key_name.equals(e.getAttribute("name")))
 				continue;
 
-			parent_fields = extractFields(schema, child);
+			parent_fields = extractFields(option, child);
 
 			break;
 		}
@@ -163,13 +163,13 @@ public class PgForeignKey {
 	/**
 	 * Extract child table name from xs:selector/@xpath.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 * @return String child table name
 	 */
-	private String extractTable(PgSchema schema, Node node) {
+	private String extractTable(PgSchemaOption option, Node node) {
 
-		String xs_prefix_ = schema.xs_prefix_;
+		String xs_prefix_ = option.xs_prefix_;
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -180,7 +180,7 @@ public class PgForeignKey {
 
 			String[] xpath = e.getAttribute("xpath").split("/");
 
-			return schema.getUnqualifiedName(xpath[xpath.length - 1]).replaceAll("@", "");
+			return option.getUnqualifiedName(xpath[xpath.length - 1]).replaceAll("@", "");
 		}
 
 		return null;

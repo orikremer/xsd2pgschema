@@ -58,7 +58,7 @@ public class PgSchemaNodeTester {
 	/**
 	 * Decide to process this node or not.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param option PostgreSQL data model option
 	 * @param parent_node parent node
 	 * @param node current node
 	 * @param parent_table parent table
@@ -69,7 +69,7 @@ public class PgSchemaNodeTester {
 	 * @param nested whether it is nested
 	 * @param nest_id ordinal number of current node in nested case
 	 */
-	public PgSchemaNodeTester(final PgSchema schema, final Node parent_node, final Node node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id) {
+	public PgSchemaNodeTester(final PgSchemaOption option, final Node parent_node, final Node node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id) {
 
 		boolean virtual = table.virtual;
 
@@ -77,7 +77,7 @@ public class PgSchemaNodeTester {
 		String node_uname;
 
 		if ((node_uname = node.getLocalName()) == null)
-			node_uname = schema.getUnqualifiedName(node.getNodeName());
+			node_uname = option.getUnqualifiedName(node.getNodeName());
 
 		if (!virtual) {
 
@@ -148,7 +148,7 @@ public class PgSchemaNodeTester {
 				String child_name;
 
 				if ((child_name = child.getLocalName()) == null)
-					child_name = schema.getUnqualifiedName(child.getNodeName());
+					child_name = option.getUnqualifiedName(child.getNodeName());
 
 				if (!child_name.equals(table.name))
 					continue;

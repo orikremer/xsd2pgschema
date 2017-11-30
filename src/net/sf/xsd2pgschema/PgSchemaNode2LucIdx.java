@@ -245,7 +245,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				if (field.system_key)
 					XsDataType.setKey(table.lucene_doc, table.name + "." + field.xname, value);
 
-				else if (field.isIndexable(schema))
+				else if (field.isIndexable(schema.option))
 					XsDataType.setValue(field, table.lucene_doc, table.name + "." + field.xname, value, value.length() >= schema.min_word_len, schema.numeric_index);
 
 			}
@@ -292,7 +292,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			PgTable nested_table = schema.getTable(nested_table_id[n]);
 
-			boolean exists = existsNestedNode(schema, nested_table, node_test.proc_node);
+			boolean exists = existsNestedNode(nested_table, node_test.proc_node);
 
 			schema.parseChildNode2LucIdx(exists || nested ? node_test.proc_node : proc_node, table, nested_table, node_test.primary_key, nested_key[n], list_holder[n], !exists, exists ? 0 : node_test.key_id);
 
@@ -317,7 +317,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			PgTable nested_table = schema.getTable(nested_table_id[n]);
 
-			if (existsNestedNode(schema, nested_table, proc_node))
+			if (existsNestedNode(nested_table, proc_node))
 				schema.parseChildNode2LucIdx(proc_node, table, nested_table, current_key, nested_key[n], list_holder[n], false, 0);
 
 		}
