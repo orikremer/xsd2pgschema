@@ -151,7 +151,7 @@ public class xmlsplitter {
 
 		};
 
-		xml_file_queue = PgSchemaUtil.getTargetFileQueue(xml_file_names, filename_filter);
+		xml_file_queue = PgSchemaUtil.getQueueOfTargetFiles(xml_file_names, filename_filter);
 
 		File xml_dir = new File(xml_dir_name);
 

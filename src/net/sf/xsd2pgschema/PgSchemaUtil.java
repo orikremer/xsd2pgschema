@@ -47,8 +47,6 @@ import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 /**
  * Utility functions and default values.
@@ -352,6 +350,41 @@ public class PgSchemaUtil {
 	}
 
 	/**
+	 * Return blocking queue of target files.
+	 *
+	 * @param file_names list of file name
+	 * @param filter file name filter
+	 * @return LinkedBlockingQueue blocking queue of target files
+	 */
+	public static LinkedBlockingQueue<File> getQueueOfTargetFiles(HashSet<String> file_names, FilenameFilter filter) {
+
+		LinkedBlockingQueue<File> queue = new LinkedBlockingQueue<File>();
+
+		file_names.forEach(file_name -> {
+
+			File file = new File(file_name);
+
+			if (!file.exists()) {
+				System.err.println("Not found + " + file.getPath());
+				System.exit(1);
+			}
+
+			if (file.isFile()) {
+
+				if (filter.accept(null, file_name))
+					queue.add(file);
+
+			}
+
+			else if (file.isDirectory())
+				queue.addAll(Arrays.asList(file.listFiles(filter)));
+
+		});
+
+		return queue;
+	}
+
+	/**
 	 * Suggest new name in PostgreSQL for a given name.
 	 *
 	 * @param name name
@@ -398,205 +431,6 @@ public class PgSchemaUtil {
 			name = name.replaceAll(ops_rex, "_");
 
 		return name;
-	}
-
-	/**
-	 * Extract one-liner annotation from xs:annotation/xs:appinfo|xs:documentation.
-	 *
-	 * @param xs_prefix_ prefix of xs_namespace_uri
-	 * @param node current node
-	 * @param is_table the is table
-	 * @return String annotation
-	 */
-	public static String extractAnnotation(String xs_prefix_, Node node, boolean is_table) {
-
-		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
-
-			if (!anno.getNodeName().equals(xs_prefix_ + "annotation"))
-				continue;
-
-			String annotation = "";
-
-			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-				String child_name = child.getNodeName();
-
-				if (child_name.equals(xs_prefix_ + "appinfo")) {
-
-					annotation = child.getTextContent().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
-
-					if (!annotation.isEmpty())
-						annotation += "\n-- ";
-
-					Element e = (Element) child;
-
-					String src = e.getAttribute("source");
-
-					if (src != null && !src.isEmpty())
-						annotation += (is_table ? "\n-- " : ", ") + "URI-reference = " + src + (is_table ? "\n-- " : ", ");
-				}
-
-				else if (child_name.equals(xs_prefix_ + "documentation")) {
-
-					annotation += child.getTextContent().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
-
-					Element e = (Element) child;
-
-					String src = e.getAttribute("source");
-
-					if (src != null && !src.isEmpty())
-						annotation += (is_table ? "\n-- " : ", ") + "URI-reference = " + src;
-				}
-
-			}
-
-			if (annotation != null && !annotation.isEmpty())
-				return annotation;
-		}
-
-		return null;
-	}
-
-	/**
-	 * Extract one-liner annotation from xs:annotation/xs:appinfo.
-	 *
-	 * @param xs_prefix_ prefix of xs_namespace_uri
-	 * @param node current node
-	 * @return String appinfo of annotation
-	 */
-	public static String extractAppinfo(String xs_prefix_, Node node) {
-
-		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
-
-			if (!anno.getNodeName().equals(xs_prefix_ + "annotation"))
-				continue;
-
-			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-				String child_name = child.getNodeName();
-
-				if (child_name.equals(xs_prefix_ + "appinfo")) {
-
-					String annotation = child.getTextContent().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
-
-					Element e = (Element) child;
-
-					String src = e.getAttribute("source");
-
-					if (src != null && !src.isEmpty())
-						annotation += ", URI-reference = " + src;
-
-					if (annotation != null && !annotation.isEmpty())
-						return annotation;
-				}
-
-			}
-
-		}
-
-		return null;
-	}
-
-	/**
-	 * Extract annotation from xs:annotation/xs:documentation.
-	 *
-	 * @param xs_prefix_ prefix of xs_namespace_uri
-	 * @param node current node
-	 * @param one_liner whether return one-liner annotation or exact one
-	 * @return String documentation of annotation
-	 */
-	public static String extractDocumentation(String xs_prefix_, Node node, boolean one_liner) {
-
-		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
-
-			if (!anno.getNodeName().equals(xs_prefix_ + "annotation"))
-				continue;
-
-			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-				String child_name = child.getNodeName();
-
-				if (child_name.equals(xs_prefix_ + "documentation")) {
-
-					String text = child.getTextContent();
-
-					if (one_liner) {
-
-						String annotation = text.replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
-
-						Element e = (Element) child;
-
-						String src = e.getAttribute("source");
-
-						if (src != null && !src.isEmpty())
-							annotation += ", URI-reference = " + src;
-
-						if (annotation != null && !annotation.isEmpty())
-							return annotation;
-					}
-
-					else if (text != null && !text.isEmpty())
-						return text;
-				}
-
-			}
-
-		}
-
-		return null;
-	}
-
-	/**
-	 * Return blocking queue of target files.
-	 *
-	 * @param file_names list of file name
-	 * @param filter file name filter
-	 * @return LinkedBlockingQueue blocking queue of target files
-	 */
-	public static LinkedBlockingQueue<File> getTargetFileQueue(HashSet<String> file_names, FilenameFilter filter) {
-
-		LinkedBlockingQueue<File> queue = new LinkedBlockingQueue<File>();
-
-		file_names.forEach(file_name -> {
-
-			File file = new File(file_name);
-
-			if (!file.exists()) {
-				System.err.println("Not found + " + file.getPath());
-				System.exit(1);
-			}
-
-			if (file.isFile()) {
-
-				if (filter.accept(null, file_name))
-					queue.add(file);
-
-			}
-
-			else if (file.isDirectory())
-				queue.addAll(Arrays.asList(file.listFiles(filter)));
-
-		});
-
-		return queue;
-	}
-
-	/**
-	 * Return last name of current path.
-	 *
-	 * @param path current path
-	 * @return String last name of the path
-	 */
-	public static String getLastNameOfPath(String path) {
-
-		String[] _path = path.split(" ").length < 2 ? path.replaceFirst("//$", "").split("/") : path.replaceFirst("//$", "").split(" ");
-
-		int position = _path.length - 1;
-
-		if (position < 0)
-			return null;
-
-		return _path[position];
 	}
 
 }

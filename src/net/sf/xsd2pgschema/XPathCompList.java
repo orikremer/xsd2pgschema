@@ -1527,7 +1527,7 @@ public class XPathCompList {
 				}
 				break;
 			case table:
-				table_name = PgSchemaUtil.getLastNameOfPath(path);
+				table_name = getLastNameOfPath(path);
 				if (!case_sense)
 					table_name = table_name.toLowerCase();
 				try {
@@ -1926,7 +1926,7 @@ public class XPathCompList {
 				}
 				break;
 			case table:
-				table_name = PgSchemaUtil.getLastNameOfPath(path);
+				table_name = getLastNameOfPath(path);
 				if (!case_sense)
 					table_name = table_name.toLowerCase();
 				try {
@@ -2491,7 +2491,7 @@ public class XPathCompList {
 
 			switch (func_name) {
 			case "last":
-				table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.path);
+				table_name = getLastNameOfPath(src_path_expr.path);
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
@@ -2529,7 +2529,7 @@ public class XPathCompList {
 
 				break;
 			case "position":
-				table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.path);
+				table_name = getLastNameOfPath(src_path_expr.path);
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
@@ -2614,10 +2614,10 @@ public class XPathCompList {
 							sb.append("'" + sql_expr.column_name + "'");
 							break;
 						case any_element:
-							sb.append("'" + PgSchemaUtil.getLastNameOfPath(sql_expr.getXPathFragment()) + "'");
+							sb.append("'" + getLastNameOfPath(sql_expr.getXPathFragment()) + "'");
 							break;
 						case any_attribute:
-							sb.append("'" + PgSchemaUtil.getLastNameOfPath(sql_expr.getXPathFragment()).replaceFirst("^@", "") + "'");
+							sb.append("'" + getLastNameOfPath(sql_expr.getXPathFragment()).replaceFirst("^@", "") + "'");
 							break;
 						default:
 							throw new PgSchemaException(tree);
@@ -2656,7 +2656,7 @@ public class XPathCompList {
 						case attribute:
 						case any_element:
 						case any_attribute:
-							table_name = PgSchemaUtil.getLastNameOfPath(sql_expr.getParentPath());
+							table_name = getLastNameOfPath(sql_expr.getParentPath());
 							table = schema.getTable(table_name);
 							PgField field = table.getField(sql_expr.column_name);
 
@@ -2701,17 +2701,17 @@ public class XPathCompList {
 						case attribute:
 						case any_element:
 						case any_attribute:
-							table_name = PgSchemaUtil.getLastNameOfPath(sql_expr.getParentPath());
+							table_name = getLastNameOfPath(sql_expr.getParentPath());
 							table = schema.getTable(table_name);
 							PgField field = table.getField(sql_expr.column_name);
 							prefix = schema.getPrefixOf(field.target_namespace != null ? field.target_namespace.split(" ")[0] : "");
 
 							switch (sql_expr.terminus) {
 							case any_element:
-								sb.append("'" + (prefix != null && !prefix.isEmpty() ? prefix + ":" : "") + PgSchemaUtil.getLastNameOfPath(sql_expr.getXPathFragment()) + "'");
+								sb.append("'" + (prefix != null && !prefix.isEmpty() ? prefix + ":" : "") + getLastNameOfPath(sql_expr.getXPathFragment()) + "'");
 								break;
 							case any_attribute:
-								sb.append("'" + (prefix != null && !prefix.isEmpty() ? prefix + ":" : "") + PgSchemaUtil.getLastNameOfPath(sql_expr.getXPathFragment()).replaceFirst("^@", "") + "'");
+								sb.append("'" + (prefix != null && !prefix.isEmpty() ? prefix + ":" : "") + getLastNameOfPath(sql_expr.getXPathFragment()).replaceFirst("^@", "") + "'");
 								break;
 							default:
 								sb.append("'" + (prefix != null && !prefix.isEmpty() ? prefix + ":" : "") + sql_expr.column_name + "'");
@@ -3785,7 +3785,7 @@ public class XPathCompList {
 				sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 				break;
 			case text:
-				String table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.getParentPath());
+				String table_name = getLastNameOfPath(src_path_expr.getParentPath());
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
@@ -3839,7 +3839,7 @@ public class XPathCompList {
 
 		if (parent.getClass().equals(PredicateContext.class)) {
 
-			String table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.path);
+			String table_name = getLastNameOfPath(src_path_expr.path);
 			if (!case_sense)
 				table_name = table_name.toLowerCase();
 			appendSqlColumnName(table_name, serial_key_name, sb);
@@ -3861,7 +3861,7 @@ public class XPathCompList {
 				break;
 			case text:
 				if (!sql_expr.predicate.equals("0")) {
-					String table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.getParentPath());
+					String table_name = getLastNameOfPath(src_path_expr.getParentPath());
 					if (!serial_key) {
 						try {
 							throw new PgSchemaException(tree, "serial key", serial_key);
@@ -3924,7 +3924,7 @@ public class XPathCompList {
 
 		if (parent.getClass().equals(PredicateContext.class)) {
 
-			String table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.path);
+			String table_name = getLastNameOfPath(src_path_expr.path);
 			if (!case_sense)
 				table_name = table_name.toLowerCase();
 			appendSqlColumnName(table_name, serial_key_name, sb);
@@ -3945,7 +3945,7 @@ public class XPathCompList {
 				appendSqlColumnName(sql_expr, sb);
 				break;
 			case text:
-				String table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.getParentPath());
+				String table_name = getLastNameOfPath(src_path_expr.getParentPath());
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
@@ -4072,7 +4072,7 @@ public class XPathCompList {
 					sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 					break;
 				case text:
-					String table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.getParentPath());
+					String table_name = getLastNameOfPath(src_path_expr.getParentPath());
 					if (!serial_key) {
 						try {
 							throw new PgSchemaException(tree, "serial key", serial_key);
@@ -4138,7 +4138,7 @@ public class XPathCompList {
 				sb.append(sql_expr.predicate);
 
 			else {
-				String table_name = PgSchemaUtil.getLastNameOfPath(src_path_expr.getParentPath());
+				String table_name = getLastNameOfPath(src_path_expr.getParentPath());
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
@@ -4252,7 +4252,7 @@ public class XPathCompList {
 
 						if (min_distance == -1 || distance < min_distance) {
 
-							target_table_name = PgSchemaUtil.getLastNameOfPath(target_path);
+							target_table_name = getLastNameOfPath(target_path);
 							target_table_path = common_path;
 
 							joined_table_name = joined_name;
@@ -4409,6 +4409,24 @@ public class XPathCompList {
 
 		path_exprs.forEach(path_expr -> System.out.println(path_expr.getReadablePath() + " (terminus type: " + path_expr.terminus.name() + ") -> " + path_expr.sql));
 
+	}
+
+	/**
+	 * Return last name of current path.
+	 *
+	 * @param path current path
+	 * @return String last name of the path
+	 */
+	protected String getLastNameOfPath(String path) {
+
+		String[] _path = path.split(" ").length < 2 ? path.replaceFirst("//$", "").split("/") : path.replaceFirst("//$", "").split(" ");
+
+		int position = _path.length - 1;
+
+		if (position < 0)
+			return null;
+
+		return _path[position];
 	}
 
 }

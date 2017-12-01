@@ -245,7 +245,7 @@ public class xml2pgsql {
 
 		};
 
-		xml_file_queue = PgSchemaUtil.getTargetFileQueue(xml_file_names, filename_filter);
+		xml_file_queue = PgSchemaUtil.getQueueOfTargetFiles(xml_file_names, filename_filter);
 
 		if (xml_file_queue.size() < max_thrds)
 			max_thrds = xml_file_queue.size();

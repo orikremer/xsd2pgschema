@@ -21,6 +21,11 @@ package net.sf.xsd2pgschema;
 
 import java.util.HashSet;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 /**
  * PostgreSQL schema construction option.
  *
@@ -195,6 +200,31 @@ public class PgSchemaOption {
 	}
 
 	/**
+	 * Set prefix of namespace URI representing XML Schema 1.x (http://www.w3.org/2001/XMLSchema)
+	 *
+	 * @param doc XML Schema document
+	 * @param def_schema_location default schema location
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void setPrefixOfXmlSchema(Document doc, String def_schema_location) throws PgSchemaException {
+
+		NodeList node_list = doc.getElementsByTagNameNS(PgSchemaUtil.xs_namespace_uri, "*");
+
+		if (node_list == null)
+			throw new PgSchemaException("No namespace declaration stands for " + PgSchemaUtil.xs_namespace_uri + " in XML Schema: " + def_schema_location);
+
+		Node xs_namespace_uri_node = node_list.item(0);
+
+		xs_prefix = xs_namespace_uri_node != null ? xs_namespace_uri_node.getPrefix() : null;
+
+		if (xs_prefix == null || xs_prefix.isEmpty())
+			xs_prefix_ = xs_prefix = "";
+		else
+			xs_prefix_ = xs_prefix + ":";
+
+	}
+
+	/**
 	 * Set document key name.
 	 *
 	 * @param document_key_name document key name
@@ -289,6 +319,149 @@ public class PgSchemaOption {
 			discarded_document_keys = new HashSet<String>();
 
 		return discarded_document_keys.add(discarded_document_key);
+	}
+
+	/**
+	 * Extract one-liner annotation from xs:annotation/xs:appinfo|xs:documentation.
+	 *
+	 * @param node current node
+	 * @param is_table the is table
+	 * @return String annotation
+	 */
+	public String extractAnnotation(Node node, boolean is_table) {
+
+		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
+
+			if (!anno.getNodeName().equals(xs_prefix_ + "annotation"))
+				continue;
+
+			String annotation = "";
+
+			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+				String child_name = child.getNodeName();
+
+				if (child_name.equals(xs_prefix_ + "appinfo")) {
+
+					annotation = child.getTextContent().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
+
+					if (!annotation.isEmpty())
+						annotation += "\n-- ";
+
+					Element e = (Element) child;
+
+					String src = e.getAttribute("source");
+
+					if (src != null && !src.isEmpty())
+						annotation += (is_table ? "\n-- " : ", ") + "URI-reference = " + src + (is_table ? "\n-- " : ", ");
+				}
+
+				else if (child_name.equals(xs_prefix_ + "documentation")) {
+
+					annotation += child.getTextContent().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
+
+					Element e = (Element) child;
+
+					String src = e.getAttribute("source");
+
+					if (src != null && !src.isEmpty())
+						annotation += (is_table ? "\n-- " : ", ") + "URI-reference = " + src;
+				}
+
+			}
+
+			if (annotation != null && !annotation.isEmpty())
+				return annotation;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Extract one-liner annotation from xs:annotation/xs:appinfo.
+	 *
+	 * @param node current node
+	 * @return String appinfo of annotation
+	 */
+	public String extractAppinfo(Node node) {
+
+		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
+
+			if (!anno.getNodeName().equals(xs_prefix_ + "annotation"))
+				continue;
+
+			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+				String child_name = child.getNodeName();
+
+				if (child_name.equals(xs_prefix_ + "appinfo")) {
+
+					String annotation = child.getTextContent().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
+
+					Element e = (Element) child;
+
+					String src = e.getAttribute("source");
+
+					if (src != null && !src.isEmpty())
+						annotation += ", URI-reference = " + src;
+
+					if (annotation != null && !annotation.isEmpty())
+						return annotation;
+				}
+
+			}
+
+		}
+
+		return null;
+	}
+
+	/**
+	 * Extract annotation from xs:annotation/xs:documentation.
+	 *
+	 * @param node current node
+	 * @param one_liner whether return one-liner annotation or exact one
+	 * @return String documentation of annotation
+	 */
+	public String extractDocumentation(Node node, boolean one_liner) {
+
+		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
+
+			if (!anno.getNodeName().equals(xs_prefix_ + "annotation"))
+				continue;
+
+			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+				String child_name = child.getNodeName();
+
+				if (child_name.equals(xs_prefix_ + "documentation")) {
+
+					String text = child.getTextContent();
+
+					if (one_liner) {
+
+						String annotation = text.replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
+
+						Element e = (Element) child;
+
+						String src = e.getAttribute("source");
+
+						if (src != null && !src.isEmpty())
+							annotation += ", URI-reference = " + src;
+
+						if (annotation != null && !annotation.isEmpty())
+							return annotation;
+					}
+
+					else if (text != null && !text.isEmpty())
+						return text;
+				}
+
+			}
+
+		}
+
+		return null;
 	}
 
 }

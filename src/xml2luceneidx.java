@@ -227,7 +227,7 @@ public class xml2luceneidx {
 
 		};
 
-		xml_file_queue = PgSchemaUtil.getTargetFileQueue(xml_file_names, filename_filter);
+		xml_file_queue = PgSchemaUtil.getQueueOfTargetFiles(xml_file_names, filename_filter);
 
 		if (xml_file_queue.size() < shard_size)
 			shard_size = xml_file_queue.size();

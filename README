@@ -1,7 +1,8 @@
- Changes in xsd2pgschema 2.7.1 (release 2017-11-27)
+ Changes in xsd2pgschema 2.7.1 (release 2017-12-01)
 
   Allowed multiple --discard-json-doc-key options in xml2json.
   Added --discard-doc-key option in almost all main classes.
+  Added xpathparser main class, an XPath 1.0 parser with XML Schama validation.
 
  Changes in xsd2pgschema 2.7.0 (release 2017-11-22)
 

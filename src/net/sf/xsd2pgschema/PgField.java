@@ -422,7 +422,7 @@ public class PgField {
 		if (type == null)
 			return;
 
-		target_namespace = type.contains(":") ? schema.getNamespaceURI(type.split(":")[0]) : schema.getNamespaceURI("");
+		target_namespace = type.contains(":") ? schema.getNamespaceUriForPrefix(type.split(":")[0]) : schema.getNamespaceUriForPrefix("");
 
 	}
 

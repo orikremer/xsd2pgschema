@@ -170,19 +170,7 @@ public class PgSchema {
 		if (root_node == null)
 			throw new PgSchemaException("Not found root element in XML Schema: " + def_schema_location);
 
-		NodeList node_list = doc.getElementsByTagNameNS(PgSchemaUtil.xs_namespace_uri, "*");
-
-		if (node_list == null)
-			throw new PgSchemaException("No namespace declaration stands for " + PgSchemaUtil.xs_namespace_uri + " in XML Schema: " + def_schema_location);
-
-		Node xs_namespace_uri_node = node_list.item(0);
-
-		option.xs_prefix = xs_namespace_uri_node != null ? xs_namespace_uri_node.getPrefix() : null;
-
-		if (option.xs_prefix == null || option.xs_prefix.isEmpty())
-			option.xs_prefix_ = option.xs_prefix = "";
-		else
-			option.xs_prefix_ = option.xs_prefix + ":";
+		option.setPrefixOfXmlSchema(doc, def_schema_location);
 
 		// check root element name
 
@@ -191,11 +179,11 @@ public class PgSchema {
 
 		// retrieve top level schema annotation
 
-		def_anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, root_node, true);
-		def_anno_appinfo = PgSchemaUtil.extractAppinfo(option.xs_prefix_, root_node);
+		def_anno = option.extractAnnotation(root_node, true);
+		def_anno_appinfo = option.extractAppinfo(root_node);
 
-		if ((def_anno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, root_node, true)) != null)
-			def_xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, root_node, false);
+		if ((def_anno_doc = option.extractDocumentation(root_node, true)) != null)
+			def_xanno_doc = option.extractDocumentation(root_node, false);
 
 		def_stat_msg = new StringBuilder();
 
@@ -768,8 +756,8 @@ public class PgSchema {
 
 		table.required = true;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
+		if ((table.anno = option.extractAnnotation(node, true)) != null)
+			table.xanno_doc = option.extractDocumentation(node, false);
 
 		table.xs_type = root_element ? XsTableType.xs_root : XsTableType.xs_admin_root;
 
@@ -870,7 +858,7 @@ public class PgSchema {
 
 					level++;
 
-					PgTable child_table = new PgTable(getNamespaceURIOfQName(dummy.type), def_schema_location);
+					PgTable child_table = new PgTable(getNamespaceUriOfQName(dummy.type), def_schema_location);
 
 					Element child_e = (Element) node;
 
@@ -880,8 +868,8 @@ public class PgSchema {
 
 					table.required = child_table.required = true;
 
-					if ((child_table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, true)) != null)
-						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
+					if ((child_table.anno = option.extractAnnotation(node, true)) != null)
+						child_table.xanno_doc = option.extractDocumentation(node, false);
 
 					child_table.xs_type = XsTableType.xs_admin_root;
 
@@ -932,8 +920,8 @@ public class PgSchema {
 		if (table.name.isEmpty())
 			return;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
+		if ((table.anno = option.extractAnnotation(node, true)) != null)
+			table.xanno_doc = option.extractDocumentation(node, false);
 
 		if (annotation) {
 
@@ -1005,8 +993,8 @@ public class PgSchema {
 		if (table.name.isEmpty())
 			return;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
+		if ((table.anno = option.extractAnnotation(node, true)) != null)
+			table.xanno_doc = option.extractDocumentation(node, false);
 
 		table.xs_type = XsTableType.xs_attr_group;
 
@@ -1045,8 +1033,8 @@ public class PgSchema {
 		if (table.name.isEmpty())
 			return;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
+		if ((table.anno = option.extractAnnotation(node, true)) != null)
+			table.xanno_doc = option.extractDocumentation(node, false);
 
 		table.xs_type = XsTableType.xs_model_group;
 
@@ -1217,8 +1205,8 @@ public class PgSchema {
 
 		field.name = field.xname = table.avoidFieldDuplication(option, PgSchemaUtil.any_name);
 
-		if ((field.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, false)) != null)
-			field.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
+		if ((field.anno = option.extractAnnotation(node, false)) != null)
+			field.xanno_doc = option.extractDocumentation(node, false);
 
 		field.xs_type = XsDataType.xs_any;
 		field.type = field.xs_type.name();
@@ -1244,8 +1232,8 @@ public class PgSchema {
 
 		field.name = field.xname = table.avoidFieldDuplication(option, PgSchemaUtil.any_attribute_name);
 
-		if ((field.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, false)) != null)
-			field.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
+		if ((field.anno = option.extractAnnotation(node, false)) != null)
+			field.xanno_doc = option.extractDocumentation(node, false);
 
 		field.xs_type = XsDataType.xs_anyAttribute;
 		field.type = field.xs_type.name();
@@ -1314,8 +1302,8 @@ public class PgSchema {
 			field.xname = option.getUnqualifiedName(name);
 			field.name = table.avoidFieldDuplication(option, field.xname);
 
-			if ((field.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, false)) != null)
-				field.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
+			if ((field.anno = option.extractAnnotation(node, false)) != null)
+				field.xanno_doc = option.extractDocumentation(node, false);
 
 			field.extractType(option, node);
 			field.extractNamespace(this, node); // require type definition
@@ -1378,7 +1366,7 @@ public class PgSchema {
 
 					level++;
 
-					PgTable child_table = new PgTable(getNamespaceURIOfQName(field.type), def_schema_location);
+					PgTable child_table = new PgTable(getNamespaceUriOfQName(field.type), def_schema_location);
 
 					Element child_e = (Element) node;
 
@@ -1388,8 +1376,8 @@ public class PgSchema {
 
 					table.required = child_table.required = true;
 
-					if ((child_table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, true)) != null)
-						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
+					if ((child_table.anno = option.extractAnnotation(node, true)) != null)
+						child_table.xanno_doc = option.extractDocumentation(node, false);
 
 					child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
@@ -1428,7 +1416,7 @@ public class PgSchema {
 
 					name = e.getAttribute("name");
 
-					if (name.equals(option.getUnqualifiedName(ref)) && table.target_namespace != null && table.target_namespace.equals(getNamespaceURIOfQName(ref))) {
+					if (name.equals(option.getUnqualifiedName(ref)) && table.target_namespace != null && table.target_namespace.equals(getNamespaceUriOfQName(ref))) {
 
 						if (attribute)
 							field.attribute = true;
@@ -1438,8 +1426,8 @@ public class PgSchema {
 						field.xname = option.getUnqualifiedName(name);
 						field.name = table.avoidFieldDuplication(option, field.xname);
 
-						if ((field.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, child, false)) != null)
-							field.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, child, false);
+						if ((field.anno = option.extractAnnotation(child, false)) != null)
+							field.xanno_doc = option.extractDocumentation(child, false);
 
 						field.extractType(option, child);
 						field.extractNamespace(this, child); // require type definition
@@ -1502,7 +1490,7 @@ public class PgSchema {
 
 								level++;
 
-								PgTable child_table = new PgTable(getNamespaceURIOfQName(field.type), def_schema_location);
+								PgTable child_table = new PgTable(getNamespaceUriOfQName(field.type), def_schema_location);
 
 								Element child_e = (Element) child;
 
@@ -1512,8 +1500,8 @@ public class PgSchema {
 
 								table.required = child_table.required = true;
 
-								if ((child_table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, child, true)) != null)
-									child_table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, child, false);
+								if ((child_table.anno = option.extractAnnotation(child, true)) != null)
+									child_table.xanno_doc = option.extractDocumentation(child, false);
 
 								child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
@@ -1587,8 +1575,8 @@ public class PgSchema {
 
 		table.required = true;
 
-		if ((table.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, true)) != null)
-			table.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
+		if ((table.anno = option.extractAnnotation(node, true)) != null)
+			table.xanno_doc = option.extractDocumentation(node, false);
 
 		table.fields = new ArrayList<PgField>();
 
@@ -1688,8 +1676,8 @@ public class PgSchema {
 		field.xname = option.getUnqualifiedName(name);
 		field.name = table.avoidFieldDuplication(option, field.xname);
 
-		if ((field.anno = PgSchemaUtil.extractAnnotation(option.xs_prefix_, node, false)) != null)
-			field.xanno_doc = PgSchemaUtil.extractDocumentation(option.xs_prefix_, node, false);
+		if ((field.anno = option.extractAnnotation(node, false)) != null)
+			field.xanno_doc = option.extractDocumentation(node, false);
 
 		field.extractType(option, node);
 		field.extractNamespace(this, node); // require type definition
@@ -2002,12 +1990,12 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return namespace URI of prefix.
+	 * Return namespace URI for prefix.
 	 *
 	 * @param prefix prefix of namespace URI
 	 * @return String namespace URI
 	 */
-	protected String getNamespaceURI(String prefix) {
+	protected String getNamespaceUriForPrefix(String prefix) {
 		return def_namespaces.get(prefix);
 	}
 
@@ -2017,11 +2005,11 @@ public class PgSchema {
 	 * @param qname qualified name
 	 * @return String namespace URI
 	 */
-	protected String getNamespaceURIOfQName(String qname) {
+	protected String getNamespaceUriOfQName(String qname) {
 
 		String name = option.getUnqualifiedName(qname);
 
-		return getNamespaceURI(name.equals(qname) ? "" : qname.substring(0, qname.length() - name.length() - 1));
+		return getNamespaceUriForPrefix(name.equals(qname) ? "" : qname.substring(0, qname.length() - name.length() - 1));
 	}
 
 	/**
@@ -5743,7 +5731,7 @@ public class PgSchema {
 
 				else {
 
-					String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
+					String cur_table = list.getLastNameOfPath(path_expr.path);
 
 					// not specified table
 
@@ -6089,7 +6077,7 @@ public class PgSchema {
 
 				else {
 
-					String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
+					String cur_table = list.getLastNameOfPath(path_expr.path);
 
 					// not specified table
 
@@ -6504,7 +6492,7 @@ public class PgSchema {
 
 				else {
 
-					String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
+					String cur_table = list.getLastNameOfPath(path_expr.path);
 
 					// not specified table
 
@@ -6840,7 +6828,7 @@ public class PgSchema {
 
 				else {
 
-					String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
+					String cur_table = list.getLastNameOfPath(path_expr.path);
 
 					// not specified table
 
@@ -7323,7 +7311,7 @@ public class PgSchema {
 
 				else {
 
-					String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
+					String cur_table = list.getLastNameOfPath(path_expr.path);
 
 					// not specified table
 
@@ -7669,7 +7657,7 @@ public class PgSchema {
 
 				else {
 
-					String cur_table = PgSchemaUtil.getLastNameOfPath(path_expr.path);
+					String cur_table = list.getLastNameOfPath(path_expr.path);
 
 					// not specified table
 
