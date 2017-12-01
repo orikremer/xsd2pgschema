@@ -222,6 +222,8 @@ public class xpathparser {
 			System.out.println("\nTarget path in XML Schema: " + PgSchemaUtil.getSchemaName(xpath2pgsql.schema_location));
 			xpath_comp_list.showPathExprs();
 
+			System.out.println("\nThe XPath query is valid.");
+
 		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException e) {
 			e.printStackTrace();
 			System.exit(1);
