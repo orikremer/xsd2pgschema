@@ -187,7 +187,7 @@ public class xpathparser {
 
 			// XSD analysis
 
-			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, xpath2pgsql.schema_location, option);
+			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, schema_location, option);
 
 			xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_query));
 
@@ -219,7 +219,7 @@ public class xpathparser {
 			System.out.println("Input XPath query:");
 			System.out.println(" " + main_text);
 
-			System.out.println("\nTarget path in XML Schema: " + PgSchemaUtil.getSchemaName(xpath2pgsql.schema_location));
+			System.out.println("\nTarget path in XML Schema: " + PgSchemaUtil.getSchemaName(schema_location));
 			xpath_comp_list.showPathExprs();
 
 			System.out.println("\nThe XPath query is valid.");

@@ -146,7 +146,7 @@ public class PgSchemaUtil {
 
 		// local XML Schema file
 
-		if (!schema_location.startsWith("http:") && !schema_location.startsWith("https:")) {
+		if (!schema_location.matches("^https?:\\/\\/.*")) {
 
 			File schema_file = new File(schema_location);
 
@@ -252,7 +252,7 @@ public class PgSchemaUtil {
 		if (schema_file.exists())
 			return schema_file;
 
-		if (schema_parent != null && !schema_parent.startsWith("http:") && !schema_parent.startsWith("https:")) { // schema_parent indicates file path
+		if (schema_parent != null && !schema_parent.matches("^https?:\\/\\/.*")) { // schema_parent indicates file path
 
 			schema_file = new File(schema_parent + "/" + schema_file_name);
 
@@ -268,7 +268,8 @@ public class PgSchemaUtil {
 
 		try {
 
-			IOUtils.copy(is, new FileOutputStream(schema_file));
+			if (schema_parent != null && schema_parent.matches("^https?:\\/\\/.*")) // copy schema file in local
+				IOUtils.copy(is, new FileOutputStream(schema_file));
 
 			return schema_file;
 
@@ -287,7 +288,7 @@ public class PgSchemaUtil {
 	 */
 	public static String getSchemaName(String schema_location) {
 
-		if (schema_location.startsWith("http:") || schema_location.startsWith("https:"))
+		if (schema_location.matches("^https?:\\/\\/.*"))
 			return schema_location;
 
 		File schema_file = new File(schema_location);
@@ -303,7 +304,7 @@ public class PgSchemaUtil {
 	 */
 	public static String getSchemaFileName(String schema_location) {
 
-		if (schema_location.startsWith("http:") || schema_location.startsWith("https:")) {
+		if (schema_location.matches("^https?:\\/\\/.*")) {
 
 			try {
 
@@ -330,7 +331,7 @@ public class PgSchemaUtil {
 	 */
 	public static String getSchemaParent(String schema_location) {
 
-		if (schema_location.startsWith("http:") || schema_location.startsWith("https:")) {
+		if (schema_location.matches("^https?:\\/\\/.*")) {
 
 			try {
 

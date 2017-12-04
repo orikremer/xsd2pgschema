@@ -1,3 +1,7 @@
+ Changes in xsd2pgschema 2.7.2 (release 2017-12-04)
+
+  [Ticket #4] Fixed exception in case of missing root table.
+
  Changes in xsd2pgschema 2.7.1 (release 2017-12-01)
 
   Allowed multiple --discard-json-doc-key options in xml2json.
@@ -12,7 +16,7 @@
 
  Changes in xsd2pgschema 2.6.6 (release 2017-11-16)
 
-  Updated PostgreSQL 10's reserved words.
+  Updated to PostgreSQL 10's reserved words.
   Fixed issue in handling 'ref' attribute with QName which caused exception while schema analysis.
   Fixed getAbsoluteXPathOfTable() which caused an infinite loop in XPath parser.
   Fixed xmlsplitter which generated duplicating document unit.
@@ -56,7 +60,7 @@
 
  Changes in xsd2pgschema 2.5.0 (release 2017-07-13)
 
-  Added xmlsplitter main class to split large XML file.
+  [Ticket #2] Added xmlsplitter main class to split large XML file.
   Implemented ANTLR v4 based XPath parser for xmlsplitter.
   Implemented StAX based parser for xmlsplitter.
   Added --shard-size option to enable sharding in xmlsplitter.
@@ -126,7 +130,7 @@
 
   Internal code refactoring and class name revisions.
   Added automatic retrieval of XML Schemata located in the same directory of designated XML Schema.
-  Allowed to include or import XML Schema having neither root element nor administrative elements, but with warning message.
+  [Ticket #1] Allowed to include or import XML Schema having neither root element nor administrative elements, but with warning message.
   Fixed stack overflow issue when including nested XML Schemata.
   Properly copying target namespace and schema location as concatenated form in multiple referencing case.
   Added --xml-file-ext-digest option in xml2pgcsv, xml2pgsql, xml2luceneidx and xml2sphinxds classes as well as xml2json class.

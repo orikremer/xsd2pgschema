@@ -2108,8 +2108,10 @@ public class PgSchema {
 
 	/**
 	 * Realize PostgreSQL DDL.
+	 *
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void realize() {
+	private void realize() throws PgSchemaException {
 
 		// initialize realization flag and table order
 
@@ -2122,6 +2124,8 @@ public class PgSchema {
 		level = 0;
 
 		// root table
+
+		hasRootTable();
 
 		realize(root_table, root_table_id, false);
 
