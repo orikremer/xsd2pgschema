@@ -3457,6 +3457,201 @@ public enum XsDataType {
 
 	}
 
+	// Sphinx attribute
+
+	/**
+	 * Write Sphinx attribute in schema file
+	 * 
+	 * @param table PosgtreSQL table
+	 * @param field PostgreSQL field
+	 * @param filew Sphinx schema file writer
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public static void writeSphSchemaAttr(PgTable table, PgField field, FileWriter filew) throws IOException {
+
+		filew.write("<sphinx:attr name=\"" + table.name + "__" + field.xname + "\"");
+
+		String attrs = null;
+
+		switch (field.xs_type) {
+		case xs_boolean:
+			attrs = " type=\"bool\"";
+			break;
+		case xs_hexBinary:
+		case xs_base64Binary:
+			attrs = " type=\"string\"";
+			break;
+		case xs_bigserial:
+		case xs_long:
+		case xs_bigint:
+		case xs_unsignedLong:
+		case xs_duration:
+			attrs = " type=\"bigint\"";
+			break;
+		case xs_serial:
+		case xs_integer:
+		case xs_int:
+		case xs_nonPositiveInteger:
+		case xs_negativeInteger:
+		case xs_nonNegativeInteger:
+		case xs_positiveInteger:
+			attrs = " type=\"int\" bits=\"32\"";
+			break;
+		case xs_unsignedInt:
+			attrs = " type=\"int\" bits=\"32\"";
+			break;
+		case xs_float:
+		case xs_double:
+		case xs_decimal:
+			attrs = " type=\"float\"";
+			break;
+		case xs_short:
+			attrs = " type=\"int\" bits=\"16\"";
+			break;
+		case xs_unsignedShort:
+			attrs = " type=\"int\" bits=\"16\"";
+			break;
+		case xs_byte:
+			attrs = " type=\"int\" bits=\"8\"";
+			break;
+		case xs_unsignedByte:
+			attrs = " type=\"int\" bits=\"8\"";
+			break;
+		case xs_dateTime:
+		case xs_time:
+		case xs_date:
+		case xs_gYearMonth:
+		case xs_gYear:
+			attrs = " type=\"timestamp\"";
+			break;
+		case xs_gMonthDay:
+		case xs_gMonth:
+		case xs_gDay:
+		case xs_anyType:
+		case xs_string:
+		case xs_normalizedString:
+		case xs_token:
+		case xs_language:
+		case xs_Name:
+		case xs_QName:
+		case xs_NCName:
+		case xs_anyURI:
+		case xs_NOTATION:
+		case xs_NMTOKEN:
+		case xs_NMTOKENS:
+		case xs_ID:
+		case xs_IDREF:
+		case xs_IDREFS:
+		case xs_ENTITY:
+		case xs_ENTITIES:
+		case xs_any:
+		case xs_anyAttribute:
+			attrs = " type=\"string\"";
+			break;
+		}
+
+		if (field.sph_mva) {
+			/**
+		if (attrs.contains("bigint"))
+			attrs = " type=\"multi64\"";
+		else
+			 */
+			attrs = " type=\"multi\"";
+
+		}
+
+		if (field.default_value != null && !field.default_value.isEmpty())
+			attrs += " default=\"" + StringEscapeUtils.escapeCsv(field.default_value) + "\"";
+
+		filew.write(attrs + "/>\n");
+
+	}
+
+	/**
+	 * Write Sphinx attribute in configuration file
+	 * 
+	 * @param table PosgtreSQL table
+	 * @param field PostgreSQL field
+	 * @param filew Sphinx configuration file writer
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public static void writeSphConfAttr(PgTable table, PgField field, FileWriter filew) throws IOException {
+
+		String attr_name = table.name + "__" + field.xname;
+
+		switch (field.xs_type) {
+		case xs_boolean:
+			filew.write("\txmlpipe_attr_bool       = " + attr_name + "\n");
+			break;
+		case xs_bigserial:
+		case xs_long:
+		case xs_bigint:
+		case xs_unsignedLong:
+		case xs_duration:
+			if (field.sph_mva)
+				filew.write("\txmlpipe_attr_multi_64   = " + attr_name + "\n");
+			else
+				filew.write("\txmlpipe_attr_bigint     = " + attr_name + "\n");
+			break;
+		case xs_serial:
+		case xs_integer:
+		case xs_int:
+		case xs_nonPositiveInteger:
+		case xs_negativeInteger:
+		case xs_nonNegativeInteger:
+		case xs_positiveInteger:
+		case xs_unsignedInt:
+		case xs_short:
+		case xs_unsignedShort:
+		case xs_byte:
+		case xs_unsignedByte:
+			if (field.sph_mva)
+				filew.write("\txmlpipe_attr_multi      = " + attr_name + "\n");
+			else
+				filew.write("\txmlpipe_attr_uint       = " + attr_name + "\n");
+			break;
+		case xs_float:
+		case xs_double:
+		case xs_decimal:
+			filew.write("\txmlpipe_attr_float      = " + attr_name + "\n");
+			break;
+		case xs_dateTime:
+		case xs_time:
+		case xs_date:
+		case xs_gYearMonth:
+		case xs_gYear:
+			filew.write("\txmlpipe_attr_timestamp  = " + attr_name + "\n");
+			break;
+		case xs_hexBinary:
+		case xs_base64Binary:
+		case xs_gMonthDay:
+		case xs_gMonth:
+		case xs_gDay:
+		case xs_anyType:
+		case xs_string:
+		case xs_normalizedString:
+		case xs_token:
+		case xs_language:
+		case xs_Name:
+		case xs_QName:
+		case xs_NCName:
+		case xs_anyURI:
+		case xs_NOTATION:
+		case xs_NMTOKEN:
+		case xs_NMTOKENS:
+		case xs_ID:
+		case xs_IDREF:
+		case xs_IDREFS:
+		case xs_ENTITY:
+		case xs_ENTITIES:
+		case xs_any:
+		case xs_anyAttribute:
+			filew.write("\txmlpipe_attr_string     = " + attr_name + "\n");
+			break;
+		}
+
+	}
+
 	/** The date pattern in ISO 8601 format. */
 	private static final String[] date_patterns_iso = new String[] {
 			"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "yyyy-MM-dd'T'HH:mm:ssXXX", "yyyy-MM-dd'T'HH:mmXXX", "yyyy-MM-dd'T'HHXXX", "yyyy-MM-ddXXX",
