@@ -1,6 +1,7 @@
- Changes in xsd2pgschema 2.7.2 (release 2017-12-04)
+ Changes in xsd2pgschema 2.7.2 (release 2017-12-05)
 
   [Ticket #4] Fixed exception in case of missing root table.
+  Changed option name from --discard-doc-key to --discarded-doc-key-name.
 
  Changes in xsd2pgschema 2.7.1 (release 2017-12-01)
 

@@ -87,8 +87,8 @@ public class PgSchemaOption {
 	/** The XPath key name in PostgreSQL DDL. */
 	public String xpath_key_name = def_xpath_key_name;
 
-	/** The list of discarded document key. */
-	public HashSet<String> discarded_document_keys = null;
+	/** The list of discarded document key names. */
+	public HashSet<String> discarded_document_key_names = null;
 
 	/** The name of hash algorithm. */
 	public String hash_algorithm = PgSchemaUtil.def_hash_algorithm;
@@ -120,7 +120,7 @@ public class PgSchemaOption {
 
 		this.document_key = document_key;
 
-		discarded_document_keys = new HashSet<String>();
+		discarded_document_key_names = new HashSet<String>();
 
 	}
 
@@ -133,7 +133,7 @@ public class PgSchemaOption {
 
 		setDefaultForJsonSchema(json_type);
 
-		discarded_document_keys = new HashSet<String>();
+		discarded_document_key_names = new HashSet<String>();
 
 	}
 
@@ -267,6 +267,23 @@ public class PgSchemaOption {
 	}
 
 	/**
+	 * Add discarded document key name.
+	 *
+	 * @param discarded_document_key_name discarded document key name
+	 * @return result of addition
+	 */
+	public boolean addDiscardedDocKeyName(String discarded_document_key_name) {
+
+		if (discarded_document_key_name == null || discarded_document_key_name.isEmpty())
+			return false;
+
+		if (discarded_document_key_names == null)
+			discarded_document_key_names = new HashSet<String>();
+
+		return discarded_document_key_names.add(discarded_document_key_name);
+	}
+
+	/**
 	 * Set default user key names.
 	 */
 	public void setDefaultUserKeys() {
@@ -302,23 +319,6 @@ public class PgSchemaOption {
 
 		xpath_key_name = def_xpath_key_name;
 
-	}
-
-	/**
-	 * Add discarded document key.
-	 *
-	 * @param discarded_document_key discarded document key
-	 * @return result of addition
-	 */
-	public boolean addDiscardDocKey(String discarded_document_key) {
-
-		if (discarded_document_key == null || discarded_document_key.isEmpty())
-			return false;
-
-		if (discarded_document_keys == null)
-			discarded_document_keys = new HashSet<String>();
-
-		return discarded_document_keys.add(discarded_document_key);
 	}
 
 	/**

@@ -1454,7 +1454,7 @@ public class PgField {
 	 */
 	public boolean isOmitted(PgSchemaOption option) {
 
-		if ((element || attribute) && option.discarded_document_keys.contains(xname))
+		if ((element || attribute) && option.discarded_document_key_names.contains(xname))
 			return true;
 
 		return (!option.document_key && document_key) || (!option.serial_key && serial_key) || (!option.xpath_key && xpath_key) || (!option.rel_data_ext && system_key);
@@ -1468,7 +1468,7 @@ public class PgField {
 	 */
 	public boolean isIndexable(PgSchemaOption option) {
 
-		if ((element || attribute) && option.discarded_document_keys.contains(xname))
+		if ((element || attribute) && option.discarded_document_key_names.contains(xname))
 			return false;
 
 		return !option.field_resolved || (option.field_resolved && field_sel) || (option.attr_resolved && attr_sel);
@@ -1482,7 +1482,7 @@ public class PgField {
 	 */
 	public boolean isJsonable(PgSchemaOption option) {
 
-		if ((element || attribute) && option.discarded_document_keys.contains(xname))
+		if ((element || attribute) && option.discarded_document_key_names.contains(xname))
 			return false;
 
 		return !option.field_resolved || (option.field_resolved && field_sel);
@@ -1498,7 +1498,7 @@ public class PgField {
 	 */
 	public boolean matchesNodeName(PgSchemaOption option, String prefix, boolean wild_card) {
 
-		if ((element || attribute) && option.discarded_document_keys.contains(xname))
+		if ((element || attribute) && option.discarded_document_key_names.contains(xname))
 			return false;
 
 		if (wild_card)

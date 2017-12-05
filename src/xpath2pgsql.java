@@ -151,8 +151,8 @@ public class xpath2pgsql {
 			else if (args[i].equals("--xpath-key-name"))
 				option.setXPathKeyName(args[++i]);
 
-			else if (args[i].equals("--discard-doc-key"))
-				option.addDiscardDocKey(args[++i]);
+			else if (args[i].equals("--discarded-doc-key-name"))
+				option.addDiscardedDocKeyName(args[++i]);
 
 			else if (args[i].equals("--verbose"))
 				verbose = true;
@@ -223,8 +223,7 @@ public class xpath2pgsql {
 		System.err.println("        --doc-key-name DOC_KEY_NAME (default=\"" + option.document_key_name + "\")");
 		System.err.println("        --ser-key-name SER_KEY_NAME (default=\"" + option.serial_key_name + "\")");
 		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.xpath_key_name + "\")");
-		System.err.println("        --discard-doc-key DISCARDED_DOCUMENT_KEY_NAME");
-
+		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --verbose");
 		System.exit(1);
 

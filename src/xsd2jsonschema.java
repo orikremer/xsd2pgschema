@@ -75,8 +75,8 @@ public class xsd2jsonschema {
 			else if (args[i].equals("--json"))
 				json_file_name = args[++i];
 
-			else if (args[i].equals("--discard-json-doc-key") || args[i].equals("--discard-doc-key"))
-				option.addDiscardDocKey(args[++i]);
+			else if (args[i].equals("--discarded-doc-key-name"))
+				option.addDiscardedDocKeyName(args[++i]);
 
 			else if (args[i].equals("--obj-json"))
 				option.setDefaultForJsonSchema(json_type = JsonType.object);
@@ -202,7 +202,7 @@ public class xsd2jsonschema {
 		System.err.println("        --json-no-linefeed (avoid to use linefeed code)");
 		System.err.println("        --json-compact (equals to set --json-indent-spaces 0 --json-key-value-spaces 0 --json-no-linefeed)");
 		System.err.println("        --json-array-all (use JSON array uniformly for descendants, effective only in column- and relational-oriented JSON format)");
-		System.err.println("        --discard-doc-key DISCARDED_DOCUMENT_KEY_NAME");
+		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.exit(1);
 
 	}
