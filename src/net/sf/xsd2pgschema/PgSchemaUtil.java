@@ -140,9 +140,13 @@ public class PgSchemaUtil {
 	 *
 	 * @param schema_location schema location
 	 * @param schema_parent parent of schema location
+	 * @param cache_xsd whether retrieve XML Schema with caching
 	 * @return InputStream input stream of schema location
 	 */
-	public static InputStream getSchemaInputStream(String schema_location, String schema_parent) {
+	public static InputStream getSchemaInputStream(String schema_location, String schema_parent, boolean cache_xsd) {
+
+		if (!cache_xsd && !schema_location.matches("^https?:\\/\\/.*") && schema_parent != null && schema_parent.matches("^https?:\\/\\/.*"))
+			schema_location = schema_parent + "/" + schema_location;
 
 		// local XML Schema file
 
@@ -151,7 +155,7 @@ public class PgSchemaUtil {
 			File schema_file = new File(schema_location);
 
 			if (!schema_file.exists() && schema_parent != null) // schema_parent indicates either URL or file path
-				return getSchemaInputStream(schema_parent + "/" + getSchemaFileName(schema_location), null);
+				return getSchemaInputStream(schema_parent + "/" + getSchemaFileName(schema_location), null, cache_xsd);
 
 			try {
 
@@ -259,20 +263,44 @@ public class PgSchemaUtil {
 
 			schema_file = new File(schema_parent + "/" + schema_file_name);
 
-			if (schema_file.exists())
+			if (schema_file.exists() && ((is_url && cache_xsd) || !is_url))
 				return schema_file;
 
 		}
 
-		InputStream is = getSchemaInputStream(schema_location, schema_parent);
+		InputStream is = getSchemaInputStream(schema_location, schema_parent, cache_xsd);
 
 		if (is == null)
 			return null;
 
 		try {
 
-			if (schema_parent != null && is_url && cache_xsd) // copy schema file in local
-				IOUtils.copy(is, new FileOutputStream(schema_file));
+			if (cache_xsd) {
+
+				if (schema_parent != null) // copy schema file in local
+					IOUtils.copy(is, new FileOutputStream(schema_file));
+
+			}
+
+			else {
+
+				File schema_file_part;
+
+				do {
+
+					schema_file_name += "~"; // prevent corruption of schema file
+					schema_file_part = new File(schema_file_name);
+
+				} while (schema_file_part.exists());
+
+				if (schema_parent != null)  { // copy schema file in local
+
+					IOUtils.copy(is, new FileOutputStream(schema_file_part));
+					schema_file_part.renameTo(schema_file);
+
+				}
+
+			}
 
 			return schema_file;
 

@@ -262,7 +262,7 @@ public class PgSchema {
 
 					// local XML Schema file
 
-					InputStream is2 = PgSchemaUtil.getSchemaInputStream(schema_location, def_schema_parent);
+					InputStream is2 = PgSchemaUtil.getSchemaInputStream(schema_location, def_schema_parent, option.cache_xsd);
 
 					if (is2 == null)
 						throw new PgSchemaException("Could not access to schema location: " + schema_location);

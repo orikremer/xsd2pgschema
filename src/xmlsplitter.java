@@ -136,7 +136,7 @@ public class xmlsplitter {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
 
 		if (is == null)
 			showUsage();

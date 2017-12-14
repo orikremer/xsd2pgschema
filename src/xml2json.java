@@ -193,7 +193,7 @@ public class xml2json {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
 
 		if (is == null)
 			showUsage();
@@ -239,7 +239,7 @@ public class xml2json {
 			try {
 
 				if (thrd_id > 0)
-					is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
+					is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
 
 				proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, is, option, jsonb_option);
 

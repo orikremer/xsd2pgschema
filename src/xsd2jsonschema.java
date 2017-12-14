@@ -123,7 +123,7 @@ public class xsd2jsonschema {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
 
 		if (is == null)
 			showUsage();
