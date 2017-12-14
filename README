@@ -1,7 +1,8 @@
- Changes in xsd2pgschema 2.7.2 (release 2017-12-05)
+ Changes in xsd2pgschema 2.7.2 (release 2017-12-14)
 
   [Ticket #4] Fixed exception in case of missing root table.
   Changed option name from --discard-doc-key to --discarded-doc-key-name.
+  Excluded integer data from minimum word length condition while indexing. (--min-word-len option in xml2luceneidx and xml2sphinxds)
 
  Changes in xsd2pgschema 2.7.1 (release 2017-12-01)
 

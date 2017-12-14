@@ -3126,8 +3126,29 @@ public enum XsDataType {
 				lucene_doc.add(new TextField(name, value, Field.Store.YES));
 		}
 
-		if (min_word_len_filter)
+		switch (xs_type) {
+		case xs_bigserial:
+		case xs_long:
+		case xs_bigint:
+		case xs_unsignedLong:
+		case xs_serial:
+		case xs_integer:
+		case xs_int:
+		case xs_nonPositiveInteger:
+		case xs_negativeInteger:
+		case xs_nonNegativeInteger:
+		case xs_positiveInteger:
+		case xs_unsignedInt:
+		case xs_short:
+		case xs_byte:
+		case xs_unsignedShort:
+		case xs_unsignedByte:
 			lucene_doc.add(new VecTextField(PgSchemaUtil.simple_content_name, value, Field.Store.NO));
+			break;
+		default:
+			if (min_word_len_filter)
+				lucene_doc.add(new VecTextField(PgSchemaUtil.simple_content_name, value, Field.Store.NO));
+		}
 
 	}
 
@@ -3274,8 +3295,29 @@ public enum XsDataType {
 				}
 			}
 
-			if (min_word_len_filter)
+			switch (xs_type) {
+			case xs_bigserial:
+			case xs_long:
+			case xs_bigint:
+			case xs_unsignedLong:
+			case xs_serial:
+			case xs_integer:
+			case xs_int:
+			case xs_nonPositiveInteger:
+			case xs_negativeInteger:
+			case xs_nonNegativeInteger:
+			case xs_positiveInteger:
+			case xs_unsignedInt:
+			case xs_short:
+			case xs_byte:
+			case xs_unsignedShort:
+			case xs_unsignedByte:
 				writer.write("<" + PgSchemaUtil.simple_content_name + ">" + value + "</" + PgSchemaUtil.simple_content_name + ">\n");
+				break;
+			default:
+				if (min_word_len_filter)
+					writer.write("<" + PgSchemaUtil.simple_content_name + ">" + value + "</" + PgSchemaUtil.simple_content_name + ">\n");
+			}
 
 		} catch (IOException e) {
 			e.printStackTrace();
