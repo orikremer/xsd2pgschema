@@ -79,59 +79,9 @@ public class xml2pgcsv {
 
 		HashSet<String> xml_file_names = new HashSet<String>();
 
-		boolean _document_key = false;
-		boolean _no_document_key = false;
-
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--no-rel"))
-				option.cancelRelDataExt();
-
-			else if (args[i].equals("--no-wild-card"))
-				option.wild_card = false;
-
-			else if (args[i].equals("--doc-key")) {
-
-				if (_no_document_key) {
-					System.err.println("--no-doc-key is set already.");
-					showUsage();
-				}
-
-				_document_key = true;
-			}
-
-			else if (args[i].equals("--no-doc-key")) {
-
-				if (_document_key) {
-					System.err.println("--doc-key is set already.");
-					showUsage();
-				}
-
-				_no_document_key = true;
-			}
-
-			else if (args[i].equals("--ser-key"))
-				option.serial_key = true;
-
-			else if (args[i].equals("--xpath-key"))
-				option.xpath_key = true;
-
-			else if (args[i].equals("--case-insensitive"))
-				option.case_sense = false;
-
-			else if (args[i].equals("--no-xsd-cache"))
-				option.cache_xsd = false;
-
-			else if (args[i].equals("--append"))
-				option.append = true;
-
-			else if (args[i].startsWith("--valid"))
-				option.validate = true;
-
-			else if (args[i].startsWith("--no-valid"))
-				option.validate = false;
-
-			else if (args[i].equals("--xsd"))
+			if (args[i].equals("--xsd"))
 				schema_location = args[++i];
 
 			else if (args[i].equals("--xml")) {
@@ -185,6 +135,43 @@ public class xml2pgcsv {
 			else if (args[i].equals("--fill-this"))
 				xml_post_editor.addFillThis(args[++i]);
 
+			else if (args[i].equals("--doc-key")) {
+				if (!option.setDocKeyOpt())
+					showUsage();
+			}
+
+			else if (args[i].equals("--no-doc-key")) {
+				if (!option.setNoDocKeyOpt())
+					showUsage();
+			}
+
+			else if (args[i].equals("--no-rel"))
+				option.cancelRelDataExt();
+
+			else if (args[i].equals("--no-wild-card"))
+				option.wild_card = false;
+
+			else if (args[i].equals("--ser-key"))
+				option.serial_key = true;
+
+			else if (args[i].equals("--xpath-key"))
+				option.xpath_key = true;
+
+			else if (args[i].equals("--case-insensitive"))
+				option.case_sense = false;
+
+			else if (args[i].equals("--no-cache-xsd"))
+				option.cache_xsd = false;
+
+			else if (args[i].equals("--append"))
+				option.append = true;
+
+			else if (args[i].startsWith("--valid"))
+				option.validate = true;
+
+			else if (args[i].startsWith("--no-valid"))
+				option.validate = false;
+
 			else if (args[i].equals("--hash-by"))
 				option.hash_algorithm = args[++i];
 
@@ -222,11 +209,7 @@ public class xml2pgcsv {
 
 		}
 
-		if (_document_key)
-			option.document_key = true;
-
-		else if (_no_document_key)
-			option.document_key = false;
+		option.setDocumentKey();
 
 		if (schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");

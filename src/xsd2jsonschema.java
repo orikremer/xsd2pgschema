@@ -57,35 +57,17 @@ public class xsd2jsonschema {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--no-wild-card"))
-				option.wild_card = false;
+			if (args[i].equals("--xsd"))
+				schema_location = args[++i];
 
-			else if (args[i].equals("--case-insensitive"))
-				option.case_sense = false;
-
-			else if (args[i].equals("--no-xsd-cache"))
-				option.cache_xsd = false;
+			else if (args[i].equals("--json"))
+				json_file_name = args[++i];
 
 			else if (args[i].equals("--field-annotation"))
 				jsonb_option.no_field_anno = false;
 
 			else if (args[i].equals("--no-field-annotation"))
 				jsonb_option.no_field_anno = true;
-
-			else if (args[i].equals("--xsd"))
-				schema_location = args[++i];
-
-			else if (args[i].equals("--json"))
-				json_file_name = args[++i];
-
-			else if (args[i].equals("--obj-json"))
-				option.setDefaultForJsonSchema(json_type = JsonType.object);
-
-			else if (args[i].equals("--col-json"))
-				option.setDefaultForJsonSchema(json_type = JsonType.column);
-
-			else if (args[i].equals("--rel-json"))
-				option.setDefaultForJsonSchema(json_type = JsonType.relational);
 
 			else if (args[i].equals("--json-array-all"))
 				jsonb_option.array_all = true;
@@ -107,6 +89,24 @@ public class xsd2jsonschema {
 
 			else if (args[i].equals("--json-compact"))
 				jsonb_option.setCompact();
+
+			else if (args[i].equals("--no-wild-card"))
+				option.wild_card = false;
+
+			else if (args[i].equals("--case-insensitive"))
+				option.case_sense = false;
+
+			else if (args[i].equals("--no-cache-xsd"))
+				option.cache_xsd = false;
+
+			else if (args[i].equals("--obj-json"))
+				option.setDefaultForJsonSchema(json_type = JsonType.object);
+
+			else if (args[i].equals("--col-json"))
+				option.setDefaultForJsonSchema(json_type = JsonType.column);
+
+			else if (args[i].equals("--rel-json"))
+				option.setDefaultForJsonSchema(json_type = JsonType.relational);
 
 			else if (args[i].equals("--discarded-doc-key-name"))
 				option.addDiscardedDocKeyName(args[++i]);

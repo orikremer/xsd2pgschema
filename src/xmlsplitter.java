@@ -100,17 +100,17 @@ public class xmlsplitter {
 			else if (args[i].equals("--xml-dir"))
 				xml_dir_name = args[++i];
 
+			else if (args[i].equals("--xpath-doc-key"))
+				xpath_doc_key = args[++i];
+
 			else if (args[i].equals("--no-wild-card"))
 				option.wild_card = false;
 
 			else if (args[i].equals("--case-insensitive"))
 				option.case_sense = false;
 
-			else if (args[i].equals("--no-xsd-cache"))
+			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
-
-			else if (args[i].equals("--xpath-doc-key"))
-				xpath_doc_key = args[++i];
 
 			else if (args[i].equals("--shard-size")) {
 				shard_size = Integer.valueOf(args[++i]);

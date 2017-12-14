@@ -246,7 +246,7 @@ public class PgSchemaUtil {
 	 */
 	public static File getSchemaFile(String schema_location, String schema_parent, boolean cache_xsd) {
 
-		boolean is_url = schema_parent.matches("^https?:\\/\\/.*");
+		boolean is_url = schema_parent != null && schema_parent.matches("^https?:\\/\\/.*");
 
 		String schema_file_name = getSchemaFileName(schema_location);
 

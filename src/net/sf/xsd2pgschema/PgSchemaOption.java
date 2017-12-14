@@ -114,6 +114,14 @@ public class PgSchemaOption {
 	/** Whether selected attributes are resolved. */
 	protected boolean attr_resolved = false;
 
+	/** The internal status corresponding to --doc-key option. */
+
+	private boolean _doc_key = false;
+
+	/** The internal status corresponding to --no-doc-key option. */
+
+	private boolean _no_doc_key = false;
+
 	/**
 	 * Instance of PostgreSQL data modeling option.
 	 *
@@ -200,6 +208,55 @@ public class PgSchemaOption {
 		int last_pos = qname.lastIndexOf(':');
 
 		return last_pos == -1 ? qname : qname.substring(last_pos + 1);
+	}
+
+	/**
+	 * Set internal status corresponding to --doc-key option.
+	 *
+	 * @return boolean whether status changed
+	 */
+
+	public boolean setDocKeyOpt() {
+
+		if (_no_doc_key) {
+			System.err.println("--no-doc-key is set already.");
+			return false;
+		}
+
+		_doc_key = true;
+
+		return true;
+	}
+
+	/**
+	 * Set internal status corresponding to --no-doc-key option.
+	 *
+	 * @return boolean whether status changed
+	 */
+
+	public boolean setNoDocKeyOpt() {
+
+		if (_doc_key) {
+			System.err.println("--doc-key is set already.");
+			return false;
+		}
+
+		_no_doc_key = true;
+
+		return true;
+	}
+
+	/**
+	 * Decide whether add document key or not.
+	 */
+	public void setDocumentKey() {
+
+		if (_doc_key)
+			document_key = true;
+
+		else if (_no_doc_key)
+			document_key = false;
+
 	}
 
 	/**

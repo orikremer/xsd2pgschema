@@ -83,22 +83,7 @@ public class xml2luceneidx {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--no-rel"))
-				option.cancelRelDataExt();
-
-			else if (args[i].equals("--no-wild-card"))
-				option.wild_card = false;
-
-			else if (args[i].equals("--append"))
-				option.append = true;
-
-			else if (args[i].startsWith("--valid"))
-				option.validate = true;
-
-			else if (args[i].startsWith("--no-valid"))
-				option.validate = false;
-
-			else if (args[i].equals("--xsd"))
+			if (args[i].equals("--xsd"))
 				schema_location = args[++i];
 
 			else if (args[i].equals("--xml")) {
@@ -128,15 +113,6 @@ public class xml2luceneidx {
 			else if (args[i].equals("--idx-dir"))
 				idx_dir_name = args[++i];
 
-			else if (args[i].equals("--filt-in"))
-				xml_post_editor.addFiltIn(args[++i]);
-
-			else if (args[i].equals("--filt-out"))
-				xml_post_editor.addFiltOut(args[++i]);
-
-			else if (args[i].equals("--fill-this"))
-				xml_post_editor.addFillThis(args[++i]);
-
 			else if (args[i].equals("--attr"))
 				index_filter.addAttr(args[++i]);
 
@@ -164,20 +140,47 @@ public class xml2luceneidx {
 			else if (args[i].equals("--attr-time"))
 				index_filter.attr_time = true;
 
-			else if (args[i].equals("--no-xsd-cache"))
-				option.cache_xsd = false;
-
 			else if (args[i].equals("--min-word-len"))
 				index_filter.setMinWordLen(args[++i]);
 
 			else if (args[i].equals("--numeric-idx"))
 				index_filter.enableNumericIndex();
 
+			else if (args[i].equals("--filt-in"))
+				xml_post_editor.addFiltIn(args[++i]);
+
+			else if (args[i].equals("--filt-out"))
+				xml_post_editor.addFiltOut(args[++i]);
+
+			else if (args[i].equals("--fill-this"))
+				xml_post_editor.addFillThis(args[++i]);
+
+			else if (args[i].equals("--no-rel"))
+				option.cancelRelDataExt();
+
+			else if (args[i].equals("--no-wild-card"))
+				option.wild_card = false;
+
+			else if (args[i].equals("--append"))
+				option.append = true;
+
+			else if (args[i].startsWith("--valid"))
+				option.validate = true;
+
+			else if (args[i].startsWith("--no-valid"))
+				option.validate = false;
+
+			else if (args[i].equals("--no-cache-xsd"))
+				option.cache_xsd = false;
+
 			else if (args[i].equals("--hash-by"))
 				option.hash_algorithm = args[++i];
 
 			else if (args[i].equals("--hash-size"))
 				option.hash_size = PgHashSize.getPgHashSize(args[++i]);
+
+			else if (args[i].equals("--discarded-doc-key-name"))
+				option.addDiscardedDocKeyName(args[++i]);
 
 			else if (args[i].equals("--shard-size")) {
 				shard_size = Integer.valueOf(args[++i]);
@@ -196,9 +199,6 @@ public class xml2luceneidx {
 					showUsage();
 				}
 			}
-
-			else if (args[i].equals("--discarded-doc-key-name"))
-				option.addDiscardedDocKeyName(args[++i]);
 
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");

@@ -85,22 +85,7 @@ public class xml2json {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--no-wild-card"))
-				option.wild_card = false;
-
-			else if (args[i].equals("--case-insensitive"))
-				option.case_sense = false;
-
-			else if (args[i].equals("--no-xsd-cache"))
-				option.cache_xsd = false;
-
-			else if (args[i].startsWith("--valid"))
-				option.validate = true;
-
-			else if (args[i].startsWith("--no-valid"))
-				option.validate = false;
-
-			else if (args[i].equals("--xsd"))
+			if (args[i].equals("--xsd"))
 				schema_location = args[++i];
 
 			else if (args[i].equals("--xml")) {
@@ -169,6 +154,24 @@ public class xml2json {
 			else if (args[i].equals("--fill-this"))
 				xml_post_editor.addFillThis(args[++i]);
 
+			else if (args[i].equals("--no-wild-card"))
+				option.wild_card = false;
+
+			else if (args[i].equals("--case-insensitive"))
+				option.case_sense = false;
+
+			else if (args[i].equals("--no-cache-xsd"))
+				option.cache_xsd = false;
+
+			else if (args[i].startsWith("--valid"))
+				option.validate = true;
+
+			else if (args[i].startsWith("--no-valid"))
+				option.validate = false;
+
+			else if (args[i].equals("--discarded-doc-key-name"))
+				option.addDiscardedDocKeyName(args[++i]);	
+
 			else if (args[i].equals("--max-thrds")) {
 				max_thrds = Integer.valueOf(args[++i]);
 
@@ -177,9 +180,6 @@ public class xml2json {
 					showUsage();
 				}
 			}
-
-			else if (args[i].equals("--discarded-doc-key-name"))
-				option.addDiscardedDocKeyName(args[++i]);	
 
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
