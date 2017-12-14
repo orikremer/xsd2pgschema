@@ -106,6 +106,9 @@ public class xmlsplitter {
 			else if (args[i].equals("--case-insensitive"))
 				option.case_sense = false;
 
+			else if (args[i].equals("--no-xsd-cache"))
+				option.cache_xsd = false;
+
 			else if (args[i].equals("--xpath-doc-key"))
 				xpath_doc_key = args[++i];
 
@@ -189,9 +192,10 @@ public class xmlsplitter {
 		System.err.println("        --xml-file-ext SRC_FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
 		System.err.println("        --xpath-doc-key XPATH_EXPR_FOR_DOC_KEY");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
-		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --shard-size SHARD_SIZE (default=1)");
-		System.err.println("Option: --verbose");
+		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
+		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
+		System.err.println("        --verbose");
 		System.exit(1);
 
 	}

@@ -117,7 +117,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		// prepare XML validator
 
-		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2luceneidx.schema_location, null)) : null;
+		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2luceneidx.schema_location, null, option.cache_xsd)) : null;
 
 		// Lucene index writer
 

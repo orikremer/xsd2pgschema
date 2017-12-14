@@ -258,7 +258,7 @@ public class PgSchema {
 
 					// copy XML Schema if not exists
 
-					PgSchemaUtil.getSchemaFile(schema_location, def_schema_parent);
+					PgSchemaUtil.getSchemaFile(schema_location, def_schema_parent, option.cache_xsd);
 
 					// local XML Schema file
 

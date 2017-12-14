@@ -90,7 +90,7 @@ public class Xml2JsonThrd implements Runnable {
 
 		// prepare XML validator
 
-		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2json.schema_location, null)) : null;
+		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2json.schema_location, null, option.cache_xsd)) : null;
 
 	}
 

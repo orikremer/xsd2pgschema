@@ -94,6 +94,9 @@ public class xsd2pgschema {
 			else if (args[i].equals("--case-insensitive"))
 				option.case_sense = false;
 
+			else if (args[i].equals("--no-xsd-cache"))
+				option.cache_xsd = false;
+
 			else if (args[i].equals("--field-annotation"))
 				option.no_field_anno = false;
 
@@ -210,6 +213,7 @@ public class xsd2pgschema {
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --field-annotation (retrieve field annotation)");
 		System.err.println("        --no-field-annotation (do not retrieve field annotation, default)");
+		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --hash-by ASSUMED_ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
 		System.err.println("        --ser-size BIT_SIZE [short (16bit); | int (32bit, default)]");

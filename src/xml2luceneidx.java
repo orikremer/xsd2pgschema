@@ -164,8 +164,8 @@ public class xml2luceneidx {
 			else if (args[i].equals("--attr-time"))
 				index_filter.attr_time = true;
 
-			else if (args[i].equals("--discarded-doc-key-name"))
-				option.addDiscardedDocKeyName(args[++i]);
+			else if (args[i].equals("--no-xsd-cache"))
+				option.cache_xsd = false;
 
 			else if (args[i].equals("--min-word-len"))
 				index_filter.setMinWordLen(args[++i]);
@@ -196,6 +196,9 @@ public class xml2luceneidx {
 					showUsage();
 				}
 			}
+
+			else if (args[i].equals("--discarded-doc-key-name"))
+				option.addDiscardedDocKeyName(args[++i]);
 
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
@@ -338,7 +341,7 @@ public class xml2luceneidx {
 		System.err.println("        --attr-float (all float values are stored as attribute)");
 		System.err.println("        --attr-date (all date values are stored as attribute)");
 		System.err.println("        --attr-time (all time values are stored as attribute)");
-		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
+		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
 		System.err.println("        --xml-file-prerix-digest DIGESTIBLE_PREFIX (default=\"\")");
@@ -346,6 +349,7 @@ public class xml2luceneidx {
 		System.err.println("        --filt-in   table_name.column_name");
 		System.err.println("        --filt-out  table_name.column_name:regex_pattern(|regex_pattern...)");
 		System.err.println("        --fill-this table_name.column_name:filling_text");
+		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --max-thrds MAX_THRDS (default is number of available processors)");
 		System.exit(1);
 

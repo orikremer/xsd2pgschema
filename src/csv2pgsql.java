@@ -100,6 +100,9 @@ public class csv2pgsql {
 			else if (args[i].equals("--case-insensitive"))
 				option.case_sense = false;
 
+			else if (args[i].equals("--no-xsd-cache"))
+				option.cache_xsd = false;
+
 			else if (args[i].equals("--xsd"))
 				schema_location = args[++i];
 
@@ -129,7 +132,7 @@ public class csv2pgsql {
 
 			else if (args[i].equals("--xpath-key-name"))
 				option.setXPathKeyName(args[++i]);
-			
+
 			else if (args[i].equals("--discarded-doc-key-name"))
 				option.addDiscardedDocKeyName(args[++i]);
 
@@ -222,6 +225,7 @@ public class csv2pgsql {
 		System.err.println("        --ser-key (append " + option.serial_key_name + " column in child relation of list holder)");
 		System.err.println("        --xpath-key (append " + option.xpath_key_name + " column in all relations)");
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
+		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 
 		option.setDefaultUserKeys();
 

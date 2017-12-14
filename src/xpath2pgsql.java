@@ -103,6 +103,9 @@ public class xpath2pgsql {
 			else if (args[i].equals("--case-insensitive"))
 				option.case_sense = false;
 
+			else if (args[i].equals("--no-xsd-cache"))
+				option.cache_xsd = false;
+
 			else if (args[i].equals("--xsd"))
 				schema_location = args[++i];
 
@@ -213,8 +216,9 @@ public class xpath2pgsql {
 		System.err.println("        --no-doc-key (remove " + option.document_key_name + " column from all relations, effective only with relational model extension)");
 		System.err.println("        --ser-key (append " + option.serial_key_name + " column in child relation of list holder)");
 		System.err.println("        --xpath-key (append " + option.xpath_key_name + " column in all relations)");
-		System.err.println("        --case-insensitive (all table and column names are lowercase)");
-		System.err.println("Option: --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
+		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
+		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
+		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
 		System.err.println("        --ser-size BIT_SIZE [short (16bit); | int (32bit, default)]");
 

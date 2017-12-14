@@ -119,6 +119,9 @@ public class xml2pgcsv {
 			else if (args[i].equals("--case-insensitive"))
 				option.case_sense = false;
 
+			else if (args[i].equals("--no-xsd-cache"))
+				option.cache_xsd = false;
+
 			else if (args[i].equals("--append"))
 				option.append = true;
 
@@ -321,13 +324,14 @@ public class xml2pgcsv {
 		System.err.println("        --no-doc-key (remove " + option.document_key_name + " column from all relations, effective only with relational model extension)");
 		System.err.println("        --ser-key (append " + option.serial_key_name + " column in child relation of list holder)");
 		System.err.println("        --xpath-key (append " + option.xpath_key_name + " column in all relations)");
-		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --validate (turn on XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
 		System.err.println("Option: --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
+		System.err.println("        --case-insensitive (all table and column names are lowercase)");
+		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
 		System.err.println("        --ser-size BIT_SIZE [short (16bit); | int (32bit, default)]");

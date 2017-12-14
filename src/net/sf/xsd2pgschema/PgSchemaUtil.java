@@ -241,18 +241,21 @@ public class PgSchemaUtil {
 	 *
 	 * @param schema_location schema location
 	 * @param schema_parent parent of schema location
+	 * @param cache_xsd whether retrieve XML Schema with caching
 	 * @return File file of schema location
 	 */
-	public static File getSchemaFile(String schema_location, String schema_parent) {
+	public static File getSchemaFile(String schema_location, String schema_parent, boolean cache_xsd) {
+
+		boolean is_url = schema_parent.matches("^https?:\\/\\/.*");
 
 		String schema_file_name = getSchemaFileName(schema_location);
 
 		File schema_file = new File(schema_file_name);
 
-		if (schema_file.exists())
+		if (schema_file.exists() && ((is_url && cache_xsd) || !is_url))
 			return schema_file;
 
-		if (schema_parent != null && !schema_parent.matches("^https?:\\/\\/.*")) { // schema_parent indicates file path
+		if (schema_parent != null && !is_url) { // schema_parent indicates file path
 
 			schema_file = new File(schema_parent + "/" + schema_file_name);
 
@@ -268,7 +271,7 @@ public class PgSchemaUtil {
 
 		try {
 
-			if (schema_parent != null && schema_parent.matches("^https?:\\/\\/.*")) // copy schema file in local
+			if (schema_parent != null && is_url && cache_xsd) // copy schema file in local
 				IOUtils.copy(is, new FileOutputStream(schema_file));
 
 			return schema_file;

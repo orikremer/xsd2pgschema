@@ -54,6 +54,9 @@ public class PgSchemaOption {
 	/** Whether retain case sensitive name in PostgreSQL DDL. */
 	public boolean case_sense = true;
 
+	/** Whether cache XML Schema as local file. */
+	public boolean cache_xsd = true;
+
 	/** Whether output PostgreSQL DDL. */
 	public boolean ddl_output = false;
 

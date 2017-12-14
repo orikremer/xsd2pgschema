@@ -63,6 +63,9 @@ public class xsd2jsonschema {
 			else if (args[i].equals("--case-insensitive"))
 				option.case_sense = false;
 
+			else if (args[i].equals("--no-xsd-cache"))
+				option.cache_xsd = false;
+
 			else if (args[i].equals("--field-annotation"))
 				jsonb_option.no_field_anno = false;
 
@@ -74,9 +77,6 @@ public class xsd2jsonschema {
 
 			else if (args[i].equals("--json"))
 				json_file_name = args[++i];
-
-			else if (args[i].equals("--discarded-doc-key-name"))
-				option.addDiscardedDocKeyName(args[++i]);
 
 			else if (args[i].equals("--obj-json"))
 				option.setDefaultForJsonSchema(json_type = JsonType.object);
@@ -107,6 +107,9 @@ public class xsd2jsonschema {
 
 			else if (args[i].equals("--json-compact"))
 				jsonb_option.setCompact();
+
+			else if (args[i].equals("--discarded-doc-key-name"))
+				option.addDiscardedDocKeyName(args[++i]);
 
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
@@ -195,6 +198,7 @@ public class xsd2jsonschema {
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --field-annotation (retrieve field annotation, default)");
 		System.err.println("        --no-field-annotation (do not retrieve field annotation)");
+		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --attr-json-prefix ATTR_PREFIX_CODE (default=\"" + jsonb_option.attr_prefix + "\")");
 		System.err.println("        --simple-cont-json-key SIMPLE_CONTENT_NAME (default=\"" + jsonb_option.simple_content_key + "\")");
 		System.err.println("        --json-indent-spaces INTEGER (default=" + jsonb_option.indent_spaces + ", min=0, max=4)");

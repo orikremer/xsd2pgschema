@@ -1,8 +1,12 @@
- Changes in xsd2pgschema 2.7.2 (release 2017-12-14)
+ Changes in xsd2pgschema 2.7.3 (release 2017-12-14)
 
-  [Ticket #4] Fixed exception in case of missing root table.
-  Changed option name from --discard-doc-key to --discarded-doc-key-name.
   Excluded integer data from minimum word length condition while indexing. (--min-word-len option in xml2luceneidx and xml2sphinxds)
+  [Ticket #4-2] Added --no-cache-xsd option in almost all main classes. If schema location is specified as a URL, the program retrieves the XML schema without caching.
+
+ Changes in xsd2pgschema 2.7.2 (release 2017-12-05)
+
+  [Ticket #4-1] Fixed exception in case of missing root table.
+  Changed option name from --discard-doc-key to --discarded-doc-key-name.
 
  Changes in xsd2pgschema 2.7.1 (release 2017-12-01)
 

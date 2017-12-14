@@ -116,7 +116,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		// prepare XML validator
 
-		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2sphinxds.schema_location, null)) : null;
+		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2sphinxds.schema_location, null, option.cache_xsd)) : null;
 
 		ds_dir_name = xml2sphinxds.ds_dir_name;
 

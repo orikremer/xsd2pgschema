@@ -91,6 +91,9 @@ public class xml2json {
 			else if (args[i].equals("--case-insensitive"))
 				option.case_sense = false;
 
+			else if (args[i].equals("--no-xsd-cache"))
+				option.cache_xsd = false;
+
 			else if (args[i].startsWith("--valid"))
 				option.validate = true;
 
@@ -123,9 +126,6 @@ public class xml2json {
 
 			else if (args[i].equals("--xml-file-ext-digest"))
 				xml_file_filter.setExtDigest(args[++i]);
-
-			else if (args[i].equals("--discarded-doc-key-name"))
-				option.addDiscardedDocKeyName(args[++i]);
 
 			else if (args[i].equals("--obj-json"))
 				json_type = JsonType.object;
@@ -177,6 +177,9 @@ public class xml2json {
 					showUsage();
 				}
 			}
+
+			else if (args[i].equals("--discarded-doc-key-name"))
+				option.addDiscardedDocKeyName(args[++i]);	
 
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
@@ -277,7 +280,6 @@ public class xml2json {
 		System.err.println("xml2json: XML -> JSON conversion");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --json-dir DIRECTORY (default=\"" + json_dir_name + "\")");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
-		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --validate (turn on XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
@@ -291,12 +293,14 @@ public class xml2json {
 		System.err.println("        --json-no-linefeed (avoid to use linefeed code)");
 		System.err.println("        --json-compact (equals to set --json-indent-spaces 0 --json-key-value-spaces 0 --json-no-linefeed)");
 		System.err.println("        --json-array-all (use JSON array uniformly for descendants, effective only in column- and relational-oriented JSON format)");
-		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
+		System.err.println("        --case-insensitive (all table and column names are lowercase)");
+		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --xml-file-prerix-digest DIGESTIBLE_PREFIX (default=\"\")");
 		System.err.println("        --xml-file-ext-digest DIGESTIBLE_EXTENSION (default=\".\")");
 		System.err.println("        --filt-in   table_name.column_name");
 		System.err.println("        --filt-out  table_name.column_name:regex_pattern(|regex_pattern...)");
 		System.err.println("        --fill-this table_name.column_name:filling_text");
+		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --max-thrds MAX_THRDS (default is number of available processors)");
 		System.exit(1);
 
