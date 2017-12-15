@@ -63,12 +63,12 @@ public class xsd2pgschema {
 				ddl_file_name = args[++i];
 
 			else if (args[i].equals("--doc-key")) {
-				if (!option.setDocKeyOpt())
+				if (!option.setDocKeyOption(true))
 					showUsage();
 			}
 
 			else if (args[i].equals("--no-doc-key")) {
-				if (!option.setNoDocKeyOpt())
+				if (!option.setDocKeyOption(false))
 					showUsage();
 			}
 
@@ -127,7 +127,7 @@ public class xsd2pgschema {
 
 		}
 
-		option.setDocumentKey();
+		option.resolveDocKeyOption();
 
 		if (schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");

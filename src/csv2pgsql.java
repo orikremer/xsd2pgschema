@@ -84,12 +84,12 @@ public class csv2pgsql {
 				pg_option.password = args[++i];
 
 			else if (args[i].equals("--doc-key")) {
-				if (!option.setDocKeyOpt())
+				if (!option.setDocKeyOption(true))
 					showUsage();
 			}
 
 			else if (args[i].equals("--no-doc-key")) {
-				if (!option.setNoDocKeyOpt())
+				if (!option.setDocKeyOption(false))
 					showUsage();
 			}
 
@@ -130,7 +130,7 @@ public class csv2pgsql {
 
 		}
 
-		option.setDocumentKey();
+		option.resolveDocKeyOption();
 
 		if (schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");

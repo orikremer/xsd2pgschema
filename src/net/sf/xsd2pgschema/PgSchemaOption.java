@@ -34,10 +34,10 @@ import org.w3c.dom.NodeList;
 public class PgSchemaOption {
 
 	/** The relational model extension. */
-	boolean rel_model_ext = true;
+	protected boolean rel_model_ext = true;
 
 	/** The relational data extension. */
-	boolean rel_data_ext = true;
+	protected boolean rel_data_ext = true;
 
 	/** The wild card extension. */
 	public boolean wild_card = true;
@@ -54,7 +54,7 @@ public class PgSchemaOption {
 	/** Whether retain case sensitive name in PostgreSQL DDL. */
 	public boolean case_sense = true;
 
-	/** Whether cache XML Schema as local file. */
+	/** Whether prefer local XML Schema file. */
 	public boolean cache_xsd = true;
 
 	/** Whether output PostgreSQL DDL. */
@@ -91,7 +91,7 @@ public class PgSchemaOption {
 	public String xpath_key_name = def_xpath_key_name;
 
 	/** The list of discarded document key names. */
-	public HashSet<String> discarded_document_key_names = null;
+	protected HashSet<String> discarded_document_key_names = null;
 
 	/** The name of hash algorithm. */
 	public String hash_algorithm = PgSchemaUtil.def_hash_algorithm;
@@ -211,51 +211,45 @@ public class PgSchemaOption {
 	}
 
 	/**
-	 * Set internal status corresponding to --doc-key option.
+	 * Set internal status corresponding to --doc-key and --no-doc-key options.
 	 *
+	 * @param doc_key whether add document key or not
 	 * @return boolean whether status changed
 	 */
+	public boolean setDocKeyOption(boolean doc_key) {
 
-	public boolean setDocKeyOpt() {
+		if (doc_key) {
 
-		if (_no_doc_key) {
-			System.err.println("--no-doc-key is set already.");
-			return false;
+			if (_no_doc_key) {
+				System.err.println("--no-doc-key is already set.");
+				return false;
+			}
+
+			_doc_key = true;
+
 		}
 
-		_doc_key = true;
+		else {
+
+			if (_doc_key) {
+				System.err.println("--doc-key is already set.");
+				return false;
+			}
+
+			_no_doc_key = true;
+
+		}
 
 		return true;
 	}
 
 	/**
-	 * Set internal status corresponding to --no-doc-key option.
-	 *
-	 * @return boolean whether status changed
+	 * Decide whether to add document key or not.
 	 */
+	public void resolveDocKeyOption() {
 
-	public boolean setNoDocKeyOpt() {
-
-		if (_doc_key) {
-			System.err.println("--doc-key is set already.");
-			return false;
-		}
-
-		_no_doc_key = true;
-
-		return true;
-	}
-
-	/**
-	 * Decide whether add document key or not.
-	 */
-	public void setDocumentKey() {
-
-		if (_doc_key)
-			document_key = true;
-
-		else if (_no_doc_key)
-			document_key = false;
+		if (_doc_key || _no_doc_key)
+			document_key = _doc_key;
 
 	}
 

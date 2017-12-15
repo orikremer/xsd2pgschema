@@ -133,12 +133,12 @@ public class xml2pgsql {
 				xml_post_editor.addFillThis(args[++i]);
 
 			else if (args[i].equals("--doc-key")) {
-				if (!option.setDocKeyOpt())
+				if (!option.setDocKeyOption(true))
 					showUsage();
 			}
 
 			else if (args[i].equals("--no-doc-key")) {
-				if (!option.setNoDocKeyOpt())
+				if (!option.setDocKeyOption(false))
 					showUsage();
 			}
 
@@ -203,7 +203,7 @@ public class xml2pgsql {
 
 		}
 
-		option.setDocumentKey();
+		option.resolveDocKeyOption();
 
 		if (pg_option.update && !option.document_key)
 			showUsage();

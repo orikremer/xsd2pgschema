@@ -294,10 +294,8 @@ public class PgSchemaUtil {
 				} while (schema_file_part.exists());
 
 				if (schema_parent != null)  { // copy schema file in local
-
 					IOUtils.copy(is, new FileOutputStream(schema_file_part));
 					schema_file_part.renameTo(schema_file);
-
 				}
 
 			}
