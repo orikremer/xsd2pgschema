@@ -95,7 +95,7 @@ mkdir -p $ERR_DIR
 
 err_file=$ERR_DIR/all_err
 
-java -classpath ../xsd2pgschema.jar xml2pgcsv --xsd $XSD_SCHEMA --xml $XML_DIR --csv-dir $CSV_DIR --dbname $DB_NAME --dbuser $DB_USER 2> $err_file
+java -classpath ../xsd2pgschema.jar xml2pgcsv --xsd $XSD_SCHEMA --xml $XML_DIR --csv-dir $CSV_DIR --db-name $DB_NAME --db-user $DB_USER 2> $err_file
 
 if [ $? = 0 ] && [ ! -s $err_file ] ; then
 
