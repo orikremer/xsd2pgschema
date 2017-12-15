@@ -95,9 +95,9 @@ public class XPath2PgSqlImpl {
 
 		schema = new PgSchema(doc_builder, xsd_doc, null, xpath2pgsql.schema_location, option);
 
-		if (!pg_option.database.isEmpty()) {
+		if (!pg_option.name.isEmpty()) {
 
-			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.password);
+			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 
 			// validate PostgreSQL data model with schema
 

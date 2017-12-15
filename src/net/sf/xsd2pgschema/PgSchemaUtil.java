@@ -124,6 +124,9 @@ public class PgSchemaUtil {
 	/** The PostgreSQL reserved operator codes escaping regular expression match. */
 	public final static String[] reserved_ops_rex = { "\\+", "-", "\\*", "/", "%", "\\^", "\\|/", "\\|\\|/", "!", "!!", "@", "\\&", "\\|", "#", "~", "<<", ">>" };
 
+	/** The regular expression matches URL. */
+	public final static String url_rex = "^https?:\\/\\/.*";
+
 	/**
 	 * Return input stream of XSD file with gzip decompression.
 	 *
@@ -140,17 +143,17 @@ public class PgSchemaUtil {
 	 *
 	 * @param schema_location schema location
 	 * @param schema_parent parent of schema location
-	 * @param cache_xsd whether retrieve XML Schema with caching
+	 * @param cache_xsd enable XSD file caching
 	 * @return InputStream input stream of schema location
 	 */
 	public static InputStream getSchemaInputStream(String schema_location, String schema_parent, boolean cache_xsd) {
 
-		if (!cache_xsd && !schema_location.matches("^https?:\\/\\/.*") && schema_parent != null && schema_parent.matches("^https?:\\/\\/.*"))
+		if (!cache_xsd && !schema_location.matches(url_rex) && schema_parent != null && schema_parent.matches(url_rex))
 			schema_location = schema_parent + "/" + schema_location;
 
 		// local XML Schema file
 
-		if (!schema_location.matches("^https?:\\/\\/.*")) {
+		if (!schema_location.matches(url_rex)) {
 
 			File schema_file = new File(schema_location);
 
@@ -245,12 +248,12 @@ public class PgSchemaUtil {
 	 *
 	 * @param schema_location schema location
 	 * @param schema_parent parent of schema location
-	 * @param cache_xsd whether retrieve XML Schema with caching
+	 * @param cache_xsd enable XSD file caching
 	 * @return File file of schema location
 	 */
 	public static File getSchemaFile(String schema_location, String schema_parent, boolean cache_xsd) {
 
-		boolean is_url = schema_parent != null && schema_parent.matches("^https?:\\/\\/.*");
+		boolean is_url = schema_parent != null && schema_parent.matches(url_rex);
 
 		String schema_file_name = getSchemaFileName(schema_location);
 
@@ -317,7 +320,7 @@ public class PgSchemaUtil {
 	 */
 	public static String getSchemaName(String schema_location) {
 
-		if (schema_location.matches("^https?:\\/\\/.*"))
+		if (schema_location.matches(url_rex))
 			return schema_location;
 
 		File schema_file = new File(schema_location);
@@ -333,7 +336,7 @@ public class PgSchemaUtil {
 	 */
 	public static String getSchemaFileName(String schema_location) {
 
-		if (schema_location.matches("^https?:\\/\\/.*")) {
+		if (schema_location.matches(url_rex)) {
 
 			try {
 
@@ -360,7 +363,7 @@ public class PgSchemaUtil {
 	 */
 	public static String getSchemaParent(String schema_location) {
 
-		if (schema_location.matches("^https?:\\/\\/.*")) {
+		if (schema_location.matches(url_rex)) {
 
 			try {
 

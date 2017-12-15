@@ -111,20 +111,20 @@ public class xml2pgcsv {
 			else if (args[i].equals("--csv-dir"))
 				csv_dir_name = args[++i];
 
-			else if (args[i].matches("^--db-?host.*"))
+			else if (args[i].equals("--db-host"))
 				pg_option.host = args[++i];
 
-			else if (args[i].matches("^--db-?port.*"))
+			else if (args[i].equals("--db-port"))
 				pg_option.port = Integer.valueOf(args[++i]);
 
-			else if (args[i].matches("^--db-?name.*"))
-				pg_option.database = args[++i];
+			else if (args[i].equals("--db-name"))
+				pg_option.name = args[++i];
 
-			else if (args[i].matches("^--db-?user.*"))
+			else if (args[i].equals("--db-user"))
 				pg_option.user = args[++i];
 
-			else if (args[i].matches("^--db-?pass.*"))
-				pg_option.password = args[++i];
+			else if (args[i].equals("--db-pass"))
+				pg_option.pass = args[++i];
 
 			else if (args[i].equals("--filt-in"))
 				xml_post_editor.addFiltIn(args[++i]);
@@ -135,15 +135,11 @@ public class xml2pgcsv {
 			else if (args[i].equals("--fill-this"))
 				xml_post_editor.addFillThis(args[++i]);
 
-			else if (args[i].equals("--doc-key")) {
-				if (!option.setDocKeyOption(true))
-					showUsage();
-			}
+			else if (args[i].equals("--doc-key"))
+				option.setDocKeyOption(true);
 
-			else if (args[i].equals("--no-doc-key")) {
-				if (!option.setDocKeyOption(false))
-					showUsage();
-			}
+			else if (args[i].equals("--no-doc-key"))
+				option.setDocKeyOption(false);
 
 			else if (args[i].equals("--no-rel"))
 				option.cancelRelDataExt();

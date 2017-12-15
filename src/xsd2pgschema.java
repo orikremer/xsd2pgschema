@@ -62,15 +62,11 @@ public class xsd2pgschema {
 			else if (args[i].equals("--ddl"))
 				ddl_file_name = args[++i];
 
-			else if (args[i].equals("--doc-key")) {
-				if (!option.setDocKeyOption(true))
-					showUsage();
-			}
+			else if (args[i].equals("--doc-key"))
+				option.setDocKeyOption(true);
 
-			else if (args[i].equals("--no-doc-key")) {
-				if (!option.setDocKeyOption(false))
-					showUsage();
-			}
+			else if (args[i].equals("--no-doc-key"))
+				option.setDocKeyOption(false);
 
 			else if (args[i].equals("--no-rel"))
 				option.cancelRelModelExt();

@@ -86,15 +86,11 @@ public class xpathparser {
 				variables.put(variable[0], variable[1]);
 			}
 
-			else if (args[i].equals("--doc-key")) {
-				if (!option.setDocKeyOption(true))
-					showUsage();
-			}
+			else if (args[i].equals("--doc-key"))
+				option.setDocKeyOption(true);
 
-			else if (args[i].equals("--no-doc-key")) {
-				if (!option.setDocKeyOption(false))
-					showUsage();
-			}
+			else if (args[i].equals("--no-doc-key"))
+				option.setDocKeyOption(false);
 
 			else if (args[i].equals("--no-rel"))
 				option.cancelRelDataExt();

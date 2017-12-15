@@ -80,30 +80,26 @@ public class xpath2pgsql {
 				variables.put(variable[0], variable[1]);
 			}
 
-			else if (args[i].matches("^--db-?host.*"))
+			else if (args[i].equals("--db-host"))
 				pg_option.host = args[++i];
 
-			else if (args[i].matches("^--db-?port.*"))
+			else if (args[i].equals("--db-port"))
 				pg_option.port = Integer.valueOf(args[++i]);
 
-			else if (args[i].matches("^--db-?name.*"))
-				pg_option.database = args[++i];
+			else if (args[i].equals("--db-name"))
+				pg_option.name = args[++i];
 
-			else if (args[i].matches("^--db-?user.*"))
+			else if (args[i].equals("--db-user"))
 				pg_option.user = args[++i];
 
-			else if (args[i].matches("^--db-?pass.*"))
-				pg_option.password = args[++i];
+			else if (args[i].equals("--db-pass"))
+				pg_option.pass = args[++i];
 
-			else if (args[i].equals("--doc-key")) {
-				if (!option.setDocKeyOption(true))
-					showUsage();
-			}
+			else if (args[i].equals("--doc-key"))
+				option.setDocKeyOption(true);
 
-			else if (args[i].equals("--no-doc-key")) {
-				if (!option.setDocKeyOption(false))
-					showUsage();
-			}
+			else if (args[i].equals("--no-doc-key"))
+				option.setDocKeyOption(false);
 
 			else if (args[i].equals("--no-rel"))
 				option.cancelRelDataExt();
@@ -172,7 +168,7 @@ public class xpath2pgsql {
 
 			xpath2pgsql.translate(xpath_query, variables);
 
-			if (!pg_option.database.isEmpty())
+			if (!pg_option.name.isEmpty())
 				xpath2pgsql.execute();
 
 		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException | SQLException e) {

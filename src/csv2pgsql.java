@@ -68,30 +68,26 @@ public class csv2pgsql {
 			else if (args[i].equals("--csv-dir"))
 				csv_dir_name = args[++i];
 
-			else if (args[i].matches("^--db-?host.*"))
+			else if (args[i].equals("--db-host"))
 				pg_option.host = args[++i];
 
-			else if (args[i].matches("^--db-?port.*"))
+			else if (args[i].equals("--db-port"))
 				pg_option.port = Integer.valueOf(args[++i]);
 
-			else if (args[i].matches("^--db-?name.*"))
-				pg_option.database = args[++i];
+			else if (args[i].equals("--db-name"))
+				pg_option.name = args[++i];
 
-			else if (args[i].matches("^--db-?user.*"))
+			else if (args[i].equals("--db-user"))
 				pg_option.user = args[++i];
 
-			else if (args[i].matches("^--db-?pass.*"))
-				pg_option.password = args[++i];
+			else if (args[i].equals("--db-pass"))
+				pg_option.pass = args[++i];
 
-			else if (args[i].equals("--doc-key")) {
-				if (!option.setDocKeyOption(true))
-					showUsage();
-			}
+			else if (args[i].equals("--doc-key"))
+				option.setDocKeyOption(true);
 
-			else if (args[i].equals("--no-doc-key")) {
-				if (!option.setDocKeyOption(false))
-					showUsage();
-			}
+			else if (args[i].equals("--no-doc-key"))
+				option.setDocKeyOption(false);
 
 			else if (args[i].equals("--no-rel"))
 				option.cancelRelModelExt();
@@ -155,7 +151,7 @@ public class csv2pgsql {
 
 		csv_dir_name = csv_dir_name.replaceFirst("/$", "") + "/";
 
-		if (pg_option.database.isEmpty()) {
+		if (pg_option.name.isEmpty()) {
 			System.err.println("Database name is empty.");
 			showUsage();
 		}
@@ -178,12 +174,12 @@ public class csv2pgsql {
 
 			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, schema_location, option);
 
-			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.password);
+			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 
 			if (!schema.pgCsv2PgSql(db_conn, csv_dir_name))
 				System.exit(1);
 
-			System.out.println("Done csv -> db (" + pg_option.database + ").");
+			System.out.println("Done csv -> db (" + pg_option.name + ").");
 
 		} catch (ParserConfigurationException | SAXException | IOException | SQLException | NoSuchAlgorithmException | PgSchemaException e) {
 			e.printStackTrace();

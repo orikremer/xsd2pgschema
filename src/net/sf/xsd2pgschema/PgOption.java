@@ -33,13 +33,13 @@ public class PgOption {
 	public int port = PgSchemaUtil.port;
 
 	/** The database name. */
-	public String database = "";
+	public String name = "";
 
 	/** The database user name. */
 	public String user = "";
 
 	/** The database password. */
-	public String password = "";
+	public String pass = "";
 
 	/** Whether insert or update (delete before insert). */
 	public boolean update = false;
@@ -50,7 +50,7 @@ public class PgOption {
 	 * @return String database URL
 	 */
 	public String getDbUrl() {
-		return "jdbc:postgresql://" + host + ":" + port + "/" + database;
+		return "jdbc:postgresql://" + host + ":" + port + "/" + name;
 	}
 
 }
