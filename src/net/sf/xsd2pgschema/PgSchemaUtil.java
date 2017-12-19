@@ -106,6 +106,9 @@ public class PgSchemaUtil {
 	/** The Sphinx data source file name. */
 	public final static String sphinx_data_source_name = "data_source.xml";
 
+	/** The Sphinx maximum field length. (related to max_xmlpipe2_field in sphinx.conf) */
+	public final static int sphinx_max_field_len = 1024 * 1024 * 2;
+
 	/** The field name of Sphinx dictionary. */
 	public final static String trigram_field_name = "trigrams";
 

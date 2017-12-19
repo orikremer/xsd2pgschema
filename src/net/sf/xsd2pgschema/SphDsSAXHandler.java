@@ -41,6 +41,9 @@ public class SphDsSAXHandler extends DefaultHandler {
 	/** The Sphinx data source writer. */
 	FileWriter writer;
 
+	/** The cutoff length (80% of hard limit) of Sphinx field. (related to max_xmlpipe2_field in sphinx.conf) */
+	int field_len_cutoff;
+
 	/** The current state for sphinx:document. */
 	boolean sph_document = false;
 
@@ -70,11 +73,13 @@ public class SphDsSAXHandler extends DefaultHandler {
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param writer Sphinx data source writer
+	 * @param index_filter index filter
 	 */
-	public SphDsSAXHandler(PgSchema schema, FileWriter writer) {
+	public SphDsSAXHandler(PgSchema schema, FileWriter writer, IndexFilter index_filter) {
 
 		this.schema = schema;
 		this.writer = writer;
+		this.field_len_cutoff = (int) (index_filter.sphinx_max_field_len * 0.8); // 80% of hard limit
 
 	}
 
@@ -214,8 +219,12 @@ public class SphDsSAXHandler extends DefaultHandler {
 
 		}
 
-		else if (content)
-			sb.append(value + " ");
+		else if (content) {
+
+			if (sb.length() < field_len_cutoff || sb.indexOf(value) == -1)
+				sb.append(value + " ");
+
+		}
 
 		else if (sph_attr) {
 

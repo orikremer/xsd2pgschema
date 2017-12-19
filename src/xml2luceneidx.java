@@ -144,7 +144,7 @@ public class xml2luceneidx {
 				index_filter.setMinWordLen(args[++i]);
 
 			else if (args[i].equals("--numeric-idx"))
-				index_filter.enableNumericIndex();
+				index_filter.enableLuceneNumericIndex();
 
 			else if (args[i].equals("--filt-in"))
 				xml_post_editor.addFiltIn(args[++i]);

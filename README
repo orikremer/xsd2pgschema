@@ -1,7 +1,8 @@
- Changes in xsd2pgschema 2.7.3 (release 2017-12-14)
+ Changes in xsd2pgschema 2.7.3 (release 2017-12-19)
 
   Excluded integer data from minimum word length condition while indexing. (--min-word-len option in xml2luceneidx and xml2sphinxds)
   [Ticket #4-2] Added --no-cache-xsd option in almost all main classes. If schema location is specified as a URL, the program retrieves the XML schema without caching.
+  Added --max-field-len option in xml2sphinxds main class to prevent failure while indexing that exceeds the memory limit defined by max_xml2pipe_field (sphinx.conf).
 
  Changes in xsd2pgschema 2.7.2 (release 2017-12-05)
 

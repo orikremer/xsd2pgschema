@@ -265,7 +265,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 			if (!sph_doc_file.isFile())
 				continue;
 
-			SphDsSAXHandler handler = new SphDsSAXHandler(schema, filew);
+			SphDsSAXHandler handler = new SphDsSAXHandler(schema, filew, xml2sphinxds.index_filter);
 
 			try {
 

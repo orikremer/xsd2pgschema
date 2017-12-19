@@ -109,7 +109,7 @@ public class PgSchema {
 	int min_word_len = PgSchemaUtil.min_word_len;
 
 	/** Whether numeric index are stored in Lucene index. */
-	boolean numeric_index = false;
+	boolean lucene_numeric_index = false;
 
 	/** The default namespace (key=prefix, value=namespace_uri). */
 	private HashMap<String, String> def_namespaces = null;
@@ -3215,7 +3215,7 @@ public class PgSchema {
 			applyField(index_filter);
 
 		this.min_word_len = index_filter.min_word_len;
-		this.numeric_index = index_filter.numeric_index;
+		this.lucene_numeric_index = index_filter.lucene_numeric_index;
 
 		return node;
 	}
