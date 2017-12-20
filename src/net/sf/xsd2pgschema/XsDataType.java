@@ -3028,9 +3028,9 @@ public enum XsDataType {
 	 * @param name field name
 	 * @param value content
 	 * @param min_word_len_filter whether it exceeds minimum word length
-	 * @param numeric_index whether numeric values are stored in index
+	 * @param numeric_lucidx whether numeric values are stored in index
 	 */
-	public static void setValue(PgField field, org.apache.lucene.document.Document lucene_doc, String name, String value, boolean min_word_len_filter, boolean numeric_index) {
+	public static void setValue(PgField field, org.apache.lucene.document.Document lucene_doc, String name, String value, boolean min_word_len_filter, boolean numeric_lucidx) {
 
 		XsDataType xs_type = field.enum_name == null ? field.xs_type : xs_string;
 
@@ -3047,7 +3047,7 @@ public enum XsDataType {
 		case xs_unsignedLong:
 			if (field.attr_sel) {
 				lucene_doc.add(new LongPoint(name, Long.valueOf(value)));
-				if (numeric_index)
+				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 			}
 			break;
@@ -3061,14 +3061,14 @@ public enum XsDataType {
 		case xs_unsignedInt:
 			if (field.attr_sel) {
 				lucene_doc.add(new IntPoint(name, Integer.valueOf(value)));
-				if (numeric_index)
+				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 			}
 			break;
 		case xs_float:
 			if (field.attr_sel) {
 				lucene_doc.add(new FloatPoint(name, Float.valueOf(value)));
-				if (numeric_index)
+				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 			}
 			break;
@@ -3076,7 +3076,7 @@ public enum XsDataType {
 		case xs_decimal:
 			if (field.attr_sel) {
 				lucene_doc.add(new DoublePoint(name, Double.valueOf(value)));
-				if (numeric_index)
+				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 			}
 			break;
@@ -3086,7 +3086,7 @@ public enum XsDataType {
 		case xs_unsignedByte:
 			if (field.attr_sel) {
 				lucene_doc.add(new IntPoint(name, Integer.valueOf(value)));
-				if (numeric_index)
+				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 			}
 			break;

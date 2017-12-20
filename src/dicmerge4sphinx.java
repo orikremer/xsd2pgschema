@@ -136,7 +136,7 @@ public class dicmerge4sphinx {
 
 			}
 
-			File sphinx_data_source = new File(ds_dir_name, PgSchemaUtil.sphinx_data_source_name);
+			File sphinx_data_source = new File(ds_dir_name, PgSchemaUtil.sph_data_source_name);
 
 			FileWriter filew = new FileWriter(sphinx_data_source);
 

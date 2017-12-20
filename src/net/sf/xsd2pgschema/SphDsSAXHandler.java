@@ -41,8 +41,11 @@ public class SphDsSAXHandler extends DefaultHandler {
 	/** The Sphinx data source writer. */
 	FileWriter writer;
 
-	/** The cutoff length (80% of hard limit) of Sphinx field. (related to max_xmlpipe2_field in sphinx.conf) */
-	int field_len_cutoff;
+	/** The Sphinx maximum field length. (related to max_xmlpipe2_field in sphinx.conf) */
+	int sph_max_field_len;
+
+	/** The cutoff (80% of hard limit, max_field_len) of Sphinx field length. */
+	int sph_cutoff_field_len;
 
 	/** The current state for sphinx:document. */
 	boolean sph_document = false;
@@ -79,7 +82,9 @@ public class SphDsSAXHandler extends DefaultHandler {
 
 		this.schema = schema;
 		this.writer = writer;
-		this.field_len_cutoff = (int) (index_filter.sphinx_max_field_len * 0.8); // 80% of hard limit
+
+		sph_max_field_len = index_filter.sph_max_field_len;
+		sph_cutoff_field_len = (int) (index_filter.sph_max_field_len * 0.8); // 80% of hard limit
 
 	}
 
@@ -221,8 +226,14 @@ public class SphDsSAXHandler extends DefaultHandler {
 
 		else if (content) {
 
-			if (sb.length() < field_len_cutoff || sb.indexOf(value) == -1)
-				sb.append(value + " ");
+			int field_len = sb.length() + length;
+
+			if (field_len < sph_max_field_len) {
+
+				if (field_len < sph_cutoff_field_len || sb.indexOf(value) == -1)
+					sb.append(value + " ");
+
+			}
 
 		}
 

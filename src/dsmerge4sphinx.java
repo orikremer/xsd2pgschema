@@ -106,23 +106,23 @@ public class dsmerge4sphinx {
 				System.exit(1);
 			}
 
-			File src_sphinx_schema = new File(src_ds_dir_name, PgSchemaUtil.sphinx_schema_name);
+			File src_sphinx_schema = new File(src_ds_dir_name, PgSchemaUtil.sph_schema_name);
 
 			if (!src_sphinx_schema.exists()) {
-				System.err.println("Not found '" + PgSchemaUtil.sphinx_schema_name + "' in '" + src_ds_dir_name + "' directory.");
+				System.err.println("Not found '" + PgSchemaUtil.sph_schema_name + "' in '" + src_ds_dir_name + "' directory.");
 				System.exit(1);
 			}
 
-			File src_sphinx_data_source = new File(src_ds_dir_name, PgSchemaUtil.sphinx_data_source_name);
+			File src_sphinx_data_source = new File(src_ds_dir_name, PgSchemaUtil.sph_data_source_name);
 
 			if (!src_sphinx_data_source.exists()) {
-				System.err.println("Not found '" + PgSchemaUtil.sphinx_data_source_name + "' in '" + src_ds_dir_name + "' directory.");
+				System.err.println("Not found '" + PgSchemaUtil.sph_data_source_name + "' in '" + src_ds_dir_name + "' directory.");
 				System.exit(1);
 			}
 
 			if (ds_name.isEmpty()) {
 
-				File src_sphinx_conf = new File(src_ds_dir_name, PgSchemaUtil.sphinx_conf_name);
+				File src_sphinx_conf = new File(src_ds_dir_name, PgSchemaUtil.sph_conf_name);
 
 				if (src_sphinx_conf.exists()) {
 
@@ -208,7 +208,7 @@ public class dsmerge4sphinx {
 
 			for (String src_ds_dir_name : src_ds_dir_list) {
 
-				File src_sphinx_schema = new File(src_ds_dir_name, PgSchemaUtil.sphinx_schema_name);
+				File src_sphinx_schema = new File(src_ds_dir_name, PgSchemaUtil.sph_schema_name);
 
 				doc_builder_fac.setNamespaceAware(false);
 				doc_builder = doc_builder_fac.newDocumentBuilder();
@@ -225,14 +225,14 @@ public class dsmerge4sphinx {
 
 			// Sphinx xmlpipe2 writer
 
-			File dst_sphinx_data_source = new File(dst_ds_dir_name, PgSchemaUtil.sphinx_data_source_name);
+			File dst_sphinx_data_source = new File(dst_ds_dir_name, PgSchemaUtil.sph_data_source_name);
 			schema.writeSphSchema(dst_sphinx_data_source, true);
 
 			FileWriter filew = new FileWriter(dst_sphinx_data_source, true);
 
 			for (String src_ds_dir_name : src_ds_dir_list) {
 
-				File src_sphinx_data_source = new File(src_ds_dir_name, PgSchemaUtil.sphinx_data_source_name);
+				File src_sphinx_data_source = new File(src_ds_dir_name, PgSchemaUtil.sph_data_source_name);
 
 				mergeDataSource(schema, filew, src_sphinx_data_source);
 
@@ -243,13 +243,13 @@ public class dsmerge4sphinx {
 
 			// Sphinx schema writer for next update or merge
 
-			File dst_sphinx_schema = new File(dst_ds_dir_name, PgSchemaUtil.sphinx_schema_name);
+			File dst_sphinx_schema = new File(dst_ds_dir_name, PgSchemaUtil.sph_schema_name);
 
 			schema.writeSphSchema(dst_sphinx_schema, false);
 
 			// Sphinx configuration writer
 
-			File sphinx_conf = new File(dst_ds_dir_name, PgSchemaUtil.sphinx_conf_name);
+			File sphinx_conf = new File(dst_ds_dir_name, PgSchemaUtil.sph_conf_name);
 			schema.writeSphConf(sphinx_conf, ds_name, dst_sphinx_data_source);
 
 		} catch (ParserConfigurationException | SAXException | IOException | NoSuchAlgorithmException | PgSchemaException e) {

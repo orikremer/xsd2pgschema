@@ -95,19 +95,19 @@ public class PgSchemaUtil {
 	public final static String thrd_dir_prefix = "thrd-";
 
 	/** The Sphinx schema file name. */
-	public final static String sphinx_schema_name = ".schema_part.xml";
+	public final static String sph_schema_name = ".schema_part.xml";
 
 	/** The Sphinx configuration file name. */
-	public final static String sphinx_conf_name = "data_source.conf";
+	public final static String sph_conf_name = "data_source.conf";
 
 	/** The prefix of Sphinx data source file. */
-	public final static String sphinx_document_prefix = "document_part_";
+	public final static String sph_document_prefix = "document_part_";
 
 	/** The Sphinx data source file name. */
-	public final static String sphinx_data_source_name = "data_source.xml";
+	public final static String sph_data_source_name = "data_source.xml";
 
 	/** The Sphinx maximum field length. (related to max_xmlpipe2_field in sphinx.conf) */
-	public final static int sphinx_max_field_len = 1024 * 1024 * 2;
+	public final static int sph_max_field_len = 1024 * 1024 * 2;
 
 	/** The field name of Sphinx dictionary. */
 	public final static String trigram_field_name = "trigrams";

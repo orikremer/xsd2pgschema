@@ -135,7 +135,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		}
 
-		sphinx_schema = new File(ds_dir_name, PgSchemaUtil.sphinx_schema_name);
+		sphinx_schema = new File(ds_dir_name, PgSchemaUtil.sph_schema_name);
 
 		if (sphinx_schema.exists()) {
 
@@ -176,7 +176,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 			if (!xml_file.isFile())
 				continue;
 
-			String sph_doc_name = PgSchemaUtil.sphinx_document_prefix + xml_file.getName().split("\\.")[0] + ".xml";
+			String sph_doc_name = PgSchemaUtil.sph_document_prefix + xml_file.getName().split("\\.")[0] + ".xml";
 			File sph_doc_fiole = new File(ds_dir_name, sph_doc_name);
 
 			try {
@@ -239,16 +239,16 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			public boolean accept(File dir, String name) {
 				return FilenameUtils.getExtension(name).equals("xml") &&
-						name.startsWith(PgSchemaUtil.sphinx_document_prefix) &&
-						!name.equals(PgSchemaUtil.sphinx_schema_name) &&
-						!name.equals(PgSchemaUtil.sphinx_data_source_name);
+						name.startsWith(PgSchemaUtil.sph_document_prefix) &&
+						!name.equals(PgSchemaUtil.sph_schema_name) &&
+						!name.equals(PgSchemaUtil.sph_data_source_name);
 			}
 
 		};
 
 		// Sphinx xmlpipe2 writer
 
-		File sphinx_data_source = new File(ds_dir_name, PgSchemaUtil.sphinx_data_source_name);
+		File sphinx_data_source = new File(ds_dir_name, PgSchemaUtil.sph_data_source_name);
 		schema.writeSphSchema(sphinx_data_source, true);
 
 		FileWriter filew = new FileWriter(sphinx_data_source, true);
@@ -290,7 +290,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		// Sphinx configuration writer
 
-		File sphinx_conf = new File(ds_dir_name, PgSchemaUtil.sphinx_conf_name);
+		File sphinx_conf = new File(ds_dir_name, PgSchemaUtil.sph_conf_name);
 		schema.writeSphConf(sphinx_conf, xml2sphinxds.ds_name, sphinx_data_source);
 
 	}

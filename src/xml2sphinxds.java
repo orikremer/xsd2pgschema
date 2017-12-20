@@ -152,7 +152,7 @@ public class xml2sphinxds {
 				index_filter.setMinWordLen(args[++i]);
 
 			else if (args[i].equals("--max-field-len"))
-				index_filter.setSphinxMaxFieldLen(args[++i]);
+				index_filter.setSphMaxFieldLen(args[++i]);
 
 			else if (args[i].equals("--filt-in"))
 				xml_post_editor.addFiltIn(args[++i]);
@@ -235,9 +235,9 @@ public class xml2sphinxds {
 
 			public boolean accept(File dir, String name) {
 				return xml_file_filter.ext.equals(FilenameUtils.getExtension(name)) &&
-						!name.equals(PgSchemaUtil.sphinx_schema_name) &&
-						!name.startsWith(PgSchemaUtil.sphinx_document_prefix) &&
-						!name.equals(PgSchemaUtil.sphinx_data_source_name);
+						!name.equals(PgSchemaUtil.sph_schema_name) &&
+						!name.startsWith(PgSchemaUtil.sph_document_prefix) &&
+						!name.equals(PgSchemaUtil.sph_data_source_name);
 			}
 
 		};
@@ -353,7 +353,7 @@ public class xml2sphinxds {
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
 		System.err.println("        --shard-size SHARD_SIZE (default=1)");
 		System.err.println("        --min-word-len MIN_WORD_LENGTH (default is " + PgSchemaUtil.min_word_len + ")");
-		System.err.println("        --max-field-len MAX_FIELD_LENGTH (default is " + PgSchemaUtil.sphinx_max_field_len / 1024 / 1024 + "M)");
+		System.err.println("        --max-field-len MAX_FIELD_LENGTH (default is " + PgSchemaUtil.sph_max_field_len / 1024 / 1024 + "M)");
 		System.err.println("Option: --ds-name DS_NAME (default name is determined by quoting XSD file name)");
 		System.err.println("        --attr  table_name.column_name");
 		System.err.println("        --field table_name.column_name");

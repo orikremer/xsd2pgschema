@@ -109,7 +109,7 @@ public class PgSchema {
 	int min_word_len = PgSchemaUtil.min_word_len;
 
 	/** Whether numeric index are stored in Lucene index. */
-	boolean lucene_numeric_index = false;
+	boolean numeric_lucidx = false;
 
 	/** The default namespace (key=prefix, value=namespace_uri). */
 	private HashMap<String, String> def_namespaces = null;
@@ -3215,7 +3215,7 @@ public class PgSchema {
 			applyField(index_filter);
 
 		this.min_word_len = index_filter.min_word_len;
-		this.lucene_numeric_index = index_filter.lucene_numeric_index;
+		this.numeric_lucidx = index_filter.numeric_lucidx;
 
 		return node;
 	}
@@ -3875,7 +3875,7 @@ public class PgSchema {
 		Node node = sph_doc.getDocumentElement();
 
 		if (!node.getNodeName().equals("sphinx:schema"))
-			throw new PgSchemaException("Not found sphinx:schema root element in Sphinx data source: " + PgSchemaUtil.sphinx_schema_name);
+			throw new PgSchemaException("Not found sphinx:schema root element in Sphinx data source: " + PgSchemaUtil.sph_schema_name);
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 

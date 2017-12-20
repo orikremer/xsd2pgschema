@@ -53,10 +53,10 @@ public class IndexFilter {
 	public boolean attr_time = false;
 
 	/** Whether numeric values are stored in Lucene index. */
-	public boolean lucene_numeric_index = false;
+	public boolean numeric_lucidx = false;
 
 	/** The Sphinx maximum field length. (related to max_xmlpipe2_field in sphinx.conf) */
-	public int sphinx_max_field_len = PgSchemaUtil.sphinx_max_field_len;
+	public int sph_max_field_len = PgSchemaUtil.sph_max_field_len;
 
 	/**
 	 * Instance of index filter.
@@ -133,7 +133,7 @@ public class IndexFilter {
 		this.min_word_len = Integer.valueOf(min_word_len);
 
 		if (this.min_word_len < PgSchemaUtil.min_word_len) {
-			System.err.println("Minumum word length is less than " + PgSchemaUtil.min_word_len + ". Set to the default.");
+			System.err.println("Minumum word length is less than " + PgSchemaUtil.min_word_len + ". Set to the default value.");
 			this.min_word_len = PgSchemaUtil.min_word_len;
 		}
 
@@ -142,34 +142,34 @@ public class IndexFilter {
 	/**
 	 * Enable Lucene indexing for numerical data.
 	 */
-	public void enableLuceneNumericIndex() {
+	public void enableNumericLucIdx() {
 
-		lucene_numeric_index = true;
+		numeric_lucidx = true;
 
 	}
 
 	/**
 	 * Set Sphinx maximum field length.
 	 *
-	 * @param sphinx_max_field_len argument value
+	 * @param sph_max_field_len argument value
 	 */
-	public void setSphinxMaxFieldLen(String sphinx_max_field_len) {
+	public void setSphMaxFieldLen(String sph_max_field_len) {
 
-		if (sphinx_max_field_len.endsWith("k") || sphinx_max_field_len.endsWith("kB"))
-			this.sphinx_max_field_len = (int) (Float.valueOf(sphinx_max_field_len.substring(0, sphinx_max_field_len.indexOf("k"))) * 1024);
+		if (sph_max_field_len.endsWith("k") || sph_max_field_len.endsWith("kB"))
+			this.sph_max_field_len = (int) (Float.valueOf(sph_max_field_len.substring(0, sph_max_field_len.indexOf("k"))) * 1024);
 
-		else if (sphinx_max_field_len.endsWith("M") || sphinx_max_field_len.endsWith("MB"))
-			this.sphinx_max_field_len = (int) (Float.valueOf(sphinx_max_field_len.substring(0, sphinx_max_field_len.indexOf("M"))) * 1024 * 1024);
+		else if (sph_max_field_len.endsWith("M") || sph_max_field_len.endsWith("MB"))
+			this.sph_max_field_len = (int) (Float.valueOf(sph_max_field_len.substring(0, sph_max_field_len.indexOf("M"))) * 1024 * 1024);
 
-		else if (sphinx_max_field_len.endsWith("G") || sphinx_max_field_len.endsWith("GB"))
-			this.sphinx_max_field_len = (int) (Float.valueOf(sphinx_max_field_len.substring(0, sphinx_max_field_len.indexOf("G"))) * 1024 * 1024 * 1024);
+		else if (sph_max_field_len.endsWith("G") || sph_max_field_len.endsWith("GB"))
+			this.sph_max_field_len = (int) (Float.valueOf(sph_max_field_len.substring(0, sph_max_field_len.indexOf("G"))) * 1024 * 1024 * 1024);
 
 		else
-			this.sphinx_max_field_len = Integer.valueOf(sphinx_max_field_len);
+			this.sph_max_field_len = Integer.valueOf(sph_max_field_len);
 
-		if (this.sphinx_max_field_len < PgSchemaUtil.sphinx_max_field_len) {
-			System.err.println("Maximum field length is less than " + PgSchemaUtil.sphinx_max_field_len / 1024 / 1024 + "MB. Set to the default.");
-			this.sphinx_max_field_len = PgSchemaUtil.sphinx_max_field_len;
+		if (this.sph_max_field_len < PgSchemaUtil.sph_max_field_len) {
+			System.err.println("Maximum field length is less than " + PgSchemaUtil.sph_max_field_len / 1024 / 1024 + "MB. Set to the default value.");
+			this.sph_max_field_len = PgSchemaUtil.sph_max_field_len;
 		}
 
 	}
