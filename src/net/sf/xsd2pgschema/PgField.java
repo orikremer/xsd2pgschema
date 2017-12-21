@@ -124,11 +124,14 @@ public class PgField {
 	/** Whether Sphinx multi-valued attribute. */
 	boolean sph_mva = false;
 
-	/** Whether it is selected as field for partial index. */
+	/** Whether it is selected as field for partial indexing. */
 	boolean field_sel = false;
 
-	/** Whether it is selected as attribute for partial index. */
+	/** Whether it is selected as attribute for partial indexing. */
 	boolean attr_sel = false;
+
+	/** Whether it is selected as attribute and ready for partial indexing. */
+	boolean attr_sel_rdy = true;
 
 	/** The constraint name in PostgreSQL. */
 	String constraint_name = null;

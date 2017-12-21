@@ -1,3 +1,7 @@
+ Changes in xsd2pgschema 2.7.4 (release 2017-12-21)
+
+  Disallowed multiple full-text indexing for attribute except for Sphinx mva-attribute. The first value in a document for the attribute will be indexed.
+
  Changes in xsd2pgschema 2.7.3 (release 2017-12-20)
 
   Excluded integer data from minimum word length condition while indexing. (--min-word-len option in xml2luceneidx and xml2sphinxds)

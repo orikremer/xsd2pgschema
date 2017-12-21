@@ -3768,6 +3768,15 @@ public class PgSchema {
 	}
 
 	/**
+	 * Reset attr_sel_rdy flag.
+	 */
+	private void resetAttrSelRdy() {
+
+		tables.forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> field.attr_sel_rdy = true));
+
+	}
+
+	/**
 	 * Lucene document conversion.
 	 *
 	 * @param xml_parser XML document
@@ -3784,6 +3793,7 @@ public class PgSchema {
 		Node node = getRootNode(xml_parser, xml_post_editor, index_filter);
 
 		initTableLock(true);
+		resetAttrSelRdy();
 
 		tables.forEach(table -> table.lucene_doc = table.required ? lucene_doc : null);
 
@@ -4034,6 +4044,7 @@ public class PgSchema {
 		Node node = getRootNode(xml_parser, xml_post_editor, index_filter);
 
 		initTableLock(true);
+		resetAttrSelRdy();
 
 		tables.forEach(table -> {
 

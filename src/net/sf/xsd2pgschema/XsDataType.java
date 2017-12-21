@@ -3038,17 +3038,20 @@ public enum XsDataType {
 		case xs_boolean:
 		case xs_hexBinary:
 		case xs_base64Binary:
-			if (field.attr_sel)
+			if (field.attr_sel_rdy) {
 				lucene_doc.add(new StringField(name, value, Field.Store.YES));
+				field.attr_sel_rdy = false;
+			}
 			break;
 		case xs_bigserial:
 		case xs_long:
 		case xs_bigint:
 		case xs_unsignedLong:
-			if (field.attr_sel) {
+			if (field.attr_sel_rdy) {
 				lucene_doc.add(new LongPoint(name, Long.valueOf(value)));
 				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
+				field.attr_sel_rdy = false;
 			}
 			break;
 		case xs_serial:
@@ -3059,71 +3062,83 @@ public enum XsDataType {
 		case xs_nonNegativeInteger:
 		case xs_positiveInteger:
 		case xs_unsignedInt:
-			if (field.attr_sel) {
+			if (field.attr_sel_rdy) {
 				lucene_doc.add(new IntPoint(name, Integer.valueOf(value)));
 				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
+				field.attr_sel_rdy = false;
 			}
 			break;
 		case xs_float:
-			if (field.attr_sel) {
+			if (field.attr_sel_rdy) {
 				lucene_doc.add(new FloatPoint(name, Float.valueOf(value)));
 				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
+				field.attr_sel_rdy = false;
 			}
 			break;
 		case xs_double:
 		case xs_decimal:
-			if (field.attr_sel) {
+			if (field.attr_sel_rdy) {
 				lucene_doc.add(new DoublePoint(name, Double.valueOf(value)));
 				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
+				field.attr_sel_rdy = false;
 			}
 			break;
 		case xs_short:
 		case xs_byte:
 		case xs_unsignedShort:
 		case xs_unsignedByte:
-			if (field.attr_sel) {
+			if (field.attr_sel_rdy) {
 				lucene_doc.add(new IntPoint(name, Integer.valueOf(value)));
 				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
+				field.attr_sel_rdy = false;
 			}
 			break;
 		case xs_dateTime:
-			if (field.attr_sel) {
+			if (field.attr_sel_rdy) {
 				java.util.Date util_time = parseDate(value);
 				lucene_doc.add(new StringField(name, DateTools.dateToString(util_time, DateTools.Resolution.SECOND), Field.Store.YES));
+				field.attr_sel_rdy = false;
 			}
 			break;
 		case xs_date:
-			if (field.attr_sel) {
+			if (field.attr_sel_rdy) {
 				java.util.Date util_date = parseDate(value);
 				lucene_doc.add(new StringField(name, DateTools.dateToString(util_date, DateTools.Resolution.DAY), Field.Store.YES));
+				field.attr_sel_rdy = false;
 			}
 			break;
 		case xs_gYearMonth:
-			if (field.attr_sel) {
+			if (field.attr_sel_rdy) {
 				java.util.Date util_month = parseDate(value);
 				lucene_doc.add(new StringField(name, DateTools.dateToString(util_month, DateTools.Resolution.MONTH), Field.Store.YES));
+				field.attr_sel_rdy = false;
 			}
 			break;
 		case xs_gYear:
-			if (field.attr_sel) {
+			if (field.attr_sel_rdy) {
 				java.util.Date util_year = parseDate(value);
 				lucene_doc.add(new StringField(name, DateTools.dateToString(util_year, DateTools.Resolution.YEAR), Field.Store.YES));
+				field.attr_sel_rdy = false;
 			}
 			break;
 		case xs_time:
 		case xs_gMonthDay:
 		case xs_gMonth:
 		case xs_gDay:
-			if (field.attr_sel)
+			if (field.attr_sel_rdy) {
 				lucene_doc.add(new StringField(name, value, Field.Store.YES));
+				field.attr_sel_rdy = false;
+			}
 			break;
 		default:
-			if (field.attr_sel || xs_type.equals(xs_ID))
+			if (field.attr_sel_rdy || xs_type.equals(xs_ID)) {
 				lucene_doc.add(new TextField(name, value, Field.Store.YES));
+				field.attr_sel_rdy = false;
+			}
 		}
 
 		switch (xs_type) {
@@ -3186,7 +3201,8 @@ public enum XsDataType {
 			case xs_boolean:
 			case xs_hexBinary:
 			case xs_base64Binary:
-				if (field.attr_sel) {
+				if (field.attr_sel_rdy || field.sph_mva) {
+					field.attr_sel_rdy = false;
 					if (!field.sph_attr)
 						field.sph_attr = true;
 					if (++field.sph_attr_occurs > 1)
@@ -3198,7 +3214,8 @@ public enum XsDataType {
 			case xs_long:
 			case xs_bigint:
 			case xs_unsignedLong:
-				if (field.attr_sel) {
+				if (field.attr_sel_rdy || field.sph_mva) {
+					field.attr_sel_rdy = false;
 					if (!field.sph_attr)
 						field.sph_attr = true;
 					if (!field.sph_mva) {
@@ -3216,7 +3233,8 @@ public enum XsDataType {
 			case xs_nonNegativeInteger:
 			case xs_positiveInteger:
 			case xs_unsignedInt:
-				if (field.attr_sel) {
+				if (field.attr_sel_rdy || field.sph_mva) {
+					field.attr_sel_rdy = false;
 					if (!field.sph_attr)
 						field.sph_attr = true;
 					if (!field.sph_mva) {
@@ -3227,7 +3245,8 @@ public enum XsDataType {
 				}
 				break;
 			case xs_float:
-				if (field.attr_sel) {
+				if (field.attr_sel_rdy || field.sph_mva) {
+					field.attr_sel_rdy = false;
 					if (!field.sph_attr)
 						field.sph_attr = true;
 					if (++field.sph_attr_occurs > 1)
@@ -3237,7 +3256,8 @@ public enum XsDataType {
 				break;
 			case xs_double:
 			case xs_decimal:
-				if (field.attr_sel) {
+				if (field.attr_sel_rdy || field.sph_mva) {
+					field.attr_sel_rdy = false;
 					if (!field.sph_attr)
 						field.sph_attr = true;
 					if (++field.sph_attr_occurs > 1)
@@ -3249,7 +3269,8 @@ public enum XsDataType {
 			case xs_byte:
 			case xs_unsignedShort:
 			case xs_unsignedByte:
-				if (field.attr_sel) {
+				if (field.attr_sel_rdy || field.sph_mva) {
+					field.attr_sel_rdy = false;
 					if (!field.sph_attr)
 						field.sph_attr = true;
 					if (!field.sph_mva) {
@@ -3263,7 +3284,8 @@ public enum XsDataType {
 			case xs_date:
 			case xs_gYearMonth:
 			case xs_gYear:
-				if (field.attr_sel) {
+				if (field.attr_sel_rdy || field.sph_mva) {
+					field.attr_sel_rdy = false;
 					if (!field.sph_attr)
 						field.sph_attr = true;
 					if (++field.sph_attr_occurs > 1)
@@ -3276,7 +3298,8 @@ public enum XsDataType {
 			case xs_gMonthDay:
 			case xs_gMonth:
 			case xs_gDay:
-				if (field.attr_sel) {
+				if (field.attr_sel_rdy || field.sph_mva) {
+					field.attr_sel_rdy = false;
 					if (!field.sph_attr)
 						field.sph_attr = true;
 					if (++field.sph_attr_occurs > 1)
@@ -3286,7 +3309,8 @@ public enum XsDataType {
 				break;
 			default:
 				value = StringEscapeUtils.escapeXml10(value);
-				if (field.attr_sel || xs_type.equals(xs_ID)) {
+				if (field.attr_sel || field.sph_mva || xs_type.equals(xs_ID)) {
+					field.attr_sel_rdy = false;
 					if (!field.sph_attr)
 						field.sph_attr = true;
 					if (++field.sph_attr_occurs > 1)
