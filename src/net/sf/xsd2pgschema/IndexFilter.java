@@ -28,8 +28,11 @@ import java.util.HashSet;
  */
 public class IndexFilter {
 
-	/** The attributes for filtering index. */
+	/** The attributes for partial index. */
 	public HashSet<String> attrs = null;
+
+	/** The Sphinx multi-valued attribute for partial index. */
+	public HashSet<String> sph_mvas = null;
 
 	/** The fields to be stored. */
 	public HashSet<String> fields = null;
@@ -52,6 +55,9 @@ public class IndexFilter {
 	/** Whether time values are stored as attribute. */
 	public boolean attr_time = false;
 
+	/** Whether all attributes are selected. */
+	private boolean attr_all = false;
+
 	/** Whether numeric values are stored in Lucene index. */
 	public boolean numeric_lucidx = false;
 
@@ -64,12 +70,14 @@ public class IndexFilter {
 	public IndexFilter() {
 
 		attrs = new HashSet<String>();
+		sph_mvas = new HashSet<String>();
+
 		fields = new HashSet<String>();
 
 	}
 
 	/**
-	 * Add attribute.
+	 * Add an attribute.
 	 *
 	 * @param attr attribute name
 	 * @return boolean result of addition
@@ -89,7 +97,30 @@ public class IndexFilter {
 	}
 
 	/**
-	 * Add field.
+	 * Add a Sphinx multi-valued attribute.
+	 *
+	 * @param sph_mva multi-valued attribute name
+	 * @return boolean result of addition
+	 */
+	public boolean addSphMVA(String sph_mva) {
+
+		if (!attr_all)
+			addAttr(sph_mva);
+
+		if (sph_mvas != null)
+			return sph_mvas.add(sph_mva);
+
+		else {
+
+			sph_mvas = new HashSet<String>();
+
+			return sph_mvas.add(sph_mva);
+		}
+
+	}
+
+	/**
+	 * Add an field.
 	 *
 	 * @param field field name
 	 * @return boolean result of addition
@@ -111,6 +142,7 @@ public class IndexFilter {
 		}
 
 		attr_string = attr_integer = attr_float = attr_date = attr_time = false;
+		attr_all = true;
 
 	}
 

@@ -2943,18 +2943,20 @@ public class PgSchema {
 
 			tables.forEach(table -> table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true));
 
+			applySphMVA(index_filter);
+
 			return;
 		}
 
 		if (index_filter.attrs.size() == 0)
 			return;
 
-		for (String sph_attr : index_filter.attrs) {
+		for (String attr : index_filter.attrs) {
 
-			String[] key = sph_attr.split("\\.");
+			String[] key = attr.split("\\.");
 
 			if (key.length > 2)
-				throw new PgSchemaException(sph_attr + ": argument should be expressed by \"table_name.column_name\".");
+				throw new PgSchemaException(attr + ": argument should be expressed by \"table_name.column_name\".");
 
 			String table_name = key[0];
 			String field_name = key.length > 1 ? key[1] : null;
@@ -2985,6 +2987,77 @@ public class PgSchema {
 
 			} else
 				table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true);
+
+		}
+
+		applySphMVA(index_filter);
+
+	}
+
+	/**
+	 * Apply mva option for full-text indexing.
+	 *
+	 * @param index_filter index filter
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void applySphMVA(IndexFilter index_filter) throws PgSchemaException {
+
+		if (index_filter.sph_mvas.size() == 0)
+			return;
+
+		for (String sph_mva : index_filter.sph_mvas) {
+
+			String[] key = sph_mva.split("\\.");
+
+			if (key.length != 2)
+				throw new PgSchemaException(sph_mva + ": argument should be expressed by \"table_name.column_name\".");
+
+			String table_name = key[0];
+			String field_name = key.length > 1 ? key[1] : null;
+
+			PgTable table = getTable(table_name);
+
+			if (table == null)
+				throw new PgSchemaException("Not found " + table_name + " table.");
+
+			if (table.xs_type.equals(XsTableType.xs_root))
+				throw new PgSchemaException(table_name + " table is unselectable (root table).");
+
+			PgField field = table.getField(field_name);
+
+			if (field != null) {
+
+				if (field.system_key || field.user_key)
+					throw new PgSchemaException(field_name + " field of " + table_name + " table is administrative key).");
+
+				switch (field.xs_type) {
+				case xs_bigserial:
+				case xs_long:
+				case xs_bigint:
+				case xs_unsignedLong:
+				case xs_duration:
+				case xs_serial:
+				case xs_integer:
+				case xs_int:
+				case xs_nonPositiveInteger:
+				case xs_negativeInteger:
+				case xs_nonNegativeInteger:
+				case xs_positiveInteger:
+				case xs_unsignedInt:
+				case xs_short:
+				case xs_unsignedShort:
+				case xs_byte:
+				case xs_unsignedByte:
+					field.sph_mva = true;
+					break;
+				default:
+					throw new PgSchemaException(field_name + " field of " + table_name + " table is not integer or long data type.");
+				}
+
+			}
+
+			else
+				throw new PgSchemaException("Not found " + field_name + " field in " + table_name + " table.");
 
 		}
 
@@ -3917,7 +3990,7 @@ public class PgSchema {
 					if (field == null)
 						throw new PgSchemaException("Not found " + field_name + " field.");
 
-					field.sph_attr = sph_attr;
+					field.attr_sel = sph_attr;
 
 					String type_attr = e.getAttribute("type");
 
@@ -3959,7 +4032,7 @@ public class PgSchema {
 
 			}
 
-			tables.forEach(table -> table.fields.stream().filter(field -> field.sph_attr).forEach(field -> {
+			tables.forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> {
 
 				try {
 
@@ -4004,7 +4077,7 @@ public class PgSchema {
 			filew.write("\txmlpipe_attr_string     = " + option.document_key_name + "\n");
 			filew.write("\txmlpipe_field           = " + PgSchemaUtil.simple_content_name + "\n");
 
-			tables.forEach(table -> table.fields.stream().filter(field -> field.sph_attr).forEach(field -> {
+			tables.forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> {
 
 				try {
 
@@ -4046,20 +4119,7 @@ public class PgSchema {
 		initTableLock(true);
 		resetAttrSelRdy();
 
-		tables.forEach(table -> {
-
-			if (table.required) {
-
-				table.filew = writer;
-
-				table.fields.forEach(field -> field.sph_attr_occurs = 0);
-
-			}
-
-			else
-				table.filew = null;
-
-		});
+		tables.forEach(table -> table.filew = table.required ? writer : null);
 
 		// parse root node and write to Sphinx xmlpipe2 file
 
@@ -4153,7 +4213,7 @@ public class PgSchema {
 		if (field == null)
 			return false;
 
-		return field.sph_attr;
+		return field.attr_sel;
 	}
 
 	/**
@@ -4163,7 +4223,7 @@ public class PgSchema {
 	 * @param field_name field name
 	 * @return boolean whether Sphinx multi-valued attribute
 	 */
-	public boolean isSphMVAttr(String table_name, String field_name) {
+	public boolean isSphMVA(String table_name, String field_name) {
 
 		PgTable table = getTable(table_name);
 
@@ -4175,7 +4235,7 @@ public class PgSchema {
 		if (field == null)
 			return false;
 
-		if (!field.sph_attr)
+		if (!field.attr_sel)
 			return false;
 
 		return field.sph_mva;

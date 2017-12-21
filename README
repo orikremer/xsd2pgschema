@@ -1,6 +1,7 @@
  Changes in xsd2pgschema 2.7.4 (release 2017-12-21)
 
   Disallowed multiple full-text indexing for attribute except for Sphinx mva-attribute. The first value in a document for the attribute will be indexed.
+  Added --mva option in xml2sphinxds main class to set multi-valued attribute.
 
  Changes in xsd2pgschema 2.7.3 (release 2017-12-20)
 

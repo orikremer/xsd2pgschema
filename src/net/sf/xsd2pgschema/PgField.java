@@ -118,9 +118,6 @@ public class PgField {
 	/** Whether representative field of substitution group. */
 	boolean rep_substitution_group = false;
 
-	/** Whether Sphinx attribute. */
-	boolean sph_attr = false;
-
 	/** Whether Sphinx multi-valued attribute. */
 	boolean sph_mva = false;
 
@@ -225,9 +222,6 @@ public class PgField {
 
 	/** The filt-out pattern used in post XML edition. */
 	String[] out_pattern = null;
-
-	/** The counter of Sphinx attribute. */
-	int sph_attr_occurs = 0;
 
 	/** Whether JSON buffer is not empty. */
 	boolean jsonb_not_empty = false;

@@ -3202,12 +3202,8 @@ public enum XsDataType {
 			case xs_hexBinary:
 			case xs_base64Binary:
 				if (field.attr_sel_rdy || field.sph_mva) {
-					field.attr_sel_rdy = false;
-					if (!field.sph_attr)
-						field.sph_attr = true;
-					if (++field.sph_attr_occurs > 1)
-						return;
 					writer.write("<" + attr_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + attr_name + ">\n");
+					field.attr_sel_rdy = false;
 				}
 				break;
 			case xs_bigserial:
@@ -3215,14 +3211,8 @@ public enum XsDataType {
 			case xs_bigint:
 			case xs_unsignedLong:
 				if (field.attr_sel_rdy || field.sph_mva) {
-					field.attr_sel_rdy = false;
-					if (!field.sph_attr)
-						field.sph_attr = true;
-					if (!field.sph_mva) {
-						if (++field.sph_attr_occurs > 1)
-							field.sph_mva = true;
-					}
 					writer.write("<" + attr_name + ">" + Long.valueOf(value) + "</" + attr_name + ">\n");
+					field.attr_sel_rdy = false;
 				}
 				break;
 			case xs_serial:
@@ -3234,35 +3224,21 @@ public enum XsDataType {
 			case xs_positiveInteger:
 			case xs_unsignedInt:
 				if (field.attr_sel_rdy || field.sph_mva) {
-					field.attr_sel_rdy = false;
-					if (!field.sph_attr)
-						field.sph_attr = true;
-					if (!field.sph_mva) {
-						if (++field.sph_attr_occurs > 1)
-							field.sph_mva = true;
-					}
 					writer.write("<" + attr_name + ">" + Integer.valueOf(value) + "</" + attr_name + ">\n");
+					field.attr_sel_rdy = false;
 				}
 				break;
 			case xs_float:
 				if (field.attr_sel_rdy || field.sph_mva) {
-					field.attr_sel_rdy = false;
-					if (!field.sph_attr)
-						field.sph_attr = true;
-					if (++field.sph_attr_occurs > 1)
-						return;
 					writer.write("<" + attr_name + ">" + Float.valueOf(value) + "</" + attr_name + ">\n");
+					field.attr_sel_rdy = false;
 				}
 				break;
 			case xs_double:
 			case xs_decimal:
 				if (field.attr_sel_rdy || field.sph_mva) {
-					field.attr_sel_rdy = false;
-					if (!field.sph_attr)
-						field.sph_attr = true;
-					if (++field.sph_attr_occurs > 1)
-						return;
 					writer.write("<" + attr_name + ">" + Double.valueOf(value) + "</" + attr_name + ">\n");
+					field.attr_sel_rdy = false;
 				}
 				break;
 			case xs_short:
@@ -3270,14 +3246,8 @@ public enum XsDataType {
 			case xs_unsignedShort:
 			case xs_unsignedByte:
 				if (field.attr_sel_rdy || field.sph_mva) {
-					field.attr_sel_rdy = false;
-					if (!field.sph_attr)
-						field.sph_attr = true;
-					if (!field.sph_mva) {
-						if (++field.sph_attr_occurs > 1)
-							field.sph_mva = true;
-					}
 					writer.write("<" + attr_name + ">" + Integer.valueOf(value) + "</" + attr_name + ">\n");
+					field.attr_sel_rdy = false;
 				}
 				break;
 			case xs_dateTime:
@@ -3285,13 +3255,9 @@ public enum XsDataType {
 			case xs_gYearMonth:
 			case xs_gYear:
 				if (field.attr_sel_rdy || field.sph_mva) {
-					field.attr_sel_rdy = false;
-					if (!field.sph_attr)
-						field.sph_attr = true;
-					if (++field.sph_attr_occurs > 1)
-						return;
 					java.util.Date util_time = parseDate(value);
 					writer.write("<" + attr_name + ">" + util_time.getTime() / 1000L + "</" + attr_name + ">\n");
+					field.attr_sel_rdy = false;
 				}
 				break;
 			case xs_time:
@@ -3299,23 +3265,15 @@ public enum XsDataType {
 			case xs_gMonth:
 			case xs_gDay:
 				if (field.attr_sel_rdy || field.sph_mva) {
-					field.attr_sel_rdy = false;
-					if (!field.sph_attr)
-						field.sph_attr = true;
-					if (++field.sph_attr_occurs > 1)
-						return;
 					writer.write("<" + attr_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + attr_name + ">\n");
+					field.attr_sel_rdy = false;
 				}
 				break;
 			default:
 				value = StringEscapeUtils.escapeXml10(value);
 				if (field.attr_sel || field.sph_mva || xs_type.equals(xs_ID)) {
-					field.attr_sel_rdy = false;
-					if (!field.sph_attr)
-						field.sph_attr = true;
-					if (++field.sph_attr_occurs > 1)
-						return;
 					writer.write("<" + attr_name + ">" + value + "</" + attr_name + ">\n");
+					field.attr_sel_rdy = false;
 				}
 			}
 

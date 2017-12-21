@@ -124,6 +124,9 @@ public class xml2sphinxds {
 			else if (args[i].equals("--attr"))
 				index_filter.addAttr(args[++i]);
 
+			else if (args[i].equals("--mva"))
+				index_filter.addSphMVA(args[++i]);
+
 			else if (args[i].equals("--field"))
 				index_filter.addField(args[++i]);
 
@@ -357,6 +360,7 @@ public class xml2sphinxds {
 		System.err.println("Option: --ds-name DS_NAME (default name is determined by quoting XSD file name)");
 		System.err.println("        --attr  table_name.column_name");
 		System.err.println("        --field table_name.column_name");
+		System.err.println("        --mva   table_name.column_name (multi-valued attribute)");
 		System.err.println("        --attr-all");
 		System.err.println("        --field-all (default)");
 		System.err.println("        --attr-string (all string values are stored as attribute)");
