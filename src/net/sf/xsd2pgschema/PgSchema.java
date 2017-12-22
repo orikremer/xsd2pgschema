@@ -2724,7 +2724,7 @@ public class PgSchema {
 			PgTable table = getTable(table_name);
 
 			if (table == null)
-				throw new PgSchemaException("Not found " + table_name + " table.");
+				throw new PgSchemaException("Not found " + table_name + ".");
 
 			if (field_name != null && !field_name.isEmpty()) {
 
@@ -2732,7 +2732,7 @@ public class PgSchema {
 					table.filt_out = true;
 
 				else
-					throw new PgSchemaException("Not found " + field_name + " field in " + table_name + " table.");
+					throw new PgSchemaException("Not found " + table_name + "." + field_name + ".");
 
 			} else {
 
@@ -2824,10 +2824,10 @@ public class PgSchema {
 			PgTable table = getTable(table_name);
 
 			if (table == null)
-				throw new PgSchemaException("Not found " + table_name + " table.");
+				throw new PgSchemaException("Not found " + table_name + ".");
 
 			if (table.xs_type.equals(XsTableType.xs_root))
-				throw new PgSchemaException(table_name + " table is unselectable (root table).");
+				throw new PgSchemaException(table_name + " is unselectable (root table).");
 
 			if (field_name != null && !field_name.isEmpty()) {
 
@@ -2836,7 +2836,7 @@ public class PgSchema {
 				if (field != null) {
 
 					if (field.system_key || field.user_key)
-						throw new PgSchemaException(field_name + " field of " + table_name + " table is administrative key).");
+						throw new PgSchemaException(table_name + "." + field_name + " is administrative key.");
 
 					field.filt_out = true;
 					field.out_pattern = regex_pattern;
@@ -2844,7 +2844,7 @@ public class PgSchema {
 				}
 
 				else
-					throw new PgSchemaException("Not found " + field_name + " field in " + table_name + " table.");
+					throw new PgSchemaException("Not found " + table_name + "." + field_name + ".");
 
 			} else {
 
@@ -2895,17 +2895,17 @@ public class PgSchema {
 			PgTable table = getTable(table_name);
 
 			if (table == null)
-				throw new PgSchemaException("Not found " + table_name + " table.");
+				throw new PgSchemaException("Not found " + table_name + ".");
 
 			if (table.xs_type.equals(XsTableType.xs_root))
-				throw new PgSchemaException(table_name + " table is unselectable (root table).");
+				throw new PgSchemaException(table_name + " is unselectable (root table).");
 
 			PgField field = table.getField(field_name);
 
 			if (field != null) {
 
 				if (field.system_key || field.user_key)
-					throw new PgSchemaException(field_name + " field of " + table_name + " table is administrative key).");
+					throw new PgSchemaException(table_name + "." + field_name + " is administrative key.");
 
 				field.fill_this = true;
 				field.filled_text = filled_text;
@@ -2913,7 +2913,7 @@ public class PgSchema {
 			}
 
 			else
-				throw new PgSchemaException("Not found " + field_name + " field in " + table_name + " table.");
+				throw new PgSchemaException("Not found " + table + "." + field_name + ".");
 
 		}
 
@@ -2964,10 +2964,10 @@ public class PgSchema {
 			PgTable table = getTable(table_name);
 
 			if (table == null)
-				throw new PgSchemaException("Not found " + table_name + " table.");
+				throw new PgSchemaException("Not found " + table_name + ".");
 
 			if (table.xs_type.equals(XsTableType.xs_root))
-				throw new PgSchemaException(table_name + " table is unselectable (root table).");
+				throw new PgSchemaException(table_name + " is unselectable (root table).");
 
 			if (field_name != null && !field_name.isEmpty()) {
 
@@ -2976,14 +2976,14 @@ public class PgSchema {
 				if (field != null) {
 
 					if (field.system_key || field.user_key)
-						throw new PgSchemaException(field_name + " field of " + table_name + " table is administrative key).");
+						throw new PgSchemaException(table_name + "." + field_name + " is administrative key.");
 
 					field.attr_sel = true;
 
 				}
 
 				else
-					throw new PgSchemaException("Not found " + field_name + " field in " + table_name + " table.");
+					throw new PgSchemaException("Not found " + table_name + "." + field_name + ".");
 
 			} else
 				table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true);
@@ -3018,17 +3018,17 @@ public class PgSchema {
 			PgTable table = getTable(table_name);
 
 			if (table == null)
-				throw new PgSchemaException("Not found " + table_name + " table.");
+				throw new PgSchemaException("Not found " + table_name + ".");
 
 			if (table.xs_type.equals(XsTableType.xs_root))
-				throw new PgSchemaException(table_name + " table is unselectable (root table).");
+				throw new PgSchemaException(table_name + " is unselectable (root table).");
 
 			PgField field = table.getField(field_name);
 
 			if (field != null) {
 
 				if (field.system_key || field.user_key)
-					throw new PgSchemaException(field_name + " field of " + table_name + " table is administrative key).");
+					throw new PgSchemaException(table_name + "." + field_name + " is administrative key.");
 
 				switch (field.xs_type) {
 				case xs_bigserial:
@@ -3051,13 +3051,13 @@ public class PgSchema {
 					field.sph_mva = true;
 					break;
 				default:
-					throw new PgSchemaException(field_name + " field of " + table_name + " table is not integer or long data type.");
+					throw new PgSchemaException("Data type of " + table_name + "." + field_name + " is not integer.");
 				}
 
 			}
 
 			else
-				throw new PgSchemaException("Not found " + field_name + " field in " + table_name + " table.");
+				throw new PgSchemaException("Not found " + table_name + "." + field_name + ".");
 
 		}
 
@@ -3092,10 +3092,10 @@ public class PgSchema {
 			PgTable _table = getTable(table_name);
 
 			if (_table == null)
-				throw new PgSchemaException("Not found " + table_name + " table.");
+				throw new PgSchemaException("Not found " + table_name + ".");
 
 			if (_table.xs_type.equals(XsTableType.xs_root))
-				throw new PgSchemaException(table_name + " table is unselectable (root table).");
+				throw new PgSchemaException(table_name + " is unselectable (root table).");
 
 			if (field_name != null && !field_name.isEmpty()) {
 
@@ -3104,14 +3104,14 @@ public class PgSchema {
 				if (_field != null) {
 
 					if (_field.system_key || _field.user_key)
-						throw new PgSchemaException(field_name + " field of " + table_name + " table is administrative key).");
+						throw new PgSchemaException(table_name + "." + field_name + " is administrative key.");
 
 					_field.field_sel = true;
 
 				}
 
 				else
-					throw new PgSchemaException("Not found " + field_name + " field in " + table_name + " table.");
+					throw new PgSchemaException("Not found " + table_name + "." + field_name + ".");
 
 			} else
 				_table.fields.stream().filter(_field -> !_field.system_key && !_field.user_key).forEach(_field -> _field.field_sel = true);
@@ -3983,12 +3983,12 @@ public class PgSchema {
 					PgTable table = getTable(table_name);
 
 					if (table == null)
-						throw new PgSchemaException("Not found " + table_name + " table.");
+						throw new PgSchemaException("Not found " + table_name + ".");
 
 					PgField field = table.getField(field_name);
 
 					if (field == null)
-						throw new PgSchemaException("Not found " + field_name + " field.");
+						throw new PgSchemaException("Not found " + table_name + "." + field_name + ".");
 
 					field.attr_sel = sph_attr;
 
