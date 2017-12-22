@@ -84,6 +84,8 @@ public class IndexFilter {
 	 */
 	public boolean addAttr(String attr) {
 
+		attr_all = false;
+
 		if (attrs != null)
 			return attrs.add(attr);
 
