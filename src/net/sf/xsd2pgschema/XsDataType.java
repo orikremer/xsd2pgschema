@@ -3034,111 +3034,81 @@ public enum XsDataType {
 
 		XsDataType xs_type = field.enum_name == null ? field.xs_type : xs_string;
 
-		switch (xs_type) {
-		case xs_boolean:
-		case xs_hexBinary:
-		case xs_base64Binary:
-			if (field.attr_sel_rdy) {
+		if (field.attr_sel_rdy || xs_type.equals(xs_ID)) {
+
+			switch (xs_type) {
+			case xs_boolean:
+			case xs_hexBinary:
+			case xs_base64Binary:
 				lucene_doc.add(new StringField(name, value, Field.Store.YES));
-				field.attr_sel_rdy = false;
-			}
-			break;
-		case xs_bigserial:
-		case xs_long:
-		case xs_bigint:
-		case xs_unsignedLong:
-			if (field.attr_sel_rdy) {
+				break;
+			case xs_bigserial:
+			case xs_long:
+			case xs_bigint:
+			case xs_unsignedLong:
 				lucene_doc.add(new LongPoint(name, Long.valueOf(value)));
 				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
-				field.attr_sel_rdy = false;
-			}
-			break;
-		case xs_serial:
-		case xs_integer:
-		case xs_int:
-		case xs_nonPositiveInteger:
-		case xs_negativeInteger:
-		case xs_nonNegativeInteger:
-		case xs_positiveInteger:
-		case xs_unsignedInt:
-			if (field.attr_sel_rdy) {
+				break;
+			case xs_serial:
+			case xs_integer:
+			case xs_int:
+			case xs_nonPositiveInteger:
+			case xs_negativeInteger:
+			case xs_nonNegativeInteger:
+			case xs_positiveInteger:
+			case xs_unsignedInt:
 				lucene_doc.add(new IntPoint(name, Integer.valueOf(value)));
 				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
-				field.attr_sel_rdy = false;
-			}
-			break;
-		case xs_float:
-			if (field.attr_sel_rdy) {
+				break;
+			case xs_float:
 				lucene_doc.add(new FloatPoint(name, Float.valueOf(value)));
 				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
-				field.attr_sel_rdy = false;
-			}
-			break;
-		case xs_double:
-		case xs_decimal:
-			if (field.attr_sel_rdy) {
+				break;
+			case xs_double:
+			case xs_decimal:
 				lucene_doc.add(new DoublePoint(name, Double.valueOf(value)));
 				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
-				field.attr_sel_rdy = false;
-			}
-			break;
-		case xs_short:
-		case xs_byte:
-		case xs_unsignedShort:
-		case xs_unsignedByte:
-			if (field.attr_sel_rdy) {
+				break;
+			case xs_short:
+			case xs_byte:
+			case xs_unsignedShort:
+			case xs_unsignedByte:
 				lucene_doc.add(new IntPoint(name, Integer.valueOf(value)));
 				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
-				field.attr_sel_rdy = false;
-			}
-			break;
-		case xs_dateTime:
-			if (field.attr_sel_rdy) {
+				break;
+			case xs_dateTime:
 				java.util.Date util_time = parseDate(value);
 				lucene_doc.add(new StringField(name, DateTools.dateToString(util_time, DateTools.Resolution.SECOND), Field.Store.YES));
-				field.attr_sel_rdy = false;
-			}
-			break;
-		case xs_date:
-			if (field.attr_sel_rdy) {
+				break;
+			case xs_date:
 				java.util.Date util_date = parseDate(value);
 				lucene_doc.add(new StringField(name, DateTools.dateToString(util_date, DateTools.Resolution.DAY), Field.Store.YES));
-				field.attr_sel_rdy = false;
-			}
-			break;
-		case xs_gYearMonth:
-			if (field.attr_sel_rdy) {
+				break;
+			case xs_gYearMonth:
 				java.util.Date util_month = parseDate(value);
 				lucene_doc.add(new StringField(name, DateTools.dateToString(util_month, DateTools.Resolution.MONTH), Field.Store.YES));
-				field.attr_sel_rdy = false;
-			}
-			break;
-		case xs_gYear:
-			if (field.attr_sel_rdy) {
+				break;
+			case xs_gYear:
 				java.util.Date util_year = parseDate(value);
 				lucene_doc.add(new StringField(name, DateTools.dateToString(util_year, DateTools.Resolution.YEAR), Field.Store.YES));
-				field.attr_sel_rdy = false;
-			}
-			break;
-		case xs_time:
-		case xs_gMonthDay:
-		case xs_gMonth:
-		case xs_gDay:
-			if (field.attr_sel_rdy) {
+				break;
+			case xs_time:
+			case xs_gMonthDay:
+			case xs_gMonth:
+			case xs_gDay:
 				lucene_doc.add(new StringField(name, value, Field.Store.YES));
-				field.attr_sel_rdy = false;
-			}
-			break;
-		default:
-			if (field.attr_sel_rdy || xs_type.equals(xs_ID)) {
+				break;
+			default:
 				lucene_doc.add(new TextField(name, value, Field.Store.YES));
-				field.attr_sel_rdy = false;
 			}
+
+			field.attr_sel_rdy = false;
+
 		}
 
 		switch (xs_type) {
@@ -3197,84 +3167,63 @@ public enum XsDataType {
 
 		try {
 
-			switch (xs_type) {
-			case xs_boolean:
-			case xs_hexBinary:
-			case xs_base64Binary:
-				if (field.attr_sel_rdy || field.sph_mva) {
+			if (field.attr_sel_rdy || xs_type.equals(xs_ID) || field.sph_mva) {
+
+				switch (xs_type) {
+				case xs_boolean:
+				case xs_hexBinary:
+				case xs_base64Binary:
 					writer.write("<" + attr_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + attr_name + ">\n");
-					field.attr_sel_rdy = false;
-				}
-				break;
-			case xs_bigserial:
-			case xs_long:
-			case xs_bigint:
-			case xs_unsignedLong:
-				if (field.attr_sel_rdy || field.sph_mva) {
+					break;
+				case xs_bigserial:
+				case xs_long:
+				case xs_bigint:
+				case xs_unsignedLong:
 					writer.write("<" + attr_name + ">" + Long.valueOf(value) + "</" + attr_name + ">\n");
-					field.attr_sel_rdy = false;
-				}
-				break;
-			case xs_serial:
-			case xs_integer:
-			case xs_int:
-			case xs_nonPositiveInteger:
-			case xs_negativeInteger:
-			case xs_nonNegativeInteger:
-			case xs_positiveInteger:
-			case xs_unsignedInt:
-				if (field.attr_sel_rdy || field.sph_mva) {
+					break;
+				case xs_serial:
+				case xs_integer:
+				case xs_int:
+				case xs_nonPositiveInteger:
+				case xs_negativeInteger:
+				case xs_nonNegativeInteger:
+				case xs_positiveInteger:
+				case xs_unsignedInt:
 					writer.write("<" + attr_name + ">" + Integer.valueOf(value) + "</" + attr_name + ">\n");
-					field.attr_sel_rdy = false;
-				}
-				break;
-			case xs_float:
-				if (field.attr_sel_rdy || field.sph_mva) {
+					break;
+				case xs_float:
 					writer.write("<" + attr_name + ">" + Float.valueOf(value) + "</" + attr_name + ">\n");
-					field.attr_sel_rdy = false;
-				}
-				break;
-			case xs_double:
-			case xs_decimal:
-				if (field.attr_sel_rdy || field.sph_mva) {
+					break;
+				case xs_double:
+				case xs_decimal:
 					writer.write("<" + attr_name + ">" + Double.valueOf(value) + "</" + attr_name + ">\n");
-					field.attr_sel_rdy = false;
-				}
-				break;
-			case xs_short:
-			case xs_byte:
-			case xs_unsignedShort:
-			case xs_unsignedByte:
-				if (field.attr_sel_rdy || field.sph_mva) {
+					break;
+				case xs_short:
+				case xs_byte:
+				case xs_unsignedShort:
+				case xs_unsignedByte:
 					writer.write("<" + attr_name + ">" + Integer.valueOf(value) + "</" + attr_name + ">\n");
-					field.attr_sel_rdy = false;
-				}
-				break;
-			case xs_dateTime:
-			case xs_date:
-			case xs_gYearMonth:
-			case xs_gYear:
-				if (field.attr_sel_rdy || field.sph_mva) {
+					break;
+				case xs_dateTime:
+				case xs_date:
+				case xs_gYearMonth:
+				case xs_gYear:
 					java.util.Date util_time = parseDate(value);
 					writer.write("<" + attr_name + ">" + util_time.getTime() / 1000L + "</" + attr_name + ">\n");
-					field.attr_sel_rdy = false;
-				}
-				break;
-			case xs_time:
-			case xs_gMonthDay:
-			case xs_gMonth:
-			case xs_gDay:
-				if (field.attr_sel_rdy || field.sph_mva) {
+					break;
+				case xs_time:
+				case xs_gMonthDay:
+				case xs_gMonth:
+				case xs_gDay:
 					writer.write("<" + attr_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + attr_name + ">\n");
-					field.attr_sel_rdy = false;
-				}
-				break;
-			default:
-				value = StringEscapeUtils.escapeXml10(value);
-				if (field.attr_sel || field.sph_mva || xs_type.equals(xs_ID)) {
+					break;
+				default:
+					value = StringEscapeUtils.escapeXml10(value);
 					writer.write("<" + attr_name + ">" + value + "</" + attr_name + ">\n");
-					field.attr_sel_rdy = false;
 				}
+
+				field.attr_sel_rdy = false;
+
 			}
 
 			switch (xs_type) {
