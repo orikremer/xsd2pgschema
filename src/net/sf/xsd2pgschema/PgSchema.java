@@ -4195,50 +4195,31 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return whether Sphinx attribute.
+	 * Return set of Sphinx attributes.
 	 *
-	 * @param table_name table name
-	 * @param field_name field name
-	 * @return boolean whether Sphinx attribute
+	 * @return HashSet set of Sphinx attributes
 	 */
-	public boolean isSphAttr(String table_name, String field_name) {
+	public HashSet<String> getSphAttrs() {
 
-		PgTable table = getTable(table_name);
+		HashSet<String> sph_attrs = new HashSet<String>();
 
-		if (table == null)
-			return false;
+		tables.forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> sph_attrs.add(table.name + "__" + field.name)));
 
-		PgField field = table.getField(field_name);
-
-		if (field == null)
-			return false;
-
-		return field.attr_sel;
+		return sph_attrs;
 	}
 
 	/**
-	 * Return whether Sphinx multi-valued attribute.
+	 * Return set of Sphinx multi-valued attributes.
 	 *
-	 * @param table_name table name
-	 * @param field_name field name
-	 * @return boolean whether Sphinx multi-valued attribute
+	 * @return HashSet set of Sphinx multi-valued attributes
 	 */
-	public boolean isSphMVA(String table_name, String field_name) {
+	public HashSet<String> getSphMVAs() {
 
-		PgTable table = getTable(table_name);
+		HashSet<String> sph_mvas = new HashSet<String>();
 
-		if (table == null)
-			return false;
+		tables.forEach(table -> table.fields.stream().filter(field -> field.sph_mva).forEach(field -> sph_mvas.add(table.name + "__" + field.name)));
 
-		PgField field = table.getField(field_name);
-
-		if (field == null)
-			return false;
-
-		if (!field.attr_sel)
-			return false;
-
-		return field.sph_mva;
+		return sph_mvas;
 	}
 
 	// JSON conversion

@@ -22,6 +22,7 @@ package net.sf.xsd2pgschema;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map.Entry;
 
 import org.apache.commons.text.StringEscapeUtils;
@@ -35,9 +36,6 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class SphDsSAXHandler extends DefaultHandler {
 
-	/** The PostgreSQL data model. */
-	PgSchema schema;
-
 	/** The Sphinx data source writer. */
 	FileWriter writer;
 
@@ -45,7 +43,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 	int sph_max_field_len;
 
 	/** The cutoff (80% of hard limit, max_field_len) of Sphinx field length. */
-	int sph_cutoff_field_len;
+	int sph_co_field_len;
 
 	/** The current state for sphinx:document. */
 	boolean sph_document = false;
@@ -62,6 +60,9 @@ public class SphDsSAXHandler extends DefaultHandler {
 	/** Whether Sphinx multi-valued attribute. */
 	boolean sph_mvattr = false;
 
+	/** The document key name in PostgreSQL DDL. */
+	String document_key_name = null;
+
 	/** The current Sphinx attribute name. */
 	String sph_attr_name = null;
 
@@ -70,6 +71,12 @@ public class SphDsSAXHandler extends DefaultHandler {
 
 	/** The holder of string builder for each Sphinx attribute. */
 	HashMap<String, StringBuilder> buffer = null;
+
+	/** The holder of Sphinx attributes. */
+	HashSet<String> sph_attrs = null;
+
+	/** The holder of Sphinx multi-valued attributes. */
+	HashSet<String> sph_mvas = null;
 
 	/**
 	 * Instance of Sphinx xmlpipe2 SAX handler.
@@ -80,11 +87,14 @@ public class SphDsSAXHandler extends DefaultHandler {
 	 */
 	public SphDsSAXHandler(PgSchema schema, FileWriter writer, IndexFilter index_filter) {
 
-		this.schema = schema;
+		document_key_name = schema.option.document_key_name;
+		sph_attrs = schema.getSphAttrs();
+		sph_mvas = schema.getSphMVAs();
+
 		this.writer = writer;
 
 		sph_max_field_len = index_filter.sph_max_field_len;
-		sph_cutoff_field_len = (int) (index_filter.sph_max_field_len * 0.8); // 80% of hard limit
+		sph_co_field_len = (int) (index_filter.sph_max_field_len * 0.8); // 80% of hard limit
 
 	}
 
@@ -115,7 +125,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 
 		else {
 
-			if (qName.equals(schema.option.document_key_name)) {
+			if (qName.equals(document_key_name)) {
 				document_id = true;
 				return;
 			}
@@ -130,14 +140,11 @@ public class SphDsSAXHandler extends DefaultHandler {
 			if (concat_name.length != 2)
 				return;
 
-			String table_name = concat_name[0];
-			String field_name = concat_name[1];
-
-			if (!schema.isSphAttr(table_name, field_name))
+			if (!sph_attrs.contains(qName))
 				return;
 
 			sph_attr = true;
-			sph_mvattr = schema.isSphMVA(table_name, field_name);
+			sph_mvattr = sph_mvas.contains(qName);
 
 			sph_attr_name = qName;
 
@@ -186,7 +193,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 
 		else {
 
-			if (qName.equals(schema.option.document_key_name)) {
+			if (qName.equals(document_key_name)) {
 				document_id = false;
 				return;
 			}
@@ -217,7 +224,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 		else if (document_id) {
 
 			try {
-				writer.write("<" + schema.option.document_key_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + schema.option.document_key_name + ">\n");
+				writer.write("<" + document_key_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + document_key_name + ">\n");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -230,7 +237,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 
 			if (field_len < sph_max_field_len) {
 
-				if (field_len < sph_cutoff_field_len || sb.indexOf(value) == -1)
+				if (field_len < sph_co_field_len || sb.indexOf(value) == -1)
 					sb.append(value + " ");
 
 			}
