@@ -88,6 +88,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 	public SphDsSAXHandler(PgSchema schema, FileWriter writer, IndexFilter index_filter) {
 
 		document_key_name = schema.option.document_key_name;
+
 		sph_attrs = schema.getSphAttrs();
 		sph_mvas = schema.getSphMVAs();
 

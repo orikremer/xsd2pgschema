@@ -144,7 +144,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 			else if (field.serial_key) {
 
 				if (table.filew != null)
-					values[f] = schema.option.ser_size.equals(PgSerSize.unsigned_int_32) ? Integer.toString(key_id) : Short.toString((short) key_id);
+					values[f] = option.ser_size.equals(PgSerSize.unsigned_int_32) ? Integer.toString(key_id) : Short.toString((short) key_id);
 
 			}
 
@@ -266,7 +266,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				PgField field = fields.get(f);
 
-				if (field.isOmitted(schema.option))
+				if (field.isOmitted(option))
 					continue;
 
 				sb.append(values[f] + ",");

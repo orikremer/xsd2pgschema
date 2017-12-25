@@ -44,6 +44,9 @@ public abstract class PgSchemaNodeParser {
 	/** The PostgreSQL data model. */
 	PgSchema schema = null;
 
+	/** The PostgreSQL data model option. */
+	PgSchemaOption option = null;
+
 	/** The relational data extension. */
 	boolean rel_data_ext;
 
@@ -122,8 +125,9 @@ public abstract class PgSchemaNodeParser {
 	public PgSchemaNodeParser(final PgSchema schema, final PgTable parent_table, final PgTable table) throws ParserConfigurationException, TransformerConfigurationException {
 
 		this.schema = schema;
+		option = schema.option;
 
-		rel_data_ext = schema.option.rel_data_ext;
+		rel_data_ext = option.rel_data_ext;
 
 		this.parent_table = parent_table;
 		this.table = table;
@@ -339,7 +343,7 @@ public abstract class PgSchemaNodeParser {
 			String child_name;
 
 			if ((child_name = child.getLocalName()) == null)
-				child_name = schema.option.getUnqualifiedName(child.getNodeName());
+				child_name = option.getUnqualifiedName(child.getNodeName());
 
 			if (!child_name.equals(field.xname))
 				continue;
@@ -413,7 +417,7 @@ public abstract class PgSchemaNodeParser {
 			String child_name;
 
 			if ((child_name = child.getLocalName()) == null)
-				child_name = schema.option.getUnqualifiedName(child.getNodeName());
+				child_name = option.getUnqualifiedName(child.getNodeName());
 
 			String _child_name = child_name;
 
@@ -498,7 +502,7 @@ public abstract class PgSchemaNodeParser {
 				String child_name;
 
 				if ((child_name = child.getLocalName()) == null)
-					child_name = schema.option.getUnqualifiedName(child.getNodeName());
+					child_name = option.getUnqualifiedName(child.getNodeName());
 
 				if (!child_name.equals(nested_table.name))
 					continue;

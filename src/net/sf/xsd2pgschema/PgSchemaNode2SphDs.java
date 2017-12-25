@@ -214,7 +214,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 				if (field.system_key)
 					continue;
 
-				if (field.isIndexable(schema.option))
+				if (field.isIndexable(option))
 					XsDataType.setValue(field, table.filew, table.name + "__" + field.xname, value, value.length() >= schema.min_word_len);
 
 			}

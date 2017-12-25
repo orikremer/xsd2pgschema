@@ -80,7 +80,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				PgField field = fields.get(f);
 
-				if (field.isOmitted(schema.option))
+				if (field.isOmitted(option))
 					continue;
 
 				if (field.enum_name == null)
@@ -289,7 +289,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			if (!filled)
 				break;
 
-			if (!field.isOmitted(schema.option))
+			if (!field.isOmitted(option))
 				param_id++;
 
 		}
@@ -325,7 +325,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				PgField field = fields.get(f);
 
-				if (field.isOmitted(schema.option))
+				if (field.isOmitted(option))
 					continue;
 
 				if (!occupied[f])
@@ -456,7 +456,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 */
 	private void setHashKey(int field_id, int param_id, String key_name) throws SQLException {
 
-		switch (schema.option.hash_size) {
+		switch (option.hash_size) {
 		case native_default:
 			ps.setBytes(param_id, schema.getHashKeyBytes(key_name));
 			break;
@@ -484,7 +484,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 */
 	private void setSerKey(int field_id, int param_id, int key_id) throws SQLException {
 
-		switch (schema.option.ser_size) {
+		switch (option.ser_size) {
 		case unsigned_int_32:
 			ps.setInt(param_id, key_id);
 			break;

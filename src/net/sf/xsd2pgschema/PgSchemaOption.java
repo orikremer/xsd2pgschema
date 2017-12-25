@@ -115,11 +115,9 @@ public class PgSchemaOption {
 	protected boolean attr_resolved = false;
 
 	/** The internal status corresponding to --doc-key option. */
-
 	private boolean _doc_key = false;
 
 	/** The internal status corresponding to --no-doc-key option. */
-
 	private boolean _no_doc_key = false;
 
 	/**

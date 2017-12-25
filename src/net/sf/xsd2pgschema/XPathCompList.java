@@ -94,6 +94,9 @@ public class XPathCompList {
 	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
+	/** The PostgreSQL data model option. */
+	public PgSchemaOption option = null;
+
 	/** Instance of path expression for UnionExprNoRootContext node. */
 	private List<XPathExpr> path_exprs_union = null;
 
@@ -109,13 +112,15 @@ public class XPathCompList {
 
 		this.schema = schema;
 
-		document_key = schema.option.document_key;
-		serial_key = schema.option.serial_key;
+		option = schema.option;
 
-		case_sense = schema.option.case_sense;
+		document_key = option.document_key;
+		serial_key = option.serial_key;
 
-		document_key_name = schema.option.document_key_name;
-		serial_key_name = schema.option.serial_key_name;
+		case_sense = option.case_sense;
+
+		document_key_name = option.document_key_name;
+		serial_key_name = option.serial_key_name;
 
 		comps = new ArrayList<XPathComp>();
 
@@ -1037,7 +1042,7 @@ public class XPathCompList {
 
 				if (field != null) {
 
-					if (!field.target_namespace.equals(namespace_uri) || (!path_expr.terminus.equals(XPathCompType.any_element) && !path_expr.terminus.equals(XPathCompType.any_attribute) && !field.matchesNodeName(schema.option, text, wild_card)))
+					if (!field.target_namespace.equals(namespace_uri) || (!path_expr.terminus.equals(XPathCompType.any_element) && !path_expr.terminus.equals(XPathCompType.any_attribute) && !field.matchesNodeName(option, text, wild_card)))
 						iter.remove();
 
 					continue;
@@ -1067,7 +1072,7 @@ public class XPathCompList {
 
 							found_field = true;
 
-							if (!foreign_field.target_namespace.equals(namespace_uri) || (!path_expr.terminus.equals(XPathCompType.any_element) && !path_expr.terminus.equals(XPathCompType.any_attribute) && !foreign_field.matchesNodeName(schema.option, text, wild_card)))
+							if (!foreign_field.target_namespace.equals(namespace_uri) || (!path_expr.terminus.equals(XPathCompType.any_element) && !path_expr.terminus.equals(XPathCompType.any_attribute) && !foreign_field.matchesNodeName(option, text, wild_card)))
 								iter.remove();
 
 							break;

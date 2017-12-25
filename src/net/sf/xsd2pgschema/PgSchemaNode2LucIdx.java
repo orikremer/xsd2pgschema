@@ -245,7 +245,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				if (field.system_key)
 					XsDataType.setKey(table.lucene_doc, table.name + "." + field.xname, value);
 
-				else if (field.isIndexable(schema.option))
+				else if (field.isIndexable(option))
 					XsDataType.setValue(field, table.lucene_doc, table.name + "." + field.xname, value, value.length() >= schema.min_word_len, schema.numeric_lucidx);
 
 			}
