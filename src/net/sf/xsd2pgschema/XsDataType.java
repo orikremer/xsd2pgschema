@@ -3167,14 +3167,11 @@ public enum XsDataType {
 
 		try {
 
+			boolean escaped = false;
+
 			if (field.attr_sel_rdy || xs_type.equals(xs_ID) || field.sph_mva) {
 
 				switch (xs_type) {
-				case xs_boolean:
-				case xs_hexBinary:
-				case xs_base64Binary:
-					writer.write("<" + attr_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + attr_name + ">\n");
-					break;
 				case xs_bigserial:
 				case xs_long:
 				case xs_bigint:
@@ -3211,15 +3208,10 @@ public enum XsDataType {
 					java.util.Date util_time = parseDate(value);
 					writer.write("<" + attr_name + ">" + util_time.getTime() / 1000L + "</" + attr_name + ">\n");
 					break;
-				case xs_time:
-				case xs_gMonthDay:
-				case xs_gMonth:
-				case xs_gDay:
-					writer.write("<" + attr_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + attr_name + ">\n");
-					break;
 				default:
 					value = StringEscapeUtils.escapeXml10(value);
 					writer.write("<" + attr_name + ">" + value + "</" + attr_name + ">\n");
+					escaped = true;
 				}
 
 				field.attr_sel_rdy = false;
@@ -3247,7 +3239,7 @@ public enum XsDataType {
 				break;
 			default:
 				if (min_word_len_filter)
-					writer.write("<" + PgSchemaUtil.simple_content_name + ">" + value + "</" + PgSchemaUtil.simple_content_name + ">\n");
+					writer.write("<" + PgSchemaUtil.simple_content_name + ">" + (escaped ? value : StringEscapeUtils.escapeXml10(value)) + "</" + PgSchemaUtil.simple_content_name + ">\n");
 			}
 
 		} catch (IOException e) {
