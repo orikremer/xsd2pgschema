@@ -19,8 +19,6 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import org.apache.commons.text.StringEscapeUtils;
-
 /**
  * JSON builder option.
  *
@@ -59,7 +57,7 @@ public class JsonBuilderOption {
 		if (attr_prefix == null)
 			attr_prefix = "";
 
-		this.attr_prefix = StringEscapeUtils.escapeEcmaScript(attr_prefix);
+		this.attr_prefix = attr_prefix;
 
 	}
 

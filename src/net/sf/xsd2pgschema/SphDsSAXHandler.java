@@ -247,6 +247,8 @@ public class SphDsSAXHandler extends DefaultHandler {
 
 		else if (sph_attr) {
 
+			value = StringEscapeUtils.escapeXml10(value);
+
 			if (sph_mvattr)
 				buffer.get(sph_attr_name).append(StringEscapeUtils.escapeCsv(value) + ",");
 			else

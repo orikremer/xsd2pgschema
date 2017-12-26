@@ -3255,10 +3255,10 @@ public enum XsDataType {
 	 *
 	 * @param field PostgreSQL field
 	 * @param value content
-	 * @param json_key_value_space while spaces between values
+	 * @param jsonb JSON builder
 	 * @return true, if successful
 	 */
-	public static boolean setValue(PgField field, String value, String json_key_value_space) {
+	public static boolean setValue(PgField field, String value, JsonBuilder jsonb) {
 
 		if (field.jsonb == null)
 			return false;
@@ -3304,15 +3304,13 @@ public enum XsDataType {
 				field.jsonb.append(value == null ? "null" : "\"\"");
 			}
 
-			field.jsonb.append("," + json_key_value_space);
+			field.jsonb.append("," + jsonb.key_value_space);
 
 			return false;
 		}
 
 		if (!field.jsonb_not_empty)
 			field.jsonb_not_empty = true;
-
-		value = StringEscapeUtils.escapeEcmaScript(value).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'");
 
 		switch (field.xs_type) {
 		case xs_boolean:
@@ -3350,14 +3348,15 @@ public enum XsDataType {
 			field.jsonb.append(Integer.parseInt(value));
 			break;
 		default:
-			value = StringEscapeUtils.escapeCsv(value);
+			value = jsonb.escapeAnnotation(value);
+
 			if (value.startsWith("\""))
 				field.jsonb.append(value);
 			else
 				field.jsonb.append("\"" + value + "\"");
 		}
 
-		field.jsonb.append("," + json_key_value_space);
+		field.jsonb.append("," + jsonb.key_value_space);
 
 		return true;
 	}
@@ -3526,7 +3525,7 @@ public enum XsDataType {
 		}
 
 		if (field.default_value != null && !field.default_value.isEmpty())
-			attrs += " default=\"" + StringEscapeUtils.escapeCsv(field.default_value) + "\"";
+			attrs += " default=\"" + StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeXml10(field.default_value)) + "\"";
 
 		filew.write(attrs + "/>\n");
 

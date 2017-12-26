@@ -46,7 +46,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
-import org.apache.commons.text.StringEscapeUtils;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
 import org.w3c.dom.*;
@@ -4313,7 +4312,7 @@ public class PgSchema {
 
 		if (def_anno_appinfo != null) {
 
-			String _def_anno_appinfo = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_anno_appinfo).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
+			String _def_anno_appinfo = jsonb.escapeAnnotation(def_anno_appinfo);
 
 			if (!_def_anno_appinfo.startsWith("\""))
 				_def_anno_appinfo = "\"" + _def_anno_appinfo + "\"";
@@ -4324,7 +4323,7 @@ public class PgSchema {
 
 		if (def_anno_doc != null) {
 
-			String _def_anno_doc = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_anno_doc).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
+			String _def_anno_doc = jsonb.escapeAnnotation(def_anno_doc);
 
 			if (!_def_anno_doc.startsWith("\""))
 				_def_anno_doc = "\"" + _def_anno_doc + "\"";
@@ -4341,7 +4340,7 @@ public class PgSchema {
 
 			if (root_table.anno != null && !root_table.anno.isEmpty()) {
 
-				String table_anno = StringEscapeUtils.escapeCsv(root_table.anno.replaceAll("\n--", ""));
+				String table_anno = jsonb.escapeAnnotation(root_table.anno);
 
 				if (!table_anno.startsWith("\""))
 					table_anno = "\"" + table_anno + "\"";
@@ -4425,7 +4424,7 @@ public class PgSchema {
 
 			if (table.anno != null && !table.anno.isEmpty()) {
 
-				String table_anno = StringEscapeUtils.escapeCsv(table.anno.replaceAll("\n--", ""));
+				String table_anno = jsonb.escapeAnnotation(table.anno);
 
 				if (!table_anno.startsWith("\""))
 					table_anno = "\"" + table_anno + "\"";
@@ -4682,7 +4681,7 @@ public class PgSchema {
 
 		if (def_anno_appinfo != null) {
 
-			String _def_anno_appinfo = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_anno_appinfo).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
+			String _def_anno_appinfo = jsonb.escapeAnnotation(def_anno_appinfo);
 
 			if (!_def_anno_appinfo.startsWith("\""))
 				_def_anno_appinfo = "\"" + _def_anno_appinfo + "\"";
@@ -4693,7 +4692,7 @@ public class PgSchema {
 
 		if (def_anno_doc != null) {
 
-			String _def_anno_doc = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_anno_doc).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
+			String _def_anno_doc = jsonb.escapeAnnotation(def_anno_doc);
 
 			if (!_def_anno_doc.startsWith("\""))
 				_def_anno_doc = "\"" + _def_anno_doc + "\"";
@@ -4710,7 +4709,7 @@ public class PgSchema {
 
 			if (root_table.anno != null && !root_table.anno.isEmpty()) {
 
-				String table_anno = StringEscapeUtils.escapeCsv(root_table.anno.replaceAll("\n--", ""));
+				String table_anno = jsonb.escapeAnnotation(root_table.anno);
 
 				if (!table_anno.startsWith("\""))
 					table_anno = "\"" + table_anno + "\"";
@@ -4792,7 +4791,7 @@ public class PgSchema {
 
 			if (table.anno != null && !table.anno.isEmpty()) {
 
-				String table_anno = StringEscapeUtils.escapeCsv(table.anno.replaceAll("\n--", ""));
+				String table_anno = jsonb.escapeAnnotation(table.anno);
 
 				if (!table_anno.startsWith("\""))
 					table_anno = "\"" + table_anno + "\"";
@@ -5007,7 +5006,7 @@ public class PgSchema {
 
 		if (def_anno_appinfo != null) {
 
-			String _def_anno_appinfo = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_anno_appinfo).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
+			String _def_anno_appinfo = jsonb.escapeAnnotation(def_anno_appinfo);
 
 			if (!_def_anno_appinfo.startsWith("\""))
 				_def_anno_appinfo = "\"" + _def_anno_appinfo + "\"";
@@ -5018,7 +5017,7 @@ public class PgSchema {
 
 		if (def_anno_doc != null) {
 
-			String _def_anno_doc = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(def_anno_doc).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
+			String _def_anno_doc = jsonb.escapeAnnotation(def_anno_doc);
 
 			if (!_def_anno_doc.startsWith("\""))
 				_def_anno_doc = "\"" + _def_anno_doc + "\"";
@@ -5077,7 +5076,7 @@ public class PgSchema {
 
 		if (table.anno != null && !table.anno.isEmpty()) {
 
-			String table_anno = StringEscapeUtils.escapeCsv(table.anno.replaceAll("\n--", ""));
+			String table_anno = jsonb.escapeAnnotation(table.anno);
 
 			if (!table_anno.startsWith("\""))
 				table_anno = "\"" + table_anno + "\"";
