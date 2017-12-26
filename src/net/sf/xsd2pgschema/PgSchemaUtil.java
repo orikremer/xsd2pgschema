@@ -265,11 +265,11 @@ public class PgSchemaUtil {
 		if (schema_file.exists() && ((is_url && cache_xsd) || !is_url))
 			return schema_file;
 
-		if (schema_parent != null && !is_url) { // schema_parent indicates file path
+		if (!is_url) { // schema_parent indicates file path
 
 			schema_file = new File(schema_parent + "/" + schema_file_name);
 
-			if (schema_file.exists() && ((is_url && cache_xsd) || !is_url))
+			if (schema_file.exists())
 				return schema_file;
 
 		}
@@ -281,12 +281,8 @@ public class PgSchemaUtil {
 
 		try {
 
-			if (cache_xsd) {
-
-				if (schema_parent != null) // copy schema file in local
-					IOUtils.copy(is, new FileOutputStream(schema_file));
-
-			}
+			if (cache_xsd)
+				IOUtils.copy(is, new FileOutputStream(schema_file));
 
 			else {
 
@@ -299,10 +295,8 @@ public class PgSchemaUtil {
 
 				} while (schema_file_part.exists());
 
-				if (schema_parent != null)  { // copy schema file in local
-					IOUtils.copy(is, new FileOutputStream(schema_file_part));
-					schema_file_part.renameTo(schema_file);
-				}
+				IOUtils.copy(is, new FileOutputStream(schema_file_part));
+				schema_file_part.renameTo(schema_file);
 
 			}
 
