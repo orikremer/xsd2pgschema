@@ -82,13 +82,14 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
 	 * @param option PostgreSQL data model option
+	 * @param index_filter index filter
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2LuceneIdxThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2LuceneIdxThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option, final IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.shard_id = shard_id;
 		this.shard_size = shard_size;
@@ -114,6 +115,10 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		// XSD analysis
 
 		schema = new PgSchema(doc_builder, xsd_doc, null, xml2luceneidx.schema_location, option);
+
+		schema.applyXmlPostEditor(xml2luceneidx.xml_post_editor);
+
+		schema.applyIndexFilter(index_filter);
 
 		// prepare XML validator
 
@@ -188,7 +193,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 				lucene_doc.add(new StringField(schema.option.document_key_name, xml_parser.document_id, Field.Store.YES));
 
-				schema.xml2LucIdx(xml_parser, lucene_doc, xml2luceneidx.xml_post_editor, xml2luceneidx.index_filter);
+				schema.xml2LucIdx(xml_parser, lucene_doc);
 
 				writer.addDocument(lucene_doc);
 

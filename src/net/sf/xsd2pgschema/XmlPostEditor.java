@@ -37,6 +37,15 @@ public class XmlPostEditor {
 	/** The fill-this option. */
 	HashSet<String> fill_these = null;
 
+	/** Whether file-in option has been resolved. */
+	boolean filt_in_resolved = false;	
+
+	/** Whether file-out option has been resolved. */
+	boolean filt_out_resolved = false;
+
+	/** Whether fill-this option has been resolved. */
+	boolean fill_this_resolved = false;
+
 	/**
 	 * Instance of XmlPostEditor.
 	 */

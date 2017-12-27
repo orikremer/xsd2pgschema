@@ -63,6 +63,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
+	/** The index filter. */
+	private IndexFilter index_filter = null;
+
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
@@ -81,13 +84,14 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
 	 * @param option PostgreSQL data model option
+	 * @param index_filter index filter
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option, IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.shard_id = shard_id;
 		this.shard_size = shard_size;
@@ -113,6 +117,10 @@ public class Xml2SphinxDsThrd implements Runnable {
 		// XSD analysis
 
 		schema = new PgSchema(doc_builder, xsd_doc, null, xml2sphinxds.schema_location, option);
+
+		schema.applyXmlPostEditor(xml2sphinxds.xml_post_editor);
+
+		schema.applyIndexFilter(this.index_filter = index_filter);
 
 		// prepare XML validator
 
@@ -154,9 +162,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			}
 
-			else
-				sphinx_schema.delete();
-
 		}
 
 	}
@@ -189,7 +194,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 				writer.write("<sphinx:document id=\"" + schema.getHashKeyString(xml_parser.document_id) + "\">\n");
 				writer.write("<" + schema.option.document_key_name + ">" + StringEscapeUtils.escapeXml10(xml_parser.document_id) + "</" + schema.option.document_key_name + ">\n");
 
-				schema.xml2SphDs(xml_parser, writer, xml2sphinxds.xml_post_editor, xml2sphinxds.index_filter);
+				schema.xml2SphDs(xml_parser, writer);
 
 				writer.write("</sphinx:document>\n");
 
@@ -265,7 +270,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 			if (!sph_doc_file.isFile())
 				continue;
 
-			SphDsSAXHandler handler = new SphDsSAXHandler(schema, filew, xml2sphinxds.index_filter);
+			SphDsSAXHandler handler = new SphDsSAXHandler(schema, filew, index_filter);
 
 			try {
 

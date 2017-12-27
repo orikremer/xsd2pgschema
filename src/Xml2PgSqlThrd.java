@@ -93,6 +93,8 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		schema = new PgSchema(doc_builder, xsd_doc, null, xml2pgsql.schema_location, option);
 
+		schema.applyXmlPostEditor(xml2pgsql.xml_post_editor);
+
 		// prepare XML validator
 
 		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2pgsql.schema_location, null, option.cache_xsd)) : null;
@@ -126,7 +128,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2pgsql.xml_file_filter);
 
-				schema.xml2PgSql(xml_parser, db_conn, xml2pgsql.xml_post_editor, xml2pgsql.pg_option.update);
+				schema.xml2PgSql(xml_parser, db_conn, xml2pgsql.pg_option.update);
 
 			} catch (Exception e) {
 				e.printStackTrace();

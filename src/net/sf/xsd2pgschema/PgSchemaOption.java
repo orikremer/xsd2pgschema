@@ -108,11 +108,11 @@ public class PgSchemaOption {
 	/** The xs_prefix.isEmpty() ? "" : xs_prefix + ":". */
 	protected String xs_prefix_ = null;
 
-	/** Whether selected fields are resolved. */
-	protected boolean field_resolved = false;
-
-	/** Whether selected attributes are resolved. */
+	/** Whether attribute selection has been resolved. */
 	protected boolean attr_resolved = false;
+
+	/** Whether field selection has been resolved. */
+	protected boolean field_resolved = false;
 
 	/** The internal status corresponding to --doc-key option. */
 	private boolean _doc_key = false;

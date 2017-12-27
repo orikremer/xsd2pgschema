@@ -86,6 +86,8 @@ public class Xml2JsonThrd implements Runnable {
 
 		schema = new PgSchema(doc_builder, xsd_doc, null, xml2json.schema_location, option);
 
+		schema.applyXmlPostEditor(xml2json.xml_post_editor);
+
 		schema.initJsonBuilder(jsonb_option);
 
 		// prepare XML validator
@@ -117,13 +119,13 @@ public class Xml2JsonThrd implements Runnable {
 
 				switch (xml2json.json_type) {
 				case column:
-					schema.xml2ColJson(xml_parser, json_file_name, xml2json.xml_post_editor);
+					schema.xml2ColJson(xml_parser, json_file_name);
 					break;
 				case object:
-					schema.xml2ObjJson(xml_parser, json_file_name, xml2json.xml_post_editor);
+					schema.xml2ObjJson(xml_parser, json_file_name);
 					break;
 				case relational:
-					schema.xml2Json(xml_parser, json_file_name, xml2json.xml_post_editor);
+					schema.xml2Json(xml_parser, json_file_name);
 					break;
 				}
 

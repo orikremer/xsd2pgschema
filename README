@@ -1,3 +1,7 @@
+ Changes in xsd2pgschema 2.7.5 (release 2017-12-27)
+
+  Fixed missing of attribute and field in full-text indexing when sharding was enabled.
+
  Changes in xsd2pgschema 2.7.4 (release 2017-12-26)
 
   Disallowed multiple full-text indexing for attribute except for Sphinx multi-valued attribute. The first value in a document of the attribute will be indexed by default.

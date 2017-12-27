@@ -2690,26 +2690,57 @@ public class PgSchema {
 
 	// post XML editorial functions
 
-	/** Whether filt-in option are resolved. */
-	private boolean filt_in_resolved = false;
+	/**
+	 * Apply XML post editor.
+	 *
+	 * @param xml_post_editor XML post editor
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void applyXmlPostEditor(XmlPostEditor xml_post_editor) throws PgSchemaException {
+
+		if (xml_post_editor.filt_ins != null) {
+
+			xml_post_editor.filt_in_resolved = false;
+
+			applyFiltIn(xml_post_editor);
+
+		}
+
+		if (xml_post_editor.filt_outs != null) {
+
+			xml_post_editor.filt_out_resolved = false;
+
+			applyFiltOut(xml_post_editor);
+
+		}
+
+		if (xml_post_editor.fill_these != null) {
+
+			xml_post_editor.fill_this_resolved = false;
+
+			applyFillThis(xml_post_editor);
+
+		}
+
+	}
 
 	/**
 	 * Apply filt-in option.
 	 *
-	 * @param filt_ins filt-in option
+	 * @param xml_post_editor XML post editor
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void applyFiltIn(HashSet<String> filt_ins) throws PgSchemaException {
+	private void applyFiltIn(XmlPostEditor xml_post_editor) throws PgSchemaException {
 
-		if (filt_in_resolved)
+		if (xml_post_editor.filt_in_resolved)
 			return;
 
-		filt_in_resolved = true;
+		xml_post_editor.filt_in_resolved = true;
 
-		if (filt_ins.size() == 0)
+		if (xml_post_editor.filt_ins.size() == 0)
 			return;
 
-		for (String filt_in : filt_ins) {
+		for (String filt_in : xml_post_editor.filt_ins) {
 
 			String[] key_val = filt_in.split(":");
 			String[] key = key_val[0].split("\\.");
@@ -2789,26 +2820,23 @@ public class PgSchema {
 
 	}
 
-	/** Whether filt-out option are resolved. */
-	private boolean filt_out_resolved = false;
-
 	/**
 	 * Apply filt-out option.
 	 *
-	 * @param filt_outs filt-out option
+	 * @param xml_post_editor XML post editor
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void applyFiltOut(HashSet<String> filt_outs) throws PgSchemaException {
+	private void applyFiltOut(XmlPostEditor xml_post_editor) throws PgSchemaException {
 
-		if (filt_out_resolved)
+		if (xml_post_editor.filt_out_resolved)
 			return;
 
-		filt_out_resolved = true;
+		xml_post_editor.filt_out_resolved = true;
 
-		if (filt_outs.size() == 0)
+		if (xml_post_editor.filt_outs.size() == 0)
 			return;
 
-		for (String filt_out : filt_outs) {
+		for (String filt_out : xml_post_editor.filt_outs) {
 
 			String[] key_val = filt_out.split(":");
 			String[] key = key_val[0].split("\\.");
@@ -2860,26 +2888,23 @@ public class PgSchema {
 
 	}
 
-	/** Whether fill-this option are resolved. */
-	private boolean fill_this_resolved = false;
-
 	/**
 	 * Apply fill-this option.
 	 *
-	 * @param fill_these fill-this option
+	 * @param xml_post_editor XML post editor
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void applyFillThis(HashSet<String> fill_these) throws PgSchemaException {
+	private void applyFillThis(XmlPostEditor xml_post_editor) throws PgSchemaException {
 
-		if (fill_this_resolved)
+		if (xml_post_editor.fill_this_resolved)
 			return;
 
-		fill_this_resolved = true;
+		xml_post_editor.fill_this_resolved = true;
 
-		if (fill_these.size() == 0)
+		if (xml_post_editor.fill_these.size() == 0)
 			return;
 
-		for (String fill_this : fill_these) {
+		for (String fill_this : xml_post_editor.fill_these) {
 
 			String[] key_val = fill_this.split(":");
 			String[] key = key_val[0].split("\\.");
@@ -2915,6 +2940,31 @@ public class PgSchema {
 				throw new PgSchemaException("Not found " + table + "." + field_name + ".");
 
 		}
+
+	}
+
+	/**
+	 * Apply filter for full-text indexing.
+	 *
+	 * @param index_filter index filter
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void applyIndexFilter(IndexFilter index_filter) throws PgSchemaException {
+
+		option.attr_resolved = false;
+
+		applyAttr(index_filter);
+
+		if (index_filter.fields != null) {
+
+			option.field_resolved = false;
+
+			applyField(index_filter);
+
+		}
+
+		this.min_word_len = index_filter.min_word_len;
+		this.numeric_lucidx = index_filter.numeric_lucidx;
 
 	}
 
@@ -3239,22 +3289,12 @@ public class PgSchema {
 	 * Return root node of document.
 	 *
 	 * @param xml_parser XML document
-	 * @param xml_post_editor XML post editing
 	 * @return Node root node of document
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private Node getRootNode(XmlParser xml_parser, XmlPostEditor xml_post_editor) throws PgSchemaException {
+	private Node getRootNode(XmlParser xml_parser) throws PgSchemaException {
 
 		hasRootTable();
-
-		if (xml_post_editor.filt_ins != null)
-			applyFiltIn(xml_post_editor.filt_ins);
-
-		if (xml_post_editor.filt_outs != null)
-			applyFiltOut(xml_post_editor.filt_outs);
-
-		if (xml_post_editor.fill_these != null)
-			applyFillThis(xml_post_editor.fill_these);
 
 		Node node = xml_parser.document.getDocumentElement();
 
@@ -3264,30 +3304,6 @@ public class PgSchema {
 			throw new PgSchemaException("Not found root element (node_name: " + root_table.name + ") in XML: " + document_id);
 
 		this.document_id = xml_parser.document_id;
-
-		return node;
-	}
-
-	/**
-	 * Return root node of document for full-text indexing.
-	 *
-	 * @param xml_parser XML document
-	 * @param xml_post_editor XML post editing
-	 * @param index_filter index filter
-	 * @return Node root node of document
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	private Node getRootNode(XmlParser xml_parser, XmlPostEditor xml_post_editor, IndexFilter index_filter) throws PgSchemaException {
-
-		Node node = getRootNode(xml_parser, xml_post_editor);
-
-		applyAttr(index_filter);
-
-		if (index_filter.fields != null)
-			applyField(index_filter);
-
-		this.min_word_len = index_filter.min_word_len;
-		this.numeric_lucidx = index_filter.numeric_lucidx;
 
 		return node;
 	}
@@ -3358,15 +3374,14 @@ public class PgSchema {
 	 * @param xml_parser XML document
 	 * @param csv_dir_name directory name of CSV files
 	 * @param db_conn Database connection
-	 * @param xml_post_editor XML post editing
 	 * @param append_csv whether allows to append CSV files
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2PgCsv(XmlParser xml_parser, String csv_dir_name, Connection db_conn, XmlPostEditor xml_post_editor, boolean append_csv) throws ParserConfigurationException, TransformerException, PgSchemaException {
+	public void xml2PgCsv(XmlParser xml_parser, String csv_dir_name, Connection db_conn, boolean append_csv) throws ParserConfigurationException, TransformerException, PgSchemaException {
 
-		Node node = getRootNode(xml_parser, xml_post_editor);
+		Node node = getRootNode(xml_parser);
 
 		initTableLock(false);
 
@@ -3496,16 +3511,15 @@ public class PgSchema {
 	 *
 	 * @param xml_parser XML document
 	 * @param db_conn Database connection
-	 * @param xml_post_editor XML post editing
 	 * @param update delete before insert
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2PgSql(XmlParser xml_parser, Connection db_conn, XmlPostEditor xml_post_editor, boolean update) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
+	public void xml2PgSql(XmlParser xml_parser, Connection db_conn, boolean update) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
-		Node node = getRootNode(xml_parser, xml_post_editor);
+		Node node = getRootNode(xml_parser);
 
 		// parse root node and send to PostgreSQL
 
@@ -3853,16 +3867,14 @@ public class PgSchema {
 	 *
 	 * @param xml_parser XML document
 	 * @param lucene_doc Lucene document
-	 * @param xml_post_editor XML post editing
-	 * @param index_filter index filter
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2LucIdx(XmlParser xml_parser, org.apache.lucene.document.Document lucene_doc, XmlPostEditor xml_post_editor, IndexFilter index_filter) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
+	public void xml2LucIdx(XmlParser xml_parser, org.apache.lucene.document.Document lucene_doc) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
-		Node node = getRootNode(xml_parser, xml_post_editor, index_filter);
+		Node node = getRootNode(xml_parser);
 
 		initTableLock(true);
 		resetAttrSelRdy();
@@ -4104,16 +4116,14 @@ public class PgSchema {
 	 *
 	 * @param xml_parser XML document
 	 * @param writer writer of Sphinx xmlpipe2 file
-	 * @param xml_post_editor XML post editing
-	 * @param index_filter index filter
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2SphDs(XmlParser xml_parser, FileWriter writer, XmlPostEditor xml_post_editor, IndexFilter index_filter) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
+	public void xml2SphDs(XmlParser xml_parser, FileWriter writer) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
-		Node node = getRootNode(xml_parser, xml_post_editor, index_filter);
+		Node node = getRootNode(xml_parser);
 
 		initTableLock(true);
 		resetAttrSelRdy();
@@ -4486,15 +4496,14 @@ public class PgSchema {
 	 *
 	 * @param xml_parser XML document
 	 * @param json_file_name JSON file name
-	 * @param xml_post_editor XML post editing
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2ObjJson(XmlParser xml_parser, String json_file_name, XmlPostEditor xml_post_editor) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
+	public void xml2ObjJson(XmlParser xml_parser, String json_file_name) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
-		Node node = getRootNode(xml_parser, xml_post_editor);
+		Node node = getRootNode(xml_parser);
 
 		initTableLock(true);
 		clearJsonBuilder();
@@ -4853,15 +4862,14 @@ public class PgSchema {
 	 *
 	 * @param xml_parser XML document
 	 * @param json_file_name JSON file name
-	 * @param xml_post_editor XML post editing
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2ColJson(XmlParser xml_parser, String json_file_name, XmlPostEditor xml_post_editor) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
+	public void xml2ColJson(XmlParser xml_parser, String json_file_name) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
-		Node node = getRootNode(xml_parser, xml_post_editor);
+		Node node = getRootNode(xml_parser);
 
 		initTableLock(true);
 		clearJsonBuilder();
@@ -5128,15 +5136,14 @@ public class PgSchema {
 	 *
 	 * @param xml_parser XML document
 	 * @param json_file_name JSON file name
-	 * @param xml_post_editor XML post editing
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2Json(XmlParser xml_parser, String json_file_name, XmlPostEditor xml_post_editor) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
+	public void xml2Json(XmlParser xml_parser, String json_file_name) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
-		Node node = getRootNode(xml_parser, xml_post_editor);
+		Node node = getRootNode(xml_parser);
 
 		initTableLock(false);
 		clearJsonBuilder();

@@ -3425,7 +3425,7 @@ public enum XsDataType {
 
 	/**
 	 * Write Sphinx attribute in schema file
-	 * 
+	 *
 	 * @param table PosgtreSQL table
 	 * @param field PostgreSQL field
 	 * @param filew Sphinx schema file writer
@@ -3533,7 +3533,7 @@ public enum XsDataType {
 
 	/**
 	 * Write Sphinx attribute in configuration file
-	 * 
+	 *
 	 * @param table PosgtreSQL table
 	 * @param field PostgreSQL field
 	 * @param filew Sphinx configuration file writer
