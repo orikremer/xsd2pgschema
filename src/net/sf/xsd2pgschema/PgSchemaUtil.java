@@ -94,6 +94,9 @@ public class PgSchemaUtil {
 	/** The prefix of directory name for multi-threading. */
 	public final static String thrd_dir_prefix = "thrd-";
 
+	/** The Sphinx membership operator. */
+	public final static String sph_member_op = "__";
+
 	/** The Sphinx schema file name. */
 	public final static String sph_schema_name = ".schema_part.xml";
 

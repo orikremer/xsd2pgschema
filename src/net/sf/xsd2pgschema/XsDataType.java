@@ -3433,7 +3433,7 @@ public enum XsDataType {
 	 */
 	public static void writeSphSchemaAttr(PgTable table, PgField field, FileWriter filew) throws IOException {
 
-		filew.write("<sphinx:attr name=\"" + table.name + "__" + field.xname + "\"");
+		filew.write("<sphinx:attr name=\"" + table.name + PgSchemaUtil.sph_member_op + field.xname + "\"");
 
 		String attrs = null;
 
@@ -3541,7 +3541,7 @@ public enum XsDataType {
 	 */
 	public static void writeSphConfAttr(PgTable table, PgField field, FileWriter filew) throws IOException {
 
-		String attr_name = table.name + "__" + field.xname;
+		String attr_name = table.name + PgSchemaUtil.sph_member_op + field.xname;
 
 		switch (field.xs_type) {
 		case xs_boolean:

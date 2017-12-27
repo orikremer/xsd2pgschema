@@ -136,11 +136,6 @@ public class SphDsSAXHandler extends DefaultHandler {
 				return;
 			}
 
-			String[] concat_name = qName.replaceAll("__", "\\.").split("\\.");
-
-			if (concat_name.length != 2)
-				return;
-
 			if (!sph_attrs.contains(qName))
 				return;
 

@@ -3983,7 +3983,7 @@ public class PgSchema {
 
 					Element e = (Element) child;
 
-					String[] name_attr = e.getAttribute("name").replaceFirst("__", "\\.").split("\\.");
+					String[] name_attr = e.getAttribute("name").replaceFirst(PgSchemaUtil.sph_member_op, "\\.").split("\\.");
 
 					if (name_attr.length != 2)
 						continue;
@@ -4213,7 +4213,7 @@ public class PgSchema {
 
 		HashSet<String> sph_attrs = new HashSet<String>();
 
-		tables.forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> sph_attrs.add(table.name + "__" + field.name)));
+		tables.forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> sph_attrs.add(table.name + PgSchemaUtil.sph_member_op + field.xname)));
 
 		return sph_attrs;
 	}
@@ -4227,7 +4227,7 @@ public class PgSchema {
 
 		HashSet<String> sph_mvas = new HashSet<String>();
 
-		tables.forEach(table -> table.fields.stream().filter(field -> field.sph_mva).forEach(field -> sph_mvas.add(table.name + "__" + field.name)));
+		tables.forEach(table -> table.fields.stream().filter(field -> field.sph_mva).forEach(field -> sph_mvas.add(table.name + PgSchemaUtil.sph_member_op + field.xname)));
 
 		return sph_mvas;
 	}
