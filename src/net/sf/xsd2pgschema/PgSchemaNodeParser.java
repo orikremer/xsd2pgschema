@@ -139,11 +139,15 @@ public abstract class PgSchemaNodeParser {
 
 		values = new String[table.fields.size()];
 
-		list_holder = new boolean[table.nested_fields];
-		nested_table_id = new int[table.nested_fields];
-		nested_key = new String[table.nested_fields];
+		if (table.nested_fields > 0) {
 
-		if (table.fields.stream().anyMatch(field -> field.any || field.any_attribute)) {
+			list_holder = new boolean[table.nested_fields];
+			nested_table_id = new int[table.nested_fields];
+			nested_key = new String[table.nested_fields];
+
+		}
+
+		if (table.has_any || table.has_any_attribute) {
 
 			DocumentBuilderFactory doc_factory = DocumentBuilderFactory.newInstance();
 			doc_builder = doc_factory.newDocumentBuilder();

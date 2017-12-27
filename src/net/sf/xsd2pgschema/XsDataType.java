@@ -1739,7 +1739,7 @@ public enum XsDataType {
 		case xs_IDREF:
 		case xs_ENTITY:
 			return "\"" + field.default_value + "\"";
-		default:
+		default: // xs_any, xs_anyAttribute
 		}
 
 		return "null";
@@ -1813,7 +1813,7 @@ public enum XsDataType {
 				for (String enumeration : field.xenumeration)
 					sb.append("\"" + enumeration + "\"," + json_key_value_space);
 				break;
-			default:
+			default: // xs_any, xs_anyAttribute
 			}
 
 			return sb.toString();
@@ -2108,7 +2108,7 @@ public enum XsDataType {
 
 			}
 			break;
-		default:
+		default: // not numeric
 			return	null;
 		}
 
@@ -2363,7 +2363,7 @@ public enum XsDataType {
 
 			else
 				return "0";
-		default:
+		default: // not numeric
 			return	null;
 		}
 
@@ -2432,7 +2432,7 @@ public enum XsDataType {
 		case xs_unsignedShort:
 		case xs_unsignedByte:
 			return "1";
-		default:
+		default: // not numeric
 			return	null;
 		}
 
@@ -2612,7 +2612,7 @@ public enum XsDataType {
 
 			}
 			return true;
-		default:
+		default: // free text
 			return true;
 		}
 
@@ -2671,7 +2671,7 @@ public enum XsDataType {
 		case xs_any:
 		case xs_anyAttribute:
 			return "XMLPARSE (CONTENT '" + value + "')";
-		default:
+		default: // free text
 			if (!field.restriction)
 				return value;
 
@@ -3013,7 +3013,7 @@ public enum XsDataType {
 		case xs_any:
 		case xs_anyAttribute:
 			ps.setSQLXML(par_idx, value);
-		default: // xs_anyType
+		default: // not xml
 		}
 
 	}
@@ -3032,11 +3032,9 @@ public enum XsDataType {
 	 */
 	public static void setValue(PgField field, org.apache.lucene.document.Document lucene_doc, String name, String value, boolean min_word_len_filter, boolean numeric_lucidx) {
 
-		XsDataType xs_type = field.enum_name == null ? field.xs_type : xs_string;
+		if (field.attr_sel_rdy || field.xs_type.equals(xs_ID)) {
 
-		if (field.attr_sel_rdy || xs_type.equals(xs_ID)) {
-
-			switch (xs_type) {
+			switch (field.xs_type) {
 			case xs_boolean:
 			case xs_hexBinary:
 			case xs_base64Binary:
@@ -3103,7 +3101,7 @@ public enum XsDataType {
 			case xs_gDay:
 				lucene_doc.add(new StringField(name, value, Field.Store.YES));
 				break;
-			default:
+			default: // free text
 				lucene_doc.add(new TextField(name, value, Field.Store.YES));
 			}
 
@@ -3111,7 +3109,7 @@ public enum XsDataType {
 
 		}
 
-		switch (xs_type) {
+		switch (field.xs_type) {
 		case xs_bigserial:
 		case xs_long:
 		case xs_bigint:
@@ -3130,7 +3128,7 @@ public enum XsDataType {
 		case xs_unsignedByte:
 			lucene_doc.add(new VecTextField(PgSchemaUtil.simple_content_name, value, Field.Store.NO));
 			break;
-		default:
+		default: // not numetic
 			if (min_word_len_filter)
 				lucene_doc.add(new VecTextField(PgSchemaUtil.simple_content_name, value, Field.Store.NO));
 		}
@@ -3163,15 +3161,13 @@ public enum XsDataType {
 	 */
 	public static void setValue(PgField field, FileWriter writer, String attr_name, String value, boolean min_word_len_filter) {
 
-		XsDataType xs_type = field.enum_name == null ? field.xs_type : xs_string;
-
 		try {
 
 			boolean escaped = false;
 
-			if (field.attr_sel_rdy || xs_type.equals(xs_ID) || field.sph_mva) {
+			if (field.attr_sel_rdy || field.xs_type.equals(xs_ID) || field.sph_mva) {
 
-				switch (xs_type) {
+				switch (field.xs_type) {
 				case xs_bigserial:
 				case xs_long:
 				case xs_bigint:
@@ -3208,7 +3204,7 @@ public enum XsDataType {
 					java.util.Date util_time = parseDate(value);
 					writer.write("<" + attr_name + ">" + util_time.getTime() / 1000L + "</" + attr_name + ">\n");
 					break;
-				default:
+				default: // free text
 					value = StringEscapeUtils.escapeXml10(value);
 					writer.write("<" + attr_name + ">" + value + "</" + attr_name + ">\n");
 					escaped = true;
@@ -3218,7 +3214,7 @@ public enum XsDataType {
 
 			}
 
-			switch (xs_type) {
+			switch (field.xs_type) {
 			case xs_bigserial:
 			case xs_long:
 			case xs_bigint:
@@ -3237,7 +3233,7 @@ public enum XsDataType {
 			case xs_unsignedByte:
 				writer.write("<" + PgSchemaUtil.simple_content_name + ">" + value + "</" + PgSchemaUtil.simple_content_name + ">\n");
 				break;
-			default:
+			default: // not numeric
 				if (min_word_len_filter)
 					writer.write("<" + PgSchemaUtil.simple_content_name + ">" + (escaped ? value : StringEscapeUtils.escapeXml10(value)) + "</" + PgSchemaUtil.simple_content_name + ">\n");
 			}
@@ -3300,7 +3296,7 @@ public enum XsDataType {
 			case xs_unsignedByte:
 				field.jsonb.append("null");
 				break;
-			default:
+			default: // string
 				field.jsonb.append(value == null ? "null" : "\"\"");
 			}
 
@@ -3347,7 +3343,7 @@ public enum XsDataType {
 		case xs_unsignedByte:
 			field.jsonb.append(Integer.parseInt(value));
 			break;
-		default:
+		default: // free text
 			value = jsonb.escapeAnnotation(value);
 
 			if (value.startsWith("\""))
@@ -3372,9 +3368,7 @@ public enum XsDataType {
 	 */
 	public static void appendAttr(PgTable table, PgField field, IndexFilter index_filter) {
 
-		XsDataType xs_type = field.enum_name == null ? field.xs_type : xs_string;
-
-		switch (xs_type) {
+		switch (field.xs_type) {
 		case xs_bigserial:
 		case xs_long:
 		case xs_bigint:
@@ -3414,7 +3408,7 @@ public enum XsDataType {
 			if (index_filter.attr_time)
 				index_filter.addAttr(table.name + "." + field.name);
 			break;
-		default:
+		default: // free text
 			if (index_filter.attr_string)
 				index_filter.addAttr(table.name + "." + field.name);
 		}
@@ -3440,10 +3434,6 @@ public enum XsDataType {
 		switch (field.xs_type) {
 		case xs_boolean:
 			attrs = " type=\"bool\"";
-			break;
-		case xs_hexBinary:
-		case xs_base64Binary:
-			attrs = " type=\"string\"";
 			break;
 		case xs_bigserial:
 		case xs_long:
@@ -3488,30 +3478,8 @@ public enum XsDataType {
 		case xs_gYear:
 			attrs = " type=\"timestamp\"";
 			break;
-		case xs_gMonthDay:
-		case xs_gMonth:
-		case xs_gDay:
-		case xs_anyType:
-		case xs_string:
-		case xs_normalizedString:
-		case xs_token:
-		case xs_language:
-		case xs_Name:
-		case xs_QName:
-		case xs_NCName:
-		case xs_anyURI:
-		case xs_NOTATION:
-		case xs_NMTOKEN:
-		case xs_NMTOKENS:
-		case xs_ID:
-		case xs_IDREF:
-		case xs_IDREFS:
-		case xs_ENTITY:
-		case xs_ENTITIES:
-		case xs_any:
-		case xs_anyAttribute:
+		default: // string
 			attrs = " type=\"string\"";
-			break;
 		}
 
 		if (field.sph_mva) {
@@ -3586,32 +3554,8 @@ public enum XsDataType {
 		case xs_gYear:
 			filew.write("\txmlpipe_attr_timestamp  = " + attr_name + "\n");
 			break;
-		case xs_hexBinary:
-		case xs_base64Binary:
-		case xs_gMonthDay:
-		case xs_gMonth:
-		case xs_gDay:
-		case xs_anyType:
-		case xs_string:
-		case xs_normalizedString:
-		case xs_token:
-		case xs_language:
-		case xs_Name:
-		case xs_QName:
-		case xs_NCName:
-		case xs_anyURI:
-		case xs_NOTATION:
-		case xs_NMTOKEN:
-		case xs_NMTOKENS:
-		case xs_ID:
-		case xs_IDREF:
-		case xs_IDREFS:
-		case xs_ENTITY:
-		case xs_ENTITIES:
-		case xs_any:
-		case xs_anyAttribute:
+		default: // string
 			filew.write("\txmlpipe_attr_string     = " + attr_name + "\n");
-			break;
 		}
 
 	}
