@@ -3320,7 +3320,7 @@ public class PgSchema {
 	/**
 	 * Initialize table lock objects.
 	 *
-	 * @param single_lock whether single object no all objects
+	 * @param single_lock whether single lock object or individual lock objects for all tables
 	 */
 	private void initTableLock(boolean single_lock) {
 
@@ -3373,13 +3373,12 @@ public class PgSchema {
 	 *
 	 * @param xml_parser XML document
 	 * @param csv_dir_name directory name of CSV files
-	 * @param db_conn Database connection
 	 * @param append_csv whether allows to append CSV files
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2PgCsv(XmlParser xml_parser, String csv_dir_name, Connection db_conn, boolean append_csv) throws ParserConfigurationException, TransformerException, PgSchemaException {
+	public void xml2PgCsv(XmlParser xml_parser, String csv_dir_name, boolean append_csv) throws ParserConfigurationException, TransformerException, PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -3752,7 +3751,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Test PostgreSQL data model.
+	 * Test schema implementations on PostgreSQL.
 	 *
 	 * @param db_conn Database connection
 	 * @throws PgSchemaException the pg schema exception
@@ -3877,6 +3876,7 @@ public class PgSchema {
 		Node node = getRootNode(xml_parser);
 
 		initTableLock(true);
+
 		resetAttrSelRdy();
 
 		tables.forEach(table -> table.lucene_doc = table.required ? lucene_doc : null);
@@ -4126,6 +4126,7 @@ public class PgSchema {
 		Node node = getRootNode(xml_parser);
 
 		initTableLock(true);
+
 		resetAttrSelRdy();
 
 		tables.forEach(table -> table.filew = table.required ? writer : null);
@@ -4506,6 +4507,7 @@ public class PgSchema {
 		Node node = getRootNode(xml_parser);
 
 		initTableLock(true);
+
 		clearJsonBuilder();
 
 		// parse root node and store to JSON builder
@@ -4872,6 +4874,7 @@ public class PgSchema {
 		Node node = getRootNode(xml_parser);
 
 		initTableLock(true);
+
 		clearJsonBuilder();
 
 		// parse root node and write to JSON file
@@ -5146,6 +5149,7 @@ public class PgSchema {
 		Node node = getRootNode(xml_parser);
 
 		initTableLock(false);
+
 		clearJsonBuilder();
 
 		// parse root node and write to JSON file

@@ -149,7 +149,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2pgcsv.xml_file_filter);
 
-				schema.xml2PgCsv(xml_parser, csv_dir_name, db_conn, first_csv ? xml2pgcsv.option.append : true);
+				schema.xml2PgCsv(xml_parser, csv_dir_name, first_csv ? xml2pgcsv.option.append : true);
 
 			} catch (Exception e) {
 				e.printStackTrace();
