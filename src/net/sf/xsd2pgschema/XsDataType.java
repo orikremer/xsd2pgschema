@@ -3350,7 +3350,7 @@ public enum XsDataType {
 			field.jsonb.append(Integer.parseInt(value));
 			break;
 		default: // free text
-			value = jsonb.escapeAnnotation(value);
+			value = StringEscapeUtils.escapeCsv(value);
 
 			if (value.startsWith("\""))
 				field.jsonb.append(value);

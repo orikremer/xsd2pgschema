@@ -308,7 +308,7 @@ public class JsonBuilder {
 
 			if (field_anno && field.anno != null && !field.anno.isEmpty()) {
 
-				String anno = escapeAnnotation(field.anno);
+				String anno = escapeAnnotation(field.anno, true);
 
 				if (!anno.startsWith("\""))
 					anno = "\"" + anno + "\"";
@@ -538,13 +538,11 @@ public class JsonBuilder {
 	 * Return escaped one-liner annotation.
 	 *
 	 * @param annotation annotation
+	 * @param is_table whether table annotation or not
 	 * @return String escaped annotation
 	 */
-	public String escapeAnnotation(String annotation) {
-
-		annotation = annotation.replaceAll("\n--", "").replaceAll("\\\\/", "/").replaceAll("\\\\'", "'");
-
-		return StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(annotation));
+	public String escapeAnnotation(String annotation, boolean is_table) {
+		return is_table ? StringEscapeUtils.escapeCsv(annotation.replaceAll("\n--", "")) : StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(annotation).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
 	}
 
 }
