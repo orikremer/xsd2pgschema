@@ -1618,10 +1618,10 @@ public enum XsDataType {
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
-		case xs_integer:
-		case xs_int:
 		case xs_long:
 		case xs_bigint:
+		case xs_integer:
+		case xs_int:	
 		case xs_short:
 		case xs_byte:
 		case xs_nonPositiveInteger:
@@ -1695,10 +1695,10 @@ public enum XsDataType {
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
-		case xs_integer:
-		case xs_int:
 		case xs_long:
 		case xs_bigint:
+		case xs_integer:
+		case xs_int:	
 		case xs_short:
 		case xs_byte:
 		case xs_nonPositiveInteger:
@@ -1765,10 +1765,10 @@ public enum XsDataType {
 			case xs_float:
 			case xs_double:
 			case xs_decimal:
-			case xs_integer:
-			case xs_int:
 			case xs_long:
 			case xs_bigint:
+			case xs_integer:
+			case xs_int:
 			case xs_short:
 			case xs_byte:
 			case xs_nonPositiveInteger:
@@ -1839,10 +1839,10 @@ public enum XsDataType {
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
-		case xs_integer:
-		case xs_int:
 		case xs_long:
 		case xs_bigint:
+		case xs_integer:
+		case xs_int:	
 		case xs_short:
 		case xs_byte:
 			if (field.max_inclusive != null)
@@ -2130,10 +2130,10 @@ public enum XsDataType {
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
-		case xs_integer:
-		case xs_int:
 		case xs_long:
 		case xs_bigint:
+		case xs_integer:
+		case xs_int:
 		case xs_short:
 		case xs_byte:
 			if (field.min_inclusive != null)
@@ -2417,10 +2417,10 @@ public enum XsDataType {
 			break;
 		case xs_bigserial:
 		case xs_serial:
-		case xs_integer:
-		case xs_int:
 		case xs_long:
 		case xs_bigint:
+		case xs_integer:
+		case xs_int:	
 		case xs_short:
 		case xs_byte:
 		case xs_nonPositiveInteger:
@@ -2795,10 +2795,13 @@ public enum XsDataType {
 			return "decode('" + value + "','base64')";
 		case xs_boolean:
 		case xs_bigserial:
+		case xs_serial:
+		case xs_float:
+		case xs_double:
+		case xs_decimal:
 		case xs_long:
 		case xs_bigint:
 		case xs_unsignedLong:
-		case xs_serial:
 		case xs_integer:
 		case xs_int:
 		case xs_nonPositiveInteger:
@@ -2806,9 +2809,6 @@ public enum XsDataType {
 		case xs_nonNegativeInteger:
 		case xs_positiveInteger:
 		case xs_unsignedInt:
-		case xs_float:
-		case xs_double:
-		case xs_decimal:
 		case xs_short:
 		case xs_byte:
 		case xs_unsignedShort:
@@ -3111,10 +3111,13 @@ public enum XsDataType {
 
 		switch (field.xs_type) {
 		case xs_bigserial:
+		case xs_serial:
+		case xs_float:
+		case xs_double:
+		case xs_decimal:
 		case xs_long:
 		case xs_bigint:
 		case xs_unsignedLong:
-		case xs_serial:
 		case xs_integer:
 		case xs_int:
 		case xs_nonPositiveInteger:
@@ -3216,10 +3219,13 @@ public enum XsDataType {
 
 			switch (field.xs_type) {
 			case xs_bigserial:
+			case xs_serial:
+			case xs_float:
+			case xs_double:
+			case xs_decimal:
 			case xs_long:
 			case xs_bigint:
 			case xs_unsignedLong:
-			case xs_serial:
 			case xs_integer:
 			case xs_int:
 			case xs_nonPositiveInteger:
@@ -3276,10 +3282,13 @@ public enum XsDataType {
 			switch (field.xs_type) {
 			case xs_boolean:
 			case xs_bigserial:
+			case xs_serial:
+			case xs_float:
+			case xs_double:
+			case xs_decimal:
 			case xs_long:
 			case xs_bigint:
 			case xs_unsignedLong:
-			case xs_serial:
 			case xs_integer:
 			case xs_int:
 			case xs_nonPositiveInteger:
@@ -3287,9 +3296,6 @@ public enum XsDataType {
 			case xs_nonNegativeInteger:
 			case xs_positiveInteger:
 			case xs_unsignedInt:
-			case xs_float:
-			case xs_double:
-			case xs_decimal:
 			case xs_short:
 			case xs_byte:
 			case xs_unsignedShort:
@@ -3370,10 +3376,10 @@ public enum XsDataType {
 
 		switch (field.xs_type) {
 		case xs_bigserial:
+		case xs_serial:
 		case xs_long:
 		case xs_bigint:
 		case xs_unsignedLong:
-		case xs_serial:
 		case xs_integer:
 		case xs_int:
 		case xs_nonPositiveInteger:
