@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017 Masashi Yokochi
+    Copyright 2017-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -31,7 +31,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
  */
 public class XPathSqlExpr {
 
-	/** The path. */
+	/** The node path. */
 	public String path = null;
 
 	/** The table name. */

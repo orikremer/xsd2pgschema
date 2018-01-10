@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -28,22 +28,22 @@ import java.util.HashSet;
  */
 public class XmlPostEditor {
 
-	/** The filt-in option. */
+	/** The list of --filt-in option. */
 	HashSet<String> filt_ins = null;
 
-	/** The filt-out option. */
+	/** The list of --filt-out option. */
 	HashSet<String> filt_outs = null;
 
-	/** The fill-this option. */
+	/** The list of --fill-this option. */
 	HashSet<String> fill_these = null;
 
-	/** Whether file-in option has been resolved. */
+	/** Whether the --file-in options have been resolved. */
 	boolean filt_in_resolved = false;	
 
-	/** Whether file-out option has been resolved. */
+	/** Whether the --file-out options have been resolved. */
 	boolean filt_out_resolved = false;
 
-	/** Whether fill-this option has been resolved. */
+	/** Whether the --fill-this options have been resolved. */
 	boolean fill_this_resolved = false;
 
 	/**
@@ -58,7 +58,7 @@ public class XmlPostEditor {
 	}
 
 	/**
-	 * Add filt-in option.
+	 * Add a --filt-in option.
 	 *
 	 * @param filt_in argument value
 	 * @return result of addition
@@ -68,7 +68,7 @@ public class XmlPostEditor {
 	}
 
 	/**
-	 * Add filt-out option.
+	 * Add a --filt-out option.
 	 *
 	 * @param filt_out argument value
 	 * @return result of addition
@@ -78,7 +78,7 @@ public class XmlPostEditor {
 	}
 
 	/**
-	 * Add fill-this option.
+	 * Add a --fill-this option.
 	 *
 	 * @param fill_this argument value
 	 * @return result of addition

@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -80,7 +80,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				PgField field = fields.get(f);
 
-				if (field.isOmitted(option))
+				if (field.is_omitted)
 					continue;
 
 				if (field.enum_name == null)
@@ -289,7 +289,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			if (!filled)
 				break;
 
-			if (!field.isOmitted(option))
+			if (!field.is_omitted)
 				param_id++;
 
 		}
@@ -325,7 +325,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				PgField field = fields.get(f);
 
-				if (field.isOmitted(option))
+				if (field.is_omitted)
 					continue;
 
 				if (!occupied[f])

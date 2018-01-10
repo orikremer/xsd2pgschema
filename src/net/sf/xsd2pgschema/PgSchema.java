@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -676,12 +676,15 @@ public class PgSchema {
 		if (option.xpath_key)
 			tables.forEach(table -> table.addXPathKey(option));
 
-		// update system key flag and user key flag
+		// update system key, user key, is_omitted flag and is_jsonable flag
 
 		tables.forEach(table -> {
 
 			table.setSystemKey();
 			table.setUserKey();
+
+			table.setIsOmitted(option);
+			table.setIsJsonable(option);
 
 		});
 
@@ -2846,7 +2849,7 @@ public class PgSchema {
 
 			String table_name = key[0];
 			String field_name = key.length > 1 ? key[1] : null;
-			String[] regex_pattern = key_val.length > 2 ? key_val[1].split("\\|") : null;
+			String[] rex_pattern = key_val.length > 2 ? key_val[1].split("\\|") : null;
 
 			PgTable table = getTable(table_name);
 
@@ -2866,7 +2869,7 @@ public class PgSchema {
 						throw new PgSchemaException(table_name + "." + field_name + " is administrative key.");
 
 					field.filt_out = true;
-					field.out_pattern = regex_pattern;
+					field.filter_pattern = rex_pattern;
 
 				}
 
@@ -2878,7 +2881,7 @@ public class PgSchema {
 				table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
 
 					field.filt_out = true;
-					field.out_pattern = regex_pattern;
+					field.filter_pattern = rex_pattern;
 
 				});
 
@@ -2962,6 +2965,10 @@ public class PgSchema {
 			applyField(index_filter);
 
 		}
+
+		// update is_indexable flag
+
+		tables.forEach(table -> table.setIsIndexable(option));
 
 		this.min_word_len = index_filter.min_word_len;
 		this.numeric_lucidx = index_filter.numeric_lucidx;

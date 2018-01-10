@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -211,10 +211,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 				PgField field = fields.get(f);
 
-				if (field.system_key)
-					continue;
-
-				if (field.isIndexable(option))
+				if (field.is_indexable)
 					XsDataType.setValue(field, table.filew, table.name + PgSchemaUtil.sph_member_op + field.xname, value, value.length() >= schema.min_word_len);
 
 			}

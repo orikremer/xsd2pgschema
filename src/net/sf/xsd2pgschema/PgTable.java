@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -93,7 +93,7 @@ public class PgTable {
 	/** The content writer. */
 	FileWriter filew = null;
 
-	/** Whether JSON buffer of any field is not empty. */
+	/** Whether JSON buffer of arbitrary field is not empty. */
 	boolean jsonb_not_empty = false;
 
 	/** The Lucene document. */
@@ -571,7 +571,7 @@ public class PgTable {
 	}
 
 	/**
-	 * set system_key flag.
+	 * Set system_key flag.
 	 */
 	public void setSystemKey() {
 
@@ -580,11 +580,44 @@ public class PgTable {
 	}
 
 	/**
-	 * set user_key flag.
+	 * Set user_key flag.
 	 */
 	public void setUserKey() {
 
 		fields.forEach(arg -> arg.user_key = arg.document_key || arg.serial_key || arg.xpath_key);
+
+	}
+
+	/**
+	 * Set is_omitted flag.
+	 *
+	 * @param option PostgreSQL data model option
+	 */
+	public void setIsOmitted(PgSchemaOption option) {
+
+		fields.forEach(arg -> arg.isOmitted(option));
+
+	}
+
+	/**
+	 * Set is_indexable flag.
+	 *
+	 * @param option PostgreSQL data model option
+	 */
+	public void setIsIndexable(PgSchemaOption option) {
+
+		fields.forEach(arg -> arg.isIndexable(option));
+
+	}
+
+	/**
+	 * Set is_jsonable flag.
+	 *
+	 * @param option PostgreSQL data model option
+	 */
+	public void setIsJsonable(PgSchemaOption option) {
+
+		fields.forEach(arg -> arg.isJsonable(option));
 
 	}
 

@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017 Masashi Yokochi
+    Copyright 2017-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -29,7 +29,7 @@ import java.util.List;
  */
 public class XPathExpr {
 
-	/** The path. */
+	/** The node path. */
 	public String path = null;
 
 	/** The terminus type. */

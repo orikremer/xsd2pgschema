@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -380,7 +380,7 @@ public abstract class PgSchemaNodeParser {
 		if (field.pattern != null && (content == null || !content.matches(field.pattern)))
 			return false;
 
-		if (field.filt_out && field.matchesOutPattern(content))
+		if (field.filt_out && field.matchesFilterPattern(content))
 			return false;
 
 		if (field.enum_name != null) {

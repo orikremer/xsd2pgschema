@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -210,15 +210,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			if (field.jsonb == null)
 				continue;
 
-			if (field.system_key)
-				continue;
-
-			if (field.isJsonable(option)) {
-
-				if (XsDataType.setValue(field, values[f], schema.jsonb))
-					not_empty = true;
-
-			}
+			if (field.is_jsonable && XsDataType.setValue(field, values[f], schema.jsonb))
+				not_empty = true;
 
 		}
 

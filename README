@@ -1,4 +1,4 @@
- Changes in xsd2pgschema 2.7.5 (release 2017-12-28)
+ Changes in xsd2pgschema 2.7.5 (release 2018-01-10)
 
   Fixed missing of attribute and field in full-text indexing when sharding was enabled.
   Excluded decimal data from minimum word length condition while indexing.

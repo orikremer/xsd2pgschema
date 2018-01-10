@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -211,29 +211,38 @@ public class PgField {
 	/** Whether xs:union. */
 	boolean _union = false;
 
-	/** The fill-this post XML edition. */
+	/** The --fill-this option. */
 	boolean fill_this = false;
 
 	/** The filled text used in post XML edition. */
 	String filled_text = null;
 
-	/** The filt-out post XML edition. */
+	/** The --filt-out option. */
 	boolean filt_out = false;
 
-	/** The filt-out pattern used in post XML edition. */
-	String[] out_pattern = null;
+	/** The filter patterns in post XML edition. */
+	String[] filter_pattern = null;
 
 	/** Whether JSON buffer is not empty. */
 	boolean jsonb_not_empty = false;
 
-	/** The size of JSON item in JSON buffer. */
+	/** The size of data in JSON buffer. */
 	int jsonb_col_size = 0;
 
-	/** The size of null JSON value in JSON buffer. */
+	/** The size of null data in JSON buffer. */
 	int jsonb_null_size = 0;
 
 	/** The JSON buffer. */
 	StringBuilder jsonb = null;
+
+	/** Whether field is omitted. */
+	Boolean is_omitted = null;
+
+	/** Whether field is indexable. */
+	Boolean is_indexable = null;
+
+	/** Whether field is JSON convertible. */
+	Boolean is_jsonable = null;
 
 	/**
 	 * Extract @type, @itemType, @memberTypes or @base and set type.
@@ -1420,22 +1429,22 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether string matches out_pattern.
+	 * Return whether string matches filter pattern.
 	 *
 	 * @param string string
-	 * @return boolean whether string matches out_pattern
+	 * @return boolean whether string matches filter pattern
 	 */
-	public boolean matchesOutPattern(String string) {
+	public boolean matchesFilterPattern(String string) {
 
 		if (string == null || string.isEmpty())
 			return false;
 
-		if (out_pattern == null)
+		if (filter_pattern == null)
 			return true;
 
-		for (String regex_pattern : out_pattern) {
+		for (String rex_pattern : filter_pattern) {
 
-			if (string.matches(regex_pattern))
+			if (string.matches(rex_pattern))
 				return true;
 
 		}
@@ -1451,10 +1460,13 @@ public class PgField {
 	 */
 	public boolean isOmitted(PgSchemaOption option) {
 
-		if ((element || attribute) && option.discarded_document_key_names.contains(xname))
-			return true;
+		if (is_omitted != null)
+			return is_omitted;
 
-		return (!option.document_key && document_key) || (!option.serial_key && serial_key) || (!option.xpath_key && xpath_key) || (!option.rel_data_ext && system_key);
+		if ((element || attribute) && option.discarded_document_key_names.contains(xname))
+			return (is_omitted = true);
+
+		return (is_omitted = (!option.document_key && document_key) || (!option.serial_key && serial_key) || (!option.xpath_key && xpath_key) || (!option.rel_data_ext && system_key));
 	}
 
 	/**
@@ -1465,10 +1477,13 @@ public class PgField {
 	 */
 	public boolean isIndexable(PgSchemaOption option) {
 
-		if ((element || attribute) && option.discarded_document_key_names.contains(xname))
-			return false;
+		if (is_indexable != null)
+			return is_indexable;
 
-		return !option.field_resolved || (option.field_resolved && field_sel) || (option.attr_resolved && attr_sel);
+		if (system_key || ((element || attribute) && option.discarded_document_key_names.contains(xname)))
+			return (is_indexable = false);
+
+		return (is_indexable = !option.field_resolved || (option.field_resolved && field_sel) || (option.attr_resolved && attr_sel));
 	}
 
 	/**
@@ -1479,10 +1494,13 @@ public class PgField {
 	 */
 	public boolean isJsonable(PgSchemaOption option) {
 
-		if ((element || attribute) && option.discarded_document_key_names.contains(xname))
-			return false;
+		if (is_jsonable != null)
+			return is_jsonable;
 
-		return !option.field_resolved || (option.field_resolved && field_sel);
+		if (system_key || ((element || attribute) && option.discarded_document_key_names.contains(xname)))
+			return (is_jsonable = false);
+
+		return (is_jsonable = true);
 	}
 
 	/**
