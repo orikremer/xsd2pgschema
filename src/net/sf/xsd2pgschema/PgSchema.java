@@ -683,8 +683,8 @@ public class PgSchema {
 			table.setSystemKey();
 			table.setUserKey();
 
-			table.setIsOmitted(option);
-			table.setIsJsonable(option);
+			table.fields.forEach(field -> field.setOmitted(option));
+			table.fields.forEach(field -> field.setJsonable(option));
 
 		});
 
@@ -2968,7 +2968,7 @@ public class PgSchema {
 
 		// update is_indexable flag
 
-		tables.forEach(table -> table.setIsIndexable(option));
+		tables.forEach(table -> table.fields.forEach(field -> field.setIndexable(option)));
 
 		this.min_word_len = index_filter.min_word_len;
 		this.numeric_lucidx = index_filter.numeric_lucidx;

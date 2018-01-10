@@ -589,39 +589,6 @@ public class PgTable {
 	}
 
 	/**
-	 * Set is_omitted flag.
-	 *
-	 * @param option PostgreSQL data model option
-	 */
-	public void setIsOmitted(PgSchemaOption option) {
-
-		fields.forEach(arg -> arg.isOmitted(option));
-
-	}
-
-	/**
-	 * Set is_indexable flag.
-	 *
-	 * @param option PostgreSQL data model option
-	 */
-	public void setIsIndexable(PgSchemaOption option) {
-
-		fields.forEach(arg -> arg.isIndexable(option));
-
-	}
-
-	/**
-	 * Set is_jsonable flag.
-	 *
-	 * @param option PostgreSQL data model option
-	 */
-	public void setIsJsonable(PgSchemaOption option) {
-
-		fields.forEach(arg -> arg.isJsonable(option));
-
-	}
-
-	/**
 	 * Return whether node name matches.
 	 *
 	 * @param prefix prefix text

@@ -236,13 +236,13 @@ public class PgField {
 	StringBuilder jsonb = null;
 
 	/** Whether field is omitted. */
-	Boolean is_omitted = null;
+	boolean is_omitted = false;
 
 	/** Whether field is indexable. */
-	Boolean is_indexable = null;
+	boolean is_indexable = true;
 
 	/** Whether field is JSON convertible. */
-	Boolean is_jsonable = null;
+	boolean is_jsonable = true;
 
 	/**
 	 * Extract @type, @itemType, @memberTypes or @base and set type.
@@ -1453,54 +1453,51 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether field is omitted.
+	 * Decide whether field is omitted.
 	 *
 	 * @param option PostgreSQL data model option
-	 * @return boolean whether field is omitted
 	 */
-	public boolean isOmitted(PgSchemaOption option) {
+	public void setOmitted(PgSchemaOption option) {
 
-		if (is_omitted != null)
-			return is_omitted;
+		if ((element || attribute) && option.discarded_document_key_names.contains(xname)) {
+			is_omitted = true;
+			return;
+		}
 
-		if ((element || attribute) && option.discarded_document_key_names.contains(xname))
-			return (is_omitted = true);
+		is_omitted = (!option.document_key && document_key) || (!option.serial_key && serial_key) || (!option.xpath_key && xpath_key) || (!option.rel_data_ext && system_key);
 
-		return (is_omitted = (!option.document_key && document_key) || (!option.serial_key && serial_key) || (!option.xpath_key && xpath_key) || (!option.rel_data_ext && system_key));
 	}
 
 	/**
-	 * Return whether field is indexable.
+	 * Decide whether field is indexable.
 	 *
 	 * @param option PostgreSQL data model option
-	 * @return boolean whether field is indexable
 	 */
-	public boolean isIndexable(PgSchemaOption option) {
+	public void setIndexable(PgSchemaOption option) {
 
-		if (is_indexable != null)
-			return is_indexable;
+		if (system_key || ((element || attribute) && option.discarded_document_key_names.contains(xname))) {
+			is_indexable = false;
+			return;
+		}
 
-		if (system_key || ((element || attribute) && option.discarded_document_key_names.contains(xname)))
-			return (is_indexable = false);
+		is_indexable = !option.field_resolved || (option.field_resolved && field_sel) || (option.attr_resolved && attr_sel);
 
-		return (is_indexable = !option.field_resolved || (option.field_resolved && field_sel) || (option.attr_resolved && attr_sel));
 	}
 
 	/**
-	 * Return whether field is JSON convertible.
+	 * Decide whether field is JSON convertible.
 	 *
 	 * @param option PostgreSQL data model option
-	 * @return boolean whether field is JSON convertible
 	 */
-	public boolean isJsonable(PgSchemaOption option) {
+	public void setJsonable(PgSchemaOption option) {
 
-		if (is_jsonable != null)
-			return is_jsonable;
+		if (system_key || ((element || attribute) && option.discarded_document_key_names.contains(xname))) {
+			is_jsonable = false;
+			return;
+		}
 
-		if (system_key || ((element || attribute) && option.discarded_document_key_names.contains(xname)))
-			return (is_jsonable = false);
+		is_jsonable = true;
 
-		return (is_jsonable = true);
 	}
 
 	/**
