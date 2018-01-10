@@ -235,14 +235,14 @@ public class PgField {
 	/** The JSON buffer. */
 	StringBuilder jsonb = null;
 
-	/** Whether field is omitted. */
-	boolean is_omitted = false;
+	/** Whether field is omissible. */
+	boolean omissible = false;
 
 	/** Whether field is indexable. */
-	boolean is_indexable = true;
+	boolean indexable = true;
 
 	/** Whether field is JSON convertible. */
-	boolean is_jsonable = true;
+	boolean jsonable = true;
 
 	/**
 	 * Extract @type, @itemType, @memberTypes or @base and set type.
@@ -1387,84 +1387,18 @@ public class PgField {
 	}
 
 	/**
-	 * Return whether string matches enumeration.
-	 *
-	 * @param string string
-	 * @return boolean whether string matches enumeration
-	 */
-	public boolean matchesEnumeration(String string) {
-
-		if (string == null || string.isEmpty())
-			return !required;
-
-		for (String enum_string : enumeration) {
-
-			if (enum_string.equals(string))
-				return true;
-
-		}
-
-		return false;
-	}
-
-	/**
-	 * Return whether string matches enumeration.
-	 *
-	 * @param string string
-	 * @return boolean whether string matches enumeration
-	 */
-	public boolean matchesXEnumeration(String string) {
-
-		if (string == null || string.isEmpty())
-			return !required;
-
-		for (String enum_string : xenumeration) {
-
-			if (enum_string.equals(string))
-				return true;
-
-		}
-
-		return false;
-	}
-
-	/**
-	 * Return whether string matches filter pattern.
-	 *
-	 * @param string string
-	 * @return boolean whether string matches filter pattern
-	 */
-	public boolean matchesFilterPattern(String string) {
-
-		if (string == null || string.isEmpty())
-			return false;
-
-		if (filter_pattern == null)
-			return true;
-
-		for (String rex_pattern : filter_pattern) {
-
-			if (string.matches(rex_pattern))
-				return true;
-
-		}
-
-		return false;
-	}
-
-	/**
-	 * Decide whether field is omitted.
+	 * Decide whether field is omissible.
 	 *
 	 * @param option PostgreSQL data model option
 	 */
-	public void setOmitted(PgSchemaOption option) {
+	public void setOmissible(PgSchemaOption option) {
 
 		if ((element || attribute) && option.discarded_document_key_names.contains(xname)) {
-			is_omitted = true;
+			omissible = true;
 			return;
 		}
 
-		is_omitted = (!option.document_key && document_key) || (!option.serial_key && serial_key) || (!option.xpath_key && xpath_key) || (!option.rel_data_ext && system_key);
+		omissible = (!option.document_key && document_key) || (!option.serial_key && serial_key) || (!option.xpath_key && xpath_key) || (!option.rel_data_ext && system_key);
 
 	}
 
@@ -1476,11 +1410,11 @@ public class PgField {
 	public void setIndexable(PgSchemaOption option) {
 
 		if (system_key || ((element || attribute) && option.discarded_document_key_names.contains(xname))) {
-			is_indexable = false;
+			indexable = false;
 			return;
 		}
 
-		is_indexable = !option.field_resolved || (option.field_resolved && field_sel) || (option.attr_resolved && attr_sel);
+		indexable = !option.field_resolved || (option.field_resolved && field_sel) || (option.attr_resolved && attr_sel);
 
 	}
 
@@ -1492,31 +1426,97 @@ public class PgField {
 	public void setJsonable(PgSchemaOption option) {
 
 		if (system_key || ((element || attribute) && option.discarded_document_key_names.contains(xname))) {
-			is_jsonable = false;
+			jsonable = false;
 			return;
 		}
 
-		is_jsonable = true;
+		jsonable = true;
 
+	}
+
+	/**
+	 * Return whether content matches enumeration.
+	 *
+	 * @param content content
+	 * @return boolean whether content matches enumeration
+	 */
+	public boolean matchesEnumeration(String content) {
+
+		if (content == null || content.isEmpty())
+			return !required;
+
+		for (String enum_string : enumeration) {
+
+			if (enum_string.equals(content))
+				return true;
+
+		}
+
+		return false;
+	}
+
+	/**
+	 * Return whether content matches enumeration.
+	 *
+	 * @param content content
+	 * @return boolean whether content matches enumeration
+	 */
+	public boolean matchesXEnumeration(String content) {
+
+		if (content == null || content.isEmpty())
+			return !required;
+
+		for (String enum_string : xenumeration) {
+
+			if (enum_string.equals(content))
+				return true;
+
+		}
+
+		return false;
+	}
+
+	/**
+	 * Return whether content matches filter pattern.
+	 *
+	 * @param content content
+	 * @return boolean whether content matches filter pattern
+	 */
+	public boolean matchesFilterPattern(String content) {
+
+		if (content == null || content.isEmpty())
+			return false;
+
+		if (filter_pattern == null)
+			return true;
+
+		for (String rex_pattern : filter_pattern) {
+
+			if (content.matches(rex_pattern))
+				return true;
+
+		}
+
+		return false;
 	}
 
 	/**
 	 * Return whether node name matches.
 	 *
 	 * @param option PostgreSQL data model option
-	 * @param prefix prefix text
+	 * @param node_name node name
 	 * @param wild_card whether wild card follows or not
 	 * @return boolean whether node name matches
 	 */
-	public boolean matchesNodeName(PgSchemaOption option, String prefix, boolean wild_card) {
+	public boolean matchesNodeName(PgSchemaOption option, String node_name, boolean wild_card) {
 
 		if ((element || attribute) && option.discarded_document_key_names.contains(xname))
 			return false;
 
 		if (wild_card)
-			return xname.matches(prefix);
+			return xname.matches(node_name);
 
-		return prefix.equals("*") || xname.equals(prefix);
+		return node_name.equals("*") || xname.equals(node_name);
 	}
 
 }

@@ -80,7 +80,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				PgField field = fields.get(f);
 
-				if (field.is_omitted)
+				if (field.omissible)
 					continue;
 
 				if (field.enum_name == null)
@@ -289,7 +289,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			if (!filled)
 				break;
 
-			if (!field.is_omitted)
+			if (!field.omissible)
 				param_id++;
 
 		}
@@ -325,7 +325,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				PgField field = fields.get(f);
 
-				if (field.is_omitted)
+				if (field.omissible)
 					continue;
 
 				if (!occupied[f])

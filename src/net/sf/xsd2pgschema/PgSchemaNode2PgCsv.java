@@ -266,7 +266,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				PgField field = fields.get(f);
 
-				if (field.is_omitted)
+				if (field.omissible)
 					continue;
 
 				sb.append(values[f] + ",");

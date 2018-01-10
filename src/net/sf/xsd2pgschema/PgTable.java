@@ -193,14 +193,18 @@ public class PgTable {
 	 * Determine table has any element.
 	 */
 	private void testHasAny() {
+
 		has_any = fields.stream().anyMatch(arg -> arg.any);
+
 	}
 
 	/**
 	 * Determine table has any attribute.
 	 */
 	private void testHasAnyAttribute() {
+
 		has_any_attribute = fields.stream().anyMatch(arg -> arg.any_attribute);
+
 	}
 
 	/**
@@ -591,16 +595,16 @@ public class PgTable {
 	/**
 	 * Return whether node name matches.
 	 *
-	 * @param prefix prefix text
+	 * @param node_name node name
 	 * @param wild_card whether wild card follows or not
 	 * @return boolean whether node name matches
 	 */
-	public boolean matchesNodeName(String prefix, boolean wild_card) {
+	public boolean matchesNodeName(String node_name, boolean wild_card) {
 
 		if (wild_card)
-			return name.matches(prefix);
+			return name.matches(node_name);
 
-		return prefix.equals("*") || name.equals(prefix);
+		return node_name.equals("*") || name.equals(node_name);
 	}
 
 }

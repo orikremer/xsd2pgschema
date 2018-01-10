@@ -683,7 +683,7 @@ public class PgSchema {
 			table.setSystemKey();
 			table.setUserKey();
 
-			table.fields.forEach(field -> field.setOmitted(option));
+			table.fields.forEach(field -> field.setOmissible(option));
 			table.fields.forEach(field -> field.setJsonable(option));
 
 		});

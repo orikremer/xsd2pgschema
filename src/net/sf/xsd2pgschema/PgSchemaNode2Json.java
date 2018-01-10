@@ -210,7 +210,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			if (field.jsonb == null)
 				continue;
 
-			if (field.is_jsonable && XsDataType.setValue(field, values[f], schema.jsonb))
+			if (field.jsonable && XsDataType.setValue(field, values[f], schema.jsonb))
 				not_empty = true;
 
 		}
