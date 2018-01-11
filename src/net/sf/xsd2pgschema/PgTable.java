@@ -575,24 +575,6 @@ public class PgTable {
 	}
 
 	/**
-	 * Set system_key flag.
-	 */
-	public void setSystemKey() {
-
-		fields.forEach(arg -> arg.system_key = arg.primary_key || arg.foreign_key || arg.nested_key);
-
-	}
-
-	/**
-	 * Set user_key flag.
-	 */
-	public void setUserKey() {
-
-		fields.forEach(arg -> arg.user_key = arg.document_key || arg.serial_key || arg.xpath_key);
-
-	}
-
-	/**
 	 * Return whether node name matches.
 	 *
 	 * @param node_name node name

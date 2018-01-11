@@ -97,12 +97,6 @@ public class PgField {
 	/** Whether XPath key. */
 	boolean xpath_key = false;
 
-	/** Whether it has any system's administrative key (primary_key || foreign_key || nested_key). */
-	boolean system_key = false;
-
-	/** Whether it has any user's discretion key (document_key || serial_key || xpath_key). */
-	boolean user_key = false;
-
 	/** Whether not @nillable. */
 	boolean xrequired = false;
 
@@ -235,14 +229,20 @@ public class PgField {
 	/** The JSON buffer. */
 	StringBuilder jsonb = null;
 
+	/** Whether it has any system's administrative key (primary_key || foreign_key || nested_key). */
+	protected boolean system_key = false;
+
+	/** Whether it has any user's discretion key (document_key || serial_key || xpath_key). */
+	protected boolean user_key = false;
+
 	/** Whether field is omissible. */
-	boolean omissible = false;
+	protected boolean omissible = false;
 
 	/** Whether field is indexable. */
-	boolean indexable = true;
+	protected boolean indexable = true;
 
 	/** Whether field is JSON convertible. */
-	boolean jsonable = true;
+	protected boolean jsonable = true;
 
 	/**
 	 * Extract @type, @itemType, @memberTypes or @base and set type.
@@ -1387,6 +1387,24 @@ public class PgField {
 	}
 
 	/**
+	 * Decide whether field is system key.
+	 */
+	public void setSystemKey() {
+
+		system_key = primary_key || foreign_key || nested_key;
+
+	}
+
+	/**
+	 * Decide whether field is user key.
+	 */
+	public void setUserKey() {
+
+		user_key = document_key || serial_key || xpath_key;
+
+	}
+
+	/**
 	 * Decide whether field is omissible.
 	 *
 	 * @param option PostgreSQL data model option
@@ -1409,7 +1427,7 @@ public class PgField {
 	 */
 	public void setIndexable(PgSchemaOption option) {
 
-		if (system_key || ((element || attribute) && option.discarded_document_key_names.contains(xname))) {
+		if (system_key || user_key || ((element || attribute) && option.discarded_document_key_names.contains(xname))) {
 			indexable = false;
 			return;
 		}
@@ -1425,7 +1443,7 @@ public class PgField {
 	 */
 	public void setJsonable(PgSchemaOption option) {
 
-		if (system_key || ((element || attribute) && option.discarded_document_key_names.contains(xname))) {
+		if (system_key || user_key || ((element || attribute) && option.discarded_document_key_names.contains(xname))) {
 			jsonable = false;
 			return;
 		}

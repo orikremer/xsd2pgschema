@@ -676,17 +676,17 @@ public class PgSchema {
 		if (option.xpath_key)
 			tables.forEach(table -> table.addXPathKey(option));
 
-		// update system key, user key, is_omitted flag and is_jsonable flag
+		// update system key, user key, ommissible and jsonable flags
 
-		tables.forEach(table -> {
+		tables.forEach(table -> table.fields.forEach(field -> {
 
-			table.setSystemKey();
-			table.setUserKey();
+			field.setSystemKey();
+			field.setUserKey();
+			field.setOmissible(option);
+			field.setJsonable(option);
 
-			table.fields.forEach(field -> field.setOmissible(option));
-			table.fields.forEach(field -> field.setJsonable(option));
 
-		});
+		}));
 
 		// instance of message digest
 
@@ -2954,6 +2954,9 @@ public class PgSchema {
 	 */
 	public void applyIndexFilter(IndexFilter index_filter) throws PgSchemaException {
 
+		this.min_word_len = index_filter.min_word_len;
+		this.numeric_lucidx = index_filter.numeric_lucidx;
+
 		option.attr_resolved = false;
 
 		applyAttr(index_filter);
@@ -2966,12 +2969,9 @@ public class PgSchema {
 
 		}
 
-		// update is_indexable flag
+		// update indexable flag
 
 		tables.forEach(table -> table.fields.forEach(field -> field.setIndexable(option)));
-
-		this.min_word_len = index_filter.min_word_len;
-		this.numeric_lucidx = index_filter.numeric_lucidx;
 
 	}
 
@@ -4371,7 +4371,7 @@ public class PgSchema {
 
 		if (fields.stream().anyMatch(field -> field.required)) {
 
-			fields.stream().filter(field -> field.required && !field.user_key && !field.system_key && !option.discarded_document_key_names.contains(field.xname)).forEach(field -> {
+			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> {
 
 				String field_name = (field.attribute || field.any_attribute ? jsonb.attr_prefix : "") + (field.simple_content ? jsonb.simple_content_key : field.xname);
 
@@ -4389,7 +4389,7 @@ public class PgSchema {
 		if (!root_table.virtual)
 			System.out.print(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.linefeed); // JSON own items start
 
-		fields.stream().filter(field -> !field.user_key && !field.system_key && !option.discarded_document_key_names.contains(field.xname)).forEach(field -> jsonb.writeSchemaFieldProperty(field, true, false, 2));
+		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, true, false, 2));
 
 		if (jsonb.builder.length() > 2)
 			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.linefeed.equals("\n") ? 2 : 1) + (root_table.virtual ? 1 : 0)) + jsonb.linefeed);
@@ -4455,7 +4455,7 @@ public class PgSchema {
 
 		if (fields.stream().anyMatch(field -> field.required)) {
 
-			fields.stream().filter(field -> field.required && !field.user_key && !field.system_key && !option.discarded_document_key_names.contains(field.xname)).forEach(field -> {
+			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> {
 
 				String field_name = (field.attribute || field.any_attribute ? jsonb.attr_prefix : "") + (field.simple_content ? jsonb.simple_content_key : field.xname);
 
@@ -4473,7 +4473,7 @@ public class PgSchema {
 		if (!table.virtual)
 			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.linefeed); // JSON own object start
 
-		fields.stream().filter(field -> !field.user_key && !field.system_key && !option.discarded_document_key_names.contains(field.xname)).forEach(field -> jsonb.writeSchemaFieldProperty(field, true, false, json_indent_level + (table.virtual ? 0 : 1)));
+		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, true, false, json_indent_level + (table.virtual ? 0 : 1)));
 
 		if (jsonb.builder.length() > 2)
 			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.linefeed.equals("\n") ? 2 : 1) + (table.virtual ? 1 : 0)) + jsonb.linefeed);
@@ -4740,7 +4740,7 @@ public class PgSchema {
 
 		if (fields.stream().anyMatch(field -> field.required)) {
 
-			fields.stream().filter(field -> field.required && !field.user_key && !field.system_key && !option.discarded_document_key_names.contains(field.xname)).forEach(field -> {
+			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> {
 
 				String field_name = (field.attribute || field.any_attribute ? jsonb.attr_prefix : "") + (field.simple_content ? jsonb.simple_content_key : field.xname);
 
@@ -4758,7 +4758,7 @@ public class PgSchema {
 		if (!root_table.virtual)
 			System.out.print(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.linefeed); // JSON own items start
 
-		fields.stream().filter(field -> !field.user_key && !field.system_key && !option.discarded_document_key_names.contains(field.xname)).forEach(field -> jsonb.writeSchemaFieldProperty(field, !field.list_holder, field.list_holder, 2));
+		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, !field.list_holder, field.list_holder, 2));
 
 		if (jsonb.builder.length() > 2)
 			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.linefeed.equals("\n") ? 2 : 1) + (root_table.virtual ? 1 : 0)) + jsonb.linefeed);
@@ -4822,7 +4822,7 @@ public class PgSchema {
 
 		if (fields.stream().anyMatch(field -> field.required)) {
 
-			fields.stream().filter(field -> field.required && !field.user_key && !field.system_key && !option.discarded_document_key_names.contains(field.xname)).forEach(field -> {
+			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> {
 
 				String field_name = (field.attribute || field.any_attribute ? jsonb.attr_prefix : "") + (field.simple_content ? jsonb.simple_content_key : field.xname);
 
@@ -4840,7 +4840,7 @@ public class PgSchema {
 		if (!table.virtual)
 			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.linefeed); // JSON own items start
 
-		fields.stream().filter(field -> !field.user_key && !field.system_key && !option.discarded_document_key_names.contains(field.xname)).forEach(field -> jsonb.writeSchemaFieldProperty(field, obj_json && !field.list_holder, !table.virtual || field.list_holder, json_indent_level + (table.virtual ? 0 : 1)));
+		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, obj_json && !field.list_holder, !table.virtual || field.list_holder, json_indent_level + (table.virtual ? 0 : 1)));
 
 		if (jsonb.builder.length() > 2)
 			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.linefeed.equals("\n") ? 2 : 1) + (table.virtual ? 1 : 0)) + jsonb.linefeed);
@@ -5105,7 +5105,7 @@ public class PgSchema {
 
 		if (fields.stream().anyMatch(field -> field.required)) {
 
-			fields.stream().filter(field -> field.required && !field.user_key && !field.system_key && !option.discarded_document_key_names.contains(field.xname)).forEach(field -> {
+			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> {
 
 				String field_name = (field.attribute || field.any_attribute ? jsonb.attr_prefix : "") + (field.simple_content ? jsonb.simple_content_key : field.xname);
 
@@ -5122,7 +5122,7 @@ public class PgSchema {
 
 		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.linefeed); // JSON own items start
 
-		fields.stream().filter(field -> !field.user_key && !field.system_key && !option.discarded_document_key_names.contains(field.xname)).forEach(field -> {
+		fields.stream().filter(field -> field.jsonable).forEach(field -> {
 
 			if (table.xs_type.equals(XsTableType.xs_root))
 				jsonb.writeSchemaFieldProperty(field, !field.list_holder, field.list_holder, json_indent_level + 1);
