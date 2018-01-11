@@ -90,7 +90,7 @@ public class PgSchema {
 	private List<PgForeignKey> foreign_keys = null;
 
 	/** The PostgreSQL data model option. */
-	public PgSchemaOption option = null;
+	protected PgSchemaOption option = null;
 
 	/** Whether name collision occurs or not. */
 	private boolean conflicted = false;
@@ -105,10 +105,10 @@ public class PgSchema {
 	private PgTable root_table = null;
 
 	/** The minimum word length for index. */
-	int min_word_len = PgSchemaUtil.min_word_len;
+	protected int min_word_len = PgSchemaUtil.min_word_len;
 
 	/** Whether numeric index are stored in Lucene index. */
-	boolean numeric_lucidx = false;
+	protected boolean numeric_lucidx = false;
 
 	/** The default namespace (key=prefix, value=namespace_uri). */
 	private HashMap<String, String> def_namespaces = null;

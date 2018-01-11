@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -63,6 +63,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
+	/** The PostgreSQL data model option. */
+	private PgSchemaOption option = null;
+
 	/** The index filter. */
 	private IndexFilter index_filter = null;
 
@@ -116,7 +119,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, xml2sphinxds.schema_location, option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, xml2sphinxds.schema_location, this.option = option);
 
 		schema.applyXmlPostEditor(xml2sphinxds.xml_post_editor);
 
@@ -192,7 +195,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 				writer.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 				writer.write("<sphinx:document id=\"" + schema.getHashKeyString(xml_parser.document_id) + "\">\n");
-				writer.write("<" + schema.option.document_key_name + ">" + StringEscapeUtils.escapeXml10(xml_parser.document_id) + "</" + schema.option.document_key_name + ">\n");
+				writer.write("<" + option.document_key_name + ">" + StringEscapeUtils.escapeXml10(xml_parser.document_id) + "</" + option.document_key_name + ">\n");
 
 				schema.xml2SphDs(xml_parser, writer);
 

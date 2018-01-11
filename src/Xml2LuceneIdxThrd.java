@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -67,6 +67,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
+	/** The PostgreSQL data model option. */
+	private PgSchemaOption option = null;
+
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
@@ -114,7 +117,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, xml2luceneidx.schema_location, option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, xml2luceneidx.schema_location, this.option = option);
 
 		schema.applyXmlPostEditor(xml2luceneidx.xml_post_editor);
 
@@ -191,7 +194,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 				org.apache.lucene.document.Document lucene_doc = new org.apache.lucene.document.Document();
 
-				lucene_doc.add(new StringField(schema.option.document_key_name, xml_parser.document_id, Field.Store.YES));
+				lucene_doc.add(new StringField(option.document_key_name, xml_parser.document_id, Field.Store.YES));
 
 				schema.xml2LucIdx(xml_parser, lucene_doc);
 
