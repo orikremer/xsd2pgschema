@@ -3484,7 +3484,7 @@ public class PgSchema {
 
 			PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
-			if (node_test.omitted)
+			if (node_test.omissible)
 				continue;
 
 			synchronized (table_lock[table_id]) {
@@ -3581,7 +3581,7 @@ public class PgSchema {
 
 			PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
-			if (node_test.omitted)
+			if (node_test.omissible)
 				continue;
 
 			node2pgsql.parseChildNode(node_test);
@@ -3935,7 +3935,7 @@ public class PgSchema {
 
 			PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
-			if (node_test.omitted)
+			if (node_test.omissible)
 				continue;
 
 			synchronized (table_lock[0]) {
@@ -4185,7 +4185,7 @@ public class PgSchema {
 
 			PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
-			if (node_test.omitted)
+			if (node_test.omissible)
 				continue;
 
 			synchronized (table_lock[0]) {
@@ -4598,7 +4598,7 @@ public class PgSchema {
 
 			PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
-			if (node_test.omitted)
+			if (node_test.omissible)
 				continue;
 
 			synchronized (table_lock[0]) {
@@ -4955,7 +4955,7 @@ public class PgSchema {
 
 			PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
-			if (node_test.omitted)
+			if (node_test.omissible)
 				continue;
 
 			synchronized (table_lock[0]) {
@@ -5282,7 +5282,7 @@ public class PgSchema {
 
 			PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
-			if (node_test.omitted)
+			if (node_test.omissible)
 				continue;
 
 			synchronized (table_lock[table_id]) {

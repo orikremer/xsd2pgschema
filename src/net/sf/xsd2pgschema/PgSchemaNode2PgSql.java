@@ -43,13 +43,13 @@ import org.w3c.dom.Node;
 public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 	/** The prepared statement. */
-	PreparedStatement ps = null;
+	private PreparedStatement ps = null;
 
 	/** Whether field is occupied or not. */
-	boolean[] occupied = null;
+	private boolean[] occupied = null;
 
 	/** The database connection. */
-	Connection db_conn;
+	private Connection db_conn;
 
 	/**
 	 * Node parser for PostgreSQL data migration.

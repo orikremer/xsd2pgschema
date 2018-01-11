@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -43,8 +43,8 @@ public class PgSchemaNodeTester {
 	/** The processing node. */
 	public Node proc_node = null;
 
-	/** Whether this node is omitted or not. */
-	public boolean omitted = false;
+	/** Whether this node is omissible. */
+	public boolean omissible = false;
 
 	/** Whether nested node. */
 	boolean nested;
@@ -83,13 +83,9 @@ public class PgSchemaNodeTester {
 
 			boolean parent_virtual = parent_table.virtual;
 
-			if (!nested && !node_uname.equals(table.name)) {
-				omitted = true;
-				return;
-			}
-
-			else if (nested && (parent_virtual || (!parent_virtual && !node_uname.equals(parent_table.name))) && !node_uname.equals(table.name)) {
-				omitted = true;
+			if ((!nested && !node_uname.equals(table.name)) ||
+					(nested && (parent_virtual || (!parent_virtual && !node_uname.equals(parent_table.name))) && !node_uname.equals(table.name))) {
+				omissible = true;
 				return;
 			}
 
@@ -125,7 +121,7 @@ public class PgSchemaNodeTester {
 			}
 
 			if (key_id < nest_id) {
-				omitted = true;
+				omissible = true;
 				return;
 			}
 
