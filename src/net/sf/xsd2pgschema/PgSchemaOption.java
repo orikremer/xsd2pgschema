@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -73,13 +73,13 @@ public class PgSchemaOption {
 	public boolean append = false;
 
 	/** The default document key name in PostgreSQL DDL. */
-	private final String def_document_key_name = "document_id";
+	public final String def_document_key_name = "document_id";
 
 	/** The default serial key name in PostgreSQL DDL. */
-	private final String def_serial_key_name = "serial_id";
+	public final String def_serial_key_name = "serial_id";
 
 	/** The default XPath key name in PostgreSQL DDL. */
-	private final String def_xpath_key_name = "xpath_id";
+	public final String def_xpath_key_name = "xpath_id";
 
 	/** The document key name in PostgreSQL DDL. */
 	public String document_key_name = def_document_key_name;
@@ -333,44 +333,6 @@ public class PgSchemaOption {
 			discarded_document_key_names = new HashSet<String>();
 
 		return discarded_document_key_names.add(discarded_document_key_name);
-	}
-
-	/**
-	 * Set default user key names.
-	 */
-	public void setDefaultUserKeys() {
-
-		setDefaultDocumentKey();
-		setDefaultSerialKey();
-		setDefaultXPathKey();
-
-	}
-
-	/**
-	 * Set default document key name.
-	 */
-	public void setDefaultDocumentKey() {
-
-		document_key_name = def_document_key_name;
-
-	}
-
-	/**
-	 * Set default serial key name.
-	 */
-	public void setDefaultSerialKey() {
-
-		serial_key_name = def_serial_key_name;
-
-	}
-
-	/**
-	 * Set default XPath key name.
-	 */
-	public void setDefaultXPathKey() {
-
-		xpath_key_name = def_xpath_key_name;
-
 	}
 
 	/**

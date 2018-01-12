@@ -54,7 +54,7 @@ public class PgTable {
 	/** The field list. */
 	List<PgField> fields = null;
 
-	/** The depth of table (internal use only). */
+	/** The depth of table. */
 	int level = -1;
 
 	/** The number of nested field. */
@@ -87,7 +87,7 @@ public class PgTable {
 	/** Whether table is referred from child table. */
 	boolean required = false;
 
-	/** Whether table is subset of database (internal use only). */
+	/** Whether table is subset of database. */
 	boolean filt_out = false;
 
 	/** The content writer. */

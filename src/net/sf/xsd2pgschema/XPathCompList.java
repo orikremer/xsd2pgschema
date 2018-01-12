@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017 Masashi Yokochi
+    Copyright 2017-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -83,10 +83,10 @@ public class XPathCompList {
 	private boolean serial_key = false;
 
 	/** The document key name in PostgreSQL. */
-	private String document_key_name = "document_id";
+	private String document_key_name;
 
 	/** The serial key name in PostgreSQL. */
-	private String serial_key_name = "serial_id";
+	private String serial_key_name;
 
 	/** Whether retain case sensitive name in PostgreSQL DDL. */
 	private boolean case_sense = true;
@@ -95,7 +95,7 @@ public class XPathCompList {
 	private PgSchema schema = null;
 
 	/** The PostgreSQL data model option. */
-	public PgSchemaOption option = null;
+	private PgSchemaOption option = null;
 
 	/** Instance of path expression for UnionExprNoRootContext node. */
 	private List<XPathExpr> path_exprs_union = null;

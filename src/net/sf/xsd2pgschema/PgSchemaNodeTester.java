@@ -29,31 +29,31 @@ import org.w3c.dom.Node;
 public class PgSchemaNodeTester {
 
 	/** The ordinal number in sibling node. */
-	public int key_id = 1;
+	protected int key_id = 1;
 
 	/** The parent key name. */
-	public String parent_key = null;
+	protected String parent_key = null;
 
 	/** The current primary key name. */
-	public String primary_key = null;
+	protected String primary_key = null;
 
 	/** The current key name. */
-	public String current_key = null;
+	protected String current_key = null;
 
 	/** The processing node. */
-	public Node proc_node = null;
+	protected Node proc_node = null;
 
 	/** Whether this node is omissible. */
-	public boolean omissible = false;
+	protected boolean omissible = false;
 
 	/** Whether nested node. */
-	boolean nested;
+	protected boolean nested;
 
 	/** The ordinal number of current node in nested case. */
-	int nest_id;
+	protected int nest_id;
 
 	/** The total number of sibling node. */
-	int node_count = 0;
+	protected int node_count = 0;
 
 	/**
 	 * Decide to process this node or not.

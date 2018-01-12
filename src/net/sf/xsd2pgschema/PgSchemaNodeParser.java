@@ -19,6 +19,8 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -27,7 +29,10 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -42,76 +47,76 @@ import org.w3c.dom.Node;
 public abstract class PgSchemaNodeParser {
 
 	/** The PostgreSQL data model. */
-	PgSchema schema = null;
+	protected PgSchema schema = null;
 
 	/** The PostgreSQL data model option. */
-	PgSchemaOption option = null;
+	protected PgSchemaOption option = null;
 
 	/** The relational data extension. */
-	boolean rel_data_ext;
+	protected boolean rel_data_ext;
 
 	/** The parent table. */
-	PgTable parent_table = null;
+	protected PgTable parent_table = null;
 
 	/** The current table. */
-	PgTable table = null;
+	protected PgTable table = null;
 
 	/** The field list. */
-	List<PgField> fields = null;
+	protected List<PgField> fields = null;
 
 	/** The content of fields. */
-	String[] values = null;
+	protected String[] values = null;
 
 	/** The number of nested fields. */
-	int nested_fields = 0;
+	protected int nested_fields = 0;
 
 	/** Whether list holder. */
-	boolean[] list_holder = null;
+	protected boolean[] list_holder = null;
 
 	/** The nested table id. */
-	int[] nested_table_id = null;
+	protected int[] nested_table_id = null;
 
 	/** The nested key name. */
-	String[] nested_key = null;
+	protected String[] nested_key = null;
 
 	/** Whether values were filled. */
-	boolean filled = true;
+	protected boolean filled = true;
 
 	/** Whether any content was written. */
-	boolean written = false;
+	protected boolean written = false;
 
 	/** Whether any nested node was invoked. */
-	boolean invoked = false;
+	protected boolean invoked = false;
 
 	/** Whether nested node. */
-	boolean nested = false;
+	protected boolean nested = false;
 
 	/** The processing node. */
-	Node proc_node;
+	protected Node proc_node;
 
 	/** The current key name. */
-	String current_key;
+	protected String current_key;
 
 	/** The document id. */
-	String document_id = null;
+	protected String document_id = null;
 
 	/** The length of document id. */
-	int document_id_len;
+	protected int document_id_len;
 
 	/** The common content holder for element, simple_content and attribute. */
-	String content;
+	protected String content;
 
 	/** The document builder for xs:any and xs:anyAttribute. */
-	DocumentBuilder doc_builder = null;
+	private DocumentBuilder doc_builder = null;
 
 	/** The XML content of xs:any and xs:anyAttribute. */
-	Document doc = null;
+	private Document doc = null;
 
 	/** The root element of the XML content. */
-	Element doc_root = null;
+	private Element doc_root = null;
 
 	/** The transformer of the XML content. */
-	Transformer transformer = null;
+	private Transformer transformer = null;
 
 	/**
 	 * Node parser.
@@ -297,6 +302,22 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
+	 * Set any content.
+	 *
+	 * @param node current node
+	 * @param field current field
+	 * @return boolean whether content has value
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred
+	 */
+	public boolean setAnyContent(final Node node, final PgField field) throws TransformerException, IOException {
+
+		content = null;
+
+		return (field.any ? setAny(node) : setAnyAttribute(node));
+	}
+
+	/**
 	 * Set attribute.
 	 *
 	 * @param node current node
@@ -408,8 +429,10 @@ public abstract class PgSchemaNodeParser {
 	 *
 	 * @param node current node
 	 * @return boolean whether any element exists
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public boolean setAny(Node node) {
+	private boolean setAny(Node node) throws TransformerException, IOException {
 
 		boolean has_any = false;
 
@@ -441,6 +464,22 @@ public abstract class PgSchemaNodeParser {
 
 		}
 
+		if (has_any) {
+
+			doc.appendChild(doc_root);
+
+			DOMSource source = new DOMSource(doc);
+			StringWriter writer = new StringWriter();
+			StreamResult result = new StreamResult(writer);
+
+			transformer.transform(source, result);
+
+			content = writer.toString();
+
+			writer.close();
+
+		}
+
 		return has_any;
 	}
 
@@ -449,8 +488,10 @@ public abstract class PgSchemaNodeParser {
 	 *
 	 * @param node current node
 	 * @return boolean whether any attribute exists
+	 * @throws TransformerException the transformer exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public boolean setAnyAttribute(Node node) {
+	private boolean setAnyAttribute(Node node) throws TransformerException, IOException {
 
 		boolean has_any_attr = false;
 
@@ -484,6 +525,22 @@ public abstract class PgSchemaNodeParser {
 
 		}
 
+		if (has_any_attr) {
+
+			doc.appendChild(doc_root);
+
+			DOMSource source = new DOMSource(doc);
+			StringWriter writer = new StringWriter();
+			StreamResult result = new StreamResult(writer);
+
+			transformer.transform(source, result);
+
+			content = writer.toString();
+
+			writer.close();
+
+		}
+
 		return has_any_attr;
 	}
 
@@ -496,24 +553,23 @@ public abstract class PgSchemaNodeParser {
 	 */
 	public boolean existsNestedNode(final PgTable nested_table, final Node node) {
 
-		if (!nested_table.virtual) {
+		if (nested_table.virtual)
+			return false;
 
-			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-				if (child.getNodeType() != Node.ELEMENT_NODE)
-					continue;
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
 
-				String child_name;
+			String child_name;
 
-				if ((child_name = child.getLocalName()) == null)
-					child_name = option.getUnqualifiedName(child.getNodeName());
+			if ((child_name = child.getLocalName()) == null)
+				child_name = option.getUnqualifiedName(child.getNodeName());
 
-				if (!child_name.equals(nested_table.name))
-					continue;
+			if (!child_name.equals(nested_table.name))
+				continue;
 
-				return true;
-			}
-
+			return true;
 		}
 
 		return false;

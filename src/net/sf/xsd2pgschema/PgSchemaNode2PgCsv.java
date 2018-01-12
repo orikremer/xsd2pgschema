@@ -20,14 +20,11 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.Arrays;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.w3c.dom.Node;
@@ -214,21 +211,8 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			else if ((field.any || field.any_attribute) && table.filew != null) {
 
-				if (field.any ? setAny(proc_node) : setAnyAttribute(proc_node)) {
-
-					doc.appendChild(doc_root);
-
-					DOMSource source = new DOMSource(doc);
-					StringWriter writer = new StringWriter();
-					StreamResult result = new StreamResult(writer);
-
-					transformer.transform(source, result);
-
-					values[f] = StringEscapeUtils.escapeCsv(XsDataType.normalize(field, writer.toString()));
-
-					writer.close();
-
-				}
+				if (setAnyContent(proc_node, field))
+					values[f] = StringEscapeUtils.escapeCsv(XsDataType.normalize(field, content));
 
 			}
 
