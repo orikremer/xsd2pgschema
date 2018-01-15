@@ -676,7 +676,7 @@ public class PgSchema {
 		if (option.xpath_key)
 			tables.forEach(table -> table.addXPathKey(option));
 
-		// update system key, user key, ommissible and jsonable flags
+		// update system key, user key, omissible and jsonable flags
 
 		tables.forEach(table -> table.fields.forEach(field -> {
 
@@ -1428,7 +1428,9 @@ public class PgSchema {
 
 					name = e.getAttribute("name");
 
-					if (name.equals(option.getUnqualifiedName(ref)) && table.target_namespace != null && table.target_namespace.equals(getNamespaceUriOfQName(ref))) {
+					if (name.equals(option.getUnqualifiedName(ref)) && (
+							(table.target_namespace != null && table.target_namespace.equals(getNamespaceUriOfQName(ref))) ||
+							(table.target_namespace == null && getNamespaceUriOfQName(ref) == null))) {
 
 						if (attribute)
 							field.attribute = true;
