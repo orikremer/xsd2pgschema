@@ -564,7 +564,7 @@ public class PgTable {
 	}
 
 	/**
-	 * Determine the number of nested keys.
+	 * Determine the total number of nested keys.
 	 */
 	public void countNestedFields() {
 

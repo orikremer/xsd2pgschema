@@ -154,6 +154,7 @@ public class PgSchemaOption {
 	public void setDefaultForJsonSchema(JsonType json_type) {
 
 		rel_model_ext = !json_type.equals(JsonType.relational);
+
 		cancelRelDataExt();
 
 	}
@@ -164,6 +165,7 @@ public class PgSchemaOption {
 	public void cancelRelModelExt() {
 
 		rel_model_ext = false;
+
 		cancelRelDataExt();
 
 	}

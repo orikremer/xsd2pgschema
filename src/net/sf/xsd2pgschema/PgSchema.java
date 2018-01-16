@@ -683,7 +683,7 @@ public class PgSchema {
 			tables.stream().filter(table -> table.nested_fields > 0).forEach(table -> {
 
 				table.fields.removeIf(field -> field.nested_key);
-				table.nested_fields = 0;
+				table.countNestedFields();
 
 			});
 
@@ -736,7 +736,7 @@ public class PgSchema {
 		_root_schema.def_stat_msg.append(tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_child) && (option.rel_model_ext || !table.relational)).count() + " admin children\n");
 		_root_schema.def_stat_msg.append("--   System keys:\n");
 		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.primary_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " primary keys (" + tables.stream().map(table -> table.fields.stream().filter(field -> field.unique_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " unique constraints), ");
-		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys (" + foreign_keys.size() + " key references), ");
+		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys (" + countForeignKeyReferences() + " key references), ");
 		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.nested_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " nested keys\n");
 		_root_schema.def_stat_msg.append("--   User keys:\n");
 		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.document_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " document keys, ");
@@ -2405,6 +2405,7 @@ public class PgSchema {
 						constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 
 					System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + PgSchemaUtil.avoidPgReservedWords(foreign_key.child_table) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " FOREIGN KEY ( " + PgSchemaUtil.avoidPgReservedWords(child_fields[i]) + " ) REFERENCES " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(parent_fields[i]) + " ) NOT VALID;\n");
+
 				}
 
 			}
@@ -2699,6 +2700,46 @@ public class PgSchema {
 
 		System.out.println(");\n");
 
+	}
+
+	/**
+	 * Count the total number of effective foreign key references.
+	 *
+	 * @return int the total number of effective foreign key references
+	 */
+	private int countForeignKeyReferences() {
+
+		int key_references = 0;
+
+		for (PgForeignKey foreign_key : foreign_keys) {
+
+			boolean relational = false;
+
+			PgTable child_table = getTable(foreign_key.child_table);
+
+			if (child_table != null)
+				relational = child_table.relational;
+
+			if (!option.rel_data_ext && relational)
+				continue;
+
+			PgTable parent_table = getTable(foreign_key.parent_table);
+
+			if (parent_table != null)
+				relational = parent_table.relational;
+
+			if (!option.rel_data_ext && relational)
+				continue;
+
+			String[] child_fields = foreign_key.child_fields.split(" ");
+			String[] parent_fields = foreign_key.parent_fields.split(" ");
+
+			if (child_fields.length == parent_fields.length)
+				key_references += child_fields.length;
+
+		}
+
+		return key_references;
 	}
 
 	// post XML editorial functions
