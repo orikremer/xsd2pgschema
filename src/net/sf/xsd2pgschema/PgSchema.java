@@ -678,8 +678,16 @@ public class PgSchema {
 
 		// remove nested key if relational model extension is disabled
 
-		if (!option.rel_model_ext)
-			tables.stream().filter(table -> table.nested_fields > 0).forEach(table -> table.fields.removeIf(field -> field.nested_key));
+		if (!option.rel_model_ext) {
+
+			tables.stream().filter(table -> table.nested_fields > 0).forEach(table -> {
+
+				table.fields.removeIf(field -> field.nested_key);
+				table.nested_fields = 0;
+
+			});
+
+		}
 
 		// update system key, user key, omissible and jsonable flags
 
