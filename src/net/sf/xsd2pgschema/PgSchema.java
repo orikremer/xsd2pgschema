@@ -866,7 +866,7 @@ public class PgSchema {
 
 				else {
 
-					boolean unique_key = table.addNestedKey(option, e.getAttribute("name"), node);
+					boolean unique_key = table.addNestedKey(option, e.getAttribute("name"), dummy, node);
 
 					level++;
 
@@ -890,7 +890,7 @@ public class PgSchema {
 					child_table.level = level;
 
 					child_table.addPrimaryKey(option, child_table.name, unique_key);
-					if (!child_table.addNestedKey(option, dummy.type, node))
+					if (!child_table.addNestedKey(option, dummy.type, dummy, node))
 						child_table.cancelUniqueKey();
 
 					child_table.removeProhibitedAttrs();
@@ -1340,7 +1340,7 @@ public class PgSchema {
 
 			if (field.type == null || field.type.isEmpty()) {
 
-				if (!table.addNestedKey(option, e.getAttribute("name"), node))
+				if (!table.addNestedKey(option, e.getAttribute("name"), field, node))
 					table.cancelUniqueKey();
 
 				level++;
@@ -1371,7 +1371,7 @@ public class PgSchema {
 
 				else {
 
-					boolean unique_key = table.addNestedKey(option, e.getAttribute("name"), node);
+					boolean unique_key = table.addNestedKey(option, e.getAttribute("name"), field, node);
 
 					if (!unique_key)
 						table.cancelUniqueKey();
@@ -1398,7 +1398,7 @@ public class PgSchema {
 					child_table.level = level;
 
 					child_table.addPrimaryKey(option, child_table.name, unique_key);
-					if (!child_table.addNestedKey(option, field.type, node))
+					if (!child_table.addNestedKey(option, field.type, field, node))
 						child_table.cancelUniqueKey();
 
 					child_table.removeProhibitedAttrs();
@@ -1432,11 +1432,6 @@ public class PgSchema {
 							(table.target_namespace != null && table.target_namespace.equals(getNamespaceUriOfQName(ref))) ||
 							(table.target_namespace == null && getNamespaceUriOfQName(ref) == null))) {
 
-						if (attribute)
-							field.attribute = true;
-						else
-							field.element = true;
-
 						field.xname = option.getUnqualifiedName(name);
 						field.name = table.avoidFieldDuplication(option, field.xname);
 
@@ -1466,7 +1461,7 @@ public class PgSchema {
 
 						if (field.type == null || field.type.isEmpty()) {
 
-							if (!table.addNestedKey(option, e.getAttribute("name"), child))
+							if (!table.addNestedKey(option, e.getAttribute("name"), field, child))
 								table.cancelUniqueKey();
 
 							level++;
@@ -1497,7 +1492,7 @@ public class PgSchema {
 
 							else {
 
-								boolean unique_key = table.addNestedKey(option, e.getAttribute("name"), child);
+								boolean unique_key = table.addNestedKey(option, e.getAttribute("name"), field, child);
 
 								if (!unique_key)
 									table.cancelUniqueKey();
@@ -1524,7 +1519,7 @@ public class PgSchema {
 								child_table.level = level;
 
 								child_table.addPrimaryKey(option, child_table.name, unique_key);
-								if (!child_table.addNestedKey(option, field.type, child))
+								if (!child_table.addNestedKey(option, field.type, field, child))
 									child_table.cancelUniqueKey();
 
 								child_table.removeProhibitedAttrs();
