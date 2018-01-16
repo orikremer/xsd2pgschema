@@ -286,11 +286,11 @@ public class PgTable {
 	 *
 	 * @param option PostgreSQL data model option
 	 * @param name name of nested key
-	 * @param parent_field parent field
+	 * @param ref_field reference field
 	 * @param node current node
 	 * @return boolean whether success or not
 	 */
-	public boolean addNestedKey(PgSchemaOption option, String name, PgField parent_field, Node node) {
+	public boolean addNestedKey(PgSchemaOption option, String name, PgField ref_field, Node node) {
 
 		String xs_prefix_ = option.xs_prefix_;
 		/* not required for annotation retrieval if relational model extension turns off
@@ -314,9 +314,9 @@ public class PgTable {
 		field.foreign_table = name;
 		field.foreign_field = field.name;
 
-		field.maxoccurs = parent_field.maxoccurs;
-		field.minoccurs = parent_field.minoccurs;
-		field.list_holder = parent_field.list_holder;
+		field.maxoccurs = ref_field.maxoccurs;
+		field.minoccurs = ref_field.minoccurs;
+		field.list_holder = ref_field.list_holder;
 
 		Node parent_node = node.getParentNode();
 
