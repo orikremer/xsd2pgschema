@@ -78,7 +78,10 @@ public class PgSchema {
 	private HashSet<String> schema_locations = null;
 
 	/** The schema locations (value) with its target namespace (key). */
-	private HashMap<String, String> ns_schema_locations = null;
+	private HashMap<String, String> unq_schema_locations = null;
+
+	/** The duplicated schema locations (key and value). */
+	private HashMap<String, String> dup_schema_locations = null;
 
 	/** The attribute group definitions. */
 	private List<PgTable> attr_groups = null;
@@ -194,10 +197,14 @@ public class PgSchema {
 
 		def_schema_parent = root_schema == null ? PgSchemaUtil.getSchemaParent(def_schema_location) : root_schema.def_schema_parent;
 
-		// prepare target namespace holder
+		// prepare dictionary for duplicating schema_locations
 
-		if (root_schema == null)
-			ns_schema_locations = new HashMap<String, String>();
+		if (root_schema == null) {
+
+			unq_schema_locations = new HashMap<String, String>();
+			dup_schema_locations = new HashMap<String, String>();
+
+		}
 
 		// extract default namespace and default attributes
 
@@ -217,7 +224,7 @@ public class PgSchema {
 
 					String target_namespace = root_attr.getNodeValue().split(" ")[0];
 
-					_root_schema.ns_schema_locations.putIfAbsent(target_namespace, def_schema_location);
+					_root_schema.unq_schema_locations.putIfAbsent(target_namespace, def_schema_location);
 
 					def_namespaces.putIfAbsent("", target_namespace);
 
@@ -441,7 +448,8 @@ public class PgSchema {
 			if (!option.rel_model_ext)
 				tables.forEach(table -> table.classify());
 
-			_root_schema.def_stat_msg.append("--  " + (root_schema == null ? "Generated" : "Found") + " " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.stream().map(table -> option.rel_model_ext || !table.relational ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups " + (root_schema == null ? "in total" : "in XML Schema: " + def_schema_location) + "\n");
+			if (!_root_schema.dup_schema_locations.containsKey(def_schema_location))
+				_root_schema.def_stat_msg.append("--  " + (root_schema == null ? "Generated" : "Found") + " " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.stream().map(table -> option.rel_model_ext || !table.relational ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups " + (root_schema == null ? "in total" : "in XML Schema: " + def_schema_location) + "\n");
 
 		}
 
@@ -840,7 +848,7 @@ public class PgSchema {
 
 		sb.setLength(0);
 
-		schema_locations.forEach(arg -> sb.append(arg + ", "));
+		schema_locations.stream().filter(arg -> !dup_schema_locations.containsKey(arg)).forEach(arg -> sb.append(arg + ", "));
 
 		_root_schema.def_stat_msg.append("--   Schema locations:\n");
 		_root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
@@ -2082,8 +2090,10 @@ public class PgSchema {
 
 			else if (!known_table.schema_location.contains(table.schema_location)) {
 
-				if (!known_table.schema_location.contains(_root_schema.ns_schema_locations.get(table.target_namespace)))
+				if (!known_table.schema_location.contains(_root_schema.unq_schema_locations.get(table.target_namespace)))
 					known_table.schema_location += " " + table.schema_location;
+				else
+					_root_schema.dup_schema_locations.put(table.schema_location, _root_schema.unq_schema_locations.get(table.target_namespace));
 
 			}
 
