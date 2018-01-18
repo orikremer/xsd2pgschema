@@ -2274,7 +2274,7 @@ public class PgSchema {
 	 * Return model group id from model group name.
 	 *
 	 * @param table_name table name
-	 * @param throable throws exception if declaration does not exist
+	 * @param throwable throws exception if declaration does not exist
 	 * @return int table id, -1 represents not found
 	 * @throws PgSchemaException the pg schema exception
 	 */
@@ -8519,8 +8519,7 @@ public class PgSchema {
 
 		}
 
-		return getAbsoluteXPathOfTable(tables.stream().filter(foreign_table -> foreign_table.nested_fields > 0 &&
-				foreign_table.fields.stream().anyMatch(field -> field.nested_key && field.foreign_table.equals(table.name))).findFirst().get(), sb);
+		return getAbsoluteXPathOfTable(tables.stream().filter(foreign_table -> foreign_table.nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key && field.foreign_table.equals(table.name))).findFirst().get(), sb);
 	}
 
 	/**
