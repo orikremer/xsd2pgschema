@@ -89,6 +89,12 @@ public class PgSchema {
 	/** The PostgreSQL foreign keys. */
 	private List<PgForeignKey> foreign_keys = null;
 
+	/** The pending list of attribute groups. */
+	private List<PgPendingModel> pending_attr_groups = null;
+
+	/** The pending list of model groups. */
+	private List<PgPendingModel> pending_model_groups = null;
+
 	/** The PostgreSQL data model option. */
 	protected PgSchemaOption option = null;
 
@@ -146,6 +152,9 @@ public class PgSchema {
 
 	/** The instance of message digest. */
 	private MessageDigest message_digest = null;
+
+	/** The root schema object. */
+	private PgSchema _root_schema = null;
 
 	/**
 	 * PostgreSQL schema constructor.
@@ -215,7 +224,7 @@ public class PgSchema {
 
 		// detect entry point of XML schemata
 
-		PgSchema _root_schema = root_schema == null ? this : root_schema;
+		_root_schema = root_schema == null ? this : root_schema;
 
 		def_schema_parent = root_schema == null ? PgSchemaUtil.getSchemaParent(def_schema_location) : root_schema.def_schema_parent;
 
@@ -225,34 +234,56 @@ public class PgSchema {
 
 		schema_locations = new HashSet<String>();
 
-		schema_locations.add(PgSchemaUtil.getSchemaFileName(def_schema_location));
-
-		// prepare tables and foreign key holder
-
+		schema_locations.add(def_schema_location);
+		
+		// prepare table holder, attribute group holder and model group holder
+		
+		tables = new ArrayList<PgTable>();
+		
 		attr_groups = new ArrayList<PgTable>();
 
 		model_groups = new ArrayList<PgTable>();
+		
+		// prepare foreign key holder, and pending list for attribute group and model group
+
+		if (root_schema == null) {
+			
+			foreign_keys = new ArrayList<PgForeignKey>();
+
+			pending_attr_groups = new ArrayList<PgPendingModel>();
+			pending_model_groups = new ArrayList<PgPendingModel>();
+
+		}
 
 		tables = new ArrayList<PgTable>();
-
-		foreign_keys = new ArrayList<PgForeignKey>();
 
 		// include or import namespace
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			if (child.getNodeName().equals(option.xs_prefix_ + "include") || child.getNodeName().equals(option.xs_prefix_ + "import")) {
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
+			String child_name = child.getNodeName();
+
+			if (!child_name.contains("import") && !child_name.contains("include"))
+				continue;
+
+			// reset prefix of XSD because of import or include process may override
+
+			option.setPrefixOfXmlSchema(doc, def_schema_location);
+
+			if (child_name.equals(option.xs_prefix_ + "import") || child_name.equals(option.xs_prefix_ + "include")) {
 
 				Element e = (Element) child;
 
 				String schema_location = e.getAttribute("schemaLocation");
-				String schema_file_name = PgSchemaUtil.getSchemaFileName(schema_location);
 
 				if (schema_location != null && !schema_location.isEmpty()) {
 
 					// prevent infinite cyclic reference which is allowed in XML Schema 1.1
 
-					if (!_root_schema.schema_locations.add(schema_file_name))
+					if (!_root_schema.schema_locations.add(schema_location))
 						continue;
 
 					// copy XML Schema if not exists
@@ -274,7 +305,7 @@ public class PgSchema {
 
 						// referred XML Schema (xs:include|xs:import/@schemaLocation) analysis
 
-						PgSchema schema2 = new PgSchema(doc_builder, doc2, _root_schema, PgSchemaUtil.getSchemaName(schema_location), option);
+						PgSchema schema2 = new PgSchema(doc_builder, doc2, _root_schema, schema_location, option);
 
 						// add schema location to prevent infinite cyclic reference
 
@@ -286,29 +317,11 @@ public class PgSchema {
 							schema2.def_namespaces.entrySet().forEach(arg -> _root_schema.def_namespaces.putIfAbsent(arg.getKey(), arg.getValue()));
 
 						if ((schema2.tables == null || schema2.tables.size() == 0) && (schema2.attr_groups == null || schema2.attr_groups.size() == 0) && (schema2.model_groups == null || schema2.model_groups.size() == 0)) {
-
+							/*
 							_root_schema.def_stat_msg.append("--  Not found any root element (/" + option.xs_prefix_ + "schema/" + option.xs_prefix_ + "element) or administrative elements (/" + option.xs_prefix_ + "schema/[" + option.xs_prefix_ + "complexType | " + option.xs_prefix_ + "simpleType | " + option.xs_prefix_ + "attributeGroup | " + option.xs_prefix_ + "group]) in XML Schema: " + schema_location + "\n");
-
+							 */
 							continue;
 						}
-
-						// copy attribute group definitions from referred XML Schema
-
-						schema2.attr_groups.forEach(arg -> {
-
-							if (_root_schema.avoidTableDuplication(attr_groups, arg))
-								_root_schema.attr_groups.add(arg);
-
-						});
-
-						// copy model group definitions from referred XML Schema
-
-						schema2.model_groups.forEach(arg -> {
-
-							if (_root_schema.avoidTableDuplication(model_groups, arg))
-								_root_schema.model_groups.add(arg);
-
-						});
 
 						// copy administrative tables from referred XML Schema
 
@@ -329,9 +342,16 @@ public class PgSchema {
 
 		}
 
+		// reset prefix of XSD because of import or include process may override
+
+		option.setPrefixOfXmlSchema(doc, def_schema_location);
+
 		// extract attribute group elements
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
 
 			if (child.getNodeName().equals(option.xs_prefix_ + "attributeGroup"))
 				extractAdminAttributeGroup(child);
@@ -341,6 +361,9 @@ public class PgSchema {
 		// extract model group elements
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
 
 			if (child.getNodeName().equals(option.xs_prefix_ + "group"))
 				extractAdminModelGroup(child);
@@ -352,6 +375,9 @@ public class PgSchema {
 		boolean root_element = root_schema == null;
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
 
 			if (child.getNodeName().equals(option.xs_prefix_ + "element")) {
 
@@ -376,6 +402,9 @@ public class PgSchema {
 		// create table for administrative elements
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
 
 			if (child.getNodeName().equals(option.xs_prefix_ + "complexType"))
 				extractAdminElement(child, true, false);
@@ -405,6 +434,9 @@ public class PgSchema {
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
 			if (child.getNodeName().equals(option.xs_prefix_ + "element")) {
 
 				Element e = (Element) child;
@@ -427,6 +459,9 @@ public class PgSchema {
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
 			if (child.getNodeName().equals(option.xs_prefix_ + "complexType"))
 				extractAdminElement(child, true, true);
 
@@ -437,6 +472,74 @@ public class PgSchema {
 
 		if (root_schema != null)
 			return;
+
+		// apply pending attribute groups
+
+		if (pending_attr_groups.size() > 0) {
+
+			pending_attr_groups.forEach(arg -> {
+
+				try {
+
+					int t = getAttributeGroupId(arg.ref_model, true);
+
+					PgTable table = getTable(arg.table_name);
+
+					if (table != null && table.has_pending_model) {
+
+						table.fields.addAll(arg.insert_position, attr_groups.get(t).fields);
+
+						table.removeProhibitedAttrs();
+						table.removeBlockedSubstitutionGroups();
+						table.countNestedFields();
+
+					}
+
+				} catch (PgSchemaException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			});
+
+			pending_attr_groups.clear();
+
+		}
+
+		// apply pending model groups
+
+		if (pending_model_groups.size() > 0) {
+
+			pending_model_groups.forEach(arg -> {
+
+				try {
+
+					int t = getModelGroupId(arg.ref_model, true);
+
+					PgTable table = getTable(arg.table_name);
+
+					if (table != null && table.has_pending_model) {
+
+						table.fields.addAll(arg.insert_position, model_groups.get(t).fields);
+
+						table.removeProhibitedAttrs();
+						table.removeBlockedSubstitutionGroups();
+						table.countNestedFields();
+
+					}
+
+				} catch (PgSchemaException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			});
+
+			pending_model_groups.clear();
+
+		}
+
+		tables.stream().filter(table -> table.has_pending_model).forEach(table -> table.has_pending_model = false);
 
 		// whether name collision occurs or not
 
@@ -765,8 +868,9 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param root_element whether it is root element or not
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractRootElement(Node node, boolean root_element) {
+	private void extractRootElement(Node node, boolean root_element) throws PgSchemaException {
 
 		PgTable table = new PgTable(def_namespaces.get(""), def_schema_location);
 
@@ -794,6 +898,9 @@ public class PgSchema {
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
 			String child_name = child.getNodeName();
 
 			if (child_name.equals(option.xs_prefix_ + "complexType") || child_name.equals(option.xs_prefix_ + "simpleType"))
@@ -808,7 +915,7 @@ public class PgSchema {
 		table.removeBlockedSubstitutionGroups();
 		table.countNestedFields();
 
-		if (table.fields.size() < option.getMinimumSizeOfField())
+		if (!table.has_pending_model && table.fields.size() < option.getMinimumSizeOfField())
 			return;
 
 		tables.add(table);
@@ -840,8 +947,9 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param table root table
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void addRootOrphanItem(Node node, PgTable table) {
+	private void addRootOrphanItem(Node node, PgTable table) throws PgSchemaException {
 
 		PgField dummy = new PgField();
 
@@ -853,27 +961,13 @@ public class PgSchema {
 
 			dummy.extractType(option, node);
 
-			if (dummy.type == null || dummy.type.isEmpty()) {
-
-				level++;
-
-				table.required = true;
-
-				addChildItem(node, table);
-
-				level--;
-
-			}
-
-			else {
+			if (dummy.type != null && !dummy.type.isEmpty()) {
 
 				String[] type = dummy.type.contains(" ") ? dummy.type.split(" ")[0].split(":") : dummy.type.split(":");
 
 				// primitive data type
 
-				if (type.length != 0 && type[0].equals(option.xs_prefix)) {
-
-				}
+				if (type.length != 0 && type[0].equals(option.xs_prefix)) { } // nothing to do
 
 				// non-primitive data type
 
@@ -903,6 +997,7 @@ public class PgSchema {
 					child_table.level = level;
 
 					child_table.addPrimaryKey(option, child_table.name, unique_key);
+
 					if (!child_table.addNestedKey(option, dummy.type, dummy, node))
 						child_table.cancelUniqueKey();
 
@@ -910,7 +1005,7 @@ public class PgSchema {
 					child_table.removeBlockedSubstitutionGroups();
 					child_table.countNestedFields();
 
-					if (child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
+					if (!child_table.has_pending_model && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
 						tables.add(child_table);
 
 					addChildItem(node, child_table);
@@ -931,8 +1026,9 @@ public class PgSchema {
 	 * @param node current node
 	 * @param complex_type whether it is complexType or not (simpleType)
 	 * @param annotation whether corrects annotation only
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractAdminElement(Node node, boolean complex_type, boolean annotation) {
+	private void extractAdminElement(Node node, boolean complex_type, boolean annotation) throws PgSchemaException {
 
 		PgTable table = new PgTable(def_namespaces.get(""), def_schema_location);
 
@@ -992,7 +1088,7 @@ public class PgSchema {
 		table.removeBlockedSubstitutionGroups();
 		table.countNestedFields();
 
-		if (table.fields.size() < option.getMinimumSizeOfField())
+		if (!table.has_pending_model && table.fields.size() < option.getMinimumSizeOfField())
 			return;
 
 		if (avoidTableDuplication(tables, table))
@@ -1004,8 +1100,9 @@ public class PgSchema {
 	 * Extract administrative attribute group of XML Schema.
 	 *
 	 * @param node current node
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractAdminAttributeGroup(Node node) {
+	private void extractAdminAttributeGroup(Node node) throws PgSchemaException {
 
 		PgTable table = new PgTable(def_namespaces.get(""), def_schema_location);
 
@@ -1029,14 +1126,18 @@ public class PgSchema {
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling())
 			extractField(child, table);
-
-		table.fields.removeIf(field -> !field.attribute);
-
+		/*
 		if (table.fields.size() == 0)
 			return;
+		 */
+		if (avoidTableDuplication(_root_schema.attr_groups, table)) {
 
-		if (avoidTableDuplication(attr_groups, table))
 			attr_groups.add(table);
+
+			if (!this.equals(_root_schema))
+				_root_schema.attr_groups.add(table);
+
+		}
 
 	}
 
@@ -1044,8 +1145,9 @@ public class PgSchema {
 	 * Extract administrative model group of XML Schema.
 	 *
 	 * @param node current node
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractAdminModelGroup(Node node) {
+	private void extractAdminModelGroup(Node node) throws PgSchemaException {
 
 		PgTable table = new PgTable(def_namespaces.get(""), def_schema_location);
 
@@ -1069,12 +1171,18 @@ public class PgSchema {
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling())
 			extractField(child, table);
-
+		/*
 		if (table.fields.size() == 0)
 			return;
+		 */
+		if (avoidTableDuplication(_root_schema.model_groups, table)) {
 
-		if (avoidTableDuplication(model_groups, table))
 			model_groups.add(table);
+
+			if (!this.equals(_root_schema))
+				_root_schema.model_groups.add(table);
+
+		}
 
 	}
 
@@ -1083,9 +1191,9 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param table the table
-	 * @table new table
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractField(Node node, PgTable table) {
+	private void extractField(Node node, PgTable table) throws PgSchemaException {
 
 		String node_name = node.getNodeName();
 
@@ -1130,6 +1238,9 @@ public class PgSchema {
 		}
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
 
 			String child_name = child.getNodeName();
 
@@ -1209,7 +1320,7 @@ public class PgSchema {
 		if (foreign_key.parent_fields == null || foreign_key.parent_fields.isEmpty())
 			return;
 
-		foreign_keys.add(foreign_key);
+		_root_schema.foreign_keys.add(foreign_key);
 
 	}
 
@@ -1275,8 +1386,9 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param table new table
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractAttribute(Node node, PgTable table) {
+	private void extractAttribute(Node node, PgTable table) throws PgSchemaException {
 
 		extractInfoItem(node, table, true);
 
@@ -1287,8 +1399,9 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param table new table
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractElement(Node node, PgTable table) {
+	private void extractElement(Node node, PgTable table) throws PgSchemaException {
 
 		extractInfoItem(node, table, false);
 
@@ -1300,8 +1413,9 @@ public class PgSchema {
 	 * @param node current node
 	 * @param table new table
 	 * @param attribute whether it is attribute or not (element)
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractInfoItem(Node node, PgTable table, boolean attribute) {
+	private void extractInfoItem(Node node, PgTable table, boolean attribute) throws PgSchemaException {
 
 		PgField field = new PgField();
 
@@ -1411,6 +1525,7 @@ public class PgSchema {
 					child_table.level = level;
 
 					child_table.addPrimaryKey(option, child_table.name, unique_key);
+
 					if (!child_table.addNestedKey(option, field.type, field, node))
 						child_table.cancelUniqueKey();
 
@@ -1418,7 +1533,7 @@ public class PgSchema {
 					child_table.removeBlockedSubstitutionGroups();
 					child_table.countNestedFields();
 
-					if (child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
+					if (!child_table.has_pending_model && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
 						tables.add(child_table);
 
 					addChildItem(node, child_table);
@@ -1434,6 +1549,9 @@ public class PgSchema {
 		else if (ref != null && !ref.isEmpty()) {
 
 			for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+				if (child.getNodeType() != Node.ELEMENT_NODE)
+					continue;
 
 				if (child.getNodeName().equals(attribute ? option.xs_prefix_ + "attribute" : option.xs_prefix_ + "element")) {
 
@@ -1532,6 +1650,7 @@ public class PgSchema {
 								child_table.level = level;
 
 								child_table.addPrimaryKey(option, child_table.name, unique_key);
+
 								if (!child_table.addNestedKey(option, field.type, field, child))
 									child_table.cancelUniqueKey();
 
@@ -1539,7 +1658,7 @@ public class PgSchema {
 								child_table.removeBlockedSubstitutionGroups();
 								child_table.countNestedFields();
 
-								if (child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
+								if (!child_table.has_pending_model && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
 									tables.add(child_table);
 
 								addChildItem(child, child_table);
@@ -1566,8 +1685,9 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param foreign_table foreign table
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void addChildItem(Node node, PgTable foreign_table) {
+	private void addChildItem(Node node, PgTable foreign_table) throws PgSchemaException {
 
 		PgTable table = new PgTable(foreign_table.target_namespace, def_schema_location);
 
@@ -1614,7 +1734,7 @@ public class PgSchema {
 		table.removeBlockedSubstitutionGroups();
 		table.countNestedFields();
 
-		if (table.fields.size() < option.getMinimumSizeOfField())
+		if (!table.has_pending_model && table.fields.size() < option.getMinimumSizeOfField())
 			return;
 
 		if (avoidTableDuplication(tables, table))
@@ -1627,8 +1747,9 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param table new table
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractAttributeGroup(Node node, PgTable table) {
+	private void extractAttributeGroup(Node node, PgTable table) throws PgSchemaException {
 
 		Element e = (Element) node;
 
@@ -1649,12 +1770,19 @@ public class PgSchema {
 			return;
 		}
 
-		int t = getAttributeGroupId(option.getUnqualifiedName(ref));
+		ref = option.getUnqualifiedName(ref);
 
-		if (t < 0)
+		int t = getAttributeGroupId(ref, false);
+
+		if (t < 0) {
+
+			_root_schema.pending_attr_groups.add(new PgPendingModel(ref, table.name, table.fields.size()));
+			table.has_pending_model = true;
+
 			return;
+		}
 
-		attr_groups.get(t).fields.forEach(field -> table.fields.add(field));
+		table.fields.addAll(_root_schema.attr_groups.get(t).fields);
 
 	}
 
@@ -1663,8 +1791,9 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param table new table
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractModelGroup(Node node, PgTable table) {
+	private void extractModelGroup(Node node, PgTable table) throws PgSchemaException {
 
 		Element e = (Element) node;
 
@@ -1673,12 +1802,19 @@ public class PgSchema {
 		if (ref == null || ref.isEmpty())
 			return;
 
-		int t = getModelGroupId(option.getUnqualifiedName(ref));
+		ref = option.getUnqualifiedName(ref);
 
-		if (t < 0)
+		int t = getModelGroupId(ref, false);
+
+		if (t < 0) {
+
+			_root_schema.pending_model_groups.add(new PgPendingModel(ref, table.name, table.fields.size()));
+			table.has_pending_model = true;
+
 			return;
+		}
 
-		model_groups.get(t).fields.forEach(field -> table.fields.add(field));
+		table.fields.addAll(_root_schema.model_groups.get(t).fields);
 
 	}
 
@@ -1687,8 +1823,9 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param table new table
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractSimpleContent(Node node, PgTable table) {
+	private void extractSimpleContent(Node node, PgTable table) throws PgSchemaException {
 
 		PgField field = new PgField();
 
@@ -1734,6 +1871,9 @@ public class PgSchema {
 
 			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
+				if (child.getNodeType() != Node.ELEMENT_NODE)
+					continue;
+
 				if (!child.getNodeName().equals(option.xs_prefix_ + "extension"))
 					continue;
 
@@ -1766,10 +1906,14 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param table new table
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractComplexContent(Node node, PgTable table) {
+	private void extractComplexContent(Node node, PgTable table) throws PgSchemaException {
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
 
 			if (child.getNodeName().equals(option.xs_prefix_ + "extension")) {
 
@@ -1792,8 +1936,9 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param table new table
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractComplexContentExt(Node node, PgTable table) {
+	private void extractComplexContentExt(Node node, PgTable table) throws PgSchemaException {
 
 		String node_name = node.getNodeName();
 
@@ -1828,6 +1973,9 @@ public class PgSchema {
 		}
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
 
 			String child_name = child.getNodeName();
 
@@ -1873,7 +2021,14 @@ public class PgSchema {
 
 		List<PgField> fields = table.fields;
 
-		int known_t = tables == this.tables ? getTableId(table.name) : tables == this.attr_groups ? getAttributeGroupId(table.name) : getModelGroupId(table.name);
+		int known_t = -1;
+
+		try {
+			known_t = tables.equals(this.tables) ? getTableId(table.name) : tables.equals(_root_schema.attr_groups) ? getAttributeGroupId(table.name, false) : tables.equals(_root_schema.model_groups) ? getModelGroupId(table.name, false) : -1;
+		} catch (PgSchemaException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
 
 		if (known_t < 0)
 			return true;
@@ -1956,7 +2111,7 @@ public class PgSchema {
 
 					if (known_field.nested_key) {
 
-						if (known_field.parent_node != null)
+						if (known_field.parent_node != null && !known_field.parent_node.contains(field.parent_node))
 							known_field.parent_node += " " + field.parent_node;
 
 					}
@@ -2096,16 +2251,21 @@ public class PgSchema {
 	 * Return attribute group id from attribute group name.
 	 *
 	 * @param table_name table name
+	 * @param throwable throws exception if declaration does not exist
 	 * @return int table id, -1 represents not found
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private int getAttributeGroupId(String table_name) {
+	private int getAttributeGroupId(String table_name, boolean throwable) throws PgSchemaException {
 
-		for (int t = 0; t < attr_groups.size(); t++) {
+		for (int t = 0; t < _root_schema.attr_groups.size(); t++) {
 
-			if (attr_groups.get(t).name.equals(table_name))
+			if (_root_schema.attr_groups.get(t).name.equals(table_name))
 				return t;
 
 		}
+
+		if (throwable)
+			throw new PgSchemaException("Not found attribute group declaration: " + table_name + ".");
 
 		return -1;
 	}
@@ -2114,16 +2274,21 @@ public class PgSchema {
 	 * Return model group id from model group name.
 	 *
 	 * @param table_name table name
+	 * @param throable throws exception if declaration does not exist
 	 * @return int table id, -1 represents not found
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private int getModelGroupId(String table_name) {
+	private int getModelGroupId(String table_name, boolean throwable) throws PgSchemaException {
 
-		for (int t = 0; t < model_groups.size(); t++) {
+		for (int t = 0; t < _root_schema.model_groups.size(); t++) {
 
-			if (model_groups.get(t).name.equals(table_name))
+			if (_root_schema.model_groups.get(t).name.equals(table_name))
 				return t;
 
 		}
+
+		if (throwable)
+			throw new PgSchemaException("Not found model group declaration: " + table_name + ".");
 
 		return -1;
 	}
@@ -4030,6 +4195,9 @@ public class PgSchema {
 			throw new PgSchemaException("Not found sphinx:schema root element in Sphinx data source: " + PgSchemaUtil.sph_schema_name);
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
 
 			String node_name = child.getNodeName();
 			boolean sph_field = node_name.equals("sphinx:field");
@@ -8351,7 +8519,8 @@ public class PgSchema {
 
 		}
 
-		return getAbsoluteXPathOfTable(tables.stream().filter(foreign_table -> foreign_table.nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key && field.foreign_table.equals(table.name))).findFirst().get(), sb);
+		return getAbsoluteXPathOfTable(tables.stream().filter(foreign_table -> foreign_table.nested_fields > 0 &&
+				foreign_table.fields.stream().anyMatch(field -> field.nested_key && field.foreign_table.equals(table.name))).findFirst().get(), sb);
 	}
 
 	/**

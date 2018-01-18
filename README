@@ -1,3 +1,10 @@
+ Changes in xsd2pgschema 2.7.6 (release 2018-01-18)
+
+  [Ticket #4-3] Fixed overriding prefix to http://www.w3.org/2001/XMLSchema by schema import or include.
+  [Ticket #4-4] Fixed overriding schemata which have the same file name.
+  [Ticked #4-4] Revised implementation of attribute group, model group and foreign key.
+  [Ticket #4-6] Allowed lazy evaluation of attribute group and model group.
+
  Changes in xsd2pgschema 2.7.5 (release 2018-01-16)
 
   Fixed missing of attribute and field in full-text indexing when sharding was enabled.

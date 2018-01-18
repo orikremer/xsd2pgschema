@@ -81,6 +81,9 @@ public class PgTable {
 	/** Whether table has any attribute. */
 	boolean has_any_attribute = false;
 
+	/** Whether table has pending model. */
+	boolean has_pending_model = false;
+
 	/** Whether name collision occurs or not. */
 	boolean conflict = false;
 
