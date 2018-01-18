@@ -74,8 +74,11 @@ public class PgSchema {
 	/** The default schema location. */
 	private String def_schema_location = null;
 
-	/** The included or imported schema locations. */
+	/** The schema locations. */
 	private HashSet<String> schema_locations = null;
+
+	/** The schema locations (value) with its target namespace (key). */
+	private HashMap<String, String> ns_schema_locations = null;
 
 	/** The attribute group definitions. */
 	private List<PgTable> attr_groups = null;
@@ -185,15 +188,16 @@ public class PgSchema {
 		if (!root_node.getNodeName().equals(option.xs_prefix_ + "schema"))
 			throw new PgSchemaException("Not found " + option.xs_prefix_ + "schema root element in XML Schema: " + def_schema_location);
 
-		// retrieve top level schema annotation
+		// detect entry point of XML schemata
 
-		def_anno = option.extractAnnotation(root_node, true);
-		def_anno_appinfo = option.extractAppinfo(root_node);
+		_root_schema = root_schema == null ? this : root_schema;
 
-		if ((def_anno_doc = option.extractDocumentation(root_node, true)) != null)
-			def_xanno_doc = option.extractDocumentation(root_node, false);
+		def_schema_parent = root_schema == null ? PgSchemaUtil.getSchemaParent(def_schema_location) : root_schema.def_schema_parent;
 
-		def_stat_msg = new StringBuilder();
+		// prepare target namespace holder
+
+		if (root_schema == null)
+			ns_schema_locations = new HashMap<String, String>();
 
 		// extract default namespace and default attributes
 
@@ -209,8 +213,15 @@ public class PgSchema {
 
 				String node_name = root_attr.getNodeName();
 
-				if (node_name.equals("targetNamespace"))
-					def_namespaces.putIfAbsent("", root_attr.getNodeValue().split(" ")[0]);
+				if (node_name.equals("targetNamespace")) {
+
+					String target_namespace = root_attr.getNodeValue().split(" ")[0];
+
+					_root_schema.ns_schema_locations.putIfAbsent(target_namespace, def_schema_location);
+
+					def_namespaces.putIfAbsent("", target_namespace);
+
+				}
 
 				else if (node_name.startsWith("xmlns"))
 					def_namespaces.putIfAbsent(node_name.replaceFirst("^xmlns:?", ""), root_attr.getNodeValue().split(" ")[0]);
@@ -222,11 +233,15 @@ public class PgSchema {
 
 		}
 
-		// detect entry point of XML schemata
+		// retrieve top level schema annotation
 
-		_root_schema = root_schema == null ? this : root_schema;
+		def_anno = option.extractAnnotation(root_node, true);
+		def_anno_appinfo = option.extractAppinfo(root_node);
 
-		def_schema_parent = root_schema == null ? PgSchemaUtil.getSchemaParent(def_schema_location) : root_schema.def_schema_parent;
+		if ((def_anno_doc = option.extractDocumentation(root_node, true)) != null)
+			def_xanno_doc = option.extractDocumentation(root_node, false);
+
+		def_stat_msg = new StringBuilder();
 
 		// prepare schema location holder
 
@@ -307,6 +322,13 @@ public class PgSchema {
 
 						PgSchema schema2 = new PgSchema(doc_builder, doc2, _root_schema, schema_location, option);
 
+						if ((schema2.tables == null || schema2.tables.size() == 0) && (schema2.attr_groups == null || schema2.attr_groups.size() == 0) && (schema2.model_groups == null || schema2.model_groups.size() == 0)) {
+							/*
+							_root_schema.def_stat_msg.append("--  Not found any root element (/" + option.xs_prefix_ + "schema/" + option.xs_prefix_ + "element) or administrative elements (/" + option.xs_prefix_ + "schema/[" + option.xs_prefix_ + "complexType | " + option.xs_prefix_ + "simpleType | " + option.xs_prefix_ + "attributeGroup | " + option.xs_prefix_ + "group]) in XML Schema: " + schema_location + "\n");
+							 */
+							continue;
+						}
+
 						// add schema location to prevent infinite cyclic reference
 
 						schema2.schema_locations.forEach(arg -> _root_schema.schema_locations.add(arg));
@@ -315,13 +337,6 @@ public class PgSchema {
 
 						if (!schema2.def_namespaces.isEmpty())
 							schema2.def_namespaces.entrySet().forEach(arg -> _root_schema.def_namespaces.putIfAbsent(arg.getKey(), arg.getValue()));
-
-						if ((schema2.tables == null || schema2.tables.size() == 0) && (schema2.attr_groups == null || schema2.attr_groups.size() == 0) && (schema2.model_groups == null || schema2.model_groups.size() == 0)) {
-							/*
-							_root_schema.def_stat_msg.append("--  Not found any root element (/" + option.xs_prefix_ + "schema/" + option.xs_prefix_ + "element) or administrative elements (/" + option.xs_prefix_ + "schema/[" + option.xs_prefix_ + "complexType | " + option.xs_prefix_ + "simpleType | " + option.xs_prefix_ + "attributeGroup | " + option.xs_prefix_ + "group]) in XML Schema: " + schema_location + "\n");
-							 */
-							continue;
-						}
 
 						// copy administrative tables from referred XML Schema
 
@@ -2065,8 +2080,12 @@ public class PgSchema {
 			if (known_table.schema_location == null || known_table.schema_location.isEmpty())
 				known_table.schema_location = table.schema_location;
 
-			else if (!known_table.schema_location.contains(table.schema_location))
-				known_table.schema_location += " " + table.schema_location;
+			else if (!known_table.schema_location.contains(table.schema_location)) {
+
+				if (!known_table.schema_location.contains(_root_schema.ns_schema_locations.get(table.target_namespace)))
+					known_table.schema_location += " " + table.schema_location;
+
+			}
 
 		}
 
