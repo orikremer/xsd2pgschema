@@ -235,19 +235,19 @@ public class PgSchema {
 		schema_locations = new HashSet<String>();
 
 		schema_locations.add(def_schema_location);
-		
+
 		// prepare table holder, attribute group holder and model group holder
-		
+
 		tables = new ArrayList<PgTable>();
-		
+
 		attr_groups = new ArrayList<PgTable>();
 
 		model_groups = new ArrayList<PgTable>();
-		
+
 		// prepare foreign key holder, and pending list for attribute group and model group
 
 		if (root_schema == null) {
-			
+
 			foreign_keys = new ArrayList<PgForeignKey>();
 
 			pending_attr_groups = new ArrayList<PgPendingModel>();
@@ -266,18 +266,18 @@ public class PgSchema {
 
 			String child_name = child.getNodeName();
 
-			if (!child_name.contains("import") && !child_name.contains("include"))
+			if (!child_name.contains("include") && !child_name.contains("import"))
 				continue;
 
-			// reset prefix of XSD because of import or include process may override
+			// reset prefix of XSD because import or include process may override
 
 			option.setPrefixOfXmlSchema(doc, def_schema_location);
 
-			if (child_name.equals(option.xs_prefix_ + "import") || child_name.equals(option.xs_prefix_ + "include")) {
+			if (child_name.equals(option.xs_prefix_ + "include") || child_name.equals(option.xs_prefix_ + "import")) {
 
-				Element e = (Element) child;
+				Element child_e = (Element) child;
 
-				String schema_location = e.getAttribute("schemaLocation");
+				String schema_location = child_e.getAttribute("schemaLocation");
 
 				if (schema_location != null && !schema_location.isEmpty()) {
 
@@ -342,7 +342,7 @@ public class PgSchema {
 
 		}
 
-		// reset prefix of XSD because of import or include process may override
+		// reset prefix of XSD because import or include process may override
 
 		option.setPrefixOfXmlSchema(doc, def_schema_location);
 
@@ -381,9 +381,9 @@ public class PgSchema {
 
 			if (child.getNodeName().equals(option.xs_prefix_ + "element")) {
 
-				Element e = (Element) child;
+				Element child_e = (Element) child;
 
-				String _abstract = e.getAttribute("abstract");
+				String _abstract = child_e.getAttribute("abstract");
 
 				if (_abstract != null && _abstract.equals("true"))
 					continue;
@@ -439,9 +439,9 @@ public class PgSchema {
 
 			if (child.getNodeName().equals(option.xs_prefix_ + "element")) {
 
-				Element e = (Element) child;
+				Element child_e = (Element) child;
 
-				String _abstract = e.getAttribute("abstract");
+				String _abstract = child_e.getAttribute("abstract");
 
 				if (_abstract != null && _abstract.equals("true"))
 					continue;
@@ -473,7 +473,7 @@ public class PgSchema {
 		if (root_schema != null)
 			return;
 
-		// apply pending attribute groups
+		// apply pending attribute groups (lazy evaluation)
 
 		if (pending_attr_groups.size() > 0) {
 
@@ -506,7 +506,7 @@ public class PgSchema {
 
 		}
 
-		// apply pending model groups
+		// apply pending model groups (lazy evaluation)
 
 		if (pending_model_groups.size() > 0) {
 
@@ -973,7 +973,7 @@ public class PgSchema {
 
 				else {
 
-					boolean unique_key = table.addNestedKey(option, e.getAttribute("name"), dummy, node);
+					boolean unique_key = table.addNestedKey(option, name, dummy, node);
 
 					level++;
 
@@ -1467,7 +1467,7 @@ public class PgSchema {
 
 			if (field.type == null || field.type.isEmpty()) {
 
-				if (!table.addNestedKey(option, e.getAttribute("name"), field, node))
+				if (!table.addNestedKey(option, name, field, node))
 					table.cancelUniqueKey();
 
 				level++;
@@ -1498,7 +1498,7 @@ public class PgSchema {
 
 				else {
 
-					boolean unique_key = table.addNestedKey(option, e.getAttribute("name"), field, node);
+					boolean unique_key = table.addNestedKey(option, name, field, node);
 
 					if (!unique_key)
 						table.cancelUniqueKey();
@@ -1555,15 +1555,15 @@ public class PgSchema {
 
 				if (child.getNodeName().equals(attribute ? option.xs_prefix_ + "attribute" : option.xs_prefix_ + "element")) {
 
-					e = (Element) child;
+					Element child_e = (Element) child;
 
-					name = e.getAttribute("name");
+					String child_name = child_e.getAttribute("name");
 
-					if (name.equals(option.getUnqualifiedName(ref)) && (
+					if (child_name.equals(option.getUnqualifiedName(ref)) && (
 							(table.target_namespace != null && table.target_namespace.equals(getNamespaceUriOfQName(ref))) ||
 							(table.target_namespace == null && getNamespaceUriOfQName(ref) == null))) {
 
-						field.xname = option.getUnqualifiedName(name);
+						field.xname = option.getUnqualifiedName(child_name);
 						field.name = table.avoidFieldDuplication(option, field.xname);
 
 						if ((field.anno = option.extractAnnotation(child, false)) != null)
@@ -1592,7 +1592,7 @@ public class PgSchema {
 
 						if (field.type == null || field.type.isEmpty()) {
 
-							if (!table.addNestedKey(option, e.getAttribute("name"), field, child))
+							if (!table.addNestedKey(option, child_name, field, child))
 								table.cancelUniqueKey();
 
 							level++;
@@ -1623,7 +1623,7 @@ public class PgSchema {
 
 							else {
 
-								boolean unique_key = table.addNestedKey(option, e.getAttribute("name"), field, child);
+								boolean unique_key = table.addNestedKey(option, child_name, field, child);
 
 								if (!unique_key)
 									table.cancelUniqueKey();
@@ -1631,10 +1631,6 @@ public class PgSchema {
 								level++;
 
 								PgTable child_table = new PgTable(getNamespaceUriOfQName(field.type), def_schema_location);
-
-								Element child_e = (Element) child;
-
-								String child_name = child_e.getAttribute("name");
 
 								child_table.name = option.getUnqualifiedName(child_name);
 
@@ -1917,9 +1913,9 @@ public class PgSchema {
 
 			if (child.getNodeName().equals(option.xs_prefix_ + "extension")) {
 
-				Element e = (Element) child;
+				Element child_e = (Element) child;
 
-				String type = option.getUnqualifiedName(e.getAttribute("base"));
+				String type = option.getUnqualifiedName(child_e.getAttribute("base"));
 
 				table.addNestedKey(option, type);
 
@@ -4207,9 +4203,9 @@ public class PgSchema {
 
 				if (child.hasAttributes()) {
 
-					Element e = (Element) child;
+					Element child_e = (Element) child;
 
-					String[] name_attr = e.getAttribute("name").replaceFirst(PgSchemaUtil.sph_member_op, "\\.").split("\\.");
+					String[] name_attr = child_e.getAttribute("name").replaceFirst(PgSchemaUtil.sph_member_op, "\\.").split("\\.");
 
 					if (name_attr.length != 2)
 						continue;
@@ -4229,7 +4225,7 @@ public class PgSchema {
 
 					field.attr_sel = sph_attr;
 
-					String type_attr = e.getAttribute("type");
+					String type_attr = child_e.getAttribute("type");
 
 					if (type_attr != null && type_attr.contains("multi"))
 						field.sph_mva = true;
