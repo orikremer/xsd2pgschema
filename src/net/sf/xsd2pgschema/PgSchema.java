@@ -876,6 +876,12 @@ public class PgSchema {
 		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
 		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
 
+		// update schema locations
+
+		tables.forEach(table -> table.schema_location = getUniqueSchemaLocations(table.schema_location));
+		attr_groups.forEach(attr_group -> attr_group.schema_location = getUniqueSchemaLocations(attr_group.schema_location));
+		model_groups.forEach(model_group -> model_group.schema_location = getUniqueSchemaLocations(model_group.schema_location));
+
 		// realize PostgreSQL DDL
 
 		realize();
@@ -2189,6 +2195,35 @@ public class PgSchema {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Return unique schema locations.
+	 *
+	 * @param schema_locations schema locations
+	 * @return String unique schema locations
+	 */
+	private String getUniqueSchemaLocations(String schema_locations) {
+
+		StringBuilder sb = new StringBuilder();
+
+		try {
+
+			for (String schema_location : schema_locations.split(" ")) {
+
+				if (_root_schema.dup_schema_locations.containsKey(schema_location))
+					sb.append(_root_schema.dup_schema_locations.get(schema_location) + " ");
+				else
+					sb.append(schema_location + " ");
+
+			}
+
+			return sb.substring(0, sb.length() - 1);
+
+		} finally {
+			sb.setLength(0);
+		}
+
 	}
 
 	/**
