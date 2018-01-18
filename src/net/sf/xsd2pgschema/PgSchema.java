@@ -96,10 +96,10 @@ public class PgSchema {
 	private List<PgForeignKey> foreign_keys = null;
 
 	/** The pending list of attribute groups. */
-	private List<PgPendingModel> pending_attr_groups = null;
+	private List<PgPendingGroup> pending_attr_groups = null;
 
 	/** The pending list of model groups. */
-	private List<PgPendingModel> pending_model_groups = null;
+	private List<PgPendingGroup> pending_model_groups = null;
 
 	/** The PostgreSQL data model option. */
 	protected PgSchemaOption option = null;
@@ -272,8 +272,8 @@ public class PgSchema {
 
 			foreign_keys = new ArrayList<PgForeignKey>();
 
-			pending_attr_groups = new ArrayList<PgPendingModel>();
-			pending_model_groups = new ArrayList<PgPendingModel>();
+			pending_attr_groups = new ArrayList<PgPendingGroup>();
+			pending_model_groups = new ArrayList<PgPendingGroup>();
 
 		}
 
@@ -504,11 +504,11 @@ public class PgSchema {
 
 				try {
 
-					int t = getAttributeGroupId(arg.ref_model, true);
+					int t = getAttributeGroupId(arg.ref_group, true);
 
 					PgTable table = getTable(arg.table_name);
 
-					if (table != null && table.has_pending_model) {
+					if (table != null && table.has_pending_group) {
 
 						table.fields.addAll(arg.insert_position, attr_groups.get(t).fields);
 
@@ -537,11 +537,11 @@ public class PgSchema {
 
 				try {
 
-					int t = getModelGroupId(arg.ref_model, true);
+					int t = getModelGroupId(arg.ref_group, true);
 
 					PgTable table = getTable(arg.table_name);
 
-					if (table != null && table.has_pending_model) {
+					if (table != null && table.has_pending_group) {
 
 						table.fields.addAll(arg.insert_position, model_groups.get(t).fields);
 
@@ -562,7 +562,7 @@ public class PgSchema {
 
 		}
 
-		tables.stream().filter(table -> table.has_pending_model).forEach(table -> table.has_pending_model = false);
+		tables.stream().filter(table -> table.has_pending_group).forEach(table -> table.has_pending_group = false);
 
 		// whether name collision occurs or not
 
@@ -944,7 +944,7 @@ public class PgSchema {
 		table.removeBlockedSubstitutionGroups();
 		table.countNestedFields();
 
-		if (!table.has_pending_model && table.fields.size() < option.getMinimumSizeOfField())
+		if (!table.has_pending_group && table.fields.size() < option.getMinimumSizeOfField())
 			return;
 
 		tables.add(table);
@@ -1034,7 +1034,7 @@ public class PgSchema {
 					child_table.removeBlockedSubstitutionGroups();
 					child_table.countNestedFields();
 
-					if (!child_table.has_pending_model && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
+					if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
 						tables.add(child_table);
 
 					addChildItem(node, child_table);
@@ -1117,7 +1117,7 @@ public class PgSchema {
 		table.removeBlockedSubstitutionGroups();
 		table.countNestedFields();
 
-		if (!table.has_pending_model && table.fields.size() < option.getMinimumSizeOfField())
+		if (!table.has_pending_group && table.fields.size() < option.getMinimumSizeOfField())
 			return;
 
 		if (avoidTableDuplication(tables, table))
@@ -1562,7 +1562,7 @@ public class PgSchema {
 					child_table.removeBlockedSubstitutionGroups();
 					child_table.countNestedFields();
 
-					if (!child_table.has_pending_model && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
+					if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
 						tables.add(child_table);
 
 					addChildItem(node, child_table);
@@ -1683,7 +1683,7 @@ public class PgSchema {
 								child_table.removeBlockedSubstitutionGroups();
 								child_table.countNestedFields();
 
-								if (!child_table.has_pending_model && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
+								if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
 									tables.add(child_table);
 
 								addChildItem(child, child_table);
@@ -1759,7 +1759,7 @@ public class PgSchema {
 		table.removeBlockedSubstitutionGroups();
 		table.countNestedFields();
 
-		if (!table.has_pending_model && table.fields.size() < option.getMinimumSizeOfField())
+		if (!table.has_pending_group && table.fields.size() < option.getMinimumSizeOfField())
 			return;
 
 		if (avoidTableDuplication(tables, table))
@@ -1801,8 +1801,8 @@ public class PgSchema {
 
 		if (t < 0) {
 
-			_root_schema.pending_attr_groups.add(new PgPendingModel(ref, table.name, table.fields.size()));
-			table.has_pending_model = true;
+			_root_schema.pending_attr_groups.add(new PgPendingGroup(ref, table.name, table.fields.size()));
+			table.has_pending_group = true;
 
 			return;
 		}
@@ -1833,8 +1833,8 @@ public class PgSchema {
 
 		if (t < 0) {
 
-			_root_schema.pending_model_groups.add(new PgPendingModel(ref, table.name, table.fields.size()));
-			table.has_pending_model = true;
+			_root_schema.pending_model_groups.add(new PgPendingGroup(ref, table.name, table.fields.size()));
+			table.has_pending_group = true;
 
 			return;
 		}

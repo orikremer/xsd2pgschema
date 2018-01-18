@@ -20,31 +20,31 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * Pending model to be included.
+ * Pending group to be included in PostgreSQL data model.
  * 
  * @author yokochi
  */
-public class PgPendingModel {
+public class PgPendingGroup {
 
 	/** The reference to either attribute group or model group. */
-	String ref_model;
+	String ref_group;
 
 	/** The table name. */
 	String table_name;
 
-	/** The insert position. */
+	/** The insert position in fields. */
 	int insert_position;
 
 	/**
-	 * Instantiates a new pg pending model.
+	 * Instance of PgPendingGroup.
 	 *
-	 * @param ref_model reference model name
+	 * @param ref_group reference group name
 	 * @param table_name table name
 	 * @param insert_position insert position
 	 */
-	public PgPendingModel(String ref_model, String table_name, int insert_position) {
+	public PgPendingGroup(String ref_group, String table_name, int insert_position) {
 
-		this.ref_model = ref_model;
+		this.ref_group = ref_group;
 		this.table_name = table_name;
 		this.insert_position = insert_position;
 
