@@ -40,7 +40,7 @@ public class PgPendingGroup {
 	 *
 	 * @param ref_group reference group name
 	 * @param table_name table name
-	 * @param insert_position insert position
+	 * @param insert_position insert position in fields
 	 */
 	public PgPendingGroup(String ref_group, String table_name, int insert_position) {
 

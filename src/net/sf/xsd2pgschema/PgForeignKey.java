@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -184,6 +184,17 @@ public class PgForeignKey {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Return equality of foreign key.
+	 *
+	 * @param foreign_key compared foreign key
+	 * @return boolean whether the foreign key matches or not
+	 */
+	public boolean equals(PgForeignKey foreign_key) {
+		return child_table.equals(foreign_key.child_table) && parent_table.equals(foreign_key.parent_table) &&
+				child_fields.equals(foreign_key.child_fields) && parent_fields.equals(foreign_key.parent_fields);
 	}
 
 }

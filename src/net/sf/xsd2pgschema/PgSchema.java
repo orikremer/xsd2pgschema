@@ -77,10 +77,10 @@ public class PgSchema {
 	/** The schema locations. */
 	private HashSet<String> schema_locations = null;
 
-	/** The schema locations (value) with its target namespace (key). */
+	/** The unique schema locations (value) with its target namespace (key). */
 	private HashMap<String, String> unq_schema_locations = null;
 
-	/** The duplicated schema locations (key and value). */
+	/** The duplicated schema locations (key=duplicated schema location, value=unique schema location). */
 	private HashMap<String, String> dup_schema_locations = null;
 
 	/** The attribute group definitions. */
@@ -122,7 +122,7 @@ public class PgSchema {
 	/** Whether numeric index are stored in Lucene index. */
 	protected boolean numeric_lucidx = false;
 
-	/** The default namespace (key=prefix, value=namespace_uri). */
+	/** The default namespaces (key=prefix, value=namespace_uri). */
 	private HashMap<String, String> def_namespaces = null;
 
 	/** The top level xs:annotation. */
@@ -176,6 +176,7 @@ public class PgSchema {
 	public PgSchema(DocumentBuilder doc_builder, Document doc, PgSchema root_schema, String def_schema_location, PgSchemaOption option) throws NoSuchAlgorithmException, PgSchemaException {
 
 		this.option = option;
+		this.def_schema_location = def_schema_location;
 
 		// check existence of root element
 
@@ -197,7 +198,7 @@ public class PgSchema {
 
 		def_schema_parent = root_schema == null ? PgSchemaUtil.getSchemaParent(def_schema_location) : root_schema.def_schema_parent;
 
-		// prepare dictionary for duplicating schema_locations
+		// prepare dictionary of unique schema locations and duplicated schema locations
 
 		if (root_schema == null) {
 
@@ -252,8 +253,6 @@ public class PgSchema {
 
 		// prepare schema location holder
 
-		this.def_schema_location = def_schema_location;
-
 		schema_locations = new HashSet<String>();
 
 		schema_locations.add(def_schema_location);
@@ -266,7 +265,7 @@ public class PgSchema {
 
 		model_groups = new ArrayList<PgTable>();
 
-		// prepare foreign key holder, and pending list for attribute group and model group
+		// prepare foreign key holder, and pending group holder for attribute group and model group
 
 		if (root_schema == null) {
 
@@ -561,6 +560,8 @@ public class PgSchema {
 			pending_model_groups.clear();
 
 		}
+
+		// resolved pending groups
 
 		tables.stream().filter(table -> table.has_pending_group).forEach(table -> table.has_pending_group = false);
 
@@ -876,7 +877,7 @@ public class PgSchema {
 		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
 		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
 
-		// update schema locations
+		// update schema locations to unique ones
 
 		tables.forEach(table -> table.schema_location = getUniqueSchemaLocations(table.schema_location));
 		attr_groups.forEach(attr_group -> attr_group.schema_location = getUniqueSchemaLocations(attr_group.schema_location));
@@ -886,7 +887,7 @@ public class PgSchema {
 
 		realize();
 
-		// check root table
+		// check root table exists
 
 		hasRootTable();
 
@@ -1347,6 +1348,9 @@ public class PgSchema {
 		foreign_key.extractParentFields(option, parent_node, key_name);
 
 		if (foreign_key.parent_fields == null || foreign_key.parent_fields.isEmpty())
+			return;
+
+		if (_root_schema.foreign_keys.stream().anyMatch(_foreign_key -> _foreign_key.equals(foreign_key)))
 			return;
 
 		_root_schema.foreign_keys.add(foreign_key);
