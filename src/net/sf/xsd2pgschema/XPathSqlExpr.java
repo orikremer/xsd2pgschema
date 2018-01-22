@@ -279,10 +279,10 @@ public class XPathSqlExpr {
 		if ((value.startsWith("'") && value.endsWith("'")) || (value.startsWith("\"") && value.endsWith("\"")))
 			value = predicate.substring(1, value.length() - 1);
 
-		if (!XsDataType.isValid(field, value))
+		if (!field.validate(value))
 			throw new PgSchemaException(current_tree);
 
-		value = XsDataType.getSqlPredicate(field, value);
+		value = field.getSqlPredicate(value);
 
 	}
 

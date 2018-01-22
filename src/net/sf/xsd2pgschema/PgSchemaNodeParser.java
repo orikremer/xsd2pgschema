@@ -293,7 +293,7 @@ public abstract class PgSchemaNodeParser {
 
 		if (applyContentFilter(field, pg_enum_limit)) {
 
-			if (content != null && XsDataType.isValid(field, content))
+			if (content != null && field.validate(content))
 				return true;
 
 		}

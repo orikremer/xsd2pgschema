@@ -198,7 +198,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				if (setContent(proc_node, field, true)) {
 
 					if (table.filew != null)
-						values[f] = StringEscapeUtils.escapeCsv(XsDataType.normalize(field, content));
+						values[f] = StringEscapeUtils.escapeCsv(field.normalize(content));
 
 				} else if (field.required) {
 					filled = false;
@@ -212,7 +212,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 			else if ((field.any || field.any_attribute) && table.filew != null) {
 
 				if (setAnyContent(proc_node, field))
-					values[f] = StringEscapeUtils.escapeCsv(XsDataType.normalize(field, content));
+					values[f] = StringEscapeUtils.escapeCsv(field.normalize(content));
 
 			}
 

@@ -45,31 +45,26 @@ public class PgForeignKey {
 	String parent_fields = null;
 
 	/**
-	 * Set child table name.
+	 * Instance of PgForeignKey.
 	 *
 	 * @param option PostgreSQL data model option
 	 * @param node current node
+	 * @param parent_node parent node
+	 * @param name foreign key name
+	 * @param key_name key name
 	 */
-	public void extractChildTable(PgSchemaOption option, Node node) {
-
-		child_table = extractTable(option, node);
-
-	}
-
-	/**
-	 * Set parent table name from xs:key/@name.
-	 *
-	 * @param option PostgreSQL data model option
-	 * @param node current node
-	 * @param key_name the key name
-	 */
-	public void extractParentTable(PgSchemaOption option, Node node, String key_name) {
+	public PgForeignKey(PgSchemaOption option, Node node, Node parent_node, String name, String key_name) {
 
 		String xs_prefix_ = option.xs_prefix_;
 
-		parent_table = null;
+		this.name = name;
 
-		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+		child_table = extractTable(option, node);
+		child_fields = extractFields(option, node);
+
+		parent_table = parent_fields = null;
+
+		for (Node child = parent_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 			if (!child.getNodeName().equals(xs_prefix_ + "key"))
 				continue;
@@ -80,10 +75,37 @@ public class PgForeignKey {
 				continue;
 
 			parent_table = extractTable(option, child);
+			parent_fields = extractFields(option, child);
 
 			break;
 		}
 
+	}
+
+	/**
+	 * Extract child table name from xs:selector/@xpath.
+	 *
+	 * @param option PostgreSQL data model option
+	 * @param node current node
+	 * @return String child table name
+	 */
+	private String extractTable(PgSchemaOption option, Node node) {
+
+		String xs_prefix_ = option.xs_prefix_;
+
+		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (!child.getNodeName().equals(xs_prefix_ + "selector"))
+				continue;
+
+			Element e = (Element) child;
+
+			String[] xpath = e.getAttribute("xpath").split("/");
+
+			return option.getUnqualifiedName(xpath[xpath.length - 1]).replaceAll("@", "");
+		}
+
+		return null;
 	}
 
 	/**
@@ -119,71 +141,25 @@ public class PgForeignKey {
 	}
 
 	/**
-	 * Set child field names.
+	 * Return whether foreign key is empty.
 	 *
-	 * @param option PostgreSQL data model option
-	 * @param node current node
+	 * @return boolean whether foreign key is empty
 	 */
-	public void extractChildFields(PgSchemaOption option, Node node) {
+	public boolean isEmpty() {
 
-		child_fields = extractFields(option, node);
+		if (child_table == null || child_table.isEmpty())
+			return true;
 
-	}
+		if (parent_table == null || parent_table.isEmpty())
+			return true;
 
-	/**
-	 * Set parent field names from xs:key/@name.
-	 *
-	 * @param option PostgreSQL data model option
-	 * @param node current node
-	 * @param key_name key name
-	 */
-	public void extractParentFields(PgSchemaOption option, Node node, String key_name) {
+		if (child_fields == null || child_fields.isEmpty())
+			return true;
 
-		String xs_prefix_ = option.xs_prefix_;
+		if (parent_fields == null || parent_fields.isEmpty())
+			return true;
 
-		parent_fields = null;
-
-		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-			if (!child.getNodeName().equals(xs_prefix_ + "key"))
-				continue;
-
-			Element e = (Element) child;
-
-			if (!key_name.equals(e.getAttribute("name")))
-				continue;
-
-			parent_fields = extractFields(option, child);
-
-			break;
-		}
-
-	}
-
-	/**
-	 * Extract child table name from xs:selector/@xpath.
-	 *
-	 * @param option PostgreSQL data model option
-	 * @param node current node
-	 * @return String child table name
-	 */
-	private String extractTable(PgSchemaOption option, Node node) {
-
-		String xs_prefix_ = option.xs_prefix_;
-
-		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-			if (!child.getNodeName().equals(xs_prefix_ + "selector"))
-				continue;
-
-			Element e = (Element) child;
-
-			String[] xpath = e.getAttribute("xpath").split("/");
-
-			return option.getUnqualifiedName(xpath[xpath.length - 1]).replaceAll("@", "");
-		}
-
-		return null;
+		return false;
 	}
 
 	/**

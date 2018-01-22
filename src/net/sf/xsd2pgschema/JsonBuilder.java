@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -246,11 +246,11 @@ public class JsonBuilder {
 	 */
 	private void writeSchemaFieldProperty(PgField field, boolean field_anno, final int indent_level) {
 
-		String schema_type = XsDataType.getJsonSchemaType(field);
+		String schema_type = field.xs_type.getJsonSchemaType();
 
 		builder.append(getIndentSpaces(indent_level) + "\"type\":" + key_value_space + schema_type + "," + linefeed);
 
-		builder.append(getIndentSpaces(indent_level) + "\"$ref\":" + key_value_space + "\"" + XsDataType.getJsonSchemaRef(field) + "\"," + linefeed);
+		builder.append(getIndentSpaces(indent_level) + "\"$ref\":" + key_value_space + "\"" + field.xs_type.getJsonSchemaRef() + "\"," + linefeed);
 
 		builder.append(getIndentSpaces(indent_level) + "\"title\":" + key_value_space + "\"" + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_content ? simple_content_key : field.xname) + "\"," + linefeed);
 
@@ -258,11 +258,11 @@ public class JsonBuilder {
 			builder.append(getIndentSpaces(indent_level) + "\"format\":" + key_value_space + "\"uri\"," + linefeed);
 
 		if (field.default_value != null)
-			builder.append(getIndentSpaces(indent_level) + "\"default\":" + key_value_space + XsDataType.getJsonSchemaDefaultValue(field) + "," + linefeed);
+			builder.append(getIndentSpaces(indent_level) + "\"default\":" + key_value_space + field.getJsonSchemaDefaultValue() + "," + linefeed);
 
 		if (field.enum_name != null) {
 
-			String enum_array = XsDataType.getJsonSchemaEnumArray(field, key_value_space);
+			String enum_array = field.getJsonSchemaEnumArray(key_value_space);
 
 			if (enum_array.length() > 2)
 				builder.append(getIndentSpaces(indent_level) + "\"enum\":" + key_value_space + "[" + enum_array.substring(0, enum_array.length() - (key_value_spaces + 1)) + "]," + linefeed);
@@ -289,17 +289,17 @@ public class JsonBuilder {
 		if (field.pattern != null)
 			builder.append(getIndentSpaces(indent_level) + "\"pattern\":" + key_value_space + "\"" + field.pattern + "\"," + linefeed);
 
-		String schema_maximum = XsDataType.getJsonSchemaMaximumValue(field, key_value_space);
+		String schema_maximum = field.getJsonSchemaMaximumValue(key_value_space);
 
 		if (schema_maximum != null)
 			builder.append(getIndentSpaces(indent_level) + "\"maximum\":" + key_value_space + schema_maximum + "," + linefeed);
 
-		String schema_minimum = XsDataType.getJsonSchemaMinimumValue(field, key_value_space);
+		String schema_minimum = field.getJsonSchemaMinimumValue(key_value_space);
 
 		if (schema_minimum != null)
 			builder.append(getIndentSpaces(indent_level) + "\"minimum\":" + key_value_space + schema_minimum + "," + linefeed);
 
-		String multiple_of = XsDataType.getJsonSchemaMultipleOfValue(field);
+		String multiple_of = field.getJsonSchemaMultipleOfValue();
 
 		if (multiple_of != null)
 			builder.append(getIndentSpaces(indent_level) + "\"multipleOf\":" + key_value_space + multiple_of + "," + linefeed);

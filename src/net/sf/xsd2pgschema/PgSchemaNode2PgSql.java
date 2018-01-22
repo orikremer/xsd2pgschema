@@ -181,8 +181,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			if (field.document_key) {
 
-				if (ps != null)
-					setValue(f, param_id, document_id);
+				if (ps != null) {
+
+					field.setValue2PgSql(ps, param_id, document_id);
+					occupied[f] = true;
+
+				}
 
 			}
 
@@ -247,8 +251,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				if (setContent(proc_node, field, true)) {
 
-					if (ps != null)
-						setValue(f, param_id, XsDataType.normalize(field, content));
+					if (ps != null) {
+
+						field.setValue2PgSql(ps, param_id, field.normalize(content));
+						occupied[f] = true;
+
+					}
 
 				} else if (field.required) {
 					filled = false;
@@ -267,7 +275,8 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					xml_object.setString(content);
 
-					setValue(f, param_id, xml_object);
+					field.setValue2PgSql(ps, param_id, xml_object);
+					occupied[f] = true;
 
 				}
 
@@ -316,7 +325,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					continue;
 
 				if (!occupied[f])
-					ps.setNull(param_id, XsDataType.getSqlDataType(field));
+					ps.setNull(param_id, field.getSqlDataType());
 
 				param_id++;
 
@@ -398,38 +407,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				schema.parseChildNode2PgSql(proc_node, table, nested_table, current_key, nested_key[n], list_holder[n], false, 0, db_conn);
 
 		}
-
-	}
-
-	/**
-	 * Set value via prepared statement.
-	 *
-	 * @param field_id field id
-	 * @param param_id parameter index
-	 * @param value data string
-	 * @throws SQLException the SQL exception
-	 */
-	private void setValue(int field_id, int param_id, String value) throws SQLException {
-
-		XsDataType.setValue(fields.get(field_id), ps, param_id, value);
-
-		occupied[field_id] = true;
-
-	}
-
-	/**
-	 * Set XML object via prepared statement.
-	 *
-	 * @param field_id field id
-	 * @param param_id parameter index
-	 * @param xml_object XML object
-	 * @throws SQLException the SQL exception
-	 */
-	private void setValue(int field_id, int param_id, SQLXML xml_object) throws SQLException {
-
-		XsDataType.setValue(fields.get(field_id), ps, param_id, xml_object);
-
-		occupied[field_id] = true;
 
 	}
 

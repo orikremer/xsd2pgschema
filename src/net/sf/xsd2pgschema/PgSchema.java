@@ -1111,7 +1111,9 @@ public class PgSchema {
 			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling())
 				extractField(child, table);
 
-		} else
+		}
+
+		else
 			extractSimpleContent(node, table);
 
 		table.removeProhibitedAttrs();
@@ -1324,30 +1326,9 @@ public class PgSchema {
 		if (name == null || name.isEmpty() || refer == null || refer.isEmpty() || !refer.contains(":"))
 			return;
 
-		String key_name = option.getUnqualifiedName(refer);
+		PgForeignKey foreign_key = new PgForeignKey(option, node, parent_node, name, option.getUnqualifiedName(refer));
 
-		PgForeignKey foreign_key = new PgForeignKey();
-
-		foreign_key.name = name;
-
-		foreign_key.extractChildTable(option, node);
-
-		if (foreign_key.child_table == null || foreign_key.child_table.isEmpty())
-			return;
-
-		foreign_key.extractParentTable(option, parent_node, key_name);
-
-		if (foreign_key.parent_table == null || foreign_key.parent_table.isEmpty())
-			return;
-
-		foreign_key.extractChildFields(option, node);
-
-		if (foreign_key.child_fields == null || foreign_key.child_fields.isEmpty())
-			return;
-
-		foreign_key.extractParentFields(option, parent_node, key_name);
-
-		if (foreign_key.parent_fields == null || foreign_key.parent_fields.isEmpty())
+		if (foreign_key.isEmpty())
 			return;
 
 		if (_root_schema.foreign_keys.stream().anyMatch(_foreign_key -> _foreign_key.equals(foreign_key)))
@@ -2751,7 +2732,9 @@ public class PgSchema {
 			for (String namespace_uri : table.target_namespace.split(" "))
 				sb.append(namespace_uri + " (" + getAbsolutePrefixOf(namespace_uri) + "), ");
 
-		} else
+		}
+
+		else
 			sb.append("null, ");
 
 		System.out.println("-- xmlns: " + sb.toString() + "schema location: " + table.schema_location);
@@ -2862,7 +2845,7 @@ public class PgSchema {
 			}
 
 			if (field.enum_name == null || field.enum_name.isEmpty())
-				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.name) + " " + XsDataType.getPgDataType(field) + " ");
+				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.name) + " " + field.getPgDataType() + " ");
 			else
 				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.name) + " " + field.enum_name + " ");
 
@@ -2903,7 +2886,9 @@ public class PgSchema {
 
 					System.out.print("PRIMARY KEY ");
 
-				} else if (field.foreign_key) {
+				}
+
+				else if (field.foreign_key) {
 
 					PgTable foreign_table = tables.get(field.foreign_table_id);
 
@@ -3047,7 +3032,9 @@ public class PgSchema {
 				else
 					throw new PgSchemaException("Not found " + table_name + "." + field_name + ".");
 
-			} else {
+			}
+
+			else {
 
 				if (table.content_holder)
 					table.filt_out = true;
@@ -3156,7 +3143,9 @@ public class PgSchema {
 				else
 					throw new PgSchemaException("Not found " + table_name + "." + field_name + ".");
 
-			} else {
+			}
+
+			else {
 
 				table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
 
@@ -3268,6 +3257,10 @@ public class PgSchema {
 
 		option.attr_resolved = true;
 
+		// select all xs:ID as attribute
+
+		tables.forEach(table -> table.fields.stream().filter(field -> field.xs_type.equals(XsDataType.xs_ID)).forEach(field -> field.attr_sel = true));
+
 		// type dependent attribute selection
 
 		if (index_filter.attr_string || index_filter.attr_integer || index_filter.attr_float || index_filter.attr_date)
@@ -3321,7 +3314,9 @@ public class PgSchema {
 				else
 					throw new PgSchemaException("Not found " + table_name + "." + field_name + ".");
 
-			} else
+			}
+
+			else
 				table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true);
 
 		}
@@ -3449,7 +3444,9 @@ public class PgSchema {
 				else
 					throw new PgSchemaException("Not found " + table_name + "." + field_name + ".");
 
-			} else
+			}
+
+			else
 				_table.fields.stream().filter(_field -> !_field.system_key && !_field.user_key).forEach(_field -> _field.field_sel = true);
 
 		}

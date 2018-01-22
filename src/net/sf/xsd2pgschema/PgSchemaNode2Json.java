@@ -38,8 +38,11 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	/** The position of header begins in JSON buffer. */
 	int jsonb_header_begin;
 
-	/** position of header ends in JSON buffer. */
+	/** The position of header ends in JSON buffer. */
 	int jsonb_header_end;
+
+	/** The white spaces between JSON item and JSON data. */
+	String key_value_space = " ";
 
 	/**
 	 * Node parser for JSON conversion.
@@ -53,6 +56,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	public PgSchemaNode2Json(final PgSchema schema, final PgTable parent_table, final PgTable table) throws ParserConfigurationException, TransformerConfigurationException {
 
 		super(schema, parent_table, table);
+
+		key_value_space = schema.jsonb.key_value_space;
 
 	}
 
@@ -194,7 +199,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			if (field.jsonb == null)
 				continue;
 
-			if (field.jsonable && XsDataType.setValue(field, values[f], schema.jsonb))
+			if (field.jsonable && field.setValue2JsonB(values[f], key_value_space))
 				not_empty = true;
 
 		}

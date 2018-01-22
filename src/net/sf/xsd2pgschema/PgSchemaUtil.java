@@ -33,8 +33,10 @@ import java.nio.file.Paths;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.TimeZone;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.zip.GZIPInputStream;
 
@@ -47,6 +49,7 @@ import javax.net.ssl.X509TrustManager;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.time.DateUtils;
 
 /**
  * Utility functions and default values.
@@ -56,82 +59,82 @@ import org.apache.commons.io.IOUtils;
 public class PgSchemaUtil {
 
 	/** The namespace URI representing XML Schema 1.x. */
-	public final static String xs_namespace_uri = "http://www.w3.org/2001/XMLSchema";
+	public static final String xs_namespace_uri = "http://www.w3.org/2001/XMLSchema";
 
 	/** The namespace URI representing JSON Schema. */
-	public final static String json_schema_def = "http://json-schema.org/schema#";
+	public static final String json_schema_def = "http://json-schema.org/schema#";
 
 	/** The name of xs:simpleContent in PostgreSQL. */
-	public final static String simple_content_name = "content";
+	public static final String simple_content_name = "content";
 
 	/** The name of xs:any in PostgreSQL. */
-	public final static String any_name = "any_element";
+	public static final String any_name = "any_element";
 
 	/** The name of xs:anyAttribute in PostgreSQL. */
-	public final static String any_attribute_name = "any_attribute";
+	public static final String any_attribute_name = "any_attribute";
 
 	/** The default hash algorithm. */
-	public final static String def_hash_algorithm = "SHA-1";
+	public static final String def_hash_algorithm = "SHA-1";
 
 	/** The default host name. */
-	public final static String host = "localhost";
+	public static final String host = "localhost";
 
 	/** The default port number. */
-	public final static int port = 5432;
+	public static final int port = 5432;
 
 	/** The minimum word length for index. */
-	public final static int min_word_len = 1;
+	public static final int min_word_len = 1;
 
 	/** The PostgreSQL maximum length for enumeration/constraint. */
-	public final static int max_enum_len = 63;
+	public static final int max_enum_len = 63;
 
 	/** The default length of indent spaces. */
-	public final static int indent_spaces = 2;
+	public static final int indent_spaces = 2;
 
 	/** The prefix of directory name for sharding. */
-	public final static String shard_dir_prefix = "part-";
+	public static final String shard_dir_prefix = "part-";
 
 	/** The prefix of directory name for multi-threading. */
-	public final static String thrd_dir_prefix = "thrd-";
+	public static final String thrd_dir_prefix = "thrd-";
 
 	/** The Sphinx membership operator. */
-	public final static String sph_member_op = "__";
+	public static final String sph_member_op = "__";
 
 	/** The Sphinx schema file name. */
-	public final static String sph_schema_name = ".schema_part.xml";
+	public static final String sph_schema_name = ".schema_part.xml";
 
 	/** The Sphinx configuration file name. */
-	public final static String sph_conf_name = "data_source.conf";
+	public static final String sph_conf_name = "data_source.conf";
 
 	/** The prefix of Sphinx data source file. */
-	public final static String sph_document_prefix = "document_part_";
+	public static final String sph_document_prefix = "document_part_";
 
 	/** The Sphinx data source file name. */
-	public final static String sph_data_source_name = "data_source.xml";
+	public static final String sph_data_source_name = "data_source.xml";
 
 	/** The Sphinx maximum field length. (related to max_xmlpipe2_field in sphinx.conf) */
-	public final static int sph_max_field_len = 1024 * 1024 * 2;
+	public static final int sph_max_field_len = 1024 * 1024 * 2;
 
 	/** The field name of Sphinx dictionary. */
-	public final static String trigram_field_name = "trigrams";
+	public static final String trigram_field_name = "trigrams";
 
 	/** The text node of XPath notation. */
-	public final static String text_node_name = "text()";
+	public static final String text_node_name = "text()";
 
 	/** The comment node of XPath notation. */
-	public final static String comment_node_name = "comment()";
+	public static final String comment_node_name = "comment()";
 
 	/** The PostgreSQL reserved words. */
-	public final static String[] reserved_words = { "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC", "AUTHORIZATION", "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLLATION", "COLUMN", "CONCURRENTLY", "CONSTRAINT", "CREATE", "CROSS", "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT", "DEFERRABLE", "DESC", "DISTINCT", "DO", "ELSE", "END", "EXCEPT", "FALSE", "FETCH", "FOR", "FOREIGN", "FREEZE", "FROM", "FULL", "GRANT", "GROUP", "HAVING", "ILIKE", "IN", "INITIALLY", "INNER", "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "LATERAL", "LEADING", "LEFT", "LIKE", "LIMIT", "LOCALTIME", "LOCALTIMESTAMP", "NATURAL", "NOT", "NOTNULL", "NULL", "OFFSET", "ON", "ONLY", "OR", "ORDER", "OUTER", "OVERLAPS", "PLACING", "PRIMARY", "REFERENCES", "RETURNING", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "TABLESAMPLE", "THEN", "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VARIADIC", "VERBOSE", "WHEN", "WHERE", "WINDOW", "WITH" };
+	public static final String[] reserved_words = { "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC", "AUTHORIZATION", "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLLATION", "COLUMN", "CONCURRENTLY", "CONSTRAINT", "CREATE", "CROSS", "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT", "DEFERRABLE", "DESC", "DISTINCT", "DO", "ELSE", "END", "EXCEPT", "FALSE", "FETCH", "FOR", "FOREIGN", "FREEZE", "FROM", "FULL", "GRANT", "GROUP", "HAVING", "ILIKE", "IN", "INITIALLY", "INNER", "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "LATERAL", "LEADING", "LEFT", "LIKE", "LIMIT", "LOCALTIME", "LOCALTIMESTAMP", "NATURAL", "NOT", "NOTNULL", "NULL", "OFFSET", "ON", "ONLY", "OR", "ORDER", "OUTER", "OVERLAPS", "PLACING", "PRIMARY", "REFERENCES", "RETURNING", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "TABLESAMPLE", "THEN", "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VARIADIC", "VERBOSE", "WHEN", "WHERE", "WINDOW", "WITH" };
 
 	/** The PostgreSQL reserved operator codes. */
-	public final static String[] reserved_ops = { "+", "-", "*", "/", "%", "^", "|/", "||/", "!", "!!", "@", "&", "|", "#", "~", "<<", ">>" };
+	public static final String[] reserved_ops = { "+", "-", "*", "/", "%", "^", "|/", "||/", "!", "!!", "@", "&", "|", "#", "~", "<<", ">>" };
 
 	/** The PostgreSQL reserved operator codes escaping regular expression match. */
-	public final static String[] reserved_ops_rex = { "\\+", "-", "\\*", "/", "%", "\\^", "\\|/", "\\|\\|/", "!", "!!", "@", "\\&", "\\|", "#", "~", "<<", ">>" };
+	public static final String[] reserved_ops_rex = { "\\+", "-", "\\*", "/", "%", "\\^", "\\|/", "\\|\\|/", "!", "!!", "@", "\\&", "\\|", "#", "~", "<<", ">>" };
 
 	/** The regular expression matches URL. */
-	public final static String url_rex = "^https?:\\/\\/.*";
+	public static final String url_rex = "^https?:\\/\\/.*";
 
 	/**
 	 * Return input stream of XSD file with gzip decompression.
@@ -474,6 +477,76 @@ public class PgSchemaUtil {
 			name = name.replaceAll(ops_rex, "_");
 
 		return name;
+	}
+
+	/** The date pattern in ISO 8601 format. */
+	private static final String[] date_patterns_iso = new String[] {
+			"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "yyyy-MM-dd'T'HH:mm:ssXXX", "yyyy-MM-dd'T'HH:mmXXX", "yyyy-MM-dd'T'HHXXX", "yyyy-MM-ddXXX",
+			"yyyy-MM'T'HH:mm:ss.SSSXXX", "yyyy-MM'T'HH:mm:ssXXX", "yyyy-MM'T'HH:mmXXX", "yyyy-MM'T'HHXXX", "yyyy-MMXXX",
+			"yyyy'T'HH:mmXXX", "yyyy'T'HHXXX", "yyyyXXX",
+			"yyyy-MM'T'HH:mmXXX", "yyyy-MM'T'HHXXX", "yyyy-MMXXX",
+			"--MM-dd'T'HH:mmXXX", "--MM-dd'T'HHXXX", "--MM-ddXXX",
+			"--dd'T'HH:mmXXX", "--dd'T'HHXXX", "--ddXXX"
+	};
+
+	/** The date pattern in UTC. */
+	private static final String[] date_patterns_z = new String[] {
+			"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy-MM-dd'T'HH:mm'Z'", "yyyy-MM-dd'T'HH'Z'", "yyyy-MM-dd'Z'",
+			"yyyy-MM'T'HH:mm:ss.SSS'Z'", "yyyy-MM'T'HH:mm:ss'Z'", "yyyy-MM'T'HH:mm'Z'", "yyyy-MM'T'HH'Z'", "yyyy-MM'Z'",
+			"yyyy'T'HH:mm'Z'", "yyyy'T'HH'Z'", "yyyy'Z'",
+			"yyyy-MM'T'HH:mm'Z'", "yyyy-MM'T'HH'Z'", "yyyy-MM'Z'",
+			"--MM-dd'T'HH:mm'Z'", "--MM-dd'T'HH'Z'", "--MM-dd'Z'",
+			"--dd'T'HH:mm'Z'", "--dd'T'HH'Z'", "--dd'Z'"
+	};
+
+	/** The date pattern in local time. */
+	private static final String[] date_patterns_loc = new String[] {
+			"yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm", "yyyy-MM-dd'T'HH", "yyyy-MM-dd",
+			"yyyy-MM'T'HH:mm:ss.SSS", "yyyy-MM'T'HH:mm:ss", "yyyy-MM'T'HH:mm", "yyyy-MM'T'HH", "yyyy-MM",
+			"yyyy'T'HH:mm", "yyyy'T'HH", "yyyy",
+			"yyyy-MM'T'HH:mm", "yyyy-MM'T'HH", "yyyy-MM",
+			"--MM-dd'T'HH:mm", "--MM-dd'T'HH", "--MM-dd",
+			"--dd'T'HH:mm", "--dd'T'HH", "--dd"
+	};
+
+	/**
+	 * Parse string as java.util.Date.
+	 *
+	 * @param value content
+	 * @return Date java.util.Date
+	 */
+	public static java.util.Date parseDate(String value) {
+
+		java.util.Date date = null;
+
+		try {
+
+			date = DateUtils.parseDate(value, date_patterns_iso);
+
+		} catch (ParseException e1) {
+
+			try {
+
+				date = DateUtils.parseDate(value, date_patterns_z);
+				TimeZone tz = TimeZone.getDefault();
+				int offset_sec = tz.getRawOffset() / 1000;
+				date = DateUtils.addSeconds(date, offset_sec);
+
+			} catch (ParseException e2) {
+
+				try {
+
+					date = DateUtils.parseDate(value, date_patterns_loc);
+
+				} catch (ParseException e3) {
+					return null;
+				}
+
+			}
+
+		}
+
+		return date;
 	}
 
 }

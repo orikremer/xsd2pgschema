@@ -370,6 +370,7 @@ public class PgSchemaOption {
 
 					if (src != null && !src.isEmpty())
 						annotation += (is_table ? "\n-- " : ", ") + "URI-reference = " + src + (is_table ? "\n-- " : ", ");
+
 				}
 
 				else if (child_name.equals(xs_prefix_ + "documentation")) {
@@ -382,6 +383,7 @@ public class PgSchemaOption {
 
 					if (src != null && !src.isEmpty())
 						annotation += (is_table ? "\n-- " : ", ") + "URI-reference = " + src;
+
 				}
 
 			}

@@ -26,6 +26,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.apache.lucene.document.Field;
 import org.jsoup.Jsoup;
 import org.w3c.dom.Node;
 
@@ -227,10 +228,10 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				PgField field = fields.get(f);
 
 				if (field.system_key)
-					XsDataType.setKey(table.lucene_doc, table.name + "." + field.xname, value);
+					table.lucene_doc.add(new NoIdxStringField(table.name + "." + field.xname, value, Field.Store.YES));
 
 				else if (field.indexable)
-					XsDataType.setValue(field, table.lucene_doc, table.name + "." + field.xname, value, value.length() >= schema.min_word_len, schema.numeric_lucidx);
+					field.setValue2LucIdx(table.lucene_doc, table.name + "." + field.xname, value, value.length() >= schema.min_word_len, schema.numeric_lucidx);
 
 			}
 
