@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -154,6 +154,61 @@ public class IndexFilter {
 	public void setFiledAll() {
 
 		fields.clear();
+
+	}
+
+	/**
+	 * Append attribute by type dependency.
+	 *
+	 * @param table_name table name
+	 * @param field PostgreSQL field
+	 */
+	public void appendAttrByType(String table_name, PgField field) {
+
+		switch (field.xs_type) {
+		case xs_bigserial:
+		case xs_serial:
+		case xs_long:
+		case xs_bigint:
+		case xs_unsignedLong:
+		case xs_integer:
+		case xs_int:
+		case xs_nonPositiveInteger:
+		case xs_negativeInteger:
+		case xs_nonNegativeInteger:
+		case xs_positiveInteger:
+		case xs_unsignedInt:
+		case xs_short:
+		case xs_byte:
+		case xs_unsignedShort:
+		case xs_unsignedByte:
+			if (attr_integer)
+				addAttr(table_name + "." + field.name);
+			break;
+		case xs_float:
+		case xs_double:
+		case xs_decimal:
+			if (attr_float)
+				addAttr(table_name + "." + field.name);
+			break;
+		case xs_dateTime:
+		case xs_date:
+		case xs_gYearMonth:
+		case xs_gYear:
+			if (attr_date)
+				addAttr(table_name + "." + field.name);
+			break;
+		case xs_time:
+		case xs_gMonthDay:
+		case xs_gMonth:
+		case xs_gDay:
+			if (attr_time)
+				addAttr(table_name + "." + field.name);
+			break;
+		default: // free text
+			if (attr_string)
+				addAttr(table_name + "." + field.name);
+		}
 
 	}
 

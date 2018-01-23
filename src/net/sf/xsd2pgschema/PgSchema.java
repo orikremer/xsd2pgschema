@@ -46,6 +46,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.antlr.v4.runtime.tree.TerminalNodeImpl;
+import org.apache.commons.text.StringEscapeUtils;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
 import org.w3c.dom.*;
@@ -3264,7 +3265,7 @@ public class PgSchema {
 		// type dependent attribute selection
 
 		if (index_filter.attr_string || index_filter.attr_integer || index_filter.attr_float || index_filter.attr_date)
-			tables.forEach(table -> table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> XsDataType.appendAttr(table, field, index_filter)));
+			tables.forEach(table -> table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> index_filter.appendAttrByType(table.name, field)));
 
 		// select all attributes
 
@@ -4334,7 +4335,75 @@ public class PgSchema {
 
 				try {
 
-					XsDataType.writeSphSchemaAttr(table, field, filew);
+					filew.write("<sphinx:attr name=\"" + table.name + PgSchemaUtil.sph_member_op + field.xname + "\"");
+
+					String attrs = null;
+
+					switch (field.xs_type) {
+					case xs_boolean:
+						attrs = " type=\"bool\"";
+						break;
+					case xs_bigserial:
+					case xs_long:
+					case xs_bigint:
+					case xs_unsignedLong:
+					case xs_duration:
+						attrs = " type=\"bigint\"";
+						break;
+					case xs_serial:
+					case xs_integer:
+					case xs_int:
+					case xs_nonPositiveInteger:
+					case xs_negativeInteger:
+					case xs_nonNegativeInteger:
+					case xs_positiveInteger:
+						attrs = " type=\"int\" bits=\"32\"";
+						break;
+					case xs_unsignedInt:
+						attrs = " type=\"int\" bits=\"32\"";
+						break;
+					case xs_float:
+					case xs_double:
+					case xs_decimal:
+						attrs = " type=\"float\"";
+						break;
+					case xs_short:
+						attrs = " type=\"int\" bits=\"16\"";
+						break;
+					case xs_unsignedShort:
+						attrs = " type=\"int\" bits=\"16\"";
+						break;
+					case xs_byte:
+						attrs = " type=\"int\" bits=\"8\"";
+						break;
+					case xs_unsignedByte:
+						attrs = " type=\"int\" bits=\"8\"";
+						break;
+					case xs_dateTime:
+					case xs_time:
+					case xs_date:
+					case xs_gYearMonth:
+					case xs_gYear:
+						attrs = " type=\"timestamp\"";
+						break;
+					default: // string
+						attrs = " type=\"string\"";
+					}
+
+					if (field.sph_mva) {
+						/**
+					if (attrs.contains("bigint"))
+						attrs = " type=\"multi64\"";
+					else
+						 */
+						attrs = " type=\"multi\"";
+
+					}
+
+					if (field.default_value != null && !field.default_value.isEmpty())
+						attrs += " default=\"" + StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeXml10(field.default_value)) + "\"";
+
+					filew.write(attrs + "/>\n");
 
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -4379,7 +4448,54 @@ public class PgSchema {
 
 				try {
 
-					XsDataType.writeSphConfAttr(table, field, filew);
+					String attr_name = table.name + PgSchemaUtil.sph_member_op + field.xname;
+
+					switch (field.xs_type) {
+					case xs_boolean:
+						filew.write("\txmlpipe_attr_bool       = " + attr_name + "\n");
+						break;
+					case xs_bigserial:
+					case xs_long:
+					case xs_bigint:
+					case xs_unsignedLong:
+					case xs_duration:
+						if (field.sph_mva)
+							filew.write("\txmlpipe_attr_multi_64   = " + attr_name + "\n");
+						else
+							filew.write("\txmlpipe_attr_bigint     = " + attr_name + "\n");
+						break;
+					case xs_serial:
+					case xs_integer:
+					case xs_int:
+					case xs_nonPositiveInteger:
+					case xs_negativeInteger:
+					case xs_nonNegativeInteger:
+					case xs_positiveInteger:
+					case xs_unsignedInt:
+					case xs_short:
+					case xs_unsignedShort:
+					case xs_byte:
+					case xs_unsignedByte:
+						if (field.sph_mva)
+							filew.write("\txmlpipe_attr_multi      = " + attr_name + "\n");
+						else
+							filew.write("\txmlpipe_attr_uint       = " + attr_name + "\n");
+						break;
+					case xs_float:
+					case xs_double:
+					case xs_decimal:
+						filew.write("\txmlpipe_attr_float      = " + attr_name + "\n");
+						break;
+					case xs_dateTime:
+					case xs_time:
+					case xs_date:
+					case xs_gYearMonth:
+					case xs_gYear:
+						filew.write("\txmlpipe_attr_timestamp  = " + attr_name + "\n");
+						break;
+					default: // string
+						filew.write("\txmlpipe_attr_string     = " + attr_name + "\n");
+					}
 
 				} catch (IOException e) {
 					e.printStackTrace();
