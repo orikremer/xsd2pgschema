@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.sf.xsd2pgschema</groupId>
 	<artifactId>xsd2pgschema</artifactId>
-	<version>2.7.6</version>
+	<version>2.7.7</version>
 	<name>xsd2pgschema</name>
 	<description>Database replication tool based on XML Schema</description>
 	<url>https://sourceforge.net/projects/xsd2pgschema/</url>
@@ -33,6 +33,7 @@
 		<developer>
 			<id>yokochi</id>
 			<name>Masashi Yokochi</name>
+			<email>yokochi47@gmail.com</email>
 			<organization>PDBj-BMRB, Institute for Protein Research, Osaka University</organization>
 			<organizationUrl>http://bmrbdep.pdbj.org</organizationUrl>
 			<roles>
@@ -45,7 +46,7 @@
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
-			<version>42.1.4</version>
+			<version>42.2.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.lucene</groupId>

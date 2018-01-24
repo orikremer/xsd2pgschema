@@ -432,7 +432,7 @@ public class JsonBuilder {
 			if (field.jsonb == null)
 				continue;
 
-			if (field.jsonb_col_size > 0 && field.jsonb.length() > 2) {
+			if ((field.required || field.jsonb_not_empty) && field.jsonb_col_size > 0 && field.jsonb.length() > 2) {
 
 				boolean array_field = array_json || field.list_holder || field.jsonb_col_size > 1;
 

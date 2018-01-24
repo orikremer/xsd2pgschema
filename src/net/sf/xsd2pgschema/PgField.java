@@ -3802,14 +3802,14 @@ public class PgField {
 	// PostgreSQL data migration via prepared statement
 
 	/**
-	 * Set value via PreparedStatement.
+	 * Write value via PreparedStatement.
 	 *
 	 * @param ps prepared statement
 	 * @param par_idx parameter index id
 	 * @param value content
 	 * @throws SQLException the SQL exception
 	 */
-	public void setValue2PgSql(PreparedStatement ps, int par_idx, String value) throws SQLException {
+	public void writeValue2PgSql(PreparedStatement ps, int par_idx, String value) throws SQLException {
 
 		switch (xs_type) {
 		case xs_boolean:
@@ -3933,14 +3933,14 @@ public class PgField {
 	}
 
 	/**
-	 * Set XML object via PreparedStatement.
+	 * Write XML object via PreparedStatement.
 	 *
 	 * @param ps prepared statement
 	 * @param par_idx parameter index id
 	 * @param value content
 	 * @throws SQLException the SQL exception
 	 */
-	public void setValue2PgSql(PreparedStatement ps, int par_idx, SQLXML value) throws SQLException {
+	public void writeValue2PgSql(PreparedStatement ps, int par_idx, SQLXML value) throws SQLException {
 
 		switch (xs_type) {
 		case xs_any:
@@ -3954,7 +3954,7 @@ public class PgField {
 	// Lucene full-text indexing
 
 	/**
-	 * Set value to Lucene document.
+	 * Write value to Lucene document.
 	 *
 	 * @param lucene_doc Lucene document
 	 * @param name field name
@@ -3962,7 +3962,7 @@ public class PgField {
 	 * @param min_word_len_filter whether it exceeds minimum word length
 	 * @param numeric_lucidx whether numeric values are stored in index
 	 */
-	public void setValue2LucIdx(org.apache.lucene.document.Document lucene_doc, String name, String value, boolean min_word_len_filter, boolean numeric_lucidx) {
+	public void writeValue2LucIdx(org.apache.lucene.document.Document lucene_doc, String name, String value, boolean min_word_len_filter, boolean numeric_lucidx) {
 
 		if (attr_sel_rdy) {
 
@@ -4073,14 +4073,14 @@ public class PgField {
 	// Sphinx full-text indexing
 
 	/**
-	 * Set value to Sphinx data source.
+	 * Write value to Sphinx data source.
 	 *
 	 * @param writer the writer
 	 * @param attr_name Sphinx attribute name
 	 * @param value content
 	 * @param min_word_len_filter whether it exceeds minimum word length
 	 */
-	public void setValue2SphDs(FileWriter writer, String attr_name, String value, boolean min_word_len_filter) {
+	public void writeValue2SphDs(FileWriter writer, String attr_name, String value, boolean min_word_len_filter) {
 
 		try {
 
@@ -4171,13 +4171,13 @@ public class PgField {
 	// JSON array object
 
 	/**
-	 * Set value to JSON buffer.
+	 * Write value to JSON buffer.
 	 *
 	 * @param value content
 	 * @param json_key_value_space the JSON key value space
 	 * @return boolean whether value is successfully set
 	 */
-	public boolean setValue2JsonB(String value, String json_key_value_space) {
+	public boolean writeValue2JsonBuf(String value, String json_key_value_space) {
 
 		if (jsonb == null)
 			return false;

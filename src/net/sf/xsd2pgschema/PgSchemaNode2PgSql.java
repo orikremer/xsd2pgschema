@@ -183,7 +183,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				if (ps != null) {
 
-					field.setValue2PgSql(ps, param_id, document_id);
+					field.writeValue2PgSql(ps, param_id, document_id);
 					occupied[f] = true;
 
 				}
@@ -195,7 +195,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			else if (field.serial_key) {
 
 				if (ps != null)
-					setSerKey(f, param_id, key_id);
+					writeSerKey(f, param_id, key_id);
 
 			}
 
@@ -204,7 +204,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			else if (field.xpath_key) {
 
 				if (ps != null)
-					setHashKey(f, param_id, current_key.substring(document_id_len));
+					writeHashKey(f, param_id, current_key.substring(document_id_len));
 
 			}
 
@@ -213,7 +213,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			else if (field.primary_key) {
 
 				if (ps != null && rel_data_ext)
-					setHashKey(f, param_id, primary_key);
+					writeHashKey(f, param_id, primary_key);
 
 			}
 
@@ -224,7 +224,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				if (parent_table.name.equals(field.foreign_table)) {
 
 					if (ps != null && rel_data_ext)
-						setHashKey(f, param_id, parent_key);
+						writeHashKey(f, param_id, parent_key);
 
 				}
 
@@ -237,7 +237,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				if (setNestedKey(field, current_key, key_id)) {
 
 					if (ps != null && rel_data_ext)
-						setHashKey(f, param_id, nested_key[nested_fields]);
+						writeHashKey(f, param_id, nested_key[nested_fields]);
 
 					nested_fields++;
 
@@ -253,7 +253,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					if (ps != null) {
 
-						field.setValue2PgSql(ps, param_id, field.normalize(content));
+						field.writeValue2PgSql(ps, param_id, field.normalize(content));
 						occupied[f] = true;
 
 					}
@@ -275,7 +275,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					xml_object.setString(content);
 
-					field.setValue2PgSql(ps, param_id, xml_object);
+					field.writeValue2PgSql(ps, param_id, xml_object);
 					occupied[f] = true;
 
 				}
@@ -411,14 +411,14 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Set hash key via prepared statement.
+	 * Write hash key via prepared statement.
 	 *
 	 * @param field_id field id
 	 * @param param_id parameter index
 	 * @param proc_key source string
 	 * @throws SQLException the SQL exception
 	 */
-	private void setHashKey(int field_id, int param_id, String key_name) throws SQLException {
+	private void writeHashKey(int field_id, int param_id, String key_name) throws SQLException {
 
 		switch (option.hash_size) {
 		case native_default:
@@ -439,14 +439,14 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Set serial key via prepared statement.
+	 * Write serial key via prepared statement.
 	 *
 	 * @param field_id field id
 	 * @param param_id parameter index
 	 * @param key_id serial id
 	 * @throws SQLException the SQL exception
 	 */
-	private void setSerKey(int field_id, int param_id, int key_id) throws SQLException {
+	private void writeSerKey(int field_id, int param_id, int key_id) throws SQLException {
 
 		switch (option.ser_size) {
 		case unsigned_int_32:

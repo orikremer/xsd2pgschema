@@ -1,3 +1,7 @@
+ Changes in xsd2pgschema 2.7.7 (release 2018-01-24)
+
+  Removed JSON array whose all objects are either null or empty.
+
  Changes in xsd2pgschema 2.7.6 (release 2018-01-18)
 
   [Ticket #4-3] Fixed overriding prefix to http://www.w3.org/2001/XMLSchema by schema import or include.

@@ -5597,10 +5597,10 @@ public class PgSchema {
 
 							PgField _field = _fields.get(f);
 
-							if (!_field.jsonb_not_empty || _field.jsonb == null)
+							if (_field.jsonb == null)
 								continue;
 
-							if (_field.jsonb_col_size > 0 && _field.jsonb.length() > 2) {
+							if ((_field.required || _field.jsonb_not_empty) && _field.jsonb_col_size > 0 && _field.jsonb.length() > 2) {
 
 								boolean array_field = (t != root_table_id && array_json) || _field.list_holder || _field.jsonb_col_size > 1;
 

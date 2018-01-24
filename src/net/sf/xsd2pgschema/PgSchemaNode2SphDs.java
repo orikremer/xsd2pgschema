@@ -196,7 +196,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 				PgField field = fields.get(f);
 
 				if (field.indexable)
-					field.setValue2SphDs(table.filew, table.name + PgSchemaUtil.sph_member_op + field.xname, value, value.length() >= schema.min_word_len);
+					field.writeValue2SphDs(table.filew, table.name + PgSchemaUtil.sph_member_op + field.xname, value, value.length() >= schema.min_word_len);
 
 			}
 
