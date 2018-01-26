@@ -72,13 +72,13 @@ public class XmlValidatorThrd implements Runnable {
 				System.exit(1);
 			}
 
-			if (thrd_id == 0)
+			if (thrd_id == 0 && total > 1)
 				System.out.print("\nDone " + (total - xmlvalidator.xml_file_queue.size()) + " of " + total + " ...\r");
 
 		}
 
 		if (thrd_id == 0)
-			System.out.println("\nDone.");
+			System.out.println((total > 1 ? "\n" : "") + "Done.");
 
 	}
 

@@ -205,7 +205,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 				System.exit(1);
 			}
 
-			if (shard_id == 0 && thrd_id == 0)
+			if (shard_id == 0 && thrd_id == 0 && total > 1)
 				System.out.print("\rIndexed " + (total - xml2luceneidx.xml_file_queue.size()) + " of " + total + " ...");
 
 		}

@@ -137,7 +137,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 			++queue;
 
-			if (thrd_id == 0)
+			if (thrd_id == 0 && total > 1)
 				System.out.print("\rMigrated " + (total - xml2pgsql.xml_file_queue.size()) + " of " + total + " ...");
 
 		}

@@ -161,7 +161,7 @@ public class Xml2PgCsvThrd implements Runnable {
 			if (first_csv)
 				first_csv = false;
 
-			if (thrd_id == 0)
+			if (thrd_id == 0 && total > 1)
 				System.out.print("\rConverted " + (total - xml2pgcsv.xml_file_queue.size()) + " of " + total + " ...");
 
 		}

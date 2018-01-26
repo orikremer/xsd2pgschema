@@ -134,7 +134,7 @@ public class Xml2JsonThrd implements Runnable {
 				System.exit(1);
 			}
 
-			if (thrd_id == 0)
+			if (thrd_id == 0 && total > 1)
 				System.out.print("\rConverted " + (total - xml2json.xml_file_queue.size()) + " of " + total + " ...");
 
 		}
