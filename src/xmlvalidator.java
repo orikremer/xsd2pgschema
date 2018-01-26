@@ -169,8 +169,6 @@ public class xmlvalidator {
 
 		System.err.println("xmlvalidator: Validate XML documents against XML Schema");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY");
-		System.err.println("        --validate (turn on XML Schema validation)");
-		System.err.println("        --no-validate (turn off XML Schema validation, default)");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
 		System.err.println("Option: --max-thrds MAX_THRDS (default is number of available processors)");
 		System.exit(1);
