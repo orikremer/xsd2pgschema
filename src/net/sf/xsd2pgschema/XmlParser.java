@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -114,6 +114,69 @@ public class XmlParser {
 		}
 
 		doc_builder.reset();
+
+		// decide document id quoting XML file name
+
+		document_id = xml_file_name.replaceFirst("^" + xml_file_filter.prefix_digest, "").replaceFirst(_xml_file_ext_digest + _xml_file_ext + "$", "");
+
+		// decide base name of XML file name
+
+		basename = xml_file_name.replaceFirst(_xml_file_ext + "$", "");
+
+	}
+
+	/**
+	 * Instance of XML parser only for XML Schema validation.
+	 *
+	 * @param validator instance of XmlValidator
+	 * @param xml_file XML file
+	 * @param xml_file_filter XML file filter
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public XmlParser(XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter) throws IOException {
+
+		String xml_file_name = xml_file.getName();
+
+		String _xml_file_ext = xml_file_filter.ext;
+		String _xml_file_ext_digest = xml_file_filter.ext_digest;
+
+		if (!_xml_file_ext_digest.endsWith("."))
+			_xml_file_ext_digest += ".";
+
+		if (_xml_file_ext_digest.endsWith("xml."))
+			_xml_file_ext_digest = _xml_file_ext_digest.replaceFirst("xml\\.$", "");
+
+		// xml.gz file
+
+		if (FilenameUtils.getExtension(xml_file_name).equals("gz")) {
+
+			FileInputStream in = new FileInputStream(xml_file);
+			GZIPInputStream gzin = new GZIPInputStream(in);
+
+			_xml_file_ext_digest += "xml.";
+			_xml_file_ext = "gz";
+
+			in = new FileInputStream(xml_file);
+			gzin = new GZIPInputStream(in);
+
+			validator.exec(xml_file_name, gzin);
+
+			gzin.close();
+			in.close();
+
+		}
+
+		// xml file
+
+		else {
+
+			FileInputStream in = new FileInputStream(xml_file);
+
+			validator.exec(xml_file_name, in);
+
+			in.close();
+
+		}
 
 		// decide document id quoting XML file name
 

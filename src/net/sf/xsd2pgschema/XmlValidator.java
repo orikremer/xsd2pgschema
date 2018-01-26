@@ -93,8 +93,10 @@ public class XmlValidator {
 			e.printStackTrace();
 		}
 
-		if (!err_handler.success)
+		if (!err_handler.success) {
+			System.err.println(xml_file_name + " is invalid.");
 			System.exit(1);
+		}
 
 	}
 
