@@ -86,7 +86,7 @@ public class XmlParser {
 				in = new FileInputStream(xml_file);
 				gzin = new GZIPInputStream(in);
 
-				validator.exec(xml_file_name, gzin);
+				validator.exec(xml_file.getPath(), gzin);
 
 			}
 
@@ -105,7 +105,7 @@ public class XmlParser {
 
 				FileInputStream in = new FileInputStream(xml_file);
 
-				validator.exec(xml_file_name, in);
+				validator.exec(xml_file.getPath(), in);
 
 				in.close();
 
@@ -159,7 +159,7 @@ public class XmlParser {
 			in = new FileInputStream(xml_file);
 			gzin = new GZIPInputStream(in);
 
-			validator.exec(xml_file_name, gzin);
+			validator.exec(xml_file.getPath(), gzin);
 
 			gzin.close();
 			in.close();
@@ -172,7 +172,7 @@ public class XmlParser {
 
 			FileInputStream in = new FileInputStream(xml_file);
 
-			validator.exec(xml_file_name, in);
+			validator.exec(xml_file.getPath(), in);
 
 			in.close();
 

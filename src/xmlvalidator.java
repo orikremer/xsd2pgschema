@@ -138,7 +138,7 @@ public class xmlvalidator {
 			if (thrd_id > 0)
 				is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
 
-			proc_thrd[thrd_id] = new XmlValidatorThrd(thrd_id, max_thrds);
+			proc_thrd[thrd_id] = new XmlValidatorThrd(thrd_id);
 
 			thrd[thrd_id] = new Thread(proc_thrd[thrd_id], thrd_name);
 

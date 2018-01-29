@@ -38,9 +38,8 @@ public class XmlValidatorThrd implements Runnable {
 	 * Instance of XmlValidatorThrd.
 	 *
 	 * @param thrd_id thread id
-	 * @param max_thrds max threads
 	 */
-	public XmlValidatorThrd(final int thrd_id, final int max_thrds) {
+	public XmlValidatorThrd(final int thrd_id) {
 
 		this.thrd_id = thrd_id;
 
