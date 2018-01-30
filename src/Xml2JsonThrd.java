@@ -103,13 +103,11 @@ public class Xml2JsonThrd implements Runnable {
 	public void run() {
 
 		int total = xml2json.xml_file_queue.size();
+		boolean show_progress = thrd_id == 0 && total > 1;
 
 		File xml_file;
 
 		while ((xml_file = xml2json.xml_file_queue.poll()) != null) {
-
-			if (!xml_file.isFile())
-				continue;
 
 			try {
 
@@ -134,7 +132,7 @@ public class Xml2JsonThrd implements Runnable {
 				System.exit(1);
 			}
 
-			if (thrd_id == 0 && total > 1)
+			if (show_progress)
 				System.out.print("\rConverted " + (total - xml2json.xml_file_queue.size()) + " of " + total + " ...");
 
 		}

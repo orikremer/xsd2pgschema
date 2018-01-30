@@ -176,13 +176,11 @@ public class Xml2SphinxDsThrd implements Runnable {
 	public void run() {
 
 		int total = xml2sphinxds.xml_file_queue.size();
+		boolean show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
 
 		File xml_file;
 
 		while ((xml_file = xml2sphinxds.xml_file_queue.poll()) != null) {
-
-			if (!xml_file.isFile())
-				continue;
 
 			String sph_doc_name = PgSchemaUtil.sph_document_prefix + xml_file.getName().split("\\.")[0] + ".xml";
 			File sph_doc_fiole = new File(ds_dir_name, sph_doc_name);
@@ -208,7 +206,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 				System.exit(1);
 			}
 
-			if (shard_id == 0 && thrd_id == 0 && total > 1)
+			if (show_progress)
 				System.out.print("\rExtracted " + (total - xml2sphinxds.xml_file_queue.size()) + " of " + total + " ...");
 
 		}
@@ -269,9 +267,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 		File ds_dir = new File(ds_dir_name);
 
 		for (File sph_doc_file : ds_dir.listFiles(filter)) {
-
-			if (!sph_doc_file.isFile())
-				continue;
 
 			SphDsSAXHandler handler = new SphDsSAXHandler(schema, filew, index_filter);
 

@@ -54,13 +54,11 @@ public class XmlValidatorThrd implements Runnable {
 	public void run() {
 
 		int total = xmlvalidator.xml_file_queue.size();
+		boolean show_progress = thrd_id == 0 && total > 1;
 
 		File xml_file;
 
 		while ((xml_file = xmlvalidator.xml_file_queue.poll()) != null) {
-
-			if (!xml_file.isFile())
-				continue;
 
 			try {
 
@@ -71,13 +69,13 @@ public class XmlValidatorThrd implements Runnable {
 				System.exit(1);
 			}
 
-			if (thrd_id == 0 && total > 1)
-				System.out.print("\nDone " + (total - xmlvalidator.xml_file_queue.size()) + " of " + total + " ...\r");
+			if (show_progress)
+				System.out.print("\rDone " + (total - xmlvalidator.xml_file_queue.size()) + " of " + total + " ...");
 
 		}
 
 		if (thrd_id == 0)
-			System.out.println((total > 1 ? "\n" : "") + "Done.");
+			System.out.println("\nDone.");
 
 	}
 

@@ -180,13 +180,11 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	public void run() {
 
 		int total = xml2luceneidx.xml_file_queue.size();
+		boolean show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
 
 		File xml_file;
 
 		while ((xml_file = xml2luceneidx.xml_file_queue.poll()) != null) {
-
-			if (!xml_file.isFile())
-				continue;
 
 			try {
 
@@ -205,7 +203,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 				System.exit(1);
 			}
 
-			if (shard_id == 0 && thrd_id == 0 && total > 1)
+			if (show_progress)
 				System.out.print("\rIndexed " + (total - xml2luceneidx.xml_file_queue.size()) + " of " + total + " ...");
 
 		}

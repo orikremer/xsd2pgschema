@@ -114,15 +114,13 @@ public class Xml2PgSqlThrd implements Runnable {
 	public void run() {
 
 		int total = xml2pgsql.xml_file_queue.size();
+		boolean show_progress = thrd_id == 0 && total > 1;
 
-		int queue = 0;
+		int polled = 0;
 
 		File xml_file;
 
 		while ((xml_file = xml2pgsql.xml_file_queue.poll()) != null) {
-
-			if (!xml_file.isFile())
-				continue;
 
 			try {
 
@@ -135,17 +133,17 @@ public class Xml2PgSqlThrd implements Runnable {
 				System.exit(1);
 			}
 
-			++queue;
+			++polled;
 
-			if (thrd_id == 0 && total > 1)
+			if (show_progress)
 				System.out.print("\rMigrated " + (total - xml2pgsql.xml_file_queue.size()) + " of " + total + " ...");
 
 		}
 
-		if (queue > 0) {
+		if (polled > 0) {
 
 			try {
-				System.out.println("Done xml (" + queue + " entries) -> db (" + db_conn.getMetaData().getURL().split("/")[3] + ").");
+				System.out.println("Done xml (" + polled + " entries) -> db (" + db_conn.getMetaData().getURL().split("/")[3] + ").");
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}

@@ -133,17 +133,15 @@ public class Xml2PgCsvThrd implements Runnable {
 	public void run() {
 
 		int total = xml2pgcsv.xml_file_queue.size();
+		boolean show_progress = thrd_id == 0 && total > 1;
 
-		int queue = 0;
+		int polled = 0;
 
 		boolean first_csv = true;
 
 		File xml_file;
 
 		while ((xml_file = xml2pgcsv.xml_file_queue.poll()) != null) {
-
-			if (!xml_file.isFile())
-				continue;
 
 			try {
 
@@ -156,22 +154,26 @@ public class Xml2PgCsvThrd implements Runnable {
 				System.exit(1);
 			}
 
-			++queue;
+			++polled;
 
 			if (first_csv)
 				first_csv = false;
 
-			if (thrd_id == 0 && total > 1)
+			if (show_progress)
 				System.out.print("\rConverted " + (total - xml2pgcsv.xml_file_queue.size()) + " of " + total + " ...");
 
 		}
 
 		schema.closeXml2PgCsv();
 
-		if (thrd_id == 0 && db_conn == null)
-			System.out.println("\nDone.");
+		if (db_conn == null) {
 
-		if (queue > 0 && db_conn != null) {
+			if (thrd_id == 0)
+				System.out.println("\nDone.");
+
+		}
+
+		else if (polled > 0) {
 
 			try {
 
@@ -188,7 +190,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 				try {
 
-					System.out.println("Done xml (" + queue + " entries) -> db (" + db_conn.getMetaData().getURL().split("/")[3] + ").");
+					System.out.println("Done xml (" + polled + " entries) -> db (" + db_conn.getMetaData().getURL().split("/")[3] + ").");
 
 				} catch (SQLException e) {
 					e.printStackTrace();

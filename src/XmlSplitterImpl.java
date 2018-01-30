@@ -303,9 +303,6 @@ public class XmlSplitterImpl {
 
 			while ((xml_file = xmlsplitter.xml_file_queue.poll()) != null) {
 
-				if (!xml_file.isFile())
-					continue;
-
 				System.out.println("Splitting " + xml_file.getName() + "...");
 
 				// XML event reader of source XML file
