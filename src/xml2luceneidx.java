@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -83,10 +83,10 @@ public class xml2luceneidx {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--xsd"))
+			if (args[i].equals("--xsd") && i + 1 < args.length)
 				schema_location = args[++i];
 
-			else if (args[i].equals("--xml")) {
+			else if (args[i].equals("--xml") && i + 1 < args.length) {
 				String xml_file_name = args[++i];
 
 				if (xml_file_name.isEmpty()) {
@@ -97,26 +97,26 @@ public class xml2luceneidx {
 				xml_file_names.add(xml_file_name);
 			}
 
-			else if (args[i].equals("--xml-file-ext")) {
+			else if (args[i].equals("--xml-file-ext") && i + 1 < args.length) {
 
 				if (!xml_file_filter.setExt(args[++i]))
 					showUsage();
 
 			}
 
-			else if (args[i].equals("--xml-file-prefix-digest"))
+			else if (args[i].equals("--xml-file-prefix-digest") && i + 1 < args.length)
 				xml_file_filter.setPrefixDigest(args[++i]);
 
-			else if (args[i].equals("--xml-file-ext-digest"))
+			else if (args[i].equals("--xml-file-ext-digest") && i + 1 < args.length)
 				xml_file_filter.setExtDigest(args[++i]);
 
-			else if (args[i].equals("--idx-dir"))
+			else if (args[i].equals("--idx-dir") && i + 1 < args.length)
 				idx_dir_name = args[++i];
 
-			else if (args[i].equals("--attr"))
+			else if (args[i].equals("--attr") && i + 1 < args.length)
 				index_filter.addAttr(args[++i]);
 
-			else if (args[i].equals("--field"))
+			else if (args[i].equals("--field") && i + 1 < args.length)
 				index_filter.addField(args[++i]);
 
 			else if (args[i].equals("--attr-all"))
@@ -140,19 +140,19 @@ public class xml2luceneidx {
 			else if (args[i].equals("--attr-time"))
 				index_filter.attr_time = true;
 
-			else if (args[i].equals("--min-word-len"))
+			else if (args[i].equals("--min-word-len") && i + 1 < args.length)
 				index_filter.setMinWordLen(args[++i]);
 
 			else if (args[i].equals("--numeric-idx"))
 				index_filter.enableNumericLucIdx();
 
-			else if (args[i].equals("--filt-in"))
+			else if (args[i].equals("--filt-in") && i + 1 < args.length)
 				xml_post_editor.addFiltIn(args[++i]);
 
-			else if (args[i].equals("--filt-out"))
+			else if (args[i].equals("--filt-out") && i + 1 < args.length)
 				xml_post_editor.addFiltOut(args[++i]);
 
-			else if (args[i].equals("--fill-this"))
+			else if (args[i].equals("--fill-this") && i + 1 < args.length)
 				xml_post_editor.addFillThis(args[++i]);
 
 			else if (args[i].equals("--no-rel"))
@@ -173,16 +173,16 @@ public class xml2luceneidx {
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
 
-			else if (args[i].equals("--hash-by"))
+			else if (args[i].equals("--hash-by") && i + 1 < args.length)
 				option.hash_algorithm = args[++i];
 
-			else if (args[i].equals("--hash-size"))
+			else if (args[i].equals("--hash-size") && i + 1 < args.length)
 				option.hash_size = PgHashSize.getPgHashSize(args[++i]);
 
-			else if (args[i].equals("--discarded-doc-key-name"))
+			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);
 
-			else if (args[i].equals("--shard-size")) {
+			else if (args[i].equals("--shard-size") && i + 1 < args.length) {
 				shard_size = Integer.valueOf(args[++i]);
 
 				if (shard_size <= 0) {
@@ -191,7 +191,7 @@ public class xml2luceneidx {
 				}
 			}
 
-			else if (args[i].equals("--max-thrds")) {
+			else if (args[i].equals("--max-thrds") && i + 1 < args.length) {
 				max_thrds = Integer.valueOf(args[++i]);
 
 				if (max_thrds <= 0 || max_thrds > cpu_num * 2) {

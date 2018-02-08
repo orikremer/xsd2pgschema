@@ -63,10 +63,10 @@ public class xmlvalidator {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--xsd"))
+			if (args[i].equals("--xsd") && i + 1 < args.length)
 				schema_location = args[++i];
 
-			else if (args[i].equals("--xml")) {
+			else if (args[i].equals("--xml") && i + 1 < args.length) {
 				String xml_file_name = args[++i];
 
 				if (xml_file_name.isEmpty()) {
@@ -77,14 +77,14 @@ public class xmlvalidator {
 				xml_file_names.add(xml_file_name);
 			}
 
-			else if (args[i].equals("--xml-file-ext")) {
+			else if (args[i].equals("--xml-file-ext") && i + 1 < args.length) {
 
 				if (!xml_file_filter.setExt(args[++i]))
 					showUsage();
 
 			}
 
-			else if (args[i].equals("--max-thrds")) {
+			else if (args[i].equals("--max-thrds") && i + 1 < args.length) {
 				max_thrds = Integer.valueOf(args[++i]);
 
 				if (max_thrds <= 0 || max_thrds > cpu_num * 2) {

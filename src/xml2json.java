@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -85,10 +85,10 @@ public class xml2json {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--xsd"))
+			if (args[i].equals("--xsd") && i + 1 < args.length)
 				schema_location = args[++i];
 
-			else if (args[i].equals("--xml")) {
+			else if (args[i].equals("--xml") && i + 1 < args.length) {
 				String xml_file_name = args[++i];
 
 				if (xml_file_name.isEmpty()) {
@@ -99,17 +99,17 @@ public class xml2json {
 				xml_file_names.add(xml_file_name);
 			}
 
-			else if (args[i].equals("--xml-file-ext")) {
+			else if (args[i].equals("--xml-file-ext") && i + 1 < args.length) {
 
 				if (!xml_file_filter.setExt(args[++i]))
 					showUsage();
 
 			}
 
-			else if (args[i].equals("--xml-file-prefix-digest"))
+			else if (args[i].equals("--xml-file-prefix-digest") && i + 1 < args.length)
 				xml_file_filter.setPrefixDigest(args[++i]);
 
-			else if (args[i].equals("--xml-file-ext-digest"))
+			else if (args[i].equals("--xml-file-ext-digest") && i + 1 < args.length)
 				xml_file_filter.setExtDigest(args[++i]);
 
 			else if (args[i].equals("--obj-json"))
@@ -124,16 +124,16 @@ public class xml2json {
 			else if (args[i].equals("--json-array-all"))
 				jsonb_option.array_all = true;
 
-			else if (args[i].equals("--attr-json-prefix"))
+			else if (args[i].equals("--attr-json-prefix") && i + 1 < args.length)
 				jsonb_option.setAttrPrefix(args[++i]);
 
-			else if (args[i].equals("--simple-cont-json-key"))
+			else if (args[i].equals("--simple-cont-json-key") && i + 1 < args.length)
 				jsonb_option.setSimpleContentKey(args[++i]);
 
-			else if (args[i].equals("--json-indent-spaces"))
+			else if (args[i].equals("--json-indent-spaces") && i + 1 < args.length)
 				jsonb_option.setIndentSpaces(args[++i]);
 
-			else if (args[i].equals("--json-key-value-spaces"))
+			else if (args[i].equals("--json-key-value-spaces") && i + 1 < args.length)
 				jsonb_option.setKeyValueSpaces(args[++i]);
 
 			else if (args[i].equals("--json-no-linefeed"))
@@ -142,16 +142,16 @@ public class xml2json {
 			else if (args[i].equals("--json-compact"))
 				jsonb_option.setCompact();
 
-			else if (args[i].equals("--json-dir"))
+			else if (args[i].equals("--json-dir") && i + 1 < args.length)
 				json_dir_name = args[++i];
 
-			else if (args[i].equals("--filt-in"))
+			else if (args[i].equals("--filt-in") && i + 1 < args.length)
 				xml_post_editor.addFiltIn(args[++i]);
 
-			else if (args[i].equals("--filt-out"))
+			else if (args[i].equals("--filt-out") && i + 1 < args.length)
 				xml_post_editor.addFiltOut(args[++i]);
 
-			else if (args[i].equals("--fill-this"))
+			else if (args[i].equals("--fill-this") && i + 1 < args.length)
 				xml_post_editor.addFillThis(args[++i]);
 
 			else if (args[i].equals("--no-wild-card"))
@@ -169,10 +169,10 @@ public class xml2json {
 			else if (args[i].startsWith("--no-valid"))
 				option.validate = false;
 
-			else if (args[i].equals("--discarded-doc-key-name"))
+			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);	
 
-			else if (args[i].equals("--max-thrds")) {
+			else if (args[i].equals("--max-thrds") && i + 1 < args.length) {
 				max_thrds = Integer.valueOf(args[++i]);
 
 				if (max_thrds <= 0 || max_thrds > cpu_num * 2) {

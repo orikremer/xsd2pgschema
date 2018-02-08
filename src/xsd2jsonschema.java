@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -57,10 +57,10 @@ public class xsd2jsonschema {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--xsd"))
+			if (args[i].equals("--xsd") && i + 1 < args.length)
 				schema_location = args[++i];
 
-			else if (args[i].equals("--json"))
+			else if (args[i].equals("--json") && i + 1 < args.length)
 				json_file_name = args[++i];
 
 			else if (args[i].equals("--field-annotation"))
@@ -72,16 +72,16 @@ public class xsd2jsonschema {
 			else if (args[i].equals("--json-array-all"))
 				jsonb_option.array_all = true;
 
-			else if (args[i].equals("--attr-json-prefix"))
+			else if (args[i].equals("--attr-json-prefix") && i + 1 < args.length)
 				jsonb_option.setAttrPrefix(args[++i]);
 
-			else if (args[i].equals("--simple-cont-json-key"))
+			else if (args[i].equals("--simple-cont-json-key") && i + 1 < args.length)
 				jsonb_option.setSimpleContentKey(args[++i]);
 
-			else if (args[i].equals("--json-indent-spaces"))
+			else if (args[i].equals("--json-indent-spaces") && i + 1 < args.length)
 				jsonb_option.setIndentSpaces(args[++i]);
 
-			else if (args[i].equals("--json-key-value-spaces"))
+			else if (args[i].equals("--json-key-value-spaces") && i + 1 < args.length)
 				jsonb_option.setKeyValueSpaces(args[++i]);
 
 			else if (args[i].equals("--json-no-linefeed"))
@@ -108,7 +108,7 @@ public class xsd2jsonschema {
 			else if (args[i].equals("--rel-json"))
 				option.setDefaultForJsonSchema(json_type = JsonType.relational);
 
-			else if (args[i].equals("--discarded-doc-key-name"))
+			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);
 
 			else {

@@ -56,10 +56,10 @@ public class xsd2pgschema {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--xsd"))
+			if (args[i].equals("--xsd") && i + 1 < args.length)
 				schema_location = args[++i];
 
-			else if (args[i].equals("--ddl"))
+			else if (args[i].equals("--ddl") && i + 1 < args.length)
 				ddl_file_name = args[++i];
 
 			else if (args[i].equals("--doc-key"))
@@ -95,25 +95,25 @@ public class xsd2pgschema {
 			else if (args[i].equals("--no-key"))
 				option.retain_key = false;
 
-			else if (args[i].equals("--hash-by"))
+			else if (args[i].equals("--hash-by") && i + 1 < args.length)
 				option.hash_algorithm = args[++i];
 
-			else if (args[i].equals("--hash-size"))
+			else if (args[i].equals("--hash-size") && i + 1 < args.length)
 				option.hash_size = PgHashSize.getPgHashSize(args[++i]);
 
-			else if (args[i].equals("--ser-size"))
+			else if (args[i].equals("--ser-size") && i + 1 < args.length)
 				option.ser_size = PgSerSize.getPgSerSize(args[++i]);
 
-			else if (args[i].equals("--doc-key-name"))
+			else if (args[i].equals("--doc-key-name") && i + 1 < args.length)
 				option.setDocumentKeyName(args[++i]);
 
-			else if (args[i].equals("--ser-key-name"))
+			else if (args[i].equals("--ser-key-name") && i + 1 < args.length)
 				option.setSerialKeyName(args[++i]);
 
-			else if (args[i].equals("--xpath-key-name"))
+			else if (args[i].equals("--xpath-key-name") && i + 1 < args.length)
 				option.setXPathKeyName(args[++i]);
 
-			else if (args[i].equals("--discarded-doc-key-name"))
+			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);
 
 			else {

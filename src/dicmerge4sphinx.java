@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -56,13 +56,13 @@ public class dicmerge4sphinx {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--ds-dir"))
+			if (args[i].equals("--ds-dir") && i + 1 < args.length)
 				ds_dir_name = args[++i];
 
-			else if (args[i].equals("--dic"))
+			else if (args[i].equals("--dic") && i + 1 < args.length)
 				dic_file_list.add(args[++i]);
 
-			else if (args[i].equals("--freq"))
+			else if (args[i].equals("--freq") && i + 1 < args.length)
 				freq_threshold = Integer.valueOf(args[++i]);
 
 			else {

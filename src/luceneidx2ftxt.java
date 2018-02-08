@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -67,16 +67,16 @@ public class luceneidx2ftxt {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--idx-dir"))
+			if (args[i].equals("--idx-dir") && i + 1 < args.length)
 				idx_dir_name = args[++i];
 
-			else if (args[i].equals("--field"))
+			else if (args[i].equals("--field") && i + 1 < args.length)
 				fields.add(args[++i]);
 
-			else if (args[i].equals("--ftxt-dir"))
+			else if (args[i].equals("--ftxt-dir") && i + 1 < args.length)
 				ftxt_dir_name = args[++i];
 
-			else if (args[i].equals("--dic"))
+			else if (args[i].equals("--dic") && i + 1 < args.length)
 				dic_file_name = args[++i];
 
 			else {

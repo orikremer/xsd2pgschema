@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -63,16 +63,16 @@ public class dsmerge4sphinx {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--xsd"))
+			if (args[i].equals("--xsd") && i + 1 < args.length)
 				schema_location = args[++i];
 
-			else if (args[i].equals("--src-ds-dir"))
+			else if (args[i].equals("--src-ds-dir") && i + 1 < args.length)
 				src_ds_dir_list.add(args[++i]);
 
-			else if (args[i].equals("--dst-ds-dir"))
+			else if (args[i].equals("--dst-ds-dir") && i + 1 < args.length)
 				dst_ds_dir_name = args[++i];
 
-			else if (args[i].equals("--ds-name"))
+			else if (args[i].equals("--ds-name") && i + 1 < args.length)
 				ds_name = args[++i];
 
 			else {

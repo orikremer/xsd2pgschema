@@ -1,7 +1,8 @@
-﻿ Changes in xsd2pgschema 2.7.7 (release 2018-01-26)
+﻿ Changes in xsd2pgschema 2.7.7 (release 2018-02-08)
 
   Removed JSON array whose all objects are either null or empty.
   Added xmlvalidator main class, paralleled XML validator against XML Schema.
+  Fixed exception in case of insufficient argument.
 
  Changes in xsd2pgschema 2.7.6 (release 2018-01-18)
 

@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -61,13 +61,13 @@ public class luceneidx2infix {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--idx-dir"))
+			if (args[i].equals("--idx-dir") && i + 1 < args.length)
 				idx_dir_name = args[++i];
 
-			else if (args[i].equals("--field"))
+			else if (args[i].equals("--field") && i + 1 < args.length)
 				fields.add(args[++i]);
 
-			else if (args[i].equals("--infix-dir"))
+			else if (args[i].equals("--infix-dir") && i + 1 < args.length)
 				infix_dir_name = args[++i];
 
 			else {

@@ -62,25 +62,25 @@ public class csv2pgsql {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--xsd"))
+			if (args[i].equals("--xsd") && i + 1 < args.length)
 				schema_location = args[++i];
 
-			else if (args[i].equals("--csv-dir"))
+			else if (args[i].equals("--csv-dir") && i + 1 < args.length)
 				csv_dir_name = args[++i];
 
-			else if (args[i].equals("--db-host"))
+			else if (args[i].equals("--db-host") && i + 1 < args.length)
 				pg_option.host = args[++i];
 
-			else if (args[i].equals("--db-port"))
+			else if (args[i].equals("--db-port") && i + 1 < args.length)
 				pg_option.port = Integer.valueOf(args[++i]);
 
-			else if (args[i].equals("--db-name"))
+			else if (args[i].equals("--db-name") && i + 1 < args.length)
 				pg_option.name = args[++i];
 
-			else if (args[i].equals("--db-user"))
+			else if (args[i].equals("--db-user") && i + 1 < args.length)
 				pg_option.user = args[++i];
 
-			else if (args[i].equals("--db-pass"))
+			else if (args[i].equals("--db-pass") && i + 1 < args.length)
 				pg_option.pass = args[++i];
 
 			else if (args[i].equals("--doc-key"))
@@ -107,16 +107,16 @@ public class csv2pgsql {
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
 
-			else if (args[i].equals("--doc-key-name"))
+			else if (args[i].equals("--doc-key-name") && i + 1 < args.length)
 				option.setDocumentKeyName(args[++i]);
 
-			else if (args[i].equals("--ser-key-name"))
+			else if (args[i].equals("--ser-key-name") && i + 1 < args.length)
 				option.setSerialKeyName(args[++i]);
 
-			else if (args[i].equals("--xpath-key-name"))
+			else if (args[i].equals("--xpath-key-name") && i + 1 < args.length)
 				option.setXPathKeyName(args[++i]);
 
-			else if (args[i].equals("--discarded-doc-key-name"))
+			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);
 
 			else {

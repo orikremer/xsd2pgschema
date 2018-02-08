@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017 Masashi Yokochi
+    Copyright 2017-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -76,10 +76,10 @@ public class xmlsplitter {
 
 		for (int i = 0; i < args.length; i++) {
 
-			if (args[i].equals("--xsd"))
+			if (args[i].equals("--xsd") && i + 1 < args.length)
 				schema_location = args[++i];
 
-			else if (args[i].equals("--xml")) {
+			else if (args[i].equals("--xml") && i + 1 < args.length) {
 				String xml_file_name = args[++i];
 
 				if (xml_file_name.isEmpty()) {
@@ -90,17 +90,17 @@ public class xmlsplitter {
 				xml_file_names.add(xml_file_name);
 			}
 
-			else if (args[i].equals("--xml-file-ext")) {
+			else if (args[i].equals("--xml-file-ext") && i + 1 < args.length) {
 
 				if (!xml_file_filter.setExt(args[++i]))
 					showUsage();
 
 			}
 
-			else if (args[i].equals("--xml-dir"))
+			else if (args[i].equals("--xml-dir") && i + 1 < args.length)
 				xml_dir_name = args[++i];
 
-			else if (args[i].equals("--xpath-doc-key"))
+			else if (args[i].equals("--xpath-doc-key") && i + 1 < args.length)
 				xpath_doc_key = args[++i];
 
 			else if (args[i].equals("--no-wild-card"))
@@ -112,7 +112,7 @@ public class xmlsplitter {
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
 
-			else if (args[i].equals("--shard-size")) {
+			else if (args[i].equals("--shard-size") && i + 1 < args.length) {
 				shard_size = Integer.valueOf(args[++i]);
 
 				if (shard_size <= 0) {
