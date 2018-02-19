@@ -76,7 +76,12 @@ public class xml2pgsql {
 
 		HashSet<String> xml_file_names = new HashSet<String>();
 
+		boolean touch_xml = false;
+
 		for (int i = 0; i < args.length; i++) {
+
+			if (args[i].startsWith("--"))
+				touch_xml = false;
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
 				schema_location = args[++i];
@@ -90,6 +95,8 @@ public class xml2pgsql {
 				}
 
 				xml_file_names.add(xml_file_name);
+
+				touch_xml = true;
 			}
 
 			else if (args[i].equals("--xml-file-ext") && i + 1 < args.length) {
@@ -193,6 +200,17 @@ public class xml2pgsql {
 					System.err.println("Out of range (max_thrds).");
 					showUsage();
 				}
+			}
+
+			else if (touch_xml) {
+				String xml_file_name = args[i];
+
+				if (xml_file_name.isEmpty()) {
+					System.err.println("XML file name is empty.");
+					showUsage();
+				}
+
+				xml_file_names.add(xml_file_name);
 			}
 
 			else {

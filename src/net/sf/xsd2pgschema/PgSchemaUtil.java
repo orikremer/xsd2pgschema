@@ -29,7 +29,10 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
@@ -38,6 +41,10 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.TimeZone;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.BiPredicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.zip.GZIPInputStream;
 
 import javax.net.ssl.HostnameVerifier;
@@ -406,13 +413,87 @@ public class PgSchemaUtil {
 
 		LinkedBlockingQueue<File> queue = new LinkedBlockingQueue<File>();
 
+		boolean has_regex_path = file_names.stream().anyMatch(file_name -> !Files.exists(Paths.get(file_name)));
+
 		file_names.forEach(file_name -> {
 
 			File file = new File(file_name);
 
 			if (!file.exists()) {
-				System.err.println("Not found + " + file.getPath());
-				System.exit(1);
+
+				Pattern pattern = null;
+
+				try {
+
+					pattern = Pattern.compile(file_name);
+
+				} catch (PatternSyntaxException e) {
+					System.err.println("Not found + " + file.getPath());
+					System.exit(1);
+				}
+
+				Pattern _pattern = pattern;
+
+				Path path = Paths.get(file_name);
+
+				int depth = 1;
+
+				while (path != null) {
+
+					path = path.getParent();
+
+					if (Files.exists(path)) {
+
+						if (Files.isDirectory(path)) {
+
+							BiPredicate<Path, BasicFileAttributes> matcher = (_path, _attr) -> {
+
+								if (_attr.isDirectory() || _attr.isRegularFile()) {
+
+									Matcher _matcher = _pattern.matcher(_path.toString());
+
+									return _matcher.matches();
+								}
+
+								else
+									return false;
+
+							};
+
+							try {
+
+								Files.find(path, depth, matcher).forEach(_path -> {
+
+									if (Files.isDirectory(_path))
+										queue.addAll(Arrays.asList(_path.toFile().listFiles(filter)));
+
+									else if (Files.isRegularFile(_path) && filter.accept(null, _path.toString()))
+										queue.add(_path.toFile());
+
+								});
+
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+
+						}
+
+						else if (Files.isRegularFile(path)) {
+
+							Matcher _matcher = _pattern.matcher(path.toString());
+
+							if (_matcher.matches() && filter.accept(null, path.toString()))
+								queue.add(path.toFile());
+
+						}
+
+						break;
+					}
+
+					depth++;
+
+				}
+
 			}
 
 			if (file.isFile()) {
@@ -427,7 +508,25 @@ public class PgSchemaUtil {
 
 		});
 
-		return queue;
+		if (!has_regex_path)
+			return queue;
+
+		HashSet<File> set = new HashSet<File>();
+
+		try {
+
+			set.addAll(queue);
+
+			queue.clear();
+
+			queue.addAll(set);
+
+			return queue;
+
+		} finally {
+			set.clear();
+		}
+
 	}
 
 	/**

@@ -95,6 +95,9 @@ public class xpath2pgsql {
 			else if (args[i].equals("--db-pass") && i + 1 < args.length)
 				pg_option.pass = args[++i];
 
+			else if (args[i].equals("--test-ddl"))
+				pg_option.test = true;
+
 			else if (args[i].equals("--doc-key"))
 				option.setDocKeyOption(true);
 

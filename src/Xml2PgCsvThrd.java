@@ -104,8 +104,16 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2pgcsv.schema_location, null, option.cache_xsd)) : null;
 
-		if (!pg_option.name.isEmpty())
+		if (!pg_option.name.isEmpty()) {
+
 			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
+
+			// test PostgreSQL data model with schema
+
+			if (pg_option.test)
+				schema.testPgSql(db_conn);
+
+		}
 
 		this.csv_dir_name = csv_dir_name;
 

@@ -83,6 +83,9 @@ public class csv2pgsql {
 			else if (args[i].equals("--db-pass") && i + 1 < args.length)
 				pg_option.pass = args[++i];
 
+			else if (args[i].equals("--test-ddl"))
+				pg_option.test = true;
+
 			else if (args[i].equals("--doc-key"))
 				option.setDocKeyOption(true);
 
@@ -176,6 +179,9 @@ public class csv2pgsql {
 
 			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 
+			if (pg_option.test)
+				schema.testPgSql(db_conn);
+
 			if (!schema.pgCsv2PgSql(db_conn, csv_dir_name))
 				System.exit(1);
 
@@ -197,6 +203,7 @@ public class csv2pgsql {
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --csv-dir DIRECTORY (default=\"" + csv_dir_name + "\") --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
+		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");

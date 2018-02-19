@@ -3811,131 +3811,129 @@ public class PgField {
 	 */
 	public void writeValue2PgSql(PreparedStatement ps, int par_idx, String value) throws SQLException {
 
-		if (enum_name == null) {
-
-			switch (xs_type) {
-			case xs_boolean:
-				ps.setBoolean(par_idx, Boolean.valueOf(value));
-				break;
-			case xs_hexBinary:
-				ps.setBytes(par_idx, DatatypeConverter.parseHexBinary(value));
-				break;
-			case xs_base64Binary:
-				ps.setBytes(par_idx, DatatypeConverter.parseBase64Binary(value));
-				break;
-			case xs_bigserial:
-			case xs_long:
-			case xs_bigint:
-			case xs_unsignedLong:
-				try {
-					ps.setLong(par_idx, Long.valueOf(value));
-				} catch (NumberFormatException e) {
-					e.printStackTrace();
-				}
-				break;
-			case xs_serial:
-			case xs_integer:
-			case xs_int:
-			case xs_nonPositiveInteger:
-			case xs_negativeInteger:
-			case xs_nonNegativeInteger:
-			case xs_positiveInteger:
-			case xs_unsignedInt:
-				ps.setInt(par_idx, Integer.valueOf(value));
-				break;
-			case xs_float:
-				ps.setFloat(par_idx, Float.valueOf(value));
-				break;
-			case xs_double:
-				ps.setDouble(par_idx, Double.valueOf(value));
-				break;
-			case xs_decimal:
-				ps.setBigDecimal(par_idx, new BigDecimal(value));
-				break;
-			case xs_short:
-			case xs_byte:
-			case xs_unsignedShort:
-			case xs_unsignedByte:
-				ps.setInt(par_idx, Integer.valueOf(value));
-				break;
-			case xs_dateTime:
-				if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required")))
-					ps.setTimestamp(par_idx, new java.sql.Timestamp(PgSchemaUtil.parseDate(value).getTime()));
-				else
-					ps.setTimestamp(par_idx, new java.sql.Timestamp(PgSchemaUtil.parseDate(value).getTime()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
-				break;
-			case xs_time:
-				if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) {
-
-					try {
-						ps.setTime(par_idx, java.sql.Time.valueOf(LocalTime.parse(value)));
-					} catch (DateTimeParseException e) {
-
-						try {
-							ps.setTime(par_idx, java.sql.Time.valueOf(OffsetTime.parse(value).toLocalTime()));
-						} catch (DateTimeParseException e2) {
-						}
-					}
-
-				}
-
-				else {
-
-					try {
-						ps.setTime(par_idx, java.sql.Time.valueOf(OffsetTime.parse(value).toLocalTime()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
-					} catch (DateTimeParseException e) {
-
-						try {
-							ps.setTime(par_idx, java.sql.Time.valueOf(LocalTime.parse(value)), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
-						} catch (DateTimeParseException e2) {
-						}
-					}
-
-				}
-				break;
-			case xs_date:
-			case xs_gYearMonth:
-			case xs_gYear:
-				Calendar cal = Calendar.getInstance();
-
-				cal.setTime(PgSchemaUtil.parseDate(value));
-				cal.set(Calendar.HOUR_OF_DAY, 0);
-				cal.set(Calendar.MINUTE, 0);
-				cal.set(Calendar.SECOND, 0);
-				cal.set(Calendar.MILLISECOND, 0);
-
-				ps.setDate(par_idx, new java.sql.Date(cal.getTimeInMillis()));
-				break;
-			case xs_gMonthDay:
-			case xs_gMonth:
-			case xs_gDay:
-			case xs_duration:
-			case xs_anyType:
-			case xs_string:
-			case xs_normalizedString:
-			case xs_token:
-			case xs_NMTOKEN:
-			case xs_NMTOKENS:
-			case xs_IDREFS:
-			case xs_ENTITIES:
-			case xs_NOTATION:
-			case xs_language:
-			case xs_Name:
-			case xs_QName:
-			case xs_NCName:
-			case xs_anyURI:
-			case xs_ID:
-			case xs_IDREF:
-			case xs_ENTITY:
-				ps.setString(par_idx, value);
-				break;
-			default: // xs_any, xs_anyAttribute
-			}
-
+		if (enum_name != null) {
+			ps.setString(par_idx, value);
+			return;
 		}
 
-		else
+		switch (xs_type) {
+		case xs_boolean:
+			ps.setBoolean(par_idx, Boolean.valueOf(value));
+			break;
+		case xs_hexBinary:
+			ps.setBytes(par_idx, DatatypeConverter.parseHexBinary(value));
+			break;
+		case xs_base64Binary:
+			ps.setBytes(par_idx, DatatypeConverter.parseBase64Binary(value));
+			break;
+		case xs_bigserial:
+		case xs_long:
+		case xs_bigint:
+		case xs_unsignedLong:
+			try {
+				ps.setLong(par_idx, Long.valueOf(value));
+			} catch (NumberFormatException e) {
+				e.printStackTrace();
+			}
+			break;
+		case xs_serial:
+		case xs_integer:
+		case xs_int:
+		case xs_nonPositiveInteger:
+		case xs_negativeInteger:
+		case xs_nonNegativeInteger:
+		case xs_positiveInteger:
+		case xs_unsignedInt:
+			ps.setInt(par_idx, Integer.valueOf(value));
+			break;
+		case xs_float:
+			ps.setFloat(par_idx, Float.valueOf(value));
+			break;
+		case xs_double:
+			ps.setDouble(par_idx, Double.valueOf(value));
+			break;
+		case xs_decimal:
+			ps.setBigDecimal(par_idx, new BigDecimal(value));
+			break;
+		case xs_short:
+		case xs_byte:
+		case xs_unsignedShort:
+		case xs_unsignedByte:
+			ps.setInt(par_idx, Integer.valueOf(value));
+			break;
+		case xs_dateTime:
+			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required")))
+				ps.setTimestamp(par_idx, new java.sql.Timestamp(PgSchemaUtil.parseDate(value).getTime()));
+			else
+				ps.setTimestamp(par_idx, new java.sql.Timestamp(PgSchemaUtil.parseDate(value).getTime()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+			break;
+		case xs_time:
+			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) {
+
+				try {
+					ps.setTime(par_idx, java.sql.Time.valueOf(LocalTime.parse(value)));
+				} catch (DateTimeParseException e) {
+
+					try {
+						ps.setTime(par_idx, java.sql.Time.valueOf(OffsetTime.parse(value).toLocalTime()));
+					} catch (DateTimeParseException e2) {
+					}
+				}
+
+			}
+
+			else {
+
+				try {
+					ps.setTime(par_idx, java.sql.Time.valueOf(OffsetTime.parse(value).toLocalTime()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+				} catch (DateTimeParseException e) {
+
+					try {
+						ps.setTime(par_idx, java.sql.Time.valueOf(LocalTime.parse(value)), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+					} catch (DateTimeParseException e2) {
+					}
+				}
+
+			}
+			break;
+		case xs_date:
+		case xs_gYearMonth:
+		case xs_gYear:
+			Calendar cal = Calendar.getInstance();
+
+			cal.setTime(PgSchemaUtil.parseDate(value));
+			cal.set(Calendar.HOUR_OF_DAY, 0);
+			cal.set(Calendar.MINUTE, 0);
+			cal.set(Calendar.SECOND, 0);
+			cal.set(Calendar.MILLISECOND, 0);
+
+			ps.setDate(par_idx, new java.sql.Date(cal.getTimeInMillis()));
+			break;
+		case xs_gMonthDay:
+		case xs_gMonth:
+		case xs_gDay:
+		case xs_duration:
+		case xs_anyType:
+		case xs_string:
+		case xs_normalizedString:
+		case xs_token:
+		case xs_NMTOKEN:
+		case xs_NMTOKENS:
+		case xs_IDREFS:
+		case xs_ENTITIES:
+		case xs_NOTATION:
+		case xs_language:
+		case xs_Name:
+		case xs_QName:
+		case xs_NCName:
+		case xs_anyURI:
+		case xs_ID:
+		case xs_IDREF:
+		case xs_ENTITY:
 			ps.setString(par_idx, value);
+			break;
+		default: // xs_any, xs_anyAttribute
+		}
 
 	}
 

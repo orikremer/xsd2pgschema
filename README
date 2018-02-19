@@ -1,4 +1,11 @@
-﻿ Changes in xsd2pgschema 2.7.7 (release 2018-02-08)
+﻿ Changes in xsd2pgschema 2.7.8 (release 2018-02-19)
+
+  Fixed consistency test on PostgreSQL DDL in case that relational model extension was disabled.
+  Fixed data migration issue via xml2pgsql if field was defiend as numerical enumeration.
+  Added --test-ddl option in csv2pgsql, xml2pgcsv, xml2pgsql and xpath2pgsql main classes.
+  Allowed to use regular expression in --xml option. i.e. --xml some_dir/[0-9a-z]{2} or --xml some_dir/*
+ 
+ Changes in xsd2pgschema 2.7.7 (release 2018-02-08)
 
   Removed JSON array whose all objects are either null or empty.
   Added xmlvalidator main class, paralleled XML validator against XML Schema.

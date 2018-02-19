@@ -79,7 +79,12 @@ public class xml2pgcsv {
 
 		HashSet<String> xml_file_names = new HashSet<String>();
 
+		boolean touch_xml = false;
+
 		for (int i = 0; i < args.length; i++) {
+
+			if (args[i].startsWith("--"))
+				touch_xml = false;
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
 				schema_location = args[++i];
@@ -93,6 +98,8 @@ public class xml2pgcsv {
 				}
 
 				xml_file_names.add(xml_file_name);
+
+				touch_xml = true;
 			}
 
 			else if (args[i].equals("--xml-file-ext") && i + 1 < args.length) {
@@ -125,6 +132,9 @@ public class xml2pgcsv {
 
 			else if (args[i].equals("--db-pass") && i + 1 < args.length)
 				pg_option.pass = args[++i];
+
+			else if (args[i].equals("--test-ddl"))
+				pg_option.test = true;
 
 			else if (args[i].equals("--filt-in") && i + 1 < args.length)
 				xml_post_editor.addFiltIn(args[++i]);
@@ -196,6 +206,17 @@ public class xml2pgcsv {
 					System.err.println("Out of range (max-thrds).");
 					showUsage();
 				}
+			}
+
+			else if (touch_xml) {
+				String xml_file_name = args[i];
+
+				if (xml_file_name.isEmpty()) {
+					System.err.println("XML file name is empty.");
+					showUsage();
+				}
+
+				xml_file_names.add(xml_file_name);
 			}
 
 			else {
@@ -309,6 +330,7 @@ public class xml2pgcsv {
 		System.err.println("Option: --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
+		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
