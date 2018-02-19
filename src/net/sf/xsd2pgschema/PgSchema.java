@@ -4036,7 +4036,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Test schema implementations on PostgreSQL.
+	 * Perform consistency test on PostgreSQL DDL.
 	 *
 	 * @param db_conn Database connection
 	 * @throws PgSchemaException the pg schema exception
@@ -4097,6 +4097,9 @@ public class PgSchema {
 								if (found_columns < table.fields.size()) {
 
 									for (PgField field : table.fields) {
+
+										if (field.omissible)
+											continue;
 
 										String field_name = option.case_sense ? field.name : field.name.toLowerCase();
 

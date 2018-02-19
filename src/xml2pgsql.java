@@ -120,6 +120,9 @@ public class xml2pgsql {
 			else if (args[i].equals("--db-pass") && i + 1 < args.length)
 				pg_option.pass = args[++i];
 
+			else if (args[i].equals("--test-ddl"))
+				pg_option.test = true;
+
 			else if (args[i].equals("--update"))
 				pg_option.update = true;
 
@@ -201,8 +204,10 @@ public class xml2pgsql {
 
 		option.resolveDocKeyOption();
 
-		if (pg_option.update && !option.document_key)
+		if (pg_option.update && !option.document_key) {
+			System.err.println("document key must be exist to enable update.");
 			showUsage();
+		}
 
 		if (schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");
@@ -287,6 +292,7 @@ public class xml2pgsql {
 		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --xml XML_FILE_OR_DIRECTORY --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
+		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
 		System.err.println("        --update (delete before insert while document key must be predefined)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");

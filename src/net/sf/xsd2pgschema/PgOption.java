@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -40,6 +40,9 @@ public class PgOption {
 
 	/** The database password. */
 	public String pass = "";
+
+	/** Whether perform consistency test on PostgreSQL DDL. */
+	public boolean test = false;
 
 	/** Whether insert or update (delete before insert). */
 	public boolean update = false;

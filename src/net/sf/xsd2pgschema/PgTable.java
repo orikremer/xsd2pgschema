@@ -219,7 +219,7 @@ public class PgTable {
 	 */
 	public String avoidFieldDuplication(PgSchemaOption option, String field_name) {
 
-		if (!option.rel_model_ext)
+		if (!option.rel_model_ext || !option.rel_data_ext)
 			return field_name;
 
 		boolean duplicate;

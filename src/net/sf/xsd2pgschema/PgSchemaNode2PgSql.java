@@ -249,7 +249,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else if (field.attribute || field.simple_content || field.element) {
 
-				if (setContent(proc_node, field, true)) {
+				if (setContent(proc_node, field, true) && !content.isEmpty()) {
 
 					if (ps != null) {
 

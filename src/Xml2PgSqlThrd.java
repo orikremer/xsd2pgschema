@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -103,7 +103,8 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		// validate PostgreSQL data model with schema
 
-		schema.testPgSql(db_conn);
+		if (pg_option.test)
+			schema.testPgSql(db_conn);
 
 	}
 

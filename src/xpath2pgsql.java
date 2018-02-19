@@ -187,6 +187,7 @@ public class xpath2pgsql {
 		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
+		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
 		System.err.println("        --xpath-query XPATH_QUERY");
 		System.err.println("        --xpath-var KEY=VALUE");
 		System.err.println("        --no-rel (turn off relational model extension)");
