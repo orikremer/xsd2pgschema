@@ -517,6 +517,9 @@ public class PgSchemaUtil {
 
 			set.addAll(queue);
 
+			if (queue.size() == set.size())
+				return queue;
+
 			queue.clear();
 
 			queue.addAll(set);
