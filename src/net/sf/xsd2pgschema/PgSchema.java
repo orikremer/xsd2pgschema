@@ -4090,6 +4090,9 @@ public class PgSchema {
 									if (table.fields.stream().anyMatch(field -> option.case_sense ? field.name.equals(db_column_name) : field.name.equalsIgnoreCase(db_column_name)))
 										found_columns++;
 
+									else
+										throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " not defined.");
+
 								}
 
 								rset_col.close();
