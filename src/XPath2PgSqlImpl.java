@@ -99,7 +99,7 @@ public class XPath2PgSqlImpl {
 
 			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 
-			// validate PostgreSQL data model with schema
+			// test PostgreSQL DDL with schema
 
 			if (pg_option.test)
 				schema.testPgSql(db_conn);
