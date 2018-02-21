@@ -4077,8 +4077,6 @@ public class PgSchema {
 
 						for (String db_table_name : table_list) {
 
-							int found_columns = 0;
-
 							if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
 
 								ResultSet rset_col = meta.getColumns(null, null, db_table_name, null);
@@ -4087,33 +4085,26 @@ public class PgSchema {
 
 									String db_column_name = rset_col.getString("COLUMN_NAME");
 
-									if (table.fields.stream().anyMatch(field -> option.case_sense ? field.name.equals(db_column_name) : field.name.equalsIgnoreCase(db_column_name)))
-										found_columns++;
-
-									else
-										throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " not defined.");
+									if (!table.fields.stream().filter(field -> !field.omissible).anyMatch(field -> option.case_sense ? field.name.equals(db_column_name) : field.name.equalsIgnoreCase(db_column_name)))
+										throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found without declaration."); // found without declaration
 
 								}
 
 								rset_col.close();
 
-								if (found_columns < table.fields.size()) {
+								for (PgField field : table.fields) {
 
-									for (PgField field : table.fields) {
+									if (field.omissible)
+										continue;
 
-										if (field.omissible)
-											continue;
+									String field_name = option.case_sense ? field.name : field.name.toLowerCase();
 
-										String field_name = option.case_sense ? field.name : field.name.toLowerCase();
+									rset_col = meta.getColumns(null, null, db_table_name, field_name);
 
-										rset_col = meta.getColumns(null, null, db_table_name, field_name);
+									if (!rset_col.next())
+										throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field_name + " not found in the relation."); // not found in the relation
 
-										if (!rset_col.next())
-											throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field_name + " not found.");
-
-										rset_col.close();
-
-									}
+									rset_col.close();
 
 								}
 
@@ -4125,7 +4116,7 @@ public class PgSchema {
 						}
 
 						if (!has_db_table)
-							throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found.");
+							throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found in the database."); // not found in the database
 
 					}
 
