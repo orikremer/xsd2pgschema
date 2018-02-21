@@ -4086,7 +4086,7 @@ public class PgSchema {
 									String db_column_name = rset_col.getString("COLUMN_NAME");
 
 									if (!table.fields.stream().filter(field -> !field.omissible).anyMatch(field -> option.case_sense ? field.name.equals(db_column_name) : field.name.equalsIgnoreCase(db_column_name)))
-										throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found without declaration."); // found without declaration
+										throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found without declaration in the data model."); // found without declaration in the data model
 
 								}
 
