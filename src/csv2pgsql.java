@@ -182,7 +182,7 @@ public class csv2pgsql {
 			// test PostgreSQL DDL with schema
 
 			if (pg_option.test)
-				schema.testPgSql(db_conn);
+				schema.testPgSql(db_conn, true);
 
 			if (!schema.pgCsv2PgSql(db_conn, csv_dir_name))
 				System.exit(1);

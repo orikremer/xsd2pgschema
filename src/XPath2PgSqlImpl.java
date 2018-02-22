@@ -102,7 +102,7 @@ public class XPath2PgSqlImpl {
 			// test PostgreSQL DDL with schema
 
 			if (pg_option.test)
-				schema.testPgSql(db_conn);
+				schema.testPgSql(db_conn, false);
 
 		}
 

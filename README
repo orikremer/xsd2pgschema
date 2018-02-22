@@ -1,9 +1,10 @@
-﻿ Changes in xsd2pgschema 2.7.8 (release 2018-02-19)
+﻿ Changes in xsd2pgschema 2.7.8 (release 2018-02-22)
 
   Fixed consistency test on PostgreSQL DDL in case that relational model extension was disabled.
   Fixed data migration issue via xml2pgsql if field was defined as numerical enumeration.
   Added --test-ddl option in csv2pgsql, xml2pgcsv, xml2pgsql and xpath2pgsql main classes.
   Allowed to use regular expression in --xml option. e.g. --xml some_dir/[0-9a-z]{2}, --xml some_dir/*, etc.
+  Added consistency test on column order of PostgreSQL DDL.
  
  Changes in xsd2pgschema 2.7.7 (release 2018-02-08)
 

@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
@@ -4039,9 +4040,10 @@ public class PgSchema {
 	 * Perform consistency test on PostgreSQL DDL.
 	 *
 	 * @param db_conn Database connection
+	 * @param column_order whether perform consistency test on column order
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void testPgSql(Connection db_conn) throws PgSchemaException {
+	public void testPgSql(Connection db_conn, boolean column_order) throws PgSchemaException {
 
 		try {
 
@@ -4103,6 +4105,33 @@ public class PgSchema {
 
 									if (!rset_col.next())
 										throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field_name + " not found in the relation."); // not found in the relation
+
+									rset_col.close();
+
+								}
+
+								if (column_order) {
+
+									rset_col = meta.getColumns(null, null, db_table_name, null);
+
+									List<PgField> fields = table.fields.stream().filter(field -> !field.omissible).collect(Collectors.toList());
+
+									int col_id = 0;
+
+									while (rset_col.next()) {
+
+										String db_column_name = rset_col.getString("COLUMN_NAME");
+
+										PgField field = fields.get(col_id++);
+
+										String field_name = option.case_sense ? field.name : field.name.toLowerCase();
+
+										if (!field_name.equals(db_column_name))
+											throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found in an incorrect order."); // found in an incorrect order
+
+									}
+
+									fields.clear();
 
 									rset_col.close();
 

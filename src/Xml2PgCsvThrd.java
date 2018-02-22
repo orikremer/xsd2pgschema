@@ -111,7 +111,7 @@ public class Xml2PgCsvThrd implements Runnable {
 			// test PostgreSQL DDL with schema
 
 			if (pg_option.test)
-				schema.testPgSql(db_conn);
+				schema.testPgSql(db_conn, true);
 
 		}
 
