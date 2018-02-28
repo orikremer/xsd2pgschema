@@ -29,6 +29,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -4040,10 +4041,10 @@ public class PgSchema {
 	 * Perform consistency test on PostgreSQL DDL.
 	 *
 	 * @param db_conn Database connection
-	 * @param column_order whether perform consistency test on column order
+	 * @param strict whether perform strict consistency test
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void testPgSql(Connection db_conn, boolean column_order) throws PgSchemaException {
+	public void testPgSql(Connection db_conn, boolean strict) throws PgSchemaException {
 
 		try {
 
@@ -4110,7 +4111,7 @@ public class PgSchema {
 
 								}
 
-								if (column_order) {
+								if (strict) {
 
 									rset_col = meta.getColumns(null, null, db_table_name, null);
 
@@ -4121,6 +4122,10 @@ public class PgSchema {
 									while (rset_col.next()) {
 
 										String db_column_name = rset_col.getString("COLUMN_NAME");
+										int db_column_type = rset_col.getInt("DATA_TYPE");
+
+										if (db_column_type == java.sql.Types.NUMERIC) // NUMERIC and DECIMAL are equivalent in PostgreSQL
+											db_column_type = java.sql.Types.DECIMAL;
 
 										PgField field = fields.get(col_id++);
 
@@ -4128,6 +4133,9 @@ public class PgSchema {
 
 										if (!field_name.equals(db_column_name))
 											throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found in an incorrect order."); // found in an incorrect order
+
+										if (field.getSqlDataType() != db_column_type)
+											throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " column type " + JDBCType.valueOf(db_column_type) + " is incorrect with " + JDBCType.valueOf(field.getSqlDataType()) + "."); // column type is incorrect
 
 									}
 

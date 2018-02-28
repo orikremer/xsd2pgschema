@@ -2630,6 +2630,9 @@ public class PgField {
 	 */
 	public int getSqlDataType() {
 
+		if (enum_name != null)
+			return java.sql.Types.VARCHAR;
+
 		switch (xs_type) {
 		case xs_boolean:
 			return java.sql.Types.BOOLEAN;
