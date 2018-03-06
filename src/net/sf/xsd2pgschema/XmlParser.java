@@ -41,10 +41,10 @@ public class XmlParser {
 	Document document;
 
 	/** The document id. */
-	public String document_id;
+	public String document_id = null;
 
 	/** The base name of XML file. */
-	public String basename;
+	public String basename = null;
 
 	/**
 	 * Instance of XML parser.
@@ -185,6 +185,16 @@ public class XmlParser {
 		// decide base name of XML file name
 
 		basename = xml_file_name.replaceFirst(_xml_file_ext + "$", "");
+
+	}
+
+	/**
+	 * Remove document.
+	 */
+	public void clear() {
+
+		document = null;
+		document_id = basename = null;
 
 	}
 

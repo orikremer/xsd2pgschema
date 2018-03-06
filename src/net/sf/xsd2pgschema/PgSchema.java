@@ -3711,6 +3711,8 @@ public class PgSchema {
 			throw new PgSchemaException(e);
 		}
 
+		xml_parser.clear();
+
 	}
 
 	/**
@@ -3828,6 +3830,8 @@ public class PgSchema {
 		} catch (SQLException e) {
 			throw new PgSchemaException(e);
 		}
+
+		xml_parser.clear();
 
 	}
 
@@ -4208,6 +4212,8 @@ public class PgSchema {
 
 		node2lucidx.invokeRootNestedNode();
 
+		xml_parser.clear();
+
 	}
 
 	/**
@@ -4575,6 +4581,8 @@ public class PgSchema {
 		node2sphds.parseRootNode(node);
 
 		node2sphds.invokeRootNestedNode();
+
+		xml_parser.clear();
 
 	}
 
@@ -4982,6 +4990,8 @@ public class PgSchema {
 			throw new PgSchemaException(e);
 		}
 
+		xml_parser.clear();
+
 	}
 
 	/**
@@ -5349,6 +5359,8 @@ public class PgSchema {
 			throw new PgSchemaException(e);
 		}
 
+		xml_parser.clear();
+
 	}
 
 	/**
@@ -5681,6 +5693,8 @@ public class PgSchema {
 		} catch (IOException e) {
 			throw new PgSchemaException(e);
 		}
+
+		xml_parser.clear();
 
 	}
 
