@@ -19,14 +19,19 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 
 import javax.xml.parsers.DocumentBuilder;
 
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -46,6 +51,9 @@ public class XmlParser {
 	/** The base name of XML file. */
 	public String basename = null;
 
+	/** The identity of XML document assessed by agreement of check sum. */
+	public boolean identity = false;
+
 	/**
 	 * Instance of XML parser.
 	 *
@@ -57,6 +65,71 @@ public class XmlParser {
 	 * @throws SAXException the SAX exception
 	 */
 	public XmlParser(DocumentBuilder doc_builder, XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter) throws IOException, SAXException {
+
+		parse(doc_builder, validator, xml_file, xml_file_filter);
+
+		setDocumentId(xml_file, xml_file_filter);
+
+	}
+
+	/**
+	 * Instance of XML parser with check sum.
+	 *
+	 * @param doc_builder instance of DocumentBuilder
+	 * @param validator instance of XmlValidator
+	 * @param xml_file XML file
+	 * @param xml_file_filter XML file filter
+	 * @param pg_option PostgreSQL option
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws SAXException the SAX exception
+	 */
+	public XmlParser(DocumentBuilder doc_builder, XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter, PgOption pg_option) throws IOException, SAXException {
+
+		parse(doc_builder, validator, xml_file, xml_file_filter);
+
+		identify(xml_file, pg_option);
+
+		setDocumentId(xml_file, xml_file_filter);
+
+	}
+
+	/**
+	 * Instance of XML parser for XML Schema validation only.
+	 *
+	 * @param validator instance of XmlValidator
+	 * @param xml_file XML file
+	 * @param xml_file_filter XML file filter
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public XmlParser(XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter) throws IOException {
+
+		validate(validator, xml_file);
+
+		setDocumentId(xml_file, xml_file_filter);
+
+	}
+
+	/**
+	 * Instance of XML parser (dummy).
+	 *
+	 * @param xml_file XML file
+	 * @param xml_file_filter XML file filter
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public XmlParser(File xml_file, XmlFileFilter xml_file_filter) throws IOException {
+
+		setDocumentId(xml_file, xml_file_filter);
+
+	}
+
+	/**
+	 * Set document id and basename.
+	 *
+	 * @param xml_file XML file
+	 * @param xml_file_filter XML file filter
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	private void setDocumentId(File xml_file, XmlFileFilter xml_file_filter) {
 
 		String xml_file_name = xml_file.getName();
 
@@ -73,13 +146,41 @@ public class XmlParser {
 
 		if (FilenameUtils.getExtension(xml_file_name).equals("gz")) {
 
+			_xml_file_ext_digest += "xml.";
+			_xml_file_ext = "gz";
+
+		}
+
+		// decide document id quoting XML file name
+
+		document_id = xml_file_name.replaceFirst("^" + xml_file_filter.prefix_digest, "").replaceFirst(_xml_file_ext_digest + _xml_file_ext + "$", "");
+
+		// decide base name of XML file name
+
+		basename = xml_file_name.replaceFirst(_xml_file_ext + "$", "");
+
+	}
+
+	/**
+	 * Parse XML document with XML Schema validation.
+	 *
+	 * @param doc_builder instance of DocumentBuilder
+	 * @param validator instance of XmlValidator
+	 * @param xml_file XML file
+	 * @param xml_file_filter XML file filter
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws SAXException the SAX exception
+	 */
+	private void parse(DocumentBuilder doc_builder, XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter) throws IOException, SAXException {
+
+		// xml.gz file
+
+		if (FilenameUtils.getExtension(xml_file.getName()).equals("gz")) {
+
 			FileInputStream in = new FileInputStream(xml_file);
 			GZIPInputStream gzin = new GZIPInputStream(in);
 
 			document = doc_builder.parse(gzin);
-
-			_xml_file_ext_digest += "xml.";
-			_xml_file_ext = "gz";
 
 			if (validator != null) {
 
@@ -115,46 +216,21 @@ public class XmlParser {
 
 		doc_builder.reset();
 
-		// decide document id quoting XML file name
-
-		document_id = xml_file_name.replaceFirst("^" + xml_file_filter.prefix_digest, "").replaceFirst(_xml_file_ext_digest + _xml_file_ext + "$", "");
-
-		// decide base name of XML file name
-
-		basename = xml_file_name.replaceFirst(_xml_file_ext + "$", "");
-
 	}
 
 	/**
-	 * Instance of XML parser only for XML Schema validation.
+	 * Validate XML document.
 	 *
 	 * @param validator instance of XmlValidator
 	 * @param xml_file XML file
-	 * @param xml_file_filter XML file filter
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public XmlParser(XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter) throws IOException {
+	private void validate(XmlValidator validator, File xml_file) throws IOException {
 
-		String xml_file_name = xml_file.getName();
-
-		String _xml_file_ext = xml_file_filter.ext;
-		String _xml_file_ext_digest = xml_file_filter.ext_digest;
-
-		if (!_xml_file_ext_digest.endsWith("."))
-			_xml_file_ext_digest += ".";
-
-		if (_xml_file_ext_digest.endsWith("xml."))
-			_xml_file_ext_digest = _xml_file_ext_digest.replaceFirst("xml\\.$", "");
-
-		// xml.gz file
-
-		if (FilenameUtils.getExtension(xml_file_name).equals("gz")) {
+		if (FilenameUtils.getExtension(xml_file.getName()).equals("gz")) {
 
 			FileInputStream in = new FileInputStream(xml_file);
 			GZIPInputStream gzin = new GZIPInputStream(in);
-
-			_xml_file_ext_digest += "xml.";
-			_xml_file_ext = "gz";
 
 			in = new FileInputStream(xml_file);
 			gzin = new GZIPInputStream(in);
@@ -178,13 +254,54 @@ public class XmlParser {
 
 		}
 
-		// decide document id quoting XML file name
+	}
 
-		document_id = xml_file_name.replaceFirst("^" + xml_file_filter.prefix_digest, "").replaceFirst(_xml_file_ext_digest + _xml_file_ext + "$", "");
+	/**
+	 * Identify XML document by agreement of check sum.
+	 *
+	 * @param xml_file XML file
+	 * @param pg_option PostgreSQL option
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	private void identify(File xml_file, PgOption pg_option) throws IOException {
 
-		// decide base name of XML file name
+		identity = false;
 
-		basename = xml_file_name.replaceFirst(_xml_file_ext + "$", "");
+		if (pg_option.sync && pg_option.check_sum_dir != null && pg_option.message_digest != null) {
+
+			FileInputStream in = new FileInputStream(xml_file);
+
+			byte[] digest = pg_option.message_digest.digest(IOUtils.toByteArray(in));
+			String new_check_sum = String.valueOf(Hex.encodeHex(digest));
+
+			in.close();
+
+			File check_sum = new File(pg_option.check_sum_dir, xml_file.getName() + "." + pg_option.check_sum_algorithm.toLowerCase());
+
+			if (check_sum.exists()) {
+
+				FileReader fr = new FileReader(check_sum);
+				BufferedReader br = new BufferedReader(fr);
+
+				String old_check_sum = br.readLine();
+
+				if (old_check_sum.equals(new_check_sum))
+					identity = true;
+
+				br.close();
+				fr.close();
+
+			}
+
+			if (!identity) {
+
+				FileWriter fw = new FileWriter(check_sum);
+				fw.write(new_check_sum);
+				fw.close();
+
+			}
+
+		}
 
 	}
 
@@ -194,7 +311,10 @@ public class XmlParser {
 	public void clear() {
 
 		document = null;
+
 		document_id = basename = null;
+
+		identity = false;
 
 	}
 

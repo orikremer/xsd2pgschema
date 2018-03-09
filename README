@@ -1,4 +1,8 @@
-﻿ Changes in xsd2pgschema 2.7.8 (release 2018-02-28)
+﻿ Changes in xsd2pgschema 2.7.9 (release 2018-03-09)
+
+  Added --sync and --sync-weak option in xml2pgsql, which enables differential update of PostgreSQL.
+
+ Changes in xsd2pgschema 2.7.8 (release 2018-02-28)
 
   Fixed consistency test on PostgreSQL DDL in case that relational model extension was disabled.
   Fixed data migration issue via xml2pgsql if field was defined as numerical enumeration.

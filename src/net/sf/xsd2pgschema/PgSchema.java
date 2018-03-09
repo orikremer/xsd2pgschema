@@ -118,6 +118,9 @@ public class PgSchema {
 
 	/** The PostgreSQL root table. */
 	private PgTable root_table = null;
+	
+	/** The PostgreSQL table for questing document id. */
+	private PgTable doc_id_table = null;
 
 	/** The minimum word length for index. */
 	protected int min_word_len = PgSchemaUtil.min_word_len;
@@ -2420,6 +2423,8 @@ public class PgSchema {
 
 		}
 
+		decideDocIdTable();
+
 		if (!option.ddl_output)
 			return;
 
@@ -3799,13 +3804,13 @@ public class PgSchema {
 	 *
 	 * @param xml_parser XML document
 	 * @param db_conn Database connection
-	 * @param update delete before insert
+	 * @param pg_option PostgreSQL option
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2PgSql(XmlParser xml_parser, Connection db_conn, boolean update) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
+	public void xml2PgSql(XmlParser xml_parser, Connection db_conn, PgOption pg_option) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -3813,10 +3818,35 @@ public class PgSchema {
 
 		try {
 
-			db_conn.setAutoCommit(false); // transaction begins
+			if (option.document_key) {
 
-			if (update)
-				deleteBeforeUpdate(db_conn);
+				String sql = "SELECT * FROM " + PgSchemaUtil.avoidPgReservedWords(doc_id_table.name) + " WHERE " + option.document_key_name + "='" + document_id + "'";
+
+				Statement stat = db_conn.createStatement();
+				ResultSet rset = stat.executeQuery(sql);
+
+				boolean has_rows = false;
+
+				while (rset.next()) {
+					has_rows = true;
+					break;
+				}
+
+				rset.close();
+				stat.close();
+
+				if (has_rows) {
+
+					if (pg_option.sync_weak || (pg_option.sync && xml_parser.identity)) {
+						xml_parser.clear();
+						return;
+					}
+
+					deleteBeforeUpdate(db_conn);
+
+				}
+
+			}
 
 			PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, null, root_table, db_conn);
 
@@ -3890,6 +3920,99 @@ public class PgSchema {
 	}
 
 	/**
+	 * Decide table for questing document id.
+	 */
+	private void decideDocIdTable() {
+
+		if (doc_id_table != null)
+			return;
+
+		doc_id_table = root_table;
+
+		if (!option.rel_data_ext) {
+
+			doc_id_table = null;
+
+			for (level = 0; level < tables.size(); level++) {
+
+				for (int t = 0; t < tables.size(); t++) {
+
+					if (table_order[t] == level) {
+
+						doc_id_table = tables.get(t);
+
+						if (!doc_id_table.required)
+							continue;
+
+						if (!option.rel_data_ext && doc_id_table.relational)
+							continue;
+
+						return;
+					}
+
+				}
+
+			}
+
+		}
+
+	}
+
+	/**
+	 * Return list of document ids stored in PostgreSQL.
+	 *
+	 * @param db_conn Database connection
+	 * @return List list of document ids stored in PostgreSQL
+	 * @throws SQLException the SQL exception
+	 */
+	public List<String> getDocIdRows(Connection db_conn) throws SQLException {
+
+		List<String> list = new ArrayList<String>();
+
+		if (option.document_key) {
+
+			String sql = "SELECT DISTINCT " + option.document_key_name + " FROM " + PgSchemaUtil.avoidPgReservedWords(doc_id_table.name);
+
+			Statement stat = db_conn.createStatement();
+			ResultSet rset = stat.executeQuery(sql);
+
+			while (rset.next())
+				list.add(rset.getString(1));
+
+			rset.close();
+			stat.close();
+
+		}
+
+		return list;
+	}
+
+	/**
+	 * Execute PostgreSQL DELETE command for strict synchronization.
+	 *
+	 * @param db_conn Database connection
+	 * @param list list of target document ids
+	 */
+	public void deleteRows(Connection db_conn, List<String> list) {
+
+		list.forEach(id -> {
+
+			this.document_id = id;
+
+			try {
+
+				deleteBeforeUpdate(db_conn);
+
+			} catch (PgSchemaException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+
+		});
+
+	}
+
+	/**
 	 * Execute PostgreSQL DELETE command before INSERT for all tables of current document.
 	 *
 	 * @param db_conn Database connection
@@ -3957,6 +4080,8 @@ public class PgSchema {
 
 			table_list.clear();
 
+			db_conn.commit(); // transaction ends
+
 		} catch (SQLException e) {
 			throw new PgSchemaException(e);
 		}
@@ -3968,7 +4093,7 @@ public class PgSchema {
 	 *
 	 * @param db_conn Database connection
 	 * @param csv_dir_name directory name of CSV files
-	 * @return whether success or not
+	 * @return boolean whether success or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public boolean pgCsv2PgSql(Connection db_conn, String csv_dir_name) throws PgSchemaException {

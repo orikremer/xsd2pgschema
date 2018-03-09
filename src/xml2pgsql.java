@@ -40,6 +40,9 @@ import org.xml.sax.SAXException;
  */
 public class xml2pgsql {
 
+	/** The CSV directory name. */
+	public static String chksum_dir_name = "chksum_work";
+
 	/** The schema location. */
 	public static String schema_location = "";
 
@@ -131,7 +134,22 @@ public class xml2pgsql {
 				pg_option.test = true;
 
 			else if (args[i].equals("--update"))
-				pg_option.update = true;
+				pg_option.sync = pg_option.sync_weak = false;
+
+			else if (args[i].equals("--sync")) {
+				pg_option.sync = true;
+				pg_option.sync_weak = false;
+			}
+
+			else if (args[i].equals("--sync-weak")) {
+				pg_option.sync = false;
+				pg_option.sync_weak = true;
+			}
+
+			else if (args[i].equals("--checksum-by") && i + 1 < args.length) {
+				if (!pg_option.setCheckSumAlgorithm(args[++i]))
+					showUsage();
+			}
 
 			else if (args[i].equals("--filt-in") && i + 1 < args.length)
 				xml_post_editor.addFiltIn(args[++i]);
@@ -222,8 +240,8 @@ public class xml2pgsql {
 
 		option.resolveDocKeyOption();
 
-		if (pg_option.update && !option.document_key) {
-			System.err.println("document key must be exist to enable update.");
+		if ((pg_option.sync || pg_option.sync_weak) && !option.document_key) {
+			System.err.println("document key must be exist to enable synchronization.");
 			showUsage();
 		}
 
@@ -258,6 +276,23 @@ public class xml2pgsql {
 		if (pg_option.name.isEmpty()) {
 			System.err.println("Database name is empty.");
 			showUsage();
+		}
+
+		if (pg_option.sync) {
+
+			File chksum_dir = new File(chksum_dir_name);
+
+			if (!chksum_dir.isDirectory()) {
+
+				if (!chksum_dir.mkdir()) {
+					System.err.println("Couldn't create directory '" + chksum_dir_name + "'.");
+					System.exit(1);
+				}
+
+			}
+
+			pg_option.check_sum_dir = chksum_dir;
+
 		}
 
 		Xml2PgSqlThrd[] proc_thrd = new Xml2PgSqlThrd[max_thrds];
@@ -311,7 +346,9 @@ public class xml2pgsql {
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
-		System.err.println("        --update (delete before insert while document key must be predefined)");
+		System.err.println("        --update (insert if not exists, and update if required, default)");
+		System.err.println("        --sync (insert if not exists, update if required, and delete rows if XML not exists)");
+		System.err.println("        --sync-weak (insert if not exists, no update even if exists, no deletion)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");
@@ -323,6 +360,7 @@ public class xml2pgsql {
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
+		System.err.println("        --checksum-by ALGORITHM [MD2 | MD5 (default) | SHA-1 | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
 		System.err.println("        --ser-size BIT_SIZE [short (16bit); | int (32bit, default)]");

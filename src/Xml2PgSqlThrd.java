@@ -26,6 +26,7 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -43,6 +44,9 @@ public class Xml2PgSqlThrd implements Runnable {
 
 	/** The thread id. */
 	private int thrd_id;
+
+	/** The PostgreSQL option. */
+	private PgOption pg_option = null;
 
 	/** The document builder for reusing. */
 	private DocumentBuilder doc_builder;
@@ -73,6 +77,8 @@ public class Xml2PgSqlThrd implements Runnable {
 	public Xml2PgSqlThrd(final int thrd_id, final InputStream is, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
+
+		this.pg_option = pg_option;
 
 		// parse XSD document
 
@@ -106,6 +112,33 @@ public class Xml2PgSqlThrd implements Runnable {
 		if (pg_option.test)
 			schema.testPgSql(db_conn, true);
 
+		db_conn.setAutoCommit(false);
+
+		// delete rows if XML not exists
+
+		if (pg_option.sync) {
+
+			List<String> doc_ids = schema.getDocIdRows(db_conn);
+
+			xml2pgsql.xml_file_queue.forEach(xml_file -> {
+
+				try {
+
+					XmlParser xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter);
+
+					doc_ids.remove(xml_parser.document_id);
+
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			});
+
+			schema.deleteRows(db_conn, doc_ids);
+
+		}
+
 	}
 
 	/* (non-Javadoc)
@@ -125,9 +158,9 @@ public class Xml2PgSqlThrd implements Runnable {
 
 			try {
 
-				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2pgsql.xml_file_filter);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2pgsql.xml_file_filter, pg_option);
 
-				schema.xml2PgSql(xml_parser, db_conn, xml2pgsql.pg_option.update);
+				schema.xml2PgSql(xml_parser, db_conn, pg_option);
 
 			} catch (Exception e) {
 				e.printStackTrace();
