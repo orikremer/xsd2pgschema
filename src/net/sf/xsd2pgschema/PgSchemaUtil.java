@@ -630,7 +630,7 @@ public class PgSchemaUtil {
 			try {
 
 				date = DateUtils.parseDate(value, date_patterns_z);
-				TimeZone tz = TimeZone.getDefault();
+				TimeZone tz = TimeZone.getTimeZone("UTC");
 				int offset_sec = tz.getRawOffset() / 1000;
 				date = DateUtils.addSeconds(date, offset_sec);
 

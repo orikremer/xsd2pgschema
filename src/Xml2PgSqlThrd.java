@@ -26,7 +26,7 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.List;
+import java.util.HashSet;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -59,6 +59,9 @@ public class Xml2PgSqlThrd implements Runnable {
 
 	/** The database connection. */
 	private Connection db_conn = null;
+
+	/** The document id stored in PostgreSQL. */
+	private HashSet<String> doc_rows = null;
 
 	/**
 	 * Instance of Xml2PgSqlThrd.
@@ -116,26 +119,36 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		// delete rows if XML not exists
 
-		if (pg_option.sync) {
+		if (pg_option.sync_weak || pg_option.sync) {
 
-			List<String> doc_ids = schema.getDocIdRows(db_conn);
+			doc_rows = schema.getDocIdRows(db_conn);
 
-			xml2pgsql.xml_file_queue.forEach(xml_file -> {
+			if (pg_option.sync && thrd_id == 0) {
 
-				try {
+				HashSet<String> _doc_rows = new HashSet<String>();
 
-					XmlParser xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter);
+				_doc_rows.addAll(doc_rows);
 
-					doc_ids.remove(xml_parser.document_id);
+				xml2pgsql.xml_file_queue.forEach(xml_file -> {
 
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
+					try {
 
-			});
+						XmlParser xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter);
 
-			schema.deleteRows(db_conn, doc_ids);
+						_doc_rows.remove(xml_parser.document_id);
+
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+
+				});
+
+				schema.deleteRows(db_conn, _doc_rows);
+
+				_doc_rows.clear();
+
+			}
 
 		}
 
@@ -149,6 +162,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		int total = xml2pgsql.xml_file_queue.size();
 		boolean show_progress = thrd_id == 0 && total > 1;
+		boolean sync_check = (pg_option.sync_weak || (pg_option.sync && pg_option.check_sum_dir != null && pg_option.message_digest != null));
 
 		int polled = 0;
 
@@ -156,9 +170,34 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		while ((xml_file = xml2pgsql.xml_file_queue.poll()) != null) {
 
+			if (sync_check) {
+
+				try {
+
+					XmlParser xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter);
+
+					if (doc_rows.contains(xml_parser.document_id)) {
+
+						if (pg_option.sync_weak)
+							continue;
+
+						xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter, pg_option);
+
+						if (xml_parser.identity)
+							continue;
+
+					}
+
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			}
+
 			try {
 
-				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2pgsql.xml_file_filter, pg_option);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2pgsql.xml_file_filter);
 
 				schema.xml2PgSql(xml_parser, db_conn, pg_option);
 
@@ -178,6 +217,16 @@ public class Xml2PgSqlThrd implements Runnable {
 
 			try {
 				System.out.println("Done xml (" + polled + " entries) -> db (" + db_conn.getMetaData().getURL().split("/")[3] + ").");
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+		}
+
+		if (sync_check) {
+
+			try {
+				System.out.println(db_conn.getMetaData().getURL().split("/")[3] + " is up-to-date.");
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}

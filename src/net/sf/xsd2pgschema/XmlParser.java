@@ -66,30 +66,25 @@ public class XmlParser {
 	 */
 	public XmlParser(DocumentBuilder doc_builder, XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter) throws IOException, SAXException {
 
-		parse(doc_builder, validator, xml_file, xml_file_filter);
-
 		setDocumentId(xml_file, xml_file_filter);
+
+		parse(doc_builder, validator, xml_file, xml_file_filter);
 
 	}
 
 	/**
-	 * Instance of XML parser with check sum.
+	 * Instance of XML parser for check sum only.
 	 *
-	 * @param doc_builder instance of DocumentBuilder
-	 * @param validator instance of XmlValidator
 	 * @param xml_file XML file
 	 * @param xml_file_filter XML file filter
 	 * @param pg_option PostgreSQL option
 	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws SAXException the SAX exception
 	 */
-	public XmlParser(DocumentBuilder doc_builder, XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter, PgOption pg_option) throws IOException, SAXException {
-
-		parse(doc_builder, validator, xml_file, xml_file_filter);
-
-		identify(xml_file, pg_option);
+	public XmlParser(File xml_file, XmlFileFilter xml_file_filter, PgOption pg_option) throws IOException {
 
 		setDocumentId(xml_file, xml_file_filter);
+
+		identify(xml_file, pg_option);
 
 	}
 
@@ -103,9 +98,9 @@ public class XmlParser {
 	 */
 	public XmlParser(XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter) throws IOException {
 
-		validate(validator, xml_file);
-
 		setDocumentId(xml_file, xml_file_filter);
+
+		validate(validator, xml_file);
 
 	}
 

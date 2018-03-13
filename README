@@ -1,4 +1,4 @@
-﻿ Changes in xsd2pgschema 2.7.9 (release 2018-03-09)
+﻿ Changes in xsd2pgschema 2.7.9 (release 2018-03-13)
 
   Added --sync and --sync-weak option in xml2pgsql, which enables differential update of PostgreSQL.
 

@@ -118,7 +118,7 @@ public class PgSchema {
 
 	/** The PostgreSQL root table. */
 	private PgTable root_table = null;
-	
+
 	/** The PostgreSQL table for questing document id. */
 	private PgTable doc_id_table = null;
 
@@ -160,7 +160,7 @@ public class PgSchema {
 	private Object[] table_lock = null;
 
 	/** The content of document key. */
-	private String document_id;
+	private String document_id = null;
 
 	/** The instance of message digest. */
 	private MessageDigest message_digest = null;
@@ -2423,7 +2423,7 @@ public class PgSchema {
 
 		}
 
-		decideDocIdTable();
+		setDocIdTable();
 
 		if (!option.ddl_output)
 			return;
@@ -3231,8 +3231,8 @@ public class PgSchema {
 	 */
 	public void applyIndexFilter(IndexFilter index_filter) throws PgSchemaException {
 
-		this.min_word_len = index_filter.min_word_len;
-		this.numeric_lucidx = index_filter.numeric_lucidx;
+		min_word_len = index_filter.min_word_len;
+		numeric_lucidx = index_filter.numeric_lucidx;
 
 		option.attr_resolved = false;
 
@@ -3595,7 +3595,7 @@ public class PgSchema {
 		if (!node.getNodeName().endsWith(root_table.name))
 			throw new PgSchemaException("Not found root element (node_name: " + root_table.name + ") in XML: " + document_id);
 
-		this.document_id = xml_parser.document_id;
+		document_id = xml_parser.document_id;
 
 		return node;
 	}
@@ -3818,36 +3818,6 @@ public class PgSchema {
 
 		try {
 
-			if (option.document_key) {
-
-				String sql = "SELECT * FROM " + PgSchemaUtil.avoidPgReservedWords(doc_id_table.name) + " WHERE " + option.document_key_name + "='" + document_id + "'";
-
-				Statement stat = db_conn.createStatement();
-				ResultSet rset = stat.executeQuery(sql);
-
-				boolean has_rows = false;
-
-				while (rset.next()) {
-					has_rows = true;
-					break;
-				}
-
-				rset.close();
-				stat.close();
-
-				if (has_rows) {
-
-					if (pg_option.sync_weak || (pg_option.sync && xml_parser.identity)) {
-						xml_parser.clear();
-						return;
-					}
-
-					deleteBeforeUpdate(db_conn);
-
-				}
-
-			}
-
 			PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, null, root_table, db_conn);
 
 			node2pgsql.parseRootNode(node);
@@ -3920,9 +3890,9 @@ public class PgSchema {
 	}
 
 	/**
-	 * Decide table for questing document id.
+	 * Decide primary table for questing document id.
 	 */
-	private void decideDocIdTable() {
+	private void setDocIdTable() {
 
 		if (doc_id_table != null)
 			return;
@@ -3959,45 +3929,45 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return list of document ids stored in PostgreSQL.
+	 * Return set of document ids stored in PostgreSQL.
 	 *
 	 * @param db_conn Database connection
-	 * @return List list of document ids stored in PostgreSQL
+	 * @return HashSet set of document ids stored in PostgreSQL
 	 * @throws SQLException the SQL exception
 	 */
-	public List<String> getDocIdRows(Connection db_conn) throws SQLException {
+	public HashSet<String> getDocIdRows(Connection db_conn) throws SQLException {
 
-		List<String> list = new ArrayList<String>();
+		HashSet<String> set = new HashSet<String>();
 
 		if (option.document_key) {
 
-			String sql = "SELECT DISTINCT " + option.document_key_name + " FROM " + PgSchemaUtil.avoidPgReservedWords(doc_id_table.name);
+			String sql = "SELECT " + option.document_key_name + " FROM " + PgSchemaUtil.avoidPgReservedWords(doc_id_table.name);
 
 			Statement stat = db_conn.createStatement();
 			ResultSet rset = stat.executeQuery(sql);
 
 			while (rset.next())
-				list.add(rset.getString(1));
+				set.add(rset.getString(1));
 
 			rset.close();
 			stat.close();
 
 		}
 
-		return list;
+		return set;
 	}
 
 	/**
 	 * Execute PostgreSQL DELETE command for strict synchronization.
 	 *
 	 * @param db_conn Database connection
-	 * @param list list of target document ids
+	 * @param set set of target document ids
 	 */
-	public void deleteRows(Connection db_conn, List<String> list) {
+	public void deleteRows(Connection db_conn, HashSet<String> set) {
 
-		list.forEach(id -> {
+		set.forEach(id -> {
 
-			this.document_id = id;
+			document_id = id;
 
 			try {
 
@@ -4009,6 +3979,8 @@ public class PgSchema {
 			}
 
 		});
+
+		document_id = null;
 
 	}
 
