@@ -41,7 +41,7 @@ import org.xml.sax.SAXException;
 public class xml2pgsql {
 
 	/** The CSV directory name. */
-	public static String chksum_dir_name = "chksum_work";
+	public static String chksum_dir_name = "";
 
 	/** The schema location. */
 	public static String schema_location = "";
@@ -136,9 +136,10 @@ public class xml2pgsql {
 			else if (args[i].equals("--update"))
 				pg_option.sync = pg_option.sync_weak = false;
 
-			else if (args[i].equals("--sync")) {
+			else if (args[i].equals("--sync") && i + 1 < args.length) {
 				pg_option.sync = true;
 				pg_option.sync_weak = false;
+				chksum_dir_name = args[++i];
 			}
 
 			else if (args[i].equals("--sync-weak")) {
@@ -280,6 +281,11 @@ public class xml2pgsql {
 
 		if (pg_option.sync) {
 
+			if (chksum_dir_name.isEmpty()) {
+				System.err.println("Check sum directory is empty.");
+				showUsage();
+			}
+
 			File chksum_dir = new File(chksum_dir_name);
 
 			if (!chksum_dir.isDirectory()) {
@@ -347,7 +353,7 @@ public class xml2pgsql {
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
 		System.err.println("        --update (insert if not exists, and update if required, default)");
-		System.err.println("        --sync (insert if not exists, update if required, and delete rows if XML not exists)");
+		System.err.println("        --sync CHECK_SUM_DIRECTORY (insert if not exists, update if required, and delete rows if XML not exists)");
 		System.err.println("        --sync-weak (insert if not exists, no update even if exists, no deletion)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
