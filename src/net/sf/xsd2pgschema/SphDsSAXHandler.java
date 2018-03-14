@@ -248,7 +248,7 @@ public class SphDsSAXHandler extends DefaultHandler {
 
 			if (sph_mvattr)
 				_sb.append(StringEscapeUtils.escapeCsv(value) + ",");
-			else if (_sb.length() == 0)
+			else
 				_sb.append(value);
 
 		}
