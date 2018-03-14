@@ -244,10 +244,12 @@ public class SphDsSAXHandler extends DefaultHandler {
 
 			value = StringEscapeUtils.escapeXml10(value);
 
+			StringBuilder _sb = buffer.get(sph_attr_name);
+
 			if (sph_mvattr)
-				buffer.get(sph_attr_name).append(StringEscapeUtils.escapeCsv(value) + ",");
-			else
-				buffer.get(sph_attr_name).append(value.replaceAll("\t", " ") + "\t");
+				_sb.append(StringEscapeUtils.escapeCsv(value) + ",");
+			else if (_sb.length() == 0)
+				_sb.append(value);
 
 		}
 
@@ -270,7 +272,10 @@ public class SphDsSAXHandler extends DefaultHandler {
 				continue;
 
 			String attr_name = e.getKey();
-			writer.write("<" + attr_name + ">" + StringEscapeUtils.escapeXml10(_sb.substring(0, len - 1)) + "</" + attr_name + ">\n");
+
+			sph_mvattr = sph_mvas.contains(attr_name);
+
+			writer.write("<" + attr_name + ">" + StringEscapeUtils.escapeXml10(sph_mvattr ? _sb.substring(0, len - 1) : _sb.toString()) + "</" + attr_name + ">\n");
 
 			_sb.setLength(0);
 
