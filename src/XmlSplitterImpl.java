@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017 Masashi Yokochi
+    Copyright 2017-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -115,14 +115,15 @@ public class XmlSplitterImpl {
 	/** The XML event writer. */
 	private XMLEventWriter xml_writer = null;
 
-	/** The XML directory. */
-	private File[] xml_dir = null;
+	/** The XML directories. */
+	private File[] xml_dirs = null;
 
 	/**
 	 * Instance of XmlSplitterImpl.
 	 *
 	 * @param shard_size shard size
 	 * @param is InputStream of XML Schema
+	 * @param xml_dir XML directory
 	 * @param option PostgreSQL data model option
 	 * @param xpath_doc_key XPath expression pointing document key
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -132,7 +133,7 @@ public class XmlSplitterImpl {
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws xpathListenerException the xpath listener exception
 	 */
-	public XmlSplitterImpl(final int shard_size, final InputStream is, final PgSchemaOption option, final String xpath_doc_key) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, xpathListenerException {
+	public XmlSplitterImpl(final int shard_size, final InputStream is, final File xml_dir, final PgSchemaOption option, final String xpath_doc_key) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, xpathListenerException {
 
 		this.shard_size = shard_size <= 0 ? 1 : shard_size;
 
@@ -157,23 +158,21 @@ public class XmlSplitterImpl {
 
 		// prepare shard directories
 
-		xml_dir = new File[shard_size];
+		xml_dirs = new File[shard_size];
 
 		if (shard_size == 1)
-			xml_dir[0] = new File(xmlsplitter.xml_dir_name);
+			xml_dirs[0] = xml_dir;
 
 		else {
 
 			for (int shard_id = 0; shard_id < shard_size; shard_id++) {
 
-				String xml_dir_name = xmlsplitter.xml_dir_name + "/" + PgSchemaUtil.shard_dir_prefix + shard_id;
+				xml_dirs[shard_id] = new File(xml_dir, PgSchemaUtil.shard_dir_prefix + shard_id);
 
-				xml_dir[shard_id] = new File(xml_dir_name);
+				if (!xml_dirs[shard_id].isDirectory()) {
 
-				if (!xml_dir[shard_id].isDirectory()) {
-
-					if (!xml_dir[shard_id].mkdir())
-						throw new PgSchemaException("Couldn't create directory '" + xml_dir_name + "'.");
+					if (!xml_dirs[shard_id].mkdir())
+						throw new PgSchemaException("Couldn't create directory '" + xml_dirs[shard_id].getPath() + "'.");
 
 				}
 
@@ -661,7 +660,7 @@ public class XmlSplitterImpl {
 
 		no_document_key = false;
 
-		File xml_file = new File(xml_dir[proc_id++ % shard_size], document_id + ".xml");
+		File xml_file = new File(xml_dirs[proc_id++ % shard_size], document_id + ".xml");
 
 		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 

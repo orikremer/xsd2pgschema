@@ -22,8 +22,15 @@ import net.sf.xsd2pgschema.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -33,12 +40,16 @@ import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.index.Term;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.HardlinkCopyDirectoryWrapper;
+import org.apache.lucene.store.MMapDirectory;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -75,6 +86,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 	/** The Lucene index writer. */
 	private IndexWriter writer = null;
+
+	/** The document id stored in index. */
+	private HashSet<String> doc_rows = null;
 
 	/**
 	 * Instance of Xml2LuceneIdxThrd.
@@ -131,35 +145,18 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		String idx_dir_name = xml2luceneidx.idx_dir_name;
 
-		File idx_dir = new File(idx_dir_name);
-
-		if (shard_size > 1) {
-
+		if (shard_size > 1)
 			idx_dir_name += "/" + PgSchemaUtil.shard_dir_prefix + shard_id;
 
-			idx_dir = new File(idx_dir_name);
-
-			if (!idx_dir.isDirectory()) {
-
-				if (!idx_dir.mkdir())
-					throw new PgSchemaException("Couldn't create directory '" + idx_dir_name + "'.");
-
-			}
-
-		}
-
-		if (max_thrds > 1) {
-
+		if (max_thrds > 1)
 			idx_dir_name += "/" + PgSchemaUtil.thrd_dir_prefix + thrd_id;
 
-			idx_dir = new File(idx_dir_name);
+		File idx_dir = new File(idx_dir_name);
 
-			if (!idx_dir.isDirectory()) {
+		if (!idx_dir.isDirectory()) {
 
-				if (!idx_dir.mkdir())
-					throw new PgSchemaException("Couldn't create directory '" + idx_dir_name + "'.");
-
-			}
+			if (!idx_dir.mkdir())
+				throw new PgSchemaException("Couldn't create directory '" + idx_dir_name + "'.");
 
 		}
 
@@ -167,9 +164,129 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
 
-		config.setOpenMode(option.append ? OpenMode.CREATE_OR_APPEND : OpenMode.CREATE);
+		idx_dir_name = xml2luceneidx.idx_dir_name;
+
+		if (shard_size > 1)
+			idx_dir_name += "/" + PgSchemaUtil.shard_dir_prefix + shard_id;
+
+		Path idx_dir_path = Paths.get(idx_dir_name);
+
+		boolean has_idx = (option.sync_weak || option.sync) && Files.list(idx_dir_path).anyMatch(path -> path.getFileName().toString().matches("^segments_[0-9]+"));
+
+		config.setOpenMode(has_idx ? OpenMode.CREATE_OR_APPEND : OpenMode.CREATE);
 
 		writer = new IndexWriter(dir, config);
+
+		// delete indexes if XML not exists
+
+		if (has_idx) {
+
+			HashMap<String, Integer> doc_map = new HashMap<String, Integer>();
+
+			IndexReader reader = DirectoryReader.open(MMapDirectory.open(idx_dir_path));
+
+			for (int i = 0; i < reader.numDocs(); i++)
+				doc_map.put(reader.document(i).get(option.document_key_name), i);
+
+			if (option.sync) {
+
+				if (thrd_id == 0) {
+
+					HashMap<String, Integer> _doc_map = new HashMap<String, Integer>();
+
+					_doc_map.putAll(doc_map);
+
+					xml2luceneidx.xml_file_queue.forEach(xml_file -> {
+
+						try {
+
+							XmlParser xml_parser = new XmlParser(xml_file, xml2luceneidx.xml_file_filter);
+
+							_doc_map.remove(xml_parser.document_id);
+
+						} catch (IOException e) {
+							e.printStackTrace();
+							System.exit(1);
+						}
+
+					});
+
+					List<Integer> del_ids = _doc_map.entrySet().stream().map(entry -> entry.getValue()).collect(Collectors.toList());
+
+					del_ids.stream().sorted(Comparator.comparingInt(null).reversed()).forEach(i -> {
+
+						try {
+
+							writer.tryDeleteDocument(reader, i);
+
+						} catch (IOException e) {
+							e.printStackTrace();
+							System.exit(1);
+						}
+
+					});;
+
+					del_ids.clear();
+
+					_doc_map.clear();
+
+					writer.commit();
+
+					synchronized (xml2luceneidx.sync_lock[shard_id]) {
+						xml2luceneidx.sync_lock[shard_id].notifyAll();
+					}
+
+				}
+
+				else {
+
+					try {
+
+						synchronized (xml2luceneidx.sync_lock[shard_id]) {
+							xml2luceneidx.sync_lock[shard_id].wait();
+						}
+
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+
+				}
+
+				reader.close();
+
+			}
+
+			doc_rows = new HashSet<String>();
+
+			doc_map.entrySet().stream().map(entry -> entry.getKey()).forEach(doc_id -> doc_rows.add(doc_id));
+
+			doc_map.clear();
+
+			if (shard_size > 1) {
+
+				for (int _shard_id = 0; _shard_id < shard_size; _shard_id++) {
+
+					if (_shard_id == shard_id)
+						continue;
+
+					Path _idx_dir_path = Paths.get(xml2luceneidx.idx_dir_name + "/" + PgSchemaUtil.shard_dir_prefix + _shard_id);
+
+					if (!Files.list(_idx_dir_path).anyMatch(path -> path.getFileName().toString().matches("^segments_[0-9]+")))
+						continue;
+
+					IndexReader _reader = DirectoryReader.open(MMapDirectory.open(_idx_dir_path));
+
+					for (int i = 0; i < _reader.numDocs(); i++)
+						doc_rows.add(_reader.document(i).get(option.document_key_name));
+
+					_reader.close();
+
+				}
+
+			}
+
+		}
 
 	}
 
@@ -181,10 +298,39 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		int total = xml2luceneidx.xml_file_queue.size();
 		boolean show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
+		boolean sync_check = (option.sync_weak || (option.sync && option.check_sum_dir != null && option.check_sum_message_digest != null));
+		boolean has_doc = false;
 
 		File xml_file;
 
 		while ((xml_file = xml2luceneidx.xml_file_queue.poll()) != null) {
+
+			if (sync_check) {
+
+				try {
+
+					XmlParser xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter);
+
+					has_doc = doc_rows.contains(xml_parser.document_id);
+
+					if (has_doc) {
+
+						if (option.sync_weak)
+							continue;
+
+						xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter, option);
+
+						if (xml_parser.identity)
+							continue;
+
+					}
+
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			}
 
 			try {
 
@@ -196,7 +342,10 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 				schema.xml2LucIdx(xml_parser, lucene_doc);
 
-				writer.addDocument(lucene_doc);
+				if (has_doc)
+					writer.updateDocument(new Term(option.document_key_name, xml_parser.document_id), lucene_doc);
+				else
+					writer.addDocument(lucene_doc);
 
 			} catch (Exception e) {
 				e.printStackTrace();

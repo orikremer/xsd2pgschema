@@ -25,14 +25,18 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.HashSet;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.w3c.dom.Document;
@@ -72,11 +76,14 @@ public class Xml2SphinxDsThrd implements Runnable {
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
-	/** The data source directory name. */
-	private String ds_dir_name = null;
+	/** The data source directory. */
+	private File ds_dir = null;
 
 	/** The Sphinx schema file. */
 	private File sphinx_schema = null;
+
+	/** The document id stored in data source. */
+	private HashMap<String, Integer> doc_rows = null;
 
 	/**
 	 * Instance of Xml2SphinxDsThrd.
@@ -129,39 +136,130 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2sphinxds.schema_location, null, option.cache_xsd)) : null;
 
-		ds_dir_name = xml2sphinxds.ds_dir_name;
+		String ds_dir_name = xml2sphinxds.ds_dir_name;
 
-		if (shard_size > 1) {
-
+		if (shard_size > 1)
 			ds_dir_name += "/" + PgSchemaUtil.shard_dir_prefix + shard_id;
 
-			File ds_dir = new File(ds_dir_name);
+		ds_dir = new File(ds_dir_name);
 
-			if (!ds_dir.isDirectory()) {
+		if (!ds_dir.isDirectory()) {
 
-				if (!ds_dir.mkdir())
-					throw new PgSchemaException("Couldn't create directory '" + ds_dir_name + "'.");
-
-			}
+			if (!ds_dir.mkdir())
+				throw new PgSchemaException("Couldn't create directory '" + ds_dir_name + "'.");
 
 		}
 
-		sphinx_schema = new File(ds_dir_name, PgSchemaUtil.sph_schema_name);
+		sphinx_schema = new File(ds_dir, PgSchemaUtil.sph_schema_name);
 
 		if (sphinx_schema.exists()) {
 
-			if (option.append) {
+			doc_builder_fac.setNamespaceAware(false);
+			doc_builder = doc_builder_fac.newDocumentBuilder();
 
-				doc_builder_fac.setNamespaceAware(false);
-				doc_builder = doc_builder_fac.newDocumentBuilder();
+			Document sphinx_doc = doc_builder.parse(sphinx_schema);
 
-				Document sphinx_doc = doc_builder.parse(sphinx_schema);
+			doc_builder.reset();
 
-				doc_builder.reset();
+			schema.syncSphSchema(sphinx_doc);
 
-				schema.syncSphSchema(sphinx_doc);
+			sphinx_doc = null;
 
-				sphinx_doc = null;
+		}
+
+		File sph_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
+
+		if ((option.sync_weak || option.sync) && sph_data_source.exists()) {
+
+			HashSet<String> doc_set = new HashSet<String>();
+
+			SAXParserFactory spf = SAXParserFactory.newInstance();
+			SAXParser sax_parser = spf.newSAXParser();
+
+			SphDsDocIdExtractor handler = new SphDsDocIdExtractor(schema, doc_set);
+
+			try {
+
+				sax_parser.parse(sph_data_source, handler);
+
+			} catch (SAXException | IOException e) {
+				e.printStackTrace();
+			}
+
+			if (option.sync) {
+
+				if (thrd_id == 0) {
+
+					xml2sphinxds.sync_delete_ids[shard_id].addAll(doc_set);
+
+					xml2sphinxds.xml_file_queue.forEach(xml_file -> {
+
+						try {
+
+							XmlParser xml_parser = new XmlParser(xml_file, xml2luceneidx.xml_file_filter);
+
+							xml2sphinxds.sync_delete_ids[shard_id].remove(xml_parser.document_id);
+
+						} catch (IOException e) {
+							e.printStackTrace();
+							System.exit(1);
+						}
+
+					});
+
+					synchronized (xml2sphinxds.sync_lock[shard_id]) {
+						xml2sphinxds.sync_lock[shard_id].notifyAll();
+					}
+
+				}
+
+				else {
+
+					try {
+
+						synchronized (xml2sphinxds.sync_lock[shard_id]) {
+							xml2sphinxds.sync_lock[shard_id].wait();
+						}
+
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+
+				}
+
+				doc_rows = new HashMap<String, Integer>();
+
+				doc_set.forEach(doc_id -> doc_rows.put(doc_id, shard_id));
+
+				doc_set.clear();
+
+				if (shard_size > 1) {
+
+					for (int _shard_id = 0; _shard_id < shard_size; _shard_id++) {
+
+						if (_shard_id == shard_id)
+							continue;
+
+						File _sph_data_source = new File(xml2sphinxds.ds_dir_name + "/" + PgSchemaUtil.shard_dir_prefix + _shard_id, PgSchemaUtil.sph_data_source_name);
+
+						if (!_sph_data_source.exists())
+							continue;
+
+						SphDsDocIdExtractor _handler = new SphDsDocIdExtractor(schema, doc_rows, _shard_id);
+
+						try {
+
+							sax_parser.reset();
+							sax_parser.parse(_sph_data_source, _handler);
+
+						} catch (SAXException | IOException e) {
+							e.printStackTrace();
+						}
+
+					}
+
+				}
 
 			}
 
@@ -177,13 +275,45 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		int total = xml2sphinxds.xml_file_queue.size();
 		boolean show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
+		boolean sync_check = (option.sync_weak || (option.sync && option.check_sum_dir != null && option.check_sum_message_digest != null));
 
 		File xml_file;
 
 		while ((xml_file = xml2sphinxds.xml_file_queue.poll()) != null) {
 
+			if (sync_check) {
+
+				try {
+
+					XmlParser xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter);
+
+					Integer _shard_id = doc_rows.get(xml_parser.document_id);
+
+					if (_shard_id != null) {
+
+						if (option.sync_weak)
+							continue;
+
+						xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter, option);
+
+						if (xml_parser.identity)
+							continue;
+
+						synchronized (xml2sphinxds.sync_lock[_shard_id]) {
+							xml2sphinxds.sync_delete_ids[_shard_id].add(xml_parser.document_id);
+						}
+
+					}
+
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			}
+
 			String sph_doc_name = PgSchemaUtil.sph_document_prefix + xml_file.getName().split("\\.")[0] + ".xml";
-			File sph_doc_fiole = new File(ds_dir_name, sph_doc_name);
+			File sph_doc_fiole = new File(ds_dir, sph_doc_name);
 
 			try {
 
@@ -217,7 +347,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			try {
 
-				merge();
+				composite();
 
 			} catch (PgSchemaException | IOException | ParserConfigurationException | SAXException e) {
 				e.printStackTrace();
@@ -229,17 +359,44 @@ public class Xml2SphinxDsThrd implements Runnable {
 	}
 
 	/**
-	 * Merge Sphinx data source files
+	 * Composite Sphinx data source files
 	 *
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
 	 */
-	public void merge() throws PgSchemaException, IOException, ParserConfigurationException, SAXException {
+	public void composite() throws PgSchemaException, IOException, ParserConfigurationException, SAXException {
 
 		if (thrd_id != 0)
 			return;
+
+		File sph_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
+		File sph_data_extract = new File(sph_data_source.getParent(), PgSchemaUtil.sph_data_extract_name);
+
+		boolean sync_check = ((option.sync_weak || (option.sync && option.check_sum_dir != null && option.check_sum_message_digest != null)) && sph_data_source.exists());
+
+		if (sync_check) {
+
+			if (option.sync_weak)
+				FileUtils.copyFile(sph_data_source, sph_data_extract);
+
+			else if (option.sync) {
+
+				SphDsDocIdRemover stax_parser = new SphDsDocIdRemover(schema, sph_data_source, sph_data_extract, xml2sphinxds.sync_delete_ids[thrd_id]);
+
+				try {
+
+					stax_parser.exec();
+
+				} catch (XMLStreamException | IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			}
+
+		}
 
 		FilenameFilter filter = new FilenameFilter() {
 
@@ -254,21 +411,18 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		// Sphinx xmlpipe2 writer
 
-		File sphinx_data_source = new File(ds_dir_name, PgSchemaUtil.sph_data_source_name);
-		schema.writeSphSchema(sphinx_data_source, true);
+		schema.writeSphSchema(sph_data_source, true);
 
-		FileWriter filew = new FileWriter(sphinx_data_source, true);
+		FileWriter filew = new FileWriter(sph_data_source, true);
 
 		SAXParserFactory spf = SAXParserFactory.newInstance();
 		SAXParser sax_parser = spf.newSAXParser();
 
 		System.out.println("Merging" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
 
-		File ds_dir = new File(ds_dir_name);
-
 		for (File sph_doc_file : ds_dir.listFiles(filter)) {
 
-			SphDsSAXHandler handler = new SphDsSAXHandler(schema, filew, index_filter);
+			SphDsCompositor handler = new SphDsCompositor(schema, filew, index_filter);
 
 			try {
 
@@ -293,8 +447,33 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		// Sphinx configuration writer
 
-		File sphinx_conf = new File(ds_dir_name, PgSchemaUtil.sph_conf_name);
-		schema.writeSphConf(sphinx_conf, xml2sphinxds.ds_name, sphinx_data_source);
+		File sphinx_conf = new File(ds_dir, PgSchemaUtil.sph_conf_name);
+		schema.writeSphConf(sphinx_conf, xml2sphinxds.ds_name, sph_data_source);
+
+		if (!sync_check)
+			return;
+
+		// Full merge
+
+		System.out.println("Full merge" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
+
+		File sph_data_update = new File(ds_dir, PgSchemaUtil.sph_data_update_name);
+
+		SphDsDocIdUpdater stax_parser = new SphDsDocIdUpdater(sph_data_source, sph_data_extract, sph_data_update);
+
+		try {
+
+			stax_parser.exec();
+
+		} catch (XMLStreamException | IOException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+
+		FileUtils.moveFile(sph_data_update, sph_data_source);
+		sph_data_extract.delete();
+
+		System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
 
 	}
 

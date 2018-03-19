@@ -48,6 +48,9 @@ public class xml2sphinxds {
 	/** The data source directory name. */
 	public static String ds_dir_name = "sphinx_xmlpipe2";
 
+	/** The check sum directory name. */
+	private static String check_sum_dir_name = "";
+
 	/** The schema option. */
 	public static PgSchemaOption option = new PgSchemaOption(false);
 
@@ -62,6 +65,12 @@ public class xml2sphinxds {
 
 	/** The XML file queue. */
 	public static LinkedBlockingQueue<File> xml_file_queue = null;
+
+	/** The sync lock object. */
+	public static Object[] sync_lock = null;
+
+	/** The set of deleting document id while synchronization. */
+	public static HashSet<String>[] sync_delete_ids = null;
 
 	/** The shard size. */
 	public static int shard_size = 1;
@@ -80,6 +89,7 @@ public class xml2sphinxds {
 	 *
 	 * @param args the arguments
 	 */
+	@SuppressWarnings("unchecked")
 	public static void main(String[] args) {
 
 		option.cancelRelDataExt();
@@ -176,9 +186,6 @@ public class xml2sphinxds {
 			else if (args[i].equals("--no-wild-card"))
 				option.wild_card = false;
 
-			else if (args[i].equals("--append"))
-				option.append = true;
-
 			else if (args[i].equals("--valid"))
 				option.validate = true;
 
@@ -200,6 +207,25 @@ public class xml2sphinxds {
 
 			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);
+
+			else if (args[i].equals("--update"))
+				option.sync = option.sync_weak = false;
+
+			else if (args[i].equals("--sync") && i + 1 < args.length) {
+				option.sync = true;
+				option.sync_weak = false;
+				check_sum_dir_name = args[++i];
+			}
+
+			else if (args[i].equals("--sync-weak")) {
+				option.sync = false;
+				option.sync_weak = true;
+			}
+
+			else if (args[i].equals("--checksum-by") && i + 1 < args.length) {
+				if (!option.setCheckSumAlgorithm(args[++i]))
+					showUsage();
+			}
 
 			else if (args[i].equals("--shard-size") && i + 1 < args.length) {
 				shard_size = Integer.valueOf(args[++i]);
@@ -295,6 +321,38 @@ public class xml2sphinxds {
 
 		}
 
+		if (option.sync) {
+
+			if (check_sum_dir_name.isEmpty()) {
+				System.err.println("Check sum directory is empty.");
+				showUsage();
+			}
+
+			File check_sum_dir = new File(check_sum_dir_name);
+
+			if (!check_sum_dir.isDirectory()) {
+
+				if (!check_sum_dir.mkdir()) {
+					System.err.println("Couldn't create directory '" + check_sum_dir_name + "'.");
+					System.exit(1);
+				}
+
+			}
+
+			option.check_sum_dir = check_sum_dir;
+
+			sync_lock = new Object[shard_size];
+			sync_delete_ids = new HashSet[shard_size];
+
+			for (int shard_id = 0; shard_id < shard_size; shard_id++) {
+
+				sync_lock[shard_id] = new Object();
+				sync_delete_ids[shard_id] = new HashSet<String>();
+
+			}
+
+		}
+
 		Xml2SphinxDsThrd[] proc_thrd = new Xml2SphinxDsThrd[shard_size * max_thrds];
 		Thread[] thrd = new Thread[shard_size * max_thrds];
 
@@ -347,7 +405,7 @@ public class xml2sphinxds {
 
 				try {
 
-					proc_thrd[shard_id * max_thrds].merge();
+					proc_thrd[shard_id * max_thrds].composite();
 
 				} catch (PgSchemaException | IOException | ParserConfigurationException | SAXException e) {
 					e.printStackTrace();
@@ -367,10 +425,12 @@ public class xml2sphinxds {
 
 		System.err.println("xml2sphinxds: XML -> Sphinx data source (xmlpipe2) conversion");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --ds-dir DIRECTORY (default=\"" + ds_dir_name + "\")");
+		System.err.println("        --update (insert if not exists, and update if required, default)");
+		System.err.println("        --sync CHECK_SUM_DIRECTORY (insert if not exists, update if required, and delete rows if XML not exists)");
+		System.err.println("        --sync-weak (insert if not exists, no update even if exists, no deletion)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --validate (turn off XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
-		System.err.println("        --append (append to existing data source files)");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
 		System.err.println("        --shard-size SHARD_SIZE (default=1)");
 		System.err.println("        --min-word-len MIN_WORD_LENGTH (default is " + PgSchemaUtil.min_word_len + ")");

@@ -40,11 +40,11 @@ import org.xml.sax.SAXException;
  */
 public class xml2pgsql {
 
-	/** The CSV directory name. */
-	public static String chksum_dir_name = "";
-
 	/** The schema location. */
 	public static String schema_location = "";
+
+	/** The check sum directory name. */
+	private static String check_sum_dir_name = "";
 
 	/** The schema option. */
 	public static PgSchemaOption option = new PgSchemaOption(true);
@@ -60,6 +60,9 @@ public class xml2pgsql {
 
 	/** The XML file queue. */
 	public static LinkedBlockingQueue<File> xml_file_queue = null;
+
+	/** The sync lock object. */
+	public static Object sync_lock = null;
 
 	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
@@ -133,25 +136,6 @@ public class xml2pgsql {
 			else if (args[i].equals("--test-ddl"))
 				pg_option.test = true;
 
-			else if (args[i].equals("--update"))
-				pg_option.sync = pg_option.sync_weak = false;
-
-			else if (args[i].equals("--sync") && i + 1 < args.length) {
-				pg_option.sync = true;
-				pg_option.sync_weak = false;
-				chksum_dir_name = args[++i];
-			}
-
-			else if (args[i].equals("--sync-weak")) {
-				pg_option.sync = false;
-				pg_option.sync_weak = true;
-			}
-
-			else if (args[i].equals("--checksum-by") && i + 1 < args.length) {
-				if (!pg_option.setCheckSumAlgorithm(args[++i]))
-					showUsage();
-			}
-
 			else if (args[i].equals("--filt-in") && i + 1 < args.length)
 				xml_post_editor.addFiltIn(args[++i]);
 
@@ -212,6 +196,25 @@ public class xml2pgsql {
 			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);
 
+			else if (args[i].equals("--update"))
+				option.sync = option.sync_weak = false;
+
+			else if (args[i].equals("--sync") && i + 1 < args.length) {
+				option.sync = true;
+				option.sync_weak = false;
+				check_sum_dir_name = args[++i];
+			}
+
+			else if (args[i].equals("--sync-weak")) {
+				option.sync = false;
+				option.sync_weak = true;
+			}
+
+			else if (args[i].equals("--checksum-by") && i + 1 < args.length) {
+				if (!option.setCheckSumAlgorithm(args[++i]))
+					showUsage();
+			}
+
 			else if (args[i].equals("--max-thrds") && i + 1 < args.length) {
 				max_thrds = Integer.valueOf(args[++i]);
 
@@ -241,7 +244,7 @@ public class xml2pgsql {
 
 		option.resolveDocKeyOption();
 
-		if ((pg_option.sync || pg_option.sync_weak) && !option.document_key) {
+		if ((option.sync || option.sync_weak) && !option.document_key) {
 			System.err.println("document key must be exist to enable synchronization.");
 			showUsage();
 		}
@@ -279,25 +282,27 @@ public class xml2pgsql {
 			showUsage();
 		}
 
-		if (pg_option.sync) {
+		if (option.sync) {
 
-			if (chksum_dir_name.isEmpty()) {
+			if (check_sum_dir_name.isEmpty()) {
 				System.err.println("Check sum directory is empty.");
 				showUsage();
 			}
 
-			File chksum_dir = new File(chksum_dir_name);
+			File check_sum_dir = new File(check_sum_dir_name);
 
-			if (!chksum_dir.isDirectory()) {
+			if (!check_sum_dir.isDirectory()) {
 
-				if (!chksum_dir.mkdir()) {
-					System.err.println("Couldn't create directory '" + chksum_dir_name + "'.");
+				if (!check_sum_dir.mkdir()) {
+					System.err.println("Couldn't create directory '" + check_sum_dir_name + "'.");
 					System.exit(1);
 				}
 
 			}
 
-			pg_option.check_sum_dir = chksum_dir;
+			option.check_sum_dir = check_sum_dir;
+
+			sync_lock = new Object();
 
 		}
 

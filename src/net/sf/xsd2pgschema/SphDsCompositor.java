@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -30,11 +30,11 @@ import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Sphinx xmlpipe2 SAX handler.
+ * Sphinx xmlpipe2 compositor. 
  *
  * @author yokochi
  */
-public class SphDsSAXHandler extends DefaultHandler {
+public class SphDsCompositor extends DefaultHandler {
 
 	/** The Sphinx data source writer. */
 	FileWriter writer;
@@ -79,13 +79,13 @@ public class SphDsSAXHandler extends DefaultHandler {
 	HashSet<String> sph_mvas = null;
 
 	/**
-	 * Instance of Sphinx xmlpipe2 SAX handler.
+	 * Instance of Sphinx xmlpipe2 compositor.
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param writer Sphinx data source writer
 	 * @param index_filter index filter
 	 */
-	public SphDsSAXHandler(PgSchema schema, FileWriter writer, IndexFilter index_filter) {
+	public SphDsCompositor(PgSchema schema, FileWriter writer, IndexFilter index_filter) {
 
 		document_key_name = schema.option.document_key_name;
 

@@ -39,7 +39,7 @@ import org.apache.commons.text.StringEscapeUtils;
 public class dicmerge4sphinx {
 
 	/** The data source directory name. */
-	public static String ds_dir_name = xml2sphinxds.ds_dir_name;
+	private static String ds_dir_name = xml2sphinxds.ds_dir_name;
 
 	/** The frequency threshold. */
 	public static int freq_threshold = 10;
@@ -136,7 +136,7 @@ public class dicmerge4sphinx {
 
 			}
 
-			File sphinx_data_source = new File(ds_dir_name, PgSchemaUtil.sph_data_source_name);
+			File sphinx_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
 
 			FileWriter filew = new FileWriter(sphinx_data_source);
 

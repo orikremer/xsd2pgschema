@@ -40,11 +40,11 @@ import org.xml.sax.SAXException;
  */
 public class xml2pgcsv {
 
-	/** The CSV directory name. */
-	public static String csv_dir_name = "pg_work";
-
 	/** The schema location. */
 	public static String schema_location = "";
+
+	/** The CSV directory name. */
+	public static String csv_dir_name = "pg_work";
 
 	/** The schema option. */
 	public static PgSchemaOption option = new PgSchemaOption(true);
@@ -169,9 +169,6 @@ public class xml2pgcsv {
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
 
-			else if (args[i].equals("--append"))
-				option.append = true;
-
 			else if (args[i].startsWith("--valid"))
 				option.validate = true;
 
@@ -267,8 +264,6 @@ public class xml2pgcsv {
 
 		}
 
-		csv_dir_name = csv_dir_name.replaceFirst("/$", "") + "/";
-
 		Xml2PgCsvThrd[] proc_thrd = new Xml2PgCsvThrd[max_thrds];
 		Thread[] thrd = new Thread[max_thrds];
 
@@ -281,7 +276,7 @@ public class xml2pgcsv {
 				if (thrd_id > 0)
 					is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
 
-				proc_thrd[thrd_id] = new Xml2PgCsvThrd(thrd_id, max_thrds, is, csv_dir_name, option, pg_option);
+				proc_thrd[thrd_id] = new Xml2PgCsvThrd(thrd_id, max_thrds, is, csv_dir, option, pg_option);
 
 			} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | SQLException | PgSchemaException e) {
 				e.printStackTrace();
@@ -319,7 +314,6 @@ public class xml2pgcsv {
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --csv-dir DIRECTORY (default=\"" + csv_dir_name + "\")");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
-		System.err.println("        --append (append to existing CSV files)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");
 		System.err.println("        --no-doc-key (remove " + option.document_key_name + " column from all relations, effective only with relational model extension)");
 		System.err.println("        --ser-key (append " + option.serial_key_name + " column in child relation of list holder)");

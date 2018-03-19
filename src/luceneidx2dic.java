@@ -47,10 +47,10 @@ import org.apache.lucene.store.OutputStreamDataOutput;
 public class luceneidx2dic {
 
 	/** The index directory name. */
-	public static String idx_dir_name = xml2luceneidx.idx_dir_name;
+	private static String idx_dir_name = xml2luceneidx.idx_dir_name;
 
 	/** The dictionary directory name. */
-	public static String dic_dir_name = "lucene_dic";
+	private static String dic_dir_name = "lucene_dic";
 
 	/** The dictionary file name. */
 	public static String dic_file_name = "dictionary";
@@ -167,7 +167,7 @@ public class luceneidx2dic {
 
 			}
 
-			File dic = new File(dic_dir_name + "/" + dic_file_name);
+			File dic = new File(dic_dir, dic_file_name);
 
 			DataOutput output = new OutputStreamDataOutput(new FileOutputStream(dic));
 

@@ -77,14 +77,14 @@ public class XmlParser {
 	 *
 	 * @param xml_file XML file
 	 * @param xml_file_filter XML file filter
-	 * @param pg_option PostgreSQL option
+	 * @param option PostgreSQL data model option
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public XmlParser(File xml_file, XmlFileFilter xml_file_filter, PgOption pg_option) throws IOException {
+	public XmlParser(File xml_file, XmlFileFilter xml_file_filter, PgSchemaOption option) throws IOException {
 
 		setDocumentId(xml_file, xml_file_filter);
 
-		identify(xml_file, pg_option);
+		identify(xml_file, option);
 
 	}
 
@@ -255,23 +255,23 @@ public class XmlParser {
 	 * Identify XML document by agreement of check sum.
 	 *
 	 * @param xml_file XML file
-	 * @param pg_option PostgreSQL option
+	 * @param option PostgreSQL data model option
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void identify(File xml_file, PgOption pg_option) throws IOException {
+	private void identify(File xml_file, PgSchemaOption option) throws IOException {
 
 		identity = false;
 
-		if (pg_option.sync && pg_option.check_sum_dir != null && pg_option.message_digest != null) {
+		if (option.sync && option.check_sum_dir != null && option.check_sum_message_digest != null) {
 
 			FileInputStream in = new FileInputStream(xml_file);
 
-			byte[] digest = pg_option.message_digest.digest(IOUtils.toByteArray(in));
+			byte[] digest = option.check_sum_message_digest.digest(IOUtils.toByteArray(in));
 			String new_check_sum = String.valueOf(Hex.encodeHex(digest));
 
 			in.close();
 
-			File check_sum = new File(pg_option.check_sum_dir, xml_file.getName() + "." + pg_option.check_sum_algorithm.toLowerCase());
+			File check_sum = new File(option.check_sum_dir, xml_file.getName() + "." + option.check_sum_algorithm.toLowerCase());
 
 			if (check_sum.exists()) {
 

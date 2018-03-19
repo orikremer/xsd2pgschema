@@ -45,7 +45,7 @@ public class xmlsplitter {
 	public static String schema_location = "";
 
 	/** The XML directory name for split XML files. */
-	public static String xml_dir_name = "xml_work";
+	private static String xml_dir_name = "xml_work";
 
 	/** The schema option. */
 	public static PgSchemaOption option = new PgSchemaOption(false);
@@ -185,11 +185,9 @@ public class xmlsplitter {
 
 		}
 
-		xml_dir_name = xml_dir_name.replaceFirst("/$", "");
-
 		try {
 
-			XmlSplitterImpl splitter = new XmlSplitterImpl(shard_size, is, option, xpath_doc_key);
+			XmlSplitterImpl splitter = new XmlSplitterImpl(shard_size, is, xml_dir, option, xpath_doc_key);
 
 			splitter.exec();
 

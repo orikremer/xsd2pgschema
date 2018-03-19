@@ -40,7 +40,7 @@ import org.xml.sax.SAXException;
 public class csv2pgsql {
 
 	/** The CSV directory name. */
-	public static String csv_dir_name = xml2pgcsv.csv_dir_name;
+	private static String csv_dir_name = xml2pgcsv.csv_dir_name;
 
 	/** The schema location. */
 	public static String schema_location = "";
@@ -152,8 +152,6 @@ public class csv2pgsql {
 
 		}
 
-		csv_dir_name = csv_dir_name.replaceFirst("/$", "") + "/";
-
 		if (pg_option.name.isEmpty()) {
 			System.err.println("Database name is empty.");
 			showUsage();
@@ -184,7 +182,7 @@ public class csv2pgsql {
 			if (pg_option.test)
 				schema.testPgSql(db_conn, true);
 
-			if (!schema.pgCsv2PgSql(db_conn, csv_dir_name))
+			if (!schema.pgCsv2PgSql(db_conn, csv_dir))
 				System.exit(1);
 
 			System.out.println("Done csv -> db (" + pg_option.name + ").");

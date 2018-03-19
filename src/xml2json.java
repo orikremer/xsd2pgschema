@@ -39,11 +39,11 @@ import org.xml.sax.SAXException;
  */
 public class xml2json {
 
-	/** The JSON directory name. */
-	public static String json_dir_name = "json_work";
-
 	/** The schema location. */
 	public static String schema_location = "";
+
+	/** The JSON directory name. */
+	private static String json_dir_name = "json_work";
 
 	/** The JSON type. */
 	public static JsonType json_type = JsonType.defaultType();
@@ -245,8 +245,6 @@ public class xml2json {
 
 		}
 
-		json_dir_name = json_dir_name.replaceFirst("/$", "") + "/";
-
 		Xml2JsonThrd[] proc_thrd = new Xml2JsonThrd[max_thrds];
 		Thread[] thrd = new Thread[max_thrds];
 
@@ -259,7 +257,7 @@ public class xml2json {
 				if (thrd_id > 0)
 					is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
 
-				proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, is, option, jsonb_option);
+				proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, is, json_dir, option, jsonb_option);
 
 			} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 				e.printStackTrace();

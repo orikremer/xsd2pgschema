@@ -83,6 +83,9 @@ public class PgSchemaUtil {
 	/** The default hash algorithm. */
 	public static final String def_hash_algorithm = "SHA-1";
 
+	/** The default check sum algorithm. */
+	public static final String def_check_sum_algorithm = "MD5";
+
 	/** The default host name. */
 	public static final String host = "localhost";
 
@@ -118,6 +121,12 @@ public class PgSchemaUtil {
 
 	/** The Sphinx data source file name. */
 	public static final String sph_data_source_name = "data_source.xml";
+
+	/** The extracted Sphinx data source file name. */
+	public static final String sph_data_extract_name = "data_extract.xml";
+
+	/** The updated Sphinx data source file name. */
+	public static final String sph_data_update_name = "data_update.xml";
 
 	/** The Sphinx maximum field length. (related to max_xmlpipe2_field in sphinx.conf) */
 	public static final int sph_max_field_len = 1024 * 1024 * 2;

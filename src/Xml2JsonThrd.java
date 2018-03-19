@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -50,11 +50,15 @@ public class Xml2JsonThrd implements Runnable {
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
+	/** The JSON directory. */
+	private File json_dir = null;
+
 	/**
 	 * Instance of Xml2JsonThrd.
 	 *
 	 * @param thrd_id thread id
 	 * @param is InputStream of XML Schema
+	 * @param json_dir directory contains JSON files
 	 * @param option PostgreSQL data model option
 	 * @param jsonb_option JsonBuilder option
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -63,9 +67,10 @@ public class Xml2JsonThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2JsonThrd(final int thrd_id, final InputStream is, final PgSchemaOption option, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2JsonThrd(final int thrd_id, final InputStream is, final File json_dir, final PgSchemaOption option, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
+		this.json_dir = json_dir;
 
 		// parse XSD document
 
@@ -113,17 +118,17 @@ public class Xml2JsonThrd implements Runnable {
 
 				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2json.xml_file_filter);
 
-				String json_file_name = xml2json.json_dir_name + xml_parser.basename + "json";
+				File json_file = new File(json_dir, xml_parser.basename + "json");
 
 				switch (xml2json.json_type) {
 				case column:
-					schema.xml2ColJson(xml_parser, json_file_name);
+					schema.xml2ColJson(xml_parser, json_file);
 					break;
 				case object:
-					schema.xml2ObjJson(xml_parser, json_file_name);
+					schema.xml2ObjJson(xml_parser, json_file);
 					break;
 				case relational:
-					schema.xml2Json(xml_parser, json_file_name);
+					schema.xml2Json(xml_parser, json_file);
 					break;
 				}
 

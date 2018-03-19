@@ -45,14 +45,14 @@ public class Xml2PgSqlThrd implements Runnable {
 	/** The thread id. */
 	private int thrd_id;
 
-	/** The PostgreSQL option. */
-	private PgOption pg_option = null;
-
 	/** The document builder for reusing. */
 	private DocumentBuilder doc_builder;
 
 	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
+
+	/** The PostgreSQL data model option. */
+	private PgSchemaOption option = null;
 
 	/** The XML validator. */
 	private XmlValidator validator = null;
@@ -81,8 +81,6 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		this.thrd_id = thrd_id;
 
-		this.pg_option = pg_option;
-
 		// parse XSD document
 
 		DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
@@ -100,7 +98,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, xml2pgsql.schema_location, option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, xml2pgsql.schema_location, this.option = option);
 
 		schema.applyXmlPostEditor(xml2pgsql.xml_post_editor);
 
@@ -119,34 +117,55 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		// delete rows if XML not exists
 
-		if (pg_option.sync_weak || pg_option.sync) {
+		if (option.sync_weak || option.sync) {
 
 			doc_rows = schema.getDocIdRows(db_conn);
 
-			if (pg_option.sync && thrd_id == 0) {
+			if (option.sync) {
 
-				HashSet<String> _doc_rows = new HashSet<String>();
+				if (thrd_id == 0) {
 
-				_doc_rows.addAll(doc_rows);
+					HashSet<String> _doc_rows = new HashSet<String>();
 
-				xml2pgsql.xml_file_queue.forEach(xml_file -> {
+					_doc_rows.addAll(doc_rows);
+
+					xml2pgsql.xml_file_queue.forEach(xml_file -> {
+
+						try {
+
+							XmlParser xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter);
+
+							_doc_rows.remove(xml_parser.document_id);
+
+						} catch (IOException e) {
+							e.printStackTrace();
+							System.exit(1);
+						}
+
+					});
+
+					schema.deleteRows(db_conn, _doc_rows);
+
+					_doc_rows.clear();
+
+					synchronized (xml2pgsql.sync_lock) {
+						xml2pgsql.sync_lock.notifyAll();
+					}
+
+				} else {
 
 					try {
 
-						XmlParser xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter);
+						synchronized (xml2pgsql.sync_lock) {
+							xml2pgsql.sync_lock.wait();
+						}
 
-						_doc_rows.remove(xml_parser.document_id);
-
-					} catch (IOException e) {
+					} catch (InterruptedException e) {
 						e.printStackTrace();
 						System.exit(1);
 					}
 
-				});
-
-				schema.deleteRows(db_conn, _doc_rows);
-
-				_doc_rows.clear();
+				}
 
 			}
 
@@ -162,7 +181,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		int total = xml2pgsql.xml_file_queue.size();
 		boolean show_progress = thrd_id == 0 && total > 1;
-		boolean sync_check = (pg_option.sync_weak || (pg_option.sync && pg_option.check_sum_dir != null && pg_option.message_digest != null));
+		boolean sync_check = (option.sync_weak || (option.sync && option.check_sum_dir != null && option.check_sum_message_digest != null));
 
 		int polled = 0;
 
@@ -178,10 +197,10 @@ public class Xml2PgSqlThrd implements Runnable {
 
 					if (doc_rows.contains(xml_parser.document_id)) {
 
-						if (pg_option.sync_weak)
+						if (option.sync_weak)
 							continue;
 
-						xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter, pg_option);
+						xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter, option);
 
 						if (xml_parser.identity)
 							continue;
@@ -199,7 +218,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2pgsql.xml_file_filter);
 
-				schema.xml2PgSql(xml_parser, db_conn, pg_option);
+				schema.xml2PgSql(xml_parser, db_conn);
 
 			} catch (Exception e) {
 				e.printStackTrace();

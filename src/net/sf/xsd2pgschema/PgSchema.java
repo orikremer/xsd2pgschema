@@ -3664,13 +3664,12 @@ public class PgSchema {
 	 * CSV conversion.
 	 *
 	 * @param xml_parser XML document
-	 * @param csv_dir_name directory name of CSV files
-	 * @param append_csv whether allows to append CSV files
+	 * @param csv_dir directory contains CSV files
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2PgCsv(XmlParser xml_parser, String csv_dir_name, boolean append_csv) throws ParserConfigurationException, TransformerException, PgSchemaException {
+	public void xml2PgCsv(XmlParser xml_parser, File csv_dir) throws ParserConfigurationException, TransformerException, PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -3682,11 +3681,11 @@ public class PgSchema {
 
 				if (table.filew == null) {
 
-					File csv_file = new File(csv_dir_name + table.name + ".csv");
+					File csv_file = new File(csv_dir, table.name + ".csv");
 
 					try {
 
-						table.filew = new FileWriter(csv_file, append_csv && csv_file.exists());
+						table.filew = new FileWriter(csv_file);
 
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -3804,13 +3803,12 @@ public class PgSchema {
 	 *
 	 * @param xml_parser XML document
 	 * @param db_conn Database connection
-	 * @param pg_option PostgreSQL option
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2PgSql(XmlParser xml_parser, Connection db_conn, PgOption pg_option) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
+	public void xml2PgSql(XmlParser xml_parser, Connection db_conn) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -4064,11 +4062,11 @@ public class PgSchema {
 	 * Execute PostgreSQL COPY command for all CSV files.
 	 *
 	 * @param db_conn Database connection
-	 * @param csv_dir_name directory name of CSV files
+	 * @param csv_dir directory contains CSV files
 	 * @return boolean whether success or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public boolean pgCsv2PgSql(Connection db_conn, String csv_dir_name) throws PgSchemaException {
+	public boolean pgCsv2PgSql(Connection db_conn, File csv_dir) throws PgSchemaException {
 
 		try {
 
@@ -4100,7 +4098,7 @@ public class PgSchema {
 
 						String table_name = table.name;
 
-						File csv_file = new File(csv_dir_name + table_name + ".csv");
+						File csv_file = new File(csv_dir, table_name + ".csv");
 
 						boolean has_db_table = false;
 
@@ -5038,13 +5036,13 @@ public class PgSchema {
 	 * Object-oriented JSON conversion.
 	 *
 	 * @param xml_parser XML document
-	 * @param json_file_name JSON file name
+	 * @param json_file JSON file
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2ObjJson(XmlParser xml_parser, String json_file_name) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
+	public void xml2ObjJson(XmlParser xml_parser, File json_file) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -5073,7 +5071,7 @@ public class PgSchema {
 
 		try {
 
-			FileWriter json_writer = new FileWriter(new File(json_file_name));
+			FileWriter json_writer = new FileWriter(json_file);
 
 			json_writer.write("{" + jsonb.linefeed); // JSON document start
 
@@ -5407,13 +5405,13 @@ public class PgSchema {
 	 * Column-oriented JSON conversion.
 	 *
 	 * @param xml_parser XML document
-	 * @param json_file_name JSON file name
+	 * @param json_file JSON file
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2ColJson(XmlParser xml_parser, String json_file_name) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
+	public void xml2ColJson(XmlParser xml_parser, File json_file) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -5442,7 +5440,7 @@ public class PgSchema {
 
 		try {
 
-			FileWriter json_writer = new FileWriter(new File(json_file_name));
+			FileWriter json_writer = new FileWriter(json_file);
 
 			json_writer.write("{" + jsonb.linefeed); // JSON document start
 
@@ -5684,13 +5682,13 @@ public class PgSchema {
 	 * Relational-oriented JSON conversion.
 	 *
 	 * @param xml_parser XML document
-	 * @param json_file_name JSON file name
+	 * @param json_file JSON file
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2Json(XmlParser xml_parser, String json_file_name) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
+	public void xml2Json(XmlParser xml_parser, File json_file) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -5708,7 +5706,7 @@ public class PgSchema {
 
 		try {
 
-			FileWriter json_writer = new FileWriter(new File(json_file_name));
+			FileWriter json_writer = new FileWriter(json_file);
 
 			json_writer.write("{" + jsonb.linefeed); // JSON document start
 

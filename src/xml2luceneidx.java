@@ -39,11 +39,14 @@ import org.xml.sax.SAXException;
  */
 public class xml2luceneidx {
 
+	/** The schema location. */
+	public static String schema_location = "";
+
 	/** The index directory name. */
 	public static String idx_dir_name = "lucene_index";
 
-	/** The schema location. */
-	public static String schema_location = "";
+	/** The check sum directory name. */
+	private static String check_sum_dir_name = "";
 
 	/** The schema option. */
 	public static PgSchemaOption option = new PgSchemaOption(false);
@@ -59,6 +62,9 @@ public class xml2luceneidx {
 
 	/** The XML file queue. */
 	public static LinkedBlockingQueue<File> xml_file_queue = null;
+
+	/** The sync lock object. */
+	public static Object[] sync_lock = null;
 
 	/** The shard size. */
 	public static int shard_size = 1;
@@ -168,9 +174,6 @@ public class xml2luceneidx {
 			else if (args[i].equals("--no-wild-card"))
 				option.wild_card = false;
 
-			else if (args[i].equals("--append"))
-				option.append = true;
-
 			else if (args[i].startsWith("--valid"))
 				option.validate = true;
 
@@ -188,6 +191,25 @@ public class xml2luceneidx {
 
 			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);
+
+			else if (args[i].equals("--update"))
+				option.sync = option.sync_weak = false;
+
+			else if (args[i].equals("--sync") && i + 1 < args.length) {
+				option.sync = true;
+				option.sync_weak = false;
+				check_sum_dir_name = args[++i];
+			}
+
+			else if (args[i].equals("--sync-weak")) {
+				option.sync = false;
+				option.sync_weak = true;
+			}
+
+			else if (args[i].equals("--checksum-by") && i + 1 < args.length) {
+				if (!option.setCheckSumAlgorithm(args[++i]))
+					showUsage();
+			}
 
 			else if (args[i].equals("--shard-size") && i + 1 < args.length) {
 				shard_size = Integer.valueOf(args[++i]);
@@ -269,6 +291,33 @@ public class xml2luceneidx {
 
 		}
 
+		if (option.sync) {
+
+			if (check_sum_dir_name.isEmpty()) {
+				System.err.println("Check sum directory is empty.");
+				showUsage();
+			}
+
+			File check_sum_dir = new File(check_sum_dir_name);
+
+			if (!check_sum_dir.isDirectory()) {
+
+				if (!check_sum_dir.mkdir()) {
+					System.err.println("Couldn't create directory '" + check_sum_dir_name + "'.");
+					System.exit(1);
+				}
+
+			}
+
+			option.check_sum_dir = check_sum_dir;
+
+			sync_lock = new Object[shard_size];
+
+			for (int shard_id = 0; shard_id < shard_size; shard_id++)
+				sync_lock[shard_id] = new Object();
+
+		}
+
 		Xml2LuceneIdxThrd[] proc_thrd = new Xml2LuceneIdxThrd[shard_size * max_thrds];
 		Thread[] thrd = new Thread[shard_size * max_thrds];
 
@@ -341,11 +390,13 @@ public class xml2luceneidx {
 
 		System.err.println("xm2luceneidx: XML -> Lucene full-text indexing");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --idx-dir DIRECTORY (default=\"" + idx_dir_name + "\")");
+		System.err.println("        --update (insert if not exists, and update if required, default)");
+		System.err.println("        --sync CHECK_SUM_DIRECTORY (insert if not exists, update if required, and delete rows if XML not exists)");
+		System.err.println("        --sync-weak (insert if not exists, no update even if exists, no deletion)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --validate (turn on XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
-		System.err.println("        --append (append to existing index files)");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
 		System.err.println("        --shard-size SHARD_SIZE (default=1)");
 		System.err.println("        --min-word-len MIN_WORD_LENGTH (default is " + PgSchemaUtil.min_word_len + ")");

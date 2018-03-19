@@ -19,6 +19,9 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.io.File;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 
 import org.w3c.dom.Document;
@@ -69,9 +72,6 @@ public class PgSchemaOption {
 	/** Whether execute XML Schema validation. */
 	public boolean validate = false;
 
-	/** Whether append to existing data. */
-	public boolean append = false;
-
 	/** The default document key name in PostgreSQL DDL. */
 	public final String def_document_key_name = "document_id";
 
@@ -102,6 +102,21 @@ public class PgSchemaOption {
 	/** The size of serial key. */
 	public PgSerSize ser_size = PgSerSize.defaultSize();
 
+	/** Whether adopt strict synchronization (insert if not exists, update if required, and delete if XML not exists). */
+	public boolean sync = false;
+
+	/** Whether adopt weak synchronization (insert if not exists, no update even if exists, no deletion). */
+	public boolean sync_weak = false;
+
+	/** The directory contains check sum files. */
+	public File check_sum_dir = null;
+
+	/** The default algorithm for check sum. */
+	public String check_sum_algorithm = PgSchemaUtil.def_check_sum_algorithm;
+
+	/** The instance of message digest for check sum. */
+	public MessageDigest check_sum_message_digest = null;
+
 	/** The prefix of xs_namespace_uri. */
 	protected String xs_prefix = null;
 
@@ -131,6 +146,8 @@ public class PgSchemaOption {
 
 		discarded_document_key_names = new HashSet<String>();
 
+		setCheckSumAlgorithm(check_sum_algorithm);
+
 	}
 
 	/**
@@ -143,6 +160,8 @@ public class PgSchemaOption {
 		setDefaultForJsonSchema(json_type);
 
 		discarded_document_key_names = new HashSet<String>();
+
+		setCheckSumAlgorithm(check_sum_algorithm);
 
 	}
 
@@ -480,6 +499,28 @@ public class PgSchemaOption {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Instance message digest for check sum.
+	 *
+	 * @param check_sum_algorithm algorithm name of message digest
+	 * @return whether algorithm name is valid or not
+	 */
+	public boolean setCheckSumAlgorithm(String check_sum_algorithm) {
+
+		try {
+
+			check_sum_message_digest = MessageDigest.getInstance(check_sum_algorithm);
+
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+			return false;
+		}
+
+		this.check_sum_algorithm = check_sum_algorithm;
+
+		return true;
 	}
 
 }

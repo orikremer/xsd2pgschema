@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -56,8 +56,8 @@ public class Xml2PgCsvThrd implements Runnable {
 	/** The database connection. */
 	private Connection db_conn = null;
 
-	/** The CSV directory name. */
-	private String csv_dir_name = null;
+	/** The CSV directory. */
+	private File csv_dir = null;
 
 	/**
 	 * Instance of Xml2PgCsvThrd.
@@ -65,7 +65,7 @@ public class Xml2PgCsvThrd implements Runnable {
 	 * @param thrd_id thread id
 	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
-	 * @param csv_dir_name directory name of CSV files
+	 * @param csv_dir directory contains CSV files
 	 * @param option PostgreSQL data model option
 	 * @param pg_option PostgreSQL option
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -75,7 +75,7 @@ public class Xml2PgCsvThrd implements Runnable {
 	 * @throws SQLException the SQL exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2PgCsvThrd(final int thrd_id, final int max_thrds, final InputStream is, final String csv_dir_name, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
+	public Xml2PgCsvThrd(final int thrd_id, final int max_thrds, final InputStream is, final File csv_dir, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
 
@@ -115,20 +115,12 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		}
 
-		this.csv_dir_name = csv_dir_name;
+		this.csv_dir = max_thrds == 1 ? csv_dir : new File(csv_dir, PgSchemaUtil.thrd_dir_prefix + thrd_id);
 
-		if (max_thrds > 1) {
+		if (!this.csv_dir.isDirectory()) {
 
-			this.csv_dir_name += PgSchemaUtil.thrd_dir_prefix + thrd_id + "/";
-
-			File csv_dir = new File(this.csv_dir_name);
-
-			if (!csv_dir.isDirectory()) {
-
-				if (!csv_dir.mkdir())
-					throw new PgSchemaException("Couldn't create directory '" + this.csv_dir_name + "'.");
-
-			}
+			if (!this.csv_dir.mkdir())
+				throw new PgSchemaException("Couldn't create directory '" + this.csv_dir + "'.");
 
 		}
 
@@ -145,8 +137,6 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		int polled = 0;
 
-		boolean first_csv = true;
-
 		File xml_file;
 
 		while ((xml_file = xml2pgcsv.xml_file_queue.poll()) != null) {
@@ -155,7 +145,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2pgcsv.xml_file_filter);
 
-				schema.xml2PgCsv(xml_parser, csv_dir_name, first_csv ? xml2pgcsv.option.append : true);
+				schema.xml2PgCsv(xml_parser, csv_dir);
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -163,9 +153,6 @@ public class Xml2PgCsvThrd implements Runnable {
 			}
 
 			++polled;
-
-			if (first_csv)
-				first_csv = false;
 
 			if (show_progress)
 				System.out.print("\rConverted " + (total - xml2pgcsv.xml_file_queue.size()) + " of " + total + " ...");
@@ -185,14 +172,12 @@ public class Xml2PgCsvThrd implements Runnable {
 
 			try {
 
-				schema.pgCsv2PgSql(db_conn, csv_dir_name);
+				schema.pgCsv2PgSql(db_conn, csv_dir);
 
 			} catch (PgSchemaException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
-
-			File csv_dir = new File(csv_dir_name);
 
 			if (csv_dir.isDirectory()) {
 
