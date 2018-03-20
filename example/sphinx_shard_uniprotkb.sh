@@ -153,6 +153,8 @@ for dic_name in ${DIC_NAMES[@]} ; do
 
    if [ $sync_update != "true" ] ; then
     rm -rf $WORK_DIR
+   else
+    rm -rf $ERR_DIR
    fi
 
   fi
