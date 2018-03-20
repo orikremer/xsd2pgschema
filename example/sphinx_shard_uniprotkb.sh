@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sync_update=true
+
 if [ ! `which indexer` ] ; then
 
  echo "indexer: command not found..."
@@ -37,9 +39,6 @@ fi
 
 mkdir -p $IDX_DIR
 
-WORK_DIR=sphinx_work
-ERR_DIR=$WORK_DIR/err
-
 DIC_NAMES=("all" "aut" "pol" "org")
 ATTRS=("--attr entry.accession --attr entry.name --attr entry.created" "" "" "")
 FIELDS=("" "--field personType.name" "--field evidencedStringType.content" "--field organismNameType.content --field dbReferenceType.id")
@@ -55,14 +54,31 @@ for dic_name in ${DIC_NAMES[@]} ; do
 
  echo $dic_name
 
- rm -rf $WORK_DIR
+ WORK_DIR=sphinx_work_$dic_name
+ DIC_WORK_DIR=sphinx_dic_work_$dic_name
+ ERR_DIR=$WORK_DIR/err
+
+ if [ $sync_update != "true" ] ; then
+  rm -rf $WORK_DIR
+ else
+  MD5_DIR=chk_sum_sph_$dic_name
+ fi
 
  mkdir -p $WORK_DIR
+ mkdir -p $DIC_WORK_DIR
  mkdir -p $ERR_DIR
 
  err_file=$ERR_DIR/all_err
 
- java -classpath ../xsd2pgschema.jar xml2sphinxds --xsd $XSD_SCHEMA --xml $XML_DIR --ds-dir $WORK_DIR --ds-name $PREFIX $attrs $fields --shard-size $SHARD_SIZE 2> $err_file
+ if [ $sync_update != "true" ] ; then
+
+  java -classpath ../xsd2pgschema.jar xml2sphinxds --xsd $XSD_SCHEMA --xml $XML_DIR --ds-dir $WORK_DIR --ds-name $PREFIX $attrs $fields --shard-size $SHARD_SIZE 2> $err_file
+
+ else
+
+  java -classpath ../xsd2pgschema.jar xml2sphinxds --xsd $XSD_SCHEMA --xml $XML_DIR --ds-dir $WORK_DIR --ds-name $PREFIX $attrs $fields --shard-size $SHARD_SIZE --sync $MD5_DIR 2> $err_file
+
+ fi
 
  if [ $? = 0 ] && [ ! -s $err_file ] ; then
 
@@ -92,12 +108,12 @@ for dic_name in ${DIC_NAMES[@]} ; do
 
     mkdir -p $IDX_DIR/"part-"$_proc_id -m 777
     indexer $PREFIX"_p"$_proc_id
-    indexer $PREFIX"_p"$_proc_id --buildstops $WORK_DIR/dictionary_p$_proc_id.txt 100000 --buildfreqs
+    indexer $PREFIX"_p"$_proc_id --buildstops $DIC_WORK_DIR/dictionary_p$_proc_id.txt 100000 --buildfreqs
 
    else
 
     indexer $PREFIX"_"$dic_name"_p"$_proc_id
-    indexer $PREFIX"_"$dic_name"_p"$_proc_id --buildstops $WORK_DIR/dictionary_p$_proc_id.txt 100000 --buildfreqs
+    indexer $PREFIX"_"$dic_name"_p"$_proc_id --buildstops $DIC_WORK_DIR/dictionary_p$_proc_id.txt 100000 --buildfreqs
 
    fi
 
@@ -117,13 +133,13 @@ for dic_name in ${DIC_NAMES[@]} ; do
   for proc_id in `seq 1 $SHARD_SIZE` ; do
 
    _proc_id=`expr $proc_id - 1`
-    DIC_FILES="$DIC_FILES$WORK_DIR/dictionary_p$_proc_id.txt "
+    DIC_FILES="$DIC_FILES$DIC_WORK_DIR/dictionary_p$_proc_id.txt "
 
   done
 
   SRC_DIC_FILES=`echo " "$DIC_FILES | sed -e 's/ / \-\-dic /g'`
 
-  java -classpath ../xsd2pgschema.jar dicmerge4sphinx --ds-dir $WORK_DIR $SRC_DIC_FILES --freq 1
+  java -classpath ../xsd2pgschema.jar dicmerge4sphinx --ds-dir $DIC_WORK_DIR $SRC_DIC_FILES --freq 1
 
   if [ $dic_name = "all" ] ; then
    indexer $PREFIX"_dic"
@@ -135,7 +151,9 @@ for dic_name in ${DIC_NAMES[@]} ; do
 
    echo "Sphinx index (UniProtKB:"$dic_name") is update."
 
-   rm -rf $WORK_DIR
+   if [ $sync_update != "true" ] ; then
+    rm -rf $WORK_DIR
+   fi
 
   fi
 

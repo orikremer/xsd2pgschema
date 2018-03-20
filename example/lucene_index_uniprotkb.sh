@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sync_update=true
+
 XML_DIR=uniprot_xml
 
 XSD_SCHEMA=uniprot.xsd
@@ -19,7 +21,9 @@ if [ -d $IDX_DIR ] ; then
    exit 1;;
  esac
 
- rm -rf $IDX_DIR
+ if [ $sync_update != "true" ] ; then
+  rm -rf $IDX_DIR
+ fi
 
 fi
 
@@ -31,9 +35,21 @@ rm -rf $WORK_DIR
 mkdir -p $WORK_DIR
 mkdir -p $ERR_DIR
 
+if [ $sync_update = "true" ] ; then
+ MD5_DIR=chk_sum_lucene
+fi
+
 err_file=$ERR_DIR/all_err
 
-java -classpath ../xsd2pgschema.jar xml2luceneidx --xsd $XSD_SCHEMA --xml $XML_DIR --idx-dir $IDX_DIR --attr-all --no-rel 2> $err_file
+if [ $sync_update != "true" ] ; then
+
+ java -classpath ../xsd2pgschema.jar xml2luceneidx --xsd $XSD_SCHEMA --xml $XML_DIR --idx-dir $IDX_DIR --attr-all --no-rel 2> $err_file
+
+else
+
+ java -classpath ../xsd2pgschema.jar xml2luceneidx --xsd $XSD_SCHEMA --xml $XML_DIR --idx-dir $IDX_DIR --attr-all --no-rel --sync $MD5_DIR 2> $err_file
+
+fi
 
 if [ $? = 0 ] && [ ! -s $err_file ] ; then
 
