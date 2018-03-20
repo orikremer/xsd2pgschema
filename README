@@ -1,7 +1,8 @@
-﻿ Changes in xsd2pgschema 2.8.0 (release 2018-03-19)
+﻿ Changes in xsd2pgschema 2.8.0 (release 2018-03-20)
 
-  Enable differential update for full-text indexing in addition to PostgreSQL data migration.
+  Enabled differential update for full-text indexing in addition to PostgreSQL data migration.
   Added --sync and --sync-weak option in xml2luceneidx and xml2sphinxds main classes.
+  Updated example scripts using differential update.
 
  Changes in xsd2pgschema 2.7.9 (release 2018-03-13)
 

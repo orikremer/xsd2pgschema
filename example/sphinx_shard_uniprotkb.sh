@@ -61,7 +61,7 @@ for dic_name in ${DIC_NAMES[@]} ; do
  if [ $sync_update != "true" ] ; then
   rm -rf $WORK_DIR
  else
-  MD5_DIR=chk_sum_sph_$dic_name
+  MD5_DIR=chk_sum_sphinx_$dic_name
  fi
 
  mkdir -p $WORK_DIR
