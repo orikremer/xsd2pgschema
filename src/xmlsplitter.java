@@ -62,9 +62,6 @@ public class xmlsplitter {
 	/** The shard size. */
 	private static int shard_size = 1;
 
-	/** The verbose mode. */
-	public static boolean verbose = false;
-
 	/**
 	 * The main method.
 	 *
@@ -119,6 +116,9 @@ public class xmlsplitter {
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
 
+			else if (args[i].equals("--verbose"))
+				option.verbose = true;
+
 			else if (args[i].equals("--shard-size") && i + 1 < args.length) {
 				shard_size = Integer.valueOf(args[++i]);
 
@@ -127,9 +127,6 @@ public class xmlsplitter {
 					showUsage();
 				}
 			}
-
-			else if (args[i].equals("--verbose"))
-				verbose = true;
 
 			else if (touch_xml) {
 				String xml_file_name = args[i];

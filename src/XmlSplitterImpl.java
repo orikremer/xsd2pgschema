@@ -189,8 +189,6 @@ public class XmlSplitterImpl {
 
 		// validate XPath expression with schema
 
-		boolean verbose = xmlsplitter.verbose;
-
 		xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_doc_key));
 
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -206,12 +204,12 @@ public class XmlSplitterImpl {
 		if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		XPathCompList doc_key = new XPathCompList(schema, tree, null, verbose);
+		XPathCompList doc_key = new XPathCompList(schema, tree, null, option.verbose);
 
 		if (doc_key.comps.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		doc_key.validate(true, verbose);
+		doc_key.validate(true, option.verbose);
 
 		if (doc_key.path_exprs.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");

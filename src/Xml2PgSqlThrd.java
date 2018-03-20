@@ -129,7 +129,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		// delete rows if XML not exists
 
-		if (option.sync_weak || option.sync) {
+		if (option.syncronizable()) {
 
 			doc_rows = schema.getDocIdRows(db_conn);
 

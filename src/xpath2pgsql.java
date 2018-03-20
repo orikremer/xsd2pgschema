@@ -53,9 +53,6 @@ public class xpath2pgsql {
 	/** The XPath variable reference. */
 	private static HashMap<String, String> variables = new HashMap<String, String>();
 
-	/** The verbose mode. */
-	public static boolean verbose = false;
-
 	/**
 	 * The main method.
 	 *
@@ -144,7 +141,7 @@ public class xpath2pgsql {
 				option.addDiscardedDocKeyName(args[++i]);
 
 			else if (args[i].equals("--verbose"))
-				verbose = true;
+				option.verbose = true;
 
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");

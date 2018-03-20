@@ -59,15 +59,15 @@ public class xpathparser {
 	/** The XPath variable reference. */
 	private static HashMap<String, String> variables = new HashMap<String, String>();
 
-	/** The verbose mode. */
-	private static boolean verbose = true;
-
 	/**
 	 * The main method.
 	 *
 	 * @param args the arguments
 	 */
 	public static void main(String[] args) {
+
+		// turn on verbose mode
+		option.verbose = true;
 
 		for (int i = 0; i < args.length; i++) {
 
@@ -188,12 +188,12 @@ public class xpathparser {
 			if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
 				throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-			XPathCompList xpath_comp_list = new XPathCompList(schema, tree, variables, verbose);
+			XPathCompList xpath_comp_list = new XPathCompList(schema, tree, variables, option.verbose);
 
 			if (xpath_comp_list.comps.size() == 0)
 				throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-			xpath_comp_list.validate(false, verbose);
+			xpath_comp_list.validate(false, option.verbose);
 
 			if (xpath_comp_list.path_exprs.size() == 0)
 				throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");

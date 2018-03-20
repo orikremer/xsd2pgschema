@@ -183,7 +183,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		Path idx_dir_path = Paths.get(idx_dir_name);
 
-		boolean has_idx = (option.sync_weak || option.sync) && Files.list(idx_dir_path).anyMatch(path -> path.getFileName().toString().matches("^segments_[0-9]+"));
+		boolean has_idx = option.syncronizable() && Files.list(idx_dir_path).anyMatch(path -> path.getFileName().toString().matches("^segments_[0-9]+"));
 
 		config.setOpenMode(has_idx ? OpenMode.CREATE_OR_APPEND : OpenMode.CREATE);
 

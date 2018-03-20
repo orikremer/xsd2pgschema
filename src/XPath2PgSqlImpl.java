@@ -55,6 +55,9 @@ public class XPath2PgSqlImpl {
 	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
+	/** The PostgreSQL data model option. */
+	private PgSchemaOption option = null;
+
 	/** The database connection. */
 	private Connection db_conn = null;
 
@@ -93,7 +96,7 @@ public class XPath2PgSqlImpl {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, xpath2pgsql.schema_location, option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, xpath2pgsql.schema_location, this.option = option);
 
 		if (!pg_option.name.isEmpty()) {
 
@@ -128,8 +131,6 @@ public class XPath2PgSqlImpl {
 
 		// validate XPath expression with schema
 
-		boolean verbose = xpath2pgsql.verbose;
-
 		MainContext main = parser.main();
 
 		ParseTree tree = main.children.get(0);
@@ -138,12 +139,12 @@ public class XPath2PgSqlImpl {
 		if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		xpath_comp_list = new XPathCompList(schema, tree, variables, verbose);
+		xpath_comp_list = new XPathCompList(schema, tree, variables, option.verbose);
 
 		if (xpath_comp_list.comps.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		xpath_comp_list.validate(false, verbose);
+		xpath_comp_list.validate(false, option.verbose);
 
 		if (xpath_comp_list.path_exprs.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
@@ -156,7 +157,7 @@ public class XPath2PgSqlImpl {
 
 		// translate XPath to SQL
 
-		xpath_comp_list.translateToSqlExpr(verbose);
+		xpath_comp_list.translateToSqlExpr(option.verbose);
 
 		System.out.println("\nSQL expression:");
 		xpath_comp_list.showSqlExpr();

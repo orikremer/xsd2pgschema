@@ -183,7 +183,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		File sph_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
 
-		if ((option.sync_weak || option.sync) && sph_data_source.exists()) {
+		if (option.syncronizable() && sph_data_source.exists()) {
 
 			HashSet<String> doc_set = new HashSet<String>();
 
@@ -389,7 +389,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 			return;
 
 		File sph_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
-		File sph_data_extract = new File(sph_data_source.getParent(), PgSchemaUtil.sph_data_extract_name);
+		File sph_data_extract = new File(ds_dir, PgSchemaUtil.sph_data_extract_name);
 
 		boolean synchronizable = option.syncronizable() && sph_data_source.exists();
 

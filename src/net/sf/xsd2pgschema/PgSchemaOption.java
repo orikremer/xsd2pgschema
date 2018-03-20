@@ -72,6 +72,9 @@ public class PgSchemaOption {
 	/** Whether execute XML Schema validation. */
 	public boolean validate = false;
 
+	/** The verbose mode. */
+	public boolean verbose = false;
+
 	/** The default document key name in PostgreSQL DDL. */
 	public final String def_document_key_name = "document_id";
 
@@ -529,7 +532,7 @@ public class PgSchemaOption {
 	 * @return boolean whether if synchronizable or not
 	 */
 	public boolean syncronizable() {
-		return sync_weak || (sync && check_sum_dir != null && check_sum_message_digest != null);
+		return sync_weak || (sync && check_sum_dir != null && check_sum_dir.isDirectory() && check_sum_message_digest != null);
 	}
 
 }
