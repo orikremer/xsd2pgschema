@@ -20,6 +20,7 @@ limitations under the License.
 import net.sf.xsd2pgschema.*;
 
 import java.io.File;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Thread function for xmlvalidator.
@@ -34,14 +35,25 @@ public class XmlValidatorThrd implements Runnable {
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
+	/** The XML file filter. */
+	private XmlFileFilter xml_file_filter = null;
+
+	/** The XML file queue. */
+	private LinkedBlockingQueue<File> xml_file_queue = null;
+
 	/**
 	 * Instance of XmlValidatorThrd.
 	 *
 	 * @param thrd_id thread id
+	 * @param xml_file_filter XML file filter
+	 * @param xml_file_queue XML file queue
 	 */
-	public XmlValidatorThrd(final int thrd_id) {
+	public XmlValidatorThrd(final int thrd_id, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue) {
 
 		this.thrd_id = thrd_id;
+
+		this.xml_file_filter = xml_file_filter;
+		this.xml_file_queue = xml_file_queue;
 
 		validator = new XmlValidator(PgSchemaUtil.getSchemaFile(xmlvalidator.schema_location, null, true));
 
@@ -53,16 +65,16 @@ public class XmlValidatorThrd implements Runnable {
 	@Override
 	public void run() {
 
-		int total = xmlvalidator.xml_file_queue.size();
+		int total = xml_file_queue.size();
 		boolean show_progress = thrd_id == 0 && total > 1;
 
 		File xml_file;
 
-		while ((xml_file = xmlvalidator.xml_file_queue.poll()) != null) {
+		while ((xml_file = xml_file_queue.poll()) != null) {
 
 			try {
 
-				new XmlParser(validator, xml_file, xmlvalidator.xml_file_filter);
+				new XmlParser(validator, xml_file, xml_file_filter);
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -70,7 +82,7 @@ public class XmlValidatorThrd implements Runnable {
 			}
 
 			if (show_progress)
-				System.out.print("\rDone " + (total - xmlvalidator.xml_file_queue.size()) + " of " + total + " ...");
+				System.out.print("\rDone " + (total - xml_file_queue.size()) + " of " + total + " ...");
 
 		}
 

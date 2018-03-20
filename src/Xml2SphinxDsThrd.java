@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -79,6 +80,12 @@ public class Xml2SphinxDsThrd implements Runnable {
 	/** The data source directory. */
 	private File ds_dir = null;
 
+	/** The XML file filter. */
+	private XmlFileFilter xml_file_filter = null;
+
+	/** The XML file queue. */
+	private LinkedBlockingQueue<File> xml_file_queue = null;
+
 	/** The Sphinx schema file. */
 	private File sphinx_schema = null;
 
@@ -93,6 +100,8 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @param thrd_id thread id
 	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
+	 * @param xml_file_filter XML file filter
+	 * @param xml_file_queue XML file queue
 	 * @param option PostgreSQL data model option
 	 * @param index_filter index filter
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -101,13 +110,16 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option, IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.shard_id = shard_id;
 		this.shard_size = shard_size;
 
 		this.thrd_id = thrd_id;
 		this.max_thrds = max_thrds;
+
+		this.xml_file_filter = xml_file_filter;
+		this.xml_file_queue = xml_file_queue;
 
 		// parse XSD document
 
@@ -194,11 +206,11 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 					xml2sphinxds.sync_delete_ids[shard_id].addAll(doc_set);
 
-					xml2sphinxds.xml_file_queue.forEach(xml_file -> {
+					xml_file_queue.forEach(xml_file -> {
 
 						try {
 
-							XmlParser xml_parser = new XmlParser(xml_file, xml2luceneidx.xml_file_filter);
+							XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
 							xml2sphinxds.sync_delete_ids[shard_id].remove(xml_parser.document_id);
 
@@ -275,19 +287,19 @@ public class Xml2SphinxDsThrd implements Runnable {
 	@Override
 	public void run() {
 
-		int total = xml2sphinxds.xml_file_queue.size();
+		int total = xml_file_queue.size();
 		boolean show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
 		boolean synchronizable = option.syncronizable();
 
 		File xml_file;
 
-		while ((xml_file = xml2sphinxds.xml_file_queue.poll()) != null) {
+		while ((xml_file = xml_file_queue.poll()) != null) {
 
 			if (synchronizable) {
 
 				try {
 
-					XmlParser xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter);
+					XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
 					Integer _shard_id = doc_rows.get(xml_parser.document_id);
 
@@ -296,7 +308,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 						if (option.sync_weak)
 							continue;
 
-						xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter, option);
+						xml_parser = new XmlParser(xml_file, xml_file_filter, option);
 
 						if (xml_parser.identity)
 							continue;
@@ -306,6 +318,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 						}
 
 					}
+
+					else if (option.sync)
+						new XmlParser(xml_file, xml_file_filter, option);
 
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -321,7 +336,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 				FileWriter writer = new FileWriter(sph_doc_fiole);
 
-				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2sphinxds.xml_file_filter);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
 
 				writer.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 				writer.write("<sphinx:document id=\"" + schema.getHashKeyString(xml_parser.document_id) + "\">\n");
@@ -339,7 +354,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 			}
 
 			if (show_progress)
-				System.out.print("\rExtracted " + (total - xml2sphinxds.xml_file_queue.size()) + " of " + total + " ...");
+				System.out.print("\rExtracted " + (total - xml_file_queue.size()) + " of " + total + " ...");
 
 		}
 

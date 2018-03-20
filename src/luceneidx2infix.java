@@ -50,7 +50,7 @@ public class luceneidx2infix {
 	private static String infix_dir_name = "lucene_infix";
 
 	/** The field list. */
-	public static List<String> fields = new ArrayList<String>();
+	private static List<String> fields = new ArrayList<String>();
 
 	/**
 	 * The main method.

@@ -45,7 +45,7 @@ public class dicmerge4sphinx {
 	public static int freq_threshold = 10;
 
 	/** The dictionary file list. */
-	public static List<String> dic_file_list = new ArrayList<String>();
+	private static List<String> dic_file_list = new ArrayList<String>();
 
 	/**
 	 * The main method.

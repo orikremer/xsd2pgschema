@@ -30,6 +30,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -84,6 +85,12 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
+	/** The XML file filter. */
+	private XmlFileFilter xml_file_filter = null;
+
+	/** The XML file queue. */
+	private LinkedBlockingQueue<File> xml_file_queue = null;
+
 	/** The Lucene index writer. */
 	private IndexWriter writer = null;
 
@@ -98,6 +105,8 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	 * @param thrd_id thread id
 	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
+	 * @param xml_file_filter XML file filter
+	 * @param xml_file_queue XML file queue
 	 * @param option PostgreSQL data model option
 	 * @param index_filter index filter
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -106,13 +115,16 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2LuceneIdxThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final PgSchemaOption option, final IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2LuceneIdxThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, final IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.shard_id = shard_id;
 		this.shard_size = shard_size;
 
 		this.thrd_id = thrd_id;
 		this.max_thrds = max_thrds;
+
+		this.xml_file_filter = xml_file_filter;
+		this.xml_file_queue = xml_file_queue;
 
 		// parse XSD document
 
@@ -196,11 +208,11 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 					_doc_map.putAll(doc_map);
 
-					xml2luceneidx.xml_file_queue.forEach(xml_file -> {
+					xml_file_queue.forEach(xml_file -> {
 
 						try {
 
-							XmlParser xml_parser = new XmlParser(xml_file, xml2luceneidx.xml_file_filter);
+							XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
 							_doc_map.remove(xml_parser.document_id);
 
@@ -296,20 +308,20 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	@Override
 	public void run() {
 
-		int total = xml2luceneidx.xml_file_queue.size();
+		int total = xml_file_queue.size();
 		boolean show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
 		boolean synchronizable = option.syncronizable();
 		boolean has_doc = false;
 
 		File xml_file;
 
-		while ((xml_file = xml2luceneidx.xml_file_queue.poll()) != null) {
+		while ((xml_file = xml_file_queue.poll()) != null) {
 
 			if (synchronizable) {
 
 				try {
 
-					XmlParser xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter);
+					XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
 					has_doc = doc_rows.contains(xml_parser.document_id);
 
@@ -318,12 +330,15 @@ public class Xml2LuceneIdxThrd implements Runnable {
 						if (option.sync_weak)
 							continue;
 
-						xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter, option);
+						xml_parser = new XmlParser(xml_file, xml_file_filter, option);
 
 						if (xml_parser.identity)
 							continue;
 
 					}
+
+					else if (option.sync)
+						new XmlParser(xml_file, xml_file_filter, option);
 
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -334,7 +349,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 			try {
 
-				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2luceneidx.xml_file_filter);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
 
 				org.apache.lucene.document.Document lucene_doc = new org.apache.lucene.document.Document();
 
@@ -353,7 +368,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 			}
 
 			if (show_progress)
-				System.out.print("\rIndexed " + (total - xml2luceneidx.xml_file_queue.size()) + " of " + total + " ...");
+				System.out.print("\rIndexed " + (total - xml_file_queue.size()) + " of " + total + " ...");
 
 		}
 

@@ -47,19 +47,19 @@ public class xml2pgsql {
 	private static String check_sum_dir_name = "";
 
 	/** The schema option. */
-	public static PgSchemaOption option = new PgSchemaOption(true);
+	private static PgSchemaOption option = new PgSchemaOption(true);
 
 	/** The PostgreSQL option. */
-	public static PgOption pg_option = new PgOption();
+	private static PgOption pg_option = new PgOption();
 
 	/** The XML file filter. */
-	public static XmlFileFilter xml_file_filter = new XmlFileFilter();
+	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
 
 	/** The XML post editor. */
 	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
 	/** The XML file queue. */
-	public static LinkedBlockingQueue<File> xml_file_queue = null;
+	private static LinkedBlockingQueue<File> xml_file_queue = null;
 
 	/** The sync lock object. */
 	public static Object sync_lock = null;
@@ -318,7 +318,7 @@ public class xml2pgsql {
 				if (thrd_id > 0)
 					is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
 
-				proc_thrd[thrd_id] = new Xml2PgSqlThrd(thrd_id, is, option, pg_option);
+				proc_thrd[thrd_id] = new Xml2PgSqlThrd(thrd_id, is, xml_file_filter, xml_file_queue, option, pg_option);
 
 			} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | SQLException | PgSchemaException e) {
 				e.printStackTrace();

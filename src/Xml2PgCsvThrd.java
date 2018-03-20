@@ -26,6 +26,7 @@ import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -53,11 +54,17 @@ public class Xml2PgCsvThrd implements Runnable {
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
-	/** The database connection. */
-	private Connection db_conn = null;
-
 	/** The CSV directory. */
 	private File csv_dir = null;
+
+	/** The XML file filter. */
+	private XmlFileFilter xml_file_filter = null;
+
+	/** The XML file queue. */
+	private LinkedBlockingQueue<File> xml_file_queue = null;
+
+	/** The database connection. */
+	private Connection db_conn = null;
 
 	/**
 	 * Instance of Xml2PgCsvThrd.
@@ -66,6 +73,8 @@ public class Xml2PgCsvThrd implements Runnable {
 	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
 	 * @param csv_dir directory contains CSV files
+	 * @param xml_file_filter XML file filter
+	 * @param xml_file_queue XML file queue
 	 * @param option PostgreSQL data model option
 	 * @param pg_option PostgreSQL option
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -75,9 +84,12 @@ public class Xml2PgCsvThrd implements Runnable {
 	 * @throws SQLException the SQL exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2PgCsvThrd(final int thrd_id, final int max_thrds, final InputStream is, final File csv_dir, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
+	public Xml2PgCsvThrd(final int thrd_id, final int max_thrds, final InputStream is, final File csv_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
+
+		this.xml_file_filter = xml_file_filter;
+		this.xml_file_queue = xml_file_queue;
 
 		// parse XSD document
 
@@ -132,18 +144,18 @@ public class Xml2PgCsvThrd implements Runnable {
 	@Override
 	public void run() {
 
-		int total = xml2pgcsv.xml_file_queue.size();
+		int total = xml_file_queue.size();
 		boolean show_progress = thrd_id == 0 && total > 1;
 
 		int polled = 0;
 
 		File xml_file;
 
-		while ((xml_file = xml2pgcsv.xml_file_queue.poll()) != null) {
+		while ((xml_file = xml_file_queue.poll()) != null) {
 
 			try {
 
-				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2pgcsv.xml_file_filter);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
 
 				schema.xml2PgCsv(xml_parser, csv_dir);
 
@@ -155,7 +167,7 @@ public class Xml2PgCsvThrd implements Runnable {
 			++polled;
 
 			if (show_progress)
-				System.out.print("\rConverted " + (total - xml2pgcsv.xml_file_queue.size()) + " of " + total + " ...");
+				System.out.print("\rConverted " + (total - xml_file_queue.size()) + " of " + total + " ...");
 
 		}
 

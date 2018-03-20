@@ -46,10 +46,10 @@ public class csv2pgsql {
 	public static String schema_location = "";
 
 	/** The schema option. */
-	public static PgSchemaOption option = new PgSchemaOption(true);
+	private static PgSchemaOption option = new PgSchemaOption(true);
 
 	/** The PostgreSQL option. */
-	public static PgOption pg_option = new PgOption();
+	private static PgOption pg_option = new PgOption();
 
 	/**
 	 * The main method.

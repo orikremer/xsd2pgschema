@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -53,12 +54,20 @@ public class Xml2JsonThrd implements Runnable {
 	/** The JSON directory. */
 	private File json_dir = null;
 
+	/** The XML file filter. */
+	private XmlFileFilter xml_file_filter = null;
+
+	/** The XML file queue. */
+	private LinkedBlockingQueue<File> xml_file_queue = null;
+
 	/**
 	 * Instance of Xml2JsonThrd.
 	 *
 	 * @param thrd_id thread id
 	 * @param is InputStream of XML Schema
 	 * @param json_dir directory contains JSON files
+	 * @param xml_file_filter XML file filter
+	 * @param xml_file_queue XML file queue
 	 * @param option PostgreSQL data model option
 	 * @param jsonb_option JsonBuilder option
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -67,10 +76,13 @@ public class Xml2JsonThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2JsonThrd(final int thrd_id, final InputStream is, final File json_dir, final PgSchemaOption option, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2JsonThrd(final int thrd_id, final InputStream is, final File json_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
 		this.json_dir = json_dir;
+
+		this.xml_file_filter = xml_file_filter;
+		this.xml_file_queue = xml_file_queue;
 
 		// parse XSD document
 
@@ -107,16 +119,16 @@ public class Xml2JsonThrd implements Runnable {
 	@Override
 	public void run() {
 
-		int total = xml2json.xml_file_queue.size();
+		int total = xml_file_queue.size();
 		boolean show_progress = thrd_id == 0 && total > 1;
 
 		File xml_file;
 
-		while ((xml_file = xml2json.xml_file_queue.poll()) != null) {
+		while ((xml_file = xml_file_queue.poll()) != null) {
 
 			try {
 
-				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2json.xml_file_filter);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
 
 				File json_file = new File(json_dir, xml_parser.basename + "json");
 
@@ -138,7 +150,7 @@ public class Xml2JsonThrd implements Runnable {
 			}
 
 			if (show_progress)
-				System.out.print("\rConverted " + (total - xml2json.xml_file_queue.size()) + " of " + total + " ...");
+				System.out.print("\rConverted " + (total - xml_file_queue.size()) + " of " + total + " ...");
 
 		}
 

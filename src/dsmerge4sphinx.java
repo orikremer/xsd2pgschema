@@ -46,13 +46,13 @@ public class dsmerge4sphinx {
 	public static String schema_location = "";
 
 	/** The data source name. */
-	public static String ds_name = "";
+	private static String ds_name = "";
 
 	/** The destination directory name of data source. */
 	private static String dst_ds_dir_name = xml2sphinxds.ds_dir_name;
 
 	/** The source directory name of data source. */
-	public static List<String> src_ds_dir_list = new ArrayList<String>();
+	private static List<String> src_ds_dir_list = new ArrayList<String>();
 
 	/**
 	 * The main method.

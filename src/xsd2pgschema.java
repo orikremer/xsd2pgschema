@@ -38,7 +38,7 @@ import org.w3c.dom.Document;
 public class xsd2pgschema {
 
 	/** The schema option. */
-	public static PgSchemaOption option = new PgSchemaOption(true);
+	private static PgSchemaOption option = new PgSchemaOption(true);
 
 	/**
 	 * The main method.

@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
@@ -76,6 +77,9 @@ public class XmlSplitterImpl {
 	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
+	/** The XML file queue. */
+	private LinkedBlockingQueue<File> xml_file_queue = null;
+
 	/** The StAX read event handlers. */
 	private HashMap<Integer, EventHandler> read_handlers = null;
 
@@ -124,6 +128,7 @@ public class XmlSplitterImpl {
 	 * @param shard_size shard size
 	 * @param is InputStream of XML Schema
 	 * @param xml_dir XML directory
+	 * @param xml_file_queue XML file queue
 	 * @param option PostgreSQL data model option
 	 * @param xpath_doc_key XPath expression pointing document key
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -133,9 +138,11 @@ public class XmlSplitterImpl {
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws xpathListenerException the xpath listener exception
 	 */
-	public XmlSplitterImpl(final int shard_size, final InputStream is, final File xml_dir, final PgSchemaOption option, final String xpath_doc_key) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, xpathListenerException {
+	public XmlSplitterImpl(final int shard_size, final InputStream is, final File xml_dir, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, final String xpath_doc_key) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, xpathListenerException {
 
 		this.shard_size = shard_size <= 0 ? 1 : shard_size;
+
+		this.xml_file_queue = xml_file_queue;
 
 		// parse XSD document
 
@@ -300,7 +307,7 @@ public class XmlSplitterImpl {
 
 			File xml_file;
 
-			while ((xml_file = xmlsplitter.xml_file_queue.poll()) != null) {
+			while ((xml_file = xml_file_queue.poll()) != null) {
 
 				System.out.println("Splitting " + xml_file.getName() + "...");
 

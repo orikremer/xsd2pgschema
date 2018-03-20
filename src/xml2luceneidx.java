@@ -49,25 +49,25 @@ public class xml2luceneidx {
 	private static String check_sum_dir_name = "";
 
 	/** The schema option. */
-	public static PgSchemaOption option = new PgSchemaOption(false);
+	private static PgSchemaOption option = new PgSchemaOption(false);
 
 	/** The XML file filter. */
-	public static XmlFileFilter xml_file_filter = new XmlFileFilter();
+	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
 
 	/** The XML post editor. */
 	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
 	/** The index filter. */
-	public static IndexFilter index_filter = new IndexFilter();
+	private static IndexFilter index_filter = new IndexFilter();
 
 	/** The XML file queue. */
-	public static LinkedBlockingQueue<File> xml_file_queue = null;
+	private static LinkedBlockingQueue<File> xml_file_queue = null;
 
 	/** The sync lock object. */
 	public static Object[] sync_lock = null;
 
 	/** The shard size. */
-	public static int shard_size = 1;
+	private static int shard_size = 1;
 
 	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
@@ -333,7 +333,7 @@ public class xml2luceneidx {
 					if (shard_id > 0 || thrd_id > 0)
 						is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
 
-					proc_thrd[_thrd_id] = new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, max_thrds, is, option, index_filter);
+					proc_thrd[_thrd_id] = new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, max_thrds, is, xml_file_filter, xml_file_queue, option, index_filter);
 
 				} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 					e.printStackTrace();

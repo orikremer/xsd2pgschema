@@ -42,16 +42,16 @@ public class xpath2pgsql {
 	public static String schema_location = "";
 
 	/** The schema option. */
-	public static PgSchemaOption option = new PgSchemaOption(true);
+	private static PgSchemaOption option = new PgSchemaOption(true);
 
 	/** The PostgreSQL option. */
-	public static PgOption pg_option = new PgOption();
+	private static PgOption pg_option = new PgOption();
 
 	/** The XPath query. */
-	public static String xpath_query = "";
+	private static String xpath_query = "";
 
 	/** The XPath variable reference. */
-	public static HashMap<String, String> variables = new HashMap<String, String>();
+	private static HashMap<String, String> variables = new HashMap<String, String>();
 
 	/** The verbose mode. */
 	public static boolean verbose = false;

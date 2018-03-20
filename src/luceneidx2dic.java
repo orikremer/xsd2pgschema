@@ -53,10 +53,10 @@ public class luceneidx2dic {
 	private static String dic_dir_name = "lucene_dic";
 
 	/** The dictionary file name. */
-	public static String dic_file_name = "dictionary";
+	private static String dic_file_name = "dictionary";
 
 	/** The field list. */
-	public static List<String> fields = new ArrayList<String>();
+	private static List<String> fields = new ArrayList<String>();
 
 	/**
 	 * The main method.

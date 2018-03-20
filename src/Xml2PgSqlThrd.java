@@ -27,6 +27,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.HashSet;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -57,6 +58,12 @@ public class Xml2PgSqlThrd implements Runnable {
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
+	/** The XML file filter. */
+	private XmlFileFilter xml_file_filter = null;
+
+	/** The XML file queue. */
+	private LinkedBlockingQueue<File> xml_file_queue = null;
+
 	/** The database connection. */
 	private Connection db_conn = null;
 
@@ -68,6 +75,8 @@ public class Xml2PgSqlThrd implements Runnable {
 	 *
 	 * @param thrd_id thread id
 	 * @param is InputStream of XML Schema
+	 * @param xml_file_filter XML file filter
+	 * @param xml_file_queue XML file queue
 	 * @param option PostgreSQL data model option
 	 * @param pg_option PostgreSQL option
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -77,9 +86,12 @@ public class Xml2PgSqlThrd implements Runnable {
 	 * @throws SQLException the SQL exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2PgSqlThrd(final int thrd_id, final InputStream is, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
+	public Xml2PgSqlThrd(final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
+
+		this.xml_file_filter = xml_file_filter;
+		this.xml_file_queue = xml_file_queue;
 
 		// parse XSD document
 
@@ -129,11 +141,11 @@ public class Xml2PgSqlThrd implements Runnable {
 
 					_doc_rows.addAll(doc_rows);
 
-					xml2pgsql.xml_file_queue.forEach(xml_file -> {
+					xml_file_queue.forEach(xml_file -> {
 
 						try {
 
-							XmlParser xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter);
+							XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
 							_doc_rows.remove(xml_parser.document_id);
 
@@ -179,7 +191,7 @@ public class Xml2PgSqlThrd implements Runnable {
 	@Override
 	public void run() {
 
-		int total = xml2pgsql.xml_file_queue.size();
+		int total = xml_file_queue.size();
 		boolean show_progress = thrd_id == 0 && total > 1;
 		boolean synchronizable = option.syncronizable();
 
@@ -187,25 +199,28 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		File xml_file;
 
-		while ((xml_file = xml2pgsql.xml_file_queue.poll()) != null) {
+		while ((xml_file = xml_file_queue.poll()) != null) {
 
 			if (synchronizable) {
 
 				try {
 
-					XmlParser xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter);
+					XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
 					if (doc_rows.contains(xml_parser.document_id)) {
 
 						if (option.sync_weak)
 							continue;
 
-						xml_parser = new XmlParser(xml_file, xml2pgsql.xml_file_filter, option);
+						xml_parser = new XmlParser(xml_file, xml_file_filter, option);
 
 						if (xml_parser.identity)
 							continue;
 
 					}
+
+					else if (option.sync)
+						new XmlParser(xml_file, xml_file_filter, option);
 
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -216,7 +231,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 			try {
 
-				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml2pgsql.xml_file_filter);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
 
 				schema.xml2PgSql(xml_parser, db_conn);
 
@@ -228,7 +243,7 @@ public class Xml2PgSqlThrd implements Runnable {
 			++polled;
 
 			if (show_progress)
-				System.out.print("\rMigrated " + (total - xml2pgsql.xml_file_queue.size()) + " of " + total + " ...");
+				System.out.print("\rMigrated " + (total - xml_file_queue.size()) + " of " + total + " ...");
 
 		}
 

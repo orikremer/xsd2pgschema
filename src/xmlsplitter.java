@@ -48,19 +48,19 @@ public class xmlsplitter {
 	private static String xml_dir_name = "xml_work";
 
 	/** The schema option. */
-	public static PgSchemaOption option = new PgSchemaOption(false);
+	private static PgSchemaOption option = new PgSchemaOption(false);
 
 	/** The XML file filter. */
-	public static XmlFileFilter xml_file_filter = new XmlFileFilter();
+	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
 
 	/** The source XML file queue. */
-	public static LinkedBlockingQueue<File> xml_file_queue = null;
+	private static LinkedBlockingQueue<File> xml_file_queue = null;
 
 	/** The XPath expression pointing document key. */
-	public static String xpath_doc_key = "";
+	private static String xpath_doc_key = "";
 
 	/** The shard size. */
-	public static int shard_size = 1;
+	private static int shard_size = 1;
 
 	/** The verbose mode. */
 	public static boolean verbose = false;
@@ -187,7 +187,7 @@ public class xmlsplitter {
 
 		try {
 
-			XmlSplitterImpl splitter = new XmlSplitterImpl(shard_size, is, xml_dir, option, xpath_doc_key);
+			XmlSplitterImpl splitter = new XmlSplitterImpl(shard_size, is, xml_dir, xml_file_queue, option, xpath_doc_key);
 
 			splitter.exec();
 

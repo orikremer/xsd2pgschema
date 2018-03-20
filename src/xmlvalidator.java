@@ -38,10 +38,10 @@ public class xmlvalidator {
 	public static String schema_location = "";
 
 	/** The XML file filter. */
-	public static XmlFileFilter xml_file_filter = new XmlFileFilter();
+	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
 
 	/** The XML file queue. */
-	public static LinkedBlockingQueue<File> xml_file_queue = null;
+	private static LinkedBlockingQueue<File> xml_file_queue = null;
 
 	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
@@ -156,7 +156,7 @@ public class xmlvalidator {
 			if (thrd_id > 0)
 				is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
 
-			proc_thrd[thrd_id] = new XmlValidatorThrd(thrd_id);
+			proc_thrd[thrd_id] = new XmlValidatorThrd(thrd_id, xml_file_filter, xml_file_queue);
 
 			thrd[thrd_id] = new Thread(proc_thrd[thrd_id], thrd_name);
 

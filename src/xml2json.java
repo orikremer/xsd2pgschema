@@ -49,19 +49,19 @@ public class xml2json {
 	public static JsonType json_type = JsonType.defaultType();
 
 	/** The schema option. */
-	public static PgSchemaOption option = new PgSchemaOption(false);
+	private static PgSchemaOption option = new PgSchemaOption(false);
 
 	/** The JSON builder option. */
-	public static JsonBuilderOption jsonb_option = new JsonBuilderOption();
+	private static JsonBuilderOption jsonb_option = new JsonBuilderOption();
 
 	/** The XML file filter. */
-	public static XmlFileFilter xml_file_filter = new XmlFileFilter();
+	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
 
 	/** The XML post editor. */
 	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
 	/** The XML file queue. */
-	public static LinkedBlockingQueue<File> xml_file_queue = null;
+	private static LinkedBlockingQueue<File> xml_file_queue = null;
 
 	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
@@ -257,7 +257,7 @@ public class xml2json {
 				if (thrd_id > 0)
 					is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
 
-				proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, is, json_dir, option, jsonb_option);
+				proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, is, json_dir, xml_file_filter, xml_file_queue, option, jsonb_option);
 
 			} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 				e.printStackTrace();
