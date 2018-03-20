@@ -3605,7 +3605,7 @@ public class PgSchema {
 	 *
 	 * @return String document id
 	 */
-	protected String getDocumentId() {
+	public String getDocumentId() {
 		return document_id;
 	}
 

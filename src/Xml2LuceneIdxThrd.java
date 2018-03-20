@@ -225,7 +225,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 					List<Integer> del_ids = _doc_map.entrySet().stream().map(entry -> entry.getValue()).collect(Collectors.toList());
 
-					del_ids.stream().sorted(Comparator.comparingInt(null).reversed()).forEach(i -> {
+					del_ids.stream().sorted(Comparator.reverseOrder()).forEach(i -> {
 
 						try {
 
@@ -358,7 +358,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 				schema.xml2LucIdx(xml_parser, lucene_doc);
 
 				if (has_doc)
-					writer.updateDocument(new Term(option.document_key_name, xml_parser.document_id), lucene_doc);
+					writer.updateDocument(new Term(option.document_key_name, schema.getDocumentId()), lucene_doc);
 				else
 					writer.addDocument(lucene_doc);
 
@@ -376,6 +376,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		try {
 
+			writer.commit();
 			writer.forceMerge(1);
 			writer.close();
 
@@ -422,6 +423,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		System.out.println("Full merge" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
 
+		writer.commit();
 		writer.forceMerge(1);
 		writer.close();
 
