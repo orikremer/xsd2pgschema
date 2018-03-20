@@ -301,7 +301,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 					XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
-					Integer _shard_id = doc_rows.get(xml_parser.document_id);
+					Integer _shard_id = doc_rows != null ? doc_rows.get(xml_parser.document_id) : null;
 
 					if (_shard_id != null) {
 

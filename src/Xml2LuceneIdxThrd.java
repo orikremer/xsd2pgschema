@@ -323,7 +323,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 					XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
-					has_doc = doc_rows.contains(xml_parser.document_id);
+					has_doc = doc_rows != null && doc_rows.contains(xml_parser.document_id);
 
 					if (has_doc) {
 
