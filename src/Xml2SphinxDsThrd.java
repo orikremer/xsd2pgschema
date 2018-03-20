@@ -167,6 +167,8 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		}
 
+		// delete indexes if XML not exists
+
 		File sph_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
 
 		if ((option.sync_weak || option.sync) && sph_data_source.exists()) {
@@ -275,13 +277,13 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		int total = xml2sphinxds.xml_file_queue.size();
 		boolean show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
-		boolean sync_check = (option.sync_weak || (option.sync && option.check_sum_dir != null && option.check_sum_message_digest != null));
+		boolean synchronizable = option.syncronizable();
 
 		File xml_file;
 
 		while ((xml_file = xml2sphinxds.xml_file_queue.poll()) != null) {
 
-			if (sync_check) {
+			if (synchronizable) {
 
 				try {
 
@@ -374,9 +376,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 		File sph_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
 		File sph_data_extract = new File(sph_data_source.getParent(), PgSchemaUtil.sph_data_extract_name);
 
-		boolean sync_check = ((option.sync_weak || (option.sync && option.check_sum_dir != null && option.check_sum_message_digest != null)) && sph_data_source.exists());
+		boolean synchronizable = option.syncronizable() && sph_data_source.exists();
 
-		if (sync_check) {
+		if (synchronizable) {
 
 			if (option.sync_weak)
 				FileUtils.copyFile(sph_data_source, sph_data_extract);
@@ -404,7 +406,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 				return FilenameUtils.getExtension(name).equals("xml") &&
 						name.startsWith(PgSchemaUtil.sph_document_prefix) &&
 						!name.equals(PgSchemaUtil.sph_schema_name) &&
-						!name.equals(PgSchemaUtil.sph_data_source_name);
+						!name.equals(PgSchemaUtil.sph_data_source_name) &&
+						!name.equals(PgSchemaUtil.sph_data_extract_name) &&
+						!name.equals(PgSchemaUtil.sph_data_update_name);
 			}
 
 		};
@@ -450,7 +454,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 		File sphinx_conf = new File(ds_dir, PgSchemaUtil.sph_conf_name);
 		schema.writeSphConf(sphinx_conf, xml2sphinxds.ds_name, sph_data_source);
 
-		if (!sync_check)
+		if (!synchronizable)
 			return;
 
 		// Full merge

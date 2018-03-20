@@ -181,10 +181,10 @@ public class dicmerge4sphinx {
 	}
 
 	/**
-	 * Convert to trigram.
+	 * Convert keyword to trigram.
 	 *
 	 * @param keyword the keyword
-	 * @return the string
+	 * @return String trigram
 	 */
 	private static String toTrigram(String keyword) {
 

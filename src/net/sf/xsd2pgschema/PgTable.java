@@ -496,7 +496,7 @@ public class PgTable {
 	 * Return field id.
 	 *
 	 * @param field_name name of field
-	 * @return int field id, -1 represents not found
+	 * @return int the field id, -1 represents not found
 	 */
 	public int getFieldId(String field_name) {
 

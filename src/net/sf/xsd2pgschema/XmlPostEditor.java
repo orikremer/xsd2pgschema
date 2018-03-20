@@ -61,7 +61,7 @@ public class XmlPostEditor {
 	 * Add a --filt-in option.
 	 *
 	 * @param filt_in argument value
-	 * @return result of addition
+	 * @return boolean result of addition
 	 */
 	public boolean addFiltIn(String filt_in) {
 		return filt_ins.add(filt_in);
@@ -71,7 +71,7 @@ public class XmlPostEditor {
 	 * Add a --filt-out option.
 	 *
 	 * @param filt_out argument value
-	 * @return result of addition
+	 * @return boolean result of addition
 	 */
 	public boolean addFiltOut(String filt_out) {
 		return filt_outs.add(filt_out);
@@ -81,7 +81,7 @@ public class XmlPostEditor {
 	 * Add a --fill-this option.
 	 *
 	 * @param fill_this argument value
-	 * @return result of addition
+	 * @return boolean result of addition
 	 */
 	public boolean addFillThis(String fill_this) {
 		return fill_these.add(fill_this);

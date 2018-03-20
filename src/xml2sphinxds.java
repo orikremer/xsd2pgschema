@@ -284,7 +284,9 @@ public class xml2sphinxds {
 				return xml_file_filter.ext.equals(FilenameUtils.getExtension(name)) &&
 						!name.equals(PgSchemaUtil.sph_schema_name) &&
 						!name.startsWith(PgSchemaUtil.sph_document_prefix) &&
-						!name.equals(PgSchemaUtil.sph_data_source_name);
+						!name.equals(PgSchemaUtil.sph_data_source_name) &&
+						!name.equals(PgSchemaUtil.sph_data_extract_name) &&
+						!name.equals(PgSchemaUtil.sph_data_update_name);
 			}
 
 		};

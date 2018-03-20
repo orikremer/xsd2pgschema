@@ -138,7 +138,7 @@ public enum XsDataType {
 	 * Return least common data type.
 	 *
 	 * @param xs_type compared data type
-	 * @return least common data type
+	 * @return XsDataType the least common data type
 	 */
 	public XsDataType leastCommonOf(XsDataType xs_type) {
 

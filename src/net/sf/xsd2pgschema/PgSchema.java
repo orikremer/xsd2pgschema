@@ -2284,7 +2284,7 @@ public class PgSchema {
 	 * Return table id from table name.
 	 *
 	 * @param table_name table name
-	 * @return int table id, -1 represents not found
+	 * @return int the table id, -1 represents not found
 	 */
 	private int getTableId(String table_name) {
 
@@ -2301,9 +2301,9 @@ public class PgSchema {
 	/**
 	 * Return attribute group id from attribute group name.
 	 *
-	 * @param table_name table name
+	 * @param table_name attribute group name
 	 * @param throwable throws exception if declaration does not exist
-	 * @return int table id, -1 represents not found
+	 * @return int the attribute group id, -1 represents not found
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private int getAttributeGroupId(String table_name, boolean throwable) throws PgSchemaException {
@@ -2324,9 +2324,9 @@ public class PgSchema {
 	/**
 	 * Return model group id from model group name.
 	 *
-	 * @param table_name table name
+	 * @param table_name model group name
 	 * @param throwable throws exception if declaration does not exist
-	 * @return int table id, -1 represents not found
+	 * @return int the model group id, -1 represents not found
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private int getModelGroupId(String table_name, boolean throwable) throws PgSchemaException {
@@ -3535,7 +3535,7 @@ public class PgSchema {
 	 * Determine hash key of source string.
 	 *
 	 * @param key_name source string
-	 * @return int hash key
+	 * @return int the hash key
 	 */
 	protected synchronized int getHashKeyInt(String key_name) {
 

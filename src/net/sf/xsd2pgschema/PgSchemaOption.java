@@ -201,7 +201,7 @@ public class PgSchemaOption {
 	/**
 	 * Return minimum size of field.
 	 *
-	 * @return int minimum size of field
+	 * @return int the minimum size of field
 	 */
 	public int getMinimumSizeOfField() {
 		return (rel_model_ext ? 1 : 0) + (document_key ? 1 : 0);
@@ -505,7 +505,7 @@ public class PgSchemaOption {
 	 * Instance message digest for check sum.
 	 *
 	 * @param check_sum_algorithm algorithm name of message digest
-	 * @return whether algorithm name is valid or not
+	 * @return boolean whether algorithm name is valid or not
 	 */
 	public boolean setCheckSumAlgorithm(String check_sum_algorithm) {
 
@@ -521,6 +521,15 @@ public class PgSchemaOption {
 		this.check_sum_algorithm = check_sum_algorithm;
 
 		return true;
+	}
+
+	/**
+	 * Return whether if synchronizable.
+	 *
+	 * @return boolean whether if synchronizable or not
+	 */
+	public boolean syncronizable() {
+		return sync_weak || (sync && check_sum_dir != null && check_sum_message_digest != null);
 	}
 
 }

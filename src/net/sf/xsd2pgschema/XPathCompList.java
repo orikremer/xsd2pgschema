@@ -549,7 +549,7 @@ public class XPathCompList {
 	/**
 	 * Return size of path expression in XPath component list.
 	 *
-	 * @return int size of path expression in XPath component list
+	 * @return int the size of path expression in XPath component list
 	 */
 	protected int sizeOfPathExpr() {
 		return getLastUnionId() + 1 - (int) comps.stream().filter(comp -> comp.tree.getClass().equals(TerminalNodeImpl.class) && comp.tree.getText().equals("|")).count();
@@ -3547,7 +3547,7 @@ public class XPathCompList {
 	 * Return total number of predicates in XPath SQL expression
 	 *
 	 * @param sql_predicates list of XPath SQL expression
-	 * @return int total number of predicates in the list
+	 * @return int the total number of predicates in the list
 	 */
 	private int sizeOfPredicate(List<XPathSqlExpr> sql_predicates) {
 		return (int) sql_predicates.stream().filter(sql_expr -> sql_expr.predicate != null).count();
@@ -4394,7 +4394,7 @@ public class XPathCompList {
 	 *
 	 * @param path1 first table path
 	 * @param path2 second table path
-	 * @return int distance between the paths, return -1 when invalid case
+	 * @return int the distance between the paths, return -1 when invalid case
 	 */
 	private int getDistanceOfTables(String path1, String path2) {
 

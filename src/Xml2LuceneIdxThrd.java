@@ -298,14 +298,14 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		int total = xml2luceneidx.xml_file_queue.size();
 		boolean show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
-		boolean sync_check = (option.sync_weak || (option.sync && option.check_sum_dir != null && option.check_sum_message_digest != null));
+		boolean synchronizable = option.syncronizable();
 		boolean has_doc = false;
 
 		File xml_file;
 
 		while ((xml_file = xml2luceneidx.xml_file_queue.poll()) != null) {
 
-			if (sync_check) {
+			if (synchronizable) {
 
 				try {
 

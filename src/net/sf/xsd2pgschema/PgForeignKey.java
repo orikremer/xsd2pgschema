@@ -113,7 +113,7 @@ public class PgForeignKey {
 	 *
 	 * @param option PostgreSQL data model option
 	 * @param node current node
-	 * @return child field names separated by comma
+	 * @return String child field names separated by comma
 	 */
 	private String extractFields(PgSchemaOption option, Node node) {
 

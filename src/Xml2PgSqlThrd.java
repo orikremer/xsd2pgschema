@@ -181,7 +181,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		int total = xml2pgsql.xml_file_queue.size();
 		boolean show_progress = thrd_id == 0 && total > 1;
-		boolean sync_check = (option.sync_weak || (option.sync && option.check_sum_dir != null && option.check_sum_message_digest != null));
+		boolean synchronizable = option.syncronizable();
 
 		int polled = 0;
 
@@ -189,7 +189,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		while ((xml_file = xml2pgsql.xml_file_queue.poll()) != null) {
 
-			if (sync_check) {
+			if (synchronizable) {
 
 				try {
 
@@ -242,7 +242,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		}
 
-		if (sync_check) {
+		if (synchronizable) {
 
 			try {
 				System.out.println(db_conn.getMetaData().getURL().split("/")[3] + " is up-to-date.");

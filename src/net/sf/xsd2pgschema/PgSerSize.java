@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -34,7 +34,7 @@ public enum PgSerSize {
 	/**
 	 * Return default serial key size.
 	 *
-	 * @return PgSerSize default value
+	 * @return PgSerSize the default serial key size
 	 */
 	public static PgSerSize defaultSize() {
 		return unsigned_int_32;
