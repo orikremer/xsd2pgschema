@@ -182,8 +182,7 @@ public class csv2pgsql {
 			if (pg_option.test)
 				schema.testPgSql(db_conn, true);
 
-			if (!schema.pgCsv2PgSql(db_conn, csv_dir))
-				System.exit(1);
+			schema.pgCsv2PgSql(db_conn, csv_dir);
 
 			System.out.println("Done csv -> db (" + pg_option.name + ").");
 

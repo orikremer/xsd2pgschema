@@ -34,7 +34,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -113,9 +112,6 @@ public class PgSchema {
 	/** The current depth of table (internal use only). */
 	private int level;
 
-	/** The root table id (internal use only). */
-	private int root_table_id = -1;
-
 	/** The PostgreSQL root table. */
 	private PgTable root_table = null;
 
@@ -149,12 +145,6 @@ public class PgSchema {
 
 	/** The statistics message on schema. */
 	private StringBuilder def_stat_msg = null;
-
-	/** Whether used for PostgreSQL DDL realization (internal use only). */
-	private boolean[] realized = null;
-
-	/** The generation or destruction order of table (internal use only). */
-	private int[] table_order = null;
 
 	/** The table lock object. */
 	private Object[] table_lock = null;
@@ -960,19 +950,7 @@ public class PgSchema {
 
 			addRootOrphanItem(node, table);
 
-			for (int t = 0; t < tables.size(); t++) {
-
-				root_table = tables.get(t);
-
-				if (root_table.xs_type.equals(XsTableType.xs_root)) {
-					root_table_id = t;
-					break;
-				}
-
-			}
-
-			if (root_table_id < 0)
-				root_table = null;
+			root_table = tables.stream().filter(_table -> _table.xs_type.equals(XsTableType.xs_root)).findFirst().get();
 
 		}
 
@@ -2349,19 +2327,11 @@ public class PgSchema {
 	 */
 	private void realize() {
 
-		// initialize realization flag and table order
-
-		realized = new boolean[tables.size()];
-		table_order = new int [tables.size()];
-
-		Arrays.fill(realized, false);
-		Arrays.fill(table_order, -1);
-
 		level = 0;
 
 		// root table
 
-		realize(root_table, root_table_id, false);
+		realize(root_table, false);
 
 		// referenced administrative tables at first
 
@@ -2373,9 +2343,13 @@ public class PgSchema {
 
 				PgTable table = tables.get(t);
 
-				realizeAdmin(table, false);
+				if (!table.realized) {
 
-				realize(table, t, false);
+					realizeAdmin(table, false);
+
+					realize(table, false);
+
+				}
 
 			}
 
@@ -2385,43 +2359,25 @@ public class PgSchema {
 
 		if (tables.stream().anyMatch(table -> table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child))) {
 
-			int max_child_level = tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child)).max(Comparator.comparingInt(table -> table.level)).get().level;
+			tables.stream().filter(table -> (table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child)) && !table.realized).sorted(Comparator.comparing(table -> -table.level)).forEach(table -> {
 
-			for (int l = 1; l <= max_child_level; l++) {
+				realizeAdmin(table, false);
 
-				for (int t = 0; t < tables.size(); t++) {
+				realize(table, false);
 
-					PgTable table = tables.get(t);
-
-					if ((table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child))&& table.level == l) {
-
-						realizeAdmin(table, false);
-
-						realize(table, t, false);
-
-					}
-
-				}
-
-			}
+			});
 
 		}
 
 		// remaining administrative tables
 
-		for (int t = 0; t < tables.size(); t++) {
+		tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root) && !table.realized).forEach(table -> {
 
-			PgTable table = tables.get(t);
+			realizeAdmin(table, false);
 
-			if (table.xs_type.equals(XsTableType.xs_admin_root) && !realized[t]) {
+			realize(table, false);
 
-				realizeAdmin(table, false);
-
-				realize(table, t, false);
-
-			}
-
-		}
+		});
 
 		setDocIdTable();
 
@@ -2462,74 +2418,37 @@ public class PgSchema {
 
 		}
 
-		for (--level; level >= 0; --level) {
+		tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparing(table -> -table.order)).forEach(table -> {
 
-			for (int t = 0; t < tables.size(); t++) {
+			System.out.println("DROP TABLE IF EXISTS " + PgSchemaUtil.avoidPgReservedWords(table.name) + " CASCADE;");
 
-				PgTable table = tables.get(t);
-
-				if (!table.required)
-					continue;
-
-				if (!option.rel_data_ext && table.relational)
-					continue;
-
-				if (table_order[t] == level)
-					System.out.println("DROP TABLE IF EXISTS " + PgSchemaUtil.avoidPgReservedWords(table.name) + " CASCADE;");
-
-			}
-
-		}
+		});
 
 		System.out.println("");
 
-		Arrays.fill(realized, false);
-
-		for (level = 0; level < tables.size(); level++) {
-
-			for (int t = 0; t < tables.size(); t++) {
-
-				if (table_order[t] == level)
-					realize(tables.get(t), t, true);
-
-			}
-
-		}
+		tables.stream().filter(table -> !table.realized).sorted(Comparator.comparing(table -> table.order)).forEach(table -> realize(table, true));
 
 		// add primary key/foreign key
 
 		if (!option.retain_key) {
 
-			for (level = 0; level < tables.size(); level++) {
+			tables.stream().filter(table -> !table.bridge).sorted(Comparator.comparing(table -> table.order)).forEach(table -> {
 
-				for (int t = 0; t < tables.size(); t++) {
+				table.fields.forEach(field -> {
 
-					if (table_order[t] == level) {
+					if (field.unique_key)
+						System.out.println("--ALTER TABLE " + PgSchemaUtil.avoidPgReservedWords(table.name) + " ADD PRIMARY KEY ( " + PgSchemaUtil.avoidPgReservedWords(field.name) + " );\n");
 
-						PgTable table = tables.get(t);
+					else if (field.foreign_key) {
 
-						if (table.bridge)
-							continue;
-
-						table.fields.forEach(field -> {
-
-							if (field.unique_key)
-								System.out.println("--ALTER TABLE " + PgSchemaUtil.avoidPgReservedWords(table.name) + " ADD PRIMARY KEY ( " + PgSchemaUtil.avoidPgReservedWords(field.name) + " );\n");
-
-							else if (field.foreign_key) {
-
-								if (!tables.get(field.foreign_table_id).bridge)
-									System.out.println("--ALTER TABLE " + PgSchemaUtil.avoidPgReservedWords(table.name) + " ADD FOREIGN KEY " + field.constraint_name + " REFERENCES " + PgSchemaUtil.avoidPgReservedWords(field.foreign_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " );\n");
-
-							}
-
-						});
+						if (!tables.get(field.foreign_table_id).bridge)
+							System.out.println("--ALTER TABLE " + PgSchemaUtil.avoidPgReservedWords(table.name) + " ADD FOREIGN KEY " + field.constraint_name + " REFERENCES " + PgSchemaUtil.avoidPgReservedWords(field.foreign_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " );\n");
 
 					}
 
-				}
+				});
 
-			}
+			});
 
 		}
 
@@ -2630,9 +2549,6 @@ public class PgSchema {
 
 		}
 
-		realized = null;
-		table_order = null;
-
 	}
 
 	/**
@@ -2653,11 +2569,11 @@ public class PgSchema {
 
 				PgTable admin_table = tables.get(admin_t);
 
-				if (!realized[admin_t]) {
+				if (!admin_table.realized) {
 
 					realizeAdmin(admin_table, output);
 
-					realize(admin_table, admin_t, output);
+					realize(admin_table, output);
 
 				}
 
@@ -2683,11 +2599,11 @@ public class PgSchema {
 
 					PgTable admin_table = tables.get(admin_t);
 
-					if (!realized[admin_t]) {
+					if (!admin_table.realized) {
 
 						realizeAdmin(admin_table, output);
 
-						realize(admin_table, admin_t, output);
+						realize(admin_table, output);
 
 					}
 
@@ -2706,23 +2622,20 @@ public class PgSchema {
 	 * Realize PostgreSQL DDL of arbitrary table.
 	 *
 	 * @param table the table
-	 * @param table_id table id
 	 * @param output whether outputs PostgreSQL DDL via standard output
 	 */
-	private void realize(PgTable table, int table_id, boolean output) {
+	private void realize(PgTable table, boolean output) {
 
-		if (table == null || table_id < 0)
+		if (table == null)
 			return;
 
-		if (realized[table_id])
+		if (table.realized)
 			return;
 
-		realized[table_id] = true;
+		table.order = level++;
 
-		if (!output) {
-			table_order[table_id] = level++;
+		if (!output)
 			return;
-		}
 
 		if (!table.required)
 			return;
@@ -3572,7 +3485,7 @@ public class PgSchema {
 	 */
 	private void hasRootTable() throws PgSchemaException {
 
-		if (root_table_id < 0)
+		if (root_table == null)
 			throw new PgSchemaException("Not found root table in XML Schema: " + def_schema_location);
 
 	}
@@ -3897,32 +3810,8 @@ public class PgSchema {
 
 		doc_id_table = root_table;
 
-		if (!option.rel_data_ext) {
-
-			doc_id_table = null;
-
-			for (level = 0; level < tables.size(); level++) {
-
-				for (int t = 0; t < tables.size(); t++) {
-
-					if (table_order[t] == level) {
-
-						doc_id_table = tables.get(t);
-
-						if (!doc_id_table.required)
-							continue;
-
-						if (!option.rel_data_ext && doc_id_table.relational)
-							continue;
-
-						return;
-					}
-
-				}
-
-			}
-
-		}
+		if (!option.rel_data_ext)
+			doc_id_table = tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparing(table -> table.order)).findFirst().get();
 
 	}
 
@@ -4004,47 +3893,44 @@ public class PgSchema {
 
 			Statement stat = db_conn.createStatement();
 
-			for (level = 0; level < tables.size(); level++) {
+			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparing(table -> table.order)).forEach(table -> {
 
-				for (int t = 0; t < tables.size(); t++) {
+				String table_name = table.name;
 
-					if (table_order[t] == level) {
+				boolean has_db_table = false;
 
-						PgTable table = tables.get(t);
+				for (String db_table_name : table_list) {
 
-						if (!table.required)
-							continue;
+					if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
 
-						if (!option.rel_data_ext && table.relational)
-							continue;
+						has_db_table = true;
 
-						String table_name = table.name;
+						String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + option.document_key_name + "='" + document_id + "'";
 
-						boolean has_db_table = false;
-
-						for (String db_table_name : table_list) {
-
-							if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
-
-								has_db_table = true;
-
-								String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + option.document_key_name + "='" + document_id + "'";
-
-								stat.execute(sql);
-
-								break;
-							}
-
+						try {
+							stat.execute(sql);
+						} catch (SQLException e) {
+							e.printStackTrace();
+							System.exit(1);
 						}
 
-						if (!has_db_table)
-							throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found.");
-
+						break;
 					}
 
 				}
 
-			}
+				if (!has_db_table) {
+
+					try {
+						throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found.");
+					} catch (PgSchemaException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+
+				}
+
+			});
 
 			stat.close();
 
@@ -4063,10 +3949,9 @@ public class PgSchema {
 	 *
 	 * @param db_conn Database connection
 	 * @param csv_dir directory contains CSV files
-	 * @return boolean whether success or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public boolean pgCsv2PgSql(Connection db_conn, File csv_dir) throws PgSchemaException {
+	public void pgCsv2PgSql(Connection db_conn, File csv_dir) throws PgSchemaException {
 
 		try {
 
@@ -4082,58 +3967,53 @@ public class PgSchema {
 
 			CopyManager copy_man = new CopyManager((BaseConnection) db_conn);
 
-			for (level = 0; level < tables.size(); level++) {
+			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparing(table -> table.order)).forEach(table -> {
 
-				for (int t = 0; t < tables.size(); t++) {
+				String table_name = table.name;
 
-					if (table_order[t] == level) {
+				File csv_file = new File(csv_dir, table_name + ".csv");
 
-						PgTable table = tables.get(t);
+				boolean has_db_table = false;
 
-						if (!table.required)
-							continue;
+				for (String db_table_name : table_list) {
 
-						if (!option.rel_data_ext && table.relational)
-							continue;
+					if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
 
-						String table_name = table.name;
+						has_db_table = true;
 
-						File csv_file = new File(csv_dir, table_name + ".csv");
+						String sql = "COPY " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " FROM STDIN CSV";
 
-						boolean has_db_table = false;
-
-						for (String db_table_name : table_list) {
-
-							if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
-
-								has_db_table = true;
-
-								String sql = "COPY " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " FROM STDIN CSV";
-
-								if (copy_man.copyIn(sql, new FileInputStream(csv_file)) < 0)
-									return false;
-
-								break;
-							}
-
+						try {
+							copy_man.copyIn(sql, new FileInputStream(csv_file));
+						} catch (SQLException | IOException e) {
+							e.printStackTrace();
+							System.exit(1);
 						}
 
-						if (!has_db_table)
-							throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found.");
-
+						break;
 					}
 
 				}
 
-			}
+				if (!has_db_table) {
+
+					try {
+						throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found.");
+					} catch (PgSchemaException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+
+				}
+
+			});
 
 			table_list.clear();
 
-		} catch (SQLException | IOException e) {
+		} catch (SQLException e) {
 			throw new PgSchemaException(e);
 		}
 
-		return true;
 	}
 
 	/**
@@ -4159,106 +4039,97 @@ public class PgSchema {
 
 			Statement stat = db_conn.createStatement();
 
-			for (level = 0; level < tables.size(); level++) {
+			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparing(table -> table.order)).forEach(table -> {
 
-				for (int t = 0; t < tables.size(); t++) {
+				try {
 
-					if (table_order[t] == level) {
+					String table_name = table.name;
 
-						PgTable table = tables.get(t);
+					boolean has_db_table = false;
 
-						if (!table.required)
-							continue;
+					for (String db_table_name : table_list) {
 
-						if (!option.rel_data_ext && table.relational)
-							continue;
+						if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
 
-						String table_name = table.name;
+							ResultSet rset_col = meta.getColumns(null, null, db_table_name, null);
 
-						boolean has_db_table = false;
+							while (rset_col.next()) {
 
-						for (String db_table_name : table_list) {
+								String db_column_name = rset_col.getString("COLUMN_NAME");
 
-							if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
+								if (!table.fields.stream().filter(field -> !field.omissible).anyMatch(field -> option.case_sense ? field.name.equals(db_column_name) : field.name.equalsIgnoreCase(db_column_name)))
+									throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found without declaration in the data model."); // found without declaration in the data model
 
-								ResultSet rset_col = meta.getColumns(null, null, db_table_name, null);
+							}
+
+							rset_col.close();
+
+							for (PgField field : table.fields) {
+
+								if (field.omissible)
+									continue;
+
+								String field_name = option.case_sense ? field.name : field.name.toLowerCase();
+
+								rset_col = meta.getColumns(null, null, db_table_name, field_name);
+
+								if (!rset_col.next())
+									throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field_name + " not found in the relation."); // not found in the relation
+
+								rset_col.close();
+
+							}
+
+							if (strict) {
+
+								rset_col = meta.getColumns(null, null, db_table_name, null);
+
+								List<PgField> fields = table.fields.stream().filter(field -> !field.omissible).collect(Collectors.toList());
+
+								int col_id = 0;
 
 								while (rset_col.next()) {
 
 									String db_column_name = rset_col.getString("COLUMN_NAME");
+									int db_column_type = rset_col.getInt("DATA_TYPE");
 
-									if (!table.fields.stream().filter(field -> !field.omissible).anyMatch(field -> option.case_sense ? field.name.equals(db_column_name) : field.name.equalsIgnoreCase(db_column_name)))
-										throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found without declaration in the data model."); // found without declaration in the data model
+									if (db_column_type == java.sql.Types.NUMERIC) // NUMERIC and DECIMAL are equivalent in PostgreSQL
+										db_column_type = java.sql.Types.DECIMAL;
 
-								}
-
-								rset_col.close();
-
-								for (PgField field : table.fields) {
-
-									if (field.omissible)
-										continue;
+									PgField field = fields.get(col_id++);
 
 									String field_name = option.case_sense ? field.name : field.name.toLowerCase();
 
-									rset_col = meta.getColumns(null, null, db_table_name, field_name);
+									if (!field_name.equals(db_column_name))
+										throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found in an incorrect order."); // found in an incorrect order
 
-									if (!rset_col.next())
-										throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field_name + " not found in the relation."); // not found in the relation
-
-									rset_col.close();
-
-								}
-
-								if (strict) {
-
-									rset_col = meta.getColumns(null, null, db_table_name, null);
-
-									List<PgField> fields = table.fields.stream().filter(field -> !field.omissible).collect(Collectors.toList());
-
-									int col_id = 0;
-
-									while (rset_col.next()) {
-
-										String db_column_name = rset_col.getString("COLUMN_NAME");
-										int db_column_type = rset_col.getInt("DATA_TYPE");
-
-										if (db_column_type == java.sql.Types.NUMERIC) // NUMERIC and DECIMAL are equivalent in PostgreSQL
-											db_column_type = java.sql.Types.DECIMAL;
-
-										PgField field = fields.get(col_id++);
-
-										String field_name = option.case_sense ? field.name : field.name.toLowerCase();
-
-										if (!field_name.equals(db_column_name))
-											throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found in an incorrect order."); // found in an incorrect order
-
-										if (field.getSqlDataType() != db_column_type)
-											throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " column type " + JDBCType.valueOf(db_column_type) + " is incorrect with " + JDBCType.valueOf(field.getSqlDataType()) + "."); // column type is incorrect
-
-									}
-
-									fields.clear();
-
-									rset_col.close();
+									if (field.getSqlDataType() != db_column_type)
+										throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " column type " + JDBCType.valueOf(db_column_type) + " is incorrect with " + JDBCType.valueOf(field.getSqlDataType()) + "."); // column type is incorrect
 
 								}
 
-								has_db_table = true;
+								fields.clear();
 
-								break;
+								rset_col.close();
+
 							}
 
-						}
+							has_db_table = true;
 
-						if (!has_db_table)
-							throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found in the database."); // not found in the database
+							break;
+						}
 
 					}
 
+					if (!has_db_table)
+						throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found in the database."); // not found in the database
+
+				} catch (SQLException | PgSchemaException e) {
+					e.printStackTrace();
+					System.exit(1);
 				}
 
-			}
+			});
 
 			stat.close();
 
@@ -5581,31 +5452,16 @@ public class PgSchema {
 
 		}
 
-		boolean has_category = false;
+		PgTable first = tables.stream().filter(table -> table.content_holder).sorted(Comparator.comparing(table -> table.order)).findFirst().get();
 
-		for (level = 0; level < tables.size(); level++) {
+		tables.stream().filter(table -> table.content_holder).sorted(Comparator.comparing(table -> table.order)).forEach(table -> {
 
-			for (int t = 0; t < tables.size(); t++) {
+			if (!table.equals(first))
+				System.out.print("," + jsonb.linefeed);
 
-				if (table_order[t] == level) {
+			realizeJsonSchema(table, 1);
 
-					PgTable table = tables.get(t);
-
-					if (!table.content_holder)
-						continue;
-
-					if (has_category)
-						System.out.print("," + jsonb.linefeed);
-
-					realizeJsonSchema(table, 1);
-
-					has_category = true;
-
-				}
-
-			}
-
-		}
+		});
 
 		System.out.print(jsonb.linefeed + "}" + jsonb.linefeed); // JSON document end
 
@@ -5710,75 +5566,67 @@ public class PgSchema {
 
 			json_writer.write("{" + jsonb.linefeed); // JSON document start
 
-			boolean has_category = false;
+			PgTable first = tables.stream().filter(_table -> _table.jsonb_not_empty).sorted(Comparator.comparing(table -> table.order)).findFirst().get();
 
-			for (level = 0; level < tables.size(); level++) {
+			tables.stream().filter(_table -> _table.jsonb_not_empty).sorted(Comparator.comparing(table -> table.order)).forEach(_table -> {
 
-				for (int t = 0; t < tables.size(); t++) {
+				try {
 
-					if (table_order[t] == level) {
+					boolean array_json = !_table.virtual && jsonb.array_all;
 
-						PgTable _table = tables.get(t);
+					if (!_table.equals(first))
+						json_writer.write("," + jsonb.linefeed);
 
-						if (!_table.jsonb_not_empty)
+					json_writer.write(jsonb.getIndentSpaces(1) + "\"" + _table.name + "\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // JSON object start
+
+					boolean has_field = false;
+
+					List<PgField> _fields = _table.fields;
+
+					for (int f = 0; f < _fields.size(); f++) {
+
+						PgField _field = _fields.get(f);
+
+						if (_field.jsonb == null)
 							continue;
 
-						boolean array_json = !_table.virtual && jsonb.array_all;
+						if ((_field.required || _field.jsonb_not_empty) && _field.jsonb_col_size > 0 && _field.jsonb.length() > 2) {
 
-						if (has_category)
-							json_writer.write("," + jsonb.linefeed);
+							boolean array_field = (!_table.equals(root_table) && array_json) || _field.list_holder || _field.jsonb_col_size > 1;
 
-						json_writer.write(jsonb.getIndentSpaces(1) + "\"" + _table.name + "\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // JSON object start
+							if (has_field)
+								json_writer.write("," + jsonb.linefeed);
 
-						boolean has_field = false;
+							json_writer.write(jsonb.getIndentSpaces(2) + "\"" + (_field.attribute || _field.any_attribute ? jsonb.attr_prefix : "") + (_field.simple_content ? jsonb.simple_content_key : _field.xname) + "\":" + jsonb.key_value_space + (array_field ? "[" : ""));
 
-						List<PgField> _fields = _table.fields;
+							_field.jsonb.setLength(_field.jsonb.length() - (jsonb.key_value_spaces + 1));
+							json_writer.write(_field.jsonb.toString());
 
-						for (int f = 0; f < _fields.size(); f++) {
+							if (array_field)
+								json_writer.write("]");
 
-							PgField _field = _fields.get(f);
-
-							if (_field.jsonb == null)
-								continue;
-
-							if ((_field.required || _field.jsonb_not_empty) && _field.jsonb_col_size > 0 && _field.jsonb.length() > 2) {
-
-								boolean array_field = (t != root_table_id && array_json) || _field.list_holder || _field.jsonb_col_size > 1;
-
-								if (has_field)
-									json_writer.write("," + jsonb.linefeed);
-
-								json_writer.write(jsonb.getIndentSpaces(2) + "\"" + (_field.attribute || _field.any_attribute ? jsonb.attr_prefix : "") + (_field.simple_content ? jsonb.simple_content_key : _field.xname) + "\":" + jsonb.key_value_space + (array_field ? "[" : ""));
-
-								_field.jsonb.setLength(_field.jsonb.length() - (jsonb.key_value_spaces + 1));
-								json_writer.write(_field.jsonb.toString());
-
-								if (array_field)
-									json_writer.write("]");
-
-								has_field = true;
-
-							}
-
-							if (_field.jsonb.length() > 0)
-								_field.jsonb.setLength(0);
+							has_field = true;
 
 						}
 
-						if (has_field)
-							json_writer.write(jsonb.linefeed);
-
-						json_writer.write(jsonb.getIndentSpaces(1) + "}"); // JSON object end
-
-						has_category = true;
+						if (_field.jsonb.length() > 0)
+							_field.jsonb.setLength(0);
 
 					}
 
+					if (has_field)
+						json_writer.write(jsonb.linefeed);
+
+					json_writer.write(jsonb.getIndentSpaces(1) + "}"); // JSON object end
+
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
 				}
 
-			}
+			});
 
-			if (has_category)
+			if (first != null)
 				json_writer.write(jsonb.linefeed);
 
 			json_writer.write("}" + jsonb.linefeed); // JSON document end

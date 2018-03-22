@@ -57,6 +57,9 @@ public class PgTable {
 	/** The depth of table. */
 	int level = -1;
 
+	/** the generation order in PostgreSQL DDL. */
+	int order = -1;
+
 	/** The number of nested field. */
 	int nested_fields = 0;
 
@@ -89,6 +92,9 @@ public class PgTable {
 
 	/** Whether table is referred from child table. */
 	boolean required = false;
+
+	/** Whether table is realized in PostgreSQL DDL. */
+	boolean realized = false;
 
 	/** Whether table is subset of database. */
 	boolean filt_out = false;
