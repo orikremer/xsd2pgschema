@@ -531,7 +531,7 @@ public class PgSchemaOption {
 	 *
 	 * @return boolean whether if synchronizable or not
 	 */
-	public boolean syncronizable() {
+	public boolean isSynchronizable() {
 		return sync_weak || (sync && check_sum_dir != null && check_sum_dir.isDirectory() && check_sum_message_digest != null);
 	}
 

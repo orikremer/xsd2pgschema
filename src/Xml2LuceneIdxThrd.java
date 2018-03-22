@@ -28,7 +28,6 @@ import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
@@ -95,7 +94,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	private IndexWriter writer = null;
 
 	/** The document id stored in index. */
-	private HashSet<String> doc_rows = null;
+	private HashMap<String, Integer> doc_rows = null;
 
 	/**
 	 * Instance of Xml2LuceneIdxThrd.
@@ -183,7 +182,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		Path idx_dir_path = Paths.get(idx_dir_name);
 
-		boolean has_idx = option.syncronizable() && Files.list(idx_dir_path).anyMatch(path -> path.getFileName().toString().matches("^segments_[0-9]+"));
+		boolean has_idx = option.isSynchronizable() && Files.list(idx_dir_path).anyMatch(path -> path.getFileName().toString().matches("^segments_[0-9]+"));
 
 		config.setOpenMode(has_idx ? OpenMode.CREATE_OR_APPEND : OpenMode.CREATE);
 
@@ -192,6 +191,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		// delete indexes if XML not exists
 
 		if (has_idx) {
+
+			if (thrd_id == 0)
+				xml2luceneidx.sync_writer[shard_id] = writer;
 
 			HashMap<String, Integer> doc_map = new HashMap<String, Integer>();
 
@@ -269,9 +271,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 			}
 
-			doc_rows = new HashSet<String>();
+			doc_rows = new HashMap<String, Integer>();
 
-			doc_map.entrySet().stream().map(entry -> entry.getKey()).forEach(doc_id -> doc_rows.add(doc_id));
+			doc_map.entrySet().stream().map(entry -> entry.getKey()).forEach(doc_id -> doc_rows.put(doc_id, shard_id));
 
 			doc_map.clear();
 
@@ -290,7 +292,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 					IndexReader _reader = DirectoryReader.open(MMapDirectory.open(_idx_dir_path));
 
 					for (int i = 0; i < _reader.numDocs(); i++)
-						doc_rows.add(_reader.document(i).get(option.document_key_name));
+						doc_rows.put(_reader.document(i).get(option.document_key_name), _shard_id);
 
 					_reader.close();
 
@@ -310,8 +312,8 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		int total = xml_file_queue.size();
 		boolean show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
-		boolean synchronizable = option.syncronizable();
-		boolean has_doc = false;
+		boolean synchronizable = option.isSynchronizable();
+		Integer _shard_id = null;
 
 		File xml_file;
 
@@ -323,9 +325,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 					XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
-					has_doc = doc_rows != null && doc_rows.contains(xml_parser.document_id);
+					_shard_id = doc_rows != null ? doc_rows.get(xml_parser.document_id) : null;
 
-					if (has_doc) {
+					if (_shard_id != null) {
 
 						if (option.sync_weak)
 							continue;
@@ -357,10 +359,20 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 				schema.xml2LucIdx(xml_parser, lucene_doc);
 
-				if (has_doc)
-					writer.updateDocument(new Term(option.document_key_name, schema.getDocumentId()), lucene_doc);
-				else
+				if (_shard_id == null)
 					writer.addDocument(lucene_doc);
+
+				else {
+
+					Term term = new Term(option.document_key_name, schema.getDocumentId());
+
+					if (shard_id == _shard_id)
+						writer.updateDocument(term, lucene_doc);
+					else
+						xml2luceneidx.sync_writer[_shard_id].updateDocument(term, lucene_doc);
+
+				}
+
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -377,7 +389,6 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		try {
 
 			writer.commit();
-			writer.forceMerge(1);
 			writer.close();
 
 		} catch (IOException e) {
@@ -423,7 +434,6 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		System.out.println("Full merge" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
 
-		writer.commit();
 		writer.forceMerge(1);
 		writer.close();
 

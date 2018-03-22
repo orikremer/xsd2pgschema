@@ -30,6 +30,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import javax.xml.parsers.*;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.lucene.index.IndexWriter;
 import org.xml.sax.SAXException;
 
 /**
@@ -65,6 +66,9 @@ public class xml2luceneidx {
 
 	/** The sync lock object. */
 	public static Object[] sync_lock = null;
+
+	/** The set of index writer while synchronization. */
+	public static IndexWriter[] sync_writer = null;
 
 	/** The shard size. */
 	private static int shard_size = 1;
@@ -315,6 +319,8 @@ public class xml2luceneidx {
 
 			for (int shard_id = 0; shard_id < shard_size; shard_id++)
 				sync_lock[shard_id] = new Object();
+
+			sync_writer = new IndexWriter[shard_size];
 
 		}
 

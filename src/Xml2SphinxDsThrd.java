@@ -183,7 +183,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		File sph_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
 
-		if (option.syncronizable() && sph_data_source.exists()) {
+		if (option.isSynchronizable() && sph_data_source.exists()) {
 
 			HashSet<String> doc_set = new HashSet<String>();
 
@@ -289,7 +289,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		int total = xml_file_queue.size();
 		boolean show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
-		boolean synchronizable = option.syncronizable();
+		boolean synchronizable = option.isSynchronizable();
 
 		File xml_file;
 
@@ -391,14 +391,11 @@ public class Xml2SphinxDsThrd implements Runnable {
 		File sph_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
 		File sph_data_extract = new File(ds_dir, PgSchemaUtil.sph_data_extract_name);
 
-		boolean synchronizable = option.syncronizable() && sph_data_source.exists();
+		boolean has_idx = sph_data_source.exists();
 
-		if (synchronizable) {
+		if (has_idx) {
 
-			if (option.sync_weak)
-				FileUtils.copyFile(sph_data_source, sph_data_extract);
-
-			else if (option.sync) {
+			if (option.sync) {
 
 				SphDsDocIdRemover stax_parser = new SphDsDocIdRemover(schema, sph_data_source, sph_data_extract, xml2sphinxds.sync_delete_ids[thrd_id]);
 
@@ -412,6 +409,10 @@ public class Xml2SphinxDsThrd implements Runnable {
 				}
 
 			}
+
+			else
+				FileUtils.copyFile(sph_data_source, sph_data_extract);
+
 
 		}
 
@@ -469,7 +470,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 		File sphinx_conf = new File(ds_dir, PgSchemaUtil.sph_conf_name);
 		schema.writeSphConf(sphinx_conf, xml2sphinxds.ds_name, sph_data_source);
 
-		if (!synchronizable)
+		if (!has_idx)
 			return;
 
 		// Full merge

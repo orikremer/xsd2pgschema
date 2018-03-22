@@ -129,7 +129,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		// delete rows if XML not exists
 
-		if (option.syncronizable()) {
+		if (option.isSynchronizable()) {
 
 			doc_rows = schema.getDocIdRows(db_conn);
 
@@ -193,7 +193,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		int total = xml_file_queue.size();
 		boolean show_progress = thrd_id == 0 && total > 1;
-		boolean synchronizable = option.syncronizable();
+		boolean synchronizable = option.isSynchronizable();
 
 		int polled = 0;
 
