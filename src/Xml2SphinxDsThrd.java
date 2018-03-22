@@ -25,7 +25,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -88,9 +87,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 	/** The Sphinx schema file. */
 	private File sphinx_schema = null;
-
-	/** The document id stored in data source. */
-	private HashMap<String, Integer> doc_rows = null;
 
 	/**
 	 * Instance of Xml2SphinxDsThrd.
@@ -183,7 +179,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		File sph_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
 
-		if (option.isSynchronizable() && sph_data_source.exists()) {
+		if (option.isSynchronizable() && sph_data_source.exists() && thrd_id == 0) {
 
 			HashSet<String> doc_set = new HashSet<String>();
 
@@ -202,78 +198,28 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			if (option.sync) {
 
-				if (thrd_id == 0) {
+				xml2sphinxds.sync_del_doc_rows[shard_id].addAll(doc_set);
 
-					xml2sphinxds.sync_delete_ids[shard_id].addAll(doc_set);
-
-					xml_file_queue.forEach(xml_file -> {
-
-						try {
-
-							XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
-
-							xml2sphinxds.sync_delete_ids[shard_id].remove(xml_parser.document_id);
-
-						} catch (IOException e) {
-							e.printStackTrace();
-							System.exit(1);
-						}
-
-					});
-
-					synchronized (xml2sphinxds.sync_lock[shard_id]) {
-						xml2sphinxds.sync_lock[shard_id].notifyAll();
-					}
-
-				}
-
-				else {
+				xml_file_queue.forEach(xml_file -> {
 
 					try {
 
-						synchronized (xml2sphinxds.sync_lock[shard_id]) {
-							xml2sphinxds.sync_lock[shard_id].wait();
-						}
+						XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
-					} catch (InterruptedException e) {
+						xml2sphinxds.sync_del_doc_rows[shard_id].remove(xml_parser.document_id);
+
+					} catch (IOException e) {
 						e.printStackTrace();
 						System.exit(1);
 					}
 
+				});
+
+				synchronized (xml2sphinxds.doc_rows) {
+					doc_set.forEach(doc_id -> xml2sphinxds.doc_rows.put(doc_id, shard_id));
 				}
-
-				doc_rows = new HashMap<String, Integer>();
-
-				doc_set.forEach(doc_id -> doc_rows.put(doc_id, shard_id));
 
 				doc_set.clear();
-
-				if (shard_size > 1) {
-
-					for (int _shard_id = 0; _shard_id < shard_size; _shard_id++) {
-
-						if (_shard_id == shard_id)
-							continue;
-
-						File _sph_data_source = new File(xml2sphinxds.ds_dir_name + "/" + PgSchemaUtil.shard_dir_prefix + _shard_id, PgSchemaUtil.sph_data_source_name);
-
-						if (!_sph_data_source.exists())
-							continue;
-
-						SphDsDocIdExtractor _handler = new SphDsDocIdExtractor(schema, doc_rows, _shard_id);
-
-						try {
-
-							sax_parser.reset();
-							sax_parser.parse(_sph_data_source, _handler);
-
-						} catch (SAXException | IOException e) {
-							e.printStackTrace();
-						}
-
-					}
-
-				}
 
 			}
 
@@ -301,7 +247,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 					XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
-					Integer _shard_id = doc_rows != null ? doc_rows.get(xml_parser.document_id) : null;
+					Integer _shard_id = xml2sphinxds.doc_rows != null ? xml2sphinxds.doc_rows.get(xml_parser.document_id) : null;
 
 					if (_shard_id != null) {
 
@@ -313,8 +259,8 @@ public class Xml2SphinxDsThrd implements Runnable {
 						if (xml_parser.identity)
 							continue;
 
-						synchronized (xml2sphinxds.sync_lock[_shard_id]) {
-							xml2sphinxds.sync_delete_ids[_shard_id].add(xml_parser.document_id);
+						synchronized (xml2sphinxds.sync_del_doc_rows) {
+							xml2sphinxds.sync_del_doc_rows[_shard_id].add(xml_parser.document_id);
 						}
 
 					}
@@ -397,7 +343,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			if (option.sync) {
 
-				SphDsDocIdRemover stax_parser = new SphDsDocIdRemover(schema, sph_data_source, sph_data_extract, xml2sphinxds.sync_delete_ids[thrd_id]);
+				SphDsDocIdRemover stax_parser = new SphDsDocIdRemover(schema, sph_data_source, sph_data_extract, xml2sphinxds.sync_del_doc_rows[shard_id]);
 
 				try {
 

@@ -24,6 +24,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -64,11 +65,11 @@ public class xml2luceneidx {
 	/** The XML file queue. */
 	private static LinkedBlockingQueue<File> xml_file_queue = null;
 
-	/** The sync lock object. */
-	public static Object[] sync_lock = null;
+	/** The index writer while synchronization for case of sharding. */
+	public static IndexWriter[] cross_writer = null;
 
-	/** The set of index writer while synchronization. */
-	public static IndexWriter[] sync_writer = null;
+	/** The document id stored in index (key=document id, value=shard id). */
+	public static HashMap<String, Integer> doc_rows = null;
 
 	/** The shard size. */
 	private static int shard_size = 1;
@@ -315,12 +316,9 @@ public class xml2luceneidx {
 
 			option.check_sum_dir = check_sum_dir;
 
-			sync_lock = new Object[shard_size];
+			cross_writer = new IndexWriter[shard_size];
 
-			for (int shard_id = 0; shard_id < shard_size; shard_id++)
-				sync_lock[shard_id] = new Object();
-
-			sync_writer = new IndexWriter[shard_size];
+			doc_rows = new HashMap<String, Integer>();
 
 		}
 

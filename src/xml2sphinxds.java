@@ -24,6 +24,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -66,11 +67,11 @@ public class xml2sphinxds {
 	/** The XML file queue. */
 	private static LinkedBlockingQueue<File> xml_file_queue = null;
 
-	/** The sync lock object. */
-	public static Object[] sync_lock = null;
+	/** The document id stored in index (key=document id, value=shard id). */
+	public static HashMap<String, Integer> doc_rows = null;
 
 	/** The set of deleting document id while synchronization. */
-	public static HashSet<String>[] sync_delete_ids = null;
+	public static HashSet<String>[] sync_del_doc_rows = null;
 
 	/** The shard size. */
 	private static int shard_size = 1;
@@ -343,15 +344,12 @@ public class xml2sphinxds {
 
 			option.check_sum_dir = check_sum_dir;
 
-			sync_lock = new Object[shard_size];
-			sync_delete_ids = new HashSet[shard_size];
+			doc_rows = new HashMap<String, Integer>();
 
-			for (int shard_id = 0; shard_id < shard_size; shard_id++) {
+			sync_del_doc_rows = new HashSet[shard_size];
 
-				sync_lock[shard_id] = new Object();
-				sync_delete_ids[shard_id] = new HashSet<String>();
-
-			}
+			for (int shard_id = 0; shard_id < shard_size; shard_id++)
+				sync_del_doc_rows[shard_id] = new HashSet<String>();
 
 		}
 

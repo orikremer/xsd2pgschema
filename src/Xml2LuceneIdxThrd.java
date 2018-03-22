@@ -93,9 +93,6 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/** The Lucene index writer. */
 	private IndexWriter writer = null;
 
-	/** The document id stored in index. */
-	private HashMap<String, Integer> doc_rows = null;
-
 	/**
 	 * Instance of Xml2LuceneIdxThrd.
 	 *
@@ -190,10 +187,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		// delete indexes if XML not exists
 
-		if (has_idx) {
+		if (has_idx && thrd_id == 0) {
 
-			if (thrd_id == 0)
-				xml2luceneidx.sync_writer[shard_id] = writer;
+			xml2luceneidx.cross_writer[shard_id] = writer;
 
 			HashMap<String, Integer> doc_map = new HashMap<String, Integer>();
 
@@ -204,101 +200,55 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 			if (option.sync) {
 
-				if (thrd_id == 0) {
+				HashMap<String, Integer> _doc_map = new HashMap<String, Integer>();
 
-					HashMap<String, Integer> _doc_map = new HashMap<String, Integer>();
+				_doc_map.putAll(doc_map);
 
-					_doc_map.putAll(doc_map);
-
-					xml_file_queue.forEach(xml_file -> {
-
-						try {
-
-							XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
-
-							_doc_map.remove(xml_parser.document_id);
-
-						} catch (IOException e) {
-							e.printStackTrace();
-							System.exit(1);
-						}
-
-					});
-
-					List<Integer> del_ids = _doc_map.entrySet().stream().map(entry -> entry.getValue()).collect(Collectors.toList());
-
-					del_ids.stream().sorted(Comparator.reverseOrder()).forEach(i -> {
-
-						try {
-
-							writer.tryDeleteDocument(reader, i);
-
-						} catch (IOException e) {
-							e.printStackTrace();
-							System.exit(1);
-						}
-
-					});;
-
-					del_ids.clear();
-
-					_doc_map.clear();
-
-					writer.commit();
-
-					synchronized (xml2luceneidx.sync_lock[shard_id]) {
-						xml2luceneidx.sync_lock[shard_id].notifyAll();
-					}
-
-				}
-
-				else {
+				xml_file_queue.forEach(xml_file -> {
 
 					try {
 
-						synchronized (xml2luceneidx.sync_lock[shard_id]) {
-							xml2luceneidx.sync_lock[shard_id].wait();
-						}
+						XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
-					} catch (InterruptedException e) {
+						_doc_map.remove(xml_parser.document_id);
+
+					} catch (IOException e) {
 						e.printStackTrace();
 						System.exit(1);
 					}
 
-				}
+				});
+
+				List<Integer> del_ids = _doc_map.entrySet().stream().map(entry -> entry.getValue()).collect(Collectors.toList());
+
+				del_ids.stream().sorted(Comparator.reverseOrder()).forEach(i -> {
+
+					try {
+
+						writer.tryDeleteDocument(reader, i);
+
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+
+				});;
+
+				del_ids.clear();
+
+				_doc_map.clear();
+
+				writer.commit();
 
 				reader.close();
 
 			}
 
-			doc_rows = new HashMap<String, Integer>();
-
-			doc_map.entrySet().stream().map(entry -> entry.getKey()).forEach(doc_id -> doc_rows.put(doc_id, shard_id));
+			synchronized (xml2luceneidx.doc_rows) {
+				doc_map.entrySet().stream().map(entry -> entry.getKey()).forEach(doc_id -> xml2luceneidx.doc_rows.put(doc_id, shard_id));
+			}
 
 			doc_map.clear();
-
-			if (shard_size > 1) {
-
-				for (int _shard_id = 0; _shard_id < shard_size; _shard_id++) {
-
-					if (_shard_id == shard_id)
-						continue;
-
-					Path _idx_dir_path = Paths.get(xml2luceneidx.idx_dir_name + "/" + PgSchemaUtil.shard_dir_prefix + _shard_id);
-
-					if (!Files.list(_idx_dir_path).anyMatch(path -> path.getFileName().toString().matches("^segments_[0-9]+")))
-						continue;
-
-					IndexReader _reader = DirectoryReader.open(MMapDirectory.open(_idx_dir_path));
-
-					for (int i = 0; i < _reader.numDocs(); i++)
-						doc_rows.put(_reader.document(i).get(option.document_key_name), _shard_id);
-
-					_reader.close();
-
-				}
-
-			}
 
 		}
 
@@ -325,7 +275,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 					XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
-					_shard_id = doc_rows != null ? doc_rows.get(xml_parser.document_id) : null;
+					_shard_id = xml2luceneidx.doc_rows != null ? xml2luceneidx.doc_rows.get(xml_parser.document_id) : null;
 
 					if (_shard_id != null) {
 
@@ -369,7 +319,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 					if (shard_id == _shard_id)
 						writer.updateDocument(term, lucene_doc);
 					else
-						xml2luceneidx.sync_writer[_shard_id].updateDocument(term, lucene_doc);
+						xml2luceneidx.cross_writer[_shard_id].updateDocument(term, lucene_doc);
 
 				}
 
