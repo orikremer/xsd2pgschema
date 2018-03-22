@@ -2357,17 +2357,13 @@ public class PgSchema {
 
 		// administrative tables ordered by level
 
-		if (tables.stream().anyMatch(table -> table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child))) {
+		tables.stream().filter(table -> (table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child)) && table.level > 0 && !table.realized).sorted(Comparator.comparing(table -> table.level)).forEach(table -> {
 
-			tables.stream().filter(table -> (table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child)) && !table.realized).sorted(Comparator.comparing(table -> -table.level)).forEach(table -> {
+			realizeAdmin(table, false);
 
-				realizeAdmin(table, false);
+			realize(table, false);
 
-				realize(table, false);
-
-			});
-
-		}
+		});
 
 		// remaining administrative tables
 
