@@ -283,7 +283,10 @@ public class SphDsDocIdUpdater {
 		public void handleEvent(XMLEvent element) {
 
 			try {
-				addXMLEventWriter(element);
+
+				if ((source && !element.asEndElement().getName().getLocalPart().equals("docset")) || !source)
+					addXMLEventWriter(element);
+
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
 				System.exit(1);

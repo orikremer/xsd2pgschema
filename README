@@ -1,4 +1,10 @@
-﻿ Changes in xsd2pgschema 2.8.0 (release 2018-03-22)
+﻿ Changes in xsd2pgschema 2.8.1 (release 2018-03-23)
+
+  Retrieved order of tables in PostgreSQL DDL, which broke in 2.7.9 and 2.8.0.
+  Defined prefix of namespace URI, sphinx, in xmlpipe2 document for StAX processing in differential update. 
+  Fixed differential update of xmlpipe2 document.
+
+ Changes in xsd2pgschema 2.8.0 (release 2018-03-22)
 
   Enabled differential update for full-text indexing in addition to PostgreSQL data migration.
   Added --sync and --sync-weak option in xml2luceneidx and xml2sphinxds main classes.

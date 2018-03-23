@@ -276,11 +276,11 @@ public class Xml2SphinxDsThrd implements Runnable {
 			}
 
 			String sph_doc_name = PgSchemaUtil.sph_document_prefix + xml_file.getName().split("\\.")[0] + ".xml";
-			File sph_doc_fiole = new File(ds_dir, sph_doc_name);
+			File sph_doc_file = new File(ds_dir, sph_doc_name);
 
 			try {
 
-				FileWriter writer = new FileWriter(sph_doc_fiole);
+				FileWriter writer = new FileWriter(sph_doc_file);
 
 				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
 
@@ -436,6 +436,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 			System.exit(1);
 		}
 
+		sph_data_source.delete();
 		FileUtils.moveFile(sph_data_update, sph_data_source);
 		sph_data_extract.delete();
 

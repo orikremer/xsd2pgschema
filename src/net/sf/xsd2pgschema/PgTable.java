@@ -58,7 +58,7 @@ public class PgTable {
 	int level = -1;
 
 	/** the generation order in PostgreSQL DDL. */
-	int order = -1;
+	int order = 0;
 
 	/** The number of nested field. */
 	int nested_fields = 0;

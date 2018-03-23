@@ -950,7 +950,8 @@ public class PgSchema {
 
 			addRootOrphanItem(node, table);
 
-			root_table = tables.stream().filter(_table -> _table.xs_type.equals(XsTableType.xs_root)).findFirst().get();
+			if (tables.stream().anyMatch(_table -> _table.xs_type.equals(XsTableType.xs_root)))
+				root_table = tables.stream().filter(_table -> _table.xs_type.equals(XsTableType.xs_root)).findFirst().get();
 
 		}
 
@@ -2279,22 +2280,22 @@ public class PgSchema {
 	/**
 	 * Return attribute group id from attribute group name.
 	 *
-	 * @param table_name attribute group name
+	 * @param attr_group_name attribute group name
 	 * @param throwable throws exception if declaration does not exist
 	 * @return int the attribute group id, -1 represents not found
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private int getAttributeGroupId(String table_name, boolean throwable) throws PgSchemaException {
+	private int getAttributeGroupId(String attr_group_name, boolean throwable) throws PgSchemaException {
 
 		for (int t = 0; t < _root_schema.attr_groups.size(); t++) {
 
-			if (_root_schema.attr_groups.get(t).name.equals(table_name))
+			if (_root_schema.attr_groups.get(t).name.equals(attr_group_name))
 				return t;
 
 		}
 
 		if (throwable)
-			throw new PgSchemaException("Not found attribute group declaration: " + table_name + ".");
+			throw new PgSchemaException("Not found attribute group declaration: " + attr_group_name + ".");
 
 		return -1;
 	}
@@ -2302,22 +2303,22 @@ public class PgSchema {
 	/**
 	 * Return model group id from model group name.
 	 *
-	 * @param table_name model group name
+	 * @param model_group_name model group name
 	 * @param throwable throws exception if declaration does not exist
 	 * @return int the model group id, -1 represents not found
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private int getModelGroupId(String table_name, boolean throwable) throws PgSchemaException {
+	private int getModelGroupId(String model_group_name, boolean throwable) throws PgSchemaException {
 
 		for (int t = 0; t < _root_schema.model_groups.size(); t++) {
 
-			if (_root_schema.model_groups.get(t).name.equals(table_name))
+			if (_root_schema.model_groups.get(t).name.equals(model_group_name))
 				return t;
 
 		}
 
 		if (throwable)
-			throw new PgSchemaException("Not found model group declaration: " + table_name + ".");
+			throw new PgSchemaException("Not found model group declaration: " + model_group_name + ".");
 
 		return -1;
 	}
@@ -2343,13 +2344,9 @@ public class PgSchema {
 
 				PgTable table = tables.get(t);
 
-				if (!table.realized) {
+				realizeAdmin(table, false);
 
-					realizeAdmin(table, false);
-
-					realize(table, false);
-
-				}
+				realize(table, false);
 
 			}
 
@@ -2357,7 +2354,7 @@ public class PgSchema {
 
 		// administrative tables ordered by level
 
-		tables.stream().filter(table -> (table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child)) && table.level > 0 && !table.realized).sorted(Comparator.comparing(table -> table.level)).forEach(table -> {
+		tables.stream().filter(table -> (table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child)) && table.level > 0).sorted(Comparator.comparing(table -> table.level)).forEach(table -> {
 
 			realizeAdmin(table, false);
 
@@ -2367,7 +2364,7 @@ public class PgSchema {
 
 		// remaining administrative tables
 
-		tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root) && !table.realized).forEach(table -> {
+		tables.stream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root)).forEach(table -> {
 
 			realizeAdmin(table, false);
 
@@ -2414,7 +2411,7 @@ public class PgSchema {
 
 		}
 
-		tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparing(table -> -table.order)).forEach(table -> {
+		tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparing(table -> table.order)).forEach(table -> {
 
 			System.out.println("DROP TABLE IF EXISTS " + PgSchemaUtil.avoidPgReservedWords(table.name) + " CASCADE;");
 
@@ -2422,7 +2419,7 @@ public class PgSchema {
 
 		System.out.println("");
 
-		tables.stream().filter(table -> !table.realized).sorted(Comparator.comparing(table -> table.order)).forEach(table -> realize(table, true));
+		tables.stream().filter(table -> !table.realized).sorted(Comparator.comparing(table -> -table.order)).forEach(table -> realize(table, true));
 
 		// add primary key/foreign key
 
@@ -2565,13 +2562,9 @@ public class PgSchema {
 
 				PgTable admin_table = tables.get(admin_t);
 
-				if (!admin_table.realized) {
+				realizeAdmin(admin_table, output);
 
-					realizeAdmin(admin_table, output);
-
-					realize(admin_table, output);
-
-				}
+				realize(admin_table, output);
 
 			}
 
@@ -2595,13 +2588,9 @@ public class PgSchema {
 
 					PgTable admin_table = tables.get(admin_t);
 
-					if (!admin_table.realized) {
+					realizeAdmin(admin_table, output);
 
-						realizeAdmin(admin_table, output);
-
-						realize(admin_table, output);
-
-					}
+					realize(admin_table, output);
 
 				}
 
@@ -2628,10 +2617,10 @@ public class PgSchema {
 		if (table.realized)
 			return;
 
-		table.order = level++;
-
-		if (!output)
+		if (!output) {
+			table.order++;
 			return;
+		}
 
 		if (!table.required)
 			return;
@@ -3368,32 +3357,12 @@ public class PgSchema {
 
 		}
 
-		for (int t = 0; t < tables.size(); t++) {
+		tables.forEach(_table -> {
 
-			PgTable _table = tables.get(t);
+			if (!_table.fields.stream().anyMatch(_field -> !_field.system_key && !_field.user_key && (_field.attr_sel || _field.field_sel)))
+				_table.required = false;
 
-			List<PgField> _fields = _table.fields;
-
-			int f = 0;
-
-			for (; f < _fields.size(); f++) {
-
-				PgField _field = _fields.get(f);
-
-				if (_field.system_key || _field.user_key)
-					continue;
-
-				if (_field.attr_sel || _field.field_sel)
-					break;
-
-			}
-
-			if (f < _fields.size())
-				continue;
-
-			_table.required = false;
-
-		}
+		});
 
 	}
 
@@ -3807,7 +3776,7 @@ public class PgSchema {
 		doc_id_table = root_table;
 
 		if (!option.rel_data_ext)
-			doc_id_table = tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparing(table -> table.order)).findFirst().get();
+			doc_id_table = tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).max(Comparator.comparingInt(table -> table.order)).get();
 
 	}
 
@@ -4322,7 +4291,7 @@ public class PgSchema {
 			filew.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 
 			if (data_source)
-				filew.write("<sphinx:docset>\n");
+				filew.write("<sphinx:docset xmlns:sphinx=\"http://sphinxsearch.com/\">\n");
 
 			filew.write("<sphinx:schema>\n");
 

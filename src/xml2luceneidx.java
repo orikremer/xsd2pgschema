@@ -277,9 +277,6 @@ public class xml2luceneidx {
 
 		xml_file_queue = PgSchemaUtil.getQueueOfTargetFiles(xml_file_names, filename_filter);
 
-		if (xml_file_queue.size() < shard_size)
-			shard_size = xml_file_queue.size();
-
 		max_thrds = max_thrds / shard_size; // number of thread per a shard
 
 		if (max_thrds == 0)

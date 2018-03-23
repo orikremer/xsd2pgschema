@@ -45,7 +45,7 @@ public class XmlFileFilter {
 
 		this.ext = ext;
 
-		if (ext == null || !ext.equals("xml") && !ext.equals("gz")) {
+		if (ext == null || (!ext.equals("xml") && !ext.equals("gz"))) {
 
 			System.err.println("Illegal xml-file-ext option: " + ext + ".");
 
