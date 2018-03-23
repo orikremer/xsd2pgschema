@@ -30,7 +30,6 @@ import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
 /**
@@ -256,9 +255,7 @@ public class SphDsDocIdUpdater {
 		@Override
 		public void handleEvent(XMLEvent element) {
 
-			StartElement start_elem = element.asStartElement();
-
-			cur_path.append("/" + start_elem.getName().getLocalPart());
+			cur_path.append("/" + element.asStartElement().getName().getLocalPart());
 
 			try {
 				addXMLEventWriter(element);
@@ -282,9 +279,11 @@ public class SphDsDocIdUpdater {
 		@Override
 		public void handleEvent(XMLEvent element) {
 
+			String local_name = element.asEndElement().getName().getLocalPart();
+
 			try {
 
-				if ((source && !element.asEndElement().getName().getLocalPart().equals("docset")) || !source)
+				if ((source && !local_name.equals("docset")) || !source)
 					addXMLEventWriter(element);
 
 			} catch (XMLStreamException e) {
@@ -292,7 +291,7 @@ public class SphDsDocIdUpdater {
 				System.exit(1);
 			}
 
-			int len = cur_path.length() - element.asEndElement().getName().getLocalPart().length() - 1;
+			int len = cur_path.length() - local_name.length() - 1;
 
 			cur_path.setLength(len);
 

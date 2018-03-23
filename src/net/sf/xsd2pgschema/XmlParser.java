@@ -266,7 +266,14 @@ public class XmlParser {
 
 			FileInputStream in = new FileInputStream(xml_file);
 
-			byte[] digest = option.check_sum_message_digest.digest(IOUtils.toByteArray(in));
+			byte[] digest;
+
+			synchronized (option.check_sum_message_digest) { // message digest is not thread safe
+
+				digest = option.check_sum_message_digest.digest(IOUtils.toByteArray(in));
+
+			}
+
 			String new_check_sum = String.valueOf(Hex.encodeHex(digest));
 
 			in.close();
