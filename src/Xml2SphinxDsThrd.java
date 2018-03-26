@@ -254,9 +254,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 						if (option.sync_weak)
 							continue;
 
-						xml_parser = new XmlParser(xml_file, xml_file_filter, option);
-
-						if (xml_parser.identity)
+						if (xml_parser.identify(option))
 							continue;
 
 						synchronized (xml2sphinxds.sync_del_doc_rows) {
@@ -266,7 +264,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 					}
 
 					else if (option.sync)
-						new XmlParser(xml_file, xml_file_filter, option);
+						xml_parser.identify(option);
 
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -341,7 +339,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		if (has_idx) {
 
-			if (option.sync) {
+			if (option.sync && xml2sphinxds.sync_del_doc_rows[shard_id].size() > 0) {
 
 				SphDsDocIdRemover stax_parser = new SphDsDocIdRemover(schema, sph_data_source, sph_data_extract, xml2sphinxds.sync_del_doc_rows[shard_id]);
 
@@ -358,7 +356,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			else
 				FileUtils.copyFile(sph_data_source, sph_data_extract);
-
 
 		}
 
@@ -386,6 +383,8 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		System.out.println("Merging" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
 
+		int total = 0;
+
 		for (File sph_doc_file : ds_dir.listFiles(filter)) {
 
 			SphDsCompositor handler = new SphDsCompositor(schema, filew, index_filter);
@@ -399,6 +398,8 @@ public class Xml2SphinxDsThrd implements Runnable {
 			}
 
 			sph_doc_file.deleteOnExit();
+
+			total++;
 
 		}
 
@@ -418,6 +419,14 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		if (!has_idx)
 			return;
+
+		else if (total == 0) {
+
+			sph_data_source.delete();
+			FileUtils.moveFile(sph_data_extract, sph_data_source);
+
+			return;
+		}
 
 		// Full merge
 

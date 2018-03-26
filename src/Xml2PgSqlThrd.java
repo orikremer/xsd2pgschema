@@ -212,15 +212,13 @@ public class Xml2PgSqlThrd implements Runnable {
 						if (option.sync_weak)
 							continue;
 
-						xml_parser = new XmlParser(xml_file, xml_file_filter, option);
-
-						if (xml_parser.identity)
+						if (xml_parser.identify(option))
 							continue;
 
 					}
 
 					else if (option.sync)
-						new XmlParser(xml_file, xml_file_filter, option);
+						xml_parser.identify(option);
 
 				} catch (IOException e) {
 					e.printStackTrace();

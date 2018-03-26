@@ -42,6 +42,9 @@ import org.xml.sax.SAXException;
  */
 public class XmlParser {
 
+	/** The XML file.*/
+	File xml_file;
+
 	/** The XML document. */
 	Document document;
 
@@ -50,9 +53,6 @@ public class XmlParser {
 
 	/** The base name of XML file. */
 	public String basename = null;
-
-	/** The identity of XML document assessed by agreement of check sum. */
-	public boolean identity = false;
 
 	/**
 	 * Instance of XML parser.
@@ -66,25 +66,9 @@ public class XmlParser {
 	 */
 	public XmlParser(DocumentBuilder doc_builder, XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter) throws IOException, SAXException {
 
-		setDocumentId(xml_file, xml_file_filter);
+		init(xml_file, xml_file_filter);
 
-		parse(doc_builder, validator, xml_file, xml_file_filter);
-
-	}
-
-	/**
-	 * Instance of XML parser for check sum only.
-	 *
-	 * @param xml_file XML file
-	 * @param xml_file_filter XML file filter
-	 * @param option PostgreSQL data model option
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public XmlParser(File xml_file, XmlFileFilter xml_file_filter, PgSchemaOption option) throws IOException {
-
-		setDocumentId(xml_file, xml_file_filter);
-
-		identify(xml_file, option);
+		parse(doc_builder, validator, xml_file_filter);
 
 	}
 
@@ -98,9 +82,9 @@ public class XmlParser {
 	 */
 	public XmlParser(XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter) throws IOException {
 
-		setDocumentId(xml_file, xml_file_filter);
+		init(xml_file, xml_file_filter);
 
-		validate(validator, xml_file);
+		validate(validator);
 
 	}
 
@@ -113,7 +97,7 @@ public class XmlParser {
 	 */
 	public XmlParser(File xml_file, XmlFileFilter xml_file_filter) throws IOException {
 
-		setDocumentId(xml_file, xml_file_filter);
+		init(xml_file, xml_file_filter);
 
 	}
 
@@ -124,7 +108,9 @@ public class XmlParser {
 	 * @param xml_file_filter XML file filter
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void setDocumentId(File xml_file, XmlFileFilter xml_file_filter) {
+	private void init(File xml_file, XmlFileFilter xml_file_filter) {
+
+		this.xml_file = xml_file;
 
 		String xml_file_name = xml_file.getName();
 
@@ -161,12 +147,11 @@ public class XmlParser {
 	 *
 	 * @param doc_builder instance of DocumentBuilder
 	 * @param validator instance of XmlValidator
-	 * @param xml_file XML file
 	 * @param xml_file_filter XML file filter
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws SAXException the SAX exception
 	 */
-	private void parse(DocumentBuilder doc_builder, XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter) throws IOException, SAXException {
+	private void parse(DocumentBuilder doc_builder, XmlValidator validator, XmlFileFilter xml_file_filter) throws IOException, SAXException {
 
 		// xml.gz file
 
@@ -217,10 +202,9 @@ public class XmlParser {
 	 * Validate XML document.
 	 *
 	 * @param validator instance of XmlValidator
-	 * @param xml_file XML file
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void validate(XmlValidator validator, File xml_file) throws IOException {
+	private void validate(XmlValidator validator) throws IOException {
 
 		if (FilenameUtils.getExtension(xml_file.getName()).equals("gz")) {
 
@@ -254,13 +238,13 @@ public class XmlParser {
 	/**
 	 * Identify XML document by agreement of check sum.
 	 *
-	 * @param xml_file XML file
 	 * @param option PostgreSQL data model option
+	 * @return boolean identity of XML document
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void identify(File xml_file, PgSchemaOption option) throws IOException {
+	public boolean identify(PgSchemaOption option) throws IOException {
 
-		identity = false;
+		boolean identity = false;
 
 		if (option.sync && option.check_sum_dir != null && option.check_sum_message_digest != null) {
 
@@ -305,6 +289,7 @@ public class XmlParser {
 
 		}
 
+		return identity;
 	}
 
 	/**
@@ -312,11 +297,10 @@ public class XmlParser {
 	 */
 	public void clear() {
 
+		xml_file = null;
 		document = null;
 
 		document_id = basename = null;
-
-		identity = false;
 
 	}
 
