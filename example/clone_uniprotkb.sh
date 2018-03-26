@@ -45,6 +45,7 @@ esac
 relations=`psql -d $DB_NAME -U $DB_USER -c "\d" | wc -l`
 
 if [ $sync_update != "true" ] || [ $relations = "0" ] ; then
+ sync_update=false
  psql -d $DB_NAME -U $DB_USER -f $DB_SCHEMA --quiet
 fi
 
@@ -52,10 +53,9 @@ WORK_DIR=pg_work
 
 if [ $sync_update != "true" ] ; then
  CSV_DIR=$WORK_DIR/csv
-else
- MD5_DIR=chk_sum_pgsql
 fi
 
+MD5_DIR=chk_sum_pgsql
 ERR_DIR=$WORK_DIR/err
 
 rm -rf $WORK_DIR
@@ -72,7 +72,7 @@ err_file=$ERR_DIR/all_err
 
 if [ $sync_update != "true" ] ; then
 
- java -classpath ../xsd2pgschema.jar xml2pgcsv --xsd $XSD_SCHEMA --xml $XML_DIR --csv-dir $CSV_DIR --db-name $DB_NAME --db-user $DB_USER 2> $err_file
+ java -classpath ../xsd2pgschema.jar xml2pgcsv --xsd $XSD_SCHEMA --xml $XML_DIR --csv-dir $CSV_DIR --sync $MD5_DIR --db-name $DB_NAME --db-user $DB_USER 2> $err_file
 
 else
 
