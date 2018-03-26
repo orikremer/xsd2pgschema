@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -36,7 +35,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -46,9 +44,7 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.store.HardlinkCopyDirectoryWrapper;
 import org.apache.lucene.store.MMapDirectory;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -69,9 +65,6 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/** The thread id. */
 	private int thrd_id;
 
-	/** The max threads. */
-	private int max_thrds;
-
 	/** The doc builder for reusing. */
 	private DocumentBuilder doc_builder;
 
@@ -90,16 +83,12 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/** The XML file queue. */
 	private LinkedBlockingQueue<File> xml_file_queue = null;
 
-	/** The Lucene index writer. */
-	private IndexWriter writer = null;
-
 	/**
 	 * Instance of Xml2LuceneIdxThrd.
 	 *
 	 * @param shard_id shard id
 	 * @param shard_size shard size
 	 * @param thrd_id thread id
-	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue
@@ -111,13 +100,12 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2LuceneIdxThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, final IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2LuceneIdxThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, final IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.shard_id = shard_id;
 		this.shard_size = shard_size;
 
 		this.thrd_id = thrd_id;
-		this.max_thrds = max_thrds;
 
 		this.xml_file_filter = xml_file_filter;
 		this.xml_file_queue = xml_file_queue;
@@ -151,104 +139,96 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		// Lucene index writer
 
-		String idx_dir_name = xml2luceneidx.idx_dir_name;
+		if (thrd_id == 0) {
 
-		if (shard_size > 1)
-			idx_dir_name += "/" + PgSchemaUtil.shard_dir_prefix + shard_id;
+			String idx_dir_name = xml2luceneidx.idx_dir_name;
 
-		if (max_thrds > 1)
-			idx_dir_name += "/" + PgSchemaUtil.thrd_dir_prefix + thrd_id;
+			if (shard_size > 1)
+				idx_dir_name += "/" + PgSchemaUtil.shard_dir_prefix + shard_id;
 
-		File idx_dir = new File(idx_dir_name);
+			File idx_dir = new File(idx_dir_name);
 
-		if (!idx_dir.isDirectory()) {
+			if (!idx_dir.isDirectory()) {
 
-			if (!idx_dir.mkdir())
-				throw new PgSchemaException("Couldn't create directory '" + idx_dir_name + "'.");
-
-		}
-
-		Directory dir = FSDirectory.open(idx_dir.toPath());
-
-		IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
-
-		idx_dir_name = xml2luceneidx.idx_dir_name;
-
-		if (shard_size > 1)
-			idx_dir_name += "/" + PgSchemaUtil.shard_dir_prefix + shard_id;
-
-		Path idx_dir_path = Paths.get(idx_dir_name);
-
-		boolean has_idx = option.isSynchronizable() && Files.list(idx_dir_path).anyMatch(path -> path.getFileName().toString().matches("^segments_[0-9]+"));
-
-		config.setOpenMode(has_idx ? OpenMode.CREATE_OR_APPEND : OpenMode.CREATE);
-
-		writer = new IndexWriter(dir, config);
-
-		// delete indexes if XML not exists
-
-		if (has_idx && thrd_id == 0) {
-
-			xml2luceneidx.cross_writer[shard_id] = writer;
-
-			HashMap<String, Integer> doc_map = new HashMap<String, Integer>();
-
-			IndexReader reader = DirectoryReader.open(MMapDirectory.open(idx_dir_path));
-
-			for (int i = 0; i < reader.numDocs(); i++)
-				doc_map.put(reader.document(i).get(option.document_key_name), i);
-
-			if (option.sync) {
-
-				HashMap<String, Integer> _doc_map = new HashMap<String, Integer>();
-
-				_doc_map.putAll(doc_map);
-
-				xml_file_queue.forEach(xml_file -> {
-
-					try {
-
-						XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
-
-						_doc_map.remove(xml_parser.document_id);
-
-					} catch (IOException e) {
-						e.printStackTrace();
-						System.exit(1);
-					}
-
-				});
-
-				List<Integer> del_ids = _doc_map.entrySet().stream().map(entry -> entry.getValue()).collect(Collectors.toList());
-
-				del_ids.stream().sorted(Comparator.reverseOrder()).forEach(i -> {
-
-					try {
-
-						writer.tryDeleteDocument(reader, i);
-
-					} catch (IOException e) {
-						e.printStackTrace();
-						System.exit(1);
-					}
-
-				});;
-
-				del_ids.clear();
-
-				_doc_map.clear();
-
-				writer.commit();
-
-				reader.close();
+				if (!idx_dir.mkdir())
+					throw new PgSchemaException("Couldn't create directory '" + idx_dir_name + "'.");
 
 			}
 
-			synchronized (xml2luceneidx.doc_rows) {
-				doc_map.entrySet().stream().map(entry -> entry.getKey()).forEach(doc_id -> xml2luceneidx.doc_rows.put(doc_id, shard_id));
-			}
+			Path idx_dir_path = idx_dir.toPath();
 
-			doc_map.clear();
+			boolean has_idx = option.isSynchronizable() && Files.list(idx_dir_path).anyMatch(path -> path.getFileName().toString().matches("^segments_.*"));
+
+			IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
+
+			config.setOpenMode(has_idx ? OpenMode.APPEND : OpenMode.CREATE);
+
+			// delete indexes if XML not exists
+
+			xml2luceneidx.writers[shard_id] = new IndexWriter(FSDirectory.open(idx_dir_path), config);
+
+			if (has_idx) {
+
+				HashMap<String, Integer> doc_map = new HashMap<String, Integer>();
+
+				IndexReader reader = DirectoryReader.open(MMapDirectory.open(idx_dir_path));
+
+				for (int i = 0; i < reader.numDocs(); i++)
+					doc_map.put(reader.document(i).get(option.document_key_name), i);
+
+				if (option.sync) {
+
+					HashMap<String, Integer> _doc_map = new HashMap<String, Integer>();
+
+					_doc_map.putAll(doc_map);
+
+					xml_file_queue.forEach(xml_file -> {
+
+						try {
+
+							XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
+
+							_doc_map.remove(xml_parser.document_id);
+
+						} catch (IOException e) {
+							e.printStackTrace();
+							System.exit(1);
+						}
+
+					});
+
+					List<Integer> del_ids = _doc_map.entrySet().stream().map(entry -> entry.getValue()).collect(Collectors.toList());
+
+					del_ids.stream().sorted(Comparator.reverseOrder()).forEach(i -> {
+
+						try {
+
+							xml2luceneidx.writers[shard_id].tryDeleteDocument(reader, i);
+
+						} catch (IOException e) {
+							e.printStackTrace();
+							System.exit(1);
+						}
+
+					});;
+
+					del_ids.clear();
+
+					_doc_map.clear();
+
+					xml2luceneidx.writers[shard_id].commit();
+
+					reader.close();
+
+				}
+
+				synchronized (xml2luceneidx.doc_rows) {
+					doc_map.entrySet().stream().map(entry -> entry.getKey()).forEach(doc_id -> xml2luceneidx.doc_rows.put(doc_id, shard_id));
+				}
+
+				doc_map.clear();
+
+			}
 
 		}
 
@@ -263,7 +243,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		int total = xml_file_queue.size();
 		boolean show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
 		boolean synchronizable = option.isSynchronizable();
+
 		Integer _shard_id = null;
+		IndexWriter writer = xml2luceneidx.writers[shard_id];
 
 		File xml_file;
 
@@ -307,20 +289,35 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 				schema.xml2LucIdx(xml_parser, lucene_doc);
 
-				if (_shard_id == null)
-					writer.addDocument(lucene_doc);
+				if (_shard_id == null) {
+
+					synchronized (xml2luceneidx.writers[shard_id]) {
+						writer.addDocument(lucene_doc);
+					}
+
+				}
 
 				else {
 
 					Term term = new Term(option.document_key_name, schema.getDocumentId());
 
-					if (shard_id == _shard_id)
-						writer.updateDocument(term, lucene_doc);
-					else
-						xml2luceneidx.cross_writer[_shard_id].updateDocument(term, lucene_doc);
+					if (shard_id == _shard_id) {
+
+						synchronized (xml2luceneidx.writers[shard_id]) {
+							writer.updateDocument(term, lucene_doc);
+						}
+
+					}
+
+					else {
+
+						synchronized (xml2luceneidx.writers[_shard_id]) {
+							xml2luceneidx.writers[_shard_id].updateDocument(term, lucene_doc);
+						}
+
+					}
 
 				}
-
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -334,6 +331,20 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		schema.closeXml2LucIdx();
 
+	}
+
+	/**
+	 * close Lucene index.
+	 *
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public void close() throws IOException {
+
+		if (thrd_id != 0)
+			return;
+
+		IndexWriter writer = xml2luceneidx.writers[shard_id];
+
 		try {
 
 			writer.commit();
@@ -343,52 +354,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 			e.printStackTrace();
 		}
 
-	}
-
-	/**
-	 * Merge Lucene indices.
-	 *
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public void merge() throws IOException {
-
-		if (thrd_id != 0 || max_thrds < 2)
-			return;
-
-		String dst_idx_dir_name = xml2luceneidx.idx_dir_name;
-
-		if (shard_size > 1)
-			dst_idx_dir_name += "/" + PgSchemaUtil.shard_dir_prefix + shard_id;
-
-		FSDirectory dst_idx = FSDirectory.open(Paths.get(dst_idx_dir_name));
-
-		IndexWriter writer = new IndexWriter(dst_idx, new IndexWriterConfig(null).setOpenMode(OpenMode.CREATE));
-
-		String[] src_idx_dir_name = new String[max_thrds];
-		Directory[] src_idx = new Directory[max_thrds];
-
-		for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
-
-			src_idx_dir_name[thrd_id] = dst_idx_dir_name + "/" + PgSchemaUtil.thrd_dir_prefix + thrd_id;
-
-			// try to use hardlinks if possible
-			src_idx[thrd_id] = new HardlinkCopyDirectoryWrapper(FSDirectory.open(Paths.get(src_idx_dir_name[thrd_id])));
-
-		}
-
-		System.out.println("Merging" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
-
-		writer.addIndexes(src_idx);
-
-		System.out.println("Full merge" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
-
-		writer.forceMerge(1);
-		writer.close();
-
 		System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
-
-		for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++)
-			FileUtils.deleteDirectory(new File(src_idx_dir_name[thrd_id]));
 
 	}
 

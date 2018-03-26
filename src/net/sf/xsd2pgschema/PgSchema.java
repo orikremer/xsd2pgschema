@@ -2411,7 +2411,7 @@ public class PgSchema {
 
 		}
 
-		tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparing(table -> table.order)).forEach(table -> {
+		tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparing(table -> -table.order)).forEach(table -> {
 
 			System.out.println("DROP TABLE IF EXISTS " + PgSchemaUtil.avoidPgReservedWords(table.name) + " CASCADE;");
 
@@ -2419,7 +2419,7 @@ public class PgSchema {
 
 		System.out.println("");
 
-		tables.stream().filter(table -> !table.realized).sorted(Comparator.comparing(table -> -table.order)).forEach(table -> realize(table, true));
+		tables.stream().filter(table -> !table.realized).sorted(Comparator.comparing(table -> table.order)).forEach(table -> realize(table, true));
 
 		// add primary key/foreign key
 
@@ -2534,7 +2534,7 @@ public class PgSchema {
 					if (constraint_name.length() > PgSchemaUtil.max_enum_len)
 						constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 
-					System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + PgSchemaUtil.avoidPgReservedWords(foreign_key.child_table) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " FOREIGN KEY ( " + PgSchemaUtil.avoidPgReservedWords(child_fields[i]) + " ) REFERENCES " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(parent_fields[i]) + " ) NOT VALID;\n");
+					System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + PgSchemaUtil.avoidPgReservedWords(foreign_key.child_table) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " FOREIGN KEY ( " + PgSchemaUtil.avoidPgReservedWords(child_fields[i]) + " ) REFERENCES " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(parent_fields[i]) + " ) ON DELETE CASCADE NOT VALID;\n");
 
 				}
 
@@ -2618,7 +2618,7 @@ public class PgSchema {
 			return;
 
 		if (!output) {
-			table.order++;
+			table.order--;
 			return;
 		}
 
@@ -2803,7 +2803,7 @@ public class PgSchema {
 					if (foreign_field != null) {
 
 						if (foreign_field.unique_key)
-							System.out.print("CONSTRAINT " + field.constraint_name + " REFERENCES " + PgSchemaUtil.avoidPgReservedWords(field.foreign_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " ) ");
+							System.out.print("CONSTRAINT " + field.constraint_name + " REFERENCES " + PgSchemaUtil.avoidPgReservedWords(field.foreign_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " ) ON DELETE CASCADE");
 
 					}
 
@@ -3680,13 +3680,14 @@ public class PgSchema {
 	 * PostgreSQL data migration.
 	 *
 	 * @param xml_parser XML document
+	 * @param update whether update or insert
 	 * @param db_conn Database connection
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2PgSql(XmlParser xml_parser, Connection db_conn) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
+	public void xml2PgSql(XmlParser xml_parser, boolean update, Connection db_conn) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -3694,7 +3695,10 @@ public class PgSchema {
 
 		try {
 
-			PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, null, root_table, db_conn);
+			if (update && !option.rel_data_ext)
+				deleteBeforeUpdate(db_conn);
+
+			PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, null, root_table, update, db_conn);
 
 			node2pgsql.parseRootNode(node);
 			node2pgsql.executeBatch();
@@ -3722,17 +3726,18 @@ public class PgSchema {
 	 * @param list_holder whether parent field is list holder
 	 * @param nested whether it is nested
 	 * @param nest_id ordinal number of current node
+	 * @param update whether update or insert
 	 * @param db_conn Database connection
 	 * @throws SQLException the SQL exception
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	protected void parseChildNode2PgSql(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id, final Connection db_conn) throws SQLException, ParserConfigurationException, TransformerException, IOException {
+	protected void parseChildNode2PgSql(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id, final boolean update, final Connection db_conn) throws SQLException, ParserConfigurationException, TransformerException, IOException {
 
 		PgSchemaNode2PgSql node2pgsql = null;
 
-		node2pgsql = new PgSchemaNode2PgSql(this, parent_table, table, db_conn);
+		node2pgsql = new PgSchemaNode2PgSql(this, parent_table, table, update, db_conn);
 
 		for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
 

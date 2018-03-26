@@ -1,7 +1,14 @@
-﻿ Changes in xsd2pgschema 2.8.1 (release 2018-03-23)
+﻿ Changes in xsd2pgschema 2.8.2 (release 2018-03-26)
+
+  Appended ON DELETE CASCADE to foreign key constraint for differential update.
+  Supported PostgreSQL UPSERT command while differential update.
+  Fixed Lucene full-text indexing in differential update mode.
+  Improved full-text indexing performance in differential update mode.
+
+ Changes in xsd2pgschema 2.8.1 (release 2018-03-23)
 
   Retrieved order of tables in PostgreSQL DDL, which broke in 2.7.9 and 2.8.0.
-  Defined prefix of namespace URI, sphinx, in xmlpipe2 document for StAX processing in differential update. 
+  Defined prefix of namespace URI, sphinx, in xmlpipe2 document for StAX processing in differential update.
   Fixed differential update of xmlpipe2 document.
 
  Changes in xsd2pgschema 2.8.0 (release 2018-03-22)
@@ -21,7 +28,7 @@
   Added --test-ddl option in csv2pgsql, xml2pgcsv, xml2pgsql and xpath2pgsql main classes.
   Allowed to use regular expression in --xml option. e.g. --xml some_dir/[0-9a-z]{2}, --xml some_dir/*, etc.
   Added consistency test on column order and column type of PostgreSQL DDL.
- 
+
  Changes in xsd2pgschema 2.7.7 (release 2018-02-08)
 
   Removed JSON array whose all objects are either null or empty.

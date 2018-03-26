@@ -61,9 +61,6 @@ public class xml2pgsql {
 	/** The XML file queue. */
 	private static LinkedBlockingQueue<File> xml_file_queue = null;
 
-	/** The sync lock object. */
-	public static Object sync_lock = null;
-
 	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
 
@@ -301,8 +298,6 @@ public class xml2pgsql {
 			}
 
 			option.check_sum_dir = check_sum_dir;
-
-			sync_lock = new Object();
 
 		}
 

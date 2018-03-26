@@ -65,8 +65,8 @@ public class xml2luceneidx {
 	/** The XML file queue. */
 	private static LinkedBlockingQueue<File> xml_file_queue = null;
 
-	/** The index writer while synchronization for case of sharding. */
-	public static IndexWriter[] cross_writer = null;
+	/** The Lucene index writers. */
+	public static IndexWriter[] writers = null;
 
 	/** The document id stored in index (key=document id, value=shard id). */
 	public static HashMap<String, Integer> doc_rows = null;
@@ -293,6 +293,8 @@ public class xml2luceneidx {
 
 		}
 
+		writers = new IndexWriter[shard_size];
+
 		if (option.sync) {
 
 			if (check_sum_dir_name.isEmpty()) {
@@ -313,8 +315,6 @@ public class xml2luceneidx {
 
 			option.check_sum_dir = check_sum_dir;
 
-			cross_writer = new IndexWriter[shard_size];
-
 			doc_rows = new HashMap<String, Integer>();
 
 		}
@@ -334,7 +334,7 @@ public class xml2luceneidx {
 					if (shard_id > 0 || thrd_id > 0)
 						is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
 
-					proc_thrd[_thrd_id] = new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, max_thrds, is, xml_file_filter, xml_file_queue, option, index_filter);
+					proc_thrd[_thrd_id] = new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, option, index_filter);
 
 				} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 					e.printStackTrace();
@@ -367,17 +367,13 @@ public class xml2luceneidx {
 
 			}
 
-			if (max_thrds > 1) {
+			try {
 
-				try {
+				proc_thrd[shard_id * max_thrds].close();
 
-					proc_thrd[shard_id * max_thrds].merge();
-
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
 			}
 
 		}

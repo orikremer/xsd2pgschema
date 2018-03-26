@@ -45,6 +45,18 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/** Whether field is occupied or not. */
 	private boolean[] occupied = null;
 
+	/** Whether update or insert. */
+	private boolean update;
+
+	/** Whether upsert or insert. */
+	private boolean upsert = false;
+
+	/** The primary key. */
+	private PgField pkey = null;
+
+	/** The size of parameters. */
+	private int param_size = 1;
+
 	/** The database connection. */
 	private Connection db_conn;
 
@@ -54,16 +66,19 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @param schema PostgreSQL data model
 	 * @param parent_table parent table
 	 * @param table current table
+	 * @param update whether update or insert
 	 * @param db_conn database connection
 	 * @throws SQLException the SQL exception
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerConfigurationException the transformer configuration exception
 	 */
-	public PgSchemaNode2PgSql(final PgSchema schema, final PgTable parent_table, final PgTable table, final Connection db_conn) throws SQLException, ParserConfigurationException, TransformerConfigurationException {
+	public PgSchemaNode2PgSql(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean update, final Connection db_conn) throws SQLException, ParserConfigurationException, TransformerConfigurationException {
 
 		super(schema, parent_table, table);
 
 		occupied = new boolean[fields.size()];
+
+		this.update = update;
 
 		this.db_conn = db_conn;
 
@@ -87,10 +102,50 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				sql.append(", ");
 
+				param_size++;
+
 			}
 
 			sql.setLength(sql.length() - 2);
 			sql.append(" )");
+
+			if (update && rel_data_ext) {
+
+				pkey = fields.stream().filter(field -> field.primary_key).findFirst().get();
+
+				if (pkey.unique_key) {
+
+					String pkey_name = PgSchemaUtil.avoidPgReservedWords(pkey.name);
+
+					sql.append(" ON CONFLICT ( " + pkey_name + " ) DO UPDATE SET ");
+
+					for (int f = 0; f < fields.size(); f++) {
+
+						PgField field = fields.get(f);
+
+						if (field.omissible || field.primary_key)
+							continue;
+
+						sql.append(PgSchemaUtil.avoidPgReservedWords(field.name) + "=");
+
+						if (field.enum_name == null)
+							sql.append("?");
+						else
+							sql.append("?::" + field.enum_name);
+
+						sql.append(", ");
+
+					}
+
+					sql.setLength(sql.length() - 2);
+
+					sql.append(" WHERE EXCLUDED." + pkey_name + "=?");
+
+					upsert = true;
+
+				}
+
+			}
 
 			ps = db_conn.prepareStatement(sql.toString());
 
@@ -173,6 +228,8 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		int param_id = 1;
 
+		int _param_id = param_size;
+
 		for (int f = 0; f < fields.size(); f++) {
 
 			PgField field = fields.get(f);
@@ -186,6 +243,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					field.writeValue2PgSql(ps, param_id, document_id);
 					occupied[f] = true;
 
+					if (upsert)
+						field.writeValue2PgSql(ps, _param_id, document_id);
+
 				}
 
 			}
@@ -195,7 +255,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			else if (field.serial_key) {
 
 				if (ps != null)
-					writeSerKey(f, param_id, key_id);
+					writeSerKey(f, param_id, upsert ? _param_id : -1, key_id);
 
 			}
 
@@ -204,7 +264,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			else if (field.xpath_key) {
 
 				if (ps != null)
-					writeHashKey(f, param_id, current_key.substring(document_id_len));
+					writeHashKey(f, param_id, upsert ? _param_id : -1, current_key.substring(document_id_len));
 
 			}
 
@@ -213,7 +273,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			else if (field.primary_key) {
 
 				if (ps != null && rel_data_ext)
-					writeHashKey(f, param_id, primary_key);
+					writeHashKey(f, param_id, upsert ? (param_size - 1) * 2 : -1, primary_key);
 
 			}
 
@@ -224,7 +284,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				if (parent_table.name.equals(field.foreign_table)) {
 
 					if (ps != null && rel_data_ext)
-						writeHashKey(f, param_id, parent_key);
+						writeHashKey(f, param_id, upsert ? _param_id : -1, parent_key);
 
 				}
 
@@ -237,7 +297,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				if (setNestedKey(field, current_key, key_id)) {
 
 					if (ps != null && rel_data_ext)
-						writeHashKey(f, param_id, nested_key[nested_fields]);
+						writeHashKey(f, param_id, upsert ? _param_id : -1, nested_key[nested_fields]);
 
 					nested_fields++;
 
@@ -253,8 +313,13 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					if (ps != null) {
 
-						field.writeValue2PgSql(ps, param_id, field.normalize(content));
+						String normalized_value = field.normalize(content);
+
+						field.writeValue2PgSql(ps, param_id, normalized_value);
 						occupied[f] = true;
+
+						if (upsert)
+							field.writeValue2PgSql(ps, _param_id, normalized_value);
 
 					}
 
@@ -278,6 +343,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					field.writeValue2PgSql(ps, param_id, xml_object);
 					occupied[f] = true;
 
+					if (upsert)
+						field.writeValue2PgSql(ps, _param_id, xml_object);
+
 				}
 
 			}
@@ -285,8 +353,14 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			if (!filled)
 				break;
 
-			if (!field.omissible)
+			if (!field.omissible) {
+
 				param_id++;
+
+				if (!field.primary_key)
+					_param_id++;
+
+			}
 
 		}
 
@@ -331,6 +405,26 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			}
 
+			if (upsert) {
+
+				int _param_id = param_size;
+
+				for (int f = 0; f < fields.size(); f++) {
+
+					PgField field = fields.get(f);
+
+					if (field.omissible || field.primary_key)
+						continue;
+
+					if (!occupied[f])
+						ps.setNull(_param_id, field.getSqlDataType());
+
+					_param_id++;
+
+				}
+
+			}
+
 			ps.addBatch();
 
 		}
@@ -352,7 +446,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			return;
 
 		for (int n = 0; n < nested_fields; n++)
-			schema.parseChildNode2PgSql(proc_node, table, schema.getTable(nested_table_id[n]), current_key, nested_key[n], list_holder[n], table.bridge, 0, db_conn);
+			schema.parseChildNode2PgSql(proc_node, table, schema.getTable(nested_table_id[n]), current_key, nested_key[n], list_holder[n], table.bridge, 0, update, db_conn);
 
 	}
 
@@ -379,7 +473,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			boolean exists = existsNestedNode(nested_table, node_test.proc_node);
 
-			schema.parseChildNode2PgSql(exists || nested ? node_test.proc_node : proc_node, table, nested_table, node_test.primary_key, nested_key[n], list_holder[n], !exists, exists ? 0 : node_test.key_id, db_conn);
+			schema.parseChildNode2PgSql(exists || nested ? node_test.proc_node : proc_node, table, nested_table, node_test.primary_key, nested_key[n], list_holder[n], !exists, exists ? 0 : node_test.key_id, update, db_conn);
 
 		}
 
@@ -404,7 +498,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			PgTable nested_table = schema.getTable(nested_table_id[n]);
 
 			if (existsNestedNode(nested_table, proc_node))
-				schema.parseChildNode2PgSql(proc_node, table, nested_table, current_key, nested_key[n], list_holder[n], false, 0, db_conn);
+				schema.parseChildNode2PgSql(proc_node, table, nested_table, current_key, nested_key[n], list_holder[n], false, 0, update, db_conn);
 
 		}
 
@@ -415,23 +509,35 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 *
 	 * @param field_id field id
 	 * @param param_id parameter index
+	 * @param _param_id parameter index for upsert
 	 * @param proc_key source string
 	 * @throws SQLException the SQL exception
 	 */
-	private void writeHashKey(int field_id, int param_id, String key_name) throws SQLException {
+	private void writeHashKey(int field_id, int param_id, int _param_id, String key_name) throws SQLException {
 
 		switch (option.hash_size) {
 		case native_default:
-			ps.setBytes(param_id, schema.getHashKeyBytes(key_name));
+			byte[] bytes = schema.getHashKeyBytes(key_name);
+			ps.setBytes(param_id, bytes);
+			if (_param_id != -1)
+				ps.setBytes(_param_id, bytes);
 			break;
 		case unsigned_int_32:
-			ps.setInt(param_id, schema.getHashKeyInt(key_name));
+			int int_key = schema.getHashKeyInt(key_name);
+			ps.setInt(param_id, int_key);
+			if (_param_id != -1)
+				ps.setInt(_param_id, int_key);
 			break;
 		case unsigned_long_64:
-			ps.setLong(param_id, schema.getHashKeyLong(key_name));
+			long long_key = schema.getHashKeyLong(key_name);
+			ps.setLong(param_id, long_key);
+			if (_param_id != -1)
+				ps.setLong(_param_id, long_key);
 			break;
 		default:
 			ps.setString(param_id, key_name);
+			if (_param_id != -1)
+				ps.setString(_param_id, key_name);
 		}
 
 		occupied[field_id] = true;
@@ -443,17 +549,22 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 *
 	 * @param field_id field id
 	 * @param param_id parameter index
+	 * @param _param_id parameter index for upsert
 	 * @param key_id serial id
 	 * @throws SQLException the SQL exception
 	 */
-	private void writeSerKey(int field_id, int param_id, int key_id) throws SQLException {
+	private void writeSerKey(int field_id, int param_id, int _param_id, int key_id) throws SQLException {
 
 		switch (option.ser_size) {
 		case unsigned_int_32:
 			ps.setInt(param_id, key_id);
+			if (_param_id != -1)
+				ps.setInt(_param_id,  key_id);
 			break;
 		case unsigned_short_16:
 			ps.setShort(param_id, (short) key_id);
+			if (_param_id != -1)
+				ps.setInt(_param_id,  key_id);
 			break;
 		}
 

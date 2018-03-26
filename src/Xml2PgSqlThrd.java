@@ -160,23 +160,6 @@ public class Xml2PgSqlThrd implements Runnable {
 
 					_doc_rows.clear();
 
-					synchronized (xml2pgsql.sync_lock) {
-						xml2pgsql.sync_lock.notifyAll();
-					}
-
-				} else {
-
-					try {
-
-						synchronized (xml2pgsql.sync_lock) {
-							xml2pgsql.sync_lock.wait();
-						}
-
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-						System.exit(1);
-					}
-
 				}
 
 			}
@@ -194,6 +177,7 @@ public class Xml2PgSqlThrd implements Runnable {
 		int total = xml_file_queue.size();
 		boolean show_progress = thrd_id == 0 && total > 1;
 		boolean synchronizable = option.isSynchronizable();
+		boolean update = false;
 
 		int polled = 0;
 
@@ -207,7 +191,9 @@ public class Xml2PgSqlThrd implements Runnable {
 
 					XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
-					if (doc_rows.contains(xml_parser.document_id)) {
+					update = doc_rows.contains(xml_parser.document_id);
+
+					if (update) {
 
 						if (option.sync_weak)
 							continue;
@@ -231,7 +217,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
 
-				schema.xml2PgSql(xml_parser, db_conn);
+				schema.xml2PgSql(xml_parser, update, db_conn);
 
 			} catch (Exception e) {
 				e.printStackTrace();

@@ -78,6 +78,9 @@ public class PgTable {
 	/** Whether bridge table or virtual table or not content_holder. */
 	boolean relational = false;
 
+	/** Whether table has foreign key. */
+	boolean has_foreign_key = false;
+
 	/** Whether table has any element. */
 	boolean has_any = false;
 
@@ -130,6 +133,7 @@ public class PgTable {
 		testListHolder();
 		testBridge();
 		testVirtual();
+		testForeignKey();
 		testHasAny();
 		testHasAnyAttribute();
 
@@ -195,6 +199,15 @@ public class PgTable {
 
 		virtual = xs_type.equals(XsTableType.xs_admin_root);
 		relational = bridge || virtual || !content_holder;
+
+	}
+
+	/**
+	 * Determine table has foreign key constraint.
+	 */
+	private void testForeignKey() {
+
+		has_foreign_key = fields.stream().anyMatch(arg -> arg.foreign_key);
 
 	}
 
