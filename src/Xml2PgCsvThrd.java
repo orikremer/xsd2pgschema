@@ -51,6 +51,9 @@ public class Xml2PgCsvThrd implements Runnable {
 	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
+	/** The PostgreSQL data model option. */
+	private PgSchemaOption option = null;
+
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
@@ -108,7 +111,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, xml2pgcsv.schema_location, option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, xml2pgcsv.schema_location, this.option = option);
 
 		schema.applyXmlPostEditor(xml2pgcsv.xml_post_editor);
 
@@ -146,12 +149,26 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		int total = xml_file_queue.size();
 		boolean show_progress = thrd_id == 0 && total > 1;
+		boolean synchronizable = option.isSynchronizable();
 
 		int polled = 0;
 
 		File xml_file;
 
 		while ((xml_file = xml_file_queue.poll()) != null) {
+
+			if (synchronizable) {
+
+				try {
+
+					new XmlParser(xml_file, xml_file_filter).identify(option);
+
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			}
 
 			try {
 

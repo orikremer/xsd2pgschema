@@ -107,6 +107,9 @@ public class PgSchemaUtil {
 	/** The prefix of directory name for multi-threading. */
 	public static final String thrd_dir_prefix = "thrd-";
 
+	/** The namespace URI representing Sphinx xmlpipe2. */
+	public static final String sph_namespace_uri = "http://sphinxsearch.com/xmlpipe2";
+
 	/** The Sphinx membership operator. */
 	public static final String sph_member_op = "__";
 

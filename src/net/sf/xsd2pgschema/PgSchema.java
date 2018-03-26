@@ -4296,7 +4296,7 @@ public class PgSchema {
 			filew.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 
 			if (data_source)
-				filew.write("<sphinx:docset xmlns:sphinx=\"http://sphinxsearch.com/\">\n");
+				filew.write("<sphinx:docset xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
 
 			filew.write("<sphinx:schema>\n");
 

@@ -46,6 +46,9 @@ public class xml2pgcsv {
 	/** The CSV directory name. */
 	public static String csv_dir_name = "pg_work";
 
+	/** The check sum directory name. */
+	private static String check_sum_dir_name = "";
+
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(true);
 
@@ -196,6 +199,16 @@ public class xml2pgcsv {
 			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);
 
+			else if (args[i].equals("--sync") && i + 1 < args.length) {
+				option.sync = true;
+				check_sum_dir_name = args[++i];
+			}
+
+			else if (args[i].equals("--checksum-by") && i + 1 < args.length) {
+				if (!option.setCheckSumAlgorithm(args[++i]))
+					showUsage();
+			}
+
 			else if (args[i].equals("--max-thrds") && i + 1 < args.length) {
 				max_thrds = Integer.valueOf(args[++i]);
 
@@ -224,6 +237,11 @@ public class xml2pgcsv {
 		}
 
 		option.resolveDocKeyOption();
+
+		if (option.sync && !option.document_key) {
+			System.out.println("Ignored --sync option because document key did not defined.");
+			option.sync = false;
+		}
 
 		if (schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");
@@ -261,6 +279,28 @@ public class xml2pgcsv {
 				System.err.println("Couldn't create directory '" + csv_dir_name + "'.");
 				System.exit(1);
 			}
+
+		}
+
+		if (option.sync) {
+
+			if (check_sum_dir_name.isEmpty()) {
+				System.err.println("Check sum directory is empty.");
+				showUsage();
+			}
+
+			File check_sum_dir = new File(check_sum_dir_name);
+
+			if (!check_sum_dir.isDirectory()) {
+
+				if (!check_sum_dir.mkdir()) {
+					System.err.println("Couldn't create directory '" + check_sum_dir_name + "'.");
+					System.exit(1);
+				}
+
+			}
+
+			option.check_sum_dir = check_sum_dir;
 
 		}
 
@@ -327,6 +367,8 @@ public class xml2pgcsv {
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
+		System.err.println("        --sync CHECK_SUM_DIRECTORY (generate check sum files)");
+		System.err.println("        --checksum-by ALGORITHM [MD2 | MD5 (default) | SHA-1 | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
 		System.err.println("        --ser-size BIT_SIZE [short (16bit); | int (32bit, default)]");

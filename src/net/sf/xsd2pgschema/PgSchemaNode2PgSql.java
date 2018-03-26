@@ -51,9 +51,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/** Whether upsert or insert. */
 	private boolean upsert = false;
 
-	/** The primary key. */
-	private PgField pkey = null;
-
 	/** The size of parameters. */
 	private int param_size = 1;
 
@@ -111,9 +108,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			if (update && rel_data_ext) {
 
-				pkey = fields.stream().filter(field -> field.primary_key).findFirst().get();
+				PgField pkey = fields.stream().filter(field -> field.primary_key).findFirst().get();
 
-				if (pkey.unique_key) {
+				if (upsert = pkey.unique_key) {
 
 					String pkey_name = PgSchemaUtil.avoidPgReservedWords(pkey.name);
 
@@ -140,8 +137,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					sql.setLength(sql.length() - 2);
 
 					sql.append(" WHERE EXCLUDED." + pkey_name + "=?");
-
-					upsert = true;
 
 				}
 
@@ -241,10 +236,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				if (ps != null) {
 
 					field.writeValue2PgSql(ps, param_id, document_id);
-					occupied[f] = true;
 
 					if (upsert)
 						field.writeValue2PgSql(ps, _param_id, document_id);
+
+					occupied[f] = true;
 
 				}
 
@@ -316,10 +312,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 						String normalized_value = field.normalize(content);
 
 						field.writeValue2PgSql(ps, param_id, normalized_value);
-						occupied[f] = true;
 
 						if (upsert)
 							field.writeValue2PgSql(ps, _param_id, normalized_value);
+
+						occupied[f] = true;
 
 					}
 
@@ -341,10 +338,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					xml_object.setString(content);
 
 					field.writeValue2PgSql(ps, param_id, xml_object);
-					occupied[f] = true;
 
 					if (upsert)
 						field.writeValue2PgSql(ps, _param_id, xml_object);
+
+					occupied[f] = true;
 
 				}
 
