@@ -500,7 +500,9 @@ public class XmlSplitterImpl {
 			else {
 
 				try {
+
 					xml_writer.add(element);
+
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
 					System.exit(1);
@@ -538,7 +540,9 @@ public class XmlSplitterImpl {
 			else {
 
 				try {
+
 					xml_writer.add(element);
+
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
 					System.exit(1);
@@ -549,7 +553,9 @@ public class XmlSplitterImpl {
 			if (doc_unit) {
 
 				try {
+
 					closeXMLEventWriter();
+
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
 					System.exit(1);
@@ -589,7 +595,9 @@ public class XmlSplitterImpl {
 			else {
 
 				try {
+
 					xml_writer.add(element);
+
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
 					System.exit(1);
@@ -638,7 +646,9 @@ public class XmlSplitterImpl {
 			else {
 
 				try {
+
 					xml_writer.add(element);
+
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
 					System.exit(1);
@@ -676,7 +686,9 @@ public class XmlSplitterImpl {
 		header_start_events.forEach(event -> {
 
 			try {
+
 				xml_writer.add(event);
+
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -687,8 +699,11 @@ public class XmlSplitterImpl {
 		if (!interim_events.isEmpty()) {
 
 			interim_events.forEach(event -> {
+
 				try {
+
 					xml_writer.add(event);
+
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
 					System.exit(1);
@@ -712,7 +727,9 @@ public class XmlSplitterImpl {
 		header_end_events.forEach(event -> {
 
 			try {
+
 				xml_writer.add(event);
+
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
 				System.exit(1);

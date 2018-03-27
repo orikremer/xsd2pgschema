@@ -253,9 +253,7 @@ public class XmlParser {
 			byte[] digest;
 
 			synchronized (option.check_sum_message_digest) { // message digest is not thread safe
-
 				digest = option.check_sum_message_digest.digest(IOUtils.toByteArray(in));
-
 			}
 
 			String new_check_sum = String.valueOf(Hex.encodeHex(digest));

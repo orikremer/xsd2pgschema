@@ -84,6 +84,9 @@ public class SphDsDocIdRemover {
 	/** The XML event writer. */
 	private XMLEventWriter xml_writer = null;
 
+	/** The set of document key to eliminate duplication. */
+	private HashSet<String> doc_ids;
+
 	/**
 	 * Instance of Sphinx xmlpipe2 document id remover.
 	 *
@@ -144,6 +147,8 @@ public class SphDsDocIdRemover {
 	 */
 	public void exec() throws IOException, XMLStreamException {
 
+		doc_ids = new HashSet<String>();
+
 		// XML event reader of source XML file
 
 		XMLInputFactory in_factory = XMLInputFactory.newInstance();
@@ -180,6 +185,8 @@ public class SphDsDocIdRemover {
 
 		in.close();
 
+		doc_ids.clear();
+
 	}
 
 	/**
@@ -201,7 +208,7 @@ public class SphDsDocIdRemover {
 	class StartDocumentReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdRemover.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -209,7 +216,9 @@ public class SphDsDocIdRemover {
 			cur_path = new StringBuilder();
 
 			try {
+
 				xml_writer.add(element);
+
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -225,7 +234,7 @@ public class SphDsDocIdRemover {
 	class EndDocumentReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdRemover.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -253,7 +262,7 @@ public class SphDsDocIdRemover {
 	class StartElementReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdRemover.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -282,7 +291,10 @@ public class SphDsDocIdRemover {
 						if (doc_key_path.equals(attr_doc_key_holder + "/@" + attr.getName())) {
 
 							no_document_key = false;
-							omit_doc_unit = sync_delete_ids.contains(attr.getValue().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", ""));
+
+							String doc_id = attr.getValue();
+
+							omit_doc_unit = sync_delete_ids.contains(doc_id) || !doc_ids.add(doc_id);
 
 							break;
 						}
@@ -294,7 +306,9 @@ public class SphDsDocIdRemover {
 			}
 
 			try {
+
 				addXMLEventWriter(element);
+
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -310,13 +324,15 @@ public class SphDsDocIdRemover {
 	class EndElementReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdRemover.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
 
 			try {
+
 				addXMLEventWriter(element);
+
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -336,13 +352,15 @@ public class SphDsDocIdRemover {
 	class CommonReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdRemover.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
 
 			try {
+
 				addXMLEventWriter(element);
+
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -358,7 +376,7 @@ public class SphDsDocIdRemover {
 	class CharactersReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdRemover.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -366,12 +384,17 @@ public class SphDsDocIdRemover {
 			if (!attr_doc_key && cur_path.toString().equals(doc_key_path)) {
 
 				no_document_key = false;
-				omit_doc_unit = sync_delete_ids.contains(element.asCharacters().getData().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", ""));
+
+				String doc_id = element.asCharacters().getData();
+
+				omit_doc_unit = sync_delete_ids.contains(doc_id) || !doc_ids.add(doc_id);
 
 			}
 
 			try {
+
 				addXMLEventWriter(element);
+
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -404,7 +427,9 @@ public class SphDsDocIdRemover {
 				interim_events.forEach(_event -> {
 
 					try {
+
 						xml_writer.add(_event);
+
 					} catch (XMLStreamException e) {
 						e.printStackTrace();
 						System.exit(1);

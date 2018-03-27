@@ -190,7 +190,7 @@ public class SphDsDocIdUpdater {
 	class StartDocumentReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdUpdater.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -200,7 +200,9 @@ public class SphDsDocIdUpdater {
 			if (source) {
 
 				try {
+
 					xml_writer.add(element);
+
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
 					System.exit(1);
@@ -218,7 +220,7 @@ public class SphDsDocIdUpdater {
 	class EndDocumentReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdUpdater.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -250,7 +252,7 @@ public class SphDsDocIdUpdater {
 	class StartElementReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdUpdater.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -258,7 +260,9 @@ public class SphDsDocIdUpdater {
 			cur_path.append("/" + element.asStartElement().getName().getLocalPart());
 
 			try {
+
 				addXMLEventWriter(element);
+
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -274,7 +278,7 @@ public class SphDsDocIdUpdater {
 	class EndElementReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdUpdater.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -305,13 +309,15 @@ public class SphDsDocIdUpdater {
 	class CommonReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdUpdater.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
 
 			try {
+
 				addXMLEventWriter(element);
+
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -327,13 +333,15 @@ public class SphDsDocIdUpdater {
 	class CharactersReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see XmlSplitterImpl.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdUpdater.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
 
 			try {
+
 				addXMLEventWriter(element);
+
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
 				System.exit(1);
