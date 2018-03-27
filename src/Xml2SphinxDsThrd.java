@@ -58,9 +58,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 	/** The thread id. */
 	private int thrd_id;
 
-	/** The max threads. */
-	private int max_thrds;
-
 	/** The document builder for reusing. */
 	private DocumentBuilder doc_builder;
 
@@ -94,7 +91,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @param shard_id shard id
 	 * @param shard_size shard size
 	 * @param thrd_id thread id
-	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue
@@ -106,13 +102,12 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final int max_thrds, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.shard_id = shard_id;
 		this.shard_size = shard_size;
 
 		this.thrd_id = thrd_id;
-		this.max_thrds = max_thrds;
 
 		this.xml_file_filter = xml_file_filter;
 		this.xml_file_queue = xml_file_queue;
@@ -157,6 +152,8 @@ public class Xml2SphinxDsThrd implements Runnable {
 				throw new PgSchemaException("Couldn't create directory '" + ds_dir_name + "'.");
 
 		}
+
+		// parse the previous Sphinx schema file if exists
 
 		sphinx_schema = new File(ds_dir, PgSchemaUtil.sph_schema_name);
 
@@ -304,23 +301,10 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		schema.closeXml2SphDs();
 
-		if (max_thrds == 1) {
-
-			try {
-
-				composite();
-
-			} catch (PgSchemaException | IOException | ParserConfigurationException | SAXException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-
-		}
-
 	}
 
 	/**
-	 * Composite Sphinx data source files
+	 * Composite Sphinx data source file (xmlpipe2)
 	 *
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws IOException Signals that an I/O exception has occurred.
@@ -334,6 +318,8 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		File sph_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
 		File sph_data_extract = new File(ds_dir, PgSchemaUtil.sph_data_extract_name);
+
+		// sync-delete documents from the previous xmlpipe2
 
 		boolean has_idx = sph_data_source.exists();
 
@@ -372,7 +358,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		};
 
-		// Sphinx xmlpipe2 writer
+		// composite a xmlpipe2 from partial documents
 
 		schema.writeSphSchema(sph_data_source, true);
 
@@ -408,11 +394,11 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
 
-		// Sphinx schema writer for next update or merge
+		// write Sphinx schema file for next update or merge
 
 		schema.writeSphSchema(sphinx_schema, false);
 
-		// Sphinx configuration writer
+		// write Sphinx configuration file
 
 		File sphinx_conf = new File(ds_dir, PgSchemaUtil.sph_conf_name);
 		schema.writeSphConf(sphinx_conf, xml2sphinxds.ds_name, sph_data_source);
@@ -428,7 +414,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 			return;
 		}
 
-		// Full merge
+		// merge xmlpipe2 with the previous one
 
 		System.out.println("Full merge" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
 

@@ -137,7 +137,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2luceneidx.schema_location, null, option.cache_xsd)) : null;
 
-		// Lucene index writer
+		// prepare index writer
 
 		if (thrd_id == 0) {
 
@@ -318,7 +318,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	}
 
 	/**
-	 * close Lucene index.
+	 * Close index writer.
 	 *
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */

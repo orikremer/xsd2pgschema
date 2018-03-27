@@ -32,6 +32,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.io.FileUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -73,7 +74,6 @@ public class Xml2PgCsvThrd implements Runnable {
 	 * Instance of Xml2PgCsvThrd.
 	 *
 	 * @param thrd_id thread id
-	 * @param max_thrds max threads
 	 * @param is InputStream of XML Schema
 	 * @param csv_dir directory contains CSV files
 	 * @param xml_file_filter XML file filter
@@ -87,7 +87,7 @@ public class Xml2PgCsvThrd implements Runnable {
 	 * @throws SQLException the SQL exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2PgCsvThrd(final int thrd_id, final int max_thrds, final InputStream is, final File csv_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
+	public Xml2PgCsvThrd(final int thrd_id, final InputStream is, final File csv_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
 
@@ -130,7 +130,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		}
 
-		this.csv_dir = max_thrds == 1 ? csv_dir : new File(csv_dir, PgSchemaUtil.thrd_dir_prefix + thrd_id);
+		this.csv_dir = new File(csv_dir, PgSchemaUtil.thrd_dir_prefix + thrd_id);
 
 		if (!this.csv_dir.isDirectory()) {
 
@@ -218,10 +218,11 @@ public class Xml2PgCsvThrd implements Runnable {
 					e.printStackTrace();
 				}
 
-				File[] files = csv_dir.listFiles();
-
-				for (int i = 0; i < files.length; i++)
-					files[i].delete();
+				try {
+					FileUtils.deleteDirectory(csv_dir);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 
 			}
 

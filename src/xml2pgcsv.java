@@ -316,7 +316,7 @@ public class xml2pgcsv {
 				if (thrd_id > 0)
 					is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
 
-				proc_thrd[thrd_id] = new Xml2PgCsvThrd(thrd_id, max_thrds, is, csv_dir, xml_file_filter, xml_file_queue, option, pg_option);
+				proc_thrd[thrd_id] = new Xml2PgCsvThrd(thrd_id, is, csv_dir, xml_file_filter, xml_file_queue, option, pg_option);
 
 			} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | SQLException | PgSchemaException e) {
 				e.printStackTrace();

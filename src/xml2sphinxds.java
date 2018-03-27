@@ -365,7 +365,7 @@ public class xml2sphinxds {
 					if (shard_id > 0 || thrd_id > 0)
 						is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
 
-					proc_thrd[_thrd_id] = new Xml2SphinxDsThrd(shard_id, shard_size, thrd_id, max_thrds, is, xml_file_filter, xml_file_queue, option, index_filter);
+					proc_thrd[_thrd_id] = new Xml2SphinxDsThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, option, index_filter);
 
 				} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 					e.printStackTrace();
@@ -398,17 +398,13 @@ public class xml2sphinxds {
 
 			}
 
-			if (max_thrds > 1) {
+			try {
 
-				try {
+				proc_thrd[shard_id * max_thrds].composite();
 
-					proc_thrd[shard_id * max_thrds].composite();
-
-				} catch (PgSchemaException | IOException | ParserConfigurationException | SAXException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
+			} catch (PgSchemaException | IOException | ParserConfigurationException | SAXException e) {
+				e.printStackTrace();
+				System.exit(1);
 			}
 
 		}
