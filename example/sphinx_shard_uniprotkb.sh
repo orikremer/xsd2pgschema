@@ -33,7 +33,9 @@ if [ -d $IDX_DIR ] ; then
    exit 1;;
  esac
 
- rm -rf $IDX_DIR
+ if [ $sync_update != "true" ] ; then
+  rm -rf $IDX_DIR
+ fi
 
 fi
 
