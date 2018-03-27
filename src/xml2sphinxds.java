@@ -67,7 +67,7 @@ public class xml2sphinxds {
 	/** The XML file queue. */
 	private static LinkedBlockingQueue<File> xml_file_queue = null;
 
-	/** The document id stored in index (key=document id, value=shard id). */
+	/** The document id stored in data source (key=document id, value=shard id). */
 	public static HashMap<String, Integer> doc_rows = null;
 
 	/** The set of deleting document id while synchronization. */

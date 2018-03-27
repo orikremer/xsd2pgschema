@@ -52,7 +52,10 @@ public class SphDsDocIdRemover {
 	private File sph_data_extract = null;
 
 	/** The set of deleting document id while synchronization. */
-	private HashSet<String> sync_delete_ids = null;
+	private HashSet<String> del_doc_set = null;
+
+	/** The set of document id stored in data source. */
+	private HashSet<String> doc_set;
 
 	/** Whether this document unit is omitted or not. */
 	private boolean omit_doc_unit = false;
@@ -84,24 +87,21 @@ public class SphDsDocIdRemover {
 	/** The XML event writer. */
 	private XMLEventWriter xml_writer = null;
 
-	/** The set of document key to eliminate duplication. */
-	private HashSet<String> doc_ids;
-
 	/**
 	 * Instance of Sphinx xmlpipe2 document id remover.
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param sph_data_source Sphinx data source input file
 	 * @param sph_data_extract Sphinx data source output file
-	 * @param sync_delete_ids set of deleting document id while synchronization
+	 * @param del_doc_set set of deleting document id while synchronization
 	 */
-	public SphDsDocIdRemover(PgSchema schema, File sph_data_source, File sph_data_extract, HashSet<String> sync_delete_ids) {
+	public SphDsDocIdRemover(PgSchema schema, File sph_data_source, File sph_data_extract, HashSet<String> del_doc_set) {
 
 		doc_key_path = doc_unit_path + "/" + schema.option.document_key_name;
 
 		this.sph_data_source = sph_data_source;
 		this.sph_data_extract = sph_data_extract;
-		this.sync_delete_ids = sync_delete_ids;
+		this.del_doc_set = del_doc_set;
 
 		attr_doc_key = doc_key_path.substring(doc_key_path.lastIndexOf("/") + 1, doc_key_path.length()).startsWith("@");
 
@@ -147,7 +147,7 @@ public class SphDsDocIdRemover {
 	 */
 	public void exec() throws IOException, XMLStreamException {
 
-		doc_ids = new HashSet<String>();
+		doc_set = new HashSet<String>();
 
 		// XML event reader of source XML file
 
@@ -185,7 +185,7 @@ public class SphDsDocIdRemover {
 
 		in.close();
 
-		doc_ids.clear();
+		doc_set.clear();
 
 	}
 
@@ -293,7 +293,7 @@ public class SphDsDocIdRemover {
 
 							String doc_id = attr.getValue();
 
-							omit_doc_unit = sync_delete_ids.contains(doc_id) || !doc_ids.add(doc_id);
+							omit_doc_unit = del_doc_set.contains(doc_id) || !doc_set.add(doc_id);
 
 							if (omit_doc_unit) {
 
@@ -392,7 +392,7 @@ public class SphDsDocIdRemover {
 
 				String doc_id = element.asCharacters().getData();
 
-				omit_doc_unit = sync_delete_ids.contains(doc_id) || !doc_ids.add(doc_id);
+				omit_doc_unit = del_doc_set.contains(doc_id) || !doc_set.add(doc_id);
 
 				if (omit_doc_unit) {
 

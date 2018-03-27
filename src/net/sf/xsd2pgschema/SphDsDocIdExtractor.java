@@ -50,8 +50,8 @@ public class SphDsDocIdExtractor extends DefaultHandler {
 	/** The document id stored in data source. */
 	HashSet<String> doc_set = null;
 
-	/** The document id stored in data source. */
-	HashMap<String, Integer> doc_rows = null;
+	/** The document id stored in data source (key=document id, value=shard id). */
+	HashMap<String, Integer> doc_map = null;
 
 	/**
 	 * Instance of Sphinx xmlpipe2 document id extractor.
@@ -71,15 +71,15 @@ public class SphDsDocIdExtractor extends DefaultHandler {
 	 * Instance of Sphinx xmlpipe2 document id extractor.
 	 *
 	 * @param schema PostgreSQL data model
-	 * @param doc_rows set of document id in data source
+	 * @param doc_map set of document id in data source
 	 * @param shard_id shard id
 	 */
-	public SphDsDocIdExtractor(PgSchema schema, HashMap<String, Integer> doc_rows, int shard_id) {
+	public SphDsDocIdExtractor(PgSchema schema, HashMap<String, Integer> doc_map, int shard_id) {
 
 		document_key_name = schema.option.document_key_name;
 
 		this.shard_id = shard_id;
-		this.doc_rows = doc_rows;
+		this.doc_map = doc_map;
 
 	}
 
@@ -137,8 +137,8 @@ public class SphDsDocIdExtractor extends DefaultHandler {
 			if (doc_set != null)
 				doc_set.add(value);
 
-			else if (doc_rows != null)
-				doc_rows.put(value, shard_id);
+			else if (doc_map != null)
+				doc_map.put(value, shard_id);
 
 		}
 
