@@ -231,7 +231,6 @@ public class SphDsDocIdUpdater {
 
 					xml_writer.add(element);
 					xml_writer.close();
-					xml_writer = null;
 
 				} catch (XMLStreamException e) {
 					e.printStackTrace();

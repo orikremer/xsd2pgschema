@@ -183,7 +183,6 @@ public class SphDsCompositor extends DefaultHandler {
 			}
 
 			buffer.clear();
-			buffer = null;
 
 		}
 

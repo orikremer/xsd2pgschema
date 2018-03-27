@@ -739,8 +739,6 @@ public class XmlSplitterImpl {
 
 		xml_writer.close();
 
-		xml_writer = null;
-
 		System.out.print("\rGenerated " + proc_id + " XML documents.");
 
 	}

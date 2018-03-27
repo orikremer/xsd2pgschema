@@ -243,7 +243,6 @@ public class SphDsDocIdRemover {
 
 				xml_writer.add(element);
 				xml_writer.close();
-				xml_writer = null;
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
@@ -296,7 +295,13 @@ public class SphDsDocIdRemover {
 
 							omit_doc_unit = sync_delete_ids.contains(doc_id) || !doc_ids.add(doc_id);
 
-							break;
+							if (omit_doc_unit) {
+
+								interim_events.clear();
+
+								return;
+							}
+
 						}
 
 					}
@@ -388,6 +393,13 @@ public class SphDsDocIdRemover {
 				String doc_id = element.asCharacters().getData();
 
 				omit_doc_unit = sync_delete_ids.contains(doc_id) || !doc_ids.add(doc_id);
+
+				if (omit_doc_unit) {
+
+					interim_events.clear();
+
+					return;
+				}
 
 			}
 
