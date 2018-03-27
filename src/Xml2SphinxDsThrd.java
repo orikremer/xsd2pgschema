@@ -257,7 +257,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 						if (xml_parser.identify(option))
 							continue;
 
-						synchronized (xml2sphinxds.sync_del_doc_rows) {
+						synchronized (xml2sphinxds.sync_del_doc_rows[_shard_id]) {
 							xml2sphinxds.sync_del_doc_rows[_shard_id].add(xml_parser.document_id);
 						}
 

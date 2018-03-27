@@ -289,33 +289,17 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 				schema.xml2LucIdx(xml_parser, lucene_doc);
 
-				if (_shard_id == null) {
-
-					synchronized (xml2luceneidx.writers[shard_id]) {
-						writer.addDocument(lucene_doc);
-					}
-
-				}
+				if (_shard_id == null)
+					writer.addDocument(lucene_doc);
 
 				else {
 
 					Term term = new Term(option.document_key_name, schema.getDocumentId());
 
-					if (shard_id == _shard_id) {
-
-						synchronized (xml2luceneidx.writers[shard_id]) {
-							writer.updateDocument(term, lucene_doc);
-						}
-
-					}
-
-					else {
-
-						synchronized (xml2luceneidx.writers[_shard_id]) {
-							xml2luceneidx.writers[_shard_id].updateDocument(term, lucene_doc);
-						}
-
-					}
+					if (shard_id == _shard_id)
+						writer.updateDocument(term, lucene_doc);
+					else
+						xml2luceneidx.writers[_shard_id].updateDocument(term, lucene_doc);
 
 				}
 

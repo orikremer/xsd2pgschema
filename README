@@ -1,4 +1,4 @@
-﻿ Changes in xsd2pgschema 2.8.2 (release 2018-03-26)
+﻿ Changes in xsd2pgschema 2.8.2 (release 2018-03-27)
 
   Appended ON DELETE CASCADE to foreign key constraint for differential update.
   Supported PostgreSQL UPSERT command while differential update.
