@@ -739,6 +739,8 @@ public class XmlSplitterImpl {
 
 		xml_writer.close();
 
+		// set null for recursive document generation
+
 		xml_writer = null;
 
 		System.out.print("\rGenerated " + proc_id + " XML documents.");
