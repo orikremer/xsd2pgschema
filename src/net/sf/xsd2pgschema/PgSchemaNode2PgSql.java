@@ -48,8 +48,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/** Whether update or insert. */
 	private boolean update;
 
-	/** Whether upsert or insert. */
+	/** Whether upsert or not. */
 	private boolean upsert = false;
+
+	/** Whether update only or not. */
+	private boolean update_only = false;
 
 	/** The size of parameters. */
 	private int param_size = 1;
@@ -110,9 +113,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				PgField pkey = fields.stream().filter(field -> field.primary_key).findFirst().get();
 
-				if (upsert = pkey.unique_key) {
+				String pkey_name = PgSchemaUtil.avoidPgReservedWords(pkey.name);
 
-					String pkey_name = PgSchemaUtil.avoidPgReservedWords(pkey.name);
+				upsert = pkey.unique_key;
+
+				if (upsert) {
 
 					sql.append(" ON CONFLICT ( " + pkey_name + " ) DO UPDATE SET ");
 
@@ -137,6 +142,38 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					sql.setLength(sql.length() - 2);
 
 					sql.append(" WHERE EXCLUDED." + pkey_name + "=?");
+
+				}
+
+				else {
+
+					update_only = true;
+
+					sql.setLength(0);
+
+					sql.append("UPDATE ONLY " + PgSchemaUtil.avoidPgReservedWords(table.name) + " SET ");
+
+					for (int f = 0; f < fields.size(); f++) {
+
+						PgField field = fields.get(f);
+
+						if (field.omissible || field.primary_key)
+							continue;
+
+						sql.append(PgSchemaUtil.avoidPgReservedWords(field.name) + "=");
+
+						if (field.enum_name == null)
+							sql.append("?");
+						else
+							sql.append("?::" + field.enum_name);
+
+						sql.append(", ");
+
+					}
+
+					sql.setLength(sql.length() - 2);
+
+					sql.append(" WHERE " + pkey_name + "=?");
 
 				}
 
@@ -269,7 +306,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			else if (field.primary_key) {
 
 				if (ps != null && rel_data_ext)
-					writeHashKey(f, param_id, upsert ? (param_size - 1) * 2 : -1, primary_key);
+					writeHashKey(f, update_only ? param_size - 1 : param_id, upsert ? (param_size - 1) * 2 : -1, primary_key);
 
 			}
 
@@ -353,9 +390,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			if (!field.omissible) {
 
-				param_id++;
+				if ((update_only && !field.primary_key) || !update_only)
+					param_id++;
 
-				if (!field.primary_key)
+				if (upsert && !field.primary_key)
 					_param_id++;
 
 			}
@@ -393,7 +431,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				PgField field = fields.get(f);
 
-				if (field.omissible)
+				if (field.omissible || (update_only && field.primary_key))
 					continue;
 
 				if (!occupied[f])

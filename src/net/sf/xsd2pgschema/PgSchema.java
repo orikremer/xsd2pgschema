@@ -3721,8 +3721,12 @@ public class PgSchema {
 
 		try {
 
-			if (update && !option.rel_data_ext)
+			if (update && !option.rel_data_ext) {
+
 				deleteBeforeUpdate(db_conn);
+				update = false;
+
+			}
 
 			PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, null, root_table, update, db_conn);
 

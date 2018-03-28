@@ -244,7 +244,10 @@ public class Xml2PgSqlThrd implements Runnable {
 		if (synchronizable) {
 
 			try {
-				System.out.println(db_conn.getMetaData().getURL().split("/")[3] + " is up-to-date.");
+
+				if (show_progress)
+					System.out.println(db_conn.getMetaData().getURL().split("/")[3] + " is up-to-date.");
+
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
