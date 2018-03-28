@@ -120,9 +120,6 @@ public class PgSchemaOption {
 	/** The default algorithm for check sum. */
 	public String check_sum_algorithm = PgSchemaUtil.def_check_sum_algorithm;
 
-	/** The instance of message digest for check sum. */
-	public MessageDigest check_sum_message_digest = null;
-
 	/** The prefix of xs_namespace_uri. */
 	protected String xs_prefix = null;
 
@@ -153,8 +150,6 @@ public class PgSchemaOption {
 		discarded_document_key_names = new HashSet<String>();
 		inplace_document_key_names = new HashSet<String>();
 
-		setCheckSumAlgorithm(check_sum_algorithm);
-
 	}
 
 	/**
@@ -168,8 +163,6 @@ public class PgSchemaOption {
 
 		discarded_document_key_names = new HashSet<String>();
 		inplace_document_key_names = new HashSet<String>();
-
-		setCheckSumAlgorithm(check_sum_algorithm);
 
 	}
 
@@ -541,7 +534,7 @@ public class PgSchemaOption {
 
 		try {
 
-			check_sum_message_digest = MessageDigest.getInstance(check_sum_algorithm);
+			MessageDigest.getInstance(check_sum_algorithm);
 
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
@@ -559,7 +552,7 @@ public class PgSchemaOption {
 	 * @return boolean whether if synchronizable or not
 	 */
 	public boolean isSynchronizable() {
-		return sync_weak || (sync && check_sum_dir != null && check_sum_dir.isDirectory() && check_sum_message_digest != null);
+		return sync_weak || (sync && check_sum_dir != null && check_sum_dir.isDirectory());
 	}
 
 }

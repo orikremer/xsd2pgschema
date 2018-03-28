@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -77,11 +78,17 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
+	/** The index directory. */
+	private File idx_dir = null;
+
 	/** The XML file filter. */
 	private XmlFileFilter xml_file_filter = null;
 
 	/** The XML file queue. */
 	private LinkedBlockingQueue<File> xml_file_queue = null;
+
+	/** The instance of message digest for check sum. */
+	private MessageDigest md_chk_sum = null;
 
 	/**
 	 * Instance of Xml2LuceneIdxThrd.
@@ -146,7 +153,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 			if (shard_size > 1)
 				idx_dir_name += "/" + PgSchemaUtil.shard_dir_prefix + shard_id;
 
-			File idx_dir = new File(idx_dir_name);
+			idx_dir = new File(idx_dir_name);
 
 			if (!idx_dir.isDirectory()) {
 
@@ -232,7 +239,15 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		}
 
+		// prepare message digest for check sum
+
+		if (!option.check_sum_algorithm.isEmpty() && option.isSynchronizable())
+			md_chk_sum = MessageDigest.getInstance(option.check_sum_algorithm);
+
 	}
+
+	/** Whether show progress or not. */
+	private boolean show_progress = false;
 
 	/* (non-Javadoc)
 	 * @see java.lang.Runnable#run()
@@ -241,7 +256,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	public void run() {
 
 		int total = xml_file_queue.size();
-		boolean show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
+		show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
 		boolean synchronizable = option.isSynchronizable();
 
 		Integer _shard_id = null;
@@ -264,13 +279,13 @@ public class Xml2LuceneIdxThrd implements Runnable {
 						if (option.sync_weak)
 							continue;
 
-						if (xml_parser.identify(option))
+						if (xml_parser.identify(option, md_chk_sum))
 							continue;
 
 					}
 
 					else if (option.sync)
-						xml_parser.identify(option);
+						xml_parser.identify(option, md_chk_sum);
 
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -339,6 +354,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		}
 
 		System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
+
+		if (option.isSynchronizable() && show_progress)
+			System.out.println(idx_dir.getAbsolutePath() + " is up-to-date.");
 
 	}
 

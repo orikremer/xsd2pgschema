@@ -152,8 +152,8 @@ public class PgSchema {
 	/** The content of document key. */
 	private String document_id = null;
 
-	/** The instance of message digest. */
-	private MessageDigest message_digest = null;
+	/** The instance of message digest for hash_key. */
+	private MessageDigest md_hash_key = null;
 
 	/** The root schema object. */
 	private PgSchema _root_schema = null;
@@ -827,7 +827,7 @@ public class PgSchema {
 		// instance of message digest
 
 		if (!option.hash_algorithm.isEmpty() && !option.hash_size.equals(PgHashSize.debug_string))
-			message_digest = MessageDigest.getInstance(option.hash_algorithm);
+			md_hash_key = MessageDigest.getInstance(option.hash_algorithm);
 
 		// statistics
 
@@ -2412,7 +2412,7 @@ public class PgSchema {
 		System.out.println("--  retained constraint of primary/foreign key: " + option.retain_key);
 		System.out.println("--  retrieved field annotation: " + !option.no_field_anno);
 		if (option.rel_data_ext || option.serial_key)
-			System.out.println("--  " + (message_digest == null ? "assumed " : "") + "hash algorithm: " + (message_digest == null ? PgSchemaUtil.def_hash_algorithm : message_digest.getAlgorithm()));
+			System.out.println("--  " + (md_hash_key == null ? "assumed " : "") + "hash algorithm: " + (md_hash_key == null ? PgSchemaUtil.def_hash_algorithm : md_hash_key.getAlgorithm()));
 		if (option.rel_data_ext)
 			System.out.println("--  hash key type: " + option.hash_size.name().replaceAll("_", " ") + " bits");
 		if (option.serial_key)
@@ -3400,12 +3400,12 @@ public class PgSchema {
 	 */
 	public synchronized String getHashKeyString(String key_name) {
 
-		if (message_digest == null) // debug mode
+		if (md_hash_key == null) // debug mode
 			return key_name;
 
-		message_digest.reset();
+		md_hash_key.reset();
 
-		byte[] bytes = message_digest.digest(key_name.getBytes());
+		byte[] bytes = md_hash_key.digest(key_name.getBytes());
 
 		switch (option.hash_size) {
 		case native_default:
@@ -3430,9 +3430,9 @@ public class PgSchema {
 	 */
 	protected synchronized byte[] getHashKeyBytes(String key_name) {
 
-		message_digest.reset();
+		md_hash_key.reset();
 
-		return message_digest.digest(key_name.getBytes());
+		return md_hash_key.digest(key_name.getBytes());
 	}
 
 	/**
@@ -3443,9 +3443,9 @@ public class PgSchema {
 	 */
 	protected synchronized int getHashKeyInt(String key_name) {
 
-		message_digest.reset();
+		md_hash_key.reset();
 
-		byte[] hash = message_digest.digest(key_name.getBytes());
+		byte[] hash = md_hash_key.digest(key_name.getBytes());
 
 		BigInteger bint = new BigInteger(hash);
 
@@ -3460,9 +3460,9 @@ public class PgSchema {
 	 */
 	protected synchronized long getHashKeyLong(String key_name) {
 
-		message_digest.reset();
+		md_hash_key.reset();
 
-		byte[] hash = message_digest.digest(key_name.getBytes());
+		byte[] hash = md_hash_key.digest(key_name.getBytes());
 
 		BigInteger bint = new BigInteger(hash);
 

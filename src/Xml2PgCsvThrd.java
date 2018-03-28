@@ -22,6 +22,7 @@ import net.sf.xsd2pgschema.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -66,6 +67,9 @@ public class Xml2PgCsvThrd implements Runnable {
 
 	/** The XML file queue. */
 	private LinkedBlockingQueue<File> xml_file_queue = null;
+
+	/** The instance of message digest for check sum. */
+	private MessageDigest md_chk_sum = null;
 
 	/** The database connection. */
 	private Connection db_conn = null;
@@ -139,6 +143,11 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		}
 
+		// prepare message digest for check sum
+
+		if (!option.check_sum_algorithm.isEmpty() && option.isSynchronizable())
+			md_chk_sum = MessageDigest.getInstance(option.check_sum_algorithm);
+
 	}
 
 	/* (non-Javadoc)
@@ -161,7 +170,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 				try {
 
-					new XmlParser(xml_file, xml_file_filter).identify(option);
+					new XmlParser(xml_file, xml_file_filter).identify(option, md_chk_sum);
 
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -224,6 +233,19 @@ public class Xml2PgCsvThrd implements Runnable {
 					e.printStackTrace();
 				}
 
+			}
+
+		}
+
+		if (synchronizable) {
+
+			try {
+
+				if (show_progress)
+					System.out.println(db_conn.getMetaData().getURL() + " is up-to-date.");
+
+			} catch (SQLException e) {
+				e.printStackTrace();
 			}
 
 		}

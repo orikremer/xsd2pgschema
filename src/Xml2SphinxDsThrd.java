@@ -24,6 +24,7 @@ import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -81,6 +82,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 	/** The XML file queue. */
 	private LinkedBlockingQueue<File> xml_file_queue = null;
+
+	/** The instance of message digest for check sum. */
+	private MessageDigest md_chk_sum = null;
 
 	/** The Sphinx schema file. */
 	private File sphinx_schema = null;
@@ -222,7 +226,15 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		}
 
+		// prepare message digest for check sum
+
+		if (!option.check_sum_algorithm.isEmpty() && option.isSynchronizable())
+			md_chk_sum = MessageDigest.getInstance(option.check_sum_algorithm);
+
 	}
+
+	/** Whether show progress or not. */
+	private boolean show_progress = false;
 
 	/* (non-Javadoc)
 	 * @see java.lang.Runnable#run()
@@ -231,7 +243,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 	public void run() {
 
 		int total = xml_file_queue.size();
-		boolean show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
+		show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
 		boolean synchronizable = option.isSynchronizable();
 
 		File xml_file;
@@ -251,7 +263,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 						if (option.sync_weak)
 							continue;
 
-						if (xml_parser.identify(option))
+						if (xml_parser.identify(option, md_chk_sum))
 							continue;
 
 						synchronized (xml2sphinxds.sync_del_doc_rows[_shard_id]) {
@@ -261,7 +273,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 					}
 
 					else if (option.sync)
-						xml_parser.identify(option);
+						xml_parser.identify(option, md_chk_sum);
 
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -316,126 +328,135 @@ public class Xml2SphinxDsThrd implements Runnable {
 		if (thrd_id != 0)
 			return;
 
-		File sph_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
-		File sph_data_extract = new File(ds_dir, PgSchemaUtil.sph_data_extract_name);
+		try {
 
-		// sync-delete documents from the previous xmlpipe2
+			File sph_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
+			File sph_data_extract = new File(ds_dir, PgSchemaUtil.sph_data_extract_name);
 
-		boolean has_idx = sph_data_source.exists();
+			// sync-delete documents from the previous xmlpipe2
 
-		if (has_idx) {
+			boolean has_idx = sph_data_source.exists();
 
-			if (option.sync && xml2sphinxds.sync_del_doc_rows[shard_id].size() > 0) {
+			if (has_idx) {
 
-				SphDsDocIdRemover stax_parser = new SphDsDocIdRemover(schema, sph_data_source, sph_data_extract, xml2sphinxds.sync_del_doc_rows[shard_id]);
+				if (option.sync && xml2sphinxds.sync_del_doc_rows[shard_id].size() > 0) {
+
+					SphDsDocIdRemover stax_parser = new SphDsDocIdRemover(schema, sph_data_source, sph_data_extract, xml2sphinxds.sync_del_doc_rows[shard_id]);
+
+					try {
+
+						stax_parser.exec();
+
+					} catch (XMLStreamException | IOException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+
+				}
+
+				else
+					FileUtils.copyFile(sph_data_source, sph_data_extract);
+
+			}
+
+			FilenameFilter filter = new FilenameFilter() {
+
+				public boolean accept(File dir, String name) {
+					return FilenameUtils.getExtension(name).equals("xml") &&
+							name.startsWith(PgSchemaUtil.sph_document_prefix) &&
+							!name.equals(PgSchemaUtil.sph_schema_name) &&
+							!name.equals(PgSchemaUtil.sph_data_source_name) &&
+							!name.equals(PgSchemaUtil.sph_data_extract_name) &&
+							!name.equals(PgSchemaUtil.sph_data_update_name);
+				}
+
+			};
+
+			// composite a xmlpipe2 from partial documents
+
+			schema.writeSphSchema(sph_data_source, true);
+
+			FileWriter filew = new FileWriter(sph_data_source, true);
+
+			SAXParserFactory spf = SAXParserFactory.newInstance();
+			SAXParser sax_parser = spf.newSAXParser();
+
+			System.out.println("Merging" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
+
+			int total = 0;
+
+			for (File sph_doc_file : ds_dir.listFiles(filter)) {
+
+				SphDsCompositor handler = new SphDsCompositor(schema, filew, index_filter);
 
 				try {
 
-					stax_parser.exec();
+					sax_parser.parse(sph_doc_file, handler);
 
-				} catch (XMLStreamException | IOException e) {
+				} catch (SAXException | IOException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
+				sph_doc_file.deleteOnExit();
+
+				total++;
+
 			}
 
-			else
-				FileUtils.copyFile(sph_data_source, sph_data_extract);
+			filew.write("</sphinx:docset>\n");
+			filew.close();
 
-		}
+			System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
 
-		FilenameFilter filter = new FilenameFilter() {
+			// write Sphinx schema file for next update or merge
 
-			public boolean accept(File dir, String name) {
-				return FilenameUtils.getExtension(name).equals("xml") &&
-						name.startsWith(PgSchemaUtil.sph_document_prefix) &&
-						!name.equals(PgSchemaUtil.sph_schema_name) &&
-						!name.equals(PgSchemaUtil.sph_data_source_name) &&
-						!name.equals(PgSchemaUtil.sph_data_extract_name) &&
-						!name.equals(PgSchemaUtil.sph_data_update_name);
+			schema.writeSphSchema(sphinx_schema, false);
+
+			// write Sphinx configuration file
+
+			File sphinx_conf = new File(ds_dir, PgSchemaUtil.sph_conf_name);
+			schema.writeSphConf(sphinx_conf, xml2sphinxds.ds_name, sph_data_source);
+
+			if (!has_idx)
+				return;
+
+			else if (total == 0) {
+
+				sph_data_source.delete();
+				FileUtils.moveFile(sph_data_extract, sph_data_source);
+
+				return;
 			}
 
-		};
+			// merge xmlpipe2 with the previous one
 
-		// composite a xmlpipe2 from partial documents
+			System.out.println("Full merge" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
 
-		schema.writeSphSchema(sph_data_source, true);
+			File sph_data_update = new File(ds_dir, PgSchemaUtil.sph_data_update_name);
 
-		FileWriter filew = new FileWriter(sph_data_source, true);
-
-		SAXParserFactory spf = SAXParserFactory.newInstance();
-		SAXParser sax_parser = spf.newSAXParser();
-
-		System.out.println("Merging" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
-
-		int total = 0;
-
-		for (File sph_doc_file : ds_dir.listFiles(filter)) {
-
-			SphDsCompositor handler = new SphDsCompositor(schema, filew, index_filter);
+			SphDsDocIdUpdater stax_parser = new SphDsDocIdUpdater(sph_data_source, sph_data_extract, sph_data_update);
 
 			try {
 
-				sax_parser.parse(sph_doc_file, handler);
+				stax_parser.exec();
 
-			} catch (SAXException | IOException e) {
+			} catch (XMLStreamException | IOException e) {
 				e.printStackTrace();
+				System.exit(1);
 			}
 
-			sph_doc_file.deleteOnExit();
-
-			total++;
-
-		}
-
-		filew.write("</sphinx:docset>\n");
-		filew.close();
-
-		System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
-
-		// write Sphinx schema file for next update or merge
-
-		schema.writeSphSchema(sphinx_schema, false);
-
-		// write Sphinx configuration file
-
-		File sphinx_conf = new File(ds_dir, PgSchemaUtil.sph_conf_name);
-		schema.writeSphConf(sphinx_conf, xml2sphinxds.ds_name, sph_data_source);
-
-		if (!has_idx)
-			return;
-
-		else if (total == 0) {
-
 			sph_data_source.delete();
-			FileUtils.moveFile(sph_data_extract, sph_data_source);
+			FileUtils.moveFile(sph_data_update, sph_data_source);
+			sph_data_extract.delete();
 
-			return;
+			System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
+
+		} finally {
+
+			if (option.isSynchronizable() && show_progress)
+				System.out.println(ds_dir.getAbsolutePath() + " (" + xml2sphinxds.ds_name + ") is up-to-date.");
+
 		}
-
-		// merge xmlpipe2 with the previous one
-
-		System.out.println("Full merge" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
-
-		File sph_data_update = new File(ds_dir, PgSchemaUtil.sph_data_update_name);
-
-		SphDsDocIdUpdater stax_parser = new SphDsDocIdUpdater(sph_data_source, sph_data_extract, sph_data_update);
-
-		try {
-
-			stax_parser.exec();
-
-		} catch (XMLStreamException | IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
-
-		sph_data_source.delete();
-		FileUtils.moveFile(sph_data_update, sph_data_source);
-		sph_data_extract.delete();
-
-		System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
 
 	}
 

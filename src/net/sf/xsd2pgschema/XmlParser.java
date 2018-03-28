@@ -25,6 +25,7 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.util.zip.GZIPInputStream;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -239,22 +240,21 @@ public class XmlParser {
 	 * Identify XML document by agreement of check sum.
 	 *
 	 * @param option PostgreSQL data model option
+	 * @param md_chk_sum instance of message digest for check sum
 	 * @return boolean identity of XML document
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public boolean identify(PgSchemaOption option) throws IOException {
+	public synchronized boolean identify(PgSchemaOption option, MessageDigest md_chk_sum) throws IOException {
 
 		boolean identity = false;
 
-		if (option.sync && option.check_sum_dir != null && option.check_sum_message_digest != null) {
+		if (option.sync && option.check_sum_dir != null && md_chk_sum != null) {
 
 			FileInputStream in = new FileInputStream(xml_file);
 
-			byte[] digest;
+			md_chk_sum.reset();
 
-			synchronized (option.check_sum_message_digest) { // message digest is not thread safe
-				digest = option.check_sum_message_digest.digest(IOUtils.toByteArray(in));
-			}
+			byte[] digest = md_chk_sum.digest(IOUtils.toByteArray(in));
 
 			String new_check_sum = String.valueOf(Hex.encodeHex(digest));
 
