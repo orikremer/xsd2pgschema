@@ -278,6 +278,11 @@ public class PgSchemaOption {
 		if (_doc_key || _no_doc_key)
 			document_key = _doc_key;
 
+		if (document_key && inplace_document_key_names.size() > 0) {
+			inplace_document_key_names.clear();
+			System.out.println("Ignored --inplace-doc-key-name option because default document key was enabled.");
+		}
+
 	}
 
 	/**
