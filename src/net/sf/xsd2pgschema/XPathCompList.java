@@ -82,9 +82,6 @@ public class XPathCompList {
 	/** Whether add serial key in PostgreSQL DDL. */
 	private boolean serial_key = false;
 
-	/** The document key name in PostgreSQL. */
-	private String document_key_name;
-
 	/** The serial key name in PostgreSQL. */
 	private String serial_key_name;
 
@@ -119,7 +116,6 @@ public class XPathCompList {
 
 		case_sense = option.case_sense;
 
-		document_key_name = option.document_key_name;
 		serial_key_name = option.serial_key_name;
 
 		comps = new ArrayList<XPathComp>();
@@ -2528,7 +2524,7 @@ public class XPathCompList {
 
 				sb.append(PgSchemaUtil.avoidPgReservedWords(table_name) + " as " + alias_name);
 
-				sb.append(" WHERE " + alias_name + "." + document_key_name + " = t1." + document_key_name);
+				sb.append(" WHERE " + alias_name + "." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(table_name)) + " = t1." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(main_aliases.entrySet().stream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey())));
 
 				sb.append(" )");
 
@@ -2577,7 +2573,7 @@ public class XPathCompList {
 
 				sb.append(PgSchemaUtil.avoidPgReservedWords(sql_expr.table_name) + " as " + alias_name);
 
-				sb.append(" WHERE " + alias_name + "." + document_key_name + " = t1." + document_key_name);
+				sb.append(" WHERE " + alias_name + "." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(sql_expr.table_name)) + " = t1." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(main_aliases.entrySet().stream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey())));
 
 				sb.append(" )");
 				break;
@@ -3480,7 +3476,7 @@ public class XPathCompList {
 
 				sb.append(PgSchemaUtil.avoidPgReservedWords(sql_expr_str.table_name) + " as " + alias_name);
 
-				sb.append(" WHERE " + alias_name + "." + document_key_name + " = t1." + document_key_name);
+				sb.append(" WHERE " + alias_name + "." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(sql_expr_str.table_name)) + " = t1." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(main_aliases.entrySet().stream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey())));
 
 				sb.append(" )");
 				break;

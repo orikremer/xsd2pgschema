@@ -1436,11 +1436,12 @@ public class PgField {
 	/**
 	 * Decide whether field is omissible.
 	 *
+	 * @param table current table 
 	 * @param option PostgreSQL data model option
 	 */
-	public void setOmissible(PgSchemaOption option) {
+	public void setOmissible(PgTable table, PgSchemaOption option) {
 
-		if ((element || attribute) && option.discarded_document_key_names.contains(xname)) {
+		if ((element || attribute) && (option.discarded_document_key_names.contains(xname) || option.discarded_document_key_names.contains(table.name + "." + xname))) {
 			omissible = true;
 			return;
 		}
@@ -1452,11 +1453,12 @@ public class PgField {
 	/**
 	 * Decide whether field is indexable.
 	 *
+	 * @param table current table 
 	 * @param option PostgreSQL data model option
 	 */
-	public void setIndexable(PgSchemaOption option) {
+	public void setIndexable(PgTable table, PgSchemaOption option) {
 
-		if (system_key || user_key || ((element || attribute) && option.discarded_document_key_names.contains(xname))) {
+		if (system_key || user_key || ((element || attribute) && (option.discarded_document_key_names.contains(xname) || option.discarded_document_key_names.contains(table.name + "." + xname)))) {
 			indexable = false;
 			return;
 		}
@@ -1468,11 +1470,12 @@ public class PgField {
 	/**
 	 * Decide whether field is JSON convertible.
 	 *
+	 * @param table current table 
 	 * @param option PostgreSQL data model option
 	 */
-	public void setJsonable(PgSchemaOption option) {
+	public void setJsonable(PgTable table, PgSchemaOption option) {
 
-		if (system_key || user_key || ((element || attribute) && option.discarded_document_key_names.contains(xname))) {
+		if (system_key || user_key || ((element || attribute) && (option.discarded_document_key_names.contains(xname) || option.discarded_document_key_names.contains(table.name + "." + xname)))) {
 			jsonable = false;
 			return;
 		}

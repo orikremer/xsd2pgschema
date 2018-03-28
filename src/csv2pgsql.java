@@ -122,6 +122,11 @@ public class csv2pgsql {
 			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);
 
+			else if (args[i].equals("--inplace-doc-key-name") && i + 1 < args.length) {
+				option.addInPlaceDocKeyName(args[++i]);
+				option.setDocKeyOption(false);
+			}
+
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
 				showUsage();
@@ -215,6 +220,7 @@ public class csv2pgsql {
 		System.err.println("        --ser-key-name SER_KEY_NAME (default=\"" + option.def_serial_key_name + "\")");
 		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.def_xpath_key_name + "\")");
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
+		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME (select --no-doc-key option by default)");
 		System.exit(1);
 
 	}

@@ -193,6 +193,11 @@ public class xml2pgsql {
 			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);
 
+			else if (args[i].equals("--inplace-doc-key-name") && i + 1 < args.length) {
+				option.addInPlaceDocKeyName(args[++i]);
+				option.setDocKeyOption(false);
+			}
+
 			else if (args[i].equals("--update"))
 				option.sync = option.sync_weak = false;
 
@@ -241,8 +246,8 @@ public class xml2pgsql {
 
 		option.resolveDocKeyOption();
 
-		if ((option.sync || option.sync_weak) && !option.document_key) {
-			System.err.println("document key must be exist to enable synchronization.");
+		if ((option.sync || option.sync_weak) && !option.document_key && option.inplace_document_key_names.size() == 0) {
+			System.err.println("Either document key or in-place document key must be exist to enable synchronization.");
 			showUsage();
 		}
 
@@ -379,6 +384,7 @@ public class xml2pgsql {
 		System.err.println("        --ser-key-name SER_KEY_NAME (default=\"" + option.def_serial_key_name + "\")");
 		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.def_xpath_key_name + "\")");
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
+		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME (select --no-doc-key option by default)");
 		System.err.println("        --max-thrds MAX_THRDS (default is number of available processors)");
 		System.exit(1);
 

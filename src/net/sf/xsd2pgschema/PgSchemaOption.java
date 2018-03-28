@@ -93,8 +93,11 @@ public class PgSchemaOption {
 	/** The XPath key name in PostgreSQL DDL. */
 	public String xpath_key_name = def_xpath_key_name;
 
-	/** The list of discarded document key names. */
+	/** The list of discarded document key name. */
 	protected HashSet<String> discarded_document_key_names = null;
+
+	/** The list of in-place document key name. */
+	public HashSet<String> inplace_document_key_names = null;
 
 	/** The name of hash algorithm. */
 	public String hash_algorithm = PgSchemaUtil.def_hash_algorithm;
@@ -148,6 +151,7 @@ public class PgSchemaOption {
 		this.document_key = document_key;
 
 		discarded_document_key_names = new HashSet<String>();
+		inplace_document_key_names = new HashSet<String>();
 
 		setCheckSumAlgorithm(check_sum_algorithm);
 
@@ -163,6 +167,7 @@ public class PgSchemaOption {
 		setDefaultForJsonSchema(json_type);
 
 		discarded_document_key_names = new HashSet<String>();
+		inplace_document_key_names = new HashSet<String>();
 
 		setCheckSumAlgorithm(check_sum_algorithm);
 
@@ -357,6 +362,23 @@ public class PgSchemaOption {
 			discarded_document_key_names = new HashSet<String>();
 
 		return discarded_document_key_names.add(discarded_document_key_name);
+	}
+
+	/**
+	 * Add in-place document key name.
+	 *
+	 * @param inplace_document_key_name in-place document key name
+	 * @return result of addition
+	 */
+	public boolean addInPlaceDocKeyName(String inplace_document_key_name) {
+
+		if (inplace_document_key_name == null || inplace_document_key_name.isEmpty())
+			return false;
+
+		if (inplace_document_key_names == null)
+			inplace_document_key_names = new HashSet<String>();
+
+		return inplace_document_key_names.add(inplace_document_key_name);
 	}
 
 	/**

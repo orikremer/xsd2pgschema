@@ -818,8 +818,8 @@ public class PgSchema {
 
 			field.setSystemKey();
 			field.setUserKey();
-			field.setOmissible(option);
-			field.setJsonable(option);
+			field.setOmissible(table, option);
+			field.setJsonable(table, option);
 
 
 		}));
@@ -866,8 +866,10 @@ public class PgSchema {
 		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
 		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
 		_root_schema.def_stat_msg.append("--   Contents:\n");
-		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.xname)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes, ");
-		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.xname)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements, ");
+		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.xname) && !option.discarded_document_key_names.contains(table.name + "." + field.xname)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes ("
+				+ (option.document_key || option.inplace_document_key_names.size() == 0 ? 0 : tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.xname) && !option.discarded_document_key_names.contains(table.name + "." + field.xname) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
+		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.xname) && !option.discarded_document_key_names.contains(table.name + "." + field.xname)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements ("
+				+ (option.document_key || option.inplace_document_key_names.size() == 0 ? 0 : tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.xname) && !option.discarded_document_key_names.contains(table.name + "." + field.xname) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
 		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.simple_content).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents\n");
 		_root_schema.def_stat_msg.append("--   Wild cards:\n");
 		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
@@ -886,6 +888,23 @@ public class PgSchema {
 		// check root table exists
 
 		hasRootTable();
+
+		// check in-place document keys
+
+		if (!option.document_key && option.inplace_document_key_names.size() > 0) {
+
+			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).forEach(table -> {
+
+				try {
+					getDocKeyName(table);
+				} catch (PgSchemaException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			});
+
+		}
 
 	}
 
@@ -2354,7 +2373,7 @@ public class PgSchema {
 
 		// administrative tables ordered by level
 
-		tables.stream().filter(table -> (table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child)) && table.level > 0).sorted(Comparator.comparing(table -> table.level)).forEach(table -> {
+		tables.stream().filter(table -> (table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child)) && table.level > 0).sorted(Comparator.comparingInt(table -> table.level)).forEach(table -> {
 
 			realizeAdmin(table, false);
 
@@ -2411,7 +2430,7 @@ public class PgSchema {
 
 		}
 
-		tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparing(table -> -table.order)).forEach(table -> {
+		tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparingInt(table -> -table.order)).forEach(table -> {
 
 			System.out.println("DROP TABLE IF EXISTS " + PgSchemaUtil.avoidPgReservedWords(table.name) + " CASCADE;");
 
@@ -2419,13 +2438,13 @@ public class PgSchema {
 
 		System.out.println("");
 
-		tables.stream().filter(table -> !table.realized).sorted(Comparator.comparing(table -> table.order)).forEach(table -> realize(table, true));
+		tables.stream().filter(table -> !table.realized).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> realize(table, true));
 
 		// add primary key/foreign key
 
 		if (!option.retain_key) {
 
-			tables.stream().filter(table -> !table.bridge).sorted(Comparator.comparing(table -> table.order)).forEach(table -> {
+			tables.stream().filter(table -> !table.bridge).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 				table.fields.forEach(field -> {
 
@@ -2696,10 +2715,14 @@ public class PgSchema {
 
 			else if (field.attribute) {
 
-				if (option.discarded_document_key_names.contains(field.xname))
+				if (option.discarded_document_key_names.contains(field.xname) || option.discarded_document_key_names.contains(table.name + "." + field.xname))
 					continue;
 
-				System.out.println("-- ATTRIBUTE");
+				if (!option.document_key && option.inplace_document_key_names.size() > 0 && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname)))
+					System.out.println("-- ATTRIBUTE, IN-PLACE DOCUMENT KEY");
+				else
+					System.out.println("-- ATTRIBUTE");
+
 			}
 
 			else if (field.simple_content)
@@ -2711,8 +2734,11 @@ public class PgSchema {
 			else if (field.any_attribute)
 				System.out.println("-- ANY ATTRIBUTE");
 
-			else if (option.discarded_document_key_names.contains(field.xname))
+			else if (option.discarded_document_key_names.contains(field.xname) || option.discarded_document_key_names.contains(table.name + "." + field.xname))
 				continue;
+
+			else if (!option.document_key && option.inplace_document_key_names.size() > 0 && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname)))
+				System.out.println("-- IN-PLACE DOCUMENT KEY");
 
 			if (!field.required && field.xrequired) {
 
@@ -3146,7 +3172,7 @@ public class PgSchema {
 
 		// update indexable flag
 
-		tables.forEach(table -> table.fields.forEach(field -> field.setIndexable(option)));
+		tables.forEach(table -> table.fields.forEach(field -> field.setIndexable(table, option)));
 
 	}
 
@@ -3771,6 +3797,38 @@ public class PgSchema {
 	}
 
 	/**
+	 * Return document key name.
+	 * 
+	 * @param table current table
+	 * @return String document key name
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private String getDocKeyName(PgTable table) throws PgSchemaException {
+
+		if (option.document_key)
+			return option.document_key_name;
+
+		if (option.inplace_document_key_names.size() == 0)
+			throw new PgSchemaException("Not defined in-place document key.");
+
+		if (!table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname))))
+			throw new PgSchemaException("Not found document key in " + table.name + ".");
+
+		return table.fields.stream().filter(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname))).findFirst().get().name;
+	}
+
+	/**
+	 * Return document key name.
+	 * 
+	 * @param table_name current table name
+	 * @return String document key name
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	protected String getDocKeyName(String table_name) throws PgSchemaException {
+		return getDocKeyName(getTable(table_name));
+	}
+
+	/**
 	 * Decide primary table for questing document id.
 	 */
 	private void setDocIdTable() {
@@ -3781,7 +3839,7 @@ public class PgSchema {
 		doc_id_table = root_table;
 
 		if (!option.rel_data_ext)
-			doc_id_table = tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).max(Comparator.comparingInt(table -> table.order)).get();
+			doc_id_table = tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).min(Comparator.comparingInt(table -> table.order)).get();
 
 	}
 
@@ -3791,14 +3849,15 @@ public class PgSchema {
 	 * @param db_conn Database connection
 	 * @return HashSet set of document ids stored in PostgreSQL
 	 * @throws SQLException the SQL exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public HashSet<String> getDocIdRows(Connection db_conn) throws SQLException {
+	public HashSet<String> getDocIdRows(Connection db_conn) throws SQLException, PgSchemaException {
 
 		HashSet<String> set = new HashSet<String>();
 
-		if (option.document_key) {
+		if (option.document_key || option.inplace_document_key_names.size() > 0) {
 
-			String sql = "SELECT " + option.document_key_name + " FROM " + PgSchemaUtil.avoidPgReservedWords(doc_id_table.name);
+			String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + " FROM " + PgSchemaUtil.avoidPgReservedWords(doc_id_table.name);
 
 			Statement stat = db_conn.createStatement();
 			ResultSet rset = stat.executeQuery(sql);
@@ -3863,7 +3922,7 @@ public class PgSchema {
 
 			Statement stat = db_conn.createStatement();
 
-			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparing(table -> table.order)).forEach(table -> {
+			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 				String table_name = table.name;
 
@@ -3875,11 +3934,13 @@ public class PgSchema {
 
 						has_db_table = true;
 
-						String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + option.document_key_name + "='" + document_id + "'";
-
 						try {
+
+							String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
+
 							stat.execute(sql);
-						} catch (SQLException e) {
+
+						} catch (PgSchemaException | SQLException e) {
 							e.printStackTrace();
 							System.exit(1);
 						}
@@ -3937,7 +3998,7 @@ public class PgSchema {
 
 			CopyManager copy_man = new CopyManager((BaseConnection) db_conn);
 
-			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparing(table -> table.order)).forEach(table -> {
+			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 				String table_name = table.name;
 
@@ -4009,7 +4070,7 @@ public class PgSchema {
 
 			Statement stat = db_conn.createStatement();
 
-			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparing(table -> table.order)).forEach(table -> {
+			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 				try {
 
@@ -5422,9 +5483,9 @@ public class PgSchema {
 
 		}
 
-		PgTable first = tables.stream().filter(table -> table.content_holder).sorted(Comparator.comparing(table -> table.order)).findFirst().get();
+		PgTable first = tables.stream().filter(table -> table.content_holder).sorted(Comparator.comparingInt(table -> table.order)).findFirst().get();
 
-		tables.stream().filter(table -> table.content_holder).sorted(Comparator.comparing(table -> table.order)).forEach(table -> {
+		tables.stream().filter(table -> table.content_holder).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 			if (!table.equals(first))
 				System.out.print("," + jsonb.linefeed);
@@ -5536,9 +5597,9 @@ public class PgSchema {
 
 			json_writer.write("{" + jsonb.linefeed); // JSON document start
 
-			PgTable first = tables.stream().filter(_table -> _table.jsonb_not_empty).sorted(Comparator.comparing(table -> table.order)).findFirst().get();
+			PgTable first = tables.stream().filter(_table -> _table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).findFirst().get();
 
-			tables.stream().filter(_table -> _table.jsonb_not_empty).sorted(Comparator.comparing(table -> table.order)).forEach(_table -> {
+			tables.stream().filter(_table -> _table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).forEach(_table -> {
 
 				try {
 
