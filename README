@@ -1,4 +1,9 @@
-﻿ Changes in xsd2pgschema 2.8.3 (release 2018-03-29)
+﻿ Changed in xsd2pgschema 2.8.4 (release 2018-03-29)
+
+  Fixed differential update of Sphinx full-text indexing did not work in the previous version.
+  Improved performance in differential update and XML splitter.
+
+ Changes in xsd2pgschema 2.8.3 (release 2018-03-29)
 
   Fixed null pointer exception in xmlsplitter.
   Fixed differential update of PostgreSQL data migration did not work in the previous version.

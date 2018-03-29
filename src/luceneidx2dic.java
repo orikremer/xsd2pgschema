@@ -19,6 +19,7 @@ limitations under the License.
 
 import net.sf.xsd2pgschema.*;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -169,9 +170,17 @@ public class luceneidx2dic {
 
 			File dic = new File(dic_dir, dic_file_name);
 
-			DataOutput output = new OutputStreamDataOutput(new FileOutputStream(dic));
+			FileOutputStream fout = new FileOutputStream(dic);
+
+			BufferedOutputStream bout = new BufferedOutputStream(fout);
+
+			DataOutput output = new OutputStreamDataOutput(bout);
 
 			suggester.store(output);
+
+			bout.close();
+
+			fout.close();
 
 			System.out.println("Done index -> dictionary (" + dic.getPath() + ").");
 

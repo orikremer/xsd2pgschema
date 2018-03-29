@@ -19,7 +19,6 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.util.HashMap;
 import java.util.HashSet;
 
 import org.xml.sax.Attributes;
@@ -32,9 +31,6 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class SphDsDocIdExtractor extends DefaultHandler {
 
-	/** The shard id. */
-	private int shard_id;
-
 	/** The document key name in PostgreSQL DDL. */
 	String document_key_name = null;
 
@@ -44,14 +40,11 @@ public class SphDsDocIdExtractor extends DefaultHandler {
 	/** The current state for document_id. */
 	boolean document_id = false;
 
-	/** The Sphinx unique document id. */
-	String sph_doc_id;
+	/** The string builder for document id. */
+	StringBuilder sb = null;
 
 	/** The document id stored in data source. */
 	HashSet<String> doc_set = null;
-
-	/** The document id stored in data source (key=document id, value=shard id). */
-	HashMap<String, Integer> doc_map = null;
 
 	/**
 	 * Instance of Sphinx xmlpipe2 document id extractor.
@@ -67,40 +60,25 @@ public class SphDsDocIdExtractor extends DefaultHandler {
 
 	}
 
-	/**
-	 * Instance of Sphinx xmlpipe2 document id extractor.
-	 *
-	 * @param schema PostgreSQL data model
-	 * @param doc_map set of document id in data source
-	 * @param shard_id shard id
-	 */
-	public SphDsDocIdExtractor(PgSchema schema, HashMap<String, Integer> doc_map, int shard_id) {
-
-		document_key_name = schema.option.document_key_name;
-
-		this.shard_id = shard_id;
-		this.doc_map = doc_map;
-
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * @see org.xml.sax.helpers.DefaultHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
 	 */
 	public void startElement(String namespaceURI, String localName, String qName, Attributes atts) {
 
-		if (qName.equals("sphinx:document"))
+		if (qName.equals("sphinx:document")) {
+
 			sph_document = true;
+
+			sb = new StringBuilder();
+
+		}
 
 		else if (!sph_document)
 			return;
 
-		else if (qName.equals(document_key_name)) {
-
+		else if (qName.equals(document_key_name))
 			document_id = true;
-			sph_doc_id = atts.getValue("id");
-
-		}
 
 	}
 
@@ -116,8 +94,15 @@ public class SphDsDocIdExtractor extends DefaultHandler {
 		if (qName.equals("sphinx:document"))
 			sph_document = false;
 
-		else if (qName.equals(document_key_name))
+		else if (qName.equals(document_key_name)) {
+
 			document_id = false;
+
+			doc_set.add(sb.toString());
+
+			sb.setLength(0);
+
+		}
 
 	}
 
@@ -127,20 +112,11 @@ public class SphDsDocIdExtractor extends DefaultHandler {
 	 */
 	public void characters(char[] chars, int offset, int length) {
 
-		String value = new String(chars, offset, length);
-
 		if (!sph_document)
 			return;
 
-		else if (document_id) {
-
-			if (doc_set != null)
-				doc_set.add(value);
-
-			else if (doc_map != null)
-				doc_map.put(value, shard_id);
-
-		}
+		else if (document_id)
+			sb.append(new String(chars, offset, length));
 
 	}
 

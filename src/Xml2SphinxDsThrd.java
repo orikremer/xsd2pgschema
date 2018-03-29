@@ -236,6 +236,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 	/** Whether show progress or not. */
 	private boolean show_progress = false;
 
+	/** Whether need to commit or not. */
+	private boolean changed = false;
+
 	/* (non-Javadoc)
 	 * @see java.lang.Runnable#run()
 	 */
@@ -268,6 +271,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 						synchronized (xml2sphinxds.sync_del_doc_rows[_shard_id]) {
 							xml2sphinxds.sync_del_doc_rows[_shard_id].add(xml_parser.document_id);
+							changed = true;
 						}
 
 					}
@@ -309,6 +313,8 @@ public class Xml2SphinxDsThrd implements Runnable {
 			if (show_progress)
 				System.out.print("\rExtracted " + (total - xml_file_queue.size()) + " of " + total + " ...");
 
+			changed = true;
+
 		}
 
 		schema.closeXml2SphDs();
@@ -341,7 +347,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 				if (option.sync && xml2sphinxds.sync_del_doc_rows[shard_id].size() > 0) {
 
-					SphDsDocIdRemover stax_parser = new SphDsDocIdRemover(schema, sph_data_source, sph_data_extract, xml2sphinxds.sync_del_doc_rows[shard_id]);
+					System.out.println("Cleaning" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
+
+					SphDsDocIdCleaner stax_parser = new SphDsDocIdCleaner(schema, sph_data_source, sph_data_extract, xml2sphinxds.sync_del_doc_rows[shard_id]);
 
 					try {
 
@@ -381,11 +389,16 @@ public class Xml2SphinxDsThrd implements Runnable {
 			SAXParserFactory spf = SAXParserFactory.newInstance();
 			SAXParser sax_parser = spf.newSAXParser();
 
-			System.out.println("Merging" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
+			File[] sph_doc_files = ds_dir.listFiles(filter);
 
-			int total = 0;
+			int total = sph_doc_files.length;
 
-			for (File sph_doc_file : ds_dir.listFiles(filter)) {
+			if (total > 0)
+				System.out.println("Merging" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
+
+			int proc = 0;
+
+			for (File sph_doc_file : sph_doc_files) {
 
 				SphDsCompositor handler = new SphDsCompositor(schema, filew, index_filter);
 
@@ -399,14 +412,16 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 				sph_doc_file.deleteOnExit();
 
-				total++;
+				if (show_progress)
+					System.out.print("\rMerged " + (++proc) + " of " + total + " ...");
 
 			}
 
 			filew.write("</sphinx:docset>\n");
 			filew.close();
 
-			System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
+			if (changed)
+				System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
 
 			// write Sphinx schema file for next update or merge
 

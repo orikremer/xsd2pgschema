@@ -17,6 +17,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -556,7 +557,7 @@ public class XmlSplitterImpl {
 
 					closeXMLEventWriter();
 
-				} catch (XMLStreamException e) {
+				} catch (XMLStreamException | IOException e) {
 					e.printStackTrace();
 					System.exit(1);
 				}
@@ -660,6 +661,12 @@ public class XmlSplitterImpl {
 
 	}
 
+	/** The file output stream for split XML file. */
+	private FileOutputStream fout = null;
+
+	/** The buffered output stream for split XML file. */
+	private BufferedOutputStream bout = null;
+
 	/**
 	 * Create XML event writer.
 	 *
@@ -679,9 +686,13 @@ public class XmlSplitterImpl {
 
 		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 
+		fout = new FileOutputStream(xml_file);
+
+		bout = new BufferedOutputStream(fout);
+
 		// XML event writer of split XML file
 
-		xml_writer = out_factory.createXMLEventWriter(new FileOutputStream(xml_file));
+		xml_writer = out_factory.createXMLEventWriter(bout);
 
 		header_start_events.forEach(event -> {
 
@@ -721,8 +732,9 @@ public class XmlSplitterImpl {
 	 * Close XML event writer.
 	 *
 	 * @throws XMLStreamException the XML stream exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void closeXMLEventWriter() throws XMLStreamException {
+	private void closeXMLEventWriter() throws XMLStreamException, IOException {
 
 		header_end_events.forEach(event -> {
 
@@ -738,6 +750,10 @@ public class XmlSplitterImpl {
 		});
 
 		xml_writer.close();
+
+		bout.close();
+
+		fout.close();
 
 		// set null for recursive document generation
 

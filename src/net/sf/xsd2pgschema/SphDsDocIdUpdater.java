@@ -19,6 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -117,9 +118,13 @@ public class SphDsDocIdUpdater {
 
 		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 
+		FileOutputStream fout = new FileOutputStream(sph_data_update);
+
+		BufferedOutputStream bout = new BufferedOutputStream(fout);
+
 		// XML event writer
 
-		xml_writer = out_factory.createXMLEventWriter(new FileOutputStream(sph_data_update));
+		xml_writer = out_factory.createXMLEventWriter(bout);
 
 		// Processing sph_data_srouce
 
@@ -168,6 +173,10 @@ public class SphDsDocIdUpdater {
 		reader.close();
 
 		in.close();
+
+		bout.close();
+
+		fout.close();
 
 	}
 
@@ -286,8 +295,11 @@ public class SphDsDocIdUpdater {
 
 			try {
 
-				if ((source && !local_name.equals("docset")) || !source)
+				if ((source && !local_name.equals("docset")) || !source) {
+
 					addXMLEventWriter(element);
+
+				}
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();

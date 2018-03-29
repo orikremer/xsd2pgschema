@@ -249,6 +249,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/** Whether show progress or not. */
 	private boolean show_progress = false;
 
+	/** Whether need to commit or not. */
+	private boolean changed = false;
+
 	/* (non-Javadoc)
 	 * @see java.lang.Runnable#run()
 	 */
@@ -326,6 +329,8 @@ public class Xml2LuceneIdxThrd implements Runnable {
 			if (show_progress)
 				System.out.print("\rIndexed " + (total - xml_file_queue.size()) + " of " + total + " ...");
 
+			changed = true;
+
 		}
 
 		schema.closeXml2LucIdx();
@@ -342,6 +347,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		if (thrd_id != 0)
 			return;
 
+		if (show_progress && changed)
+			System.out.println("Commiting" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
+
 		IndexWriter writer = xml2luceneidx.writers[shard_id];
 
 		try {
@@ -353,7 +361,8 @@ public class Xml2LuceneIdxThrd implements Runnable {
 			e.printStackTrace();
 		}
 
-		System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
+		if (changed)
+			System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
 
 		if (option.isSynchronizable() && show_progress)
 			System.out.println(idx_dir.getAbsolutePath() + " is up-to-date.");

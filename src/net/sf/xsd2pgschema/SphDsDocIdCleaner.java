@@ -19,6 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -39,11 +40,11 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
 /**
- * Sphinx xmlpipe2 document id remover.
+ * Sphinx xmlpipe2 document id cleaner.
  *
  * @author yokochi
  */
-public class SphDsDocIdRemover {
+public class SphDsDocIdCleaner {
 
 	/** The Sphinx data source input file. */
 	private File sph_data_source = null;
@@ -88,14 +89,14 @@ public class SphDsDocIdRemover {
 	private XMLEventWriter xml_writer = null;
 
 	/**
-	 * Instance of Sphinx xmlpipe2 document id remover.
+	 * Instance of Sphinx xmlpipe2 document id cleaner.
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param sph_data_source Sphinx data source input file
 	 * @param sph_data_extract Sphinx data source output file
 	 * @param del_doc_set set of deleting document id while synchronization
 	 */
-	public SphDsDocIdRemover(PgSchema schema, File sph_data_source, File sph_data_extract, HashSet<String> del_doc_set) {
+	public SphDsDocIdCleaner(PgSchema schema, File sph_data_source, File sph_data_extract, HashSet<String> del_doc_set) {
 
 		doc_key_path = doc_unit_path + "/" + schema.option.document_key_name;
 
@@ -140,7 +141,7 @@ public class SphDsDocIdRemover {
 	}
 
 	/**
-	 * Remove documents from Sphinx data source.
+	 * Clean Sphinx data source.
 	 *
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws XMLStreamException the XML stream exception
@@ -163,7 +164,11 @@ public class SphDsDocIdRemover {
 
 		// XML event writer of extracted XML file
 
-		xml_writer = out_factory.createXMLEventWriter(new FileOutputStream(sph_data_extract));
+		FileOutputStream fout = new FileOutputStream(sph_data_extract);
+
+		BufferedOutputStream bout = new BufferedOutputStream(fout);
+
+		xml_writer = out_factory.createXMLEventWriter(bout);
 
 		// XML event writer for interim XML content before xml_writer is prepared
 
@@ -180,6 +185,10 @@ public class SphDsDocIdRemover {
 		}
 
 		interim_events.clear();
+
+		bout.close();
+
+		fout.close();
 
 		reader.close();
 
@@ -208,7 +217,7 @@ public class SphDsDocIdRemover {
 	class StartDocumentReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see SphDsDocIdRemover.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdCleaner.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -234,7 +243,7 @@ public class SphDsDocIdRemover {
 	class EndDocumentReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see SphDsDocIdRemover.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdCleaner.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -261,7 +270,7 @@ public class SphDsDocIdRemover {
 	class StartElementReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see SphDsDocIdRemover.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdCleaner.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -329,7 +338,7 @@ public class SphDsDocIdRemover {
 	class EndElementReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see SphDsDocIdRemover.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdCleaner.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -357,7 +366,7 @@ public class SphDsDocIdRemover {
 	class CommonReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see SphDsDocIdRemover.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdCleaner.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
@@ -381,7 +390,7 @@ public class SphDsDocIdRemover {
 	class CharactersReadHandler implements EventHandler {
 
 		/* (non-Javadoc)
-		 * @see SphDsDocIdRemover.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
+		 * @see SphDsDocIdCleaner.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
 		 */
 		@Override
 		public void handleEvent(XMLEvent element) {
