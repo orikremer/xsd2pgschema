@@ -187,7 +187,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 			SAXParserFactory spf = SAXParserFactory.newInstance();
 			SAXParser sax_parser = spf.newSAXParser();
 
-			SphDsDocIdExtractor handler = new SphDsDocIdExtractor(schema, doc_set);
+			SphDsDocIdExtractor handler = new SphDsDocIdExtractor(option.document_key_name, doc_set);
 
 			try {
 
@@ -334,6 +334,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 		if (thrd_id != 0)
 			return;
 
+		if (show_progress && changed)
+			System.out.println("");
+
 		try {
 
 			File sph_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
@@ -349,7 +352,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 					System.out.println("Cleaning" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
 
-					SphDsDocIdCleaner stax_parser = new SphDsDocIdCleaner(schema, sph_data_source, sph_data_extract, xml2sphinxds.sync_del_doc_rows[shard_id]);
+					SphDsDocIdCleaner stax_parser = new SphDsDocIdCleaner(option.document_key_name, sph_data_source, sph_data_extract, xml2sphinxds.sync_del_doc_rows[shard_id]);
 
 					try {
 
@@ -400,7 +403,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			for (File sph_doc_file : sph_doc_files) {
 
-				SphDsCompositor handler = new SphDsCompositor(schema, filew, index_filter);
+				SphDsCompositor handler = new SphDsCompositor(option.document_key_name, schema.getSphAttrs(), schema.getSphMVAs(), filew, index_filter);
 
 				try {
 
@@ -421,7 +424,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 			filew.close();
 
 			if (changed)
-				System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
+				System.out.println("\nDone" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
 
 			// write Sphinx schema file for next update or merge
 

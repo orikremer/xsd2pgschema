@@ -91,14 +91,14 @@ public class SphDsDocIdCleaner {
 	/**
 	 * Instance of Sphinx xmlpipe2 document id cleaner.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param document_key_name document key name
 	 * @param sph_data_source Sphinx data source input file
 	 * @param sph_data_extract Sphinx data source output file
 	 * @param del_doc_set set of deleting document id while synchronization
 	 */
-	public SphDsDocIdCleaner(PgSchema schema, File sph_data_source, File sph_data_extract, HashSet<String> del_doc_set) {
+	public SphDsDocIdCleaner(String document_key_name, File sph_data_source, File sph_data_extract, HashSet<String> del_doc_set) {
 
-		doc_key_path = doc_unit_path + "/" + schema.option.document_key_name;
+		doc_key_path = doc_unit_path + "/" + document_key_name;
 
 		this.sph_data_source = sph_data_source;
 		this.sph_data_extract = sph_data_extract;

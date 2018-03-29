@@ -49,12 +49,12 @@ public class SphDsDocIdExtractor extends DefaultHandler {
 	/**
 	 * Instance of Sphinx xmlpipe2 document id extractor.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param document_key_name document key name
 	 * @param doc_set set of document id in data source
 	 */
-	public SphDsDocIdExtractor(PgSchema schema, HashSet<String> doc_set) {
+	public SphDsDocIdExtractor(String document_key_name, HashSet<String> doc_set) {
 
-		document_key_name = schema.option.document_key_name;
+		this.document_key_name = document_key_name;
 
 		this.doc_set = doc_set;
 

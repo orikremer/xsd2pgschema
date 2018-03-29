@@ -348,7 +348,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 			return;
 
 		if (show_progress && changed)
-			System.out.println("Commiting" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
+			System.out.println("\nCommiting" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
 
 		IndexWriter writer = xml2luceneidx.writers[shard_id];
 

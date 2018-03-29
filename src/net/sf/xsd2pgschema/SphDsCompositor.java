@@ -72,25 +72,27 @@ public class SphDsCompositor extends DefaultHandler {
 	/** The holder of string builder for each Sphinx attribute. */
 	HashMap<String, StringBuilder> buffer = null;
 
-	/** The holder of Sphinx attributes. */
+	/** The set of Sphinx attribute. */
 	HashSet<String> sph_attrs = null;
 
-	/** The holder of Sphinx multi-valued attributes. */
+	/** The set of Sphinx multi-valued attribute. */
 	HashSet<String> sph_mvas = null;
 
 	/**
 	 * Instance of Sphinx xmlpipe2 compositor.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param document_key_name document key name
+	 * @param sph_attrs set of Sphinx attribute
+	 * @param sph_mvas set of Sphinx multi-valued attribute
 	 * @param writer Sphinx data source writer
 	 * @param index_filter index filter
 	 */
-	public SphDsCompositor(PgSchema schema, FileWriter writer, IndexFilter index_filter) {
+	public SphDsCompositor(String document_key_name, HashSet<String> sph_attrs, HashSet<String> sph_mvas, FileWriter writer, IndexFilter index_filter) {
 
-		document_key_name = schema.option.document_key_name;
+		this.document_key_name = document_key_name;
 
-		sph_attrs = schema.getSphAttrs();
-		sph_mvas = schema.getSphMVAs();
+		this.sph_attrs = sph_attrs;
+		this.sph_mvas = sph_mvas;
 
 		this.writer = writer;
 
