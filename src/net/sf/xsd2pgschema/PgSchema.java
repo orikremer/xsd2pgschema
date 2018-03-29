@@ -3721,10 +3721,12 @@ public class PgSchema {
 
 		try {
 
-			if (update && !option.rel_data_ext) {
+			if (update) {
 
-				deleteBeforeUpdate(db_conn);
-				update = false;
+				deleteBeforeUpdate(db_conn, option.rel_data_ext);
+
+				if (!option.rel_data_ext)
+					update = false;
 
 			}
 
@@ -3891,7 +3893,7 @@ public class PgSchema {
 
 			try {
 
-				deleteBeforeUpdate(db_conn);
+				deleteBeforeUpdate(db_conn, false);
 
 			} catch (PgSchemaException e) {
 				e.printStackTrace();
@@ -3908,9 +3910,10 @@ public class PgSchema {
 	 * Execute PostgreSQL DELETE command before INSERT for all tables of current document.
 	 *
 	 * @param db_conn Database connection
+	 * @param no_pkey whether delete relations not having primary key or non selective
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void deleteBeforeUpdate(Connection db_conn) throws PgSchemaException {
+	private void deleteBeforeUpdate(Connection db_conn, boolean no_pkey) throws PgSchemaException {
 
 		try {
 
@@ -3926,7 +3929,7 @@ public class PgSchema {
 
 			Statement stat = db_conn.createStatement();
 
-			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 				String table_name = table.name;
 

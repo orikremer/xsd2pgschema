@@ -25,6 +25,7 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.util.zip.GZIPInputStream;
 
@@ -136,6 +137,9 @@ public class XmlParser {
 		// decide document id quoting XML file name
 
 		document_id = xml_file_name.replaceFirst("^" + xml_file_filter.prefix_digest, "").replaceFirst(_xml_file_ext_digest + _xml_file_ext + "$", "");
+
+		if (!xml_file_filter.case_sense_doc_key)
+			document_id = (xml_file_filter.lower_case_doc_key ? document_id.toLowerCase() : document_id.toUpperCase());
 
 		// decide base name of XML file name
 
@@ -252,11 +256,13 @@ public class XmlParser {
 
 			FileInputStream in = new FileInputStream(xml_file);
 
+			FileChannel ch = in.getChannel();
+
 			md_chk_sum.reset();
 
-			byte[] digest = md_chk_sum.digest(IOUtils.toByteArray(in));
+			String new_check_sum = String.valueOf(Hex.encodeHex(md_chk_sum.digest(IOUtils.readFully(in, (int) ch.size()))));
 
-			String new_check_sum = String.valueOf(Hex.encodeHex(digest));
+			ch.close();
 
 			in.close();
 

@@ -1,8 +1,10 @@
-﻿ Changes in xsd2pgschema 2.8.3 (release 2018-03-28)
+﻿ Changes in xsd2pgschema 2.8.3 (release 2018-03-29)
 
   Fixed null pointer exception in xmlsplitter.
   Fixed differential update of PostgreSQL data migration did not work in the previous version.
   Added --inplace-doc-key-name option to allow differential update without relational model extension.
+  Fixed duplication if primary key was not unique while differential update.
+  Added --lower-case-doc-key and --upper-case-doc-key options.
 
  Changes in xsd2pgschema 2.8.2 (release 2018-03-27)
 

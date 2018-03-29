@@ -119,6 +119,12 @@ public class xml2json {
 			else if (args[i].equals("--xml-file-ext-digest") && i + 1 < args.length)
 				xml_file_filter.setExtDigest(args[++i]);
 
+			else if (args[i].equals("--lower-case-doc-key"))
+				xml_file_filter.setLowerCaseDocKey();
+
+			else if (args[i].equals("--upper-case-doc-key"))
+				xml_file_filter.setUpperCaseDocKey();
+
 			else if (args[i].equals("--obj-json"))
 				json_type = JsonType.object;
 
@@ -313,6 +319,8 @@ public class xml2json {
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --xml-file-prerix-digest DIGESTIBLE_PREFIX (default=\"\")");
 		System.err.println("        --xml-file-ext-digest DIGESTIBLE_EXTENSION (default=\".\")");
+		System.err.println("        --lower-case-doc-key (lower case document key)");
+		System.err.println("        --upper-case-doc-key (upper case document key)");
 		System.err.println("        --filt-in   table_name.column_name");
 		System.err.println("        --filt-out  table_name.column_name:regex_pattern(|regex_pattern...)");
 		System.err.println("        --fill-this table_name.column_name:filling_text");

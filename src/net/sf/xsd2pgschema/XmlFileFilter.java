@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -34,6 +34,12 @@ public class XmlFileFilter {
 
 	/** The digest-able extension name. */
 	String ext_digest = ".";
+
+	/** Whether case-sensitive document key. */
+	protected boolean case_sense_doc_key = true;
+
+	/** Whether lower-case document key or not. */
+	protected boolean lower_case_doc_key = true;
 
 	/**
 	 * Set extension of target file.
@@ -80,6 +86,26 @@ public class XmlFileFilter {
 
 		if (ext_digest == null)
 			this.ext_digest = ".";
+
+	}
+
+	/**
+	 * Set lower case document key.
+	 */
+	public void setLowerCaseDocKey() {
+
+		case_sense_doc_key = false;
+		lower_case_doc_key = true;
+
+	}
+
+	/**
+	 * Set upper case document key.
+	 */
+	public void setUpperCaseDocKey() {
+
+		case_sense_doc_key = false;
+		lower_case_doc_key = false;
 
 	}
 
