@@ -19,6 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -3602,13 +3603,14 @@ public class PgSchema {
 
 			if (table.required && (option.rel_data_ext || !table.relational)) {
 
-				if (table.filew == null) {
+				if (table.buffw == null) {
 
 					File csv_file = new File(csv_dir, table.name + ".csv");
 
 					try {
 
 						table.filew = new FileWriter(csv_file);
+						table.buffw = new BufferedWriter(table.filew);
 
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -3619,8 +3621,10 @@ public class PgSchema {
 
 			}
 
-			else
+			else {
+				table.buffw = null;
 				table.filew = null;
+			}
 
 		});
 
@@ -3649,11 +3653,14 @@ public class PgSchema {
 
 		closeTableLock();
 
-		tables.stream().filter(table -> table.filew != null).forEach(table -> {
+		tables.stream().filter(table -> table.buffw != null).forEach(table -> {
 
 			try {
 
+				table.buffw.close();
 				table.filew.close();
+
+				table.buffw = null;
 				table.filew = null;
 
 			} catch (IOException e) {
@@ -4380,18 +4387,19 @@ public class PgSchema {
 		try {
 
 			FileWriter filew = new FileWriter(sphinx_schema);
+			BufferedWriter buffw = new BufferedWriter(filew);
 
-			filew.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+			buffw.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 
 			if (data_source)
-				filew.write("<sphinx:docset xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
+				buffw.write("<sphinx:docset xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
 
-			filew.write("<sphinx:schema>\n");
+			buffw.write("<sphinx:schema>\n");
 
 			if (data_source) {
 
-				filew.write("<sphinx:attr name=\"" + option.document_key_name + "\" type=\"string\"/>\n"); // default attr
-				filew.write("<sphinx:field name=\"" + PgSchemaUtil.simple_content_name + "\"/>\n"); // default field
+				buffw.write("<sphinx:attr name=\"" + option.document_key_name + "\" type=\"string\"/>\n"); // default attr
+				buffw.write("<sphinx:field name=\"" + PgSchemaUtil.simple_content_name + "\"/>\n"); // default field
 
 			}
 
@@ -4399,7 +4407,7 @@ public class PgSchema {
 
 				try {
 
-					filew.write("<sphinx:attr name=\"" + table.name + PgSchemaUtil.sph_member_op + field.xname + "\"");
+					buffw.write("<sphinx:attr name=\"" + table.name + PgSchemaUtil.sph_member_op + field.xname + "\"");
 
 					String attrs = null;
 
@@ -4467,7 +4475,7 @@ public class PgSchema {
 					if (field.default_value != null && !field.default_value.isEmpty())
 						attrs += " default=\"" + StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeXml10(field.default_value)) + "\"";
 
-					filew.write(attrs + "/>\n");
+					buffw.write(attrs + "/>\n");
 
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -4476,8 +4484,9 @@ public class PgSchema {
 
 			}));
 
-			filew.write("</sphinx:schema>\n");
+			buffw.write("</sphinx:schema>\n");
 
+			buffw.close();
 			filew.close();
 
 		} catch (IOException e) {
@@ -4499,14 +4508,15 @@ public class PgSchema {
 		try {
 
 			FileWriter filew = new FileWriter(sphinx_conf);
+			BufferedWriter buffw = new BufferedWriter(filew);
 
-			filew.write("#\n# Sphinx configuration file sample\n#\n# WARNING! While this sample file mentions all available options,\n#\n# it contains (very) short helper descriptions only. Please refer to\n# doc/sphinx.html for details.\n#\n\n#############################################################################\n## data source definition\n#############################################################################\n\n");
+			buffw.write("#\n# Sphinx configuration file sample\n#\n# WARNING! While this sample file mentions all available options,\n#\n# it contains (very) short helper descriptions only. Please refer to\n# doc/sphinx.html for details.\n#\n\n#############################################################################\n## data source definition\n#############################################################################\n\n");
 
-			filew.write("source " + idx_name + "\n{\n");
-			filew.write("\ttype                    = xmlpipe2\n");
-			filew.write("\txmlpipe_command         = cat " + data_source.getAbsolutePath() + "\n");
-			filew.write("\txmlpipe_attr_string     = " + option.document_key_name + "\n");
-			filew.write("\txmlpipe_field           = " + PgSchemaUtil.simple_content_name + "\n");
+			buffw.write("source " + idx_name + "\n{\n");
+			buffw.write("\ttype                    = xmlpipe2\n");
+			buffw.write("\txmlpipe_command         = cat " + data_source.getAbsolutePath() + "\n");
+			buffw.write("\txmlpipe_attr_string     = " + option.document_key_name + "\n");
+			buffw.write("\txmlpipe_field           = " + PgSchemaUtil.simple_content_name + "\n");
 
 			tables.forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> {
 
@@ -4516,7 +4526,7 @@ public class PgSchema {
 
 					switch (field.xs_type) {
 					case xs_boolean:
-						filew.write("\txmlpipe_attr_bool       = " + attr_name + "\n");
+						buffw.write("\txmlpipe_attr_bool       = " + attr_name + "\n");
 						break;
 					case xs_bigserial:
 					case xs_long:
@@ -4524,9 +4534,9 @@ public class PgSchema {
 					case xs_unsignedLong:
 					case xs_duration:
 						if (field.sph_mva)
-							filew.write("\txmlpipe_attr_multi_64   = " + attr_name + "\n");
+							buffw.write("\txmlpipe_attr_multi_64   = " + attr_name + "\n");
 						else
-							filew.write("\txmlpipe_attr_bigint     = " + attr_name + "\n");
+							buffw.write("\txmlpipe_attr_bigint     = " + attr_name + "\n");
 						break;
 					case xs_serial:
 					case xs_integer:
@@ -4541,24 +4551,24 @@ public class PgSchema {
 					case xs_byte:
 					case xs_unsignedByte:
 						if (field.sph_mva)
-							filew.write("\txmlpipe_attr_multi      = " + attr_name + "\n");
+							buffw.write("\txmlpipe_attr_multi      = " + attr_name + "\n");
 						else
-							filew.write("\txmlpipe_attr_uint       = " + attr_name + "\n");
+							buffw.write("\txmlpipe_attr_uint       = " + attr_name + "\n");
 						break;
 					case xs_float:
 					case xs_double:
 					case xs_decimal:
-						filew.write("\txmlpipe_attr_float      = " + attr_name + "\n");
+						buffw.write("\txmlpipe_attr_float      = " + attr_name + "\n");
 						break;
 					case xs_dateTime:
 					case xs_time:
 					case xs_date:
 					case xs_gYearMonth:
 					case xs_gYear:
-						filew.write("\txmlpipe_attr_timestamp  = " + attr_name + "\n");
+						buffw.write("\txmlpipe_attr_timestamp  = " + attr_name + "\n");
 						break;
 					default: // string
-						filew.write("\txmlpipe_attr_string     = " + attr_name + "\n");
+						buffw.write("\txmlpipe_attr_string     = " + attr_name + "\n");
 					}
 
 				} catch (IOException e) {
@@ -4568,8 +4578,9 @@ public class PgSchema {
 
 			}));
 
-			filew.write("}\n\n");
+			buffw.write("}\n\n");
 
+			buffw.close();
 			filew.close();
 
 		} catch (IOException e) {
@@ -4582,13 +4593,13 @@ public class PgSchema {
 	 * Sphinx xmlpipe2 conversion.
 	 *
 	 * @param xml_parser XML document
-	 * @param writer writer of Sphinx xmlpipe2 file
+	 * @param buffw buffered writer of Sphinx xmlpipe2 file
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2SphDs(XmlParser xml_parser, FileWriter writer) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
+	public void xml2SphDs(XmlParser xml_parser, BufferedWriter buffw) throws ParserConfigurationException, TransformerException, IOException, PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -4596,7 +4607,7 @@ public class PgSchema {
 
 		resetAttrSelRdy();
 
-		tables.forEach(table -> table.filew = table.required ? writer : null);
+		tables.forEach(table -> table.buffw = table.required ? buffw : null);
 
 		// parse root node and write to Sphinx xmlpipe2 file
 
@@ -4617,7 +4628,7 @@ public class PgSchema {
 
 		closeTableLock();
 
-		tables.stream().filter(table -> table.filew != null).forEach(table -> table.filew = null);
+		tables.stream().filter(table -> table.buffw != null).forEach(table -> table.buffw = null);
 
 	}
 
@@ -5000,15 +5011,11 @@ public class PgSchema {
 
 		try {
 
-			FileWriter json_writer = new FileWriter(json_file);
+			FileWriter filew = new FileWriter(json_file);
 
-			json_writer.write("{" + jsonb.linefeed); // JSON document start
+			filew.write("{" + jsonb.linefeed + jsonb.builder.toString() + "}" + jsonb.linefeed);
 
-			json_writer.write(jsonb.builder.toString());
-
-			json_writer.write("}" + jsonb.linefeed); // JSON document end
-
-			json_writer.close();
+			filew.close();
 
 		} catch (IOException e) {
 			throw new PgSchemaException(e);
@@ -5369,15 +5376,11 @@ public class PgSchema {
 
 		try {
 
-			FileWriter json_writer = new FileWriter(json_file);
+			FileWriter filew = new FileWriter(json_file);
 
-			json_writer.write("{" + jsonb.linefeed); // JSON document start
+			filew.write("{" + jsonb.linefeed + jsonb.builder.toString() + "}" + jsonb.linefeed);
 
-			json_writer.write(jsonb.builder.toString());
-
-			json_writer.write("}" + jsonb.linefeed); // JSON document end
-
-			json_writer.close();
+			filew.close();
 
 		} catch (IOException e) {
 			throw new PgSchemaException(e);
@@ -5620,9 +5623,10 @@ public class PgSchema {
 
 		try {
 
-			FileWriter json_writer = new FileWriter(json_file);
+			FileWriter filew = new FileWriter(json_file);
+			BufferedWriter buffw = new BufferedWriter(filew);
 
-			json_writer.write("{" + jsonb.linefeed); // JSON document start
+			buffw.write("{" + jsonb.linefeed); // JSON document start
 
 			PgTable first = tables.stream().filter(_table -> _table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).findFirst().get();
 
@@ -5633,9 +5637,9 @@ public class PgSchema {
 					boolean array_json = !_table.virtual && jsonb.array_all;
 
 					if (!_table.equals(first))
-						json_writer.write("," + jsonb.linefeed);
+						buffw.write("," + jsonb.linefeed);
 
-					json_writer.write(jsonb.getIndentSpaces(1) + "\"" + _table.name + "\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // JSON object start
+					buffw.write(jsonb.getIndentSpaces(1) + "\"" + _table.name + "\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // JSON object start
 
 					boolean has_field = false;
 
@@ -5653,15 +5657,15 @@ public class PgSchema {
 							boolean array_field = (!_table.equals(root_table) && array_json) || _field.list_holder || _field.jsonb_col_size > 1;
 
 							if (has_field)
-								json_writer.write("," + jsonb.linefeed);
+								buffw.write("," + jsonb.linefeed);
 
-							json_writer.write(jsonb.getIndentSpaces(2) + "\"" + (_field.attribute || _field.any_attribute ? jsonb.attr_prefix : "") + (_field.simple_content ? jsonb.simple_content_key : _field.xname) + "\":" + jsonb.key_value_space + (array_field ? "[" : ""));
+							buffw.write(jsonb.getIndentSpaces(2) + "\"" + (_field.attribute || _field.any_attribute ? jsonb.attr_prefix : "") + (_field.simple_content ? jsonb.simple_content_key : _field.xname) + "\":" + jsonb.key_value_space + (array_field ? "[" : ""));
 
 							_field.jsonb.setLength(_field.jsonb.length() - (jsonb.key_value_spaces + 1));
-							json_writer.write(_field.jsonb.toString());
+							buffw.write(_field.jsonb.toString());
 
 							if (array_field)
-								json_writer.write("]");
+								buffw.write("]");
 
 							has_field = true;
 
@@ -5673,9 +5677,9 @@ public class PgSchema {
 					}
 
 					if (has_field)
-						json_writer.write(jsonb.linefeed);
+						buffw.write(jsonb.linefeed);
 
-					json_writer.write(jsonb.getIndentSpaces(1) + "}"); // JSON object end
+					buffw.write(jsonb.getIndentSpaces(1) + "}"); // JSON object end
 
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -5685,11 +5689,12 @@ public class PgSchema {
 			});
 
 			if (first != null)
-				json_writer.write(jsonb.linefeed);
+				buffw.write(jsonb.linefeed);
 
-			json_writer.write("}" + jsonb.linefeed); // JSON document end
+			buffw.write("}" + jsonb.linefeed); // JSON document end
 
-			json_writer.close();
+			buffw.close();
+			filew.close();
 
 		} catch (IOException e) {
 			throw new PgSchemaException(e);

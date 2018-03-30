@@ -139,7 +139,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 				if (setContent(proc_node, field, false)) {
 
-					if (table.filew != null)
+					if (table.buffw != null)
 						values[f] = content;
 
 				} else if (field.required) {
@@ -151,7 +151,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 			// any, any_attribute
 
-			else if ((field.any || field.any_attribute) && table.filew != null) {
+			else if ((field.any || field.any_attribute) && table.buffw != null) {
 
 				if (setAnyContent(proc_node, field))
 					values[f] = Jsoup.parse(content).text();
@@ -182,7 +182,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 		written = false;
 
-		if (table.filew != null) {
+		if (table.buffw != null) {
 
 			written = true;
 
@@ -196,7 +196,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 				PgField field = fields.get(f);
 
 				if (field.indexable)
-					field.writeValue2SphDs(table.filew, table.name + PgSchemaUtil.sph_member_op + field.xname, value, value.length() >= schema.min_word_len);
+					field.writeValue2SphDs(table.buffw, table.name + PgSchemaUtil.sph_member_op + field.xname, value, value.length() >= schema.min_word_len);
 
 			}
 

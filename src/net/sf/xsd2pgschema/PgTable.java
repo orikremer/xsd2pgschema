@@ -19,6 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -102,8 +103,11 @@ public class PgTable {
 	/** Whether table is subset of database. */
 	boolean filt_out = false;
 
-	/** The content writer. */
+	/** The current file writer. */
 	FileWriter filew = null;
+
+	/** The current buffered writer. */
+	BufferedWriter buffw = null;
 
 	/** Whether JSON buffer of arbitrary field is not empty. */
 	boolean jsonb_not_empty = false;

@@ -19,7 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.io.FileWriter;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
@@ -4086,12 +4086,12 @@ public class PgField {
 	/**
 	 * Write value to Sphinx data source.
 	 *
-	 * @param writer the writer
+	 * @param buffw the buffered writer
 	 * @param attr_name Sphinx attribute name
 	 * @param value content
 	 * @param min_word_len_filter whether it exceeds minimum word length
 	 */
-	public void writeValue2SphDs(FileWriter writer, String attr_name, String value, boolean min_word_len_filter) {
+	public void writeValue2SphDs(BufferedWriter buffw, String attr_name, String value, boolean min_word_len_filter) {
 
 		try {
 
@@ -4104,7 +4104,7 @@ public class PgField {
 				case xs_long:
 				case xs_bigint:
 				case xs_unsignedLong:
-					writer.write("<" + attr_name + ">" + Long.valueOf(value) + "</" + attr_name + ">\n");
+					buffw.write("<" + attr_name + ">" + Long.valueOf(value) + "</" + attr_name + ">\n");
 					break;
 				case xs_serial:
 				case xs_integer:
@@ -4114,31 +4114,31 @@ public class PgField {
 				case xs_nonNegativeInteger:
 				case xs_positiveInteger:
 				case xs_unsignedInt:
-					writer.write("<" + attr_name + ">" + Integer.valueOf(value) + "</" + attr_name + ">\n");
+					buffw.write("<" + attr_name + ">" + Integer.valueOf(value) + "</" + attr_name + ">\n");
 					break;
 				case xs_float:
-					writer.write("<" + attr_name + ">" + Float.valueOf(value) + "</" + attr_name + ">\n");
+					buffw.write("<" + attr_name + ">" + Float.valueOf(value) + "</" + attr_name + ">\n");
 					break;
 				case xs_double:
 				case xs_decimal:
-					writer.write("<" + attr_name + ">" + Double.valueOf(value) + "</" + attr_name + ">\n");
+					buffw.write("<" + attr_name + ">" + Double.valueOf(value) + "</" + attr_name + ">\n");
 					break;
 				case xs_short:
 				case xs_byte:
 				case xs_unsignedShort:
 				case xs_unsignedByte:
-					writer.write("<" + attr_name + ">" + Integer.valueOf(value) + "</" + attr_name + ">\n");
+					buffw.write("<" + attr_name + ">" + Integer.valueOf(value) + "</" + attr_name + ">\n");
 					break;
 				case xs_dateTime:
 				case xs_date:
 				case xs_gYearMonth:
 				case xs_gYear:
 					java.util.Date util_time = PgSchemaUtil.parseDate(value);
-					writer.write("<" + attr_name + ">" + util_time.getTime() / 1000L + "</" + attr_name + ">\n");
+					buffw.write("<" + attr_name + ">" + util_time.getTime() / 1000L + "</" + attr_name + ">\n");
 					break;
 				default: // free text
 					value = StringEscapeUtils.escapeXml10(value);
-					writer.write("<" + attr_name + ">" + value + "</" + attr_name + ">\n");
+					buffw.write("<" + attr_name + ">" + value + "</" + attr_name + ">\n");
 					escaped = true;
 				}
 
@@ -4166,11 +4166,11 @@ public class PgField {
 			case xs_byte:
 			case xs_unsignedShort:
 			case xs_unsignedByte:
-				writer.write("<" + PgSchemaUtil.simple_content_name + ">" + value + "</" + PgSchemaUtil.simple_content_name + ">\n");
+				buffw.write("<" + PgSchemaUtil.simple_content_name + ">" + value + "</" + PgSchemaUtil.simple_content_name + ">\n");
 				break;
 			default: // not numeric
 				if (min_word_len_filter)
-					writer.write("<" + PgSchemaUtil.simple_content_name + ">" + (escaped ? value : StringEscapeUtils.escapeXml10(value)) + "</" + PgSchemaUtil.simple_content_name + ">\n");
+					buffw.write("<" + PgSchemaUtil.simple_content_name + ">" + (escaped ? value : StringEscapeUtils.escapeXml10(value)) + "</" + PgSchemaUtil.simple_content_name + ">\n");
 			}
 
 		} catch (IOException e) {

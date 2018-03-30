@@ -20,6 +20,7 @@ limitations under the License.
 import net.sf.xsd2pgschema.*;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -139,18 +140,19 @@ public class dicmerge4sphinx {
 			File sphinx_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
 
 			FileWriter filew = new FileWriter(sphinx_data_source);
+			BufferedWriter buffw = new BufferedWriter(filew);
 
-			filew.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+			buffw.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
 
-			filew.write("<sphinx:docset>\n");
+			buffw.write("<sphinx:docset>\n");
 
-			filew.write("<sphinx:schema>\n");
+			buffw.write("<sphinx:schema>\n");
 
-			filew.write("<sphinx:attr name=\"keyword\" type=\"string\"/>\n");
-			filew.write("<sphinx:attr name=\"freq\" type=\"int\" bits=\"32\"/>\n");
-			filew.write("<sphinx:field name=\"" + PgSchemaUtil.trigram_field_name + "\"/>\n"); // default field
+			buffw.write("<sphinx:attr name=\"keyword\" type=\"string\"/>\n");
+			buffw.write("<sphinx:attr name=\"freq\" type=\"int\" bits=\"32\"/>\n");
+			buffw.write("<sphinx:field name=\"" + PgSchemaUtil.trigram_field_name + "\"/>\n"); // default field
 
-			filew.write("</sphinx:schema>\n");
+			buffw.write("</sphinx:schema>\n");
 
 			int id = 0;
 
@@ -162,15 +164,17 @@ public class dicmerge4sphinx {
 				if (freq < freq_threshold)
 					continue;
 
-				filew.write("<sphinx:document id=\"" + (++id) + "\">\n");
-				filew.write("<keyword>" + StringEscapeUtils.escapeXml10(keyword) + "</keyword>\n");
-				filew.write("<freq>" + freq + "</freq>\n");
-				filew.write("<" + PgSchemaUtil.trigram_field_name + ">" + toTrigram(keyword) + "</" + PgSchemaUtil.trigram_field_name + ">\n");
-				filew.write("</sphinx:document>\n");
+				buffw.write("<sphinx:document id=\"" + (++id) + "\">\n");
+				buffw.write("<keyword>" + StringEscapeUtils.escapeXml10(keyword) + "</keyword>\n");
+				buffw.write("<freq>" + freq + "</freq>\n");
+				buffw.write("<" + PgSchemaUtil.trigram_field_name + ">" + toTrigram(keyword) + "</" + PgSchemaUtil.trigram_field_name + ">\n");
+				buffw.write("</sphinx:document>\n");
 
 			}
 
-			filew.write("</sphinx:docset>\n");
+			buffw.write("</sphinx:docset>\n");
+
+			buffw.close();
 			filew.close();
 
 		} catch (IOException e) {

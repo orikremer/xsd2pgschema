@@ -1,4 +1,8 @@
-﻿ Changed in xsd2pgschema 2.8.4 (release 2018-03-30)
+﻿ Changed in xsd2pgschema 2.8.5 (release 2018-03-30)
+
+  Improved output performance.
+
+ Changed in xsd2pgschema 2.8.4 (release 2018-03-30)
 
   Fixed differential update of Sphinx full-text indexing did not work in the previous version.
   Improved performance in differential update and XML splitter.

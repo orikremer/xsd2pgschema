@@ -20,6 +20,7 @@ limitations under the License.
 import net.sf.xsd2pgschema.*;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -229,16 +230,19 @@ public class dsmerge4sphinx {
 			schema.writeSphSchema(dst_sphinx_data_source, true);
 
 			FileWriter filew = new FileWriter(dst_sphinx_data_source, true);
+			BufferedWriter buffw = new BufferedWriter(filew);
 
 			for (String src_ds_dir_name : src_ds_dir_list) {
 
 				File src_sphinx_data_source = new File(src_ds_dir_name, PgSchemaUtil.sph_data_source_name);
 
-				mergeDataSource(schema, filew, src_sphinx_data_source);
+				mergeDataSource(schema, buffw, src_sphinx_data_source);
 
 			}
 
-			filew.write("</sphinx:docset>\n");
+			buffw.write("</sphinx:docset>\n");
+
+			buffw.close();
 			filew.close();
 
 			// Sphinx schema writer for next update or merge
@@ -263,10 +267,10 @@ public class dsmerge4sphinx {
 	 * Merge data source.
 	 *
 	 * @param schema PostgreSQL data model
-	 * @param filew Sphinx data source file writer
+	 * @param buffw buffered writer for Sphinx data source
 	 * @param sph_doc Sphinx data source file
 	 */
-	private static void mergeDataSource(PgSchema schema, FileWriter filew, File sph_doc) {
+	private static void mergeDataSource(PgSchema schema, BufferedWriter buffw, File sph_doc) {
 
 		try {
 
@@ -287,7 +291,7 @@ public class dsmerge4sphinx {
 					if (line.contains("</sphinx:docset>"))
 						break;
 
-					filew.write(line + "\n");
+					buffw.write(line + "\n");
 
 				}
 

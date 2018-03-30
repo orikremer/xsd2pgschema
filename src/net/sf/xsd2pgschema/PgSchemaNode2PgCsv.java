@@ -131,7 +131,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			if (field.document_key) {
 
-				if (table.filew != null)
+				if (table.buffw != null)
 					values[f] = document_id;
 
 			}
@@ -140,7 +140,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			else if (field.serial_key) {
 
-				if (table.filew != null)
+				if (table.buffw != null)
 					values[f] = option.ser_size.equals(PgSerSize.unsigned_int_32) ? Integer.toString(key_id) : Short.toString((short) key_id);
 
 			}
@@ -149,7 +149,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			else if (field.xpath_key) {
 
-				if (table.filew != null)
+				if (table.buffw != null)
 					values[f] = schema.getHashKeyString(current_key.substring(document_id_len));
 
 			}
@@ -158,7 +158,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			else if (field.primary_key) {
 
-				if (table.filew != null && rel_data_ext)
+				if (table.buffw != null && rel_data_ext)
 					values[f] = schema.getHashKeyString(primary_key);
 
 			}
@@ -169,7 +169,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				if (parent_table.name.equals(field.foreign_table)) {
 
-					if (table.filew != null && rel_data_ext)
+					if (table.buffw != null && rel_data_ext)
 						values[f] = schema.getHashKeyString(parent_key);
 
 				}
@@ -182,7 +182,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				if (setNestedKey(field, current_key, key_id)) {
 
-					if (table.filew != null && rel_data_ext)
+					if (table.buffw != null && rel_data_ext)
 						values[f] = schema.getHashKeyString(nested_key[nested_fields]);
 
 					nested_fields++;
@@ -197,7 +197,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				if (setContent(proc_node, field, true)) {
 
-					if (table.filew != null)
+					if (table.buffw != null)
 						values[f] = StringEscapeUtils.escapeCsv(field.normalize(content));
 
 				} else if (field.required) {
@@ -209,7 +209,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			// any, any_attribute
 
-			else if ((field.any || field.any_attribute) && table.filew != null) {
+			else if ((field.any || field.any_attribute) && table.buffw != null) {
 
 				if (setAnyContent(proc_node, field))
 					values[f] = StringEscapeUtils.escapeCsv(field.normalize(content));
@@ -242,7 +242,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		written = false;
 
-		if (table.filew != null) {
+		if (table.buffw != null) {
 
 			written = true;
 
@@ -257,7 +257,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			}
 
-			table.filew.write(sb.substring(0, sb.length() - 1) + "\n");
+			table.buffw.write(sb.substring(0, sb.length() - 1) + "\n");
 
 			sb.setLength(0);
 

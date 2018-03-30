@@ -19,6 +19,7 @@ limitations under the License.
 
 import net.sf.xsd2pgschema.*;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
@@ -291,19 +292,21 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			try {
 
-				FileWriter writer = new FileWriter(sph_doc_file);
+				FileWriter filew = new FileWriter(sph_doc_file);
+				BufferedWriter buffw = new BufferedWriter(filew);
 
 				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
 
-				writer.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-				writer.write("<sphinx:document id=\"" + schema.getHashKeyString(xml_parser.document_id) + "\">\n");
-				writer.write("<" + option.document_key_name + ">" + StringEscapeUtils.escapeXml10(xml_parser.document_id) + "</" + option.document_key_name + ">\n");
+				buffw.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+				buffw.write("<sphinx:document id=\"" + schema.getHashKeyString(xml_parser.document_id) + "\">\n");
+				buffw.write("<" + option.document_key_name + ">" + StringEscapeUtils.escapeXml10(xml_parser.document_id) + "</" + option.document_key_name + ">\n");
 
-				schema.xml2SphDs(xml_parser, writer);
+				schema.xml2SphDs(xml_parser, buffw);
 
-				writer.write("</sphinx:document>\n");
+				buffw.write("</sphinx:document>\n");
 
-				writer.close();
+				buffw.close();
+				filew.close();
 
 			} catch (IOException | SAXException | ParserConfigurationException | TransformerException | PgSchemaException e) {
 				e.printStackTrace();
@@ -388,6 +391,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 			schema.writeSphSchema(sph_data_source, true);
 
 			FileWriter filew = new FileWriter(sph_data_source, true);
+			BufferedWriter buffw = new BufferedWriter(filew);
 
 			SAXParserFactory spf = SAXParserFactory.newInstance();
 			SAXParser sax_parser = spf.newSAXParser();
@@ -403,7 +407,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			for (File sph_doc_file : sph_doc_files) {
 
-				SphDsCompositor handler = new SphDsCompositor(option.document_key_name, schema.getSphAttrs(), schema.getSphMVAs(), filew, index_filter);
+				SphDsCompositor handler = new SphDsCompositor(option.document_key_name, schema.getSphAttrs(), schema.getSphMVAs(), buffw, index_filter);
 
 				try {
 
@@ -420,7 +424,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			}
 
-			filew.write("</sphinx:docset>\n");
+			buffw.write("</sphinx:docset>\n");
+
+			buffw.close();
 			filew.close();
 
 			if (changed)

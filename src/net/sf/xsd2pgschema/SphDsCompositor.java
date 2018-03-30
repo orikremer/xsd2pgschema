@@ -19,7 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.io.FileWriter;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,8 +36,8 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class SphDsCompositor extends DefaultHandler {
 
-	/** The Sphinx data source writer. */
-	FileWriter writer;
+	/** The buffered writer for Sphinx data source. */
+	BufferedWriter buffw;
 
 	/** The Sphinx maximum field length. (related to max_xmlpipe2_field in sphinx.conf) */
 	int sph_max_field_len;
@@ -84,17 +84,17 @@ public class SphDsCompositor extends DefaultHandler {
 	 * @param document_key_name document key name
 	 * @param sph_attrs set of Sphinx attribute
 	 * @param sph_mvas set of Sphinx multi-valued attribute
-	 * @param writer Sphinx data source writer
+	 * @param buffw buffered writer for Sphinx data source
 	 * @param index_filter index filter
 	 */
-	public SphDsCompositor(String document_key_name, HashSet<String> sph_attrs, HashSet<String> sph_mvas, FileWriter writer, IndexFilter index_filter) {
+	public SphDsCompositor(String document_key_name, HashSet<String> sph_attrs, HashSet<String> sph_mvas, BufferedWriter buffw, IndexFilter index_filter) {
 
 		this.document_key_name = document_key_name;
 
 		this.sph_attrs = sph_attrs;
 		this.sph_mvas = sph_mvas;
 
-		this.writer = writer;
+		this.buffw = buffw;
 
 		sph_max_field_len = index_filter.sph_max_field_len;
 		sph_co_field_len = (int) (index_filter.sph_max_field_len * 0.8); // 80% of hard limit
@@ -112,7 +112,7 @@ public class SphDsCompositor extends DefaultHandler {
 			sph_document = true;
 
 			try {
-				writer.write("<sphinx:document id=\"" + atts.getValue("id") + "\">\n");
+				buffw.write("<sphinx:document id=\"" + atts.getValue("id") + "\">\n");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -171,14 +171,14 @@ public class SphDsCompositor extends DefaultHandler {
 
 				if (len > 0) {
 
-					writer.write("<" + PgSchemaUtil.simple_content_name + ">" + StringEscapeUtils.escapeXml10(sb.substring(0, len - 1)) + "</" + PgSchemaUtil.simple_content_name + ">\n");
+					buffw.write("<" + PgSchemaUtil.simple_content_name + ">" + StringEscapeUtils.escapeXml10(sb.substring(0, len - 1)) + "</" + PgSchemaUtil.simple_content_name + ">\n");
 					sb.setLength(0);
 
 				}
 
 				write();
 
-				writer.write("</sphinx:document>\n");
+				buffw.write("</sphinx:document>\n");
 
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -221,7 +221,7 @@ public class SphDsCompositor extends DefaultHandler {
 		else if (document_id) {
 
 			try {
-				writer.write("<" + document_key_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + document_key_name + ">\n");
+				buffw.write("<" + document_key_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + document_key_name + ">\n");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -276,7 +276,7 @@ public class SphDsCompositor extends DefaultHandler {
 
 			sph_mvattr = sph_mvas.contains(attr_name);
 
-			writer.write("<" + attr_name + ">" + StringEscapeUtils.escapeXml10(sph_mvattr ? _sb.substring(0, len - 1) : _sb.toString()) + "</" + attr_name + ">\n");
+			buffw.write("<" + attr_name + ">" + StringEscapeUtils.escapeXml10(sph_mvattr ? _sb.substring(0, len - 1) : _sb.toString()) + "</" + attr_name + ">\n");
 
 			_sb.setLength(0);
 
