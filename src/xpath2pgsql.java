@@ -146,6 +146,12 @@ public class xpath2pgsql {
 				option.setDocKeyOption(false);
 			}
 
+			else if (args[i].equals("--doc-key-if-no-inplace")) {
+				option.document_key_if_no_in_place = true;
+				option.cancelRelDataExt();
+				option.setDocKeyOption(false);
+			}
+
 			else if (args[i].equals("--verbose"))
 				option.verbose = true;
 
@@ -212,6 +218,7 @@ public class xpath2pgsql {
 		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.def_xpath_key_name + "\")");
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME (select --no-rel and --no-doc-key options by default)");
+		System.err.println("        --doc-key-if-no-inplace (select --no-rel and --no-doc-key options by default)");
 		System.err.println("        --verbose");
 		System.exit(1);
 

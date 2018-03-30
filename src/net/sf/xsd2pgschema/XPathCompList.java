@@ -76,10 +76,10 @@ public class XPathCompList {
 	/** Whether UnionExprNoRootContext node exists or not. */
 	private boolean union_expr = false;
 
-	/** Whether add document key in PostgreSQL DDL. */
+	/** Whether either document key or in-place document key exists in PostgreSQL DDL. */
 	public boolean document_key = true;
 
-	/** Whether add serial key in PostgreSQL DDL. */
+	/** Whether serial key exists in PostgreSQL DDL. */
 	private boolean serial_key = false;
 
 	/** The serial key name in PostgreSQL. */
@@ -111,7 +111,8 @@ public class XPathCompList {
 
 		option = schema.option;
 
-		document_key = option.document_key;
+		document_key = option.document_key || option.inplace_document_key;
+
 		serial_key = option.serial_key;
 
 		case_sense = option.case_sense;

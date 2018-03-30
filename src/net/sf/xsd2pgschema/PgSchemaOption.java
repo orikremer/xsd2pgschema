@@ -114,6 +114,12 @@ public class PgSchemaOption {
 	/** Whether adopt weak synchronization (insert if not exists, no update even if exists, no deletion). */
 	public boolean sync_weak = false;
 
+	/** Whether in-place document key exists or not. */
+	public boolean inplace_document_key = false;
+
+	/** Whether append document key if in-place key not exists. */
+	public boolean document_key_if_no_in_place = false;
+
 	/** The directory contains check sum files. */
 	public File check_sum_dir = null;
 
@@ -271,9 +277,17 @@ public class PgSchemaOption {
 		if (_doc_key || _no_doc_key)
 			document_key = _doc_key;
 
-		if (document_key && inplace_document_key_names.size() > 0) {
+		inplace_document_key = inplace_document_key_names.size() > 0;
+
+		if (document_key && inplace_document_key) {
+			inplace_document_key = false;
 			inplace_document_key_names.clear();
 			System.out.println("Ignored --inplace-doc-key-name option because default document key was enabled.");
+		}
+
+		if (document_key_if_no_in_place && !inplace_document_key) {
+			document_key_if_no_in_place = false;
+			document_key = true;
 		}
 
 	}

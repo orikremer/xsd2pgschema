@@ -205,6 +205,12 @@ public class xml2pgsql {
 				option.setDocKeyOption(false);
 			}
 
+			else if (args[i].equals("--doc-key-if-no-inplace")) {
+				option.document_key_if_no_in_place = true;
+				option.cancelRelDataExt();
+				option.setDocKeyOption(false);
+			}
+
 			else if (args[i].equals("--update"))
 				option.sync = option.sync_weak = false;
 
@@ -253,7 +259,7 @@ public class xml2pgsql {
 
 		option.resolveDocKeyOption();
 
-		if ((option.sync || option.sync_weak) && !option.document_key && option.inplace_document_key_names.size() == 0) {
+		if ((option.sync || option.sync_weak) && !option.document_key && !option.inplace_document_key) {
 			System.err.println("Either document key or in-place document key must be exist to enable synchronization.");
 			showUsage();
 		}
@@ -394,6 +400,7 @@ public class xml2pgsql {
 		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.def_xpath_key_name + "\")");
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME (select --no-rel and --no-doc-key options by default)");
+		System.err.println("        --doc-key-if-no-inplace (select --no-rel and --no-doc-key options by default)");
 		System.err.println("        --max-thrds MAX_THRDS (default is number of available processors)");
 		System.exit(1);
 

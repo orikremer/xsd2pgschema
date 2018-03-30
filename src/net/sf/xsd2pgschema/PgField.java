@@ -1446,7 +1446,7 @@ public class PgField {
 			return;
 		}
 
-		omissible = (!option.document_key && document_key) || (!option.serial_key && serial_key) || (!option.xpath_key && xpath_key) || (!option.rel_data_ext && system_key);
+		omissible = (!option.document_key && !option.inplace_document_key && document_key) || (!option.serial_key && serial_key) || (!option.xpath_key && xpath_key) || (!option.rel_data_ext && system_key);
 
 	}
 

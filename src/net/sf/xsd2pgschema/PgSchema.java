@@ -812,6 +812,25 @@ public class PgSchema {
 
 		}
 
+		// retrieve document key if in-place dument key no exists
+
+		if (!option.document_key && option.inplace_document_key && option.document_key_if_no_in_place) {
+
+			tables.stream().filter(table -> table.required && !table.relational && !table.fields.stream().anyMatch(field -> field.name.equals(option.document_key_name)) && !table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname)))).forEach(table -> {
+
+				PgField field = new PgField();
+
+				field.name = field.xname = option.document_key_name;
+				field.type = option.xs_prefix_ + "string";
+				field.xs_type = XsDataType.xs_string;
+				field.document_key = true;
+
+				table.fields.add(0, field);
+
+			});
+
+		}
+
 		// update system key, user key, omissible and jsonable flags
 
 		tables.forEach(table -> table.fields.forEach(field -> {
@@ -867,9 +886,9 @@ public class PgSchema {
 		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
 		_root_schema.def_stat_msg.append("--   Contents:\n");
 		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.xname) && !option.discarded_document_key_names.contains(table.name + "." + field.xname)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes ("
-				+ (option.document_key || option.inplace_document_key_names.size() == 0 ? 0 : tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.xname) && !option.discarded_document_key_names.contains(table.name + "." + field.xname) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
+				+ (option.document_key || !option.inplace_document_key ? 0 : tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.xname) && !option.discarded_document_key_names.contains(table.name + "." + field.xname) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
 		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.xname) && !option.discarded_document_key_names.contains(table.name + "." + field.xname)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements ("
-				+ (option.document_key || option.inplace_document_key_names.size() == 0 ? 0 : tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.xname) && !option.discarded_document_key_names.contains(table.name + "." + field.xname) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
+				+ (option.document_key || !option.inplace_document_key ? 0 : tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.xname) && !option.discarded_document_key_names.contains(table.name + "." + field.xname) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
 		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.simple_content).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents\n");
 		_root_schema.def_stat_msg.append("--   Wild cards:\n");
 		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
@@ -891,9 +910,9 @@ public class PgSchema {
 
 		// check in-place document keys
 
-		if (!option.document_key && option.inplace_document_key_names.size() > 0) {
+		if (!option.document_key && option.inplace_document_key) {
 
-			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).forEach(table -> {
+			tables.stream().filter(table -> table.required && !table.relational).forEach(table -> {
 
 				try {
 					getDocKeyName(table);
@@ -2402,7 +2421,7 @@ public class PgSchema {
 		System.out.println("--  https://sourceforge.net/projects/xsd2pgschema/");
 		System.out.println("--");
 		System.out.println("-- Schema modeling options:");
-		System.out.println("--  relational extension: " + option.rel_data_ext);
+		System.out.println("--  relational extension: " + option.rel_model_ext);
 		System.out.println("--  wild card extension: " + option.wild_card);
 		System.out.println("--  case sensitive name: " + option.case_sense);
 		System.out.println("--  no name collision: " + !conflicted);
@@ -2411,9 +2430,9 @@ public class PgSchema {
 		System.out.println("--  appended xpath key: " + option.xpath_key);
 		System.out.println("--  retained constraint of primary/foreign key: " + option.retain_key);
 		System.out.println("--  retrieved field annotation: " + !option.no_field_anno);
-		if (option.rel_data_ext || option.serial_key)
+		if (option.rel_model_ext || option.serial_key)
 			System.out.println("--  " + (md_hash_key == null ? "assumed " : "") + "hash algorithm: " + (md_hash_key == null ? PgSchemaUtil.def_hash_algorithm : md_hash_key.getAlgorithm()));
-		if (option.rel_data_ext)
+		if (option.rel_model_ext)
 			System.out.println("--  hash key type: " + option.hash_size.name().replaceAll("_", " ") + " bits");
 		if (option.serial_key)
 			System.out.println("--  searial key type: " + option.ser_size.name().replaceAll("_", " ") + " bits");
@@ -2430,7 +2449,7 @@ public class PgSchema {
 
 		}
 
-		tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparingInt(table -> -table.order)).forEach(table -> {
+		tables.stream().filter(table -> table.required && (option.rel_model_ext || !table.relational)).sorted(Comparator.comparingInt(table -> -table.order)).forEach(table -> {
 
 			System.out.println("DROP TABLE IF EXISTS " + PgSchemaUtil.avoidPgReservedWords(table.name) + " CASCADE;");
 
@@ -2490,7 +2509,7 @@ public class PgSchema {
 
 			if (table != null) {
 
-				if (!option.rel_data_ext && table.relational)
+				if (!option.rel_model_ext && table.relational)
 					unique = false;
 
 				PgField field = table.getField(foreign_key.parent_fields);
@@ -2527,7 +2546,7 @@ public class PgSchema {
 			if (child_table != null)
 				relational = child_table.relational;
 
-			if (!option.rel_data_ext && relational)
+			if (!option.rel_model_ext && relational)
 				continue;
 
 			PgTable parent_table = getTable(foreign_key.parent_table);
@@ -2535,7 +2554,7 @@ public class PgSchema {
 			if (parent_table != null)
 				relational = parent_table.relational;
 
-			if (!option.rel_data_ext && relational)
+			if (!option.rel_model_ext && relational)
 				continue;
 
 			String[] child_fields = foreign_key.child_fields.split(" ");
@@ -2644,7 +2663,7 @@ public class PgSchema {
 		if (!table.required)
 			return;
 
-		if (!option.rel_data_ext && table.relational)
+		if (!option.rel_model_ext && table.relational)
 			return;
 
 		System.out.println("--");
@@ -2718,7 +2737,7 @@ public class PgSchema {
 				if (option.discarded_document_key_names.contains(field.xname) || option.discarded_document_key_names.contains(table.name + "." + field.xname))
 					continue;
 
-				if (!option.document_key && option.inplace_document_key_names.size() > 0 && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname)))
+				if (!option.document_key && option.inplace_document_key && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname)))
 					System.out.println("-- ATTRIBUTE, IN-PLACE DOCUMENT KEY");
 				else
 					System.out.println("-- ATTRIBUTE");
@@ -2737,7 +2756,7 @@ public class PgSchema {
 			else if (option.discarded_document_key_names.contains(field.xname) || option.discarded_document_key_names.contains(table.name + "." + field.xname))
 				continue;
 
-			else if (!option.document_key && option.inplace_document_key_names.size() > 0 && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname)))
+			else if (!option.document_key && option.inplace_document_key && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname)))
 				System.out.println("-- IN-PLACE DOCUMENT KEY");
 
 			if (!field.required && field.xrequired) {
@@ -2866,7 +2885,7 @@ public class PgSchema {
 			if (child_table != null)
 				relational = child_table.relational;
 
-			if (!option.rel_data_ext && relational)
+			if (!option.rel_model_ext && relational)
 				continue;
 
 			PgTable parent_table = getTable(foreign_key.parent_table);
@@ -2874,7 +2893,7 @@ public class PgSchema {
 			if (parent_table != null)
 				relational = parent_table.relational;
 
-			if (!option.rel_data_ext && relational)
+			if (!option.rel_model_ext && relational)
 				continue;
 
 			String[] child_fields = foreign_key.child_fields.split(" ");
@@ -3814,11 +3833,16 @@ public class PgSchema {
 		if (option.document_key)
 			return option.document_key_name;
 
-		if (option.inplace_document_key_names.size() == 0)
-			throw new PgSchemaException("Not defined in-place document key.");
+		if (!option.inplace_document_key)
+			throw new PgSchemaException("Not defined document key, or select either --doc-key or --doc-key-if-no-inplace option.");
 
-		if (!table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname))))
-			throw new PgSchemaException("Not found document key in " + table.name + ".");
+		if (!table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname)))) {
+
+			if (option.document_key_if_no_in_place)
+				return option.document_key_name;
+
+			throw new PgSchemaException("Not found in-place document key in " + table.name + ", or select --doc-key-if-no-inplace option.");
+		}
 
 		return table.fields.stream().filter(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname))).findFirst().get().name;
 	}
@@ -3861,20 +3885,16 @@ public class PgSchema {
 
 		HashSet<String> set = new HashSet<String>();
 
-		if (option.document_key || option.inplace_document_key_names.size() > 0) {
+		String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + " FROM " + PgSchemaUtil.avoidPgReservedWords(doc_id_table.name);
 
-			String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + " FROM " + PgSchemaUtil.avoidPgReservedWords(doc_id_table.name);
+		Statement stat = db_conn.createStatement();
+		ResultSet rset = stat.executeQuery(sql);
 
-			Statement stat = db_conn.createStatement();
-			ResultSet rset = stat.executeQuery(sql);
+		while (rset.next())
+			set.add(rset.getString(1));
 
-			while (rset.next())
-				set.add(rset.getString(1));
-
-			rset.close();
-			stat.close();
-
-		}
+		rset.close();
+		stat.close();
 
 		return set;
 	}
