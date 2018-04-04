@@ -3916,20 +3916,34 @@ public class PgSchema {
 	 *
 	 * @param db_conn Database connection
 	 * @param set set of target document ids
+	 * @throws SQLException the SQL exception
 	 */
-	public void deleteRows(Connection db_conn, HashSet<String> set) {
+	public void deleteRows(Connection db_conn, HashSet<String> set) throws SQLException {
 
 		if (has_db_rows == null && !option.rel_data_ext) {
 
-			try {
+			Statement stat = db_conn.createStatement();
 
-				Statement stat = db_conn.createStatement();
+			has_db_rows = new HashMap<String, Boolean>();
 
-				has_db_rows = new HashMap<String, Boolean>();
+			String doc_id_table_name = doc_id_table.name;
 
-				tables.stream().filter(table -> table.required && !table.relational).forEach(table -> {
+			String _sql = "SELECT COUNT(*) FROM " + PgSchemaUtil.avoidPgReservedWords(doc_id_table_name);
 
-					String table_name = table.name;
+			ResultSet _rset = stat.executeQuery(_sql);
+
+			if (_rset.next())
+				has_db_rows.put(doc_id_table_name, _rset.getInt(1) > 0);
+
+			_rset.close();
+
+			boolean has_doc_id = has_db_rows.get(doc_id_table_name);
+
+			tables.stream().filter(table -> table.required && !table.relational && !table.equals(doc_id_table)).forEach(table -> {
+
+				String table_name = table.name;
+
+				if (has_doc_id) {
 
 					try {
 
@@ -3947,14 +3961,14 @@ public class PgSchema {
 						System.exit(1);
 					}
 
-				});
+				}
 
-				stat.close();
+				else
+					has_db_rows.put(table_name, false);
 
-			} catch (SQLException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
+			});
+
+			stat.close();
 
 		}
 
@@ -3966,7 +3980,7 @@ public class PgSchema {
 
 				deleteBeforeUpdate(db_conn, false);
 
-			} catch (PgSchemaException e) {
+			} catch (PgSchemaException | SQLException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
@@ -3986,111 +4000,106 @@ public class PgSchema {
 	 * @param db_conn Database connection
 	 * @param no_pkey whether delete relations not having primary key or non selective
 	 * @throws PgSchemaException the pg schema exception
+	 * @throws SQLException the SQL exception
 	 */
-	private void deleteBeforeUpdate(Connection db_conn, boolean no_pkey) throws PgSchemaException {
+	private void deleteBeforeUpdate(Connection db_conn, boolean no_pkey) throws PgSchemaException, SQLException {
 
-		try {
+		if (db_tables == null) {
 
-			if (db_tables == null) {
+			db_tables = new HashSet<String>();
 
-				db_tables = new HashSet<String>();
+			DatabaseMetaData meta = db_conn.getMetaData();
+			ResultSet rset = meta.getTables(null, null, null, null);
 
-				DatabaseMetaData meta = db_conn.getMetaData();
-				ResultSet rset = meta.getTables(null, null, null, null);
+			while (rset.next())
+				db_tables.add(rset.getString("TABLE_NAME"));
 
-				while (rset.next())
-					db_tables.add(rset.getString("TABLE_NAME"));
+			rset.close();
 
-				rset.close();
+		}
 
-			}
+		Statement stat = db_conn.createStatement();
 
-			Statement stat = db_conn.createStatement();
+		String doc_id_table_name = doc_id_table.name;
 
-			String doc_id_table_name = doc_id_table.name;
+		boolean has_doc_id_table = false;
+		boolean has_doc_id = false;
 
-			boolean has_doc_id_table = false;
-			boolean has_doc_id = false;
+		for (String db_table_name : db_tables) {
 
-			for (String db_table_name : db_tables) {
+			if (option.case_sense ? db_table_name.equals(doc_id_table_name) : db_table_name.equalsIgnoreCase(doc_id_table_name)) {
 
-				if (option.case_sense ? db_table_name.equals(doc_id_table_name) : db_table_name.equalsIgnoreCase(doc_id_table_name)) {
+				has_doc_id_table = true;
 
-					has_doc_id_table = true;
+				if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(doc_id_table_name))) {
 
-					if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(doc_id_table_name))) {
+					String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + "='" + document_id + "'";
 
-						String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + "='" + document_id + "'";
+					has_doc_id = stat.executeUpdate(sql) > 0;
 
-						has_doc_id = stat.executeUpdate(sql) > 0;
-
-					}
-
-					break;
 				}
 
+				break;
 			}
 
-			if (!has_doc_id_table)
-				throw new PgSchemaException(db_conn.toString() + " : " + doc_id_table_name + " not found.");
+		}
 
-			if (has_doc_id) {
+		if (!has_doc_id_table)
+			throw new PgSchemaException(db_conn.toString() + " : " + doc_id_table_name + " not found.");
 
-				tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational) && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+		if (has_doc_id) {
 
-					String table_name = table.name;
+			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational) && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
-					boolean has_table = false;
+				String table_name = table.name;
 
-					for (String db_table_name : db_tables) {
+				boolean has_table = false;
 
-						if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
+				for (String db_table_name : db_tables) {
 
-							has_table = true;
+					if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
 
-							if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(table_name))) {
+						has_table = true;
 
-								try {
+						if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(table_name))) {
 
-									String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
+							try {
 
-									stat.executeUpdate(sql);
+								String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
 
-								} catch (PgSchemaException | SQLException e) {
-									e.printStackTrace();
-									System.exit(1);
-								}
+								stat.executeUpdate(sql);
 
+							} catch (PgSchemaException | SQLException e) {
+								e.printStackTrace();
+								System.exit(1);
 							}
 
-							break;
 						}
 
+						break;
 					}
 
-					if (!has_table) {
+				}
 
-						try {
-							throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found.");
-						} catch (PgSchemaException e) {
-							e.printStackTrace();
-							System.exit(1);
-						}
+				if (!has_table) {
 
+					try {
+						throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found.");
+					} catch (PgSchemaException e) {
+						e.printStackTrace();
+						System.exit(1);
 					}
 
-				});
+				}
 
-			}
+			});
 
-			stat.close();
-
-			if (has_doc_id)
-				db_conn.commit(); // transaction ends
-
-		} catch (SQLException e) {
-			throw new PgSchemaException(e);
 		}
+
+		stat.close();
+
+		if (has_doc_id)
+			db_conn.commit(); // transaction ends
 
 	}
 
