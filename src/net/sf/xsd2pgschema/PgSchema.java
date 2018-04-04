@@ -3892,19 +3892,24 @@ public class PgSchema {
 
 		HashSet<String> set = new HashSet<String>();
 
+		Statement stat = db_conn.createStatement();
+
 		String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + " FROM " + PgSchemaUtil.avoidPgReservedWords(doc_id_table.name);
 
-		Statement stat = db_conn.createStatement();
 		ResultSet rset = stat.executeQuery(sql);
 
 		while (rset.next())
 			set.add(rset.getString(1));
 
 		rset.close();
+
 		stat.close();
 
 		return set;
 	}
+
+	/** The initial number of rows (value) in table table name (key). */
+	private HashMap<String, Integer> count_rows = null;
 
 	/**
 	 * Execute PostgreSQL DELETE command for strict synchronization.
@@ -3913,6 +3918,45 @@ public class PgSchema {
 	 * @param set set of target document ids
 	 */
 	public void deleteRows(Connection db_conn, HashSet<String> set) {
+
+		if (count_rows == null && !option.rel_data_ext) {
+
+			try {
+
+				Statement stat = db_conn.createStatement();
+
+				count_rows = new HashMap<String, Integer>();
+
+				tables.stream().filter(table -> table.required && !table.relational).forEach(table -> {
+
+					String table_name = table.name;
+
+					try {
+
+						String sql = "SELECT COUNT(*) FROM " + PgSchemaUtil.avoidPgReservedWords(table_name);
+
+						ResultSet rset = stat.executeQuery(sql);
+
+						if (rset.next())
+							count_rows.put(table_name, rset.getInt(1));
+
+						rset.close();
+
+					} catch (SQLException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+
+				});
+
+				stat.close();
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+
+		}
 
 		set.forEach(id -> {
 
@@ -3968,15 +4012,19 @@ public class PgSchema {
 
 						has_db_table = true;
 
-						try {
+						if (count_rows == null || (count_rows != null && count_rows.get(table_name) > 0)) {
 
-							String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
+							try {
 
-							stat.execute(sql);
+								String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
 
-						} catch (PgSchemaException | SQLException e) {
-							e.printStackTrace();
-							System.exit(1);
+								stat.execute(sql);
+
+							} catch (PgSchemaException | SQLException e) {
+								e.printStackTrace();
+								System.exit(1);
+							}
+
 						}
 
 						break;
@@ -4046,10 +4094,12 @@ public class PgSchema {
 
 						has_db_table = true;
 
-						String sql = "COPY " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " FROM STDIN CSV";
-
 						try {
+
+							String sql = "COPY " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " FROM STDIN CSV";
+
 							copy_man.copyIn(sql, new FileInputStream(csv_file));
+
 						} catch (SQLException | IOException e) {
 							e.printStackTrace();
 							System.exit(1);
