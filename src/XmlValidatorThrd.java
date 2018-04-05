@@ -20,6 +20,9 @@ limitations under the License.
 import net.sf.xsd2pgschema.*;
 
 import java.io.File;
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -34,6 +37,9 @@ public class XmlValidatorThrd implements Runnable {
 	/** The thread id. */
 	private int thrd_id;
 
+	/** The PostgreSQL data model option. */
+	private PgSchemaOption option = null;
+
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
@@ -43,21 +49,33 @@ public class XmlValidatorThrd implements Runnable {
 	/** The XML file queue. */
 	private LinkedBlockingQueue<File> xml_file_queue = null;
 
+	/** The instance of message digest for check sum. */
+	private MessageDigest md_chk_sum = null;
+
 	/**
 	 * Instance of XmlValidatorThrd.
 	 *
 	 * @param thrd_id thread id
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue
+	 * @param option PostgreSQL data model option
+	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 */
-	public XmlValidatorThrd(final int thrd_id, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue) {
+	public XmlValidatorThrd(final int thrd_id, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, PgSchemaOption option) throws NoSuchAlgorithmException {
 
 		this.thrd_id = thrd_id;
 
 		this.xml_file_filter = xml_file_filter;
 		this.xml_file_queue = xml_file_queue;
 
+		this.option = option;
+
 		validator = new XmlValidator(PgSchemaUtil.getSchemaFile(xmlvalidator.schema_location, null, true));
+
+		// prepare message digest for check sum
+
+		if (!option.check_sum_algorithm.isEmpty() && option.isSynchronizable())
+			md_chk_sum = MessageDigest.getInstance(option.check_sum_algorithm);
 
 	}
 
@@ -69,6 +87,7 @@ public class XmlValidatorThrd implements Runnable {
 
 		int total = xml_file_queue.size();
 		boolean show_progress = thrd_id == 0 && total > 1;
+		boolean synchronizable = option.isSynchronizable();
 
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
 
@@ -90,9 +109,25 @@ public class XmlValidatorThrd implements Runnable {
 
 			}
 
+			if (synchronizable) {
+
+				try {
+
+					XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
+
+					if (xml_parser.identify(option, md_chk_sum))
+						continue;
+
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			}
+
 			try {
 
-				new XmlParser(validator, xml_file, xml_file_filter, xmlvalidator.verbose);
+				new XmlParser(validator, xml_file, xml_file_filter, option, md_chk_sum);
 
 			} catch (Exception e) {
 				e.printStackTrace();

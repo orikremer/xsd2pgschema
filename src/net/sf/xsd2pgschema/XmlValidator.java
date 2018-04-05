@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -78,9 +78,10 @@ public class XmlValidator {
 	 *
 	 * @param xml_file_name XML file name
 	 * @param in InputStream of XML file
+	 * @param chk_sum check sum file to be deleted in case of invalid XML
 	 * @param verbose verbose mode
 	 */
-	public void exec(String xml_file_name, InputStream in, boolean verbose) {
+	public void exec(String xml_file_name, InputStream in, File chk_sum, boolean verbose) {
 
 		err_handler.init();
 
@@ -98,8 +99,14 @@ public class XmlValidator {
 		}
 
 		if (!err_handler.success) {
+
 			System.err.println(xml_file_name + " is invalid.");
+
+			if (chk_sum != null && chk_sum.exists())
+				chk_sum.delete();
+
 			System.exit(1);
+
 		}
 
 		else if (verbose)

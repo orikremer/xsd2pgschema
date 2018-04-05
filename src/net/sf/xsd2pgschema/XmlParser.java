@@ -80,14 +80,20 @@ public class XmlParser {
 	 * @param validator instance of XmlValidator
 	 * @param xml_file XML file
 	 * @param xml_file_filter XML file filter
-	 * @param verbose verbose mode
+	 * @param option PostgreSQL data model option
+	 * @param md_chk_sum instance of message digest for check sum
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public XmlParser(XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter, boolean verbose) throws IOException {
+	public XmlParser(XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter, PgSchemaOption option, MessageDigest md_chk_sum) throws IOException {
 
 		init(xml_file, xml_file_filter);
 
-		validate(validator, verbose);
+		File check_sum = null;
+
+		if (option.sync && option.check_sum_dir != null && md_chk_sum != null)
+			check_sum = new File(option.check_sum_dir, xml_file.getName() + "." + option.check_sum_algorithm.toLowerCase());
+
+		validate(validator, check_sum, option.verbose);
 
 	}
 
@@ -173,7 +179,7 @@ public class XmlParser {
 				in = new FileInputStream(xml_file);
 				gzin = new GZIPInputStream(in);
 
-				validator.exec(xml_file.getPath(), gzin, false);
+				validator.exec(xml_file.getPath(), gzin, null, false);
 
 			}
 
@@ -192,7 +198,7 @@ public class XmlParser {
 
 				FileInputStream in = new FileInputStream(xml_file);
 
-				validator.exec(xml_file.getPath(), in, false);
+				validator.exec(xml_file.getPath(), in, null, false);
 
 				in.close();
 
@@ -208,10 +214,11 @@ public class XmlParser {
 	 * Validate XML document.
 	 *
 	 * @param validator instance of XmlValidator
+	 * @param check_sum check sum file to be deleted in case of invalid XML
 	 * @param verbose verbose mode
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void validate(XmlValidator validator, boolean verbose) throws IOException {
+	private void validate(XmlValidator validator, File check_sum, boolean verbose) throws IOException {
 
 		if (FilenameUtils.getExtension(xml_file.getName()).equals("gz")) {
 
@@ -221,7 +228,7 @@ public class XmlParser {
 			in = new FileInputStream(xml_file);
 			gzin = new GZIPInputStream(in);
 
-			validator.exec(xml_file.getPath(), gzin, verbose);
+			validator.exec(xml_file.getPath(), gzin, check_sum, verbose);
 
 			gzin.close();
 			in.close();
@@ -234,7 +241,7 @@ public class XmlParser {
 
 			FileInputStream in = new FileInputStream(xml_file);
 
-			validator.exec(xml_file.getPath(), in, verbose);
+			validator.exec(xml_file.getPath(), in, check_sum, verbose);
 
 			in.close();
 

@@ -22,6 +22,7 @@ import net.sf.xsd2pgschema.*;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -37,14 +38,17 @@ public class xmlvalidator {
 	/** The schema location. */
 	public static String schema_location = "";
 
+	/** The check sum directory name. */
+	private static String check_sum_dir_name = "";
+
+	/** The schema option. */
+	private static PgSchemaOption option = new PgSchemaOption(true);
+
 	/** The XML file filter. */
 	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
 
 	/** The XML file queue. */
 	private static LinkedBlockingQueue<File> xml_file_queue = null;
-
-	/** The verbose mode. */
-	public static boolean verbose = false;
 
 	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
@@ -104,7 +108,17 @@ public class xmlvalidator {
 			}
 
 			else if (args[i].equals("--verbose"))
-				verbose = true;
+				option.verbose = true;
+
+			else if (args[i].equals("--sync") && i + 1 < args.length) {
+				option.sync = true;
+				check_sum_dir_name = args[++i];
+			}
+
+			else if (args[i].equals("--checksum-by") && i + 1 < args.length) {
+				if (!option.setCheckSumAlgorithm(args[++i]))
+					showUsage();
+			}
 
 			else if (touch_xml) {
 				String xml_file_name = args[i];
@@ -152,6 +166,28 @@ public class xmlvalidator {
 		if (xml_file_queue.size() < max_thrds)
 			max_thrds = xml_file_queue.size();
 
+		if (option.sync) {
+
+			if (check_sum_dir_name.isEmpty()) {
+				System.err.println("Check sum directory is empty.");
+				showUsage();
+			}
+
+			File check_sum_dir = new File(check_sum_dir_name);
+
+			if (!check_sum_dir.isDirectory()) {
+
+				if (!check_sum_dir.mkdir()) {
+					System.err.println("Couldn't create directory '" + check_sum_dir_name + "'.");
+					System.exit(1);
+				}
+
+			}
+
+			option.check_sum_dir = check_sum_dir;
+
+		}
+
 		XmlValidatorThrd[] proc_thrd = new XmlValidatorThrd[max_thrds];
 		Thread[] thrd = new Thread[max_thrds];
 
@@ -159,10 +195,17 @@ public class xmlvalidator {
 
 			String thrd_name = "xmlvalidator-" + thrd_id;
 
-			if (thrd_id > 0)
-				is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+			try {
 
-			proc_thrd[thrd_id] = new XmlValidatorThrd(thrd_id, xml_file_filter, xml_file_queue);
+				if (thrd_id > 0)
+					is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+
+				proc_thrd[thrd_id] = new XmlValidatorThrd(thrd_id, xml_file_filter, xml_file_queue, option);
+
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
 
 			thrd[thrd_id] = new Thread(proc_thrd[thrd_id], thrd_name);
 
@@ -194,7 +237,9 @@ public class xmlvalidator {
 		System.err.println("xmlvalidator: Validate XML documents against XML Schema");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
-		System.err.println("Option: --max-thrds MAX_THRDS (default is number of available processors)");
+		System.err.println("Option: --sync CHECK_SUM_DIRECTORY (generate check sum files)");
+		System.err.println("        --checksum-by ALGORITHM [MD2 | MD5 (default) | SHA-1 | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
+		System.err.println("        --max-thrds MAX_THRDS (default is number of available processors)");
 		System.err.println("        --verbose");
 		System.exit(1);
 
