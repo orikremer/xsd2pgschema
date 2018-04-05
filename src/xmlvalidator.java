@@ -98,15 +98,6 @@ public class xmlvalidator {
 
 			}
 
-			else if (args[i].equals("--max-thrds") && i + 1 < args.length) {
-				max_thrds = Integer.valueOf(args[++i]);
-
-				if (max_thrds <= 0 || max_thrds > cpu_num * 2) {
-					System.err.println("Out of range (max-thrds).");
-					showUsage();
-				}
-			}
-
 			else if (args[i].equals("--verbose"))
 				option.verbose = true;
 
@@ -118,6 +109,15 @@ public class xmlvalidator {
 			else if (args[i].equals("--checksum-by") && i + 1 < args.length) {
 				if (!option.setCheckSumAlgorithm(args[++i]))
 					showUsage();
+			}
+
+			else if (args[i].equals("--max-thrds") && i + 1 < args.length) {
+				max_thrds = Integer.valueOf(args[++i]);
+
+				if (max_thrds <= 0 || max_thrds > cpu_num * 2) {
+					System.err.println("Out of range (max-thrds).");
+					showUsage();
+				}
 			}
 
 			else if (touch_xml) {

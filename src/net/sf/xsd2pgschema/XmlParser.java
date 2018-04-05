@@ -81,19 +81,13 @@ public class XmlParser {
 	 * @param xml_file XML file
 	 * @param xml_file_filter XML file filter
 	 * @param option PostgreSQL data model option
-	 * @param md_chk_sum instance of message digest for check sum
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public XmlParser(XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter, PgSchemaOption option, MessageDigest md_chk_sum) throws IOException {
+	public XmlParser(XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter, PgSchemaOption option) throws IOException {
 
 		init(xml_file, xml_file_filter);
 
-		File check_sum = null;
-
-		if (option.sync && option.check_sum_dir != null && md_chk_sum != null)
-			check_sum = new File(option.check_sum_dir, xml_file.getName() + "." + option.check_sum_algorithm.toLowerCase());
-
-		validate(validator, check_sum, option.verbose);
+		validate(validator, option.isSynchronizable(false) ? getCheckSumFile(option) : null, option.verbose);
 
 	}
 
@@ -250,6 +244,16 @@ public class XmlParser {
 	}
 
 	/**
+	 * Return check sum file.
+	 *
+	 * @param option PostgreSQL data model option
+	 * @return File check sum file
+	 */
+	private File getCheckSumFile(PgSchemaOption option) {
+		return new File(option.check_sum_dir, xml_file.getName() + "." + option.check_sum_algorithm.toLowerCase());
+	}
+
+	/**
 	 * Identify XML document by agreement of check sum.
 	 *
 	 * @param option PostgreSQL data model option
@@ -261,7 +265,7 @@ public class XmlParser {
 
 		boolean identity = false;
 
-		if (option.sync && option.check_sum_dir != null && md_chk_sum != null) {
+		if (option.isSynchronizable(false)) {
 
 			FileInputStream in = new FileInputStream(xml_file);
 
@@ -275,7 +279,7 @@ public class XmlParser {
 
 			in.close();
 
-			File check_sum = new File(option.check_sum_dir, xml_file.getName() + "." + option.check_sum_algorithm.toLowerCase());
+			File check_sum = getCheckSumFile(option);
 
 			if (check_sum.exists()) {
 

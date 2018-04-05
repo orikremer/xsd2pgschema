@@ -72,12 +72,17 @@ public class XmlValidatorThrd implements Runnable {
 
 		validator = new XmlValidator(PgSchemaUtil.getSchemaFile(xmlvalidator.schema_location, null, true));
 
+		synchronizable = option.isSynchronizable(false);
+
 		// prepare message digest for check sum
 
-		if (!option.check_sum_algorithm.isEmpty() && option.isSynchronizable())
+		if (!option.check_sum_algorithm.isEmpty() && synchronizable)
 			md_chk_sum = MessageDigest.getInstance(option.check_sum_algorithm);
 
 	}
+
+	/** Whether if synchronizable or not. */
+	private boolean synchronizable = false;
 
 	/* (non-Javadoc)
 	 * @see java.lang.Runnable#run()
@@ -87,7 +92,6 @@ public class XmlValidatorThrd implements Runnable {
 
 		int total = xml_file_queue.size();
 		boolean show_progress = thrd_id == 0 && total > 1;
-		boolean synchronizable = option.isSynchronizable();
 
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
 
@@ -127,7 +131,7 @@ public class XmlValidatorThrd implements Runnable {
 
 			try {
 
-				new XmlParser(validator, xml_file, xml_file_filter, option, md_chk_sum);
+				new XmlParser(validator, xml_file, xml_file_filter, option);
 
 			} catch (Exception e) {
 				e.printStackTrace();

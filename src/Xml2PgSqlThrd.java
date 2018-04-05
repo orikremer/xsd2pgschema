@@ -135,7 +135,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		// delete rows if XML not exists
 
-		if (option.isSynchronizable()) {
+		if (synchronizable = option.isSynchronizable(true)) {
 
 			doc_rows = schema.getDocIdRows(db_conn);
 
@@ -174,10 +174,13 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		// prepare message digest for check sum
 
-		if (!option.check_sum_algorithm.isEmpty() && option.isSynchronizable())
+		if (!option.check_sum_algorithm.isEmpty() && synchronizable)
 			md_chk_sum = MessageDigest.getInstance(option.check_sum_algorithm);
 
 	}
+
+	/** Whether if synchronizable or not. */
+	private boolean synchronizable = false;
 
 	/* (non-Javadoc)
 	 * @see java.lang.Runnable#run()
@@ -187,7 +190,6 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		int total = xml_file_queue.size();
 		boolean show_progress = thrd_id == 0 && total > 1;
-		boolean synchronizable = option.isSynchronizable();
 		boolean update = false;
 
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");

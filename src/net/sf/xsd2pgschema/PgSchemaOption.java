@@ -563,10 +563,11 @@ public class PgSchemaOption {
 	/**
 	 * Return whether if synchronizable.
 	 *
+	 * @param weak whether if allows weak synchronization or not
 	 * @return boolean whether if synchronizable or not
 	 */
-	public boolean isSynchronizable() {
-		return sync_weak || (sync && check_sum_dir != null && check_sum_dir.isDirectory());
+	public boolean isSynchronizable(boolean allow_weak) {
+		return (allow_weak && sync_weak) || (sync && check_sum_dir != null && check_sum_dir.isDirectory());
 	}
 
 }

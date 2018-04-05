@@ -363,7 +363,7 @@ public class xml2pgcsv {
 
 		}
 
-		if (!pg_option.name.isEmpty() && option.isSynchronizable() && total > 1)
+		if (!pg_option.name.isEmpty() && option.isSynchronizable(false) && total > 1)
 			System.out.println(pg_option.getDbUrl() + " is up-to-date.");
 
 	}

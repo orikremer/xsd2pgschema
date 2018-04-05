@@ -360,7 +360,7 @@ public class xml2pgsql {
 
 		}
 
-		if (option.isSynchronizable() && total > 1)
+		if (option.isSynchronizable(true) && total > 1)
 			System.out.println(pg_option.getDbUrl() + " is up-to-date.");
 
 	}

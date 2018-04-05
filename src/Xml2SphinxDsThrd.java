@@ -179,11 +179,13 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		}
 
+		synchronizable = option.isSynchronizable(true);
+
 		// delete indexes if XML not exists
 
 		File sph_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
 
-		if (option.isSynchronizable() && sph_data_source.exists() && thrd_id == 0) {
+		if (synchronizable && sph_data_source.exists() && thrd_id == 0) {
 
 			HashSet<String> doc_set = new HashSet<String>();
 
@@ -231,10 +233,13 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		// prepare message digest for check sum
 
-		if (!option.check_sum_algorithm.isEmpty() && option.isSynchronizable())
+		if (!option.check_sum_algorithm.isEmpty() && synchronizable)
 			md_chk_sum = MessageDigest.getInstance(option.check_sum_algorithm);
 
 	}
+
+	/** Whether if synchronizable or not. */
+	private boolean synchronizable = false;
 
 	/** Whether show progress or not. */
 	private boolean show_progress = false;
@@ -250,7 +255,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		int total = xml_file_queue.size();
 		show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
-		boolean synchronizable = option.isSynchronizable();
 
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
 
@@ -492,7 +496,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		} finally {
 
-			if (option.isSynchronizable() && show_progress)
+			if (synchronizable && show_progress)
 				System.out.println((changed ? "" : "\n") + ds_dir.getAbsolutePath() + " (" + xml2sphinxds.ds_name + ") is up-to-date.");
 
 		}

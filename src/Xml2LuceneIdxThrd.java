@@ -146,6 +146,8 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2luceneidx.schema_location, null, option.cache_xsd)) : null;
 
+		synchronizable = option.isSynchronizable(true);
+
 		// prepare index writer
 
 		if (thrd_id == 0) {
@@ -166,7 +168,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 			Path idx_dir_path = idx_dir.toPath();
 
-			boolean has_idx = option.isSynchronizable() && Files.list(idx_dir_path).anyMatch(path -> path.getFileName().toString().matches("^segments_.*"));
+			boolean has_idx = synchronizable && Files.list(idx_dir_path).anyMatch(path -> path.getFileName().toString().matches("^segments_.*"));
 
 			IndexWriterConfig config = new IndexWriterConfig(new StandardAnalyzer());
 
@@ -243,10 +245,13 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		// prepare message digest for check sum
 
-		if (!option.check_sum_algorithm.isEmpty() && option.isSynchronizable())
+		if (!option.check_sum_algorithm.isEmpty() && synchronizable)
 			md_chk_sum = MessageDigest.getInstance(option.check_sum_algorithm);
 
 	}
+
+	/** Whether if synchronizable or not. */
+	private boolean synchronizable = false;
 
 	/** Whether show progress or not. */
 	private boolean show_progress = false;
@@ -262,7 +267,6 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		int total = xml_file_queue.size();
 		show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
-		boolean synchronizable = option.isSynchronizable();
 
 		Integer _shard_id = null;
 		IndexWriter writer = xml2luceneidx.writers[shard_id];
@@ -379,7 +383,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		if (changed)
 			System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
 
-		if (option.isSynchronizable() && show_progress)
+		if (synchronizable && show_progress)
 			System.out.println((changed ? "" : "\n") + idx_dir.getAbsolutePath() + " is up-to-date.");
 
 	}
