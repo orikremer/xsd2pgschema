@@ -26,7 +26,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -265,9 +267,25 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		Integer _shard_id = null;
 		IndexWriter writer = xml2luceneidx.writers[shard_id];
 
+		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+
+		long start_time = System.currentTimeMillis();
+
 		File xml_file;
 
 		while ((xml_file = xml_file_queue.poll()) != null) {
+
+			if (show_progress) {
+
+				int remains = xml_file_queue.size();
+				int progress = total - remains;
+
+				long etc = start_time + remains / progress * (System.currentTimeMillis() - start_time);
+				Date etc_date = new Date(etc);
+
+				System.out.print("\rIndexed " + progress + " of " + total + " ... (ETC " + sdf.format(etc_date) + ")");
+
+			}
 
 			if (synchronizable) {
 
@@ -326,9 +344,6 @@ public class Xml2LuceneIdxThrd implements Runnable {
 				System.exit(1);
 			}
 
-			if (show_progress)
-				System.out.print("\rIndexed " + (total - xml_file_queue.size()) + " of " + total + " ...");
-
 			changed = true;
 
 		}
@@ -365,7 +380,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 			System.out.println("Done" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + ".");
 
 		if (option.isSynchronizable() && show_progress)
-			System.out.println(idx_dir.getAbsolutePath() + " is up-to-date.");
+			System.out.println((changed ? "" : "\n") + idx_dir.getAbsolutePath() + " is up-to-date.");
 
 	}
 

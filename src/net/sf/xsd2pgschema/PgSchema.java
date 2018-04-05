@@ -3997,29 +3997,6 @@ public class PgSchema {
 	private HashSet<String> db_tables = null;
 
 	/**
-	 * Collect PostgreSQL table names.
-	 *
-	 * @param db_conn database connection
-	 * @throws SQLException the SQL exception
-	 */
-	private void collectDbTableNames(Connection db_conn) throws SQLException {
-
-		if (db_tables != null)
-			return;
-
-		db_tables = new HashSet<String>();
-
-		DatabaseMetaData meta = db_conn.getMetaData();
-		ResultSet rset = meta.getTables(null, null, null, null);
-
-		while (rset.next())
-			db_tables.add(rset.getString("TABLE_NAME"));
-
-		rset.close();
-
-	}
-
-	/**
 	 * Return exact table name in PostgreSQL
 	 *
 	 * @param db_conn database connection
@@ -4029,7 +4006,19 @@ public class PgSchema {
 	 */
 	private String getDbTableName(Connection db_conn, String table_name) throws PgSchemaException, SQLException {
 
-		collectDbTableNames(db_conn);
+		if (db_tables == null) {
+
+			db_tables = new HashSet<String>();
+
+			DatabaseMetaData meta = db_conn.getMetaData();
+			ResultSet rset = meta.getTables(null, null, null, null);
+
+			while (rset.next())
+				db_tables.add(rset.getString("TABLE_NAME"));
+
+			rset.close();
+
+		}
 
 		Optional<String> opt = db_tables.stream().filter(db_table_name -> option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)).findFirst();
 
@@ -4049,10 +4038,7 @@ public class PgSchema {
 	 */
 	private void deleteBeforeUpdate(Connection db_conn, boolean no_pkey) throws PgSchemaException, SQLException {
 
-		collectDbTableNames(db_conn);
-
 		String doc_id_table_name = doc_id_table.name;
-		String db_doc_id_table_name = getDbTableName(db_conn, doc_id_table_name);
 
 		Statement stat = db_conn.createStatement();
 
@@ -4060,7 +4046,7 @@ public class PgSchema {
 
 		if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(doc_id_table_name))) {
 
-			String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_doc_id_table_name) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + "='" + document_id + "'";
+			String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, doc_id_table_name)) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + "='" + document_id + "'";
 
 			has_doc_id = stat.executeUpdate(sql) > 0;
 
@@ -4071,20 +4057,12 @@ public class PgSchema {
 			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational) && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 				String table_name = table.name;
-				String db_table_name = null;
-
-				try {
-					db_table_name = getDbTableName(db_conn, table_name);
-				} catch (PgSchemaException | SQLException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
 
 				if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(table_name))) {
 
 					try {
 
-						String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
+						String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, table_name)) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
 
 						stat.executeUpdate(sql);
 
@@ -4116,8 +4094,6 @@ public class PgSchema {
 	public void pgCsv2PgSql(Connection db_conn, File csv_dir) throws PgSchemaException {
 
 		try {
-
-			collectDbTableNames(db_conn);
 
 			CopyManager copy_man = new CopyManager((BaseConnection) db_conn);
 
@@ -4156,8 +4132,6 @@ public class PgSchema {
 	public void testPgSql(Connection db_conn, boolean strict) throws PgSchemaException {
 
 		try {
-
-			collectDbTableNames(db_conn);
 
 			DatabaseMetaData meta = db_conn.getMetaData();
 

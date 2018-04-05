@@ -78,10 +78,14 @@ public class XmlValidator {
 	 *
 	 * @param xml_file_name XML file name
 	 * @param in InputStream of XML file
+	 * @param verbose verbose mode
 	 */
-	public void exec(String xml_file_name, InputStream in) {
+	public void exec(String xml_file_name, InputStream in, boolean verbose) {
 
 		err_handler.init();
+
+		if (verbose)
+			System.out.println("Validating " + xml_file_name + " ...");
 
 		try {
 
@@ -97,6 +101,9 @@ public class XmlValidator {
 			System.err.println(xml_file_name + " is invalid.");
 			System.exit(1);
 		}
+
+		else if (verbose)
+			System.out.println(xml_file_name + " is valid.");
 
 	}
 

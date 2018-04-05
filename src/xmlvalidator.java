@@ -43,6 +43,9 @@ public class xmlvalidator {
 	/** The XML file queue. */
 	private static LinkedBlockingQueue<File> xml_file_queue = null;
 
+	/** The verbose mode. */
+	public static boolean verbose = false;
+
 	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
 
@@ -99,6 +102,9 @@ public class xmlvalidator {
 					showUsage();
 				}
 			}
+
+			else if (args[i].equals("--verbose"))
+				verbose = true;
 
 			else if (touch_xml) {
 				String xml_file_name = args[i];
@@ -189,6 +195,7 @@ public class xmlvalidator {
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
 		System.err.println("Option: --max-thrds MAX_THRDS (default is number of available processors)");
+		System.err.println("        --verbose");
 		System.exit(1);
 
 	}

@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -122,9 +124,25 @@ public class Xml2JsonThrd implements Runnable {
 		int total = xml_file_queue.size();
 		boolean show_progress = thrd_id == 0 && total > 1;
 
+		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+
+		long start_time = System.currentTimeMillis();
+
 		File xml_file;
 
 		while ((xml_file = xml_file_queue.poll()) != null) {
+
+			if (show_progress) {
+
+				int remains = xml_file_queue.size();
+				int progress = total - remains;
+
+				long etc = start_time + remains / progress * (System.currentTimeMillis() - start_time);
+				Date etc_date = new Date(etc);
+
+				System.out.print("\rConverted " + progress + " of " + total + " ... (ETC " + sdf.format(etc_date) + ")");
+
+			}
 
 			try {
 
@@ -148,9 +166,6 @@ public class Xml2JsonThrd implements Runnable {
 				e.printStackTrace();
 				System.exit(1);
 			}
-
-			if (show_progress)
-				System.out.print("\rConverted " + (total - xml_file_queue.size()) + " of " + total + " ...");
 
 		}
 

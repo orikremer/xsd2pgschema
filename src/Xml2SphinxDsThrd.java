@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -250,9 +252,25 @@ public class Xml2SphinxDsThrd implements Runnable {
 		show_progress = shard_id == 0 && thrd_id == 0 && total > 1;
 		boolean synchronizable = option.isSynchronizable();
 
+		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+
+		long start_time = System.currentTimeMillis();
+
 		File xml_file;
 
 		while ((xml_file = xml_file_queue.poll()) != null) {
+
+			if (show_progress) {
+
+				int remains = xml_file_queue.size();
+				int progress = total - remains;
+
+				long etc = start_time + remains / progress * (System.currentTimeMillis() - start_time);
+				Date etc_date = new Date(etc);
+
+				System.out.print("\rExtracted " + progress + " of " + total + " ... (ETC " + sdf.format(etc_date) + ")");
+
+			}
 
 			if (synchronizable) {
 
@@ -312,9 +330,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 				e.printStackTrace();
 				System.exit(1);
 			}
-
-			if (show_progress)
-				System.out.print("\rExtracted " + (total - xml_file_queue.size()) + " of " + total + " ...");
 
 			changed = true;
 
@@ -478,7 +493,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 		} finally {
 
 			if (option.isSynchronizable() && show_progress)
-				System.out.println(ds_dir.getAbsolutePath() + " (" + xml2sphinxds.ds_name + ") is up-to-date.");
+				System.out.println((changed ? "" : "\n") + ds_dir.getAbsolutePath() + " (" + xml2sphinxds.ds_name + ") is up-to-date.");
 
 		}
 

@@ -80,13 +80,14 @@ public class XmlParser {
 	 * @param validator instance of XmlValidator
 	 * @param xml_file XML file
 	 * @param xml_file_filter XML file filter
+	 * @param verbose verbose mode
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public XmlParser(XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter) throws IOException {
+	public XmlParser(XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter, boolean verbose) throws IOException {
 
 		init(xml_file, xml_file_filter);
 
-		validate(validator);
+		validate(validator, verbose);
 
 	}
 
@@ -172,7 +173,7 @@ public class XmlParser {
 				in = new FileInputStream(xml_file);
 				gzin = new GZIPInputStream(in);
 
-				validator.exec(xml_file.getPath(), gzin);
+				validator.exec(xml_file.getPath(), gzin, false);
 
 			}
 
@@ -191,7 +192,7 @@ public class XmlParser {
 
 				FileInputStream in = new FileInputStream(xml_file);
 
-				validator.exec(xml_file.getPath(), in);
+				validator.exec(xml_file.getPath(), in, false);
 
 				in.close();
 
@@ -207,9 +208,10 @@ public class XmlParser {
 	 * Validate XML document.
 	 *
 	 * @param validator instance of XmlValidator
+	 * @param verbose verbose mode
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void validate(XmlValidator validator) throws IOException {
+	private void validate(XmlValidator validator, boolean verbose) throws IOException {
 
 		if (FilenameUtils.getExtension(xml_file.getName()).equals("gz")) {
 
@@ -219,7 +221,7 @@ public class XmlParser {
 			in = new FileInputStream(xml_file);
 			gzin = new GZIPInputStream(in);
 
-			validator.exec(xml_file.getPath(), gzin);
+			validator.exec(xml_file.getPath(), gzin, verbose);
 
 			gzin.close();
 			in.close();
@@ -232,7 +234,7 @@ public class XmlParser {
 
 			FileInputStream in = new FileInputStream(xml_file);
 
-			validator.exec(xml_file.getPath(), in);
+			validator.exec(xml_file.getPath(), in, verbose);
 
 			in.close();
 
