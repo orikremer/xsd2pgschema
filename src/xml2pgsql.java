@@ -319,6 +319,8 @@ public class xml2pgsql {
 
 		}
 
+		int total = xml_file_queue.size();
+
 		Xml2PgSqlThrd[] proc_thrd = new Xml2PgSqlThrd[max_thrds];
 		Thread[] thrd = new Thread[max_thrds];
 
@@ -357,6 +359,9 @@ public class xml2pgsql {
 			}
 
 		}
+
+		if (option.isSynchronizable() && total > 1)
+			System.out.println(pg_option.getDbUrl() + " is up-to-date.");
 
 	}
 

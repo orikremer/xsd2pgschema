@@ -237,19 +237,6 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		}
 
-		if (synchronizable) {
-
-			try {
-
-				if (show_progress)
-					System.out.println(db_conn.getMetaData().getURL() + " is up-to-date.");
-
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-
-		}
-
 	}
 
 }

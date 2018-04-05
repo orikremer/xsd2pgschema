@@ -243,20 +243,7 @@ public class Xml2PgSqlThrd implements Runnable {
 		if (polled > 0) {
 
 			try {
-				System.out.println("\nDone xml (" + polled + " entries) -> db (" + db_conn.getMetaData().getURL().split("/")[3] + ").");
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-
-		}
-
-		if (synchronizable) {
-
-			try {
-
-				if (show_progress)
-					System.out.println(db_conn.getMetaData().getURL() + " is up-to-date.");
-
+				System.out.println("Done xml (" + polled + " entries) -> db (" + db_conn.getMetaData().getURL().split("/")[3] + ").");
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}

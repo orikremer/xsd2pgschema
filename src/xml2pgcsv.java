@@ -322,6 +322,8 @@ public class xml2pgcsv {
 
 		}
 
+		int total = xml_file_queue.size();
+
 		Xml2PgCsvThrd[] proc_thrd = new Xml2PgCsvThrd[max_thrds];
 		Thread[] thrd = new Thread[max_thrds];
 
@@ -360,6 +362,9 @@ public class xml2pgcsv {
 			}
 
 		}
+
+		if (!pg_option.name.isEmpty() && option.isSynchronizable() && total > 1)
+			System.out.println(pg_option.getDbUrl() + " is up-to-date.");
 
 	}
 

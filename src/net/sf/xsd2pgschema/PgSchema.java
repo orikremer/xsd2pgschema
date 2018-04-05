@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.DatatypeConverter;
@@ -3733,7 +3734,7 @@ public class PgSchema {
 	 *
 	 * @param xml_parser XML document
 	 * @param update whether update or insert
-	 * @param db_conn Database connection
+	 * @param db_conn database connection
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
@@ -3785,7 +3786,7 @@ public class PgSchema {
 	 * @param nested whether it is nested
 	 * @param nest_id ordinal number of current node
 	 * @param update whether update or insert
-	 * @param db_conn Database connection
+	 * @param db_conn database connection
 	 * @throws SQLException the SQL exception
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws TransformerException the transformer exception
@@ -3830,7 +3831,7 @@ public class PgSchema {
 
 	/**
 	 * Return document key name.
-	 * 
+	 *
 	 * @param table current table
 	 * @return String document key name
 	 * @throws PgSchemaException the pg schema exception
@@ -3856,7 +3857,7 @@ public class PgSchema {
 
 	/**
 	 * Return document key name.
-	 * 
+	 *
 	 * @param table_name current table name
 	 * @return String document key name
 	 * @throws PgSchemaException the pg schema exception
@@ -3883,7 +3884,7 @@ public class PgSchema {
 	/**
 	 * Return set of document ids stored in PostgreSQL.
 	 *
-	 * @param db_conn Database connection
+	 * @param db_conn database connection
 	 * @return HashSet set of document ids stored in PostgreSQL
 	 * @throws SQLException the SQL exception
 	 * @throws PgSchemaException the pg schema exception
@@ -3894,7 +3895,7 @@ public class PgSchema {
 
 		Statement stat = db_conn.createStatement();
 
-		String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + " FROM " + PgSchemaUtil.avoidPgReservedWords(doc_id_table.name);
+		String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + " FROM " + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, doc_id_table.name));
 
 		ResultSet rset = stat.executeQuery(sql);
 
@@ -3914,11 +3915,12 @@ public class PgSchema {
 	/**
 	 * Execute PostgreSQL DELETE command for strict synchronization.
 	 *
-	 * @param db_conn Database connection
+	 * @param db_conn database connection
 	 * @param set set of target document ids
 	 * @throws SQLException the SQL exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void deleteRows(Connection db_conn, HashSet<String> set) throws SQLException {
+	public void deleteRows(Connection db_conn, HashSet<String> set) throws SQLException, PgSchemaException {
 
 		if (has_db_rows == null && !option.rel_data_ext) {
 
@@ -3928,14 +3930,14 @@ public class PgSchema {
 
 			String doc_id_table_name = doc_id_table.name;
 
-			String _sql = "SELECT COUNT(*) FROM " + PgSchemaUtil.avoidPgReservedWords(doc_id_table_name);
+			String sql1 = "SELECT COUNT(*) FROM " + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, doc_id_table_name));
 
-			ResultSet _rset = stat.executeQuery(_sql);
+			ResultSet rset1 = stat.executeQuery(sql1);
 
-			if (_rset.next())
-				has_db_rows.put(doc_id_table_name, _rset.getInt(1) > 0);
+			if (rset1.next())
+				has_db_rows.put(doc_id_table_name, rset1.getInt(1) > 0);
 
-			_rset.close();
+			rset1.close();
 
 			boolean has_doc_id = has_db_rows.get(doc_id_table_name);
 
@@ -3947,16 +3949,16 @@ public class PgSchema {
 
 					try {
 
-						String sql = "SELECT COUNT(*) FROM " + PgSchemaUtil.avoidPgReservedWords(table_name);
+						String sql2 = "SELECT COUNT(*) FROM " + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, table_name));
 
-						ResultSet rset = stat.executeQuery(sql);
+						ResultSet rset2 = stat.executeQuery(sql2);
 
-						if (rset.next())
-							has_db_rows.put(table_name, rset.getInt(1) > 0);
+						if (rset2.next())
+							has_db_rows.put(table_name, rset2.getInt(1) > 0);
 
-						rset.close();
+						rset2.close();
 
-					} catch (SQLException e) {
+					} catch (SQLException | PgSchemaException e) {
 						e.printStackTrace();
 						System.exit(1);
 					}
@@ -3995,97 +3997,98 @@ public class PgSchema {
 	private HashSet<String> db_tables = null;
 
 	/**
+	 * Collect PostgreSQL table names.
+	 *
+	 * @param db_conn database connection
+	 * @throws SQLException the SQL exception
+	 */
+	private void collectDbTableNames(Connection db_conn) throws SQLException {
+
+		if (db_tables != null)
+			return;
+
+		db_tables = new HashSet<String>();
+
+		DatabaseMetaData meta = db_conn.getMetaData();
+		ResultSet rset = meta.getTables(null, null, null, null);
+
+		while (rset.next())
+			db_tables.add(rset.getString("TABLE_NAME"));
+
+		rset.close();
+
+	}
+
+	/**
+	 * Return exact table name in PostgreSQL
+	 *
+	 * @param db_conn database connection
+	 * @param table_name table name
+	 * @throws PgSchemaException the pg schema exception
+	 * @throws SQLException the SQL exception
+	 */
+	private String getDbTableName(Connection db_conn, String table_name) throws PgSchemaException, SQLException {
+
+		collectDbTableNames(db_conn);
+
+		Optional<String> opt = db_tables.stream().filter(db_table_name -> option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)).findFirst();
+
+		if (opt == null)
+			throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found in the database."); // not found in the database
+
+		return opt.get();
+	}
+
+	/**
 	 * Execute PostgreSQL DELETE command before INSERT for all tables of current document.
 	 *
-	 * @param db_conn Database connection
+	 * @param db_conn database connection
 	 * @param no_pkey whether delete relations not having primary key or non selective
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws SQLException the SQL exception
 	 */
 	private void deleteBeforeUpdate(Connection db_conn, boolean no_pkey) throws PgSchemaException, SQLException {
 
-		if (db_tables == null) {
+		collectDbTableNames(db_conn);
 
-			db_tables = new HashSet<String>();
-
-			DatabaseMetaData meta = db_conn.getMetaData();
-			ResultSet rset = meta.getTables(null, null, null, null);
-
-			while (rset.next())
-				db_tables.add(rset.getString("TABLE_NAME"));
-
-			rset.close();
-
-		}
+		String doc_id_table_name = doc_id_table.name;
+		String db_doc_id_table_name = getDbTableName(db_conn, doc_id_table_name);
 
 		Statement stat = db_conn.createStatement();
 
-		String doc_id_table_name = doc_id_table.name;
-
-		boolean has_doc_id_table = false;
 		boolean has_doc_id = false;
 
-		for (String db_table_name : db_tables) {
+		if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(doc_id_table_name))) {
 
-			if (option.case_sense ? db_table_name.equals(doc_id_table_name) : db_table_name.equalsIgnoreCase(doc_id_table_name)) {
+			String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_doc_id_table_name) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + "='" + document_id + "'";
 
-				has_doc_id_table = true;
-
-				if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(doc_id_table_name))) {
-
-					String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + "='" + document_id + "'";
-
-					has_doc_id = stat.executeUpdate(sql) > 0;
-
-				}
-
-				break;
-			}
+			has_doc_id = stat.executeUpdate(sql) > 0;
 
 		}
-
-		if (!has_doc_id_table)
-			throw new PgSchemaException(db_conn.toString() + " : " + doc_id_table_name + " not found.");
 
 		if (has_doc_id) {
 
 			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational) && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 				String table_name = table.name;
+				String db_table_name = null;
 
-				boolean has_table = false;
-
-				for (String db_table_name : db_tables) {
-
-					if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
-
-						has_table = true;
-
-						if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(table_name))) {
-
-							try {
-
-								String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
-
-								stat.executeUpdate(sql);
-
-							} catch (PgSchemaException | SQLException e) {
-								e.printStackTrace();
-								System.exit(1);
-							}
-
-						}
-
-						break;
-					}
-
+				try {
+					db_table_name = getDbTableName(db_conn, table_name);
+				} catch (PgSchemaException | SQLException e) {
+					e.printStackTrace();
+					System.exit(1);
 				}
 
-				if (!has_table) {
+				if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(table_name))) {
 
 					try {
-						throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found.");
-					} catch (PgSchemaException e) {
+
+						String sql = "DELETE FROM " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
+
+						stat.executeUpdate(sql);
+
+					} catch (PgSchemaException | SQLException e) {
 						e.printStackTrace();
 						System.exit(1);
 					}
@@ -4106,7 +4109,7 @@ public class PgSchema {
 	/**
 	 * Execute PostgreSQL COPY command for all CSV files.
 	 *
-	 * @param db_conn Database connection
+	 * @param db_conn database connection
 	 * @param csv_dir directory contains CSV files
 	 * @throws PgSchemaException the pg schema exception
 	 */
@@ -4114,19 +4117,7 @@ public class PgSchema {
 
 		try {
 
-			if (db_tables == null) {
-
-				db_tables = new HashSet<String>();
-
-				DatabaseMetaData meta = db_conn.getMetaData();
-				ResultSet rset = meta.getTables(null, null, null, null);
-
-				while (rset.next())
-					db_tables.add(rset.getString("TABLE_NAME"));
-
-				rset.close();
-
-			}
+			collectDbTableNames(db_conn);
 
 			CopyManager copy_man = new CopyManager((BaseConnection) db_conn);
 
@@ -4136,39 +4127,15 @@ public class PgSchema {
 
 				File csv_file = new File(csv_dir, table_name + ".csv");
 
-				boolean has_table = false;
+				try {
 
-				for (String db_table_name : db_tables) {
+					String sql = "COPY " + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, table_name)) + " FROM STDIN CSV";
 
-					if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
+					copy_man.copyIn(sql, new FileInputStream(csv_file));
 
-						has_table = true;
-
-						try {
-
-							String sql = "COPY " + PgSchemaUtil.avoidPgReservedWords(db_table_name) + " FROM STDIN CSV";
-
-							copy_man.copyIn(sql, new FileInputStream(csv_file));
-
-						} catch (SQLException | IOException e) {
-							e.printStackTrace();
-							System.exit(1);
-						}
-
-						break;
-					}
-
-				}
-
-				if (!has_table) {
-
-					try {
-						throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found.");
-					} catch (PgSchemaException e) {
-						e.printStackTrace();
-						System.exit(1);
-					}
-
+				} catch (SQLException | IOException | PgSchemaException e) {
+					e.printStackTrace();
+					System.exit(1);
 				}
 
 			});
@@ -4182,7 +4149,7 @@ public class PgSchema {
 	/**
 	 * Perform consistency test on PostgreSQL DDL.
 	 *
-	 * @param db_conn Database connection
+	 * @param db_conn database connection
 	 * @param strict whether perform strict consistency test
 	 * @throws PgSchemaException the pg schema exception
 	 */
@@ -4190,20 +4157,9 @@ public class PgSchema {
 
 		try {
 
+			collectDbTableNames(db_conn);
+
 			DatabaseMetaData meta = db_conn.getMetaData();
-
-			if (db_tables == null) {
-
-				db_tables = new HashSet<String>();
-
-				ResultSet rset = meta.getTables(null, null, null, null);
-
-				while (rset.next())
-					db_tables.add(rset.getString("TABLE_NAME"));
-
-				rset.close();
-
-			}
 
 			Statement stat = db_conn.createStatement();
 
@@ -4212,85 +4168,70 @@ public class PgSchema {
 				try {
 
 					String table_name = table.name;
+					String db_table_name = getDbTableName(db_conn, table_name);
 
-					boolean has_table = false;
+					ResultSet rset_col = meta.getColumns(null, null, db_table_name, null);
 
-					for (String db_table_name : db_tables) {
+					while (rset_col.next()) {
 
-						if (option.case_sense ? db_table_name.equals(table_name) : db_table_name.equalsIgnoreCase(table_name)) {
+						String db_column_name = rset_col.getString("COLUMN_NAME");
 
-							ResultSet rset_col = meta.getColumns(null, null, db_table_name, null);
-
-							while (rset_col.next()) {
-
-								String db_column_name = rset_col.getString("COLUMN_NAME");
-
-								if (!table.fields.stream().filter(field -> !field.omissible).anyMatch(field -> option.case_sense ? field.name.equals(db_column_name) : field.name.equalsIgnoreCase(db_column_name)))
-									throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found without declaration in the data model."); // found without declaration in the data model
-
-							}
-
-							rset_col.close();
-
-							for (PgField field : table.fields) {
-
-								if (field.omissible)
-									continue;
-
-								String field_name = option.case_sense ? field.name : field.name.toLowerCase();
-
-								rset_col = meta.getColumns(null, null, db_table_name, field_name);
-
-								if (!rset_col.next())
-									throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field_name + " not found in the relation."); // not found in the relation
-
-								rset_col.close();
-
-							}
-
-							if (strict) {
-
-								rset_col = meta.getColumns(null, null, db_table_name, null);
-
-								List<PgField> fields = table.fields.stream().filter(field -> !field.omissible).collect(Collectors.toList());
-
-								int col_id = 0;
-
-								while (rset_col.next()) {
-
-									String db_column_name = rset_col.getString("COLUMN_NAME");
-									int db_column_type = rset_col.getInt("DATA_TYPE");
-
-									if (db_column_type == java.sql.Types.NUMERIC) // NUMERIC and DECIMAL are equivalent in PostgreSQL
-										db_column_type = java.sql.Types.DECIMAL;
-
-									PgField field = fields.get(col_id++);
-
-									String field_name = option.case_sense ? field.name : field.name.toLowerCase();
-
-									if (!field_name.equals(db_column_name))
-										throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found in an incorrect order."); // found in an incorrect order
-
-									if (field.getSqlDataType() != db_column_type)
-										throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " column type " + JDBCType.valueOf(db_column_type) + " is incorrect with " + JDBCType.valueOf(field.getSqlDataType()) + "."); // column type is incorrect
-
-								}
-
-								fields.clear();
-
-								rset_col.close();
-
-							}
-
-							has_table = true;
-
-							break;
-						}
+						if (!table.fields.stream().filter(field -> !field.omissible).anyMatch(field -> option.case_sense ? field.name.equals(db_column_name) : field.name.equalsIgnoreCase(db_column_name)))
+							throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found without declaration in the data model."); // found without declaration in the data model
 
 					}
 
-					if (!has_table)
-						throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found in the database."); // not found in the database
+					rset_col.close();
+
+					for (PgField field : table.fields) {
+
+						if (field.omissible)
+							continue;
+
+						String field_name = option.case_sense ? field.name : field.name.toLowerCase();
+
+						rset_col = meta.getColumns(null, null, db_table_name, field_name);
+
+						if (!rset_col.next())
+							throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field_name + " not found in the relation."); // not found in the relation
+
+						rset_col.close();
+
+					}
+
+					if (strict) {
+
+						rset_col = meta.getColumns(null, null, db_table_name, null);
+
+						List<PgField> fields = table.fields.stream().filter(field -> !field.omissible).collect(Collectors.toList());
+
+						int col_id = 0;
+
+						while (rset_col.next()) {
+
+							String db_column_name = rset_col.getString("COLUMN_NAME");
+							int db_column_type = rset_col.getInt("DATA_TYPE");
+
+							if (db_column_type == java.sql.Types.NUMERIC) // NUMERIC and DECIMAL are equivalent in PostgreSQL
+								db_column_type = java.sql.Types.DECIMAL;
+
+							PgField field = fields.get(col_id++);
+
+							String field_name = option.case_sense ? field.name : field.name.toLowerCase();
+
+							if (!field_name.equals(db_column_name))
+								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found in an incorrect order."); // found in an incorrect order
+
+							if (field.getSqlDataType() != db_column_type)
+								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " column type " + JDBCType.valueOf(db_column_type) + " is incorrect with " + JDBCType.valueOf(field.getSqlDataType()) + "."); // column type is incorrect
+
+						}
+
+						fields.clear();
+
+						rset_col.close();
+
+					}
 
 				} catch (SQLException | PgSchemaException e) {
 					e.printStackTrace();
