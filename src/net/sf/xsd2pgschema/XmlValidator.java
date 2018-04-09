@@ -85,9 +85,6 @@ public class XmlValidator {
 
 		err_handler.init();
 
-		if (verbose)
-			System.out.println("Validating " + xml_file_name + " ...");
-
 		try {
 
 			dom_parser.parse(new InputSource(new InputStreamReader(in)));
