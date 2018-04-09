@@ -266,11 +266,13 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			if (show_progress) {
 
+				long current_time = System.currentTimeMillis();
+
 				int remains = xml_file_queue.size();
 				int progress = total - remains;
 
-				long etc = start_time + remains / progress * (System.currentTimeMillis() - start_time);
-				Date etc_date = new Date(etc);
+				long etc_time = current_time + remains / progress * (current_time - start_time);
+				Date etc_date = new Date(etc_time);
 
 				System.out.print("\rExtracted " + progress + " of " + total + " ... (ETC " + sdf.format(etc_date) + ")");
 
