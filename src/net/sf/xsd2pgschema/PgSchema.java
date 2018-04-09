@@ -322,6 +322,8 @@ public class PgSchema {
 
 						is2.close();
 
+						doc_builder.reset();
+
 						// referred XML Schema (xs:include|xs:import/@schemaLocation) analysis
 
 						PgSchema schema2 = new PgSchema(doc_builder, doc2, _root_schema, schema_location, option);

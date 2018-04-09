@@ -112,6 +112,8 @@ public class XmlValidator {
 		else if (verbose)
 			System.out.println(xml_file_name + " is valid.");
 
+		dom_parser.reset();
+
 	}
 
 	/**
