@@ -37,8 +37,8 @@ public class SphDsDocIdExtractor extends DefaultHandler {
 	/** The current state for sphinx:document. */
 	boolean sph_document = false;
 
-	/** The current state for document_id. */
-	boolean document_id = false;
+	/** The current state for document key. */
+	boolean document_key = false;
 
 	/** The string builder for document id. */
 	StringBuilder sb = null;
@@ -78,7 +78,7 @@ public class SphDsDocIdExtractor extends DefaultHandler {
 			return;
 
 		else if (qName.equals(document_key_name))
-			document_id = true;
+			document_key = true;
 
 	}
 
@@ -96,7 +96,7 @@ public class SphDsDocIdExtractor extends DefaultHandler {
 
 		else if (qName.equals(document_key_name)) {
 
-			document_id = false;
+			document_key = false;
 
 			doc_set.add(sb.toString());
 
@@ -115,7 +115,7 @@ public class SphDsDocIdExtractor extends DefaultHandler {
 		if (!sph_document)
 			return;
 
-		else if (document_id)
+		else if (document_key)
 			sb.append(new String(chars, offset, length));
 
 	}

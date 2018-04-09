@@ -47,10 +47,10 @@ import javax.xml.stream.events.XMLEvent;
 public class SphDsDocIdCleaner {
 
 	/** The Sphinx data source input file. */
-	private File sph_data_source = null;
+	private File sph_data_in = null;
 
 	/** The Sphinx data source output file. */
-	private File sph_data_extract = null;
+	private File sph_data_out = null;
 
 	/** The set of deleting document id while synchronization. */
 	private HashSet<String> del_doc_set = null;
@@ -92,16 +92,16 @@ public class SphDsDocIdCleaner {
 	 * Instance of Sphinx xmlpipe2 document id cleaner.
 	 *
 	 * @param document_key_name document key name
-	 * @param sph_data_source Sphinx data source input file
-	 * @param sph_data_extract Sphinx data source output file
+	 * @param sph_data_in Sphinx data source input file
+	 * @param sph_data_out Sphinx data source output file
 	 * @param del_doc_set set of deleting document id while synchronization
 	 */
-	public SphDsDocIdCleaner(String document_key_name, File sph_data_source, File sph_data_extract, HashSet<String> del_doc_set) {
+	public SphDsDocIdCleaner(String document_key_name, File sph_data_in, File sph_data_out, HashSet<String> del_doc_set) {
 
 		doc_key_path = doc_unit_path + "/" + document_key_name;
 
-		this.sph_data_source = sph_data_source;
-		this.sph_data_extract = sph_data_extract;
+		this.sph_data_in = sph_data_in;
+		this.sph_data_out = sph_data_out;
 		this.del_doc_set = del_doc_set;
 
 		attr_doc_key = doc_key_path.substring(doc_key_path.lastIndexOf("/") + 1, doc_key_path.length()).startsWith("@");
@@ -154,7 +154,7 @@ public class SphDsDocIdCleaner {
 
 		XMLInputFactory in_factory = XMLInputFactory.newInstance();
 
-		InputStream in = PgSchemaUtil.getSchemaInputStream(sph_data_source);
+		InputStream in = PgSchemaUtil.getSchemaInputStream(sph_data_in);
 
 		XMLEventReader reader = in_factory.createXMLEventReader(in);
 
@@ -164,7 +164,7 @@ public class SphDsDocIdCleaner {
 
 		// XML event writer of extracted XML file
 
-		FileOutputStream fout = new FileOutputStream(sph_data_extract);
+		FileOutputStream fout = new FileOutputStream(sph_data_out);
 
 		BufferedOutputStream bout = new BufferedOutputStream(fout);
 

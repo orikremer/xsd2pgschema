@@ -48,8 +48,8 @@ public class SphDsCompositor extends DefaultHandler {
 	/** The current state for sphinx:document. */
 	boolean sph_document = false;
 
-	/** The current state for document_id. */
-	boolean document_id = false;
+	/** The current state for document key. */
+	boolean document_key = false;
 
 	/** The current state for default content. */
 	boolean content = false;
@@ -129,7 +129,7 @@ public class SphDsCompositor extends DefaultHandler {
 		else {
 
 			if (qName.equals(document_key_name)) {
-				document_id = true;
+				document_key = true;
 				return;
 			}
 
@@ -191,7 +191,7 @@ public class SphDsCompositor extends DefaultHandler {
 		else {
 
 			if (qName.equals(document_key_name)) {
-				document_id = false;
+				document_key = false;
 				return;
 			}
 
@@ -218,7 +218,7 @@ public class SphDsCompositor extends DefaultHandler {
 		if (!sph_document)
 			return;
 
-		else if (document_id) {
+		else if (document_key) {
 
 			try {
 				buffw.write("<" + document_key_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + document_key_name + ">\n");

@@ -40,17 +40,17 @@ import javax.xml.stream.events.XMLEvent;
  */
 public class SphDsDocIdUpdater {
 
-	/** The Sphinx data source input file (appending). */
-	private File sph_data_source = null;
+	/** The Sphinx data source input file (base). */
+	private File sph_data_base = null;
 
 	/** The Sphinx data source input file (extracted). */
-	private File sph_data_extract = null;
+	private File sph_data_ext = null;
 
 	/** The Sphinx data source output file. */
-	private File sph_data_update = null;
+	private File sph_data_out = null;
 
-	/** Whether this document is appending source file or not. */
-	private boolean source = true;
+	/** Whether current document is base file or extracted one. */
+	private boolean base = true;
 
 	/** The absolute path of document unit. */
 	private final String doc_unit_path = "/docset/document";
@@ -67,15 +67,15 @@ public class SphDsDocIdUpdater {
 	/**
 	 * Instance of Sphinx xmlpipe2 document id updater.
 	 *
-	 * @param sph_data_source Sphinx data source input file (appending)
-	 * @param sph_data_extract Sphinx data source input file (extracted)
-	 * @param sph_data_update Sphix data source output file
+	 * @param sph_data_base Sphinx data source input file (base)
+	 * @param sph_data_ext Sphinx data source input file (extracted)
+	 * @param sph_data_out Sphix data source output file
 	 */
-	public SphDsDocIdUpdater(File sph_data_source, File sph_data_extract, File sph_data_update) {
+	public SphDsDocIdUpdater(File sph_data_base, File sph_data_ext, File sph_data_out) {
 
-		this.sph_data_source = sph_data_source;
-		this.sph_data_extract = sph_data_extract;
-		this.sph_data_update = sph_data_update;
+		this.sph_data_base = sph_data_base;
+		this.sph_data_ext = sph_data_ext;
+		this.sph_data_out = sph_data_out;
 
 		// StAX read event handlers
 
@@ -118,7 +118,7 @@ public class SphDsDocIdUpdater {
 
 		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 
-		FileOutputStream fout = new FileOutputStream(sph_data_update);
+		FileOutputStream fout = new FileOutputStream(sph_data_out);
 
 		BufferedOutputStream bout = new BufferedOutputStream(fout);
 
@@ -130,7 +130,7 @@ public class SphDsDocIdUpdater {
 
 		XMLInputFactory in_factory = XMLInputFactory.newInstance();
 
-		InputStream in = PgSchemaUtil.getSchemaInputStream(sph_data_source);
+		InputStream in = PgSchemaUtil.getSchemaInputStream(sph_data_base);
 
 		// XML event reader of source XML file
 
@@ -150,11 +150,11 @@ public class SphDsDocIdUpdater {
 
 		in.close();
 
-		// Processing sph_data_extract
+		// Processing sph_data_ext
 
-		source = false;
+		base = false;
 
-		in = PgSchemaUtil.getSchemaInputStream(sph_data_extract);
+		in = PgSchemaUtil.getSchemaInputStream(sph_data_ext);
 
 		// XML event reader of extracted XML file
 
@@ -206,7 +206,7 @@ public class SphDsDocIdUpdater {
 
 			cur_path = new StringBuilder();
 
-			if (source) {
+			if (base) {
 
 				try {
 
@@ -234,7 +234,7 @@ public class SphDsDocIdUpdater {
 		@Override
 		public void handleEvent(XMLEvent element) {
 
-			if (!source) {
+			if (!base) {
 
 				try {
 
@@ -295,7 +295,7 @@ public class SphDsDocIdUpdater {
 
 			try {
 
-				if ((source && !local_name.equals("docset")) || !source) {
+				if ((base && !local_name.equals("docset")) || !base) {
 
 					addXMLEventWriter(element);
 
@@ -374,7 +374,7 @@ public class SphDsDocIdUpdater {
 
 		if (!in_doc_unit) {
 
-			if (source)
+			if (base)
 				xml_writer.add(event);
 
 		}
