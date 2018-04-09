@@ -1,8 +1,8 @@
-﻿ Changed in xsd2pgschema 2.8.5 (release 2018-04-05)
+﻿ Changed in xsd2pgschema 2.8.5 (release 2018-04-09)
 
   Improved overall XML output performance.
   Improved differential update performance in case that relational model extension was disabled.
-  Appended ETC (estimated completion of time) in progress display.
+  Appended ETC (estimated time of completion) in progress display.
   Added verbose mode in xmlvalidator main class.
   Enabled differential XML Schema validation (--sync option in xmlvalidator main class).
 
