@@ -139,7 +139,7 @@ public class Xml2JsonThrd implements Runnable {
 				int remains = xml_file_queue.size();
 				int progress = total - remains;
 
-				long etc_time = current_time + remains / progress * (current_time - start_time);
+				long etc_time = current_time + (current_time - start_time) * remains / progress;
 				Date etc_date = new Date(etc_time);
 
 				System.out.print("\rConverted " + progress + " of " + total + " ... (ETC " + sdf.format(etc_date) + ")");
