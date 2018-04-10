@@ -3932,12 +3932,12 @@ public class PgSchema {
 
 			String doc_id_table_name = doc_id_table.name;
 
-			String sql1 = "SELECT COUNT(*) FROM " + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, doc_id_table_name));
+			String sql1 = "SELECT EXISTS(SELECT 1 FROM " + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, doc_id_table_name)) + " LIMIT 1)";
 
 			ResultSet rset1 = stat.executeQuery(sql1);
 
 			if (rset1.next())
-				has_db_rows.put(doc_id_table_name, rset1.getInt(1) > 0);
+				has_db_rows.put(doc_id_table_name, rset1.getBoolean(1));
 
 			rset1.close();
 
@@ -3951,12 +3951,12 @@ public class PgSchema {
 
 					try {
 
-						String sql2 = "SELECT COUNT(*) FROM " + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, table_name));
+						String sql2 = "SELECT EXISTS(SELECT 1 FROM " + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, table_name)) + " LIMIT 1)";
 
 						ResultSet rset2 = stat.executeQuery(sql2);
 
 						if (rset2.next())
-							has_db_rows.put(table_name, rset2.getInt(1) > 0);
+							has_db_rows.put(table_name, rset2.getBoolean(1));
 
 						rset2.close();
 
