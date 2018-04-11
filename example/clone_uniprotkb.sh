@@ -42,9 +42,11 @@ case $ans in
   exit 1;;
 esac
 
+MD5_DIR=chk_sum_pgsql
+
 relations=`psql -d $DB_NAME -U $DB_USER -c "\d" | wc -l`
 
-if [ $sync_update != "true" ] || [ $relations = "0" ] ; then
+if [ $sync_update != "true" ] || [ ! -d $MD5_DIR ] || [ $relations = "0" ] ; then
  sync_update=false
  psql -d $DB_NAME -U $DB_USER -f $DB_SCHEMA --quiet
 fi
@@ -55,7 +57,6 @@ if [ $sync_update != "true" ] ; then
  CSV_DIR=$WORK_DIR/csv
 fi
 
-MD5_DIR=chk_sum_pgsql
 ERR_DIR=$WORK_DIR/err
 
 rm -rf $WORK_DIR
