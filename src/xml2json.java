@@ -177,10 +177,15 @@ public class xml2json {
 				option.cache_xsd = false;
 
 			else if (args[i].startsWith("--valid"))
-				option.validate = true;
+				option.validate = option.full_check = true;
 
 			else if (args[i].startsWith("--no-valid"))
 				option.validate = false;
+
+			else if (args[i].equals("--well-formed")) {
+				option.validate = true;
+				option.full_check = false;
+			}
 
 			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);	
@@ -304,6 +309,7 @@ public class xml2json {
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --validate (turn on XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
+		System.err.println("        --well-formed (check only whether document is well-formed)");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
 		System.err.println("        --obj-json (use column-oriented JSON format)");
 		System.err.println("        --col-json (use column-oriented JSON format, default)");

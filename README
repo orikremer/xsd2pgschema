@@ -5,6 +5,7 @@
   Appended ETC (estimated time of completion) in progress display.
   Added verbose mode in xmlvalidator main class.
   Enabled differential XML Schema validation (--sync option in xmlvalidator main class).
+  Added --well-formed option, which checked only whether document was well-formed or not.
 
  Changed in xsd2pgschema 2.8.4 (release 2018-03-30)
 

@@ -3574,14 +3574,13 @@ public class PgSchema {
 	 */
 	private void closeTableLock() {
 
-		if (table_lock != null) {
+		if (table_lock == null)
+			return;
 
-			for (int t = 0; t < tables.size() && t < table_lock.length; t++)
-				table_lock[t] = null;
+		for (int t = 0; t < tables.size() && t < table_lock.length; t++)
+			table_lock[t] = null;
 
-			table_lock = null;
-
-		}
+		table_lock = null;
 
 	}
 
@@ -3717,15 +3716,14 @@ public class PgSchema {
 
 		}
 
-		if (!node2pgcsv.invoked) {
+		if (node2pgcsv.invoked)
+			return;
 
-			synchronized (table_lock[table_id]) {
-				node2pgcsv.parseChildNode(parent_node, parent_key, proc_key, nested);
-			}
-
-			node2pgcsv.invokeChildNestedNode();
-
+		synchronized (table_lock[table_id]) {
+			node2pgcsv.parseChildNode(parent_node, parent_key, proc_key, nested);
 		}
+
+		node2pgcsv.invokeChildNestedNode();
 
 	}
 
@@ -3796,9 +3794,7 @@ public class PgSchema {
 	 */
 	protected void parseChildNode2PgSql(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id, final boolean update, final Connection db_conn) throws SQLException, ParserConfigurationException, TransformerException, IOException {
 
-		PgSchemaNode2PgSql node2pgsql = null;
-
-		node2pgsql = new PgSchemaNode2PgSql(this, parent_table, table, update, db_conn);
+		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, parent_table, table, update, db_conn);
 
 		for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
 
@@ -3819,15 +3815,18 @@ public class PgSchema {
 
 		}
 
-		if (!node2pgsql.invoked) {
+		try {
+
+			if (node2pgsql.invoked)
+				return;
 
 			node2pgsql.parseChildNode(parent_node, parent_key, proc_key, nested);
 
 			node2pgsql.invokeChildNestedNode();
 
+		} finally {
+			node2pgsql.executeBatch();
 		}
-
-		node2pgsql.executeBatch();
 
 	}
 
@@ -4316,15 +4315,14 @@ public class PgSchema {
 
 		}
 
-		if (!node2lucidx.invoked) {
+		if (node2lucidx.invoked)
+			return;
 
-			synchronized (table_lock[0]) {
-				node2lucidx.parseChildNode(parent_node, parent_key, proc_key, nested);
-			}
-
-			node2lucidx.invokeChildNestedNode();
-
+		synchronized (table_lock[0]) {
+			node2lucidx.parseChildNode(parent_node, parent_key, proc_key, nested);
 		}
+
+		node2lucidx.invokeChildNestedNode();
 
 	}
 
@@ -4690,15 +4688,14 @@ public class PgSchema {
 
 		}
 
-		if (!node2sphds.invoked) {
+		if (node2sphds.invoked)
+			return;
 
-			synchronized (table_lock[0]) {
-				node2sphds.parseChildNode(parent_node, parent_key, proc_key, nested);
-			}
-
-			node2sphds.invokeChildNestedNode();
-
+		synchronized (table_lock[0]) {
+			node2sphds.parseChildNode(parent_node, parent_key, proc_key, nested);
 		}
+
+		node2sphds.invokeChildNestedNode();
 
 	}
 
@@ -5122,7 +5119,10 @@ public class PgSchema {
 
 		}
 
-		if (!node2json.invoked) {
+		try {
+
+			if (node2json.invoked)
+				return;
 
 			int _jsonb_header_begin = jsonb.builder.length();
 			int _jsonb_header_end = node2json.jsonb_header_end;
@@ -5151,11 +5151,13 @@ public class PgSchema {
 
 			}
 
-		}
+		} finally {
 
-		if (!table.virtual && table.bridge) {
-			json_indent_level--;
-			jsonb.writeArrayFooter(table, json_indent_level--, node2json.jsonb_header_begin, node2json.jsonb_header_end);
+			if (!table.virtual && table.bridge) {
+				json_indent_level--;
+				jsonb.writeArrayFooter(table, json_indent_level--, node2json.jsonb_header_begin, node2json.jsonb_header_end);
+			}
+
 		}
 
 	}
@@ -5465,7 +5467,10 @@ public class PgSchema {
 
 		}
 
-		if (!node2json.invoked) {
+		try {
+
+			if (node2json.invoked)
+				return;
 
 			synchronized (table_lock[0]) {
 
@@ -5478,10 +5483,12 @@ public class PgSchema {
 
 			node2json.invokeChildNestedNodeCol(json_indent_level);
 
-		}
+		} finally {
 
-		if (!table.virtual)
-			jsonb.writeFooter(table, json_indent_level, node2json.jsonb_header_begin, node2json.jsonb_header_end);
+			if (!table.virtual)
+				jsonb.writeFooter(table, json_indent_level, node2json.jsonb_header_begin, node2json.jsonb_header_end);
+
+		}
 
 	}
 
@@ -5764,15 +5771,14 @@ public class PgSchema {
 
 		}
 
-		if (!node2json.invoked) {
+		if (node2json.invoked)
+			return;
 
-			synchronized (table_lock[table_id]) {
-				node2json.parseChildNode(parent_node, parent_key, proc_key, nested);
-			}
-
-			node2json.invokeChildNestedNode();
-
+		synchronized (table_lock[table_id]) {
+			node2json.parseChildNode(parent_node, parent_key, proc_key, nested);
 		}
+
+		node2json.invokeChildNestedNode();
 
 	}
 

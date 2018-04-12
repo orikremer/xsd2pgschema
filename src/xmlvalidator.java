@@ -66,6 +66,8 @@ public class xmlvalidator {
 	 */
 	public static void main(String[] args) {
 
+		option.validate = true;
+
 		HashSet<String> xml_file_names = new HashSet<String>();
 
 		boolean touch_xml = false;
@@ -97,6 +99,9 @@ public class xmlvalidator {
 					showUsage();
 
 			}
+
+			else if (args[i].equals("--well-formed"))
+				option.full_check = false;
 
 			else if (args[i].equals("--verbose"))
 				option.verbose = true;
@@ -236,6 +241,7 @@ public class xmlvalidator {
 
 		System.err.println("xmlvalidator: Validate XML documents against XML Schema");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY");
+		System.err.println("        --well-formed (check only whether document is well-formed)");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
 		System.err.println("Option: --sync CHECK_SUM_DIRECTORY (generate check sum files)");
 		System.err.println("        --checksum-by ALGORITHM [MD2 | MD5 (default) | SHA-1 | SHA-224 | SHA-256 | SHA-384 | SHA-512]");

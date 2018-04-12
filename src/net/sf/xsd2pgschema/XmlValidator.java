@@ -48,23 +48,28 @@ public class XmlValidator {
 	 * Instance of XML validator.
 	 *
 	 * @param xsd_file XML Schema file
+	 * @param full_check whether enable canonical XML Schema validation or not (well-formed only)
 	 */
-	public XmlValidator(File xsd_file) {
+	public XmlValidator(File xsd_file, boolean full_check) {
 
 		dom_parser = new DOMParser();
 
-		try {
+		if (full_check) {
 
-			dom_parser.setFeature("http://xml.org/sax/features/validation", true);
-			dom_parser.setFeature("http://apache.org/xml/features/validation/schema", true);
-			dom_parser.setFeature("http://apache.org/xml/features/validation/schema-full-checking", true);
-			dom_parser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaLanguage", PgSchemaUtil.xs_namespace_uri);
-			dom_parser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaSource", xsd_file);
+			try {
 
-		} catch (SAXNotRecognizedException e) {
-			e.printStackTrace();
-		} catch (SAXNotSupportedException e) {
-			e.printStackTrace();
+				dom_parser.setFeature("http://xml.org/sax/features/validation", true);
+				dom_parser.setFeature("http://apache.org/xml/features/validation/schema", true);
+				dom_parser.setFeature("http://apache.org/xml/features/validation/schema-full-checking", true);
+				dom_parser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaLanguage", PgSchemaUtil.xs_namespace_uri);
+				dom_parser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaSource", xsd_file);
+
+			} catch (SAXNotRecognizedException e) {
+				e.printStackTrace();
+			} catch (SAXNotSupportedException e) {
+				e.printStackTrace();
+			}
+
 		}
 
 		err_handler = new Validator();

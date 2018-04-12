@@ -123,7 +123,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		// prepare XML validator
 
-		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2pgcsv.schema_location, null, option.cache_xsd)) : null;
+		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2pgcsv.schema_location, null, option.cache_xsd), option.full_check) : null;
 
 		if (!pg_option.name.isEmpty()) {
 

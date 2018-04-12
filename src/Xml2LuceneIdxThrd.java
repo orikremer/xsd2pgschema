@@ -144,7 +144,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		// prepare XML validator
 
-		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2luceneidx.schema_location, null, option.cache_xsd)) : null;
+		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2luceneidx.schema_location, null, option.cache_xsd), option.full_check) : null;
 
 		synchronizable = option.isSynchronizable(true);
 

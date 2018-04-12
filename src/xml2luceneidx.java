@@ -186,10 +186,15 @@ public class xml2luceneidx {
 				option.wild_card = false;
 
 			else if (args[i].startsWith("--valid"))
-				option.validate = true;
+				option.validate = option.full_check = true;
 
 			else if (args[i].startsWith("--no-valid"))
 				option.validate = false;
+
+			else if (args[i].equals("--well-formed")) {
+				option.validate = true;
+				option.full_check = false;
+			}
 
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
@@ -400,6 +405,7 @@ public class xml2luceneidx {
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --validate (turn on XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
+		System.err.println("        --well-formed (check only whether document is well-formed)");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
 		System.err.println("        --shard-size SHARD_SIZE (default=1)");
 		System.err.println("        --min-word-len MIN_WORD_LENGTH (default is " + PgSchemaUtil.min_word_len + ")");

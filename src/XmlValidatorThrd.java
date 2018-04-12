@@ -70,7 +70,7 @@ public class XmlValidatorThrd implements Runnable {
 
 		this.option = option;
 
-		validator = new XmlValidator(PgSchemaUtil.getSchemaFile(xmlvalidator.schema_location, null, true));
+		validator = new XmlValidator(PgSchemaUtil.getSchemaFile(xmlvalidator.schema_location, null, true), option.full_check);
 
 		synchronizable = option.isSynchronizable(false);
 
