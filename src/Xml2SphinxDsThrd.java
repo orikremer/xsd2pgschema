@@ -337,6 +337,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 				System.exit(1);
 			}
 
+			if (changed)
+				continue;
+
 			changed = true;
 
 		}

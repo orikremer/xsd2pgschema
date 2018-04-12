@@ -42,7 +42,7 @@ public class XmlValidator {
 	DOMParser dom_parser = null;
 
 	/** The error handler. */
-	Validator err_handler = null;
+	ErrHandler err_handler = null;
 
 	/**
 	 * Instance of XML validator.
@@ -72,7 +72,7 @@ public class XmlValidator {
 
 		}
 
-		err_handler = new Validator();
+		err_handler = new ErrHandler();
 
 		dom_parser.setErrorHandler(err_handler);
 
@@ -121,7 +121,7 @@ public class XmlValidator {
 	/**
 	 * Error hander implementation.
 	 */
-	private static class Validator implements ErrorHandler {
+	private static class ErrHandler implements ErrorHandler {
 
 		/** The result of XML Schema validation. */
 		public boolean success = true;

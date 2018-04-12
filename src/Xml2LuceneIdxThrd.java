@@ -350,6 +350,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 				System.exit(1);
 			}
 
+			if (changed)
+				continue;
+
 			changed = true;
 
 		}
