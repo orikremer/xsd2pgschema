@@ -34,9 +34,6 @@ public class XPathSqlExpr {
 	/** The node path. */
 	public String path = null;
 
-	/** The table name. */
-	public String table_name = null;
-
 	/** The column name. */
 	public String column_name = null;
 
@@ -65,7 +62,7 @@ public class XPathSqlExpr {
 	public String binary_operator = null;
 
 	/** The PostgreSQL table. */
-	private PgTable table = null;
+	public PgTable table = null;
 
 	/** The PostgreSQL field. */
 	private PgField field = null;
@@ -75,17 +72,17 @@ public class XPathSqlExpr {
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param path current path
-	 * @param table_name table name
+	 * @param table PostgreSQL table
 	 * @param column_name column name
 	 * @param pg_xpath_code PostgreSQL XPath code
 	 * @param predicate predicate
 	 * @param terminus terminus type
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public XPathSqlExpr(PgSchema schema, String path, String table_name, String column_name, String pg_xpath_code, String predicate, XPathCompType terminus) throws PgSchemaException {
+	public XPathSqlExpr(PgSchema schema, String path, PgTable table, String column_name, String pg_xpath_code, String predicate, XPathCompType terminus) throws PgSchemaException {
 
 		this.path = path;
-		this.table_name = table_name;
+		this.table = table;
 		this.column_name = column_name;
 		this.predicate = this.value = predicate;
 		this.terminus = terminus;
@@ -97,10 +94,11 @@ public class XPathSqlExpr {
 		case element:
 		case simple_content:
 		case attribute:
-			decideField(schema);
+			decideField(schema, null);
 			break;
 		case table:
-			decideTable(schema);
+			if (table == null)
+				throw new PgSchemaException();
 			break;
 		default:
 		}
@@ -112,7 +110,7 @@ public class XPathSqlExpr {
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param path current path
-	 * @param table_name table name
+	 * @param table PostgreSQL table
 	 * @param column_name column name
 	 * @param pg_xpath_code PostgreSQL XPath code
 	 * @param predicate predicate
@@ -121,10 +119,10 @@ public class XPathSqlExpr {
 	 * @param current_tree current parse tree
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public XPathSqlExpr(PgSchema schema, String path, String table_name, String column_name, String pg_xpath_code, String predicate, XPathCompType terminus, ParseTree parent_tree, ParseTree current_tree) throws PgSchemaException {
+	public XPathSqlExpr(PgSchema schema, String path, PgTable table, String column_name, String pg_xpath_code, String predicate, XPathCompType terminus, ParseTree parent_tree, ParseTree current_tree) throws PgSchemaException {
 
 		this.path = path;
-		this.table_name = table_name;
+		this.table = table;
 		this.column_name = column_name;
 		this.predicate = this.value = predicate;
 		this.terminus = terminus;
@@ -138,10 +136,11 @@ public class XPathSqlExpr {
 		case element:
 		case simple_content:
 		case attribute:
-			decideField(schema);
+			decideField(schema, current_tree);
 			break;
 		case table:
-			decideTable(schema);
+			if (table == null)
+				throw new PgSchemaException(current_tree);
 			break;
 		default:
 		}
@@ -155,7 +154,7 @@ public class XPathSqlExpr {
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param path current path
-	 * @param table_name table name
+	 * @param table PostgreSQL table
 	 * @param column_name column name
 	 * @param pg_xpath_code PostgreSQL XPath code
 	 * @param predicate predicate
@@ -166,10 +165,10 @@ public class XPathSqlExpr {
 	 * @param binary_operator binary operator code
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public XPathSqlExpr(PgSchema schema, String path, String table_name, String column_name, String pg_xpath_code, String predicate, XPathCompType terminus, ParseTree parent_tree, ParseTree current_tree, String unary_operator, String binary_operator) throws PgSchemaException {
+	public XPathSqlExpr(PgSchema schema, String path, PgTable table, String column_name, String pg_xpath_code, String predicate, XPathCompType terminus, ParseTree parent_tree, ParseTree current_tree, String unary_operator, String binary_operator) throws PgSchemaException {
 
 		this.path = path;
-		this.table_name = table_name;
+		this.table = table;
 		this.column_name = column_name;
 		this.predicate = this.value = predicate;
 		this.terminus = terminus;
@@ -185,10 +184,11 @@ public class XPathSqlExpr {
 		case element:
 		case simple_content:
 		case attribute:
-			decideField(schema);
+			decideField(schema, current_tree);
 			break;
 		case table:
-			decideTable(schema);
+			if (table == null)
+				throw new PgSchemaException(current_tree);
 			break;
 		default:
 		}
@@ -198,68 +198,67 @@ public class XPathSqlExpr {
 	}
 
 	/**
-	 * Decide PostgreSQL table.
-	 *
-	 * @param schema PostgreSQL data model
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	private void decideTable(PgSchema schema) throws PgSchemaException {
-
-		if (table_name == null)
-			return;
-
-		PgTable table = schema.getTable(table_name);
-
-		if (table == null)
-			throw new PgSchemaException(current_tree);
-
-	}
-
-	/**
 	 * Decide PostgreSQL field.
 	 *
 	 * @param schema PostgreSQL data model
+	 * @param current_tree current parse tree
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void decideField(PgSchema schema) throws PgSchemaException {
+	private void decideField(PgSchema schema, ParseTree current_tree) throws PgSchemaException {
 
-		decideTable(schema);
-
-		if (table == null)
-			return;
+		if (table == null) {
+			if (current_tree != null)
+				throw new PgSchemaException(current_tree);
+			else throw new PgSchemaException();
+		}
 
 		if (column_name == null || column_name.equals("*"))
 			return;
 
 		switch (terminus) {
 		case element:
-			if (!table.fields.stream().anyMatch(field -> field.element && field.xname.equals(column_name)))
-				throw new PgSchemaException(current_tree);
+			if (!table.fields.stream().anyMatch(field -> field.element && field.xname.equals(column_name))) {
+				if (current_tree != null)
+					throw new PgSchemaException(current_tree);
+				else throw new PgSchemaException();
+			}
 			break;
 		case simple_content:
-			if (!table.fields.stream().anyMatch(field -> field.simple_content && field.xname.equals(column_name)))
-				throw new PgSchemaException(current_tree);
+			if (!table.fields.stream().anyMatch(field -> field.simple_content && field.xname.equals(column_name))) {
+				if (current_tree != null)
+					throw new PgSchemaException(current_tree);
+				else throw new PgSchemaException();
+			}
 			break;
 		case attribute:
-			if (!table.fields.stream().anyMatch(field -> field.attribute && field.xname.equals(column_name)))
-				throw new PgSchemaException(current_tree);
+			if (!table.fields.stream().anyMatch(field -> field.attribute && field.xname.equals(column_name))) {
+				if (current_tree != null)
+					throw new PgSchemaException(current_tree);
+				else throw new PgSchemaException();
+			}
 			break;
 		case any_element:
-			if (!table.fields.stream().anyMatch(field -> field.any && field.xname.equals(column_name)))
-				throw new PgSchemaException(current_tree);
+			if (!table.fields.stream().anyMatch(field -> field.any && field.xname.equals(column_name))) {
+				if (current_tree != null)
+					throw new PgSchemaException(current_tree);
+				else throw new PgSchemaException();
+			}
 			break;
 		case any_attribute:
-			if (!table.fields.stream().anyMatch(field -> field.any_attribute && field.xname.equals(column_name)))
-				throw new PgSchemaException(current_tree);
+			if (!table.fields.stream().anyMatch(field -> field.any_attribute && field.xname.equals(column_name))) {
+				if (current_tree != null)
+					throw new PgSchemaException(current_tree);
+				else throw new PgSchemaException();
+			}
 			break;
 		default:
-			throw new PgSchemaException(current_tree);
+			throw new PgSchemaException();
 		}
 
 		field = table.getField(column_name);
 
 		if (field == null)
-			throw new PgSchemaException(current_tree);
+			throw new PgSchemaException();
 
 	}
 
@@ -280,7 +279,7 @@ public class XPathSqlExpr {
 			value = predicate.substring(1, value.length() - 1);
 
 		if (!field.validate(value))
-			throw new PgSchemaException(current_tree);
+			throw new PgSchemaException();
 
 		value = field.getSqlPredicate(value);
 
@@ -292,7 +291,7 @@ public class XPathSqlExpr {
 	 * @return boolean whether the relational expression is empty or not
 	 */
 	public boolean isEmptyRelation() {
-		return table_name == null || column_name == null;
+		return table == null || column_name == null;
 	}
 
 	/**
@@ -309,7 +308,7 @@ public class XPathSqlExpr {
 		if (!terminus.equals(sql_expr.terminus))
 			return false;
 
-		if (!table_name.equals(sql_expr.table_name) || !column_name.equals(sql_expr.column_name))
+		if (!table.equals(sql_expr.table) || !column_name.equals(sql_expr.column_name))
 			return false;
 
 		return pg_xpath_code == null ? true : pg_xpath_code.equals(sql_expr.pg_xpath_code);
@@ -356,7 +355,7 @@ public class XPathSqlExpr {
 		if (pg_xpath_code == null)
 			return null;
 
-		Pattern pattern = Pattern.compile("^xpath\\(\\'\\/" + table_name + "\\/(.*)\\', .*\\)$");
+		Pattern pattern = Pattern.compile("^xpath\\(\\'\\/" + table.name + "\\/(.*)\\', .*\\)$");
 
 		Matcher matcher = pattern.matcher(pg_xpath_code);
 

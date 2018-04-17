@@ -48,7 +48,7 @@ public class XmlValidator {
 	 * Instance of XML validator.
 	 *
 	 * @param xsd_file XML Schema file
-	 * @param full_check whether enable canonical XML Schema validation or not (well-formed only)
+	 * @param full_check whether enable canonical XML Schema validation or not (validate well-formed only)
 	 */
 	public XmlValidator(File xsd_file, boolean full_check) {
 

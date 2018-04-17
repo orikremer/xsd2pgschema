@@ -34,6 +34,9 @@ import org.w3c.dom.Node;
  */
 public class PgTable {
 
+	/** The PostgreSQL schema name (default schema name is "public"). */
+	String pg_schema_name = PgSchemaUtil.pg_public_schema_name;
+
 	/** The target namespace. */
 	String target_namespace = null;
 
@@ -118,11 +121,13 @@ public class PgTable {
 	/**
 	 * Instance of PostgreSQL table.
 	 *
+	 * @param pg_schema_name PosgreSQL schema name
 	 * @param target_namespace target namespace URI
 	 * @param schema_location schema location
 	 */
-	public PgTable(String target_namespace, String schema_location) {
+	public PgTable(String pg_schema_name, String target_namespace, String schema_location) {
 
+		this.pg_schema_name = pg_schema_name;
 		this.target_namespace = target_namespace;
 		this.schema_location = schema_location;
 
@@ -314,12 +319,13 @@ public class PgTable {
 	 * Add a nested key.
 	 *
 	 * @param option PostgreSQL data model option
-	 * @param name name of nested key
+	 * @param schema_name PostgreSQL schema name
+	 * @param name name of nested key:0
 	 * @param ref_field reference field
 	 * @param node current node
 	 * @return boolean whether success or not
 	 */
-	public boolean addNestedKey(PgSchemaOption option, String name, PgField ref_field, Node node) {
+	public boolean addNestedKey(PgSchemaOption option, String schema_name, String name, PgField ref_field, Node node) {
 
 		String xs_prefix_ = option.xs_prefix_;
 
@@ -337,6 +343,7 @@ public class PgTable {
 		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
 			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 		field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
+		field.foreign_schema = schema_name;
 		field.foreign_table = name;
 		field.foreign_field = field.name;
 
@@ -386,7 +393,7 @@ public class PgTable {
 		if (field.parent_node != null && field.parent_node.isEmpty())
 			field.parent_node = null;
 
-		if (this.name.equals(field.foreign_table))
+		if (this.name.equals(field.foreign_table) && this.pg_schema_name.equals(field.foreign_schema))
 			return false;
 
 		fields.add(field);
@@ -398,27 +405,29 @@ public class PgTable {
 	 * Add a nested key from foreign table.
 	 *
 	 * @param option PostgreSQL data model option
-	 * @param foreign_table name of foreign table
+	 * @param schema_name PostgreSQL schema name
+	 * @param name name of foreign table
 	 */
-	public void addNestedKey(PgSchemaOption option, String foreign_table) {
+	public void addNestedKey(PgSchemaOption option, String schema_name, String name) {
 
 		if (!option.rel_model_ext)
 			return;
 
-		if (foreign_table == null || foreign_table.isEmpty())
+		if (name == null || name.isEmpty())
 			return;
 
 		PgField field = new PgField();
 
-		field.name = field.xname = foreign_table + "_id";
+		field.name = field.xname = name + "_id";
 		field.setHashKeyType(option);
 		field.nested_key = true;
-		field.constraint_name = "FK_" + foreign_table;
+		field.constraint_name = "FK_" + name;
 		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
 			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 		field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
-		field.foreign_table = foreign_table;
-		field.foreign_field = foreign_table + "_id";
+		field.foreign_schema = schema_name;
+		field.foreign_table = name;
+		field.foreign_field = name + "_id";
 
 		fields.add(field);
 
@@ -431,9 +440,6 @@ public class PgTable {
 	 * @param foreign_table foreign table
 	 */
 	public void addForeignKey(PgSchemaOption option, PgTable foreign_table) {
-
-		if (!option.rel_model_ext)
-			return;
 
 		if (name.equals(foreign_table.name))
 			return;
@@ -449,6 +455,7 @@ public class PgTable {
 			if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
 				field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 			field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
+			field.foreign_schema = foreign_table.pg_schema_name;
 			field.foreign_table = foreign_table.name;
 			field.foreign_field = arg.name;
 

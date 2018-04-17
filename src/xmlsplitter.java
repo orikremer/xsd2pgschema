@@ -113,6 +113,12 @@ public class xmlsplitter {
 			else if (args[i].equals("--case-insensitive"))
 				option.case_sense = false;
 
+			else if (args[i].equals("--pg-public-schema"))
+				option.pg_named_schema = false;
+
+			else if (args[i].equals("--pg-named-schema"))
+				option.pg_named_schema = true;
+
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
 
@@ -207,6 +213,8 @@ public class xmlsplitter {
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --shard-size SHARD_SIZE (default=1)");
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
+		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
+		System.err.println("        --pg-named-schema (enable explicit named schema)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --verbose");
 		System.exit(1);

@@ -83,7 +83,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			StringBuilder sql = new StringBuilder();
 
-			sql.append("INSERT INTO " + PgSchemaUtil.avoidPgReservedWords(table.name) + " VALUES ( ");
+			sql.append("INSERT INTO " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(table.name) + " VALUES ( ");
 
 			for (int f = 0; f < fields.size(); f++) {
 
@@ -432,13 +432,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/**
 	 * Invoke nested node (root).
 	 *
-	 * @throws SQLException the SQL exception
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void invokeRootNestedNode() throws SQLException, ParserConfigurationException, TransformerException, IOException {
+	public void invokeRootNestedNode() throws PgSchemaException {
 
 		if (!filled)
 			return;
@@ -452,13 +449,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * Invoke nested node (child).
 	 *
 	 * @param node_test node tester
-	 * @throws SQLException the SQL exception
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void invokeChildNestedNode(PgSchemaNodeTester node_test) throws SQLException, ParserConfigurationException, TransformerException, IOException {
+	public void invokeChildNestedNode(PgSchemaNodeTester node_test) throws PgSchemaException {
 
 		if (!filled)
 			return;
@@ -480,13 +474,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/**
 	 * Invoke nested node (child).
 	 *
-	 * @throws SQLException the SQL exception
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void invokeChildNestedNode() throws SQLException, ParserConfigurationException, TransformerException, IOException {
+	public void invokeChildNestedNode() throws PgSchemaException {
 
 		if (!filled)
 			return;

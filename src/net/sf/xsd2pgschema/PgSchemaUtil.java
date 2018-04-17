@@ -71,6 +71,9 @@ public class PgSchemaUtil {
 	/** The namespace URI representing JSON Schema. */
 	public static final String json_schema_def = "http://json-schema.org/schema#";
 
+	/** The default PostgreSQL schema name. */
+	public static final String pg_public_schema_name = "public";
+
 	/** The name of xs:simpleContent in PostgreSQL. */
 	public static final String simple_content_name = "content";
 

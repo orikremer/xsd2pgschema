@@ -271,8 +271,6 @@ public class XmlParser {
 
 			FileChannel ch = in.getChannel();
 
-			md_chk_sum.reset();
-
 			String new_check_sum = String.valueOf(Hex.encodeHex(md_chk_sum.digest(IOUtils.readFully(in, (int) ch.size()))));
 
 			ch.close();
@@ -303,6 +301,8 @@ public class XmlParser {
 				fw.close();
 
 			}
+
+			md_chk_sum.reset();
 
 		}
 

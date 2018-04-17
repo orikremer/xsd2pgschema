@@ -26,7 +26,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -256,7 +255,7 @@ public class dsmerge4sphinx {
 			File sphinx_conf = new File(dst_ds_dir, PgSchemaUtil.sph_conf_name);
 			schema.writeSphConf(sphinx_conf, ds_name, dst_sphinx_data_source);
 
-		} catch (ParserConfigurationException | SAXException | IOException | NoSuchAlgorithmException | PgSchemaException e) {
+		} catch (ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}

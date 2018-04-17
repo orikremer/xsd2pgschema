@@ -22,7 +22,6 @@ import net.sf.xsd2pgschema.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -106,6 +105,12 @@ public class csv2pgsql {
 
 			else if (args[i].equals("--case-insensitive"))
 				option.case_sense = false;
+
+			else if (args[i].equals("--pg-public-schema"))
+				option.pg_named_schema = false;
+
+			else if (args[i].equals("--pg-named-schema"))
+				option.pg_named_schema = true;
 
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
@@ -198,7 +203,7 @@ public class csv2pgsql {
 
 			System.out.println("Done csv -> db (" + pg_option.name + ").");
 
-		} catch (ParserConfigurationException | SAXException | IOException | SQLException | NoSuchAlgorithmException | PgSchemaException e) {
+		} catch (ParserConfigurationException | SAXException | IOException | SQLException | PgSchemaException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
@@ -222,6 +227,8 @@ public class csv2pgsql {
 		System.err.println("        --ser-key (append " + option.serial_key_name + " column in child relation of list holder)");
 		System.err.println("        --xpath-key (append " + option.xpath_key_name + " column in all relations)");
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
+		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
+		System.err.println("        --pg-named-schema (enable explicit named schema)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --doc-key-name DOC_KEY_NAME (default=\"" + option.def_document_key_name + "\")");
 		System.err.println("        --ser-key-name SER_KEY_NAME (default=\"" + option.def_serial_key_name + "\")");

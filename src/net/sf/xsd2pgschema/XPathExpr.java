@@ -167,6 +167,23 @@ public class XPathExpr {
 	}
 
 	/**
+	 * Return the last path name.
+	 *
+	 * @return String the last path name
+	 */
+	public String getLastPathName() {
+
+		String[] _path = path.split(" ").length < 2 ? path.replaceFirst("//$", "").split("/") : path.replaceFirst("//$", "").split(" ");
+
+		int position = _path.length - 1;
+
+		if (position < 0)
+			return null;
+
+		return _path[position];
+	}
+
+	/**
 	 * Return readable path.
 	 *
 	 * @return String readable XPath

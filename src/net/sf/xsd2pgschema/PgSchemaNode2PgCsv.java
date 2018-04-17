@@ -268,12 +268,10 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	/**
 	 * Invoke nested node (root).
 	 *
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerException the transformer exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void invokeRootNestedNode() throws IOException, ParserConfigurationException, TransformerException {
+	public void invokeRootNestedNode() throws PgSchemaException {
 
 		if (!filled)
 			return;
@@ -287,12 +285,10 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 * Invoke nested node (child).
 	 *
 	 * @param node_test node tester
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerException the transformer exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void invokeChildNestedNode(PgSchemaNodeTester node_test) throws IOException, ParserConfigurationException, TransformerException {
+	public void invokeChildNestedNode(PgSchemaNodeTester node_test) throws PgSchemaException {
 
 		if (!filled)
 			return;
@@ -314,12 +310,10 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	/**
 	 * Invoke nested node (child).
 	 *
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerException the transformer exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void invokeChildNestedNode() throws IOException, ParserConfigurationException, TransformerException {
+	public void invokeChildNestedNode() throws PgSchemaException {
 
 		if (!filled)
 			return;

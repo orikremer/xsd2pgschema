@@ -32,6 +32,9 @@ public class PgForeignKey {
 	/** The foreign key name in PostgreSQL. */
 	String name = "";
 
+	/** The PostgreSQL schema name. */
+	String pg_schema_name = null;
+
 	/** The child table name. */
 	String child_table = null;
 
@@ -48,16 +51,19 @@ public class PgForeignKey {
 	 * Instance of PgForeignKey.
 	 *
 	 * @param option PostgreSQL data model option
+	 * @param pg_schema_name PostgreSQL schema name
 	 * @param node current node
 	 * @param parent_node parent node
 	 * @param name foreign key name
 	 * @param key_name key name
 	 */
-	public PgForeignKey(PgSchemaOption option, Node node, Node parent_node, String name, String key_name) {
+	public PgForeignKey(PgSchemaOption option, String pg_schema_name, Node node, Node parent_node, String name, String key_name) {
 
 		String xs_prefix_ = option.xs_prefix_;
 
 		this.name = name;
+
+		this.pg_schema_name = pg_schema_name;
 
 		child_table = extractTable(option, node);
 		child_fields = extractFields(option, node);
@@ -169,7 +175,8 @@ public class PgForeignKey {
 	 * @return boolean whether the foreign key matches or not
 	 */
 	public boolean equals(PgForeignKey foreign_key) {
-		return child_table.equals(foreign_key.child_table) && parent_table.equals(foreign_key.parent_table) &&
+		return pg_schema_name.equals(foreign_key.pg_schema_name) &&
+				child_table.equals(foreign_key.child_table) && parent_table.equals(foreign_key.parent_table) &&
 				child_fields.equals(foreign_key.child_fields) && parent_fields.equals(foreign_key.parent_fields);
 	}
 

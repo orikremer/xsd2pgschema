@@ -29,8 +29,11 @@ public class PgPendingGroup {
 	/** The reference to either attribute group or model group. */
 	String ref_group;
 
-	/** The table name. */
-	String table_name;
+	/** The PostgreSQL schema name. */
+	String pg_schema_name;
+
+	/** The table name in PostgreSQL. */
+	String name;
 
 	/** The insert position in fields. */
 	int insert_position;
@@ -39,13 +42,15 @@ public class PgPendingGroup {
 	 * Instance of PgPendingGroup.
 	 *
 	 * @param ref_group reference group name
-	 * @param table_name table name
+	 * @param pg_schema_name PostgreSQL schema name
+	 * @param name table name
 	 * @param insert_position insert position in fields
 	 */
-	public PgPendingGroup(String ref_group, String table_name, int insert_position) {
+	public PgPendingGroup(String ref_group, String pg_schema_name, String name, int insert_position) {
 
 		this.ref_group = ref_group;
-		this.table_name = table_name;
+		this.pg_schema_name = pg_schema_name;
+		this.name = name;
 		this.insert_position = insert_position;
 
 	}

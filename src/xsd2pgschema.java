@@ -83,17 +83,23 @@ public class xsd2pgschema {
 			else if (args[i].equals("--case-insensitive"))
 				option.case_sense = false;
 
+			else if (args[i].equals("--pg-public-schema"))
+				option.pg_named_schema = false;
+
+			else if (args[i].equals("--pg-named-schema"))
+				option.pg_named_schema = true;
+
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
 
 			else if (args[i].equals("--field-annotation"))
 				option.no_field_anno = false;
 
-			else if (args[i].equals("--no-field-annotation"))
-				option.no_field_anno = true;
-
 			else if (args[i].equals("--no-key"))
 				option.retain_key = false;
+
+			else if (args[i].equals("--no-field-annotation"))
+				option.no_field_anno = true;
 
 			else if (args[i].equals("--hash-by") && i + 1 < args.length)
 				option.hash_algorithm = args[++i];
@@ -202,6 +208,8 @@ public class xsd2pgschema {
 		System.err.println("        --xpath-key (append " + option.xpath_key_name + " column in all relations)");
 		System.err.println("        --no-key (turn off constraint of primary key/foreign key)");
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
+		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
+		System.err.println("        --pg-named-schema (enable explicit named schema)");
 		System.err.println("        --field-annotation (retrieve field annotation)");
 		System.err.println("        --no-field-annotation (do not retrieve field annotation, default)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");

@@ -213,11 +213,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 * Invoke nested node (root): Object-oriented JSON.
 	 *
 	 * @param json_indent_level current indent level
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void invokeRootNestedNodeObj(int json_indent_level) throws ParserConfigurationException, TransformerException, IOException {
+	public void invokeRootNestedNodeObj(int json_indent_level) throws PgSchemaException {
 
 		if (!filled)
 			return;
@@ -231,11 +229,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 * Invoke nested node (root): Column-oriented JSON.
 	 *
 	 * @param json_indent_level current indent level
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void invokeRootNestedNodeCol(int json_indent_level) throws ParserConfigurationException, TransformerException, IOException {
+	public void invokeRootNestedNodeCol(int json_indent_level) throws PgSchemaException {
 
 		if (!filled)
 			return;
@@ -248,12 +244,10 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	/**
 	 * Invoke nested node (root): Relational-oriented JSON.
 	 *
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void invokeRootNestedNode() throws TransformerException, IOException, ParserConfigurationException {
+	public void invokeRootNestedNode() throws PgSchemaException {
 
 		if (!filled)
 			return;
@@ -268,11 +262,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 *
 	 * @param node_test node tester
 	 * @param json_indent_level current indent level
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void invokeChildNestedNodeObj(PgSchemaNodeTester node_test, int json_indent_level) throws ParserConfigurationException, TransformerException, IOException {
+	public void invokeChildNestedNodeObj(PgSchemaNodeTester node_test, int json_indent_level) throws PgSchemaException {
 
 		if (!filled)
 			return;
@@ -296,11 +288,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 *
 	 * @param node_test node tester
 	 * @param json_indent_level current indent level
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void invokeChildNestedNodeCol(PgSchemaNodeTester node_test, int json_indent_level) throws ParserConfigurationException, TransformerException, IOException {
+	public void invokeChildNestedNodeCol(PgSchemaNodeTester node_test, int json_indent_level) throws PgSchemaException {
 
 		if (!filled)
 			return;
@@ -323,12 +313,10 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 * Invoke nested node (child): Relational-oriented JSON.
 	 *
 	 * @param node_test node tester
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void invokeChildNestedNode(PgSchemaNodeTester node_test) throws TransformerException, IOException, ParserConfigurationException {
+	public void invokeChildNestedNode(PgSchemaNodeTester node_test) throws PgSchemaException {
 
 		if (!filled)
 			return;
@@ -351,11 +339,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 * Invoke nested node (child): Object-oriented JSON.
 	 *
 	 * @param json_indent_level current indent level
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void invokeChildNestedNodeObj(int json_indent_level) throws ParserConfigurationException, TransformerException, IOException {
+	public void invokeChildNestedNodeObj(int json_indent_level) throws PgSchemaException {
 
 		if (!filled)
 			return;
@@ -375,11 +361,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 * Invoke nested node (child): Column-oriented JSON.
 	 *
 	 * @param json_indent_level current indent level
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void invokeChildNestedNodeCol(int json_indent_level) throws ParserConfigurationException, TransformerException, IOException {
+	public void invokeChildNestedNodeCol(int json_indent_level) throws PgSchemaException {
 
 		if (!filled)
 			return;
@@ -398,12 +382,10 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	/**
 	 * Invoke nested node (child): Relational-oriented JSON.
 	 *
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void invokeChildNestedNode() throws TransformerException, IOException, ParserConfigurationException {
+	public void invokeChildNestedNode() throws PgSchemaException {
 
 		if (!filled)
 			return;

@@ -26,7 +26,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.security.NoSuchAlgorithmException;
 
 import javax.xml.parsers.*;
 
@@ -175,7 +174,7 @@ public class xsd2jsonschema {
 				break;
 			}
 
-		} catch (ParserConfigurationException | SAXException | IOException | NoSuchAlgorithmException | PgSchemaException e) {
+		} catch (ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}

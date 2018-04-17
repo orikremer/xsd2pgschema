@@ -152,6 +152,9 @@ public class PgField {
 	/** The foreign table id. */
 	int foreign_table_id = -1;
 
+	/** The schema name of foreign table in PostgreSQL (default schema name is "public"). */
+	String foreign_schema = PgSchemaUtil.pg_public_schema_name;
+
 	/** The foreign table name in PostgreSQL. */
 	String foreign_table = null;
 

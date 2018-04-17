@@ -57,6 +57,9 @@ public class PgSchemaOption {
 	/** Whether retain case sensitive name in PostgreSQL DDL. */
 	public boolean case_sense = true;
 
+	/** Whether enable explicit named schema. */
+	public boolean pg_named_schema = false;
+
 	/** Whether prefer local XML Schema file. */
 	public boolean cache_xsd = true;
 
@@ -72,7 +75,7 @@ public class PgSchemaOption {
 	/** Whether execute XML Schema validation. */
 	public boolean validate = false;
 
-	/** Whether enable canonical XML Schema validation or not (well-formed only). */
+	/** Whether enable canonical XML Schema validation or not (validate only whether document is well-formed). */
 	public boolean full_check = true;
 
 	/** The verbose mode. */

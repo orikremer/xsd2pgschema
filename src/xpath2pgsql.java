@@ -116,6 +116,12 @@ public class xpath2pgsql {
 			else if (args[i].equals("--case-insensitive"))
 				option.case_sense = false;
 
+			else if (args[i].equals("--pg-public-schema"))
+				option.pg_named_schema = false;
+
+			else if (args[i].equals("--pg-named-schema"))
+				option.pg_named_schema = true;
+
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
 
@@ -209,6 +215,8 @@ public class xpath2pgsql {
 		System.err.println("        --ser-key (append " + option.serial_key_name + " column in child relation of list holder)");
 		System.err.println("        --xpath-key (append " + option.xpath_key_name + " column in all relations)");
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
+		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
+		System.err.println("        --pg-named-schema (enable explicit named schema)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");

@@ -38,7 +38,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.transform.TransformerException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -332,7 +331,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 				buffw.close();
 				filew.close();
 
-			} catch (IOException | SAXException | ParserConfigurationException | TransformerException | PgSchemaException e) {
+			} catch (IOException | SAXException | PgSchemaException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}

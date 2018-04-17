@@ -1,4 +1,8 @@
-﻿ Changed in xsd2pgschema 2.8.5 (release 2018-04-09)
+﻿ Changed in xsd2pgschema 2.9.0 (release 2018-04-17)
+
+  Added support for PostgreSQL named schema (--pg-named-schema option).
+
+ Changed in xsd2pgschema 2.8.5 (release 2018-04-09)
 
   Improved overall XML output performance.
   Improved differential update performance in case that relational model extension was disabled.
