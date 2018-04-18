@@ -1626,10 +1626,10 @@ public class XPathCompList {
 
 				if (single) {
 
-					String subject_table_name = PgSchemaUtil.avoidPgReservedWords(path_expr.sql_subject.table.name);
+					String subject_table_name = schema.getPgNameOf(path_expr.sql_subject.table);
 
 					if (path_expr.sql.contains(subject_table_name + "."))
-						path_expr.sql = path_expr.sql.replaceAll(subject_table_name.replaceAll("\"", "\\\"") + "\\.", "");
+						path_expr.sql = path_expr.sql.replaceAll(subject_table_name.replaceAll("\\.", "\\\\.").replaceAll("\"", "\\\"") + "\\.", "");
 
 				}
 
@@ -1688,7 +1688,7 @@ public class XPathCompList {
 			sb.append(sql_expr.pg_xpath_code);
 			break;
 		default:
-			sb.append(PgSchemaUtil.avoidPgReservedWords(sql_expr.table.name) + "." + PgSchemaUtil.avoidPgReservedWords(sql_expr.column_name));
+			sb.append(schema.getPgNameOf(sql_expr.table) + "." + PgSchemaUtil.avoidPgReservedWords(sql_expr.column_name));
 		}
 
 	}
@@ -1696,13 +1696,13 @@ public class XPathCompList {
 	/**
 	 * Append SQL column name.
 	 *
-	 * @param table_name SQL table name
+	 * @param table PostgreSQL table
 	 * @param column_name SQL column name
 	 * @param sb StringBuilder to store SQL expression
 	 */
-	private void appendSqlColumnName(String table_name, String column_name, StringBuilder sb) {
+	private void appendSqlColumnName(PgTable table, String column_name, StringBuilder sb) {
 
-		sb.append(PgSchemaUtil.avoidPgReservedWords(table_name) + "." + PgSchemaUtil.avoidPgReservedWords(column_name));
+		sb.append(schema.getPgNameOf(table) + "." + PgSchemaUtil.avoidPgReservedWords(column_name));
 
 	}
 
@@ -2476,23 +2476,21 @@ public class XPathCompList {
 		try {
 
 			XPathSqlExpr sql_expr;
-			String table_name;
+
+			PgTable src_table = schema.getTable(src_path_expr);
 			String alias_name;
 
 			switch (func_name) {
 			case "last":
-				table_name = getLastNameOfPath(src_path_expr.path);
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
 					} catch (PgSchemaException e) {
 						e.printStackTrace();
-						if (!schema.getTable(src_path_expr).list_holder)
+						if (!src_table.list_holder)
 							System.exit(1);
 					}
 				}
-				if (!case_sense)
-					table_name = table_name.toLowerCase();
 
 				if (!document_key) {
 					try {
@@ -2505,34 +2503,31 @@ public class XPathCompList {
 
 				sb.append("( SELECT max( ");
 
-				appendSqlColumnName(table_name, serial_key_name, sb);
+				appendSqlColumnName(src_table, serial_key_name, sb);
 
 				sb.append(" ) FROM ");
 
 				alias_name = "s" + (++sub_alias_id);
 
-				sb.append(schema.getPgNameOf(schema.getTable(src_path_expr)) + " as " + alias_name);
+				sb.append(schema.getPgNameOf(src_table) + " as " + alias_name);
 
-				sb.append(" WHERE " + alias_name + "." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(schema.getTable(src_path_expr))) + " = t1." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(main_aliases.entrySet().stream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey())));
+				sb.append(" WHERE " + alias_name + "." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(src_table)) + " = t1." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(main_aliases.entrySet().stream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey())));
 
 				sb.append(" )");
 
 				break;
 			case "position":
-				table_name = getLastNameOfPath(src_path_expr.path);
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
 					} catch (PgSchemaException e) {
 						e.printStackTrace();
-						if (!schema.getTable(src_path_expr).list_holder)
+						if (!src_table.list_holder)
 							System.exit(1);
 					}
 				}
-				if (!case_sense)
-					table_name = table_name.toLowerCase();
 
-				appendSqlColumnName(table_name, serial_key_name, sb);
+				appendSqlColumnName(src_table, serial_key_name, sb);
 				break;
 			case "count":
 				if (pred_size != 1)
@@ -2560,7 +2555,7 @@ public class XPathCompList {
 
 				alias_name = "s" + (++sub_alias_id);
 
-				sb.append(schema.getPgNameOf(schema.getTable(src_path_expr)) + " as " + alias_name);
+				sb.append(schema.getPgNameOf(src_table) + " as " + alias_name);
 
 				sb.append(" WHERE " + alias_name + "." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(sql_expr.table)) + " = t1." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(main_aliases.entrySet().stream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey())));
 
@@ -3773,19 +3768,17 @@ public class XPathCompList {
 				sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 				break;
 			case text:
-				String table_name = getLastNameOfPath(src_path_expr.getParentPath());
+				PgTable parent_table = schema.getParentTable(src_path_expr);
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
 					} catch (PgSchemaException e) {
 						e.printStackTrace();
-						if (!schema.getParentTable(src_path_expr).list_holder)
+						if (!parent_table.list_holder)
 							System.exit(1);
 					}
 				}
-				if (!case_sense)
-					table_name = table_name.toLowerCase();
-				appendSqlColumnName(table_name, serial_key_name, sb);
+				appendSqlColumnName(parent_table, serial_key_name, sb);
 				sb.append(" = " + sql_expr.predicate);
 				break;
 			default:
@@ -3827,10 +3820,7 @@ public class XPathCompList {
 
 		if (parent.getClass().equals(PredicateContext.class)) {
 
-			String table_name = getLastNameOfPath(src_path_expr.path);
-			if (!case_sense)
-				table_name = table_name.toLowerCase();
-			appendSqlColumnName(table_name, serial_key_name, sb);
+			appendSqlColumnName(schema.getTable(src_path_expr), serial_key_name, sb);
 			sb.append(" = ");
 
 		}
@@ -3911,10 +3901,7 @@ public class XPathCompList {
 
 		if (parent.getClass().equals(PredicateContext.class)) {
 
-			String table_name = getLastNameOfPath(src_path_expr.path);
-			if (!case_sense)
-				table_name = table_name.toLowerCase();
-			appendSqlColumnName(table_name, serial_key_name, sb);
+			appendSqlColumnName(schema.getTable(src_path_expr), serial_key_name, sb);
 			sb.append(" = ");
 
 		}
@@ -4058,19 +4045,17 @@ public class XPathCompList {
 					sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 					break;
 				case text:
-					String table_name = getLastNameOfPath(src_path_expr.getParentPath());
+					PgTable parent_table = schema.getParentTable(src_path_expr);
 					if (!serial_key) {
 						try {
 							throw new PgSchemaException(tree, "serial key", serial_key);
 						} catch (PgSchemaException e) {
 							e.printStackTrace();
-							if (!schema.getParentTable(src_path_expr).list_holder)
+							if (!parent_table.list_holder)
 								System.exit(1);
 						}
 					}
-					if (!case_sense)
-						table_name = table_name.toLowerCase();
-					appendSqlColumnName(table_name, serial_key_name, sb);
+					appendSqlColumnName(parent_table, serial_key_name, sb);
 					sb.append(" = " + sql_expr.predicate);
 					break;
 				default:
@@ -4124,19 +4109,17 @@ public class XPathCompList {
 				sb.append(sql_expr.predicate);
 
 			else {
-				String table_name = getLastNameOfPath(src_path_expr.getParentPath());
+				PgTable parent_table = schema.getParentTable(src_path_expr);
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
 					} catch (PgSchemaException e) {
 						e.printStackTrace();
-						if (!schema.getParentTable(src_path_expr).list_holder)
+						if (!parent_table.list_holder)
 							System.exit(1);
 					}
 				}
-				if (!case_sense)
-					table_name = table_name.toLowerCase();
-				appendSqlColumnName(table_name, serial_key_name, sb);
+				appendSqlColumnName(parent_table, serial_key_name, sb);
 				sb.append(" = " + sql_expr.predicate);
 			}
 			break;
@@ -4338,13 +4321,13 @@ public class XPathCompList {
 
 			PgTable _dst_table = table_path.get(l);
 
-			PgField nested_key = src_table.fields.stream().filter(field -> field.nested_key && field.foreign_table.equals(_dst_table.name)).findFirst().get();
+			PgField nested_key = src_table.fields.stream().filter(field -> field.nested_key && schema.getForeignTable(field).equals(_dst_table)).findFirst().get();
 
-			appendSqlColumnName(src_table.name, nested_key.name, sb);
+			appendSqlColumnName(src_table, nested_key.name, sb);
 
 			sb.append(" = ");
 
-			appendSqlColumnName(nested_key.foreign_table, nested_key.foreign_field, sb);
+			appendSqlColumnName(schema.getForeignTable(nested_key), nested_key.foreign_field, sb);
 
 			sb.append(" AND ");
 

@@ -2464,7 +2464,7 @@ public class PgSchema {
 	 * @param field field of either nested key of foreign key
 	 * @return PgTable table
 	 */
-	private PgTable getForeignTable(PgField field) {
+	protected PgTable getForeignTable(PgField field) {
 		return getTable(field.foreign_schema, field.foreign_table);
 	}
 
@@ -2783,7 +2783,7 @@ public class PgSchema {
 					if (constraint_name.length() > PgSchemaUtil.max_enum_len)
 						constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 
-					System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + getPgChildNameOf(foreign_key) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " FOREIGN KEY ( " + PgSchemaUtil.avoidPgReservedWords(child_fields[i]) + " ) REFERENCES " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(parent_fields[i]) + " ) ON DELETE CASCADE NOT VALID;\n");
+					System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + getPgChildNameOf(foreign_key) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " FOREIGN KEY ( " + PgSchemaUtil.avoidPgReservedWords(child_fields[i]) + " ) REFERENCES " + getPgNameOf(getParentTable(foreign_key)) + " ( " + PgSchemaUtil.avoidPgReservedWords(parent_fields[i]) + " ) ON DELETE CASCADE NOT VALID;\n");
 
 				}
 
@@ -8818,7 +8818,9 @@ public class PgSchema {
 		if (position < 0)
 			return null;
 
-		String table_name;
+		PgTable table = null;
+
+		String table_name = null;
 		String field_name;
 		String pg_xpath_code = null;
 
@@ -8843,21 +8845,24 @@ public class PgSchema {
 			if (position - 1 < 0)
 				return null;
 			table_name = _path[position - 1];
+			table = getTable(new XPathExpr(path.substring(0, path.lastIndexOf(table_name)) + table_name, XPathCompType.table));
 			field_name = PgSchemaUtil.any_name;
-			pg_xpath_code = "xpath('/" + table_name + "/" + _path[position].replaceAll(" ", "/") + "', " + PgSchemaUtil.avoidPgReservedWords(table_name) + "." + PgSchemaUtil.avoidPgReservedWords(field_name) + ")";
+			pg_xpath_code = "xpath('/" + table_name + "/" + _path[position].replaceAll(" ", "/") + "', " + getPgNameOf(table) + "." + PgSchemaUtil.avoidPgReservedWords(field_name) + ")";
 			break;
 		case any_attribute:
 			if (position - 1 < 0)
 				return null;
 			table_name = _path[position - 1];
+			table = getTable(new XPathExpr(path.substring(0, path.lastIndexOf(table_name)) + table_name, XPathCompType.table));
 			field_name = PgSchemaUtil.any_attribute_name;
-			pg_xpath_code = "xpath('/" + table_name + "/" + _path[position].replaceAll(" ", "/") + "', " + PgSchemaUtil.avoidPgReservedWords(table_name) + "." + PgSchemaUtil.avoidPgReservedWords(field_name) + ")";
+			pg_xpath_code = "xpath('/" + table_name + "/" + _path[position].replaceAll(" ", "/") + "', " + getPgNameOf(table) + "." + PgSchemaUtil.avoidPgReservedWords(field_name) + ")";
 			break;
 		default:
 			return null;
 		}
 
-		PgTable table = getTable(new XPathExpr(path.substring(0, path.lastIndexOf(table_name)) + table_name, XPathCompType.table));
+		if (table == null)
+			table = getTable(new XPathExpr(path.substring(0, path.lastIndexOf(table_name)) + table_name, XPathCompType.table));
 
 		if (table == null)
 			return null;
@@ -9047,7 +9052,7 @@ public class PgSchema {
 
 						if (foreign_table.fields.stream().anyMatch(field -> field.any)) {
 
-							pg_xpath_code = "xpath('/" + foreign_table.name + "/" + _path[position].replaceAll(" ", "/") + "', " + PgSchemaUtil.avoidPgReservedWords(foreign_table.name) + "." + PgSchemaUtil.avoidPgReservedWords(_field_name) + ")";
+							pg_xpath_code = "xpath('/" + foreign_table.name + "/" + _path[position].replaceAll(" ", "/") + "', " + getPgNameOf(foreign_table) + "." + PgSchemaUtil.avoidPgReservedWords(_field_name) + ")";
 
 							try {
 								return new XPathSqlExpr(this, path, foreign_table, _field_name, pg_xpath_code, null, terminus);
@@ -9099,7 +9104,7 @@ public class PgSchema {
 
 						if (foreign_table.fields.stream().anyMatch(field -> field.any_attribute)) {
 
-							pg_xpath_code = "xpath('/" + foreign_table.name + "/" + _path[position].replaceAll(" ", "/") + "', " + PgSchemaUtil.avoidPgReservedWords(foreign_table.name) + "." + PgSchemaUtil.avoidPgReservedWords(_field_name) + ")";
+							pg_xpath_code = "xpath('/" + foreign_table.name + "/" + _path[position].replaceAll(" ", "/") + "', " + getPgNameOf(foreign_table) + "." + PgSchemaUtil.avoidPgReservedWords(_field_name) + ")";
 
 							try {
 								return new XPathSqlExpr(this, path, foreign_table, _field_name, pg_xpath_code, null, terminus);
