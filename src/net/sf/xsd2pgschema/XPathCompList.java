@@ -1667,7 +1667,7 @@ public class XPathCompList {
 
 		main_aliases.put(table, alias_name);
 
-		sb.append((option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(table.name) + " as " + alias_name + ", ");
+		sb.append(schema.getPgNameOf(table) + " as " + alias_name + ", ");
 
 	}
 
@@ -2511,7 +2511,7 @@ public class XPathCompList {
 
 				alias_name = "s" + (++sub_alias_id);
 
-				sb.append((option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(schema.getTable(src_path_expr).pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(table_name) + " as " + alias_name);
+				sb.append(schema.getPgNameOf(schema.getTable(src_path_expr)) + " as " + alias_name);
 
 				sb.append(" WHERE " + alias_name + "." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(schema.getTable(src_path_expr))) + " = t1." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(main_aliases.entrySet().stream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey())));
 
@@ -2560,7 +2560,7 @@ public class XPathCompList {
 
 				alias_name = "s" + (++sub_alias_id);
 
-				sb.append((option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(schema.getTable(src_path_expr).pg_schema_name): "") + PgSchemaUtil.avoidPgReservedWords(sql_expr.table.name) + " as " + alias_name);
+				sb.append(schema.getPgNameOf(schema.getTable(src_path_expr)) + " as " + alias_name);
 
 				sb.append(" WHERE " + alias_name + "." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(sql_expr.table)) + " = t1." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(main_aliases.entrySet().stream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey())));
 
@@ -3461,7 +3461,7 @@ public class XPathCompList {
 
 				String alias_name = "s" + (++sub_alias_id);
 
-				sb.append((option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(sql_expr_str.table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(sql_expr_str.table.name) + " as " + alias_name);
+				sb.append(schema.getPgNameOf(sql_expr_str.table) + " as " + alias_name);
 
 				sb.append(" WHERE " + alias_name + "." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(sql_expr_str.table)) + " = t1." + PgSchemaUtil.avoidPgReservedWords(schema.getDocKeyName(main_aliases.entrySet().stream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey())));
 

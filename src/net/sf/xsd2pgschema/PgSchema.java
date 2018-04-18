@@ -586,12 +586,12 @@ public class PgSchema {
 
 					if (field.nested_key) {
 
-						int t;
+						PgTable foreign_table = getForeignTable(field);
 
-						if ((t = getForeignTableId(field)) >= 0) {
+						if (foreign_table != null) {
 
-							field.foreign_table_id = t;
-							tables.get(t).required = true;
+							field.foreign_table_id = getTableId(foreign_table);
+							foreign_table.required = true;
 
 						}
 
@@ -746,7 +746,7 @@ public class PgSchema {
 								if (!ancestor_field.nested_key)
 									continue;
 
-								if (ancestor_field.foreign_schema.equals(_parent_table.pg_schema_name) && ancestor_field.foreign_table.equals(_parent_table.name)) {
+								if (getForeignTable(ancestor_field).equals(_parent_table)) {
 
 									parent_table = ancestor_table;
 
@@ -814,7 +814,7 @@ public class PgSchema {
 
 		}
 
-		// retrieve document key if in-place dument key no exists
+		// retrieve document key if in-place document key no exists
 
 		if (!option.document_key && option.inplace_document_key && option.document_key_if_no_in_place) {
 
@@ -2259,7 +2259,7 @@ public class PgSchema {
 	 * @param qname qualified name
 	 * @return String namespace URI
 	 */
-	protected String getNamespaceUriOfQName(String qname) {
+	private String getNamespaceUriOfQName(String qname) {
 
 		String name = option.getUnqualifiedName(qname);
 
@@ -2282,7 +2282,7 @@ public class PgSchema {
 	 * @param namespace_uri namespace URI
 	 * @return String prefix of namespace URI
 	 */
-	protected String getAbsolutePrefixOf(String namespace_uri) {
+	private String getAbsolutePrefixOf(String namespace_uri) {
 		return def_namespaces.entrySet().stream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()) ? def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey() : "default";
 	}
 
@@ -2292,8 +2292,73 @@ public class PgSchema {
 	 * @param namespace_uri namespace URI
 	 * @return String PostgreSQL schema name of namespace URI
 	 */
-	protected String getPgSchemaOf(String namespace_uri) {
-		return option.pg_named_schema ? (def_namespaces.entrySet().stream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()) ? def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey() : PgSchemaUtil.pg_public_schema_name) : PgSchemaUtil.pg_public_schema_name;
+	private String getPgSchemaOf(String namespace_uri) {
+
+		String pg_schema_name = option.pg_named_schema ? (def_namespaces.entrySet().stream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()) ? def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey() : PgSchemaUtil.pg_public_schema_name) : PgSchemaUtil.pg_public_schema_name;
+
+		return option.case_sense ? pg_schema_name : pg_schema_name.toLowerCase();
+	}
+
+	/**
+	 * Return PostgreSQL name of table.
+	 * 
+	 * @param table table
+	 * @return String PostgreSQL name of table
+	 */
+	protected String getPgNameOf(PgTable table) {
+		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(table.name);
+	}
+
+	/**
+	 * Return PostgreSQL name of table.
+	 * 
+	 * @param db_conn database connection
+	 * @param table table
+	 * @return String PostgreSQL name of table
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private String getPgNameOf(Connection db_conn, PgTable table) throws PgSchemaException {
+		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, table.name));
+	}
+
+	/**
+	 * Return PostgreSQL name of parent table.
+	 * 
+	 * @param foreign_key foreign key
+	 * @return String PostgreSQL name of parent table
+	 */
+	private String getPgParentNameOf(PgForeignKey foreign_key) {
+		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(foreign_key.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_table);
+	}
+
+	/**
+	 * Return PostgreSQL name of child table.
+	 * 
+	 * @param foreign_key foreign key
+	 * @return String PostgreSQL name of child table
+	 */
+	private String getPgChildNameOf(PgForeignKey foreign_key) {
+		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(foreign_key.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(foreign_key.child_table);
+	}
+
+	/**
+	 * Return PostgreSQL name of foreign table.
+	 * 
+	 * @param field field of either nested key or foreign key
+	 * @return String PostgreSQL name of foreign table
+	 */
+	private String getPgForeignNameOf(PgField field) {
+		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(field.foreign_schema) + "." : "") + PgSchemaUtil.avoidPgReservedWords(field.foreign_table);
+	}
+
+	/**
+	 * Return CSV file name of table.
+	 * 
+	 * @param table table
+	 * @return String PostgreSQL name of table
+	 */
+	protected String getCsvNameOf(PgTable table) {
+		return (option.pg_named_schema ? table.pg_schema_name + "." : "") + table.name + ".csv";
 	}
 
 	/**
@@ -2313,7 +2378,7 @@ public class PgSchema {
 	 * @param table_name table name
 	 * @return PgTable table
 	 */
-	protected PgTable getTable(String pg_schema_name, String table_name) {
+	private PgTable getTable(String pg_schema_name, String table_name) {
 		return getTable(getTableId(pg_schema_name, table_name));
 	}
 
@@ -2404,16 +2469,6 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return foreign table id of either nested key of foreign key.
-	 *
-	 * @param field field of either nested key or foreign key
-	 * @return int the table id, -1 represents not found
-	 */
-	private int getForeignTableId(PgField field) {
-		return getTableId(field.foreign_schema, field.foreign_table);
-	}
-
-	/**
 	 * Return table id.
 	 *
 	 * @param pg_schema_name PostgreSQL schema name
@@ -2432,7 +2487,7 @@ public class PgSchema {
 
 			PgTable table = tables.get(t);
 
-			if (table.name.equals(table_name) && table.pg_schema_name.equals(pg_schema_name))
+			if (table.pg_schema_name.equals(pg_schema_name) && table.name.equals(table_name))
 				return t;
 
 		}
@@ -2517,19 +2572,11 @@ public class PgSchema {
 
 		// referenced administrative tables at first
 
-		foreign_keys.forEach(foreign_key -> {
+		foreign_keys.stream().map(foreign_key -> getParentTable(foreign_key)).filter(table -> table != null).forEach(table -> {
 
-			int t;
+			realizeAdmin(table, false);
 
-			if ((t = getTableId(foreign_key.pg_schema_name, foreign_key.parent_table)) >= 0) {
-
-				PgTable table = tables.get(t);
-
-				realizeAdmin(table, false);
-
-				realize(table, false);
-
-			}
+			realize(table, false);
 
 		});
 
@@ -2615,7 +2662,7 @@ public class PgSchema {
 
 		tables.stream().filter(table -> table.required && (option.rel_model_ext || !table.relational)).sorted(Comparator.comparingInt(table -> -table.order)).forEach(table -> {
 
-			System.out.println("DROP TABLE IF EXISTS " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(table.name) + " CASCADE;");
+			System.out.println("DROP TABLE IF EXISTS " + getPgNameOf(table) + " CASCADE;");
 
 		});
 
@@ -2632,12 +2679,12 @@ public class PgSchema {
 				table.fields.forEach(field -> {
 
 					if (field.unique_key)
-						System.out.println("--ALTER TABLE " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(table.name) + " ADD PRIMARY KEY ( " + PgSchemaUtil.avoidPgReservedWords(field.name) + " );\n");
+						System.out.println("--ALTER TABLE " + getPgNameOf(table) + " ADD PRIMARY KEY ( " + PgSchemaUtil.avoidPgReservedWords(field.name) + " );\n");
 
 					else if (field.foreign_key) {
 
 						if (!tables.get(field.foreign_table_id).bridge)
-							System.out.println("--ALTER TABLE " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(table.name) + " ADD FOREIGN KEY " + field.constraint_name + " REFERENCES " + PgSchemaUtil.avoidPgReservedWords(field.foreign_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " );\n");
+							System.out.println("--ALTER TABLE " + getPgNameOf(table) + " ADD FOREIGN KEY " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " );\n");
 
 					}
 
@@ -2669,7 +2716,7 @@ public class PgSchema {
 			if (!unique)
 				continue;
 
-			PgTable table = getTable(foreign_key.pg_schema_name, foreign_key.parent_table);
+			PgTable table = getParentTable(foreign_key);
 
 			if (table != null) {
 
@@ -2695,7 +2742,7 @@ public class PgSchema {
 			if (constraint_name.length() > PgSchemaUtil.max_enum_len)
 				constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 
-			System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(foreign_key.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_table) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " UNIQUE ( " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_fields) + " );\n");
+			System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + getPgParentNameOf(foreign_key) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " UNIQUE ( " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_fields) + " );\n");
 
 		}
 
@@ -2736,7 +2783,7 @@ public class PgSchema {
 					if (constraint_name.length() > PgSchemaUtil.max_enum_len)
 						constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 
-					System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(foreign_key.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(foreign_key.child_table) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " FOREIGN KEY ( " + PgSchemaUtil.avoidPgReservedWords(child_fields[i]) + " ) REFERENCES " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(parent_fields[i]) + " ) ON DELETE CASCADE NOT VALID;\n");
+					System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + getPgChildNameOf(foreign_key) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " FOREIGN KEY ( " + PgSchemaUtil.avoidPgReservedWords(child_fields[i]) + " ) REFERENCES " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(parent_fields[i]) + " ) ON DELETE CASCADE NOT VALID;\n");
 
 				}
 
@@ -2756,19 +2803,11 @@ public class PgSchema {
 
 		// realize parent table at first
 
-		foreign_keys.stream().filter(foreign_key -> foreign_key.child_table.equals(table.name)).forEach(foreign_key -> {
+		foreign_keys.stream().filter(foreign_key -> foreign_key.pg_schema_name.equals(table.pg_schema_name) && foreign_key.child_table.equals(table.name)).map(foreign_key -> getParentTable(foreign_key)).filter(admin_table -> admin_table != null).forEach(admin_table -> {
 
-			int admin_t = getTableId(foreign_key.pg_schema_name, foreign_key.parent_table);
+			realizeAdmin(admin_table, output);
 
-			if (admin_t >= 0) {
-
-				PgTable admin_table = tables.get(admin_t);
-
-				realizeAdmin(admin_table, output);
-
-				realize(admin_table, output);
-
-			}
+			realize(admin_table, output);
 
 		});
 
@@ -2782,13 +2821,11 @@ public class PgSchema {
 
 			if (field.foreign_key) {
 
-				int admin_t = getForeignTableId(field);
+				PgTable admin_table = getForeignTable(field);
 
-				if (admin_t >= 0) {
+				if (admin_table != null) {
 
-					field.foreign_table_id = admin_t;
-
-					PgTable admin_table = tables.get(admin_t);
+					field.foreign_table_id = getTableId(admin_table);
 
 					realizeAdmin(admin_table, output);
 
@@ -2872,7 +2909,7 @@ public class PgSchema {
 
 		});
 
-		System.out.println("CREATE TABLE " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(table.name) + " (");
+		System.out.println("CREATE TABLE " + getPgNameOf(table) + " (");
 
 		for (int f = 0; f < fields.size(); f++) {
 
@@ -2891,10 +2928,10 @@ public class PgSchema {
 				System.out.println("-- PRIMARY KEY");
 
 			else if (field.foreign_key)
-				System.out.println("-- FOREIGN KEY : " + PgSchemaUtil.avoidPgReservedWords(field.foreign_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " )");
+				System.out.println("-- FOREIGN KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " )");
 
 			else if (field.nested_key)
-				System.out.println("-- NESTED KEY : " + PgSchemaUtil.avoidPgReservedWords(field.foreign_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : ""));
+				System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : ""));
 
 			else if (field.attribute) {
 
@@ -3012,7 +3049,7 @@ public class PgSchema {
 					if (foreign_field != null) {
 
 						if (foreign_field.unique_key)
-							System.out.print("CONSTRAINT " + field.constraint_name + " REFERENCES " + PgSchemaUtil.avoidPgReservedWords(field.foreign_table) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " ) ON DELETE CASCADE");
+							System.out.print("CONSTRAINT " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " ) ON DELETE CASCADE");
 
 					}
 
@@ -3846,7 +3883,7 @@ public class PgSchema {
 
 		// check root element name
 
-		if (!node.getNodeName().endsWith(root_table.name))
+		if (!node.getLocalName().equals(root_table.name))
 			throw new PgSchemaException("Not found root element (node_name: " + root_table.name + ") in XML: " + document_id);
 
 		document_id = xml_parser.document_id;
@@ -3932,7 +3969,7 @@ public class PgSchema {
 
 				if (table.buffw == null) {
 
-					File csv_file = new File(csv_dir, (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + table.name + ".csv");
+					File csv_file = new File(csv_dir, getCsvNameOf(table));
 
 					try {
 
@@ -4226,7 +4263,7 @@ public class PgSchema {
 
 			Statement stat = db_conn.createStatement();
 
-			String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + " FROM " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(doc_id_table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, doc_id_table.name));
+			String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + " FROM " + getPgNameOf(db_conn, doc_id_table);
 
 			ResultSet rset = stat.executeQuery(sql);
 
@@ -4266,7 +4303,7 @@ public class PgSchema {
 
 				String doc_id_table_name = doc_id_table.name;
 
-				String sql1 = "SELECT EXISTS(SELECT 1 FROM " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(doc_id_table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, doc_id_table_name)) + " LIMIT 1)";
+				String sql1 = "SELECT EXISTS(SELECT 1 FROM " + getPgNameOf(db_conn, doc_id_table) + " LIMIT 1)";
 
 				ResultSet rset1 = stat.executeQuery(sql1);
 
@@ -4285,7 +4322,7 @@ public class PgSchema {
 
 						try {
 
-							String sql2 = "SELECT EXISTS(SELECT 1 FROM " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, table_name)) + " LIMIT 1)";
+							String sql2 = "SELECT EXISTS(SELECT 1 FROM " + getPgNameOf(db_conn, table) + " LIMIT 1)";
 
 							ResultSet rset2 = stat.executeQuery(sql2);
 
@@ -4382,17 +4419,15 @@ public class PgSchema {
 	 */
 	private void deleteBeforeUpdate(Connection db_conn, boolean no_pkey) throws PgSchemaException {
 
-		String doc_id_table_name = doc_id_table.name;
-
 		try {
 
 			Statement stat = db_conn.createStatement();
 
 			boolean has_doc_id = false;
 
-			if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(doc_id_table_name))) {
+			if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(doc_id_table.name))) {
 
-				String sql = "DELETE FROM " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(doc_id_table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, doc_id_table_name)) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + "='" + document_id + "'";
+				String sql = "DELETE FROM " + getPgNameOf(db_conn, doc_id_table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + "='" + document_id + "'";
 
 				has_doc_id = stat.executeUpdate(sql) > 0;
 
@@ -4402,13 +4437,11 @@ public class PgSchema {
 
 				tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational) && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
-					String table_name = table.name;
-
-					if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(table_name))) {
+					if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(table.name))) {
 
 						try {
 
-							String sql = "DELETE FROM " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, table_name)) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
+							String sql = "DELETE FROM " + getPgNameOf(db_conn, table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
 
 							stat.executeUpdate(sql);
 
@@ -4449,13 +4482,11 @@ public class PgSchema {
 
 			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
-				String table_name = table.name;
-
-				File csv_file = new File(csv_dir, (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + table_name + ".csv");
+				File csv_file = new File(csv_dir, getCsvNameOf(table));
 
 				try {
 
-					String sql = "COPY " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, table_name)) + " FROM STDIN CSV";
+					String sql = "COPY " + getPgNameOf(db_conn, table) + " FROM STDIN CSV";
 
 					copy_man.copyIn(sql, new FileInputStream(csv_file));
 
@@ -9168,7 +9199,7 @@ public class PgSchema {
 
 		}
 
-		return getAbsoluteXPathOfTable(tables.stream().filter(foreign_table -> foreign_table.nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key && field.foreign_table.equals(table.name))).findFirst().get(), sb);
+		return getAbsoluteXPathOfTable(tables.stream().filter(foreign_table -> foreign_table.nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key && getForeignTable(field).equals(table))).findFirst().get(), sb);
 	}
 
 	/**

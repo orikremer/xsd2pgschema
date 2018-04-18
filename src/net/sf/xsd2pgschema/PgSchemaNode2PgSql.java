@@ -83,7 +83,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			StringBuilder sql = new StringBuilder();
 
-			sql.append("INSERT INTO " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(table.name) + " VALUES ( ");
+			sql.append("INSERT INTO " + schema.getPgNameOf(table) + " VALUES ( ");
 
 			for (int f = 0; f < fields.size(); f++) {
 
