@@ -590,7 +590,7 @@ public class PgSchema {
 
 						if (foreign_table != null) {
 
-							field.foreign_table_id = getTableId(foreign_table);
+							field.foreign_table_id = tables.indexOf(foreign_table);
 							foreign_table.required = true;
 
 						}
@@ -2496,24 +2496,6 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return table id by table.
-	 *
-	 * @param table table
-	 * @return int the table id, -1 represents not found
-	 */
-	private int getTableId(PgTable table) {
-
-		for (int t = 0; t < tables.size(); t++) {
-
-			if (tables.get(t).equals(table))
-				return t;
-
-		}
-
-		return -1;
-	}
-
-	/**
 	 * Return attribute group id from attribute group name.
 	 *
 	 * @param attr_group_name attribute group name
@@ -2825,7 +2807,7 @@ public class PgSchema {
 
 				if (admin_table != null) {
 
-					field.foreign_table_id = getTableId(admin_table);
+					field.foreign_table_id = tables.indexOf(admin_table);
 
 					realizeAdmin(admin_table, output);
 
@@ -4051,7 +4033,7 @@ public class PgSchema {
 	 */
 	protected void parseChildNode2PgCsv(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id) throws PgSchemaException {
 
-		final int table_id = getTableId(table);
+		final int table_id = tables.indexOf(table);
 
 		try {
 
@@ -6155,7 +6137,7 @@ public class PgSchema {
 	 */
 	protected void parseChildNode2Json(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id) throws PgSchemaException {
 
-		final int table_id = getTableId(table);
+		final int table_id = tables.indexOf(table);
 
 		try {
 
