@@ -619,7 +619,7 @@ public class PgSchema {
 				if (!field.nested_key)
 					continue;
 
-				PgTable nested_table = tables.get(field.foreign_table_id);
+				PgTable nested_table = getForeignTable(field);
 
 				if (nested_table.virtual)
 					continue;
@@ -638,7 +638,7 @@ public class PgSchema {
 					if (_field.equals(field))
 						continue;
 
-					PgTable _nested_table = tables.get(_field.foreign_table_id);
+					PgTable _nested_table = getForeignTable(_field);
 
 					if (!_nested_table.virtual)
 						continue;
@@ -687,7 +687,7 @@ public class PgSchema {
 
 		// cancel unique key constraint if parent table is list holder
 
-		tables.stream().filter(table -> table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> tables.get(field.foreign_table_id).cancelUniqueKey()));
+		tables.stream().filter(table -> table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> getForeignTable(field).cancelUniqueKey()));
 
 		// decide parent node name
 
@@ -794,7 +794,7 @@ public class PgSchema {
 		// add serial key if parent table is list holder
 
 		if (option.serial_key)
-			tables.stream().filter(table -> table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> tables.get(field.foreign_table_id).addSerialKey(option)));
+			tables.stream().filter(table -> table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> getForeignTable(field).addSerialKey(option)));
 
 		// add XPath key
 
@@ -2465,7 +2465,7 @@ public class PgSchema {
 	 * @return PgTable table
 	 */
 	protected PgTable getForeignTable(PgField field) {
-		return getTable(field.foreign_schema, field.foreign_table);
+		return field.foreign_table_id == -1 ? getTable(field.foreign_schema, field.foreign_table) : getTable(field.foreign_table_id);
 	}
 
 	/**
@@ -2683,7 +2683,7 @@ public class PgSchema {
 
 					else if (field.foreign_key) {
 
-						if (!tables.get(field.foreign_table_id).bridge)
+						if (!getForeignTable(field).bridge)
 							System.out.println("--ALTER TABLE " + getPgNameOf(table) + " ADD FOREIGN KEY " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " );\n");
 
 					}
@@ -3042,7 +3042,7 @@ public class PgSchema {
 
 				else if (field.foreign_key) {
 
-					PgTable foreign_table = tables.get(field.foreign_table_id);
+					PgTable foreign_table = getForeignTable(field);
 
 					PgField foreign_field = foreign_table.getField(field.foreign_field);
 
@@ -3246,7 +3246,7 @@ public class PgSchema {
 						if (!field.nested_key)
 							continue;
 
-						PgTable nested_table = tables.get(field.foreign_table_id);
+						PgTable nested_table = getForeignTable(field);
 
 						if (nested_table.filt_out)
 							continue;
@@ -5283,7 +5283,7 @@ public class PgSchema {
 
 		int[] list_id = { 0 };
 
-		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(root_table, tables.get(field.foreign_table_id), list_id[0]++, root_table.nested_fields, root_table.virtual ? 1 : 3));
+		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(root_table, getForeignTable(field), list_id[0]++, root_table.nested_fields, root_table.virtual ? 1 : 3));
 
 		if (!root_table.virtual) {
 
@@ -5369,7 +5369,7 @@ public class PgSchema {
 
 			int[] _list_id = { 0 };
 
-			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(table, tables.get(field.foreign_table_id), _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : 2)));
+			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(table, getForeignTable(field), _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : 2)));
 
 			if (!table.virtual)
 				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.linefeed); // JSON child items end
@@ -5662,7 +5662,7 @@ public class PgSchema {
 
 		int[] list_id = { 0 };
 
-		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(root_table, tables.get(field.foreign_table_id), list_id[0]++, root_table.nested_fields, root_table.virtual ? 1 : 3));
+		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(root_table, getForeignTable(field), list_id[0]++, root_table.nested_fields, root_table.virtual ? 1 : 3));
 
 		if (!root_table.virtual) {
 
@@ -5746,7 +5746,7 @@ public class PgSchema {
 
 			int[] _list_id = { 0 };
 
-			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(table, tables.get(field.foreign_table_id), _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : 2)));
+			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(table, getForeignTable(field), _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : 2)));
 
 			if (!table.virtual)
 				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.linefeed); // JSON child items end
