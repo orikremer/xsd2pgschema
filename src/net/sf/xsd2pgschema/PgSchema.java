@@ -3883,7 +3883,7 @@ public class PgSchema {
 
 		// check root element name
 
-		if (!node.getLocalName().equals(root_table.name))
+		if (!option.getUnqualifiedName(node.getNodeName()).equals(root_table.name))
 			throw new PgSchemaException("Not found root element (node_name: " + root_table.name + ") in XML: " + document_id);
 
 		document_id = xml_parser.document_id;
