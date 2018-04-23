@@ -37,6 +37,9 @@ import org.w3c.dom.Node;
  */
 public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
+	/** The full-text index filter. */
+	private IndexFilter index_filter = null;	
+
 	/**
 	 * Node parser for Lucene document conversion.
 	 *
@@ -49,6 +52,8 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	public PgSchemaNode2LucIdx(final PgSchema schema, final PgTable parent_table, final PgTable table) throws TransformerConfigurationException, ParserConfigurationException {
 
 		super(schema, parent_table, table);
+
+		index_filter = schema.index_filter;
 
 	}
 
@@ -231,7 +236,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 					table.lucene_doc.add(new NoIdxStringField(table.name + "." + field.xname, value, Field.Store.YES));
 
 				else if (field.indexable)
-					field.writeValue2LucIdx(table.lucene_doc, table.name + "." + field.xname, value, value.length() >= schema.min_word_len, schema.numeric_lucidx);
+					field.writeValue2LucIdx(table.lucene_doc, table.name + "." + field.xname, value, value.length() >= index_filter.min_word_len, index_filter.numeric_lucidx);
 
 			}
 

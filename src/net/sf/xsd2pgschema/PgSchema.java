@@ -108,8 +108,8 @@ public class PgSchema {
 	/** The PostgreSQL data model option. */
 	protected PgSchemaOption option = null;
 
-	/** Whether name collision occurs or not. */
-	private boolean conflicted = false;
+	/** The full-text index filter. */
+	protected IndexFilter index_filter = null;
 
 	/** The current depth of table (internal use only). */
 	private int level;
@@ -119,12 +119,6 @@ public class PgSchema {
 
 	/** The PostgreSQL table for questing document id. */
 	private PgTable doc_id_table = null;
-
-	/** The minimum word length for index. */
-	protected int min_word_len = PgSchemaUtil.min_word_len;
-
-	/** Whether numeric index are stored in Lucene index. */
-	protected boolean numeric_lucidx = false;
 
 	/** The default namespaces (key=prefix, value=namespace_uri). */
 	private HashMap<String, String> def_namespaces = null;
@@ -151,7 +145,7 @@ public class PgSchema {
 	/** The table lock object. */
 	private Object[] table_lock = null;
 
-	/** The content of document key. */
+	/** The current document id. */
 	private String document_id = null;
 
 	/** The instance of message digest for hash_key. */
@@ -563,10 +557,6 @@ public class PgSchema {
 		// resolved pending groups
 
 		tables.stream().filter(table -> table.has_pending_group).forEach(table -> table.has_pending_group = false);
-
-		// whether name collision occurs or not
-
-		conflicted = tables.stream().anyMatch(table -> table.conflict);
 
 		// classify type of table
 
@@ -2597,7 +2587,7 @@ public class PgSchema {
 		System.out.println("--  relational extension: " + option.rel_model_ext);
 		System.out.println("--  wild card extension: " + option.wild_card);
 		System.out.println("--  case sensitive name: " + option.case_sense);
-		System.out.println("--  no name collision: " + !conflicted);
+		System.out.println("--  no name collision: " + !tables.stream().anyMatch(table -> table.conflict));
 		System.out.println("--  appended document key: " + option.document_key);
 		System.out.println("--  appended serial key: " + option.serial_key);
 		System.out.println("--  appended xpath key: " + option.xpath_key);
@@ -2865,7 +2855,7 @@ public class PgSchema {
 			sb.append("null, ");
 
 		System.out.println("-- xmlns: " + sb.toString() + "schema location: " + table.schema_location);
-		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replaceAll("_",  " ") + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (conflicted ? ", name collision: " + table.conflict : ""));
+		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replaceAll("_",  " ") + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (tables.stream().anyMatch(_table -> _table.conflict) ? ", name collision: " + table.conflict : ""));
 		System.out.println("--");
 
 		sb.setLength(0);
@@ -3461,8 +3451,7 @@ public class PgSchema {
 	 */
 	public void applyIndexFilter(IndexFilter index_filter) throws PgSchemaException {
 
-		min_word_len = index_filter.min_word_len;
-		numeric_lucidx = index_filter.numeric_lucidx;
+		this.index_filter = index_filter;
 
 		option.attr_resolved = false;
 

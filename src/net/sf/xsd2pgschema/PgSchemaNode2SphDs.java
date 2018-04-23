@@ -36,6 +36,9 @@ import org.w3c.dom.Node;
  */
 public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
+	/** The full-text index filter. */
+	private IndexFilter index_filter = null;
+
 	/**
 	 * Node parser for Sphinx xmlpipe2 conversion.
 	 *
@@ -48,6 +51,8 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	public PgSchemaNode2SphDs(final PgSchema schema, final PgTable parent_table, final PgTable table) throws TransformerConfigurationException, ParserConfigurationException {
 
 		super(schema, parent_table, table);
+
+		index_filter = schema.index_filter;
 
 	}
 
@@ -196,7 +201,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 				PgField field = fields.get(f);
 
 				if (field.indexable)
-					field.writeValue2SphDs(table.buffw, table.name + PgSchemaUtil.sph_member_op + field.xname, value, value.length() >= schema.min_word_len);
+					field.writeValue2SphDs(table.buffw, table.name + PgSchemaUtil.sph_member_op + field.xname, value, value.length() >= index_filter.min_word_len);
 
 			}
 
