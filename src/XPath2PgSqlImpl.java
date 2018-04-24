@@ -55,9 +55,6 @@ public class XPath2PgSqlImpl {
 	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
-	/** The PostgreSQL data model option. */
-	private PgSchemaOption option = null;
-
 	/** The database connection. */
 	private Connection db_conn = null;
 
@@ -96,7 +93,7 @@ public class XPath2PgSqlImpl {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, xpath2pgsql.schema_location, this.option = option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, xpath2pgsql.schema_location, option);
 
 		if (!pg_option.name.isEmpty()) {
 
@@ -157,7 +154,7 @@ public class XPath2PgSqlImpl {
 
 		// translate XPath to SQL
 
-		xpath_comp_list.translateToSqlExpr(option.verbose);
+		xpath_comp_list.translateToSqlExpr();
 
 		System.out.println("\nSQL expression:");
 		xpath_comp_list.showSqlExpr();
