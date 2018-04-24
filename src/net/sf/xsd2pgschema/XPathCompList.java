@@ -103,13 +103,14 @@ public class XPathCompList {
 	 * @param schema PostgreSQL data model
 	 * @param tree XPath parse tree
 	 * @param variables XPath variable reference
-	 * @param verbose whether outputs result or not
 	 */
-	public XPathCompList(PgSchema schema, ParseTree tree, HashMap<String, String> variables, boolean verbose) {
+	public XPathCompList(PgSchema schema, ParseTree tree, HashMap<String, String> variables) {
 
 		this.schema = schema;
 
 		option = schema.option;
+
+		boolean verbose = option.verbose;
 
 		document_key = option.document_key || option.inplace_document_key;
 
@@ -606,12 +607,11 @@ public class XPathCompList {
 	 * Validate XPath expression against schema.
 	 *
 	 * @param ends_with_text whether append text node in the ends, if possible
-	 * @param verbose whether output parse tree for predicate or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void validate(boolean ends_with_text, boolean verbose) throws PgSchemaException {
+	public void validate(boolean ends_with_text) throws PgSchemaException {
 
-		schema.validateXPathExpr(this, ends_with_text, verbose);
+		schema.validateXPathExpr(this, ends_with_text);
 
 	}
 

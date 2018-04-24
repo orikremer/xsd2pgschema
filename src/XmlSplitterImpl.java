@@ -205,19 +205,21 @@ public class XmlSplitterImpl {
 		if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		XPathCompList doc_key = new XPathCompList(schema, tree, null, option.verbose);
+		XPathCompList doc_key = new XPathCompList(schema, tree, null);
 
 		if (doc_key.comps.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		doc_key.validate(true, option.verbose);
+		doc_key.validate(true);
 
 		if (doc_key.path_exprs.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		XPathCompList doc_unit = new XPathCompList(schema, tree, null, false);
+		option.verbose = false;
 
-		doc_unit.validate(true, false);
+		XPathCompList doc_unit = new XPathCompList(schema, tree, null);
+
+		doc_unit.validate(true);
 
 		if (doc_unit.selectParentPath() == 0)
 			throw new xpathListenerException("Cound not specify document unit from XPath expression. (" + main_text + ")");

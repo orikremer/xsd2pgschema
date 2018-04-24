@@ -6175,10 +6175,9 @@ public class PgSchema {
 	 *
 	 * @param list XPath component list as serialized XPath tree
 	 * @param ends_with_text whether append text node in the ends, if possible
-	 * @param verbose whether output parse tree for predicate or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void validateXPathExpr(XPathCompList list, boolean ends_with_text, boolean verbose) throws PgSchemaException {
+	protected void validateXPathExpr(XPathCompList list, boolean ends_with_text) throws PgSchemaException {
 
 		hasRootTable();
 
@@ -6229,7 +6228,7 @@ public class PgSchema {
 						XPathComp[] pred_comps = list.arrayOfPredicateContext(union_id, step_id);
 
 						for (XPathComp pred_comp : pred_comps)
-							testPredicateContext(list, pred_comp, verbose);
+							testPredicateContext(list, pred_comp);
 
 						break;
 					}
@@ -8661,17 +8660,16 @@ public class PgSchema {
 	 *
 	 * @param list XPath component list
 	 * @param comp current XPath component
-	 * @param verbose whether output parse tree for predicate or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void testPredicateContext(XPathCompList list, XPathComp comp, boolean verbose) throws PgSchemaException {
+	private void testPredicateContext(XPathCompList list, XPathComp comp) throws PgSchemaException {
 
 		if (list.predicates == null)
 			list.predicates = new ArrayList<XPathPredicateExpr>();
 
 		int pred_size = list.predicates.size();
 
-		XPathCompList pred_list = new XPathCompList(this, comp.tree, list.variables, verbose);
+		XPathCompList pred_list = new XPathCompList(this, comp.tree, list.variables);
 
 		int path_expr_size = pred_list.sizeOfPathExpr();
 

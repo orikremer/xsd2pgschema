@@ -139,12 +139,12 @@ public class XPath2PgSqlImpl {
 		if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		xpath_comp_list = new XPathCompList(schema, tree, variables, option.verbose);
+		xpath_comp_list = new XPathCompList(schema, tree, variables);
 
 		if (xpath_comp_list.comps.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		xpath_comp_list.validate(false, option.verbose);
+		xpath_comp_list.validate(false);
 
 		if (xpath_comp_list.path_exprs.size() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
