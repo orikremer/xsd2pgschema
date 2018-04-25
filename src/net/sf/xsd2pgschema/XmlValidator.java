@@ -121,7 +121,7 @@ public class XmlValidator {
 	/**
 	 * Error hander implementation.
 	 */
-	private static class ErrHandler implements ErrorHandler {
+	static class ErrHandler implements ErrorHandler {
 
 		/** The result of XML Schema validation. */
 		public boolean success = true;

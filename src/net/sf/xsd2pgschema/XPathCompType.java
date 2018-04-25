@@ -52,7 +52,7 @@ public enum XPathCompType {
 	 *
 	 * @return boolean whether XPath component represents field node
 	 */
-	boolean isField() {
+	public boolean isField() {
 
 		switch (this) {
 		case element:
@@ -72,7 +72,7 @@ public enum XPathCompType {
 	 *
 	 * @return boolean whether XPath component represents text node
 	 */
-	boolean isText() {
+	public boolean isText() {
 
 		switch (this) {
 		case text:

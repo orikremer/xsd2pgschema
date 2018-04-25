@@ -163,7 +163,9 @@ public class XPathExpr {
 			} finally {
 				sb.setLength(0);
 			}
+
 		}
+
 	}
 
 	/**
@@ -213,6 +215,5 @@ public class XPathExpr {
 		}
 
 	}
-
 
 }

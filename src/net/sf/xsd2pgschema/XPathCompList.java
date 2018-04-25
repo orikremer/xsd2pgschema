@@ -71,16 +71,16 @@ public class XPathCompList {
 	public List<XPathExpr> path_exprs = null;
 
 	/** Instance of predicate expression. */
-	public List<XPathPredicateExpr> predicates = null;
+	private List<XPathPredicateExpr> predicates = null;
 
 	/** XPath variable reference. */
-	public HashMap<String, String> variables = null;
+	private HashMap<String, String> variables = null;
 
 	/** Whether UnionExprNoRootContext node exists or not. */
 	private boolean union_expr = false;
 
 	/** Whether either document key or in-place document key exists in PostgreSQL DDL. */
-	public boolean document_key = true;
+	private boolean document_key = true;
 
 	/** Whether serial key exists in PostgreSQL DDL. */
 	private boolean serial_key = false;
@@ -192,7 +192,7 @@ public class XPathCompList {
 	/**
 	 * Clear path expressions.
 	 */
-	protected void clearPathExprs() {
+	private void clearPathExprs() {
 
 		if (path_exprs != null)
 			path_exprs.clear();
@@ -507,7 +507,7 @@ public class XPathCompList {
 	 *
 	 * @return int the last union id
 	 */
-	protected int getLastUnionId() {
+	private int getLastUnionId() {
 		return comps.size() > 0 ? comps.get(comps.size() - 1).union_id : -1;
 	}
 
@@ -517,7 +517,7 @@ public class XPathCompList {
 	 * @param union_id union id
 	 * @return int the last step id
 	 */
-	protected int getLastStepId(int union_id) {
+	private int getLastStepId(int union_id) {
 
 		if (comps.stream().filter(comp -> comp.union_id == union_id).count() == 0)
 			return -1;
@@ -531,7 +531,7 @@ public class XPathCompList {
 	 * @param union_id current union id
 	 * @return XPathComp[] array of XPath component
 	 */
-	protected XPathComp[] arrayOf(int union_id) {
+	private XPathComp[] arrayOf(int union_id) {
 		return comps.stream().filter(comp -> comp.union_id == union_id).toArray(XPathComp[]::new);
 	}
 
@@ -542,7 +542,7 @@ public class XPathCompList {
 	 * @param step_id current step id
 	 * @return XPathComp[] array of XPath component
 	 */
-	protected XPathComp[] arrayOf(int union_id, int step_id) {
+	private XPathComp[] arrayOf(int union_id, int step_id) {
 		return comps.stream().filter(comp -> comp.union_id == union_id && comp.step_id == step_id).toArray(XPathComp[]::new);
 	}
 
@@ -553,7 +553,7 @@ public class XPathCompList {
 	 * @param step_id current step id
 	 * @return XPathComp[] array of PredicateContext XPath component
 	 */
-	protected XPathComp[] arrayOfPredicateContext(int union_id, int step_id) {
+	private XPathComp[] arrayOfPredicateContext(int union_id, int step_id) {
 		return comps.stream().filter(comp -> comp.union_id == union_id && comp.step_id == step_id && comp.tree.getClass().equals(PredicateContext.class)).toArray(XPathComp[]::new);
 	}
 
@@ -562,7 +562,7 @@ public class XPathCompList {
 	 *
 	 * @return int the size of path expression in XPath component list
 	 */
-	protected int sizeOfPathExpr() {
+	private int sizeOfPathExpr() {
 		return getLastUnionId() + 1 - (int) comps.stream().filter(comp -> comp.tree.getClass().equals(TerminalNodeImpl.class) && comp.tree.getText().equals("|")).count();
 	}
 
@@ -572,7 +572,7 @@ public class XPathCompList {
 	 * @param comp current XPath component in list
 	 * @return XPathComp parent XPath component
 	 */
-	protected XPathComp previousOf(XPathComp comp) {
+	private XPathComp previousOf(XPathComp comp) {
 
 		int step_id = comp.step_id - (comp.tree.getClass().equals(TerminalNodeImpl.class) ? 1 : 2);
 
@@ -599,7 +599,7 @@ public class XPathCompList {
 	 *
 	 * @param path_expr current path expression
 	 */
-	protected void add(XPathExpr path_expr) {
+	private void add(XPathExpr path_expr) {
 
 		path_exprs.add(path_expr);
 
@@ -610,7 +610,7 @@ public class XPathCompList {
 	 *
 	 * @param list XPath component list
 	 */
-	protected void addAll(XPathCompList list) {
+	private void addAll(XPathCompList list) {
 
 		path_exprs.addAll(list.path_exprs);
 
@@ -1669,7 +1669,7 @@ public class XPathCompList {
 	 * @param predicate whether XPath component in predicate or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void testNCNameContextWithParentAxis(XPathComp comp, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
+	private void testNCNameContextWithParentAxis(XPathComp comp, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
 
 		if (selectParentPath() == 0) {
 
@@ -1694,7 +1694,7 @@ public class XPathCompList {
 	 * @param predicate whether XPath component in predicate or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void testNCNameContextWithAncestorAxis(XPathComp comp, boolean inc_self, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
+	private void testNCNameContextWithAncestorAxis(XPathComp comp, boolean inc_self, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
 
 		List<XPathExpr> _path_exprs = new ArrayList<XPathExpr>();
 
@@ -2499,7 +2499,7 @@ public class XPathCompList {
 	 * @param predicate whether XPath component in predicate or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void testNodeTestContextWithParentAxis(XPathComp comp, boolean predicate) throws PgSchemaException {
+	private void testNodeTestContextWithParentAxis(XPathComp comp, boolean predicate) throws PgSchemaException {
 
 		if (selectParentPath() == 0) {
 
@@ -3354,7 +3354,7 @@ public class XPathCompList {
 	 * @param predicate whether XPath component in predicate or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void testNodeTestContextWithAncestorAxis(XPathComp comp, boolean inc_self, boolean predicate) throws PgSchemaException {
+	private void testNodeTestContextWithAncestorAxis(XPathComp comp, boolean inc_self, boolean predicate) throws PgSchemaException {
 
 		List<XPathExpr> _path_exprs = new ArrayList<XPathExpr>();
 
@@ -3394,7 +3394,7 @@ public class XPathCompList {
 	 * @param predicate whether XPath component in predicate or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void testNameTestContextWithParentAxis(XPathComp comp, String namespace_uri, String local_part, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
+	private void testNameTestContextWithParentAxis(XPathComp comp, String namespace_uri, String local_part, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
 
 		if (selectParentPath() == 0) {
 
@@ -3421,7 +3421,7 @@ public class XPathCompList {
 	 * @param predicate whether XPath component in predicate or not
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void testNameTestContextWithAncestorAxis(XPathComp comp, String namespace_uri, String local_part, boolean inc_self, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
+	private void testNameTestContextWithAncestorAxis(XPathComp comp, String namespace_uri, String local_part, boolean inc_self, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
 
 		List<XPathExpr> _path_exprs = new ArrayList<XPathExpr>();
 
@@ -3840,17 +3840,6 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Return document key name.
-	 *
-	 * @param path_expr XPath expression
-	 * @return String document key name
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	protected String getDocKeyName(XPathExpr path_expr) throws PgSchemaException {
-		return schema.getDocKeyName(getTable(path_expr));
-	}
-
-	/**
 	 * Return whether any path ends with table node.
 	 *
 	 * @return boolean whether any path ends with table node
@@ -3873,7 +3862,7 @@ public class XPathCompList {
 	 *
 	 * @return boolean whether any path ends without text node
 	 */
-	public boolean hasPathEndsWithoutTextNode() {
+	private boolean hasPathEndsWithoutTextNode() {
 		return path_exprs.stream().anyMatch(path_expr -> !path_expr.terminus.isText());
 	}
 
@@ -3882,7 +3871,7 @@ public class XPathCompList {
 	 *
 	 * @return int the number of survived paths
 	 */
-	protected int removePathEndsWithTableNode() {
+	private int removePathEndsWithTableNode() {
 
 		path_exprs.removeIf(path_expr -> path_expr.terminus.equals(XPathCompType.table));
 
@@ -3893,20 +3882,20 @@ public class XPathCompList {
 	 * Remove any path that ends with field node.
 	 *
 	 * @return int the number of survived paths
-	 */
-	protected int removePathEndsWithFieldNode() {
+	 *
+	private int removePathEndsWithFieldNode() {
 
 		path_exprs.removeIf(path_expr -> path_expr.terminus.isField());
 
 		return path_exprs.size();
 	}
-
+	 */
 	/**
 	 * Remove any path that ends with text node.
 	 *
 	 * @return int the number of survived paths
 	 */
-	protected int removePathEndsWithTextNode() {
+	private int removePathEndsWithTextNode() {
 
 		path_exprs.removeIf(path_expr -> path_expr.terminus.isText());
 
@@ -3917,38 +3906,38 @@ public class XPathCompList {
 	 * Remove any path that ends without table node.
 	 *
 	 * @return int the number of survived paths
-	 */
-	protected int removePathEndsWithoutTableNode() {
+	 *
+	private int removePathEndsWithoutTableNode() {
 
 		path_exprs.removeIf(path_expr -> !path_expr.terminus.equals(XPathCompType.table));
 
 		return path_exprs.size();
 	}
-
+	 */
 	/**
 	 * Remove any path that ends without field node.
 	 *
 	 * @return int the number of survived paths
-	 */
-	protected int removePathEndsWithoutFieldNode() {
+	 *
+	private int removePathEndsWithoutFieldNode() {
 
 		path_exprs.removeIf(path_expr -> !path_expr.terminus.isField());
 
 		return path_exprs.size();
 	}
-
+	 */
 	/**
 	 * Remove any path that ends without text node.
 	 *
 	 * @return int the number of survived paths
-	 */
-	protected int removePathEndsWithoutTextNode() {
+	 *
+	private int removePathEndsWithoutTextNode() {
 
 		path_exprs.removeIf(path_expr -> !path_expr.terminus.isText());
 
 		return path_exprs.size();
 	}
-
+	 */
 	/**
 	 * Remove any orphan path.
 	 *
@@ -4012,7 +4001,7 @@ public class XPathCompList {
 	 * @param union_id union id
 	 * @return boolean whether absolute path used
 	 */
-	protected boolean isAbsolutePath(int union_id) {
+	private boolean isAbsolutePath(int union_id) {
 
 		if (path_exprs.isEmpty()) {
 
@@ -4027,7 +4016,7 @@ public class XPathCompList {
 	/**
 	 * Append abbreviation path of all paths.
 	 */
-	protected void appendAbbrevPath() {
+	private void appendAbbrevPath() {
 
 		path_exprs.forEach(path_expr -> path_expr.path = path_expr.path + "//");
 
@@ -4036,7 +4025,7 @@ public class XPathCompList {
 	/**
 	 * Append text node.
 	 */
-	protected void appendTextNode() {
+	private void appendTextNode() {
 
 		List<XPathExpr> _path_exprs = new ArrayList<XPathExpr>(path_exprs);
 
@@ -4066,7 +4055,7 @@ public class XPathCompList {
 	/**
 	 * Append comment node.
 	 */
-	protected void appendCommentNode() {
+	private void appendCommentNode() {
 
 		List<XPathExpr> _path_exprs = new ArrayList<XPathExpr>(path_exprs);
 
@@ -4099,7 +4088,7 @@ public class XPathCompList {
 	 *
 	 * @param expression expression of processing-instruction()
 	 */
-	protected void appendProcessingInstructionNode(String expression) {
+	private void appendProcessingInstructionNode(String expression) {
 
 		if (path_exprs.isEmpty())
 			path_exprs.add(new XPathExpr("/" + expression, XPathCompType.processing_instruction));
@@ -4159,7 +4148,7 @@ public class XPathCompList {
 	 *
 	 * @param src_list source XPath component list
 	 */
-	public void replacePathExprs(XPathCompList src_list) {
+	private void replacePathExprs(XPathCompList src_list) {
 
 		replacePathExprs(src_list.path_exprs);
 
@@ -4170,7 +4159,7 @@ public class XPathCompList {
 	 *
 	 * @param src_predicate source XPath predicate
 	 */
-	public void replacePathExprs(XPathPredicateExpr src_predicate) {
+	private void replacePathExprs(XPathPredicateExpr src_predicate) {
 
 		replacePathExprs(src_predicate.dst_path_exprs);
 
@@ -4190,7 +4179,7 @@ public class XPathCompList {
 	/**
 	 * Apply union expression.
 	 */
-	protected void applyUnionExpr() {
+	private void applyUnionExpr() {
 
 		if (!union_expr)
 			return;
@@ -4215,10 +4204,10 @@ public class XPathCompList {
 	}
 
 	/** Alias name of tables in SQL main query. */
-	HashMap<PgTable, String> main_aliases = null; // key = table, value = alias name
+	private HashMap<PgTable, String> main_aliases = null; // key = table, value = alias name
 
 	/** Alias id of tables in SQL sub query. */
-	int sub_alias_id = 0;
+	private int sub_alias_id = 0;
 
 	/**
 	 * Translate to XPath expression to SQL expression.
@@ -6252,6 +6241,24 @@ public class XPathCompList {
 	}
 
 	/**
+	 * Return last name of current path.
+	 *
+	 * @param path current path
+	 * @return String last name of the path
+	 */
+	private String getLastNameOfPath(String path) {
+
+		String[] _path = path.split(" ").length < 2 ? path.replaceFirst("//$", "").split("/") : path.replaceFirst("//$", "").split(" ");
+
+		int position = _path.length - 1;
+
+		if (position < 0)
+			return null;
+
+		return _path[position];
+	}
+
+	/**
 	 * Return total number of predicates in XPath SQL expression
 	 *
 	 * @param sql_predicates list of XPath SQL expression
@@ -7107,7 +7114,7 @@ public class XPathCompList {
 	 * @param terminus current terminus type
 	 * @return XPathSqlExpr XPath SQL expression
 	 */
-	protected XPathSqlExpr getXPathSqlExprOfPath(String path, XPathCompType terminus) {
+	private XPathSqlExpr getXPathSqlExprOfPath(String path, XPathCompType terminus) {
 
 		String[] _path = path.replaceFirst("//$", "").split("/");
 
@@ -7449,24 +7456,6 @@ public class XPathCompList {
 
 		path_exprs.forEach(path_expr -> System.out.println(path_expr.getReadablePath() + " (terminus type: " + path_expr.terminus.name() + ") -> " + path_expr.sql));
 
-	}
-
-	/**
-	 * Return last name of current path.
-	 *
-	 * @param path current path
-	 * @return String last name of the path
-	 */
-	protected String getLastNameOfPath(String path) {
-
-		String[] _path = path.split(" ").length < 2 ? path.replaceFirst("//$", "").split("/") : path.replaceFirst("//$", "").split(" ");
-
-		int position = _path.length - 1;
-
-		if (position < 0)
-			return null;
-
-		return _path[position];
 	}
 
 }

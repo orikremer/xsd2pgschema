@@ -290,7 +290,7 @@ public class XPathSqlExpr {
 	 *
 	 * @return boolean whether the relational expression is empty or not
 	 */
-	public boolean isEmptyRelation() {
+	private boolean isEmptyRelation() {
 		return table == null || column_name == null;
 	}
 
