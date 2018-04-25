@@ -103,7 +103,7 @@ public class PgSchemaOption {
 	protected HashSet<String> discarded_document_key_names = null;
 
 	/** The list of in-place document key name. */
-	public HashSet<String> inplace_document_key_names = null;
+	protected HashSet<String> inplace_document_key_names = null;
 
 	/** The name of hash algorithm. */
 	public String hash_algorithm = PgSchemaUtil.def_hash_algorithm;

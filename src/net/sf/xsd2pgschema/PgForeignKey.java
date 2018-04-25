@@ -30,22 +30,22 @@ import org.w3c.dom.Node;
 public class PgForeignKey {
 
 	/** The foreign key name in PostgreSQL. */
-	String name = "";
+	protected String name = "";
 
 	/** The PostgreSQL schema name. */
-	String pg_schema_name = null;
+	protected String pg_schema_name = null;
 
 	/** The child table name. */
-	String child_table_name = null;
+	protected String child_table_name = null;
 
 	/** The child field names, separated by comma character. */
-	String child_field_names = null;
+	protected String child_field_names = null;
 
 	/** The parent table name. */
-	String parent_table_name = null;
+	protected String parent_table_name = null;
 
 	/** The parent field names, separated by comma character. */
-	String parent_field_names = null;
+	protected String parent_field_names = null;
 
 	/**
 	 * Instance of PgForeignKey.

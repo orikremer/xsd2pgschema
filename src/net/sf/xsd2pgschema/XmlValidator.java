@@ -39,10 +39,10 @@ import org.xml.sax.SAXParseException;
 public class XmlValidator {
 
 	/** The DOM parser. */
-	DOMParser dom_parser = null;
+	private DOMParser dom_parser = null;
 
 	/** The error handler. */
-	ErrHandler err_handler = null;
+	private ErrHandler err_handler = null;
 
 	/**
 	 * Instance of XML validator.

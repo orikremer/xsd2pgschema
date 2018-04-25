@@ -27,16 +27,16 @@ package net.sf.xsd2pgschema;
 public class PgPendingGroup {
 
 	/** The reference to either attribute group or model group. */
-	String ref_group;
+	protected String ref_group;
 
 	/** The PostgreSQL schema name. */
-	String pg_schema_name;
+	protected String pg_schema_name;
 
-	/** The table name in PostgreSQL. */
-	String name;
+	/** The group name in PostgreSQL. */
+	protected String name;
 
 	/** The insert position in fields. */
-	int insert_position;
+	protected int insert_position;
 
 	/**
 	 * Instance of PgPendingGroup.

@@ -277,7 +277,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else if (field.foreign_key) {
 
-				if (parent_table.name.equals(field.foreign_table)) {
+				if (parent_table.name.equals(field.foreign_table_name)) {
 
 					if (ps != null && rel_data_ext)
 						writeHashKey(f, param_id, upsert ? _param_id : -1, parent_key);

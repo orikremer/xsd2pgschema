@@ -30,10 +30,10 @@ public class XmlFileFilter {
 	public String ext = "xml";
 
 	/** The digest-able prefix name. */
-	String prefix_digest = "";
+	protected String prefix_digest = "";
 
 	/** The digest-able extension name. */
-	String ext_digest = ".";
+	protected String ext_digest = ".";
 
 	/** Whether case-sensitive document key. */
 	protected boolean case_sense_doc_key = true;

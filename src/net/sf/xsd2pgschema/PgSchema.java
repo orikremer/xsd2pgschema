@@ -707,9 +707,9 @@ public class PgSchema {
 								has_foreign_key = true;
 
 								if (field.parent_node == null)
-									field.parent_node = parent_field.foreign_table;
+									field.parent_node = parent_field.foreign_table_name;
 								else
-									field.parent_node += " " + parent_field.foreign_table;
+									field.parent_node += " " + parent_field.foreign_table_name;
 
 							}
 
@@ -2339,7 +2339,7 @@ public class PgSchema {
 	 * @return String PostgreSQL name of foreign table
 	 */
 	private String getPgForeignNameOf(PgField field) {
-		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(field.foreign_schema) + "." : "") + PgSchemaUtil.avoidPgReservedWords(field.foreign_table);
+		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(field.foreign_schema) + "." : "") + PgSchemaUtil.avoidPgReservedWords(field.foreign_table_name);
 	}
 
 	/**
@@ -2441,7 +2441,7 @@ public class PgSchema {
 	 * @return PgTable foreign table
 	 */
 	protected PgTable getForeignTable(PgField field) {
-		return field.foreign_table_id == -1 ? getTable(field.foreign_schema, field.foreign_table) : getTable(field.foreign_table_id);
+		return field.foreign_table_id == -1 ? getTable(field.foreign_schema, field.foreign_table_name) : getTable(field.foreign_table_id);
 	}
 
 	/**
@@ -2642,7 +2642,7 @@ public class PgSchema {
 					else if (field.foreign_key) {
 
 						if (!getForeignTable(field).bridge)
-							System.out.println("--ALTER TABLE " + getPgNameOf(table) + " ADD FOREIGN KEY " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " );\n");
+							System.out.println("--ALTER TABLE " + getPgNameOf(table) + " ADD FOREIGN KEY " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_name) + " );\n");
 
 					}
 
@@ -2889,10 +2889,10 @@ public class PgSchema {
 				System.out.println("-- PRIMARY KEY");
 
 			else if (field.foreign_key)
-				System.out.println("-- FOREIGN KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " )");
+				System.out.println("-- FOREIGN KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_name) + " )");
 
 			else if (field.nested_key)
-				System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : ""));
+				System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_name) + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : ""));
 
 			else if (field.attribute) {
 
@@ -3005,12 +3005,12 @@ public class PgSchema {
 
 					PgTable foreign_table = getForeignTable(field);
 
-					PgField foreign_field = foreign_table.getField(field.foreign_field);
+					PgField foreign_field = foreign_table.getField(field.foreign_field_name);
 
 					if (foreign_field != null) {
 
 						if (foreign_field.unique_key)
-							System.out.print("CONSTRAINT " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field) + " ) ON DELETE CASCADE");
+							System.out.print("CONSTRAINT " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_name) + " ) ON DELETE CASCADE");
 
 					}
 

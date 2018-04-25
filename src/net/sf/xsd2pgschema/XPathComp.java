@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017 Masashi Yokochi
+    Copyright 2017-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -29,13 +29,13 @@ import org.antlr.v4.runtime.tree.ParseTree;
 public class XPathComp {
 
 	/** The union id. */
-	public int union_id = -1;
+	protected int union_id = -1;
 
 	/** The step id. */
-	public int step_id = -1;
+	protected int step_id = -1;
 
 	/** The XPath parse tree. */
-	public ParseTree tree = null;
+	protected ParseTree tree = null;
 
 	/**
 	 * Instance of XPathComp.

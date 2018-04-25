@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -38,14 +38,14 @@ public class JsonBuilderOption {
 	/** The length of white spaces between key and value. */
 	public int key_value_spaces = 1;
 
-	/** Whether retain field annotation or not. */
-	public boolean no_field_anno = false;
-
 	/** Whether use line feed code in JSON document. */
 	public boolean linefeed = true;
 
 	/** Whether use JSON array uniformly for descendants. */
 	public boolean array_all = false;
+
+	/** Whether retain field annotation or not. */
+	public boolean no_field_anno = false;
 
 	/**
 	 * Set prefix in JSON document of xs:attribute.

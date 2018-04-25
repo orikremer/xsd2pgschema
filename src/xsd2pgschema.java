@@ -91,12 +91,12 @@ public class xsd2pgschema {
 
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
+			
+			else if (args[i].equals("--no-key"))
+				option.retain_key = false;
 
 			else if (args[i].equals("--field-annotation"))
 				option.no_field_anno = false;
-
-			else if (args[i].equals("--no-key"))
-				option.retain_key = false;
 
 			else if (args[i].equals("--no-field-annotation"))
 				option.no_field_anno = true;

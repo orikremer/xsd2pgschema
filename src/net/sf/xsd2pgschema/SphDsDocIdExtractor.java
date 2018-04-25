@@ -32,19 +32,19 @@ import org.xml.sax.helpers.DefaultHandler;
 public class SphDsDocIdExtractor extends DefaultHandler {
 
 	/** The document key name in PostgreSQL DDL. */
-	String document_key_name = null;
+	private String document_key_name = null;
 
 	/** The current state for sphinx:document. */
-	boolean sph_document = false;
+	private boolean sph_document = false;
 
 	/** The current state for document key. */
-	boolean document_key = false;
+	private boolean document_key = false;
 
 	/** The string builder for document id. */
-	StringBuilder sb = null;
+	private StringBuilder sb = null;
 
 	/** The document id stored in data source. */
-	HashSet<String> doc_set = null;
+	private HashSet<String> doc_set = null;
 
 	/**
 	 * Instance of Sphinx xmlpipe2 document id extractor.

@@ -50,10 +50,10 @@ public class PgSchemaNodeTester {
 	protected boolean nested;
 
 	/** The ordinal number of current node in nested case. */
-	protected int nest_id;
+	private int nest_id;
 
 	/** The total number of sibling node. */
-	protected int node_count = 0;
+	private int node_count = 0;
 
 	/**
 	 * Decide to process this node or not.

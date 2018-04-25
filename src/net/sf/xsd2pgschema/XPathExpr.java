@@ -30,22 +30,22 @@ import java.util.List;
 public class XPathExpr {
 
 	/** The node path. */
-	public String path = null;
+	protected String path = null;
 
 	/** The terminus type. */
-	public XPathCompType terminus = null;
+	protected XPathCompType terminus = null;
 
 	/** The previous terminus type. */
-	public XPathCompType prev_term = null;
+	protected XPathCompType prev_term = null;
 
 	/** The realized SQL statement. */
 	public String sql = null;
 
 	/** The subject SQL expression. */
-	public XPathSqlExpr sql_subject = null;
+	protected XPathSqlExpr sql_subject = null;
 
 	/** The predicate SQL expression. */
-	public List<XPathSqlExpr> sql_predicates = null;
+	protected List<XPathSqlExpr> sql_predicates = null;
 
 	/**
 	 * Instance of XPathExpr.

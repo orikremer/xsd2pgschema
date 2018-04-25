@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017 Masashi Yokochi
+    Copyright 2017-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -30,13 +30,13 @@ import java.util.List;
 public class XPathPredicateExpr {
 
 	/** The XPath component of predicate. */
-	public XPathComp src_comp = null;
+	protected XPathComp src_comp = null;
 
 	/** The source path expression of predicate. */
-	public XPathExpr src_path_expr = null;
+	protected XPathExpr src_path_expr = null;
 
 	/** The destination path expression of predicate. */
-	public List<XPathExpr> dst_path_exprs = null;
+	protected List<XPathExpr> dst_path_exprs = null;
 
 	/**
 	 * Instance of XPathPredicateExpr.

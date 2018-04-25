@@ -37,46 +37,46 @@ import org.xml.sax.helpers.DefaultHandler;
 public class SphDsCompositor extends DefaultHandler {
 
 	/** The buffered writer for Sphinx data source. */
-	BufferedWriter buffw;
+	private BufferedWriter buffw;
 
 	/** The Sphinx maximum field length. (related to max_xmlpipe2_field in sphinx.conf) */
-	int sph_max_field_len;
+	private int sph_max_field_len;
 
 	/** The cutoff (80% of hard limit, max_field_len) of Sphinx field length. */
-	int sph_co_field_len;
+	private int sph_co_field_len;
 
 	/** The current state for sphinx:document. */
-	boolean sph_document = false;
+	private boolean sph_document = false;
 
 	/** The current state for document key. */
-	boolean document_key = false;
+	private boolean document_key = false;
 
 	/** The current state for default content. */
-	boolean content = false;
+	private boolean content = false;
 
 	/** Whether Sphinx attribute. */
-	boolean sph_attr = false;
+	private boolean sph_attr = false;
 
 	/** Whether Sphinx multi-valued attribute. */
-	boolean sph_mvattr = false;
+	private boolean sph_mvattr = false;
 
 	/** The document key name in PostgreSQL DDL. */
-	String document_key_name = null;
+	private String document_key_name = null;
 
 	/** The current Sphinx attribute name. */
-	String sph_attr_name = null;
+	private String sph_attr_name = null;
 
 	/** The string builder for default field. */
-	StringBuilder sb = null;
+	private StringBuilder sb = null;
 
 	/** The holder of string builder for each Sphinx attribute. */
-	HashMap<String, StringBuilder> buffer = null;
+	private HashMap<String, StringBuilder> buffer = null;
 
 	/** The set of Sphinx attribute. */
-	HashSet<String> sph_attrs = null;
+	private HashSet<String> sph_attrs = null;
 
 	/** The set of Sphinx multi-valued attribute. */
-	HashSet<String> sph_mvas = null;
+	private HashSet<String> sph_mvas = null;
 
 	/**
 	 * Instance of Sphinx xmlpipe2 compositor.

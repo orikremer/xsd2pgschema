@@ -146,7 +146,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			else if (field.foreign_key) {
 
-				if (parent_table.name.equals(field.foreign_table)) {
+				if (parent_table.name.equals(field.foreign_table_name)) {
 
 					if (table.lucene_doc != null && rel_data_ext)
 						values[f] = schema.getHashKeyString(parent_key);

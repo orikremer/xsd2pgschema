@@ -32,37 +32,37 @@ import org.antlr.v4.runtime.tree.ParseTree;
 public class XPathSqlExpr {
 
 	/** The node path. */
-	public String path = null;
+	protected String path = null;
 
 	/** The column name. */
-	public String column_name = null;
+	protected String column_name = null;
 
 	/** The PostgreSQL XPath code. */
-	public String pg_xpath_code = null;
+	protected String pg_xpath_code = null;
 
 	/** The predicate of XPath. */
-	public String predicate = null;
+	protected String predicate = null;
 
 	/** The predicate value of concerned SQL. */
-	public String value = null;
+	protected String value = null;
 
 	/** The terminus type. */
-	public XPathCompType terminus = null;
+	protected XPathCompType terminus = null;
 
 	/** The parent tree. */
-	public ParseTree parent_tree = null;
+	protected ParseTree parent_tree = null;
 
 	/** The current tree. */
-	public ParseTree current_tree = null;
+	protected ParseTree current_tree = null;
 
 	/** The unary operator. */
-	public String unary_oprator = null;
+	protected String unary_operator = null;
 
 	/** The binary operator. */
-	public String binary_operator = null;
+	protected String binary_operator = null;
 
 	/** The PostgreSQL table. */
-	public PgTable table = null;
+	protected PgTable table = null;
 
 	/** The PostgreSQL field. */
 	private PgField field = null;
@@ -174,7 +174,7 @@ public class XPathSqlExpr {
 		this.terminus = terminus;
 		this.parent_tree = parent_tree;
 		this.current_tree = current_tree;
-		this.unary_oprator = unary_operator;
+		this.unary_operator = unary_operator;
 		this.binary_operator = binary_operator;
 
 		switch (terminus) {

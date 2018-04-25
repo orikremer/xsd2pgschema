@@ -167,7 +167,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			else if (field.foreign_key) {
 
-				if (parent_table.name.equals(field.foreign_table)) {
+				if (parent_table.name.equals(field.foreign_table_name)) {
 
 					if (table.buffw != null && rel_data_ext)
 						values[f] = schema.getHashKeyString(parent_key);

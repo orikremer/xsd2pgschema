@@ -54,205 +54,205 @@ import org.w3c.dom.Node;
 public class PgField {
 
 	/** The target namespace URI. */
-	String target_namespace = PgSchemaUtil.xs_namespace_uri;
+	protected String target_namespace = PgSchemaUtil.xs_namespace_uri;
 
 	/** The field name in XML document. */
-	String xname = "";
+	protected String xname = "";
 
 	/** The field name in PostgreSQL. */
-	String name = "";
+	protected String name = "";
 
 	/** The data type. */
-	String type = null;
+	protected String type = null;
 
 	/** The substitution group. */
-	String substitution_group = null;
+	protected String substitution_group = null;
 
 	/** The @maxOccurs. */
-	String maxoccurs = "1";
+	protected String maxoccurs = "1";
 
 	/** The @minOccurs. */
-	String minoccurs = "1";
+	protected String minoccurs = "1";
 
 	/** The xs:annotation/xs:documentation (as is). */
-	String xanno_doc = null;
+	protected String xanno_doc = null;
 
 	/** The xs:annotation. */
-	String anno = null;
+	protected String anno = null;
 
 	/** The XML Schema data type. */
-	XsDataType xs_type;
+	protected XsDataType xs_type;
 
 	/** Whether xs:element. */
-	boolean element = false;
+	protected boolean element = false;
 
 	/** Whether xs:attribute. */
-	boolean attribute = false;
+	protected boolean attribute = false;
 
 	/** Whether xs:simpleContent. */
-	boolean simple_content = false;
+	protected boolean simple_content = false;
 
 	/** Whether xs:any. */
-	boolean any = false;
+	protected boolean any = false;
 
 	/** Whether xs:anyAttribute. */
-	boolean any_attribute = false;
+	protected boolean any_attribute = false;
 
 	/** Whether primary key. */
-	boolean primary_key = false;
+	protected boolean primary_key = false;
 
 	/** Whether unique key. */
-	boolean unique_key = false;
+	protected boolean unique_key = false;
 
 	/** Whether foreign key. */
-	boolean foreign_key = false;
+	protected boolean foreign_key = false;
 
 	/** Whether nested key. */
-	boolean nested_key = false;
+	protected boolean nested_key = false;
 
 	/** Whether document key. */
-	boolean document_key = false;
+	protected boolean document_key = false;
 
 	/** Whether serial key. */
-	boolean serial_key = false;
+	protected boolean serial_key = false;
 
 	/** Whether XPath key. */
-	boolean xpath_key = false;
+	protected boolean xpath_key = false;
 
 	/** Whether not @nillable. */
-	boolean xrequired = false;
+	protected boolean xrequired = false;
 
 	/** Whether not @nillable, but mutable in PostgreSQL when conflict occurs. */
-	boolean required = false;
+	protected boolean required = false;
 
 	/** Whether @use is "prohibited". */
-	boolean prohibited = false;
+	protected boolean prohibited = false;
 
-	/** Whether @maxOccurs > 1 || @minOccurs > 1. */
-	boolean list_holder = false;
+	/** Whether @maxOccurs is greater than 1 || @minOccurs is greater than 1. */
+	protected boolean list_holder = false;
 
 	/** Whether representative field of substitution group. */
-	boolean rep_substitution_group = false;
+	protected boolean rep_substitution_group = false;
 
 	/** Whether Sphinx multi-valued attribute. */
-	boolean sph_mva = false;
+	protected boolean sph_mva = false;
 
 	/** Whether it is selected as field for partial indexing. */
-	boolean field_sel = false;
+	protected boolean field_sel = false;
 
 	/** Whether it is selected as attribute for partial indexing. */
-	boolean attr_sel = false;
+	protected boolean attr_sel = false;
 
 	/** Whether it is selected as attribute and ready for partial indexing. */
-	boolean attr_sel_rdy = true;
+	protected boolean attr_sel_rdy = true;
 
 	/** The constraint name in PostgreSQL. */
-	String constraint_name = null;
+	protected String constraint_name = null;
 
 	/** The foreign table id. */
-	int foreign_table_id = -1;
+	protected int foreign_table_id = -1;
 
 	/** The schema name of foreign table in PostgreSQL (default schema name is "public"). */
-	String foreign_schema = PgSchemaUtil.pg_public_schema_name;
+	protected String foreign_schema = PgSchemaUtil.pg_public_schema_name;
 
 	/** The foreign table name in PostgreSQL. */
-	String foreign_table = null;
+	protected String foreign_table_name = null;
 
 	/** The foreign field name in PostgreSQL. */
-	String foreign_field = null;
+	protected String foreign_field_name = null;
 
 	/** The parent node names. */
-	String parent_node = null;
+	protected String parent_node = null;
 
 	/** Whether @fixed. */
-	String fixed_value = null;
+	protected String fixed_value = null;
 
 	/** Whether @default. */
-	String default_value = null;
+	protected String default_value = null;
 
 	/** Whether @block. */
-	String block_value = null;
+	protected String block_value = null;
 
 	/** Whether field has any restriction. */
-	boolean restriction = false;
+	protected boolean restriction = false;
 
 	/** The xs:enumeration. */
-	String enum_name = null;
+	protected String enum_name = null;
 
 	/** The array of xs:enumeration in XML document. */
-	String[] xenumeration = null;
+	protected String[] xenumeration = null;
 
 	/** The array of xs:enumeration in PostgreSQL. */
-	String[] enumeration = null;
+	protected String[] enumeration = null;
 
 	/** The xs:length restriction. */
-	String length = null;
+	protected String length = null;
 
 	/** The xs:minLength restriction. */
-	String min_length = null;
+	protected String min_length = null;
 
 	/** The xs:maxLength restriction. */
-	String max_length = null;
+	protected String max_length = null;
 
 	/** The xs:pattern restriction. */
-	String pattern = null;
+	protected String pattern = null;
 
 	/** The xs:maxInclusive restriction. */
-	String max_inclusive = null;
+	protected String max_inclusive = null;
 
 	/** The xs:maxExclusive restriction. */
-	String max_exclusive = null;
+	protected String max_exclusive = null;
 
 	/** The xs:minExclusive restriction. */
-	String min_exclusive = null;
+	protected String min_exclusive = null;
 
 	/** The xs:minInclusive restriction. */
-	String min_inclusive = null;
+	protected String min_inclusive = null;
 
 	/** The xs:totalDigits restriction. */
-	String total_digits = null;
+	protected String total_digits = null;
 
 	/** The xs:fractionDigits restriction. */
-	String fraction_digits = null;
+	protected String fraction_digits = null;
 
 	/** The xs:whiteSpace restriction. */
-	String white_space = null;
+	protected String white_space = null;
 
 	/** The xs:explicitTimezone restriction. */
-	String explicit_timezone = null;
+	protected String explicit_timezone = null;
 
 	/** The xs:assertions restriction.
-	String assertions = null; */
+	protected String assertions = null; */
 
 	/** Whether xs:list. */
-	boolean _list = false;
+	protected boolean _list = false;
 
 	/** Whether xs:union. */
-	boolean _union = false;
+	protected boolean _union = false;
 
 	/** The --fill-this option. */
-	boolean fill_this = false;
+	protected boolean fill_this = false;
 
 	/** The filled text used in post XML edition. */
-	String filled_text = null;
+	protected String filled_text = null;
 
 	/** The --filt-out option. */
-	boolean filt_out = false;
+	protected boolean filt_out = false;
 
 	/** The filter patterns in post XML edition. */
-	String[] filter_pattern = null;
+	protected String[] filter_pattern = null;
 
 	/** Whether JSON buffer is not empty. */
-	boolean jsonb_not_empty = false;
+	protected boolean jsonb_not_empty = false;
 
 	/** The size of data in JSON buffer. */
-	int jsonb_col_size = 0;
+	protected int jsonb_col_size = 0;
 
 	/** The size of null data in JSON buffer. */
-	int jsonb_null_size = 0;
+	protected int jsonb_null_size = 0;
 
 	/** The JSON buffer. */
-	StringBuilder jsonb = null;
+	protected StringBuilder jsonb = null;
 
 	/** Whether it has any system's administrative key (primary_key || foreign_key || nested_key). */
 	protected boolean system_key = false;

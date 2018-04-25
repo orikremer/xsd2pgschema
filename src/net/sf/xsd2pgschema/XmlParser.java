@@ -45,10 +45,10 @@ import org.xml.sax.SAXException;
 public class XmlParser {
 
 	/** The XML file.*/
-	File xml_file;
+	private File xml_file;
 
 	/** The XML document. */
-	Document document;
+	protected Document document;
 
 	/** The document id. */
 	public String document_id = null;

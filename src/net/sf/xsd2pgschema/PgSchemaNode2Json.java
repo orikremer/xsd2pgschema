@@ -36,13 +36,13 @@ import org.w3c.dom.Node;
 public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 	/** The position of header begins in JSON buffer. */
-	int jsonb_header_begin;
+	protected int jsonb_header_begin;
 
 	/** The position of header ends in JSON buffer. */
-	int jsonb_header_end;
+	protected int jsonb_header_end;
 
 	/** The white spaces between JSON item and JSON data. */
-	String key_value_space = " ";
+	private String key_value_space = " ";
 
 	/**
 	 * Node parser for JSON conversion.

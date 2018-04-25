@@ -31,31 +31,31 @@ import org.apache.commons.text.StringEscapeUtils;
 public class JsonBuilder {
 
 	/** The JSON buffer. */
-	StringBuilder builder = null;
+	protected StringBuilder builder = null;
 
 	/** The prefix of JSON item name of xs:attribute. */
-	String attr_prefix = "";
+	protected String attr_prefix = "";
 
 	/** The JSON item name of xs:simpleContent. */
-	String simple_content_key = PgSchemaUtil.simple_content_name;
+	protected String simple_content_key = PgSchemaUtil.simple_content_name;
 
 	/** The unit of indent space. */
-	String indent_space = "  ";
+	private String indent_space = "  ";
 
 	/** The white spaces between JSON item and JSON data. */
-	String key_value_space = " ";
-
-	/** The line feed code in JSON document. */
-	String linefeed = "\n";
-
-	/** Whether retain field annotation or not. */
-	boolean no_field_anno = false;
-
-	/** Use JSON array uniformly for descendants. */
-	boolean array_all = false;
+	protected String key_value_space = " ";
 
 	/** The length of the key_value_space. */
-	int key_value_spaces = key_value_space.length();
+	protected int key_value_spaces = key_value_space.length();
+
+	/** The line feed code in JSON document. */
+	protected String linefeed = "\n";
+
+	/** Use JSON array uniformly for descendants. */
+	protected boolean array_all = false;
+
+	/** Whether retain field annotation or not. */
+	private boolean no_field_anno = false;
 
 	/**
 	 * Instance of JSON builder.
@@ -64,8 +64,8 @@ public class JsonBuilder {
 	 */
 	public JsonBuilder(JsonBuilderOption option) {
 
-		this.no_field_anno = option.no_field_anno;
 		this.array_all = option.array_all;
+		this.no_field_anno = option.no_field_anno;
 
 		if (indent_space.length() != option.indent_spaces) {
 

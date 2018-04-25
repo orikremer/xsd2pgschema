@@ -35,88 +35,88 @@ import org.w3c.dom.Node;
 public class PgTable {
 
 	/** The PostgreSQL schema name (default schema name is "public"). */
-	String pg_schema_name = PgSchemaUtil.pg_public_schema_name;
+	protected String pg_schema_name = PgSchemaUtil.pg_public_schema_name;
 
 	/** The target namespace. */
-	String target_namespace = null;
+	protected String target_namespace = null;
 
 	/** The schema location. */
-	String schema_location = null;
+	protected String schema_location = null;
 
 	/** The table name in PostgreSQL. */
-	String name = "";
+	protected String name = "";
 
 	/** The xs:annotation/xs:documentation (as is). */
-	String xanno_doc = null;
+	protected String xanno_doc = null;
 
 	/** The xs:annotation. */
-	String anno = null;
+	protected String anno = null;
 
 	/** The table type classified by xs_root (root node), xs_root_child (children node of root node), xs_admin_root (administrative root node), xs_admin_child (children node of administrative node). */
-	XsTableType xs_type;
+	protected XsTableType xs_type;
 
 	/** The field list. */
-	List<PgField> fields = null;
+	protected List<PgField> fields = null;
 
 	/** The depth of table. */
-	int level = -1;
+	protected int level = -1;
 
 	/** the generation order in PostgreSQL DDL. */
-	int order = 0;
+	protected int order = 0;
 
 	/** The number of nested field. */
-	int nested_fields = 0;
+	protected int nested_fields = 0;
 
 	/** Whether content holder. */
-	boolean content_holder = false;
+	protected boolean content_holder = false;
 
 	/** Whether list holder. */
-	boolean list_holder = false;
+	protected boolean list_holder = false;
 
 	/** Whether bridge table. */
-	boolean bridge = false;
+	protected boolean bridge = false;
 
 	/** Whether xs_type equals xs_admin_root. */
-	boolean virtual = false;
+	protected boolean virtual = false;
 
 	/** Whether bridge table or virtual table or not content_holder. */
-	boolean relational = false;
+	protected boolean relational = false;
 
 	/** Whether table has foreign key. */
-	boolean has_foreign_key = false;
+	protected boolean has_foreign_key = false;
 
 	/** Whether table has any element. */
-	boolean has_any = false;
+	protected boolean has_any = false;
 
 	/** Whether table has any attribute. */
-	boolean has_any_attribute = false;
+	protected boolean has_any_attribute = false;
 
 	/** Whether table has pending group. */
-	boolean has_pending_group = false;
+	protected boolean has_pending_group = false;
 
 	/** Whether name collision occurs or not. */
-	boolean conflict = false;
+	protected boolean conflict = false;
 
 	/** Whether table is referred from child table. */
-	boolean required = false;
+	protected boolean required = false;
 
 	/** Whether table is realized in PostgreSQL DDL. */
-	boolean realized = false;
+	protected boolean realized = false;
 
 	/** Whether table is subset of database. */
-	boolean filt_out = false;
+	protected boolean filt_out = false;
 
 	/** The current file writer. */
-	FileWriter filew = null;
+	protected FileWriter filew = null;
 
 	/** The current buffered writer. */
-	BufferedWriter buffw = null;
+	protected BufferedWriter buffw = null;
 
 	/** Whether JSON buffer of arbitrary field is not empty. */
-	boolean jsonb_not_empty = false;
+	protected boolean jsonb_not_empty = false;
 
 	/** The Lucene document. */
-	org.apache.lucene.document.Document lucene_doc = null;
+	protected org.apache.lucene.document.Document lucene_doc = null;
 
 	/**
 	 * Instance of PostgreSQL table.
@@ -344,8 +344,8 @@ public class PgTable {
 			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 		field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
 		field.foreign_schema = schema_name;
-		field.foreign_table = name;
-		field.foreign_field = field.name;
+		field.foreign_table_name = name;
+		field.foreign_field_name = field.name;
 
 		field.maxoccurs = ref_field.maxoccurs;
 		field.minoccurs = ref_field.minoccurs;
@@ -393,7 +393,7 @@ public class PgTable {
 		if (field.parent_node != null && field.parent_node.isEmpty())
 			field.parent_node = null;
 
-		if (this.name.equals(field.foreign_table) && this.pg_schema_name.equals(field.foreign_schema))
+		if (this.pg_schema_name.equals(field.foreign_schema) && this.name.equals(field.foreign_table_name))
 			return false;
 
 		fields.add(field);
@@ -426,8 +426,8 @@ public class PgTable {
 			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 		field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
 		field.foreign_schema = schema_name;
-		field.foreign_table = name;
-		field.foreign_field = name + "_id";
+		field.foreign_table_name = name;
+		field.foreign_field_name = name + "_id";
 
 		fields.add(field);
 
@@ -456,8 +456,8 @@ public class PgTable {
 				field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 			field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
 			field.foreign_schema = foreign_table.pg_schema_name;
-			field.foreign_table = foreign_table.name;
-			field.foreign_field = arg.name;
+			field.foreign_table_name = foreign_table.name;
+			field.foreign_field_name = arg.name;
 
 			fields.add(field);
 

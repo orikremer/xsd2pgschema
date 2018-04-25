@@ -91,6 +91,9 @@ public class XPathCompList {
 	/** Whether retain case sensitive name in PostgreSQL DDL. */
 	private boolean case_sense = true;
 
+	/** The verbose mode. */
+	private boolean verbose = false;
+
 	/** The PostgreSQL data model. */
 	private PgSchema schema = null;
 
@@ -134,13 +137,15 @@ public class XPathCompList {
 
 		case_sense = option.case_sense;
 
+		verbose = option.verbose;
+
 		serial_key_name = option.serial_key_name;
 
 		comps = new ArrayList<XPathComp>();
 
 		path_exprs = new ArrayList<XPathExpr>();
 
-		if (option.verbose)
+		if (verbose)
 			System.out.println("Abstract syntax tree of query: '" + tree.getText() + "'");
 
 		if (!testParserTree(tree, " "))
@@ -149,12 +154,12 @@ public class XPathCompList {
 		union_counter = step_counter = 0;
 		wild_card = false;
 
-		if (option.verbose)
+		if (verbose)
 			System.out.println("\nSerialized axis and node-test of query: '"+ tree.getText() + "'");
 
 		serializeTree(tree);
 
-		if (option.verbose)
+		if (verbose)
 			System.out.println();
 
 		this.variables = variables;
@@ -216,7 +221,7 @@ public class XPathCompList {
 
 			boolean has_children = child.getChildCount() > 1;
 
-			if (option.verbose)
+			if (verbose)
 				System.out.println(indent + child.getClass().getSimpleName() + " '" + child.getText() + "' " + child.getSourceInterval().toString());
 
 			if (testParserTree(child, indent + " ") || has_children)
@@ -287,7 +292,7 @@ public class XPathCompList {
 
 				comps.add(comp);
 
-				if (option.verbose)
+				if (verbose)
 					System.out.println(union_counter + "." + step_counter + " - " + anyClass.getSimpleName() + " '" + text + "'");
 
 				if (!wild_card)
@@ -305,12 +310,12 @@ public class XPathCompList {
 
 			else if (anyClass.equals(StepContext.class)) {
 
-				if (option.verbose)
+				if (verbose)
 					System.out.println(union_counter + "." + step_counter + " - '" + text + "' ->");
 
 				traceChildOfStepContext(child);
 
-				if (option.verbose)
+				if (verbose)
 					System.out.println();
 
 				if (!wild_card)
@@ -345,7 +350,7 @@ public class XPathCompList {
 
 				comps.add(comp);
 
-				if (option.verbose)
+				if (verbose)
 					System.out.print(" " + anyClass.getSimpleName() + " '" + text + "'");
 
 				// no need to trace more
@@ -359,7 +364,7 @@ public class XPathCompList {
 
 				comps.add(comp);
 
-				if (option.verbose)
+				if (verbose)
 					System.out.print(" " + anyClass.getSimpleName() + " '" + text + "'");
 
 				// no need to trace prefix
@@ -3803,18 +3808,18 @@ public class XPathCompList {
 
 		String table_name = path_expr.getLastPathName();
 
-		int count = (int) tables.stream().filter(table -> option.case_sense ? table.name.equals(table_name) : table.name.equalsIgnoreCase(table_name)).count();
+		int count = (int) tables.stream().filter(table -> case_sense ? table.name.equals(table_name) : table.name.equalsIgnoreCase(table_name)).count();
 
 		switch (count) {
 		case 0:
 			return null;
 		case 1:
-			return tables.stream().filter(table -> option.case_sense ? table.name.equals(table_name) : table.name.equalsIgnoreCase(table_name)).findFirst().get();
+			return tables.stream().filter(table -> case_sense ? table.name.equals(table_name) : table.name.equalsIgnoreCase(table_name)).findFirst().get();
 		}
 
 		String path = path_expr.getReadablePath();
 
-		Optional<PgTable> opt = tables.stream().filter(table -> (option.case_sense ? table.name.equals(table_name) : table.name.equalsIgnoreCase(table_name)) && getAbsoluteXPathOfTable(table).endsWith(path)).findFirst();
+		Optional<PgTable> opt = tables.stream().filter(table -> (case_sense ? table.name.equals(table_name) : table.name.equalsIgnoreCase(table_name)) && getAbsoluteXPathOfTable(table).endsWith(path)).findFirst();
 
 		return opt != null ? opt.get() : null;
 	}
@@ -4275,7 +4280,7 @@ public class XPathCompList {
 
 					for (XPathComp src_comp : src_comps) {
 
-						if (option.verbose)
+						if (verbose)
 							System.out.println("\nReversed abstract syntax tree of predicate: '" + src_comp.tree.getText() + "'");
 
 						testPredicateTree2SqlExpr(src_comp, path_expr);
@@ -4400,8 +4405,8 @@ public class XPathCompList {
 	 */
 	private void appendSqlColumnName(XPathSqlExpr sql_expr, StringBuilder sb) {
 
-		if (sql_expr.unary_oprator != null)
-			sb.append(sql_expr.unary_oprator);
+		if (sql_expr.unary_operator != null)
+			sb.append(sql_expr.unary_operator);
 
 		switch (sql_expr.terminus) {
 		case any_element:
@@ -4575,7 +4580,7 @@ public class XPathCompList {
 
 				}
 
-				if (option.verbose)
+				if (verbose)
 					System.out.println(indent + tree.getClass().getSimpleName() + " <- " + parent.getClass().getSimpleName() + " '" + tree.getText() + "' " + tree.getSourceInterval().toString());
 
 			}
@@ -7064,7 +7069,7 @@ public class XPathCompList {
 
 			sb.append(" = ");
 
-			appendSqlColumnName(schema.getForeignTable(nested_key), nested_key.foreign_field, sb);
+			appendSqlColumnName(schema.getForeignTable(nested_key), nested_key.foreign_field_name, sb);
 
 			sb.append(" AND ");
 

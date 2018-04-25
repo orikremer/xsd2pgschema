@@ -29,22 +29,22 @@ import java.util.HashSet;
 public class XmlPostEditor {
 
 	/** The list of --filt-in option. */
-	HashSet<String> filt_ins = null;
+	protected HashSet<String> filt_ins = null;
 
 	/** The list of --filt-out option. */
-	HashSet<String> filt_outs = null;
+	protected HashSet<String> filt_outs = null;
 
 	/** The list of --fill-this option. */
-	HashSet<String> fill_these = null;
+	protected HashSet<String> fill_these = null;
 
 	/** Whether the --file-in options have been resolved. */
-	boolean filt_in_resolved = false;	
+	protected boolean filt_in_resolved = false;	
 
 	/** Whether the --file-out options have been resolved. */
-	boolean filt_out_resolved = false;
+	protected boolean filt_out_resolved = false;
 
 	/** Whether the --fill-this options have been resolved. */
-	boolean fill_this_resolved = false;
+	protected boolean fill_this_resolved = false;
 
 	/**
 	 * Instance of XmlPostEditor.

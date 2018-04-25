@@ -236,7 +236,7 @@ public abstract class PgSchemaNodeParser {
 		nested_key[nested_fields] = proc_key;
 
 		if (!nested_table.virtual)
-			nested_key[nested_fields] += "/" + field.foreign_table; // XPath child
+			nested_key[nested_fields] += "/" + field.foreign_table_name; // XPath child
 
 		return true;
 	}
