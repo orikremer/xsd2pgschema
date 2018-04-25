@@ -42,7 +42,7 @@ import com.github.antlr.grammars_v4.xpath.xpathListenerException;
 public class xmlsplitter {
 
 	/** The schema location. */
-	public static String schema_location = "";
+	protected static String schema_location = "";
 
 	/** The XML directory name for split XML files. */
 	private static String xml_dir_name = "xml_work";

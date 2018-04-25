@@ -42,7 +42,7 @@ public class csv2pgsql {
 	private static String csv_dir_name = xml2pgcsv.csv_dir_name;
 
 	/** The schema location. */
-	public static String schema_location = "";
+	private static String schema_location = "";
 
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(true);

@@ -41,7 +41,7 @@ import org.xml.sax.SAXException;
 public class xml2pgsql {
 
 	/** The schema location. */
-	public static String schema_location = "";
+	protected static String schema_location = "";
 
 	/** The check sum directory name. */
 	private static String check_sum_dir_name = "";
@@ -56,7 +56,7 @@ public class xml2pgsql {
 	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
 
 	/** The XML post editor. */
-	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
+	protected static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
 	/** The XML file queue. */
 	private static LinkedBlockingQueue<File> xml_file_queue = null;

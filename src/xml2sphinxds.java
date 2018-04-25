@@ -41,13 +41,13 @@ import org.xml.sax.SAXException;
 public class xml2sphinxds {
 
 	/** The schema location. */
-	public static String schema_location = "";
+	protected static String schema_location = "";
 
 	/** The data source name. */
-	public static String ds_name = "";
+	protected static String ds_name = "";
 
 	/** The data source directory name. */
-	public static String ds_dir_name = "sphinx_xmlpipe2";
+	protected static String ds_dir_name = "sphinx_xmlpipe2";
 
 	/** The check sum directory name. */
 	private static String check_sum_dir_name = "";
@@ -59,7 +59,7 @@ public class xml2sphinxds {
 	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
 
 	/** The XML post editor. */
-	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
+	protected static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
 	/** The index filter. */
 	private static IndexFilter index_filter = new IndexFilter();
@@ -68,10 +68,10 @@ public class xml2sphinxds {
 	private static LinkedBlockingQueue<File> xml_file_queue = null;
 
 	/** The document id stored in data source (key=document id, value=shard id). */
-	public static HashMap<String, Integer> doc_rows = null;
+	protected static HashMap<String, Integer> doc_rows = null;
 
 	/** The set of deleting document id while synchronization. */
-	public static HashSet<String>[] sync_del_doc_rows = null;
+	protected static HashSet<String>[] sync_del_doc_rows = null;
 
 	/** The shard size. */
 	private static int shard_size = 1;

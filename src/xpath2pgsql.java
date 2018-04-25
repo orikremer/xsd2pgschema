@@ -39,7 +39,7 @@ import com.github.antlr.grammars_v4.xpath.xpathListenerException;
 public class xpath2pgsql {
 
 	/** The schema location. */
-	public static String schema_location = "";
+	protected static String schema_location = "";
 
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(true);

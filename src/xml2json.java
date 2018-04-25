@@ -40,13 +40,13 @@ import org.xml.sax.SAXException;
 public class xml2json {
 
 	/** The schema location. */
-	public static String schema_location = "";
+	protected static String schema_location = "";
 
 	/** The JSON directory name. */
 	private static String json_dir_name = "json_work";
 
 	/** The JSON type. */
-	public static JsonType json_type = JsonType.defaultType();
+	protected static JsonType json_type = JsonType.defaultType();
 
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(false);
@@ -58,7 +58,7 @@ public class xml2json {
 	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
 
 	/** The XML post editor. */
-	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
+	protected static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
 	/** The XML file queue. */
 	private static LinkedBlockingQueue<File> xml_file_queue = null;

@@ -36,7 +36,7 @@ import org.apache.commons.io.FilenameUtils;
 public class xmlvalidator {
 
 	/** The schema location. */
-	public static String schema_location = "";
+	protected static String schema_location = "";
 
 	/** The check sum directory name. */
 	private static String check_sum_dir_name = "";

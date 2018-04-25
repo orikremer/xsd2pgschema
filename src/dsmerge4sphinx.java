@@ -43,7 +43,7 @@ import org.xml.sax.SAXException;
 public class dsmerge4sphinx {
 
 	/** The schema location. */
-	public static String schema_location = "";
+	private static String schema_location = "";
 
 	/** The data source name. */
 	private static String ds_name = "";

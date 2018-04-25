@@ -42,10 +42,10 @@ import org.xml.sax.SAXException;
 public class xml2luceneidx {
 
 	/** The schema location. */
-	public static String schema_location = "";
+	protected static String schema_location = "";
 
 	/** The index directory name. */
-	public static String idx_dir_name = "lucene_index";
+	protected static String idx_dir_name = "lucene_index";
 
 	/** The check sum directory name. */
 	private static String check_sum_dir_name = "";
@@ -57,7 +57,7 @@ public class xml2luceneidx {
 	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
 
 	/** The XML post editor. */
-	public static XmlPostEditor xml_post_editor = new XmlPostEditor();
+	protected static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
 	/** The index filter. */
 	private static IndexFilter index_filter = new IndexFilter();
@@ -66,10 +66,10 @@ public class xml2luceneidx {
 	private static LinkedBlockingQueue<File> xml_file_queue = null;
 
 	/** The Lucene index writers. */
-	public static IndexWriter[] writers = null;
+	protected static IndexWriter[] writers = null;
 
 	/** The document id stored in index (key=document id, value=shard id). */
-	public static HashMap<String, Integer> doc_rows = null;
+	protected static HashMap<String, Integer> doc_rows = null;
 
 	/** The shard size. */
 	private static int shard_size = 1;

@@ -43,7 +43,7 @@ public class dicmerge4sphinx {
 	private static String ds_dir_name = xml2sphinxds.ds_dir_name;
 
 	/** The frequency threshold. */
-	public static int freq_threshold = 10;
+	private static int freq_threshold = 10;
 
 	/** The dictionary file list. */
 	private static List<String> dic_file_list = new ArrayList<String>();
