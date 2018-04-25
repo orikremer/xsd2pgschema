@@ -36,16 +36,16 @@ public class PgForeignKey {
 	String pg_schema_name = null;
 
 	/** The child table name. */
-	String child_table = null;
+	String child_table_name = null;
 
 	/** The child field names, separated by comma character. */
-	String child_fields = null;
+	String child_field_names = null;
 
 	/** The parent table name. */
-	String parent_table = null;
+	String parent_table_name = null;
 
 	/** The parent field names, separated by comma character. */
-	String parent_fields = null;
+	String parent_field_names = null;
 
 	/**
 	 * Instance of PgForeignKey.
@@ -65,10 +65,10 @@ public class PgForeignKey {
 
 		this.pg_schema_name = pg_schema_name;
 
-		child_table = extractTable(option, node);
-		child_fields = extractFields(option, node);
+		child_table_name = extractTableName(option, node);
+		child_field_names = extractFieldNames(option, node);
 
-		parent_table = parent_fields = null;
+		parent_table_name = parent_field_names = null;
 
 		for (Node child = parent_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -80,8 +80,8 @@ public class PgForeignKey {
 			if (!key_name.equals(e.getAttribute("name")))
 				continue;
 
-			parent_table = extractTable(option, child);
-			parent_fields = extractFields(option, child);
+			parent_table_name = extractTableName(option, child);
+			parent_field_names = extractFieldNames(option, child);
 
 			break;
 		}
@@ -95,7 +95,7 @@ public class PgForeignKey {
 	 * @param node current node
 	 * @return String child table name
 	 */
-	private String extractTable(PgSchemaOption option, Node node) {
+	private String extractTableName(PgSchemaOption option, Node node) {
 
 		String xs_prefix_ = option.xs_prefix_;
 
@@ -121,7 +121,7 @@ public class PgForeignKey {
 	 * @param node current node
 	 * @return String child field names separated by comma
 	 */
-	private String extractFields(PgSchemaOption option, Node node) {
+	private String extractFieldNames(PgSchemaOption option, Node node) {
 
 		String xs_prefix_ = option.xs_prefix_;
 
@@ -138,6 +138,7 @@ public class PgForeignKey {
 
 			if (fields.isEmpty())
 				fields = xpath[xpath.length - 1].replaceAll("@", "");
+
 			else
 				fields = fields.concat(", " + xpath[xpath.length - 1]).replaceAll("@", "");
 
@@ -153,16 +154,16 @@ public class PgForeignKey {
 	 */
 	public boolean isEmpty() {
 
-		if (child_table == null || child_table.isEmpty())
+		if (child_table_name == null || child_table_name.isEmpty())
 			return true;
 
-		if (parent_table == null || parent_table.isEmpty())
+		if (parent_table_name == null || parent_table_name.isEmpty())
 			return true;
 
-		if (child_fields == null || child_fields.isEmpty())
+		if (child_field_names == null || child_field_names.isEmpty())
 			return true;
 
-		if (parent_fields == null || parent_fields.isEmpty())
+		if (parent_field_names == null || parent_field_names.isEmpty())
 			return true;
 
 		return false;
@@ -176,8 +177,8 @@ public class PgForeignKey {
 	 */
 	public boolean equals(PgForeignKey foreign_key) {
 		return pg_schema_name.equals(foreign_key.pg_schema_name) &&
-				child_table.equals(foreign_key.child_table) && parent_table.equals(foreign_key.parent_table) &&
-				child_fields.equals(foreign_key.child_fields) && parent_fields.equals(foreign_key.parent_fields);
+				child_table_name.equals(foreign_key.child_table_name) && parent_table_name.equals(foreign_key.parent_table_name) &&
+				child_field_names.equals(foreign_key.child_field_names) && parent_field_names.equals(foreign_key.parent_field_names);
 	}
 
 }

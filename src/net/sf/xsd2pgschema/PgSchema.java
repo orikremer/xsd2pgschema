@@ -2319,7 +2319,7 @@ public class PgSchema {
 	 * @return String PostgreSQL name of parent table
 	 */
 	private String getPgParentNameOf(PgForeignKey foreign_key) {
-		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(foreign_key.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_table);
+		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(foreign_key.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_table_name);
 	}
 
 	/**
@@ -2329,7 +2329,7 @@ public class PgSchema {
 	 * @return String PostgreSQL name of child table
 	 */
 	private String getPgChildNameOf(PgForeignKey foreign_key) {
-		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(foreign_key.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(foreign_key.child_table);
+		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(foreign_key.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(foreign_key.child_table_name);
 	}
 
 	/**
@@ -2408,7 +2408,7 @@ public class PgSchema {
 	 * @return PgTable parent table
 	 */
 	private PgTable getParentTable(PgForeignKey foreign_key) {
-		return getTable(foreign_key.pg_schema_name, foreign_key.parent_table);
+		return getTable(foreign_key.pg_schema_name, foreign_key.parent_table_name);
 	}
 
 	/**
@@ -2417,9 +2417,9 @@ public class PgSchema {
 	 * @param child_table child table
 	 * @return PgTable parent table
 	 */
-	protected PgTable getParentTable(PgTable child_table) {
+	protected PgTable getFKParentTable(PgTable child_table) {
 
-		Optional<PgForeignKey> opt = foreign_keys.stream().filter(foreign_key -> foreign_key.pg_schema_name.equals(child_table.pg_schema_name) && foreign_key.child_table.equals(child_table.name)).findFirst();
+		Optional<PgForeignKey> opt = foreign_keys.stream().filter(foreign_key -> foreign_key.pg_schema_name.equals(child_table.pg_schema_name) && foreign_key.child_table_name.equals(child_table.name)).findFirst();
 
 		return opt.isPresent() ? getParentTable(opt.get()) : null;	
 	}
@@ -2431,7 +2431,7 @@ public class PgSchema {
 	 * @return PgTable child table
 	 */
 	private PgTable getChildTable(PgForeignKey foreign_key) {
-		return getTable(foreign_key.pg_schema_name, foreign_key.child_table);
+		return getTable(foreign_key.pg_schema_name, foreign_key.child_table_name);
 	}
 
 	/**
@@ -2664,7 +2664,7 @@ public class PgSchema {
 
 				PgForeignKey foreign_key2 = foreign_keys.get(fk2);
 
-				if (foreign_key.parent_table.equals(foreign_key2.parent_table)) {
+				if (foreign_key.parent_table_name.equals(foreign_key2.parent_table_name)) {
 					unique = false;
 					break;
 				}
@@ -2681,7 +2681,7 @@ public class PgSchema {
 				if (!option.rel_model_ext && table.relational)
 					unique = false;
 
-				PgField field = table.getField(foreign_key.parent_fields);
+				PgField field = table.getField(foreign_key.parent_field_names);
 
 				if (field != null) {
 
@@ -2690,17 +2690,20 @@ public class PgSchema {
 
 				}
 
+				else
+					continue;
+
 			}
 
 			if (!unique)
 				continue;
 
-			String constraint_name = "UNQ_" + foreign_key.parent_table;
+			String constraint_name = "UNQ_" + foreign_key.parent_table_name;
 
 			if (constraint_name.length() > PgSchemaUtil.max_enum_len)
 				constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 
-			System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + getPgParentNameOf(foreign_key) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " UNIQUE ( " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_fields) + " );\n");
+			System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + getPgParentNameOf(foreign_key) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " UNIQUE ( " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_field_names) + " );\n");
 
 		}
 
@@ -2726,22 +2729,22 @@ public class PgSchema {
 			if (!option.rel_model_ext && relational)
 				continue;
 
-			String[] child_fields = foreign_key.child_fields.split(" ");
-			String[] parent_fields = foreign_key.parent_fields.split(" ");
+			String[] child_field_names = foreign_key.child_field_names.split(" ");
+			String[] parent_field_names = foreign_key.parent_field_names.split(" ");
 
-			if (child_fields.length == parent_fields.length) {
+			if (child_field_names.length == parent_field_names.length) {
 
-				for (int i = 0; i < child_fields.length; i++) {
+				for (int i = 0; i < child_field_names.length; i++) {
 
-					child_fields[i] = child_fields[i].replaceFirst(",$", "");
-					parent_fields[i] = parent_fields[i].replaceFirst(",$", "");
+					child_field_names[i] = child_field_names[i].replaceFirst(",$", "");
+					parent_field_names[i] = parent_field_names[i].replaceFirst(",$", "");
 
-					String constraint_name = "KR_" + foreign_key.name + (child_fields.length > 1 ? "_" + i : "");
+					String constraint_name = "KR_" + foreign_key.name + (child_field_names.length > 1 ? "_" + i : "");
 
 					if (constraint_name.length() > PgSchemaUtil.max_enum_len)
 						constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 
-					System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + getPgChildNameOf(foreign_key) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " FOREIGN KEY ( " + PgSchemaUtil.avoidPgReservedWords(child_fields[i]) + " ) REFERENCES " + getPgNameOf(getParentTable(foreign_key)) + " ( " + PgSchemaUtil.avoidPgReservedWords(parent_fields[i]) + " ) ON DELETE CASCADE NOT VALID;\n");
+					System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + getPgChildNameOf(foreign_key) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " FOREIGN KEY ( " + PgSchemaUtil.avoidPgReservedWords(child_field_names[i]) + " ) REFERENCES " + getPgNameOf(getParentTable(foreign_key)) + " ( " + PgSchemaUtil.avoidPgReservedWords(parent_field_names[i]) + " ) ON DELETE CASCADE NOT VALID;\n");
 
 				}
 
@@ -2761,7 +2764,7 @@ public class PgSchema {
 
 		// realize parent table at first
 
-		foreign_keys.stream().filter(foreign_key -> foreign_key.pg_schema_name.equals(table.pg_schema_name) && foreign_key.child_table.equals(table.name)).map(foreign_key -> getParentTable(foreign_key)).filter(admin_table -> admin_table != null).forEach(admin_table -> {
+		foreign_keys.stream().filter(foreign_key -> foreign_key.pg_schema_name.equals(table.pg_schema_name) && foreign_key.child_table_name.equals(table.name)).map(foreign_key -> getParentTable(foreign_key)).filter(admin_table -> admin_table != null).forEach(admin_table -> {
 
 			realizeAdmin(admin_table, output);
 
@@ -3055,11 +3058,11 @@ public class PgSchema {
 			if (!option.rel_model_ext && relational)
 				continue;
 
-			String[] child_fields = foreign_key.child_fields.split(" ");
-			String[] parent_fields = foreign_key.parent_fields.split(" ");
+			String[] child_field_names = foreign_key.child_field_names.split(" ");
+			String[] parent_field_names = foreign_key.parent_field_names.split(" ");
 
-			if (child_fields.length == parent_fields.length)
-				key_references += child_fields.length;
+			if (child_field_names.length == parent_field_names.length)
+				key_references += child_field_names.length;
 
 		}
 

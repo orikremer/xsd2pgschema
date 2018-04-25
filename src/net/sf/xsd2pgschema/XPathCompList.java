@@ -3753,7 +3753,7 @@ public class XPathCompList {
 		if (!table.virtual)
 			sb.append((sb.length() > 0 ? "/" : "") + table_name);
 
-		PgTable parent_table = schema.getParentTable(table);
+		PgTable parent_table = schema.getFKParentTable(table);
 
 		if (parent_table != null)
 			return getAbsoluteXPathOfTable(parent_table, sb);
