@@ -46,6 +46,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipInputStream;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -159,14 +160,17 @@ public class PgSchemaUtil {
 	public static final String url_rex = "^https?:\\/\\/.*";
 
 	/**
-	 * Return input stream of XSD file with gzip decompression.
+	 * Return input stream of XSD file with decompression.
 	 *
-	 * @param  file plane file or gzip compressed file
+	 * @param  file plane file or compressed file
 	 * @return InputStream input stream of file
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public static InputStream getSchemaInputStream(File file) throws IOException {
-		return FilenameUtils.getExtension(file.getName()).equals("gz") ? new GZIPInputStream(new FileInputStream(file)) : new FileInputStream(file);
+
+		String ext = FilenameUtils.getExtension(file.getName());
+
+		return ext.equals("gz") ? new GZIPInputStream(new FileInputStream(file)) : ext.equals("zip") ? new ZipInputStream(new FileInputStream(file)) : new FileInputStream(file);
 	}
 
 	/**

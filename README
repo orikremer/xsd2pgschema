@@ -1,4 +1,8 @@
-﻿ Changed in xsd2pgschema 2.9.0 (release 2018-04-17)
+﻿ Changed in xsd2pgschema 2.9.1 (release 2018-04-26)
+
+  Added support for xml.zip file decompression (usage: --xml-file-ext zip).
+
+ Changed in xsd2pgschema 2.9.0 (release 2018-04-17)
 
   Added support for PostgreSQL named schema (--pg-named-schema option).
 

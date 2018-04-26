@@ -310,7 +310,7 @@ public class xml2json {
 		System.err.println("        --validate (turn on XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
 		System.err.println("        --well-formed (validate only whether document is well-formed)");
-		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
+		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix) | zip (indicates xml.zip suffix)]");
 		System.err.println("        --obj-json (use column-oriented JSON format)");
 		System.err.println("        --col-json (use column-oriented JSON format, default)");
 		System.err.println("        --rel-json (use relational-oriented JSON format)");

@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipInputStream;
 
 import javax.xml.parsers.DocumentBuilder;
 
@@ -135,6 +136,15 @@ public class XmlParser {
 
 		}
 
+		// xml.zip file
+
+		else if (FilenameUtils.getExtension(xml_file_name).equals("zip")) {
+
+			_xml_file_ext_digest += "xml.";
+			_xml_file_ext = "zip";
+
+		}
+
 		// decide document id quoting XML file name
 
 		document_id = xml_file_name.replaceFirst("^" + xml_file_filter.prefix_digest, "").replaceFirst(_xml_file_ext_digest + _xml_file_ext + "$", "");
@@ -178,6 +188,29 @@ public class XmlParser {
 			}
 
 			gzin.close();
+			in.close();
+
+		}
+
+		// xml.zip file
+
+		else if (FilenameUtils.getExtension(xml_file.getName()).equals("zip")) {
+
+			FileInputStream in = new FileInputStream(xml_file);
+			ZipInputStream zin = new ZipInputStream(in);
+
+			document = doc_builder.parse(zin);
+
+			if (validator != null) {
+
+				in = new FileInputStream(xml_file);
+				zin = new ZipInputStream(in);
+
+				validator.exec(xml_file.getPath(), zin, null, false);
+
+			}
+
+			zin.close();
 			in.close();
 
 		}

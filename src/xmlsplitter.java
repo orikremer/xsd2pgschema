@@ -208,7 +208,7 @@ public class xmlsplitter {
 
 		System.err.println("xmlsplitter: Split large XML into small XML files");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml SRC_XML_FILE_OR_DIRECTORY --xml-dir DST_DIRECTORY (default=\"" + xml_dir_name + "\")");
-		System.err.println("        --xml-file-ext SRC_FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
+		System.err.println("        --xml-file-ext SRC_FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix) | zip (indicates xml.zip suffix)]");
 		System.err.println("        --xpath-doc-key XPATH_EXPR_FOR_DOC_KEY");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --shard-size SHARD_SIZE (default=1)");

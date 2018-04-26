@@ -16,16 +16,13 @@ if [ ! -e $DB_XML ] ; then
 
  fi
 
- cp $DB_FTP/$DB_GZ .
- gunzip $DB_GZ
-
 fi
 
 XML_DIR=uniprot_xml
 
 XSD_SCHEMA=uniprot.xsd
 
-java -classpath ../xsd2pgschema.jar xmlsplitter --xsd $XSD_SCHEMA --xml $DB_XML --xml-dir $XML_DIR --xpath-doc-key /uniprot/entry/accession
+java -classpath ../xsd2pgschema.jar xmlsplitter --xsd $XSD_SCHEMA --xml $DB_FTP/$DB_GZ -xml-file-ext gz --xml-dir $XML_DIR --xpath-doc-key /uniprot/entry/accession
 
 date
 

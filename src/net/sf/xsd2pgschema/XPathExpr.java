@@ -33,7 +33,7 @@ public class XPathExpr {
 	protected String path = null;
 
 	/** The terminus type. */
-	protected XPathCompType terminus = null;
+	public XPathCompType terminus = null;
 
 	/** The previous terminus type. */
 	protected XPathCompType prev_term = null;

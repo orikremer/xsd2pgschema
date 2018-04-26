@@ -436,7 +436,7 @@ public class xml2sphinxds {
 		System.err.println("        --validate (turn off XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
 		System.err.println("        --well-formed (validate only whether document is well-formed)");
-		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
+		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix) | zip (indicates xml.zip suffix)]");
 		System.err.println("        --shard-size SHARD_SIZE (default=1)");
 		System.err.println("        --min-word-len MIN_WORD_LENGTH (default is " + PgSchemaUtil.min_word_len + ")");
 		System.err.println("        --max-field-len MAX_FIELD_LENGTH (default is " + PgSchemaUtil.sph_max_field_len / 1024 / 1024 + "M)");

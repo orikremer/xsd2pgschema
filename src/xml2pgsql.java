@@ -398,7 +398,7 @@ public class xml2pgsql {
 		System.err.println("        --validate (turn on XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
 		System.err.println("        --well-formed (validate only whether document is well-formed)");
-		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix)]");
+		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix) | zip (indicates xml.zip suffix)]");
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
