@@ -170,7 +170,9 @@ public class PgSchemaUtil {
 
 		String ext = FilenameUtils.getExtension(file.getName());
 
-		return ext.equals("gz") ? new GZIPInputStream(new FileInputStream(file)) : ext.equals("zip") ? new ZipInputStream(new FileInputStream(file)) : new FileInputStream(file);
+		FileInputStream in = new FileInputStream(file);
+
+		return ext.equals("gz") ? new GZIPInputStream(in) : ext.equals("zip") ? new ZipInputStream(in) : in;
 	}
 
 	/**

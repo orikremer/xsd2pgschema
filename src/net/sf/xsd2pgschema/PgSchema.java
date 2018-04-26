@@ -2348,7 +2348,7 @@ public class PgSchema {
 	 * @param table table
 	 * @return String PostgreSQL name of table
 	 */
-	protected String getCsvNameOf(PgTable table) {
+	protected String getCsvFileNameOf(PgTable table) {
 		return (option.pg_named_schema ? table.pg_schema_name + "." : "") + table.name + ".csv";
 	}
 
@@ -3929,7 +3929,7 @@ public class PgSchema {
 
 				if (table.buffw == null) {
 
-					File csv_file = new File(csv_dir, getCsvNameOf(table));
+					File csv_file = new File(csv_dir, getCsvFileNameOf(table));
 
 					try {
 
@@ -4431,7 +4431,7 @@ public class PgSchema {
 
 			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
-				File csv_file = new File(csv_dir, getCsvNameOf(table));
+				File csv_file = new File(csv_dir, getCsvFileNameOf(table));
 
 				try {
 
