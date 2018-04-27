@@ -125,6 +125,12 @@ public class xpath2pgsql {
 			else if (args[i].equals("--pg-named-schema"))
 				option.pg_named_schema = true;
 
+			else if (args[i].equals("--pg-tab-delimiter"))
+				option.pg_tab_delimiter = true;
+
+			else if (args[i].equals("--pg-comma-delimiter"))
+				option.pg_tab_delimiter = false;
+
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
 
@@ -221,6 +227,8 @@ public class xpath2pgsql {
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
+		System.err.println("        --pg-tab-delimiter (use tab separated file, default)");
+		System.err.println("        --pg-comma-delimiter (use comma separated file)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");

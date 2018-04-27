@@ -40,8 +40,8 @@ import org.xml.sax.SAXException;
  */
 public class xml2pgcsv {
 
-	/** The CSV directory name. */
-	protected static String csv_dir_name = "pg_work";
+	/** The working directory name. */
+	protected static String work_dir_name = "pg_work";
 
 	/** The check sum directory name. */
 	private static String check_sum_dir_name = "";
@@ -123,8 +123,8 @@ public class xml2pgcsv {
 			else if (args[i].equals("--upper-case-doc-key"))
 				xml_file_filter.setUpperCaseDocKey();
 
-			else if ((args[i].equals("--csv-dir") || args[i].equals("--tsv-dir")) && i + 1 < args.length)
-				csv_dir_name = args[++i];
+			else if ((args[i].equals("--csv-dir") || args[i].equals("--tsv-dir") || args[i].equals("--work-dir")) && i + 1 < args.length)
+				work_dir_name = args[++i];
 
 			else if (args[i].equals("--db-host") && i + 1 < args.length)
 				pg_option.host = args[++i];
@@ -302,12 +302,12 @@ public class xml2pgcsv {
 		if (xml_file_queue.size() < max_thrds)
 			max_thrds = xml_file_queue.size();
 
-		File csv_dir = new File(csv_dir_name);
+		File work_dir = new File(work_dir_name);
 
-		if (!csv_dir.isDirectory()) {
+		if (!work_dir.isDirectory()) {
 
-			if (!csv_dir.mkdir()) {
-				System.err.println("Couldn't create directory '" + csv_dir_name + "'.");
+			if (!work_dir.mkdir()) {
+				System.err.println("Couldn't create directory '" + work_dir_name + "'.");
 				System.exit(1);
 			}
 
@@ -349,7 +349,7 @@ public class xml2pgcsv {
 				if (thrd_id > 0)
 					is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
-				proc_thrd[thrd_id] = new Xml2PgCsvThrd(thrd_id, is, csv_dir, xml_file_filter, xml_file_queue, xml_post_editor, option, pg_option);
+				proc_thrd[thrd_id] = new Xml2PgCsvThrd(thrd_id, is, work_dir, xml_file_filter, xml_file_queue, xml_post_editor, option, pg_option);
 
 			} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | SQLException | PgSchemaException e) {
 				e.printStackTrace();
@@ -387,7 +387,7 @@ public class xml2pgcsv {
 	private static void showUsage() {
 
 		System.err.println("xml2pgcsv: XML -> CSV conversion and PostgreSQL data migration");
-		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --csv-dir DIRECTORY (default=\"" + csv_dir_name + "\")");
+		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --work-dir DIRECTORY (default=\"" + work_dir_name + "\")");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");

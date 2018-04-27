@@ -43,6 +43,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.apache.commons.text.StringEscapeUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -234,6 +235,7 @@ public class XPathEvaluatorImpl {
 					if (terminus.isField() || terminus.isText()) {
 
 						_bout.write(path_expr.sql_subject.field.getName().getBytes());
+						_bout.write('\n');
 
 						while (rset.next()) {
 
@@ -253,19 +255,51 @@ public class XPathEvaluatorImpl {
 
 						int column_count = meta.getColumnCount();
 
-						for (int i = 1; i <= column_count; i++) {
-
-							_bout.write(meta.getColumnName(i).getBytes());
-							_bout.write((i < column_count ? '\t' : '\n'));
-
-						}
-
-						while (rset.next()) {
+						if (option.pg_tab_delimiter) {
 
 							for (int i = 1; i <= column_count; i++) {
 
-								_bout.write(rset.getString(i).getBytes());
+								_bout.write(meta.getColumnName(i).getBytes());
 								_bout.write((i < column_count ? '\t' : '\n'));
+
+							}
+
+							while (rset.next()) {
+
+								for (int i = 1; i <= column_count; i++) {
+
+									String value = rset.getString(i);
+
+									if (value == null || value.isEmpty())
+										_bout.write(String.valueOf("\\N").getBytes());
+									else
+										_bout.write(value.replaceAll("\t", "\\t").replaceAll("\n", "\\n").getBytes());
+
+									_bout.write((i < column_count ? '\t' : '\n'));
+
+								}
+
+							}
+
+						}
+
+						else {
+
+							for (int i = 1; i <= column_count; i++) {
+
+								_bout.write(meta.getColumnName(i).getBytes());
+								_bout.write((i < column_count ? ',' : '\n'));
+
+							}
+
+							while (rset.next()) {
+
+								for (int i = 1; i <= column_count; i++) {
+
+									_bout.write(StringEscapeUtils.escapeCsv(rset.getString(i)).getBytes());
+									_bout.write((i < column_count ? ',' : '\n'));
+
+								}
 
 							}
 

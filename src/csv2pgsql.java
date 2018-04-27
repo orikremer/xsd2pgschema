@@ -38,8 +38,8 @@ import org.xml.sax.SAXException;
  */
 public class csv2pgsql {
 
-	/** The CSV directory name. */
-	private static String csv_dir_name = xml2pgcsv.csv_dir_name;
+	/** The working directory name. */
+	private static String work_dir_name = xml2pgcsv.work_dir_name;
 
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(true);
@@ -63,8 +63,8 @@ public class csv2pgsql {
 			if (args[i].equals("--xsd") && i + 1 < args.length)
 				option.root_schema_location = args[++i];
 
-			else if ((args[i].equals("--csv-dir") || args[i].equals("--tsv-dir")) && i + 1 < args.length)
-				csv_dir_name = args[++i];
+			else if ((args[i].equals("--csv-dir") || args[i].equals("--tsv-dir") || args[i].equals("--work-dir")) && i + 1 < args.length)
+				work_dir_name = args[++i];
 
 			else if (args[i].equals("--db-host") && i + 1 < args.length)
 				pg_option.host = args[++i];
@@ -160,12 +160,12 @@ public class csv2pgsql {
 		if (is == null)
 			showUsage();
 
-		File csv_dir = new File(csv_dir_name);
+		File work_dir = new File(work_dir_name);
 
-		if (!csv_dir.isDirectory()) {
+		if (!work_dir.isDirectory()) {
 
-			if (!csv_dir.mkdir()) {
-				System.err.println("Couldn't create directory '" + csv_dir_name + "'.");
+			if (!work_dir.mkdir()) {
+				System.err.println("Couldn't create directory '" + work_dir_name + "'.");
 				System.exit(1);
 			}
 
@@ -201,7 +201,7 @@ public class csv2pgsql {
 			if (pg_option.test)
 				schema.testPgSql(db_conn, true);
 
-			schema.pgCsv2PgSql(db_conn, csv_dir);
+			schema.pgCsv2PgSql(db_conn, work_dir);
 
 			System.out.println("Done " + (option.pg_tab_delimiter ? "tsv" : "csv") + " -> db (" + pg_option.name + ").");
 
@@ -218,7 +218,7 @@ public class csv2pgsql {
 	private static void showUsage() {
 
 		System.err.println("csv2pgsql: CSV -> PostgreSQL data migration");
-		System.err.println("Usage:  --xsd SCHEMA_LOCATION --csv-dir DIRECTORY (default=\"" + csv_dir_name + "\") --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
+		System.err.println("Usage:  --xsd SCHEMA_LOCATION --work-dir DIRECTORY (default=\"" + work_dir_name + "\") --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
