@@ -41,9 +41,6 @@ import org.xml.sax.SAXException;
  */
 public class xml2luceneidx {
 
-	/** The schema location. */
-	protected static String schema_location = "";
-
 	/** The index directory name. */
 	protected static String idx_dir_name = "lucene_index";
 
@@ -100,7 +97,7 @@ public class xml2luceneidx {
 				touch_xml = false;
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
-				schema_location = args[++i];
+				option.root_schema_location = args[++i];
 
 			else if (args[i].equals("--xml") && i + 1 < args.length) {
 				String xml_file_name = args[++i];
@@ -263,12 +260,12 @@ public class xml2luceneidx {
 
 		}
 
-		if (schema_location.isEmpty()) {
+		if (option.root_schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
 		if (is == null)
 			showUsage();
@@ -343,9 +340,9 @@ public class xml2luceneidx {
 				try {
 
 					if (shard_id > 0 || thrd_id > 0)
-						is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+						is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
-					proc_thrd[_thrd_id] = new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, option, index_filter);
+					proc_thrd[_thrd_id] = new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, xml_post_editor, option, index_filter);
 
 				} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 					e.printStackTrace();

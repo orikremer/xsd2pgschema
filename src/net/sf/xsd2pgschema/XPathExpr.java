@@ -42,7 +42,7 @@ public class XPathExpr {
 	public String sql = null;
 
 	/** The subject SQL expression. */
-	protected XPathSqlExpr sql_subject = null;
+	public XPathSqlExpr sql_subject = null;
 
 	/** The predicate SQL expression. */
 	protected List<XPathSqlExpr> sql_predicates = null;

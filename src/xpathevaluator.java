@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -19,26 +19,39 @@ limitations under the License.
 
 import net.sf.xsd2pgschema.*;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
+import java.security.NoSuchAlgorithmException;
+import java.sql.SQLException;
+import java.util.HashMap;
 
-import javax.xml.parsers.*;
+import javax.xml.parsers.ParserConfigurationException;
 
-import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
+import com.github.antlr.grammars_v4.xpath.xpathListenerException;
 
 /**
- * PostgreSQL DDL translation.
+ * XPath 1.0 query evaluator.
  *
  * @author yokochi
  */
-public class xsd2pgschema {
+public class xpathevaluator {
+
+	/** The output file name. */
+	protected static String out_file_name = "";
 
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(true);
+
+	/** The PostgreSQL option. */
+	private static PgOption pg_option = new PgOption();
+
+	/** The XPath query. */
+	private static String xpath_query = "";
+
+	/** The XPath variable reference. */
+	private static HashMap<String, String> variables = new HashMap<String, String>();
 
 	/**
 	 * The main method.
@@ -47,19 +60,43 @@ public class xsd2pgschema {
 	 */
 	public static void main(String[] args) {
 
-		option.ddl_output = true; // output PostgreSQL DDL
-
-		String ddl_file_name = "";
-
-		option.hash_algorithm = ""; // assumed hash algorithm should be empty
-
 		for (int i = 0; i < args.length; i++) {
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
 				option.root_schema_location = args[++i];
 
-			else if (args[i].equals("--ddl") && i + 1 < args.length)
-				ddl_file_name = args[++i];
+			else if (args[i].equals("--out") && i + 1 < args.length)
+				out_file_name = args[++i];
+
+			else if (args[i].equals("--xpath-query") && i + 1 < args.length)
+				xpath_query = args[++i];
+
+			else if (args[i].equals("--xpath-var") && i + 1 < args.length) {
+				String[] variable = args[++i].split("=");
+				if (variable.length != 2) {
+					System.err.println("Invalid variable definition.");
+					showUsage();
+				}
+				variables.put(variable[0], variable[1]);
+			}
+
+			else if (args[i].equals("--db-host") && i + 1 < args.length)
+				pg_option.host = args[++i];
+
+			else if (args[i].equals("--db-port") && i + 1 < args.length)
+				pg_option.port = Integer.valueOf(args[++i]);
+
+			else if (args[i].equals("--db-name") && i + 1 < args.length)
+				pg_option.name = args[++i];
+
+			else if (args[i].equals("--db-user") && i + 1 < args.length)
+				pg_option.user = args[++i];
+
+			else if (args[i].equals("--db-pass") && i + 1 < args.length)
+				pg_option.pass = args[++i];
+
+			else if (args[i].equals("--test-ddl"))
+				pg_option.test = true;
 
 			else if (args[i].equals("--doc-key"))
 				option.setDocKeyOption(true);
@@ -68,7 +105,7 @@ public class xsd2pgschema {
 				option.setDocKeyOption(false);
 
 			else if (args[i].equals("--no-rel"))
-				option.cancelRelModelExt();
+				option.cancelRelDataExt();
 
 			else if (args[i].equals("--no-wild-card"))
 				option.wild_card = false;
@@ -90,15 +127,6 @@ public class xsd2pgschema {
 
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
-
-			else if (args[i].equals("--no-key"))
-				option.retain_key = false;
-
-			else if (args[i].equals("--field-annotation"))
-				option.no_field_anno = false;
-
-			else if (args[i].equals("--no-field-annotation"))
-				option.no_field_anno = true;
 
 			else if (args[i].equals("--hash-by") && i + 1 < args.length)
 				option.hash_algorithm = args[++i];
@@ -123,15 +151,18 @@ public class xsd2pgschema {
 
 			else if (args[i].equals("--inplace-doc-key-name") && i + 1 < args.length) {
 				option.addInPlaceDocKeyName(args[++i]);
-				option.cancelRelModelExt();
+				option.cancelRelDataExt();
 				option.setDocKeyOption(false);
 			}
 
 			else if (args[i].equals("--doc-key-if-no-inplace")) {
 				option.document_key_if_no_in_place = true;
-				option.cancelRelModelExt();
+				option.cancelRelDataExt();
 				option.setDocKeyOption(false);
 			}
+
+			else if (args[i].equals("--verbose"))
+				option.verbose = true;
 
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
@@ -152,40 +183,16 @@ public class xsd2pgschema {
 		if (is == null)
 			showUsage();
 
-		if (!ddl_file_name.isEmpty() && !ddl_file_name.equals("stdout")) {
-
-			File ddl_file = new File(ddl_file_name);
-
-			try {
-				System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(ddl_file)), true));
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-			}
-
-		}
-
 		try {
 
-			// parse XSD document
+			XPathEvaluatorImpl evaluator = new XPathEvaluatorImpl(is, option, pg_option); // reuse the instance for repetition
 
-			DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
-			doc_builder_fac.setValidating(false);
-			doc_builder_fac.setNamespaceAware(true);
-			doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-			doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-			DocumentBuilder doc_builder = doc_builder_fac.newDocumentBuilder();
+			evaluator.translate(xpath_query, variables);
 
-			Document xsd_doc = doc_builder.parse(is);
+			if (!pg_option.name.isEmpty())
+				evaluator.evaluate(out_file_name);
 
-			is.close();
-
-			doc_builder.reset();
-
-			// XSD analysis
-
-			new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
-
-		} catch (Exception e) {
+		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException | SQLException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
@@ -197,22 +204,25 @@ public class xsd2pgschema {
 	 */
 	private static void showUsage() {
 
-		System.err.println("xsd2pgschema: XML Schema -> PostgreSQL DDL conversion");
-		System.err.println("Usage:  --xsd SCHEMA_LOCATION --ddl DDL_FILE (default=stdout)");
+		System.err.println("xpathevaluator: XPath 1.0 qeury evaluator");
+		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
+		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
+		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
+		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
+		System.err.println("        --xpath-query XPATH_QUERY");
+		System.err.println("        --xpath-var KEY=VALUE");
+		System.err.println("        --out OUTPUT_FILE (default=stdout)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");
 		System.err.println("        --no-doc-key (remove " + option.document_key_name + " column from all relations, effective only with relational model extension)");
 		System.err.println("        --ser-key (append " + option.serial_key_name + " column in child relation of list holder)");
 		System.err.println("        --xpath-key (append " + option.xpath_key_name + " column in all relations)");
-		System.err.println("        --no-key (turn off constraint of primary key/foreign key)");
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
-		System.err.println("        --field-annotation (retrieve field annotation)");
-		System.err.println("        --no-field-annotation (do not retrieve field annotation, default)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
-		System.err.println("        --hash-by ASSUMED_ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
+		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
 		System.err.println("        --ser-size BIT_SIZE [short (16bit); | int (32bit, default)]");
 		System.err.println("        --doc-key-name DOC_KEY_NAME (default=\"" + option.def_document_key_name + "\")");
@@ -221,6 +231,7 @@ public class xsd2pgschema {
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME (select --no-rel and --no-doc-key options by default)");
 		System.err.println("        --doc-key-if-no-inplace (select --no-rel and --no-doc-key options by default)");
+		System.err.println("        --verbose");
 		System.exit(1);
 
 	}

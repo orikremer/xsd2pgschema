@@ -30,7 +30,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Sphinx xmlpipe2 compositor. 
+ * Sphinx xmlpipe2 compositor.
  *
  * @author yokochi
  */

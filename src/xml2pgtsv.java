@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -34,14 +34,14 @@ import org.apache.commons.io.FilenameUtils;
 import org.xml.sax.SAXException;
 
 /**
- * CSV conversion and PostgreSQL data migration.
+ * TSV conversion and PostgreSQL data migration.
  *
  * @author yokochi
  */
-public class xml2pgcsv {
+public class xml2pgtsv {
 
-	/** The CSV directory name. */
-	protected static String csv_dir_name = "pg_work";
+	/** The TSV directory name. */
+	protected static String tsv_dir_name = "pg_work";
 
 	/** The check sum directory name. */
 	private static String check_sum_dir_name = "";
@@ -77,7 +77,7 @@ public class xml2pgcsv {
 	 */
 	public static void main(String[] args) {
 
-		option.pg_tab_delimiter = false;
+		option.pg_tab_delimiter = true;
 
 		HashSet<String> xml_file_names = new HashSet<String>();
 
@@ -124,7 +124,7 @@ public class xml2pgcsv {
 				xml_file_filter.setUpperCaseDocKey();
 
 			else if ((args[i].equals("--csv-dir") || args[i].equals("--tsv-dir")) && i + 1 < args.length)
-				csv_dir_name = args[++i];
+				tsv_dir_name = args[++i];
 
 			else if (args[i].equals("--db-host") && i + 1 < args.length)
 				pg_option.host = args[++i];
@@ -180,8 +180,8 @@ public class xml2pgcsv {
 			else if (args[i].equals("--pg-named-schema"))
 				option.pg_named_schema = true;
 
-			else if (args[i].equals("--pg-tab-delimiter"))
-				option.pg_tab_delimiter = true;
+			else if (args[i].equals("--pg-comma-delimiter"))
+				option.pg_tab_delimiter = false;
 
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
@@ -302,12 +302,12 @@ public class xml2pgcsv {
 		if (xml_file_queue.size() < max_thrds)
 			max_thrds = xml_file_queue.size();
 
-		File csv_dir = new File(csv_dir_name);
+		File tsv_dir = new File(tsv_dir_name);
 
-		if (!csv_dir.isDirectory()) {
+		if (!tsv_dir.isDirectory()) {
 
-			if (!csv_dir.mkdir()) {
-				System.err.println("Couldn't create directory '" + csv_dir_name + "'.");
+			if (!tsv_dir.mkdir()) {
+				System.err.println("Couldn't create directory '" + tsv_dir_name + "'.");
 				System.exit(1);
 			}
 
@@ -342,14 +342,14 @@ public class xml2pgcsv {
 
 		for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
 
-			String thrd_name = "xml2pgcsv-" + thrd_id;
+			String thrd_name = "xml2pgtsv-" + thrd_id;
 
 			try {
 
 				if (thrd_id > 0)
 					is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
-				proc_thrd[thrd_id] = new Xml2PgCsvThrd(thrd_id, is, csv_dir, xml_file_filter, xml_file_queue, xml_post_editor, option, pg_option);
+				proc_thrd[thrd_id] = new Xml2PgCsvThrd(thrd_id, is, tsv_dir, xml_file_filter, xml_file_queue, xml_post_editor, option, pg_option);
 
 			} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | SQLException | PgSchemaException e) {
 				e.printStackTrace();
@@ -386,8 +386,8 @@ public class xml2pgcsv {
 	 */
 	private static void showUsage() {
 
-		System.err.println("xml2pgcsv: XML -> CSV conversion and PostgreSQL data migration");
-		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --csv-dir DIRECTORY (default=\"" + csv_dir_name + "\")");
+		System.err.println("xml2pgtsv: XML -> TSV conversion and PostgreSQL data migration");
+		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --tsv-dir DIRECTORY (default=\"" + tsv_dir_name + "\")");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");
@@ -405,7 +405,7 @@ public class xml2pgcsv {
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
-		System.err.println("        --pg-tab-delimiter (use tab separated file)");
+		System.err.println("        --pg-comma-delimiter (use comma separated file)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --sync CHECK_SUM_DIRECTORY (generate check sum files)");
 		System.err.println("        --checksum-by ALGORITHM [MD2 | MD5 (default) | SHA-1 | SHA-224 | SHA-256 | SHA-384 | SHA-512]");

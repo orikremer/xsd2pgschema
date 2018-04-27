@@ -46,9 +46,6 @@ import com.github.antlr.grammars_v4.xpath.xpathParser.MainContext;
  */
 public class xpathparser {
 
-	/** The schema location. */
-	private static String schema_location = "";
-
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(true);
 
@@ -71,7 +68,7 @@ public class xpathparser {
 		for (int i = 0; i < args.length; i++) {
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
-				schema_location = args[++i];
+				option.root_schema_location = args[++i];
 
 			else if (args[i].equals("--xpath-query") && i + 1 < args.length)
 				xpath_query = args[++i];
@@ -157,12 +154,12 @@ public class xpathparser {
 
 		option.resolveDocKeyOption();
 
-		if (schema_location.isEmpty()) {
+		if (option.root_schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
 		if (is == null)
 			showUsage();
@@ -186,7 +183,7 @@ public class xpathparser {
 
 			// XSD analysis
 
-			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, schema_location, option);
+			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
 
 			xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_query));
 
@@ -218,7 +215,7 @@ public class xpathparser {
 			System.out.println("Input XPath query:");
 			System.out.println(" " + main_text);
 
-			System.out.println("\nTarget path in XML Schema: " + PgSchemaUtil.getSchemaName(schema_location));
+			System.out.println("\nTarget path in XML Schema: " + PgSchemaUtil.getSchemaName(option.root_schema_location));
 			xpath_comp_list.showPathExprs();
 
 			System.out.println("\nThe XPath query is valid.");

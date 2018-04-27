@@ -51,13 +51,12 @@ public class xsd2jsonschema {
 		PgSchemaOption option = new PgSchemaOption(json_type);
 		JsonBuilderOption jsonb_option = new JsonBuilderOption();
 
-		String schema_location = "";
 		String json_file_name = "";
 
 		for (int i = 0; i < args.length; i++) {
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
-				schema_location = args[++i];
+				option.root_schema_location = args[++i];
 
 			else if (args[i].equals("--json") && i + 1 < args.length)
 				json_file_name = args[++i];
@@ -117,12 +116,12 @@ public class xsd2jsonschema {
 
 		}
 
-		if (schema_location.isEmpty()) {
+		if (option.root_schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
 		if (is == null)
 			showUsage();
@@ -158,7 +157,7 @@ public class xsd2jsonschema {
 
 			// XSD analysis
 
-			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, schema_location, option);
+			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
 
 			schema.initJsonBuilder(jsonb_option);
 

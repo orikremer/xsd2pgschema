@@ -162,7 +162,7 @@ public class XmlSplitterImpl {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, xmlsplitter.schema_location, option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
 
 		// prepare shard directories
 

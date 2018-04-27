@@ -21,7 +21,7 @@ package net.sf.xsd2pgschema;
 
 /**
  * Pending group to be included in PostgreSQL data model.
- * 
+ *
  * @author yokochi
  */
 public class PgPendingGroup {

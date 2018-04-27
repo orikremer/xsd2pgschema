@@ -40,7 +40,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 /**
- * Thread function for xml2pgcsv.
+ * Thread function for either xml2pgcsv or xml2pgtsv.
  *
  * @author yokochi
  */
@@ -61,8 +61,8 @@ public class Xml2PgCsvThrd implements Runnable {
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
-	/** The CSV directory. */
-	private File csv_dir = null;
+	/** The working directory. */
+	private File work_dir = null;
 
 	/** The XML file filter. */
 	private XmlFileFilter xml_file_filter = null;
@@ -81,9 +81,10 @@ public class Xml2PgCsvThrd implements Runnable {
 	 *
 	 * @param thrd_id thread id
 	 * @param is InputStream of XML Schema
-	 * @param csv_dir directory contains CSV files
+	 * @param work_dir working directory contains CSV/TSV files
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue
+	 * @param xml_post_editor XML post editor
 	 * @param option PostgreSQL data model option
 	 * @param pg_option PostgreSQL option
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -93,7 +94,7 @@ public class Xml2PgCsvThrd implements Runnable {
 	 * @throws SQLException the SQL exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2PgCsvThrd(final int thrd_id, final InputStream is, final File csv_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
+	public Xml2PgCsvThrd(final int thrd_id, final InputStream is, final File work_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
 
@@ -117,13 +118,13 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, xml2pgcsv.schema_location, this.option = option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, this.option = option);
 
-		schema.applyXmlPostEditor(xml2pgcsv.xml_post_editor);
+		schema.applyXmlPostEditor(xml_post_editor);
 
 		// prepare XML validator
 
-		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2pgcsv.schema_location, null, option.cache_xsd), option.full_check) : null;
+		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
 
 		if (!pg_option.name.isEmpty()) {
 
@@ -136,12 +137,12 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		}
 
-		this.csv_dir = new File(csv_dir, PgSchemaUtil.thrd_dir_prefix + thrd_id);
+		this.work_dir = new File(work_dir, PgSchemaUtil.thrd_dir_prefix + thrd_id);
 
-		if (!this.csv_dir.isDirectory()) {
+		if (!this.work_dir.isDirectory()) {
 
-			if (!this.csv_dir.mkdir())
-				throw new PgSchemaException("Couldn't create directory '" + this.csv_dir + "'.");
+			if (!this.work_dir.mkdir())
+				throw new PgSchemaException("Couldn't create directory '" + this.work_dir + "'.");
 
 		}
 
@@ -207,7 +208,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
 
-				schema.xml2PgCsv(xml_parser, csv_dir);
+				schema.xml2PgCsv(xml_parser, work_dir);
 
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -231,14 +232,14 @@ public class Xml2PgCsvThrd implements Runnable {
 
 			try {
 
-				schema.pgCsv2PgSql(db_conn, csv_dir);
+				schema.pgCsv2PgSql(db_conn, work_dir);
 
 			} catch (PgSchemaException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
 
-			if (csv_dir.isDirectory()) {
+			if (work_dir.isDirectory()) {
 
 				try {
 
@@ -249,7 +250,7 @@ public class Xml2PgCsvThrd implements Runnable {
 				}
 
 				try {
-					FileUtils.deleteDirectory(csv_dir);
+					FileUtils.deleteDirectory(work_dir);
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

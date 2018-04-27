@@ -510,6 +510,24 @@ public class PgTable {
 	}
 
 	/**
+	 * Return target namespace.
+	 *
+	 * @return String target namespace
+	 */
+	public String getTargetNamespace() {
+		return target_namespace;
+	}
+
+	/**
+	 * Return table name.
+	 *
+	 * @return String table name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
 	 * Return PostgreSQL field.
 	 *
 	 * @param field_name name of field

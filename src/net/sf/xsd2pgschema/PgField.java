@@ -1439,7 +1439,7 @@ public class PgField {
 	/**
 	 * Decide whether field is omissible.
 	 *
-	 * @param table current table 
+	 * @param table current table
 	 * @param option PostgreSQL data model option
 	 */
 	public void setOmissible(PgTable table, PgSchemaOption option) {
@@ -1456,7 +1456,7 @@ public class PgField {
 	/**
 	 * Decide whether field is indexable.
 	 *
-	 * @param table current table 
+	 * @param table current table
 	 * @param option PostgreSQL data model option
 	 */
 	public void setIndexable(PgTable table, PgSchemaOption option) {
@@ -1473,7 +1473,7 @@ public class PgField {
 	/**
 	 * Decide whether field is JSON convertible.
 	 *
-	 * @param table current table 
+	 * @param table current table
 	 * @param option PostgreSQL data model option
 	 */
 	public void setJsonable(PgTable table, PgSchemaOption option) {
@@ -1573,6 +1573,24 @@ public class PgField {
 	}
 
 	// PostgreSQL schema generation
+
+	/**
+	 * Return target namespace.
+	 *
+	 * @return String target namespace
+	 */
+	public String getTagetNamespace() {
+		return target_namespace;
+	}
+
+	/**
+	 * Return field name.
+	 *
+	 * @return String field name
+	 */
+	public String getName() {
+		return name;
+	}
 
 	/**
 	 * Return PostgreSQL DDL type definition.

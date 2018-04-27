@@ -41,9 +41,6 @@ public class csv2pgsql {
 	/** The CSV directory name. */
 	private static String csv_dir_name = xml2pgcsv.csv_dir_name;
 
-	/** The schema location. */
-	private static String schema_location = "";
-
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(true);
 
@@ -57,14 +54,16 @@ public class csv2pgsql {
 	 */
 	public static void main(String[] args) {
 
+		option.pg_tab_delimiter = false;
+
 		Connection db_conn = null;
 
 		for (int i = 0; i < args.length; i++) {
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
-				schema_location = args[++i];
+				option.root_schema_location = args[++i];
 
-			else if (args[i].equals("--csv-dir") && i + 1 < args.length)
+			else if ((args[i].equals("--csv-dir") || args[i].equals("--tsv-dir")) && i + 1 < args.length)
 				csv_dir_name = args[++i];
 
 			else if (args[i].equals("--db-host") && i + 1 < args.length)
@@ -112,6 +111,9 @@ public class csv2pgsql {
 			else if (args[i].equals("--pg-named-schema"))
 				option.pg_named_schema = true;
 
+			else if (args[i].equals("--pg-tab-delimiter"))
+				option.pg_tab_delimiter = true;
+
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
 
@@ -148,12 +150,12 @@ public class csv2pgsql {
 
 		option.resolveDocKeyOption();
 
-		if (schema_location.isEmpty()) {
+		if (option.root_schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
 		if (is == null)
 			showUsage();
@@ -190,7 +192,7 @@ public class csv2pgsql {
 
 			// XSD analysis
 
-			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, schema_location, option);
+			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
 
 			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 
@@ -201,7 +203,7 @@ public class csv2pgsql {
 
 			schema.pgCsv2PgSql(db_conn, csv_dir);
 
-			System.out.println("Done csv -> db (" + pg_option.name + ").");
+			System.out.println("Done " + (option.pg_tab_delimiter ? "tsv" : "csv") + " -> db (" + pg_option.name + ").");
 
 		} catch (ParserConfigurationException | SAXException | IOException | SQLException | PgSchemaException e) {
 			e.printStackTrace();
@@ -229,6 +231,7 @@ public class csv2pgsql {
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
+		System.err.println("        --pg-tab-delimiter (use tab separated file)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --doc-key-name DOC_KEY_NAME (default=\"" + option.def_document_key_name + "\")");
 		System.err.println("        --ser-key-name SER_KEY_NAME (default=\"" + option.def_serial_key_name + "\")");

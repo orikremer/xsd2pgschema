@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.TransformerException;
 
 import org.apache.commons.text.StringEscapeUtils;
@@ -2263,7 +2264,7 @@ public class PgSchema {
 	 * @param namespace_uri namespace URI
 	 * @return String prefix of namespace URI
 	 */
-	protected String getPrefixOf(String namespace_uri) {
+	public String getPrefixOf(String namespace_uri) {
 		return def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri)).findFirst().get().getKey();
 	}
 
@@ -2343,13 +2344,13 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return CSV file name of table.
+	 * Return data (CSV/TSV) file name of table.
 	 *
 	 * @param table table
 	 * @return String PostgreSQL name of table
 	 */
-	protected String getCsvFileNameOf(PgTable table) {
-		return (option.pg_named_schema ? table.pg_schema_name + "." : "") + table.name + ".csv";
+	protected String getDataFileNameOf(PgTable table) {
+		return (option.pg_named_schema ? table.pg_schema_name + "." : "") + table.name + (option.pg_tab_delimiter ? ".tsv" : ".csv");
 	}
 
 	/**
@@ -3908,16 +3909,16 @@ public class PgSchema {
 
 	}
 
-	// CSV conversion
+	// Data (CSV/TSV) conversion
 
 	/**
-	 * CSV conversion.
+	 * Data (CSV/TSV) conversion.
 	 *
 	 * @param xml_parser XML document
-	 * @param csv_dir directory contains CSV files
+	 * @param work_dir working directory contains data (CSV/TSV) files
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2PgCsv(XmlParser xml_parser, File csv_dir) throws PgSchemaException {
+	public void xml2PgCsv(XmlParser xml_parser, File work_dir) throws PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -3929,11 +3930,11 @@ public class PgSchema {
 
 				if (table.buffw == null) {
 
-					File csv_file = new File(csv_dir, getCsvFileNameOf(table));
+					File data_file = new File(work_dir, getDataFileNameOf(table));
 
 					try {
 
-						table.filew = new FileWriter(csv_file);
+						table.filew = new FileWriter(data_file);
 						table.buffw = new BufferedWriter(table.filew);
 
 					} catch (IOException e) {
@@ -3952,7 +3953,7 @@ public class PgSchema {
 
 		});
 
-		// parse root node and write to CSV file
+		// parse root node and write to data (CSV/TSV) file
 
 		try {
 
@@ -3997,7 +3998,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and write to CSV file.
+	 * Parse current node and write to data (CSV/TSV) file.
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
@@ -4417,13 +4418,13 @@ public class PgSchema {
 	}
 
 	/**
-	 * Execute PostgreSQL COPY command for all CSV files.
+	 * Execute PostgreSQL COPY command for all data (CSV/TSV) files.
 	 *
 	 * @param db_conn database connection
-	 * @param csv_dir directory contains CSV files
+	 * @param work_dir working directory contains data (CSV/TSV) files
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void pgCsv2PgSql(Connection db_conn, File csv_dir) throws PgSchemaException {
+	public void pgCsv2PgSql(Connection db_conn, File work_dir) throws PgSchemaException {
 
 		try {
 
@@ -4431,13 +4432,13 @@ public class PgSchema {
 
 			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
-				File csv_file = new File(csv_dir, getCsvFileNameOf(table));
+				File data_file = new File(work_dir, getDataFileNameOf(table));
 
 				try {
 
-					String sql = "COPY " + getPgNameOf(db_conn, table) + " FROM STDIN CSV";
+					String sql = "COPY " + getPgNameOf(db_conn, table) + " FROM STDIN" + (option.pg_tab_delimiter ? "" : " CSV");
 
-					copy_man.copyIn(sql, new FileInputStream(csv_file));
+					copy_man.copyIn(sql, new FileInputStream(data_file));
 
 				} catch (SQLException | IOException | PgSchemaException e) {
 					e.printStackTrace();
@@ -6144,6 +6145,21 @@ public class PgSchema {
 			throw new PgSchemaException(e);
 		}
 
+	}
+
+	// XML composer from PostgreSQL
+
+	/**
+	 * Compose result XML document
+	 *
+	 * @param path_expr current XPath expression
+	 * @param db_conn database connection
+	 * @param rset current result set
+	 * @param xml_writer XML stream writer
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void pgSql2Xml(XPathExpr path_expr, Connection db_conn, ResultSet rset, XMLStreamWriter xml_writer) throws PgSchemaException {
+		throw new PgSchemaException("Not implemented yet (XML composer).");
 	}
 
 }

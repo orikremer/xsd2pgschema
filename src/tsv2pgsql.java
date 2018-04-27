@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -19,26 +19,33 @@ limitations under the License.
 
 import net.sf.xsd2pgschema.*;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 import javax.xml.parsers.*;
 
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 /**
- * PostgreSQL DDL translation.
+ * PostgreSQL data migration from TSV file.
  *
  * @author yokochi
  */
-public class xsd2pgschema {
+public class tsv2pgsql {
+
+	/** The TSV directory name. */
+	private static String tsv_dir_name = xml2pgtsv.tsv_dir_name;
 
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(true);
+
+	/** The PostgreSQL option. */
+	private static PgOption pg_option = new PgOption();
 
 	/**
 	 * The main method.
@@ -47,19 +54,35 @@ public class xsd2pgschema {
 	 */
 	public static void main(String[] args) {
 
-		option.ddl_output = true; // output PostgreSQL DDL
+		option.pg_tab_delimiter = true;
 
-		String ddl_file_name = "";
-
-		option.hash_algorithm = ""; // assumed hash algorithm should be empty
+		Connection db_conn = null;
 
 		for (int i = 0; i < args.length; i++) {
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
 				option.root_schema_location = args[++i];
 
-			else if (args[i].equals("--ddl") && i + 1 < args.length)
-				ddl_file_name = args[++i];
+			else if ((args[i].equals("--csv-dir") || args[i].equals("--tsv-dir")) && i + 1 < args.length)
+				tsv_dir_name = args[++i];
+
+			else if (args[i].equals("--db-host") && i + 1 < args.length)
+				pg_option.host = args[++i];
+
+			else if (args[i].equals("--db-port") && i + 1 < args.length)
+				pg_option.port = Integer.valueOf(args[++i]);
+
+			else if (args[i].equals("--db-name") && i + 1 < args.length)
+				pg_option.name = args[++i];
+
+			else if (args[i].equals("--db-user") && i + 1 < args.length)
+				pg_option.user = args[++i];
+
+			else if (args[i].equals("--db-pass") && i + 1 < args.length)
+				pg_option.pass = args[++i];
+
+			else if (args[i].equals("--test-ddl"))
+				pg_option.test = true;
 
 			else if (args[i].equals("--doc-key"))
 				option.setDocKeyOption(true);
@@ -68,7 +91,7 @@ public class xsd2pgschema {
 				option.setDocKeyOption(false);
 
 			else if (args[i].equals("--no-rel"))
-				option.cancelRelModelExt();
+				option.cancelRelDataExt();
 
 			else if (args[i].equals("--no-wild-card"))
 				option.wild_card = false;
@@ -88,26 +111,11 @@ public class xsd2pgschema {
 			else if (args[i].equals("--pg-named-schema"))
 				option.pg_named_schema = true;
 
+			else if (args[i].equals("--pg-comma-delimiter"))
+				option.pg_tab_delimiter = false;
+
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
-
-			else if (args[i].equals("--no-key"))
-				option.retain_key = false;
-
-			else if (args[i].equals("--field-annotation"))
-				option.no_field_anno = false;
-
-			else if (args[i].equals("--no-field-annotation"))
-				option.no_field_anno = true;
-
-			else if (args[i].equals("--hash-by") && i + 1 < args.length)
-				option.hash_algorithm = args[++i];
-
-			else if (args[i].equals("--hash-size") && i + 1 < args.length)
-				option.hash_size = PgHashSize.getPgHashSize(args[++i]);
-
-			else if (args[i].equals("--ser-size") && i + 1 < args.length)
-				option.ser_size = PgSerSize.getPgSerSize(args[++i]);
 
 			else if (args[i].equals("--doc-key-name") && i + 1 < args.length)
 				option.setDocumentKeyName(args[++i]);
@@ -123,13 +131,13 @@ public class xsd2pgschema {
 
 			else if (args[i].equals("--inplace-doc-key-name") && i + 1 < args.length) {
 				option.addInPlaceDocKeyName(args[++i]);
-				option.cancelRelModelExt();
+				option.cancelRelDataExt();
 				option.setDocKeyOption(false);
 			}
 
 			else if (args[i].equals("--doc-key-if-no-inplace")) {
 				option.document_key_if_no_in_place = true;
-				option.cancelRelModelExt();
+				option.cancelRelDataExt();
 				option.setDocKeyOption(false);
 			}
 
@@ -152,16 +160,20 @@ public class xsd2pgschema {
 		if (is == null)
 			showUsage();
 
-		if (!ddl_file_name.isEmpty() && !ddl_file_name.equals("stdout")) {
+		File tsv_dir = new File(tsv_dir_name);
 
-			File ddl_file = new File(ddl_file_name);
+		if (!tsv_dir.isDirectory()) {
 
-			try {
-				System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(ddl_file)), true));
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
+			if (!tsv_dir.mkdir()) {
+				System.err.println("Couldn't create directory '" + tsv_dir_name + "'.");
+				System.exit(1);
 			}
 
+		}
+
+		if (pg_option.name.isEmpty()) {
+			System.err.println("Database name is empty.");
+			showUsage();
 		}
 
 		try {
@@ -169,11 +181,8 @@ public class xsd2pgschema {
 			// parse XSD document
 
 			DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
-			doc_builder_fac.setValidating(false);
 			doc_builder_fac.setNamespaceAware(true);
-			doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-			doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-			DocumentBuilder doc_builder = doc_builder_fac.newDocumentBuilder();
+			DocumentBuilder	doc_builder = doc_builder_fac.newDocumentBuilder();
 
 			Document xsd_doc = doc_builder.parse(is);
 
@@ -183,9 +192,20 @@ public class xsd2pgschema {
 
 			// XSD analysis
 
-			new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
+			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
 
-		} catch (Exception e) {
+			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
+
+			// test PostgreSQL DDL with schema
+
+			if (pg_option.test)
+				schema.testPgSql(db_conn, true);
+
+			schema.pgCsv2PgSql(db_conn, tsv_dir);
+
+			System.out.println("Done " + (option.pg_tab_delimiter ? "tsv" : "csv") + " -> db (" + pg_option.name + ").");
+
+		} catch (ParserConfigurationException | SAXException | IOException | SQLException | PgSchemaException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
@@ -197,24 +217,22 @@ public class xsd2pgschema {
 	 */
 	private static void showUsage() {
 
-		System.err.println("xsd2pgschema: XML Schema -> PostgreSQL DDL conversion");
-		System.err.println("Usage:  --xsd SCHEMA_LOCATION --ddl DDL_FILE (default=stdout)");
+		System.err.println("tsv2pgsql: TSV -> PostgreSQL data migration");
+		System.err.println("Usage:  --xsd SCHEMA_LOCATION --tsv-dir DIRECTORY (default=\"" + tsv_dir_name + "\") --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
+		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
+		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
+		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");
 		System.err.println("        --no-doc-key (remove " + option.document_key_name + " column from all relations, effective only with relational model extension)");
 		System.err.println("        --ser-key (append " + option.serial_key_name + " column in child relation of list holder)");
 		System.err.println("        --xpath-key (append " + option.xpath_key_name + " column in all relations)");
-		System.err.println("        --no-key (turn off constraint of primary key/foreign key)");
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
-		System.err.println("        --field-annotation (retrieve field annotation)");
-		System.err.println("        --no-field-annotation (do not retrieve field annotation, default)");
+		System.err.println("        --pg-comma-delimiter (use comma separated file)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
-		System.err.println("        --hash-by ASSUMED_ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
-		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
-		System.err.println("        --ser-size BIT_SIZE [short (16bit); | int (32bit, default)]");
 		System.err.println("        --doc-key-name DOC_KEY_NAME (default=\"" + option.def_document_key_name + "\")");
 		System.err.println("        --ser-key-name SER_KEY_NAME (default=\"" + option.def_serial_key_name + "\")");
 		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.def_xpath_key_name + "\")");

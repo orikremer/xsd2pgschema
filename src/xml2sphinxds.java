@@ -40,9 +40,6 @@ import org.xml.sax.SAXException;
  */
 public class xml2sphinxds {
 
-	/** The schema location. */
-	protected static String schema_location = "";
-
 	/** The data source name. */
 	protected static String ds_name = "";
 
@@ -105,7 +102,7 @@ public class xml2sphinxds {
 				touch_xml = false;
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
-				schema_location = args[++i];
+				option.root_schema_location = args[++i];
 
 			else if (args[i].equals("--xml") && i + 1 < args.length) {
 				String xml_file_name = args[++i];
@@ -275,12 +272,12 @@ public class xml2sphinxds {
 
 		}
 
-		if (schema_location.isEmpty()) {
+		if (option.root_schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
 		if (is == null)
 			showUsage();
@@ -312,7 +309,7 @@ public class xml2sphinxds {
 
 		if (ds_name.isEmpty()) {
 
-			ds_name = PgSchemaUtil.getSchemaFileName(schema_location);
+			ds_name = PgSchemaUtil.getSchemaFileName(option.root_schema_location);
 
 			String xsd_file_ext = FilenameUtils.getExtension(ds_name);
 
@@ -374,9 +371,9 @@ public class xml2sphinxds {
 				try {
 
 					if (shard_id > 0 || thrd_id > 0)
-						is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+						is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
-					proc_thrd[_thrd_id] = new Xml2SphinxDsThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, option, index_filter);
+					proc_thrd[_thrd_id] = new Xml2SphinxDsThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, xml_post_editor, option, index_filter);
 
 				} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 					e.printStackTrace();

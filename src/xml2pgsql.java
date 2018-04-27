@@ -40,9 +40,6 @@ import org.xml.sax.SAXException;
  */
 public class xml2pgsql {
 
-	/** The schema location. */
-	protected static String schema_location = "";
-
 	/** The check sum directory name. */
 	private static String check_sum_dir_name = "";
 
@@ -87,7 +84,7 @@ public class xml2pgsql {
 				touch_xml = false;
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
-				schema_location = args[++i];
+				option.root_schema_location = args[++i];
 
 			else if (args[i].equals("--xml") && i + 1 < args.length) {
 				String xml_file_name = args[++i];
@@ -275,12 +272,12 @@ public class xml2pgsql {
 			showUsage();
 		}
 
-		if (schema_location.isEmpty()) {
+		if (option.root_schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
 		if (is == null)
 			showUsage();
@@ -342,9 +339,9 @@ public class xml2pgsql {
 			try {
 
 				if (thrd_id > 0)
-					is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+					is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
-				proc_thrd[thrd_id] = new Xml2PgSqlThrd(thrd_id, is, xml_file_filter, xml_file_queue, option, pg_option);
+				proc_thrd[thrd_id] = new Xml2PgSqlThrd(thrd_id, is, xml_file_filter, xml_file_queue, xml_post_editor, option, pg_option);
 
 			} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | SQLException | PgSchemaException e) {
 				e.printStackTrace();

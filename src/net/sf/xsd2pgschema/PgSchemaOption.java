@@ -36,6 +36,9 @@ import org.w3c.dom.NodeList;
  */
 public class PgSchemaOption {
 
+	/** The root schema location. */
+	public String root_schema_location = "";
+
 	/** The relational model extension. */
 	protected boolean rel_model_ext = true;
 
@@ -77,6 +80,9 @@ public class PgSchemaOption {
 
 	/** Whether enable canonical XML Schema validation or not (validate only whether document is well-formed). */
 	public boolean full_check = true;
+
+	/** Whether use TAB delimiter code for PostgreSQL data migration. */
+	public boolean pg_tab_delimiter = true;
 
 	/** The verbose mode. */
 	public boolean verbose = false;

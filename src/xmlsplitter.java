@@ -41,9 +41,6 @@ import com.github.antlr.grammars_v4.xpath.xpathListenerException;
  */
 public class xmlsplitter {
 
-	/** The schema location. */
-	protected static String schema_location = "";
-
 	/** The XML directory name for split XML files. */
 	private static String xml_dir_name = "xml_work";
 
@@ -79,7 +76,7 @@ public class xmlsplitter {
 				touch_xml = false;
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
-				schema_location = args[++i];
+				option.root_schema_location = args[++i];
 
 			else if (args[i].equals("--xml") && i + 1 < args.length) {
 				String xml_file_name = args[++i];
@@ -152,12 +149,12 @@ public class xmlsplitter {
 
 		}
 
-		if (schema_location.isEmpty()) {
+		if (option.root_schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
 		if (is == null)
 			showUsage();

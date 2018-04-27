@@ -35,9 +35,6 @@ import org.apache.commons.io.FilenameUtils;
  */
 public class xmlvalidator {
 
-	/** The schema location. */
-	protected static String schema_location = "";
-
 	/** The check sum directory name. */
 	private static String check_sum_dir_name = "";
 
@@ -78,7 +75,7 @@ public class xmlvalidator {
 				touch_xml = false;
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
-				schema_location = args[++i];
+				option.root_schema_location = args[++i];
 
 			else if (args[i].equals("--xml") && i + 1 < args.length) {
 				String xml_file_name = args[++i];
@@ -143,12 +140,12 @@ public class xmlvalidator {
 
 		}
 
-		if (schema_location.isEmpty()) {
+		if (option.root_schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
 		if (is == null)
 			showUsage();
@@ -203,7 +200,7 @@ public class xmlvalidator {
 			try {
 
 				if (thrd_id > 0)
-					is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+					is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
 				proc_thrd[thrd_id] = new XmlValidatorThrd(thrd_id, xml_file_filter, xml_file_queue, option);
 

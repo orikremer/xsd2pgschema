@@ -70,6 +70,7 @@ public class Xml2JsonThrd implements Runnable {
 	 * @param json_dir directory contains JSON files
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue
+	 * @param xml_post_editor XML post editor
 	 * @param option PostgreSQL data model option
 	 * @param jsonb_option JsonBuilder option
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -78,7 +79,7 @@ public class Xml2JsonThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2JsonThrd(final int thrd_id, final InputStream is, final File json_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2JsonThrd(final int thrd_id, final InputStream is, final File json_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
 		this.json_dir = json_dir;
@@ -103,15 +104,15 @@ public class Xml2JsonThrd implements Runnable {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, xml2json.schema_location, option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
 
-		schema.applyXmlPostEditor(xml2json.xml_post_editor);
+		schema.applyXmlPostEditor(xml_post_editor);
 
 		schema.initJsonBuilder(jsonb_option);
 
 		// prepare XML validator
 
-		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2json.schema_location, null, option.cache_xsd), option.full_check) : null;
+		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
 
 	}
 

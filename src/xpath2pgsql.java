@@ -38,8 +38,8 @@ import com.github.antlr.grammars_v4.xpath.xpathListenerException;
  */
 public class xpath2pgsql {
 
-	/** The schema location. */
-	protected static String schema_location = "";
+	/** The output file name. */
+	protected static String out_file_name = "";
 
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(true);
@@ -63,7 +63,10 @@ public class xpath2pgsql {
 		for (int i = 0; i < args.length; i++) {
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
-				schema_location = args[++i];
+				option.root_schema_location = args[++i];
+
+			else if (args[i].equals("--out") && i + 1 < args.length)
+				out_file_name = args[++i];
 
 			else if (args[i].equals("--xpath-query") && i + 1 < args.length)
 				xpath_query = args[++i];
@@ -170,24 +173,24 @@ public class xpath2pgsql {
 
 		option.resolveDocKeyOption();
 
-		if (schema_location.isEmpty()) {
+		if (option.root_schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
 		if (is == null)
 			showUsage();
 
 		try {
 
-			XPath2PgSqlImpl xpath2pgsql = new XPath2PgSqlImpl(is, option, pg_option);
+			XPathEvaluatorImpl xpath2pgsql = new XPathEvaluatorImpl(is, option, pg_option); // reuse the instance for repetition
 
 			xpath2pgsql.translate(xpath_query, variables);
 
 			if (!pg_option.name.isEmpty())
-				xpath2pgsql.execute();
+				xpath2pgsql.execute(out_file_name);
 
 		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException | SQLException e) {
 			e.printStackTrace();
@@ -208,6 +211,7 @@ public class xpath2pgsql {
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
 		System.err.println("        --xpath-query XPATH_QUERY");
 		System.err.println("        --xpath-var KEY=VALUE");
+		System.err.println("        --out OUTPUT_FILE (default=stdout)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");

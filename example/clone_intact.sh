@@ -93,7 +93,7 @@ fi
 WORK_DIR=pg_work
 
 if [ $sync_update != "true" ] ; then
- CSV_DIR=$WORK_DIR/csv
+ DATA_DIR=$WORK_DIR/data
 fi
 
 ERR_DIR=$WORK_DIR/err
@@ -105,7 +105,7 @@ rm -rf $WORK_DIR
 mkdir -p $WORK_DIR
 
 if [ $sync_update != "true" ] ; then
- mkdir -p $CSV_DIR
+ mkdir -p $DATA_DIR
 fi
 
 mkdir -p $ERR_DIR
@@ -114,7 +114,7 @@ err_file=$ERR_DIR/all_err
 
 if [ $sync_update != "true" ] ; then
 
- java -classpath ../xsd2pgschema.jar xml2pgcsv --xsd $XSD_SCHEMA --xml $XML_DIR --csv-dir $CSV_DIR --sync $MD5_DIR --db-name $DB_NAME --db-user $DB_USER 2> $err_file
+ java -classpath ../xsd2pgschema.jar xml2pgtsv --xsd $XSD_SCHEMA --xml $XML_DIR --tsv-dir $DATA_DIR --sync $MD5_DIR --db-name $DB_NAME --db-user $DB_USER 2> $err_file
 
 else
 
@@ -127,7 +127,7 @@ if [ $? = 0 ] && [ ! -s $err_file ] ; then
  rm -f $err_file
 
  if [ $sync_update != "true" ] ; then
-  rm -rf $CSV_DIR
+  rm -rf $DATA_DIR
  fi
 
 else

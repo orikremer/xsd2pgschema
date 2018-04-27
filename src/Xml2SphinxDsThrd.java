@@ -100,6 +100,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @param is InputStream of XML Schema
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue
+	 * @param xml_post_editor XML post editor
 	 * @param option PostgreSQL data model option
 	 * @param index_filter index filter
 	 * @throws ParserConfigurationException the parser configuration exception
@@ -108,7 +109,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.shard_id = shard_id;
 		this.shard_size = shard_size;
@@ -135,15 +136,15 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		// XSD analysis
 
-		schema = new PgSchema(doc_builder, xsd_doc, null, xml2sphinxds.schema_location, this.option = option);
+		schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, this.option = option);
 
-		schema.applyXmlPostEditor(xml2sphinxds.xml_post_editor);
+		schema.applyXmlPostEditor(xml_post_editor);
 
 		schema.applyIndexFilter(this.index_filter = index_filter);
 
 		// prepare XML validator
 
-		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(xml2sphinxds.schema_location, null, option.cache_xsd), option.full_check) : null;
+		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
 
 		String ds_dir_name = xml2sphinxds.ds_dir_name;
 

@@ -4414,7 +4414,7 @@ public class XPathCompList {
 			sb.append(sql_expr.pg_xpath_code);
 			break;
 		default:
-			sb.append(schema.getPgNameOf(sql_expr.table) + "." + PgSchemaUtil.avoidPgReservedWords(sql_expr.column_name));
+			sb.append(schema.getPgNameOf(sql_expr.table) + "." + (sql_expr.terminus.equals(XPathCompType.table) ? sql_expr.column_name : PgSchemaUtil.avoidPgReservedWords(sql_expr.column_name)));
 		}
 
 	}

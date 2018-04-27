@@ -1,4 +1,9 @@
-﻿ Changed in xsd2pgschema 2.9.1 (release 2018-04-26)
+﻿ Changed in xsd2pgschema 2.9.2 (release 2018-04-27)
+
+  Added support for TSV format as PostgreSQL data migration format (xml2pgtsv, tsv2pgsql main classes).
+  Fixed SQL translation when the last path was table (xpath2pgsql main class).
+
+ Changed in xsd2pgschema 2.9.1 (release 2018-04-26)
 
   Added support for xml.zip file decompression (usage: --xml-file-ext zip).
 

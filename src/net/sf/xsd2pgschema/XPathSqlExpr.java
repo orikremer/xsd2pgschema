@@ -62,10 +62,10 @@ public class XPathSqlExpr {
 	protected String binary_operator = null;
 
 	/** The PostgreSQL table. */
-	protected PgTable table = null;
+	public PgTable table = null;
 
 	/** The PostgreSQL field. */
-	private PgField field = null;
+	public PgField field = null;
 
 	/**
 	 * Instance of XPathSqlExpr.
