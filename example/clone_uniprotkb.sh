@@ -73,7 +73,7 @@ err_file=$ERR_DIR/all_err
 
 if [ $sync_update != "true" ] ; then
 
- java -classpath ../xsd2pgschema.jar xml2pgtsv --xsd $XSD_SCHEMA --xml $XML_DIR --tsv-dir $DATA_DIR --sync $MD5_DIR --db-name $DB_NAME --db-user $DB_USER 2> $err_file
+ java -classpath ../xsd2pgschema.jar xml2pgtsv --xsd $XSD_SCHEMA --xml $XML_DIR --work-dir $DATA_DIR --sync $MD5_DIR --db-name $DB_NAME --db-user $DB_USER 2> $err_file
 
 else
 
