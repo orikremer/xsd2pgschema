@@ -126,6 +126,9 @@ public class PgSchemaOption {
 	/** Whether adopt weak synchronization (insert if not exists, no update even if exists, no deletion). */
 	public boolean sync_weak = false;
 
+	/** Whether dry run synchronization (no update on existing check sum files). */
+	public boolean sync_dry_run = false;
+
 	/** Whether in-place document key exists or not. */
 	public boolean inplace_document_key = false;
 

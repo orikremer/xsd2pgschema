@@ -50,6 +50,8 @@ import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.TransformerException;
 
 import org.apache.commons.text.StringEscapeUtils;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
 import org.w3c.dom.*;
@@ -3727,7 +3729,7 @@ public class PgSchema {
 	 * @param key_name source string
 	 * @return String hash key
 	 */
-	public synchronized String getHashKeyString(String key_name) {
+	protected synchronized String getHashKeyString(String key_name) {
 
 		if (md_hash_key == null) // debug mode
 			return key_name;
@@ -3857,7 +3859,7 @@ public class PgSchema {
 	 *
 	 * @return String document id
 	 */
-	public String getDocumentId() {
+	protected String getDocumentId() {
 		return document_id;
 	}
 
@@ -4583,6 +4585,8 @@ public class PgSchema {
 
 		try {
 
+			lucene_doc.add(new StringField(option.document_key_name, document_id, Field.Store.YES));
+
 			PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(this, null, root_table);
 
 			node2lucidx.parseRootNode(node);
@@ -4963,11 +4967,17 @@ public class PgSchema {
 
 		try {
 
+			buffw.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+			buffw.write("<sphinx:document id=\"" + getHashKeyString(document_id) + "\">\n");
+			buffw.write("<" + option.document_key_name + ">" + StringEscapeUtils.escapeXml10(document_id) + "</" + option.document_key_name + ">\n");
+
 			PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(this, null, root_table);
 
 			node2sphds.parseRootNode(node);
 
 			node2sphds.invokeRootNestedNode();
+
+			buffw.write("</sphinx:document>\n");
 
 		} catch (ParserConfigurationException | TransformerException | IOException e) {
 			throw new PgSchemaException(e);

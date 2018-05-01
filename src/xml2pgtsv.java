@@ -30,7 +30,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.parsers.*;
 
-import org.apache.commons.io.FilenameUtils;
 import org.xml.sax.SAXException;
 
 /**
@@ -76,8 +75,6 @@ public class xml2pgtsv {
 	 * @param args the arguments
 	 */
 	public static void main(String[] args) {
-
-		option.pg_tab_delimiter = true;
 
 		HashSet<String> xml_file_names = new HashSet<String>();
 
@@ -292,7 +289,7 @@ public class xml2pgtsv {
 		FilenameFilter filename_filter = new FilenameFilter() {
 
 			public boolean accept(File dir, String name) {
-				return xml_file_filter.ext.equals(FilenameUtils.getExtension(name));
+				return name.endsWith(xml_file_filter.getAbsoluteExt());
 			}
 
 		};

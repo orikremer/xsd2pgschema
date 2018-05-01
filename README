@@ -1,17 +1,21 @@
-﻿ Changed in xsd2pgschema 2.9.2 (release 2018-04-27)
+﻿ Changes in xsd2pgschema 2.9.3 (release 2018-05-01)
+
+  Added reporter of check sum files (chksumstat main class).
+ 
+ Changes in xsd2pgschema 2.9.2 (release 2018-04-27)
 
   Added support for TSV format as PostgreSQL data migration format (xml2pgtsv, tsv2pgsql main classes).
   Fixed SQL translation when the last path was table (xpath2pgsql main class).
 
- Changed in xsd2pgschema 2.9.1 (release 2018-04-26)
+ Changes in xsd2pgschema 2.9.1 (release 2018-04-26)
 
   Added support for xml.zip file decompression (usage: --xml-file-ext zip).
 
- Changed in xsd2pgschema 2.9.0 (release 2018-04-17)
+ Changes in xsd2pgschema 2.9.0 (release 2018-04-17)
 
   Added support for PostgreSQL named schema (--pg-named-schema option).
 
- Changed in xsd2pgschema 2.8.5 (release 2018-04-09)
+ Changes in xsd2pgschema 2.8.5 (release 2018-04-09)
 
   Improved overall XML output performance.
   Improved differential update performance in case that relational model extension was disabled.
@@ -20,7 +24,7 @@
   Enabled differential XML Schema validation (--sync option in xmlvalidator main class).
   Added --well-formed option, which checked only whether document was well-formed or not.
 
- Changed in xsd2pgschema 2.8.4 (release 2018-03-30)
+ Changes in xsd2pgschema 2.8.4 (release 2018-03-30)
 
   Fixed differential update of Sphinx full-text indexing did not work in the previous version.
   Improved performance in differential update and XML splitter.

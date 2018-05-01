@@ -362,9 +362,6 @@ public class XPathEvaluatorImpl {
 
 			if (!out_file_name.isEmpty() && !out_file_name.equals("stdout")) {
 
-				if (!out_file_name.endsWith(".xml"))
-					out_file_name.concat(".xml");
-
 				File out_file = new File(out_file_name);
 
 				fout = new FileOutputStream(out_file);

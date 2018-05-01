@@ -54,8 +54,6 @@ public class tsv2pgsql {
 	 */
 	public static void main(String[] args) {
 
-		option.pg_tab_delimiter = true;
-
 		Connection db_conn = null;
 
 		for (int i = 0; i < args.length; i++) {

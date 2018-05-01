@@ -109,4 +109,17 @@ public class XmlFileFilter {
 
 	}
 
+	/**
+	 * Return absolute file extension.
+	 *
+	 * @return String absolute file extension
+	 */
+	public String getAbsoluteExt() {
+
+		if (ext.equals("xml"))
+			return ext;
+
+		return ".xml." + ext;
+	}
+
 }

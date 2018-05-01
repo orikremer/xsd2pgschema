@@ -26,8 +26,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.commons.io.FilenameUtils;
-
 /**
  * Validate XML documents against XML Schema.
  *
@@ -158,7 +156,7 @@ public class xmlvalidator {
 		FilenameFilter filename_filter = new FilenameFilter() {
 
 			public boolean accept(File dir, String name) {
-				return xml_file_filter.ext.equals(FilenameUtils.getExtension(name));
+				return name.endsWith(xml_file_filter.getAbsoluteExt());
 			}
 
 		};

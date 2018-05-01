@@ -30,7 +30,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.parsers.*;
 
-import org.apache.commons.io.FilenameUtils;
 import org.xml.sax.SAXException;
 
 /**
@@ -290,7 +289,7 @@ public class xml2pgsql {
 		FilenameFilter filename_filter = new FilenameFilter() {
 
 			public boolean accept(File dir, String name) {
-				return xml_file_filter.ext.equals(FilenameUtils.getExtension(name));
+				return name.endsWith(xml_file_filter.getAbsoluteExt());
 			}
 
 		};

@@ -290,7 +290,7 @@ public class xml2sphinxds {
 		FilenameFilter filename_filter = new FilenameFilter() {
 
 			public boolean accept(File dir, String name) {
-				return xml_file_filter.ext.equals(FilenameUtils.getExtension(name)) &&
+				return name.endsWith(xml_file_filter.getAbsoluteExt()) &&
 						!name.equals(PgSchemaUtil.sph_schema_name) &&
 						!name.startsWith(PgSchemaUtil.sph_document_prefix) &&
 						!name.equals(PgSchemaUtil.sph_data_source_name) &&

@@ -41,7 +41,6 @@ import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.text.StringEscapeUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -208,16 +207,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 				xml_file_queue.forEach(xml_file -> {
 
-					try {
+					XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
-						XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
-
-						xml2sphinxds.sync_del_doc_rows[shard_id].remove(xml_parser.document_id);
-
-					} catch (IOException e) {
-						e.printStackTrace();
-						System.exit(1);
-					}
+					xml2sphinxds.sync_del_doc_rows[shard_id].remove(xml_parser.document_id);
 
 				});
 
@@ -321,13 +313,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
 
-				buffw.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-				buffw.write("<sphinx:document id=\"" + schema.getHashKeyString(xml_parser.document_id) + "\">\n");
-				buffw.write("<" + option.document_key_name + ">" + StringEscapeUtils.escapeXml10(xml_parser.document_id) + "</" + option.document_key_name + ">\n");
-
 				schema.xml2SphDs(xml_parser, buffw);
-
-				buffw.write("</sphinx:document>\n");
 
 				buffw.close();
 				filew.close();

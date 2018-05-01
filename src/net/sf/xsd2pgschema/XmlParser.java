@@ -97,11 +97,22 @@ public class XmlParser {
 	 *
 	 * @param xml_file XML file
 	 * @param xml_file_filter XML file filter
-	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public XmlParser(File xml_file, XmlFileFilter xml_file_filter) throws IOException {
+	public XmlParser(File xml_file, XmlFileFilter xml_file_filter) {
 
 		init(xml_file, xml_file_filter);
+
+	}
+
+	/**
+	 * Instance of XML parser (dummy).
+	 *
+	 * @param xml_file_name XML file name
+	 * @param xml_file_filter XML file filter
+	 */
+	public XmlParser(String xml_file_name, XmlFileFilter xml_file_filter) {
+
+		init(xml_file_name, xml_file_filter);
 
 	}
 
@@ -110,13 +121,22 @@ public class XmlParser {
 	 *
 	 * @param xml_file XML file
 	 * @param xml_file_filter XML file filter
-	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	private void init(File xml_file, XmlFileFilter xml_file_filter) {
 
 		this.xml_file = xml_file;
 
-		String xml_file_name = xml_file.getName();
+		init(xml_file.getName(), xml_file_filter);
+
+	}
+
+	/**
+	 * Set document id and basename.
+	 *
+	 * @param xml_file_name XML file name
+	 * @param xml_file_filter XML file filter
+	 */
+	private void init(String xml_file_name, XmlFileFilter xml_file_filter) {
 
 		String _xml_file_ext = xml_file_filter.ext;
 		String _xml_file_ext_digest = xml_file_filter.ext_digest;
@@ -337,7 +357,7 @@ public class XmlParser {
 
 			}
 
-			if (!identity) {
+			if (!identity && !option.sync_dry_run) {
 
 				FileWriter fw = new FileWriter(check_sum);
 				fw.write(new_check_sum);
@@ -359,8 +379,6 @@ public class XmlParser {
 
 		xml_file = null;
 		document = null;
-
-		document_id = basename = null;
 
 	}
 

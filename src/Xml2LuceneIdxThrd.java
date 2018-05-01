@@ -39,8 +39,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -196,16 +194,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 					xml_file_queue.forEach(xml_file -> {
 
-						try {
+						XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
-							XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
-
-							_doc_map.remove(xml_parser.document_id);
-
-						} catch (IOException e) {
-							e.printStackTrace();
-							System.exit(1);
-						}
+						_doc_map.remove(xml_parser.document_id);
 
 					});
 
@@ -328,8 +319,6 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 				org.apache.lucene.document.Document lucene_doc = new org.apache.lucene.document.Document();
 
-				lucene_doc.add(new StringField(option.document_key_name, xml_parser.document_id, Field.Store.YES));
-
 				schema.xml2LucIdx(xml_parser, lucene_doc);
 
 				if (_shard_id == null)
@@ -337,7 +326,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 				else {
 
-					Term term = new Term(option.document_key_name, schema.getDocumentId());
+					Term term = new Term(option.document_key_name, xml_parser.document_id);
 
 					if (shard_id == _shard_id)
 						writer.updateDocument(term, lucene_doc);
@@ -345,6 +334,8 @@ public class Xml2LuceneIdxThrd implements Runnable {
 						xml2luceneidx.writers[_shard_id].updateDocument(term, lucene_doc);
 
 				}
+
+				lucene_doc.clear();
 
 			} catch (Exception e) {
 				e.printStackTrace();

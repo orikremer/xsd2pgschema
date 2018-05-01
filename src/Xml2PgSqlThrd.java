@@ -150,16 +150,9 @@ public class Xml2PgSqlThrd implements Runnable {
 
 					xml_file_queue.forEach(xml_file -> {
 
-						try {
+						XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
 
-							XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
-
-							_doc_rows.remove(xml_parser.document_id);
-
-						} catch (IOException e) {
-							e.printStackTrace();
-							System.exit(1);
-						}
+						_doc_rows.remove(xml_parser.document_id);
 
 					});
 
