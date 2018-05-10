@@ -245,13 +245,13 @@ public class IndexFilter {
 	public void setSphMaxFieldLen(String sph_max_field_len) {
 
 		if (sph_max_field_len.endsWith("k") || sph_max_field_len.endsWith("kB"))
-			this.sph_max_field_len = (int) (Float.valueOf(sph_max_field_len.substring(0, sph_max_field_len.indexOf("k"))) * 1024);
+			this.sph_max_field_len = (int) (Float.valueOf(sph_max_field_len.substring(0, sph_max_field_len.indexOf('k'))) * 1024);
 
 		else if (sph_max_field_len.endsWith("M") || sph_max_field_len.endsWith("MB"))
-			this.sph_max_field_len = (int) (Float.valueOf(sph_max_field_len.substring(0, sph_max_field_len.indexOf("M"))) * 1024 * 1024);
+			this.sph_max_field_len = (int) (Float.valueOf(sph_max_field_len.substring(0, sph_max_field_len.indexOf('M'))) * 1024 * 1024);
 
 		else if (sph_max_field_len.endsWith("G") || sph_max_field_len.endsWith("GB"))
-			this.sph_max_field_len = (int) (Float.valueOf(sph_max_field_len.substring(0, sph_max_field_len.indexOf("G"))) * 1024 * 1024 * 1024);
+			this.sph_max_field_len = (int) (Float.valueOf(sph_max_field_len.substring(0, sph_max_field_len.indexOf('G'))) * 1024 * 1024 * 1024);
 
 		else
 			this.sph_max_field_len = Integer.valueOf(sph_max_field_len);

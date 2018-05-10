@@ -21,6 +21,7 @@ package net.sf.xsd2pgschema;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
+import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,6 +40,9 @@ public class PgTable {
 
 	/** The target namespace. */
 	protected String target_namespace = null;
+
+	/** The prefix of target namespace. */
+	protected String prefix = "";
 
 	/** The schema location. */
 	protected String schema_location = null;
@@ -117,6 +121,9 @@ public class PgTable {
 
 	/** The Lucene document. */
 	protected org.apache.lucene.document.Document lucene_doc = null;
+
+	/** The prepared statement. */
+	protected PreparedStatement ps = null;
 
 	/**
 	 * Instance of PostgreSQL table.
@@ -338,6 +345,7 @@ public class PgTable {
 
 		field.name = field.xname = name + "_id";
 		field.setHashKeyType(option);
+		field.xtype = ref_field.xtype;
 		field.nested_key = true;
 		field.constraint_name = "FK_" + name;
 		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
@@ -420,6 +428,7 @@ public class PgTable {
 
 		field.name = field.xname = name + "_id";
 		field.setHashKeyType(option);
+		field.xtype = name;
 		field.nested_key = true;
 		field.constraint_name = "FK_" + name;
 		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)

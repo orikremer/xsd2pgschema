@@ -126,10 +126,10 @@ public class xpath2pgsql {
 				option.pg_named_schema = true;
 
 			else if (args[i].equals("--pg-tab-delimiter"))
-				option.pg_tab_delimiter = true;
+				option.usePgTsv();
 
 			else if (args[i].equals("--pg-comma-delimiter"))
-				option.pg_tab_delimiter = false;
+				option.usePgCsv();
 
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;

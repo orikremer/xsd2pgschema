@@ -151,7 +151,7 @@ public class Xml2JsonThrd implements Runnable {
 
 				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
 
-				File json_file = new File(json_dir, xml_parser.basename + "json");
+				File json_file = new File(json_dir, xml_parser.basename + ".json");
 
 				switch (xml2json.json_type) {
 				case column:

@@ -256,12 +256,12 @@ public class XmlSplitterImpl {
 		doc_key_path = doc_key.path_exprs.get(0).getReadablePath();
 
 		if (doc_key.hasPathEndsWithTextNode())
-			doc_key_path = doc_key_path.substring(0, doc_key_path.lastIndexOf("/"));
+			doc_key_path = doc_key_path.substring(0, doc_key_path.lastIndexOf('/'));
 
-		attr_doc_key = doc_key_path.substring(doc_key_path.lastIndexOf("/") + 1, doc_key_path.length()).startsWith("@");
+		attr_doc_key = doc_key_path.substring(doc_key_path.lastIndexOf('/') + 1, doc_key_path.length()).startsWith("@");
 
 		if (attr_doc_key)
-			attr_doc_key_holder = doc_key_path.substring(0, doc_key_path.lastIndexOf("/"));
+			attr_doc_key_holder = doc_key_path.substring(0, doc_key_path.lastIndexOf('/'));
 
 		doc_unit.clear();
 		doc_key.clear();
@@ -301,6 +301,8 @@ public class XmlSplitterImpl {
 	 * Execute splitting large XML file.
 	 */
 	public void exec() {
+
+		long start_time = System.currentTimeMillis();
 
 		try {
 
@@ -358,6 +360,10 @@ public class XmlSplitterImpl {
 			e.printStackTrace();
 			System.exit(1);
 		}
+
+		long end_time = System.currentTimeMillis();
+
+		System.out.println("Execution time: " + (end_time - start_time) + " ms");
 
 	}
 
@@ -482,7 +488,7 @@ public class XmlSplitterImpl {
 
 								try {
 
-									createXMLEventWriter(attr.getValue().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", ""));
+									createXMLEventWriter(PgSchemaUtil.collapseWhiteSpace(attr.getValue()));
 
 								} catch (PgSchemaException | IOException | XMLStreamException e) {
 									e.printStackTrace();
@@ -635,7 +641,7 @@ public class XmlSplitterImpl {
 
 					try {
 
-						createXMLEventWriter(element.asCharacters().getData().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", ""));
+						createXMLEventWriter(PgSchemaUtil.collapseWhiteSpace(element.asCharacters().getData()));
 
 					} catch (PgSchemaException | IOException | XMLStreamException e) {
 						e.printStackTrace();

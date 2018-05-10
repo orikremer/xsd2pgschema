@@ -81,8 +81,14 @@ public class PgSchemaOption {
 	/** Whether enable canonical XML Schema validation or not (validate only whether document is well-formed). */
 	public boolean full_check = true;
 
-	/** Whether use TAB delimiter code for PostgreSQL data migration. */
-	public boolean pg_tab_delimiter = true;
+	/** Whether use TSV format in PostgreSQL data migration. */
+	protected boolean pg_tab_delimiter = true;
+
+	/** The current delimiter code. */
+	public char pg_delimiter = '\t';
+
+	/** The current null code. */
+	public String pg_null = PgSchemaUtil.pg_tsv_null;
 
 	/** The verbose mode. */
 	public boolean verbose = false;
@@ -333,6 +339,28 @@ public class PgSchemaOption {
 	}
 
 	/**
+	 * Use tab delimiter code.
+	 */
+	public void usePgTsv() {
+
+		pg_tab_delimiter = true;
+		pg_delimiter = '\t';
+		pg_null = PgSchemaUtil.pg_tsv_null;
+
+	}
+
+	/**
+	 * Use comma delimiter code.
+	 */
+	public void usePgCsv() {
+
+		pg_tab_delimiter = false;
+		pg_delimiter = ',';
+		pg_null = "";
+
+	}
+
+	/**
 	 * Set document key name.
 	 *
 	 * @param document_key_name document key name
@@ -430,7 +458,7 @@ public class PgSchemaOption {
 
 				if (child_name.equals(xs_prefix_ + "appinfo")) {
 
-					annotation = child.getTextContent().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
+					annotation = PgSchemaUtil.collapseWhiteSpace(child.getTextContent());
 
 					if (!annotation.isEmpty())
 						annotation += "\n-- ";
@@ -446,7 +474,7 @@ public class PgSchemaOption {
 
 				else if (child_name.equals(xs_prefix_ + "documentation")) {
 
-					annotation += child.getTextContent().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
+					annotation += PgSchemaUtil.collapseWhiteSpace(child.getTextContent());
 
 					Element e = (Element) child;
 
@@ -485,7 +513,7 @@ public class PgSchemaOption {
 
 				if (child_name.equals(xs_prefix_ + "appinfo")) {
 
-					String annotation = child.getTextContent().replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
+					String annotation = PgSchemaUtil.collapseWhiteSpace(child.getTextContent());
 
 					Element e = (Element) child;
 
@@ -529,7 +557,7 @@ public class PgSchemaOption {
 
 					if (one_liner) {
 
-						String annotation = text.replaceAll("\\s+", " ").replaceAll("  ", " ").replaceFirst("^ ", "").replaceFirst(" $", "");
+						String annotation = PgSchemaUtil.collapseWhiteSpace(text);
 
 						Element e = (Element) child;
 

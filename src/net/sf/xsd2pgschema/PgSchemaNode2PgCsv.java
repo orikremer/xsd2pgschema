@@ -39,9 +39,6 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	/** The string builder for a line of CSV/TSV format. */
 	private StringBuilder sb = null;
 
-	/** Whether use TAB delimiter code for PostgreSQL data migration. */
-	private boolean pg_tab_delimiter = true;
-
 	/**
 	 * Node parser for CSV conversion.
 	 *
@@ -56,8 +53,6 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 		super(schema, parent_table, table);
 
 		sb = new StringBuilder();
-
-		pg_tab_delimiter = option.pg_tab_delimiter;
 
 	}
 
@@ -122,213 +117,107 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 */
 	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean nested, final int key_id) throws IOException, TransformerException {
 
-		Arrays.fill(values, "");
+		Arrays.fill(values, option.pg_null);
 
 		filled = true;
 
 		nested_fields = 0;
 
-		if (pg_tab_delimiter) {
+		for (int f = 0; f < fields.size(); f++) {
 
-			for (int f = 0; f < fields.size(); f++) {
+			PgField field = fields.get(f);
 
-				PgField field = fields.get(f);
+			// document_key
 
-				// document_key
+			if (field.document_key) {
 
-				if (field.document_key) {
-
-					if (table.buffw != null)
-						values[f] = document_id;
-
-				}
-
-				// serial_key
-
-				else if (field.serial_key) {
-
-					if (table.buffw != null)
-						values[f] = option.ser_size.equals(PgSerSize.unsigned_int_32) ? Integer.toString(key_id) : Short.toString((short) key_id);
-
-				}
-
-				// xpath_key
-
-				else if (field.xpath_key) {
-
-					if (table.buffw != null)
-						values[f] = schema.getHashKeyString(current_key.substring(document_id_len));
-
-				}
-
-				// primary_key
-
-				else if (field.primary_key) {
-
-					if (table.buffw != null && rel_data_ext)
-						values[f] = schema.getHashKeyString(primary_key);
-
-				}
-
-				// foreign_key
-
-				else if (field.foreign_key) {
-
-					if (parent_table.name.equals(field.foreign_table_name)) {
-
-						if (table.buffw != null && rel_data_ext)
-							values[f] = schema.getHashKeyString(parent_key);
-
-					}
-
-				}
-
-				// nested_key
-
-				else if (field.nested_key) {
-
-					if (setNestedKey(field, current_key, key_id)) {
-
-						if (table.buffw != null && rel_data_ext)
-							values[f] = schema.getHashKeyString(nested_key[nested_fields]);
-
-						nested_fields++;
-
-					}
-
-				}
-
-				// attribute, simple_content, element
-
-				else if (field.attribute || field.simple_content || field.element) {
-
-					if (setContent(proc_node, field, true)) {
-
-						if (table.buffw != null)
-							values[f] = field.normalize(content).replaceAll("\t", "\\t").replaceAll("\n", "\\n");
-
-					} else if (field.required) {
-						filled = false;
-						break;
-					}
-
-				}
-
-				// any, any_attribute
-
-				else if ((field.any || field.any_attribute) && table.buffw != null) {
-
-					if (setAnyContent(proc_node, field))
-						values[f] = field.normalize(content).replaceAll("\t", "\\t").replaceAll("\n", "\\n");
-
-				}
-
-				if (!filled)
-					break;
+				if (table.buffw != null)
+					values[f] = document_id;
 
 			}
 
-		}
+			// serial_key
 
-		else {
+			else if (field.serial_key) {
 
-			for (int f = 0; f < fields.size(); f++) {
-
-				PgField field = fields.get(f);
-
-				// document_key
-
-				if (field.document_key) {
-
-					if (table.buffw != null)
-						values[f] = document_id;
-
-				}
-
-				// serial_key
-
-				else if (field.serial_key) {
-
-					if (table.buffw != null)
-						values[f] = option.ser_size.equals(PgSerSize.unsigned_int_32) ? Integer.toString(key_id) : Short.toString((short) key_id);
-
-				}
-
-				// xpath_key
-
-				else if (field.xpath_key) {
-
-					if (table.buffw != null)
-						values[f] = schema.getHashKeyString(current_key.substring(document_id_len));
-
-				}
-
-				// primary_key
-
-				else if (field.primary_key) {
-
-					if (table.buffw != null && rel_data_ext)
-						values[f] = schema.getHashKeyString(primary_key);
-
-				}
-
-				// foreign_key
-
-				else if (field.foreign_key) {
-
-					if (parent_table.name.equals(field.foreign_table_name)) {
-
-						if (table.buffw != null && rel_data_ext)
-							values[f] = schema.getHashKeyString(parent_key);
-
-					}
-
-				}
-
-				// nested_key
-
-				else if (field.nested_key) {
-
-					if (setNestedKey(field, current_key, key_id)) {
-
-						if (table.buffw != null && rel_data_ext)
-							values[f] = schema.getHashKeyString(nested_key[nested_fields]);
-
-						nested_fields++;
-
-					}
-
-				}
-
-				// attribute, simple_content, element
-
-				else if (field.attribute || field.simple_content || field.element) {
-
-					if (setContent(proc_node, field, true)) {
-
-						if (table.buffw != null)
-							values[f] = StringEscapeUtils.escapeCsv(field.normalize(content));
-
-					} else if (field.required) {
-						filled = false;
-						break;
-					}
-
-				}
-
-				// any, any_attribute
-
-				else if ((field.any || field.any_attribute) && table.buffw != null) {
-
-					if (setAnyContent(proc_node, field))
-						values[f] = StringEscapeUtils.escapeCsv(field.normalize(content));
-
-				}
-
-				if (!filled)
-					break;
+				if (table.buffw != null)
+					values[f] = option.ser_size.equals(PgSerSize.unsigned_int_32) ? Integer.toString(key_id) : Short.toString((short) key_id);
 
 			}
+
+			// xpath_key
+
+			else if (field.xpath_key) {
+
+				if (table.buffw != null)
+					values[f] = schema.getHashKeyString(current_key.substring(document_id_len));
+
+			}
+
+			// primary_key
+
+			else if (field.primary_key) {
+
+				if (table.buffw != null && rel_data_ext)
+					values[f] = schema.getHashKeyString(primary_key);
+
+			}
+
+			// foreign_key
+
+			else if (field.foreign_key) {
+
+				if (parent_table.name.equals(field.foreign_table_name)) {
+
+					if (table.buffw != null && rel_data_ext)
+						values[f] = schema.getHashKeyString(parent_key);
+
+				}
+
+			}
+
+			// nested_key
+
+			else if (field.nested_key) {
+
+				if (setNestedKey(field, current_key, key_id)) {
+
+					if (table.buffw != null && rel_data_ext)
+						values[f] = schema.getHashKeyString(nested_key[nested_fields]);
+
+					nested_fields++;
+
+				}
+
+			}
+
+			// attribute, simple_content, element
+
+			else if (field.attribute || field.simple_content || field.element) {
+
+				if (setContent(proc_node, field, true)) {
+
+					if (table.buffw != null && !content.isEmpty())
+						values[f] = option.pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
+
+				} else if (field.required) {
+					filled = false;
+					break;
+				}
+
+			}
+
+			// any, any_attribute
+
+			else if ((field.any || field.any_attribute) && table.buffw != null) {
+
+				if (setAnyContent(proc_node, field) && !content.isEmpty())
+					values[f] = option.pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
+
+			}
+
+			if (!filled)
+				break;
 
 		}
 
@@ -357,35 +246,16 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			written = true;
 
-			if (pg_tab_delimiter) {
+			for (int f = 0; f < fields.size(); f++) {
 
-				for (int f = 0; f < fields.size(); f++) {
+				PgField field = fields.get(f);
 
-					PgField field = fields.get(f);
+				if (field.omissible)
+					continue;
 
-					if (field.omissible)
-						continue;
+				String value = values[f];
 
-					String value = values[f];
-
-					sb.append((value.isEmpty() ? "\\N" : value) + "\t");
-
-				}
-
-			}
-
-			else {
-
-				for (int f = 0; f < fields.size(); f++) {
-
-					PgField field = fields.get(f);
-
-					if (field.omissible)
-						continue;
-
-					sb.append(values[f] + ",");
-
-				}
+				sb.append(value + option.pg_delimiter);
 
 			}
 

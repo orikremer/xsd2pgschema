@@ -191,7 +191,7 @@ public class XPathExpr {
 	 * @return String readable XPath
 	 */
 	public String getReadablePath() {
-		return path.replaceAll(" ", "/");
+		return path.replace(" ", "/");
 	}
 
 	/**

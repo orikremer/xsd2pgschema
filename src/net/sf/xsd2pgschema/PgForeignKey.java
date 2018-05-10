@@ -108,7 +108,7 @@ public class PgForeignKey {
 
 			String[] xpath = e.getAttribute("xpath").split("/");
 
-			return option.getUnqualifiedName(xpath[xpath.length - 1]).replaceAll("@", "");
+			return option.getUnqualifiedName(xpath[xpath.length - 1]).replace("@", "");
 		}
 
 		return null;
@@ -137,10 +137,10 @@ public class PgForeignKey {
 			String[] xpath = e.getAttribute("xpath").split(":");
 
 			if (fields.isEmpty())
-				fields = xpath[xpath.length - 1].replaceAll("@", "");
+				fields = xpath[xpath.length - 1].replace("@", "");
 
 			else
-				fields = fields.concat(", " + xpath[xpath.length - 1]).replaceAll("@", "");
+				fields = fields.concat(", " + xpath[xpath.length - 1]).replace("@", "");
 
 		}
 

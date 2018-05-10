@@ -331,6 +331,8 @@ public class xml2pgsql {
 		Xml2PgSqlThrd[] proc_thrd = new Xml2PgSqlThrd[max_thrds];
 		Thread[] thrd = new Thread[max_thrds];
 
+		long start_time = System.currentTimeMillis();
+
 		for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
 
 			String thrd_name = "xml2pgsql-" + thrd_id;
@@ -366,6 +368,10 @@ public class xml2pgsql {
 			}
 
 		}
+
+		long end_time = System.currentTimeMillis();
+
+		System.out.println("Execution time: " + (end_time - start_time) + " ms");
 
 		if (option.isSynchronizable(true) && total > 1)
 			System.out.println(pg_option.getDbUrl() + " is up-to-date.");

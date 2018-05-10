@@ -95,7 +95,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				if (field.enum_name == null)
 					sql.append("?");
 				else
-					sql.append("?::" + field.enum_name);
+					sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
 
 				sql.append(", ");
 
@@ -128,7 +128,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 						if (field.enum_name == null)
 							sql.append("?");
 						else
-							sql.append("?::" + field.enum_name);
+							sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
 
 						sql.append(", ");
 
@@ -309,12 +309,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					if (ps != null) {
 
-						String normalized_value = field.normalize(content);
-
-						field.writeValue2PgSql(ps, param_id, normalized_value);
+						field.writeValue2PgSql(ps, param_id, content);
 
 						if (upsert)
-							field.writeValue2PgSql(ps, _param_id, normalized_value);
+							field.writeValue2PgSql(ps, _param_id, content);
 
 						occupied[f] = true;
 
@@ -341,6 +339,8 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					if (upsert)
 						field.writeValue2PgSql(ps, _param_id, xml_object);
+
+					xml_object.free();
 
 					occupied[f] = true;
 

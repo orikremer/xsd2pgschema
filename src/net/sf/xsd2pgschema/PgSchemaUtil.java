@@ -75,6 +75,9 @@ public class PgSchemaUtil {
 	/** The default PostgreSQL schema name. */
 	public static final String pg_public_schema_name = "public";
 
+	/** The PostgreSQL null value in TSV format. */
+	public static final String pg_tsv_null = "\\N";
+
 	/** The name of xs:simpleContent in PostgreSQL. */
 	public static final String simple_content_name = "content";
 
@@ -102,8 +105,8 @@ public class PgSchemaUtil {
 	/** The PostgreSQL maximum length for enumeration/constraint. */
 	public static final int max_enum_len = 63;
 
-	/** The default length of indent spaces. */
-	public static final int indent_spaces = 2;
+	/** The default indent offset. */
+	public static final int indent_offset = 2;
 
 	/** The prefix of directory name for sharding. */
 	public static final String shard_dir_prefix = "part-";
@@ -148,16 +151,28 @@ public class PgSchemaUtil {
 	public static final String comment_node_name = "comment()";
 
 	/** The PostgreSQL reserved words. */
-	public static final String[] reserved_words = { "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC", "AUTHORIZATION", "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLLATION", "COLUMN", "CONCURRENTLY", "CONSTRAINT", "CREATE", "CROSS", "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT", "DEFERRABLE", "DESC", "DISTINCT", "DO", "ELSE", "END", "EXCEPT", "FALSE", "FETCH", "FOR", "FOREIGN", "FREEZE", "FROM", "FULL", "GRANT", "GROUP", "HAVING", "ILIKE", "IN", "INITIALLY", "INNER", "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "LATERAL", "LEADING", "LEFT", "LIKE", "LIMIT", "LOCALTIME", "LOCALTIMESTAMP", "NATURAL", "NOT", "NOTNULL", "NULL", "OFFSET", "ON", "ONLY", "OR", "ORDER", "OUTER", "OVERLAPS", "PLACING", "PRIMARY", "REFERENCES", "RETURNING", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "TABLESAMPLE", "THEN", "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VARIADIC", "VERBOSE", "WHEN", "WHERE", "WINDOW", "WITH" };
+	public static final String[] pg_reserved_words = { "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC", "AUTHORIZATION", "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLLATION", "COLUMN", "CONCURRENTLY", "CONSTRAINT", "CREATE", "CROSS", "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT", "DEFERRABLE", "DESC", "DISTINCT", "DO", "ELSE", "END", "EXCEPT", "FALSE", "FETCH", "FOR", "FOREIGN", "FREEZE", "FROM", "FULL", "GRANT", "GROUP", "HAVING", "ILIKE", "IN", "INITIALLY", "INNER", "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "LATERAL", "LEADING", "LEFT", "LIKE", "LIMIT", "LOCALTIME", "LOCALTIMESTAMP", "NATURAL", "NOT", "NOTNULL", "NULL", "OFFSET", "ON", "ONLY", "OR", "ORDER", "OUTER", "OVERLAPS", "PLACING", "PRIMARY", "REFERENCES", "RETURNING", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "TABLESAMPLE", "THEN", "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VARIADIC", "VERBOSE", "WHEN", "WHERE", "WINDOW", "WITH" };
 
 	/** The PostgreSQL reserved operator codes. */
-	public static final String[] reserved_ops = { "+", "-", "*", "/", "%", "^", "|/", "||/", "!", "!!", "@", "&", "|", "#", "~", "<<", ">>" };
+	public static final String[] pg_reserved_ops = { "+", "-", "*", "/", "%", "^", "|/", "||/", "!", "!!", "@", "&", "|", "#", "~", "<<", ">>" };
 
-	/** The PostgreSQL reserved operator codes escaping regular expression match. */
-	public static final String[] reserved_ops_rex = { "\\+", "-", "\\*", "/", "%", "\\^", "\\|/", "\\|\\|/", "!", "!!", "@", "\\&", "\\|", "#", "~", "<<", ">>" };
+	/** The compiled pattern matches capital code. */
+	public static final Pattern cap_pattern = Pattern.compile(".*[A-Z].*", Pattern.MULTILINE);
 
-	/** The regular expression matches URL. */
-	public static final String url_rex = "^https?:\\/\\/.*";
+	/** The compiled pattern matches URL. */
+	public static final Pattern url_pattern = Pattern.compile("^https?:\\/\\/.*", Pattern.MULTILINE);
+
+	/** The compiled pattern matches excess spaces. */
+	public static final Pattern space_pattern = Pattern.compile("\\s+", Pattern.MULTILINE);
+
+	/** The compiled pattern for replacing white spaces. */
+	public static final Pattern ws_rep_pattern = Pattern.compile("[\\t\\n\\r]", Pattern.MULTILINE);
+
+	/** The compiled pattern matches tab code. */
+	public static final Pattern tab_pattern = Pattern.compile("\\t", Pattern.MULTILINE);
+
+	/** The compiled pattern matches line feed code. */
+	public static final Pattern lf_pattern = Pattern.compile("\\n", Pattern.MULTILINE);
 
 	/**
 	 * Return input stream of XSD file with decompression.
@@ -185,12 +200,12 @@ public class PgSchemaUtil {
 	 */
 	public static InputStream getSchemaInputStream(String schema_location, String schema_parent, boolean cache_xsd) {
 
-		if (!cache_xsd && !schema_location.matches(url_rex) && schema_parent != null && schema_parent.matches(url_rex))
+		if (!cache_xsd && !url_pattern.matcher(schema_location).matches() && schema_parent != null && url_pattern.matcher(schema_parent).matches())
 			schema_location = schema_parent + "/" + schema_location;
 
 		// local XML Schema file
 
-		if (!schema_location.matches(url_rex)) {
+		if (!url_pattern.matcher(schema_location).matches()) {
 
 			File schema_file = new File(schema_location);
 
@@ -290,10 +305,10 @@ public class PgSchemaUtil {
 	 */
 	public static File getSchemaFile(String schema_location, String schema_parent, boolean cache_xsd) {
 
-		boolean is_url = schema_parent != null && schema_parent.matches(url_rex);
+		boolean is_url = schema_parent != null && url_pattern.matcher(schema_parent).matches();
 		boolean use_cache = (is_url && cache_xsd) || !is_url;
 
-		if (use_cache && !schema_location.matches(url_rex)) {
+		if (use_cache && !url_pattern.matcher(schema_location).matches()) {
 
 			File schema_location_file = new File(schema_location);
 
@@ -361,7 +376,7 @@ public class PgSchemaUtil {
 	 */
 	public static String getSchemaName(String schema_location) {
 
-		if (schema_location.matches(url_rex))
+		if (url_pattern.matcher(schema_location).matches())
 			return schema_location;
 
 		File schema_file = new File(schema_location);
@@ -377,7 +392,7 @@ public class PgSchemaUtil {
 	 */
 	public static String getSchemaFileName(String schema_location) {
 
-		if (schema_location.matches(url_rex)) {
+		if (url_pattern.matcher(schema_location).matches()) {
 
 			try {
 
@@ -404,7 +419,7 @@ public class PgSchemaUtil {
 	 */
 	public static String getSchemaParent(String schema_location) {
 
-		if (schema_location.matches(url_rex)) {
+		if (url_pattern.matcher(schema_location).matches()) {
 
 			try {
 
@@ -561,10 +576,10 @@ public class PgSchemaUtil {
 	 */
 	public static String avoidPgReservedWords(String name) {
 
-		if (Arrays.asList(reserved_words).contains(name.toUpperCase()) || name.matches("^.*[A-Z].*$"))
+		if (Arrays.asList(pg_reserved_words).contains(name.toUpperCase()) || cap_pattern.matcher(name).matches())
 			return "\"" + name + "\"";
 
-		for (String ops : reserved_ops) {
+		for (String ops : pg_reserved_ops) {
 
 			if (name.contains(ops))
 				return "\"" + name + "\"";
@@ -582,22 +597,8 @@ public class PgSchemaUtil {
 	 */
 	public static String avoidPgReservedOps(String name) {
 
-		boolean contain_ops = false;
-
-		for (String ops : reserved_ops) {
-
-			if (name.contains(ops)) {
-				contain_ops = true;
-				break;
-			}
-
-		}
-
-		if (!contain_ops)
-			return name;
-
-		for (String ops_rex : reserved_ops_rex)
-			name = name.replaceAll(ops_rex, "_");
+		for (String ops : pg_reserved_ops)
+			name = name.replace(ops, "_");
 
 		return name;
 	}
@@ -670,6 +671,36 @@ public class PgSchemaUtil {
 		}
 
 		return date;
+	}
+
+	/**
+	 * Replace all white space characters.
+	 *
+	 * @param text string
+	 * @return String replaced string
+	 */
+	public static String replaceWhiteSpace(String text) {
+		return PgSchemaUtil.ws_rep_pattern.matcher(text).replaceAll(" ");
+	}
+
+	/**
+	 * Collapse all white space characters.
+	 *
+	 * @param text string
+	 * @return String collapsed string
+	 */
+	public static String collapseWhiteSpace(String text) {
+		return PgSchemaUtil.space_pattern.matcher(replaceWhiteSpace(text)).replaceAll(" ").trim();
+	}
+
+	/**
+	 * Escape characters for TSV format.
+	 *
+	 * @param text string
+	 * @return String escaped string
+	 */
+	public static String escapeTsv(String text) {
+		return PgSchemaUtil.tab_pattern.matcher(PgSchemaUtil.lf_pattern.matcher(text).replaceAll("\\\\n")).replaceAll("\\\\t");
 	}
 
 }

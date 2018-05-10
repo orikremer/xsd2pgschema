@@ -31,7 +31,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.commons.io.FilenameUtils;
 
 /**
- * Report check sum status.
+ * Report check sum directory status.
  *
  * @author yokochi
  */
@@ -240,7 +240,7 @@ public class chksumstat {
 			System.exit(1);
 		}
 
-		System.out.println("# new documents: " + sync_new_doc_rows.size());
+		System.out.println("# created docs: " + sync_new_doc_rows.size());
 
 		if (option.verbose)
 			sync_new_doc_rows.forEach(document_id -> System.out.println(document_id));
@@ -274,7 +274,6 @@ public class chksumstat {
 		System.err.println("        --xml-file-ext-digest DIGESTIBLE_EXTENSION (default=\".\")");
 		System.err.println("        --update (update check sum files anyway)");
 		System.err.println("        --verbose");
-
 		System.exit(1);
 
 	}

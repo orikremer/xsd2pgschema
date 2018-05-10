@@ -33,6 +33,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLXML;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -46,7 +47,9 @@ import java.util.stream.Collectors;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.TransformerException;
 
 import org.apache.commons.text.StringEscapeUtils;
@@ -711,8 +714,26 @@ public class PgSchema {
 
 								if (field.parent_node == null)
 									field.parent_node = parent_field.foreign_table_name;
-								else
-									field.parent_node += " " + parent_field.foreign_table_name;
+
+								else {
+
+									String[] _parent_nodes = field.parent_node.split(" ");
+
+									boolean has_parent_node = false;
+
+									for (String _parent_node : _parent_nodes) {
+
+										if (_parent_node.equals(parent_field.foreign_table_name)) {
+											has_parent_node = true;
+											break;
+										}
+
+									}
+
+									if (!has_parent_node)
+										field.parent_node += " " + parent_field.foreign_table_name;
+
+								}
 
 							}
 
@@ -754,6 +775,68 @@ public class PgSchema {
 					} while (!has_content && !has_foreign_key && !infinite_loop);
 
 				}
+
+			}
+
+		}));
+
+		// decide ancestor node name
+
+		tables.stream().filter(table -> table.has_foreign_key && table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> {
+
+			Optional<PgField> opt = table.fields.stream().filter(foreign_field -> foreign_field.foreign_key && foreign_field.foreign_table_name.equals(field.parent_node)).findFirst();
+
+			if (opt.isPresent()) {
+
+				Optional<PgField> opt2 = getForeignTable(opt.get()).fields.stream().filter(nested_field -> nested_field.nested_key && getForeignTable(nested_field).equals(table)).findFirst();
+
+				if (opt2.isPresent())
+					field.ancestor_node = opt2.get().parent_node;
+
+			}
+
+		}));
+
+		tables.stream().filter(table -> !table.has_foreign_key && table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null && field.ancestor_node == null).forEach(field -> {
+
+			StringBuilder sb = new StringBuilder();
+
+			tables.stream().filter(ancestor_table -> ancestor_table.nested_fields > 0).forEach(ancestor_table -> {
+
+				Optional<PgField> opt = ancestor_table.fields.stream().filter(ancestor_field -> ancestor_field.nested_key && getForeignTable(ancestor_field).equals(table) && ancestor_field.xtype.equals(field.xtype) && ancestor_field.ancestor_node != null).findFirst();
+
+				if (opt.isPresent()) {
+
+					String[] ancestor_nodes = opt.get().ancestor_node.split(" ");
+
+					String[] _ancestor_nodes = sb.toString().split(" ");
+
+					for (String ancestor_node : ancestor_nodes) {
+
+						boolean has_ancestor_node = false;
+
+						for (String _ancestor_node : _ancestor_nodes) {
+
+							if (_ancestor_node.equals(ancestor_node)) {
+								has_ancestor_node = true;
+								break;
+							}
+
+						}
+
+						if (!has_ancestor_node)
+							sb.append(ancestor_node + " ");
+
+					}
+
+				}
+
+			});
+
+			if (sb.length() > 0) {
+
+				field.ancestor_node = sb.substring(0, sb.length() - 1);
+				sb.setLength(0);
 
 			}
 
@@ -830,6 +913,22 @@ public class PgSchema {
 
 		}));
 
+		// decide prefix of target namespace
+
+		tables.stream().filter(table -> table.required && !table.relational).forEach(table -> {
+
+			table.prefix = getAbsolutePrefixOf(table.target_namespace, "");
+
+			table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
+
+				field.prefix = getAbsolutePrefixOf(field.target_namespace, "");
+				field.is_xs_namespace = field.target_namespace.equals(PgSchemaUtil.xs_namespace_uri);
+
+
+			});
+
+		});
+
 		// instance of message digest
 
 		if (!option.hash_algorithm.isEmpty() && !option.hash_size.equals(PgHashSize.debug_string)) {
@@ -850,7 +949,7 @@ public class PgSchema {
 
 		def_namespaces.entrySet().stream().map(arg -> arg.getValue()).forEach(arg -> namespace_uri.add(arg));
 
-		namespace_uri.forEach(arg -> sb.append(arg + " (" + getAbsolutePrefixOf(arg) + "), "));
+		namespace_uri.forEach(arg -> sb.append(arg + " (" + getAbsolutePrefixOf(arg, "default") + "), "));
 		namespace_uri.clear();
 
 		_root_schema.def_stat_msg.append("--   Namespaces:\n");
@@ -2274,10 +2373,11 @@ public class PgSchema {
 	 * Return absolute prefix of namespace URI.
 	 *
 	 * @param namespace_uri namespace URI
+	 * @param def_prefix prefix for default namespace URI
 	 * @return String prefix of namespace URI
 	 */
-	private String getAbsolutePrefixOf(String namespace_uri) {
-		return def_namespaces.entrySet().stream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()) ? def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey() : "default";
+	private String getAbsolutePrefixOf(String namespace_uri, String def_prefix) {
+		return def_namespaces.entrySet().stream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()) ? def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey() : def_prefix;
 	}
 
 	/**
@@ -2585,9 +2685,9 @@ public class PgSchema {
 		if (option.rel_model_ext || option.serial_key)
 			System.out.println("--  " + (md_hash_key == null ? "assumed " : "") + "hash algorithm: " + (md_hash_key == null ? PgSchemaUtil.def_hash_algorithm : md_hash_key.getAlgorithm()));
 		if (option.rel_model_ext)
-			System.out.println("--  hash key type: " + option.hash_size.name().replaceAll("_", " ") + " bits");
+			System.out.println("--  hash key type: " + option.hash_size.name().replace("_", " ") + " bits");
 		if (option.serial_key)
-			System.out.println("--  searial key type: " + option.ser_size.name().replaceAll("_", " ") + " bits");
+			System.out.println("--  searial key type: " + option.ser_size.name().replace("_", " ") + " bits");
 		System.out.println("--");
 		System.out.println("-- Statistics of schema:");
 		System.out.print(def_stat_msg.toString());
@@ -2607,9 +2707,15 @@ public class PgSchema {
 
 				named_schemas.forEach(named_schema -> System.out.println("CREATE SCHEMA " + PgSchemaUtil.avoidPgReservedWords(named_schema) + ";"));
 
+				System.out.print("\nSET search_path TO ");
+				named_schemas.forEach(named_schema -> System.out.print(PgSchemaUtil.avoidPgReservedWords(named_schema) + ", "));
+				System.out.println("public;");
+
 			}
 
 			System.out.println("");
+
+			named_schemas.clear();
 
 		}
 
@@ -2839,7 +2945,7 @@ public class PgSchema {
 		if (table.target_namespace != null && !table.target_namespace.isEmpty()) {
 
 			for (String namespace_uri : table.target_namespace.split(" "))
-				sb.append(namespace_uri + " (" + getAbsolutePrefixOf(namespace_uri) + "), ");
+				sb.append(namespace_uri + " (" + getAbsolutePrefixOf(namespace_uri, "default") + "), ");
 
 		}
 
@@ -2847,7 +2953,7 @@ public class PgSchema {
 			sb.append("null, ");
 
 		System.out.println("-- xmlns: " + sb.toString() + "schema location: " + table.schema_location);
-		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replaceAll("_",  " ") + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (tables.stream().anyMatch(_table -> _table.conflict) ? ", name collision: " + table.conflict : ""));
+		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replace("_",  " ") + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (tables.stream().anyMatch(_table -> _table.conflict) ? ", name collision: " + table.conflict : ""));
 		System.out.println("--");
 
 		sb.setLength(0);
@@ -2856,9 +2962,9 @@ public class PgSchema {
 
 		fields.stream().filter(field -> field.enum_name != null && !field.enum_name.isEmpty()).forEach(field -> {
 
-			System.out.println("DROP TYPE IF EXISTS " + field.enum_name + ";");
+			System.out.println("DROP TYPE IF EXISTS " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name + ";");
 
-			System.out.print("CREATE TYPE " + field.enum_name + " AS ENUM (");
+			System.out.print("CREATE TYPE " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name + " AS ENUM (");
 
 			for (int i = 0; i < field.enumeration.length; i++) {
 
@@ -2895,7 +3001,7 @@ public class PgSchema {
 				System.out.println("-- FOREIGN KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_name) + " )");
 
 			else if (field.nested_key)
-				System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_name) + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : ""));
+				System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_name) + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
 
 			else if (field.attribute) {
 
@@ -2961,9 +3067,9 @@ public class PgSchema {
 			}
 
 			if (field.enum_name == null || field.enum_name.isEmpty())
-				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.name) + " " + field.getPgDataType() + " ");
+				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.name) + " " + field.getPgDataType());
 			else
-				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.name) + " " + field.enum_name + " ");
+				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.name) + " " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
 
 			if ((field.required || !field.xrequired) && field.fixed_value != null && !field.fixed_value.isEmpty()) {
 
@@ -2985,22 +3091,22 @@ public class PgSchema {
 				case xs_IDREFS:
 				case xs_ENTITY:
 				case xs_ENTITIES:
-					System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.name) + " = '" + field.fixed_value + "' ) ");
+					System.out.print(" CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.name) + " = '" + field.fixed_value + "' )");
 					break;
 				default:
-					System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.name) + " = " + field.fixed_value + " ) ");
+					System.out.print(" CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.name) + " = " + field.fixed_value + " )");
 				}
 
 			}
 
 			if (field.required)
-				System.out.print("NOT NULL ");
+				System.out.print(" NOT NULL");
 
 			if (option.retain_key) {
 
 				if (field.unique_key) {
 
-					System.out.print("PRIMARY KEY ");
+					System.out.print(" PRIMARY KEY");
 
 				}
 
@@ -3013,7 +3119,7 @@ public class PgSchema {
 					if (foreign_field != null) {
 
 						if (foreign_field.unique_key)
-							System.out.print("CONSTRAINT " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_name) + " ) ON DELETE CASCADE");
+							System.out.print(" CONSTRAINT " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_name) + " ) ON DELETE CASCADE");
 
 					}
 
@@ -3022,7 +3128,7 @@ public class PgSchema {
 			}
 
 			if (f < fields.size() - 1)
-				System.out.println("," + (option.no_field_anno || field.anno == null || field.anno.isEmpty() ? "" : " -- " + field.anno));
+				System.out.println(" ," + (option.no_field_anno || field.anno == null || field.anno.isEmpty() ? "" : " -- " + field.anno));
 			else
 				System.out.println((option.no_field_anno || field.anno == null || field.anno.isEmpty() ? "" : " -- " + field.anno));
 
@@ -5157,16 +5263,16 @@ public class PgSchema {
 
 		List<PgField> fields = root_table.fields;
 
-		System.out.print("{" + jsonb.linefeed); // JSON document start
+		System.out.print("{" + jsonb.line_feed_code); // JSON document start
 
-		System.out.print(jsonb.getIndentSpaces(1) + "\"$schema\":" + jsonb.key_value_space + "\"" + PgSchemaUtil.json_schema_def + "\"," + jsonb.linefeed); // declaring a JSON Schema
+		System.out.print(jsonb.getIndentSpaces(1) + "\"$schema\":" + jsonb.key_value_space + "\"" + PgSchemaUtil.json_schema_def + "\"," + jsonb.line_feed_code); // declaring a JSON Schema
 
 		if (def_namespaces != null) {
 
 			String def_namespace = def_namespaces.get("");
 
 			if (def_namespace != null)
-				System.out.print(jsonb.getIndentSpaces(1) + "\"id\":" + jsonb.key_value_space + "\"" + def_namespace + "\"," + jsonb.linefeed); // declaring a unique identifier
+				System.out.print(jsonb.getIndentSpaces(1) + "\"id\":" + jsonb.key_value_space + "\"" + def_namespace + "\"," + jsonb.line_feed_code); // declaring a unique identifier
 
 		}
 
@@ -5177,7 +5283,7 @@ public class PgSchema {
 			if (!_def_anno_appinfo.startsWith("\""))
 				_def_anno_appinfo = "\"" + _def_anno_appinfo + "\"";
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_anno_appinfo + "," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_anno_appinfo + "," + jsonb.line_feed_code);
 
 		}
 
@@ -5188,15 +5294,15 @@ public class PgSchema {
 			if (!_def_anno_doc.startsWith("\""))
 				_def_anno_doc = "\"" + _def_anno_doc + "\"";
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_anno_doc + "," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_anno_doc + "," + jsonb.line_feed_code);
 
 		}
 
 		if (!root_table.virtual) {
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + "\"" + root_table.name + "\"," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + "\"" + root_table.name + "\"," + jsonb.line_feed_code);
 
 			if (root_table.anno != null && !root_table.anno.isEmpty()) {
 
@@ -5205,7 +5311,7 @@ public class PgSchema {
 				if (!table_anno.startsWith("\""))
 					table_anno = "\"" + table_anno + "\"";
 
-				System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.linefeed);
+				System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.line_feed_code);
 
 			}
 
@@ -5222,24 +5328,24 @@ public class PgSchema {
 			});
 
 			if (jsonb.builder.length() > 2)
-				System.out.print(jsonb.getIndentSpaces(1) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_spaces + 1)) + "]," + jsonb.linefeed);
+				System.out.print(jsonb.getIndentSpaces(1) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
 
 			jsonb.builder.setLength(0);
 
 		}
 
 		if (!root_table.virtual)
-			System.out.print(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.linefeed); // JSON own items start
+			System.out.print(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
 
 		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, true, false, 2));
 
 		if (jsonb.builder.length() > 2)
-			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.linefeed.equals("\n") ? 2 : 1) + (root_table.virtual ? 1 : 0)) + jsonb.linefeed);
+			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.line_feed_code.equals("\n") ? 2 : 1) + (root_table.virtual ? 1 : 0)) + jsonb.line_feed_code);
 
 		jsonb.builder.setLength(0);
 
 		if (!root_table.virtual)
-			System.out.print(jsonb.getIndentSpaces(2) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // JSON child items start
+			System.out.print(jsonb.getIndentSpaces(2) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON child items start
 
 		int[] list_id = { 0 };
 
@@ -5247,13 +5353,13 @@ public class PgSchema {
 
 		if (!root_table.virtual) {
 
-			System.out.print(jsonb.getIndentSpaces(2) + "}" + jsonb.linefeed); // JSON child items end
+			System.out.print(jsonb.getIndentSpaces(2) + "}" + jsonb.line_feed_code); // JSON child items end
 
-			System.out.print(jsonb.getIndentSpaces(1) + "}" + jsonb.linefeed); // JSON own items end
+			System.out.print(jsonb.getIndentSpaces(1) + "}" + jsonb.line_feed_code); // JSON own items end
 
 		}
 
-		System.out.print("}" + jsonb.linefeed); // JSON document end
+		System.out.print("}" + jsonb.line_feed_code); // JSON document end
 
 		jsonb.builder.setLength(0);
 
@@ -5273,14 +5379,14 @@ public class PgSchema {
 		List<PgField> fields = table.fields;
 
 		if (table.list_holder)
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"array\"," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"array\"," + jsonb.line_feed_code);
 
 		if (!table.virtual) {
 
 			if (!parent_table.list_holder)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.linefeed);
+				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
 
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + table.name + "\"," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + table.name + "\"," + jsonb.line_feed_code);
 
 			if (table.anno != null && !table.anno.isEmpty()) {
 
@@ -5289,7 +5395,7 @@ public class PgSchema {
 				if (!table_anno.startsWith("\""))
 					table_anno = "\"" + table_anno + "\"";
 
-				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.linefeed);
+				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.line_feed_code);
 
 			}
 
@@ -5306,38 +5412,38 @@ public class PgSchema {
 			});
 
 			if (jsonb.builder.length() > 2)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_spaces + 1)) + "]," + jsonb.linefeed);
+				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
 
 			jsonb.builder.setLength(0);
 
 		}
 
 		if (!table.virtual)
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.linefeed); // JSON own object start
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.line_feed_code); // JSON own object start
 
 		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, true, false, json_indent_level + (table.virtual ? 0 : 1)));
 
 		if (jsonb.builder.length() > 2)
-			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.linefeed.equals("\n") ? 2 : 1) + (table.virtual ? 1 : 0)) + jsonb.linefeed);
+			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.line_feed_code.equals("\n") ? 2 : 1) + (table.virtual ? 1 : 0)) + jsonb.line_feed_code);
 
 		jsonb.builder.setLength(0);
 
 		if (table.nested_fields > 0) {
 
 			if (!table.virtual)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // JSON child items start
+				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON child items start
 
 			int[] _list_id = { 0 };
 
 			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(table, getForeignTable(field), _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : 2)));
 
 			if (!table.virtual)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.linefeed); // JSON child items end
+				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.line_feed_code); // JSON child items end
 
 		}
 
 		if (!table.virtual)
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "}" + (list_id < list_size - 1 ? "," : "") + jsonb.linefeed); // JSON own items end
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "}" + (list_id < list_size - 1 ? "," : "") + jsonb.line_feed_code); // JSON own items end
 
 	}
 
@@ -5385,7 +5491,7 @@ public class PgSchema {
 
 			FileWriter filew = new FileWriter(json_file);
 
-			filew.write("{" + jsonb.linefeed + jsonb.builder.toString() + "}" + jsonb.linefeed);
+			filew.write("{" + jsonb.line_feed_code + jsonb.builder.toString() + "}" + jsonb.line_feed_code);
 
 			filew.close();
 
@@ -5536,16 +5642,16 @@ public class PgSchema {
 
 		List<PgField> fields = root_table.fields;
 
-		System.out.print("{" + jsonb.linefeed); // JSON document start
+		System.out.print("{" + jsonb.line_feed_code); // JSON document start
 
-		System.out.print(jsonb.getIndentSpaces(1) + "\"$schema\":" + jsonb.key_value_space + "\"" + PgSchemaUtil.json_schema_def + "\"," + jsonb.linefeed); // declaring a JSON Schema
+		System.out.print(jsonb.getIndentSpaces(1) + "\"$schema\":" + jsonb.key_value_space + "\"" + PgSchemaUtil.json_schema_def + "\"," + jsonb.line_feed_code); // declaring a JSON Schema
 
 		if (def_namespaces != null) {
 
 			String def_namespace = def_namespaces.get("");
 
 			if (def_namespace != null)
-				System.out.print(jsonb.getIndentSpaces(1) + "\"id\":" + jsonb.key_value_space + "\"" + def_namespace + "\"," + jsonb.linefeed); // declaring a unique identifier
+				System.out.print(jsonb.getIndentSpaces(1) + "\"id\":" + jsonb.key_value_space + "\"" + def_namespace + "\"," + jsonb.line_feed_code); // declaring a unique identifier
 
 		}
 
@@ -5556,7 +5662,7 @@ public class PgSchema {
 			if (!_def_anno_appinfo.startsWith("\""))
 				_def_anno_appinfo = "\"" + _def_anno_appinfo + "\"";
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_anno_appinfo + "," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_anno_appinfo + "," + jsonb.line_feed_code);
 
 		}
 
@@ -5567,15 +5673,15 @@ public class PgSchema {
 			if (!_def_anno_doc.startsWith("\""))
 				_def_anno_doc = "\"" + _def_anno_doc + "\"";
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_anno_doc + "," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_anno_doc + "," + jsonb.line_feed_code);
 
 		}
 
 		if (!root_table.virtual) {
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + "\"" + root_table.name + "\"," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + "\"" + root_table.name + "\"," + jsonb.line_feed_code);
 
 			if (root_table.anno != null && !root_table.anno.isEmpty()) {
 
@@ -5584,7 +5690,7 @@ public class PgSchema {
 				if (!table_anno.startsWith("\""))
 					table_anno = "\"" + table_anno + "\"";
 
-				System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.linefeed);
+				System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.line_feed_code);
 
 			}
 
@@ -5601,24 +5707,24 @@ public class PgSchema {
 			});
 
 			if (jsonb.builder.length() > 2)
-				System.out.print(jsonb.getIndentSpaces(1) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_spaces + 1)) + "]," + jsonb.linefeed);
+				System.out.print(jsonb.getIndentSpaces(1) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
 
 			jsonb.builder.setLength(0);
 
 		}
 
 		if (!root_table.virtual)
-			System.out.print(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.linefeed); // JSON own items start
+			System.out.print(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
 
 		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, !field.list_holder, field.list_holder, 2));
 
 		if (jsonb.builder.length() > 2)
-			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.linefeed.equals("\n") ? 2 : 1) + (root_table.virtual ? 1 : 0)) + jsonb.linefeed);
+			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.line_feed_code.equals("\n") ? 2 : 1) + (root_table.virtual ? 1 : 0)) + jsonb.line_feed_code);
 
 		jsonb.builder.setLength(0);
 
 		if (!root_table.virtual)
-			System.out.print(jsonb.getIndentSpaces(2) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // JSON child items start
+			System.out.print(jsonb.getIndentSpaces(2) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON child items start
 
 		int[] list_id = { 0 };
 
@@ -5626,13 +5732,13 @@ public class PgSchema {
 
 		if (!root_table.virtual) {
 
-			System.out.print(jsonb.getIndentSpaces(2) + "}" + jsonb.linefeed); // JSON child items end
+			System.out.print(jsonb.getIndentSpaces(2) + "}" + jsonb.line_feed_code); // JSON child items end
 
-			System.out.print(jsonb.getIndentSpaces(1) + "}" + jsonb.linefeed); // JSON own items end
+			System.out.print(jsonb.getIndentSpaces(1) + "}" + jsonb.line_feed_code); // JSON own items end
 
 		}
 
-		System.out.print("}" + jsonb.linefeed); // JSON document end
+		System.out.print("}" + jsonb.line_feed_code); // JSON document end
 
 		jsonb.builder.setLength(0);
 
@@ -5655,9 +5761,9 @@ public class PgSchema {
 
 		if (!table.virtual) {
 
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
 
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + table.name + "\"," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + table.name + "\"," + jsonb.line_feed_code);
 
 			if (table.anno != null && !table.anno.isEmpty()) {
 
@@ -5666,7 +5772,7 @@ public class PgSchema {
 				if (!table_anno.startsWith("\""))
 					table_anno = "\"" + table_anno + "\"";
 
-				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.linefeed);
+				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.line_feed_code);
 
 			}
 
@@ -5683,38 +5789,38 @@ public class PgSchema {
 			});
 
 			if (jsonb.builder.length() > 2)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_spaces + 1)) + "]," + jsonb.linefeed);
+				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
 
 			jsonb.builder.setLength(0);
 
 		}
 
 		if (!table.virtual)
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.linefeed); // JSON own items start
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
 
 		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, obj_json && !field.list_holder, !table.virtual || field.list_holder, json_indent_level + (table.virtual ? 0 : 1)));
 
 		if (jsonb.builder.length() > 2)
-			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.linefeed.equals("\n") ? 2 : 1) + (table.virtual ? 1 : 0)) + jsonb.linefeed);
+			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.line_feed_code.equals("\n") ? 2 : 1) + (table.virtual ? 1 : 0)) + jsonb.line_feed_code);
 
 		jsonb.builder.setLength(0);
 
 		if (table.nested_fields > 0) {
 
 			if (!table.virtual)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // JSON child items start
+				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON child items start
 
 			int[] _list_id = { 0 };
 
 			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(table, getForeignTable(field), _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : 2)));
 
 			if (!table.virtual)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.linefeed); // JSON child items end
+				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.line_feed_code); // JSON child items end
 
 		}
 
 		if (!table.virtual)
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "}" + jsonb.linefeed); // JSON own items end
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "}" + jsonb.line_feed_code); // JSON own items end
 
 	}
 
@@ -5762,7 +5868,7 @@ public class PgSchema {
 
 			FileWriter filew = new FileWriter(json_file);
 
-			filew.write("{" + jsonb.linefeed + jsonb.builder.toString() + "}" + jsonb.linefeed);
+			filew.write("{" + jsonb.line_feed_code + jsonb.builder.toString() + "}" + jsonb.line_feed_code);
 
 			filew.close();
 
@@ -5871,16 +5977,16 @@ public class PgSchema {
 
 		hasRootTable();
 
-		System.out.print("{" + jsonb.linefeed); // JSON document start
+		System.out.print("{" + jsonb.line_feed_code); // JSON document start
 
-		System.out.print(jsonb.getIndentSpaces(1) + "\"$schema\":" + jsonb.key_value_space + "\"" + PgSchemaUtil.json_schema_def + "\"," + jsonb.linefeed); // declaring a JSON Schema
+		System.out.print(jsonb.getIndentSpaces(1) + "\"$schema\":" + jsonb.key_value_space + "\"" + PgSchemaUtil.json_schema_def + "\"," + jsonb.line_feed_code); // declaring a JSON Schema
 
 		if (def_namespaces != null) {
 
 			String def_namespace = def_namespaces.get("");
 
 			if (def_namespace != null)
-				System.out.print(jsonb.getIndentSpaces(1) + "\"id\":" + jsonb.key_value_space + "\"" + def_namespace + "\"," + jsonb.linefeed); // declaring a unique identifier
+				System.out.print(jsonb.getIndentSpaces(1) + "\"id\":" + jsonb.key_value_space + "\"" + def_namespace + "\"," + jsonb.line_feed_code); // declaring a unique identifier
 
 		}
 
@@ -5891,7 +5997,7 @@ public class PgSchema {
 			if (!_def_anno_appinfo.startsWith("\""))
 				_def_anno_appinfo = "\"" + _def_anno_appinfo + "\"";
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_anno_appinfo + "," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_anno_appinfo + "," + jsonb.line_feed_code);
 
 		}
 
@@ -5902,7 +6008,7 @@ public class PgSchema {
 			if (!_def_anno_doc.startsWith("\""))
 				_def_anno_doc = "\"" + _def_anno_doc + "\"";
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_anno_doc + "," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_anno_doc + "," + jsonb.line_feed_code);
 
 		}
 
@@ -5911,13 +6017,13 @@ public class PgSchema {
 		tables.stream().filter(table -> table.content_holder).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 			if (!table.equals(first))
-				System.out.print("," + jsonb.linefeed);
+				System.out.print("," + jsonb.line_feed_code);
 
 			realizeJsonSchema(table, 1);
 
 		});
 
-		System.out.print(jsonb.linefeed + "}" + jsonb.linefeed); // JSON document end
+		System.out.print(jsonb.line_feed_code + "}" + jsonb.line_feed_code); // JSON document end
 
 		jsonb.builder.setLength(0);
 
@@ -5935,9 +6041,9 @@ public class PgSchema {
 
 		boolean obj_json = table.virtual || !jsonb.array_all;
 
-		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.linefeed);
+		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
 
-		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + table.name + "\"," + jsonb.linefeed);
+		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + table.name + "\"," + jsonb.line_feed_code);
 
 		if (table.anno != null && !table.anno.isEmpty()) {
 
@@ -5946,7 +6052,7 @@ public class PgSchema {
 			if (!table_anno.startsWith("\""))
 				table_anno = "\"" + table_anno + "\"";
 
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.linefeed);
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.line_feed_code);
 
 		}
 
@@ -5961,13 +6067,13 @@ public class PgSchema {
 			});
 
 			if (jsonb.builder.length() > 2)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_spaces + 1)) + "]," + jsonb.linefeed);
+				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
 
 			jsonb.builder.setLength(0);
 
 		}
 
-		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.linefeed); // JSON own items start
+		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
 
 		fields.stream().filter(field -> field.jsonable).forEach(field -> {
 
@@ -5980,7 +6086,7 @@ public class PgSchema {
 
 
 		if (jsonb.builder.length() > 2)
-			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.linefeed.equals("\n") ? 2 : 1)) + jsonb.linefeed);
+			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.line_feed_code.equals("\n") ? 2 : 1)) + jsonb.line_feed_code);
 
 		jsonb.builder.setLength(0);
 
@@ -6022,7 +6128,7 @@ public class PgSchema {
 			FileWriter filew = new FileWriter(json_file);
 			BufferedWriter buffw = new BufferedWriter(filew);
 
-			buffw.write("{" + jsonb.linefeed); // JSON document start
+			buffw.write("{" + jsonb.line_feed_code); // JSON document start
 
 			PgTable first = tables.stream().filter(_table -> _table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).findFirst().get();
 
@@ -6033,9 +6139,9 @@ public class PgSchema {
 					boolean array_json = !_table.virtual && jsonb.array_all;
 
 					if (!_table.equals(first))
-						buffw.write("," + jsonb.linefeed);
+						buffw.write("," + jsonb.line_feed_code);
 
-					buffw.write(jsonb.getIndentSpaces(1) + "\"" + _table.name + "\":" + jsonb.key_value_space + "{" + jsonb.linefeed); // JSON object start
+					buffw.write(jsonb.getIndentSpaces(1) + "\"" + _table.name + "\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON object start
 
 					boolean has_field = false;
 
@@ -6053,11 +6159,11 @@ public class PgSchema {
 							boolean array_field = (!_table.equals(root_table) && array_json) || _field.list_holder || _field.jsonb_col_size > 1;
 
 							if (has_field)
-								buffw.write("," + jsonb.linefeed);
+								buffw.write("," + jsonb.line_feed_code);
 
 							buffw.write(jsonb.getIndentSpaces(2) + "\"" + (_field.attribute || _field.any_attribute ? jsonb.attr_prefix : "") + (_field.simple_content ? jsonb.simple_content_key : _field.xname) + "\":" + jsonb.key_value_space + (array_field ? "[" : ""));
 
-							_field.jsonb.setLength(_field.jsonb.length() - (jsonb.key_value_spaces + 1));
+							_field.jsonb.setLength(_field.jsonb.length() - (jsonb.key_value_offset + 1));
 							buffw.write(_field.jsonb.toString());
 
 							if (array_field)
@@ -6073,7 +6179,7 @@ public class PgSchema {
 					}
 
 					if (has_field)
-						buffw.write(jsonb.linefeed);
+						buffw.write(jsonb.line_feed_code);
 
 					buffw.write(jsonb.getIndentSpaces(1) + "}"); // JSON object end
 
@@ -6085,9 +6191,9 @@ public class PgSchema {
 			});
 
 			if (first != null)
-				buffw.write(jsonb.linefeed);
+				buffw.write(jsonb.line_feed_code);
 
-			buffw.write("}" + jsonb.linefeed); // JSON document end
+			buffw.write("}" + jsonb.line_feed_code); // JSON document end
 
 			buffw.close();
 			filew.close();
@@ -6159,17 +6265,489 @@ public class PgSchema {
 
 	// XML composer from PostgreSQL
 
+	/** The XML builder. */
+	private XmlBuilder xmlb = null;
+
+	/** SAX parser for any attribute. */
+	private SAXParser any_attr_parser = null;
+
+	/** The instance of any retriever. */
+	private PgAnyRetriever any_retriever = null;
+
 	/**
-	 * Compose result XML document
+	 * Compose XML document
 	 *
-	 * @param path_expr current XPath expression
 	 * @param db_conn database connection
+	 * @param table current table
 	 * @param rset current result set
-	 * @param xml_writer XML stream writer
+	 * @param xmlb XML builder
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void pgSql2Xml(XPathExpr path_expr, Connection db_conn, ResultSet rset, XMLStreamWriter xml_writer) throws PgSchemaException {
-		throw new PgSchemaException("Not implemented yet (XML composer).");
+	public void pgSql2Xml(Connection db_conn, PgTable table, ResultSet rset, XmlBuilder xmlb) throws PgSchemaException {
+
+		this.xmlb = xmlb;
+
+		try {
+
+			if (option.wild_card) {
+
+				if (any_attr_parser == null) {
+
+					SAXParserFactory spf = SAXParserFactory.newInstance();
+					any_attr_parser = spf.newSAXParser();
+
+				}
+
+				if (any_retriever == null)
+					any_retriever = new PgAnyRetriever();
+
+			}
+
+			PgSchemaNestTester test = new PgSchemaNestTester(table, xmlb);
+
+			xmlb.writer.writeStartElement(table.prefix, table.name, table.target_namespace);
+
+			xmlb.writer.writeAttribute("xmlns" + (table.prefix.isEmpty() ? "" : ":" + table.prefix), table.target_namespace);
+
+			List<PgField> fields = table.fields;
+
+			// attribute, any_attribute
+
+			int param_id = 1;
+
+			for (int f = 0; f < fields.size(); f++) {
+
+				PgField field = fields.get(f);
+
+				if (field.attribute) {
+
+					String content = field.retrieveValue(rset, param_id);
+
+					if (content != null && !content.isEmpty()) {
+
+						if (field.is_xs_namespace)
+							xmlb.writer.writeAttribute(field.name, content);
+						else
+							xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.name, content);
+
+						test.has_content = true;
+
+					}
+
+				}
+
+				else if (field.any_attribute) {
+
+					SQLXML xml_object = rset.getSQLXML(param_id);
+
+					if (xml_object != null) {
+
+						InputStream in = xml_object.getBinaryStream();
+
+						if (in != null) {
+
+							PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table.name, xmlb.writer);
+
+							any_attr_parser.parse(in, any_attr);
+
+							test.has_content |= any_attr.has_content;
+
+							in.close();
+
+						}
+
+						any_attr_parser.reset();
+
+						xml_object.free();
+
+					}
+
+				}
+
+				if (!field.omissible)
+					param_id++;
+
+			}
+
+			// simple_content, element, any
+
+			param_id = 1;
+
+			for (int f = 0; f < fields.size(); f++) {
+
+				PgField field = fields.get(f);
+
+				if (field.simple_content) {
+
+					String content = field.retrieveValue(rset, param_id);
+
+					if (content != null && !content.isEmpty()) {
+
+						xmlb.writer.writeCharacters(content);
+
+						test.has_simple_content = true;
+
+					}
+
+				}
+
+				else if (field.element) {
+
+					String content = field.retrieveValue(rset, param_id);
+
+					if (content != null && !content.isEmpty()) {
+
+						xmlb.writer.writeCharacters((test.has_child_elem ? "" : xmlb.line_feed_code) + test.child_indent_space);
+
+						if (field.is_xs_namespace)
+							xmlb.writer.writeStartElement(table.prefix, field.name, table.target_namespace);
+						else
+							xmlb.writer.writeStartElement(field.prefix, field.name, field.target_namespace);
+
+						xmlb.writer.writeCharacters(content);
+						xmlb.writer.writeEndElement();
+
+						xmlb.writer.writeCharacters(xmlb.line_feed_code);
+
+						test.has_child_elem = test.has_content = true;
+
+					}
+
+				}
+
+				else if (field.any) {
+
+					SQLXML xml_object = rset.getSQLXML(param_id);
+
+					if (xml_object != null) {
+
+						InputStream in = xml_object.getBinaryStream();
+
+						if (in != null) {
+
+							test.mergeTest(any_retriever.exec(in, table, test, xmlb));
+							in.close();
+
+						}
+
+						xml_object.free();
+
+					}
+
+				}
+
+				if (!field.omissible)
+					param_id++;
+
+			}
+
+			// nested key
+
+			param_id = 1;
+
+			for (int f = 0; f < fields.size(); f++) {
+
+				PgField field = fields.get(f);
+
+				if (field.nested_key) {
+
+					Object key = rset.getObject(param_id);
+
+					if (key != null)
+						nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, test);
+
+				}
+
+				if (!field.omissible)
+					param_id++;
+
+			}
+
+			xmlb.writer.writeEndElement();
+
+			xmlb.writer.writeCharacters(xmlb.line_feed_code);
+
+		} catch (SQLException | XMLStreamException | ParserConfigurationException | SAXException | IOException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
+	/**
+	 * Close pgSql2Xml.
+	 */
+	public void closePgSql2Xml() {
+
+		tables.stream().filter(table -> table.ps != null).forEach(table -> {
+
+			try {
+
+				if (!table.ps.isClosed())
+					table.ps.close();
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+
+			table.ps = null;
+
+		});
+
+	}
+
+	/**
+	 * Nest node and compose XML document.
+	 *
+	 * @param db_conn database connection
+	 * @param table current table
+	 * @param parent_key parent key
+	 * @param parent_test nest test result of parent node
+	 * @return PgSchemaNestTester nest test of this node
+	 * @throws PgSchemaException the pg schema exception
+	 */	
+	private PgSchemaNestTester nestChildNode2Xml(final Connection db_conn, final PgTable table, final Object parent_key, PgSchemaNestTester parent_test) throws PgSchemaException {
+
+		try {
+
+			PgSchemaNestTester test = new PgSchemaNestTester(table, parent_test);
+
+			if (!table.virtual && !table.list_holder) {
+
+				xmlb.writer.writeCharacters((parent_test.has_child_elem ? "" : xmlb.line_feed_code) + test.current_indent_space);
+
+				xmlb.writer.writeStartElement(table.prefix, table.name, table.target_namespace);
+
+			}
+
+			if (table.ps == null || table.ps.isClosed()) {
+
+				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(table.fields.stream().filter(field -> field.primary_key).findFirst().get().name) + " = ?";
+
+				table.ps = db_conn.prepareStatement(sql);
+
+			}
+
+			switch (option.hash_size) {
+			case native_default:
+				table.ps.setBytes(1, (byte[]) parent_key);
+				break;
+			case unsigned_int_32:
+				table.ps.setInt(1, (int) (parent_key));
+				break;
+			case unsigned_long_64:
+				table.ps.setLong(1, (long) parent_key);
+				break;
+			default:
+				table.ps.setString(1, (String) parent_key);
+			}
+
+			ResultSet rset = table.ps.executeQuery();
+
+			List<PgField> fields = table.fields;
+
+			while (rset.next()) {
+
+				if (!table.virtual && table.list_holder) {
+
+					xmlb.writer.writeCharacters((parent_test.has_content ? "" : xmlb.line_feed_code) + test.current_indent_space);
+
+					xmlb.writer.writeStartElement(table.prefix, table.name, table.target_namespace);
+
+				}
+
+				// attribute, any_attribute
+
+				int param_id = 1;
+
+				for (int f = 0; f < fields.size(); f++) {
+
+					PgField field = fields.get(f);
+
+					if (field.attribute) {
+
+						String content = field.retrieveValue(rset, param_id);
+
+						if (content != null && !content.isEmpty()) {
+
+							if (field.is_xs_namespace)
+								xmlb.writer.writeAttribute(field.name, content);
+							else
+								xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.name, content);
+
+							test.has_content = true;
+
+						}
+
+					}
+
+					else if (field.any_attribute) {
+
+						SQLXML xml_object = rset.getSQLXML(param_id);
+
+						if (xml_object != null) {
+
+							InputStream in = xml_object.getBinaryStream();
+
+							if (in != null) {
+
+								PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table.name, xmlb.writer);
+
+								any_attr_parser.parse(in, any_attr);
+
+								test.has_content |= any_attr.has_content;
+
+								in.close();
+
+							}
+
+							any_attr_parser.reset();
+
+							xml_object.free();
+
+						}
+
+					}
+
+					if (!field.omissible)
+						param_id++;
+
+				}
+
+				// simple_content, element, any
+
+				param_id = 1;
+
+				for (int f = 0; f < fields.size(); f++) {
+
+					PgField field = fields.get(f);
+
+					if (field.simple_content) {
+
+						String content = field.retrieveValue(rset, param_id);
+
+						if (content != null && !content.isEmpty()) {
+
+							xmlb.writer.writeCharacters(content);
+
+							test.has_simple_content = true;
+
+						}
+
+					}
+
+					else if (field.element) {
+
+						String content = field.retrieveValue(rset, param_id);
+
+						if (content != null && !content.isEmpty()) {
+
+							xmlb.writer.writeCharacters((test.has_child_elem ? "" : xmlb.line_feed_code) + test.child_indent_space);
+
+							if (field.is_xs_namespace)
+								xmlb.writer.writeStartElement(table.prefix, field.name, table.target_namespace);
+							else
+								xmlb.writer.writeStartElement(field.prefix, field.name, field.target_namespace);
+
+							xmlb.writer.writeCharacters(content);
+							xmlb.writer.writeEndElement();
+
+							xmlb.writer.writeCharacters(xmlb.line_feed_code);
+
+							test.has_child_elem = test.has_content = true;
+
+						}
+
+					}
+
+					else if (field.any) {
+
+						SQLXML xml_object = rset.getSQLXML(param_id);
+
+						if (xml_object != null) {
+
+							InputStream in = xml_object.getBinaryStream();
+
+							if (in != null) {
+
+								test.mergeTest(any_retriever.exec(in, table, test, xmlb));
+								in.close();
+
+							}
+
+							xml_object.free();
+
+						}
+
+					}
+
+					if (!field.omissible)
+						param_id++;
+
+				}
+
+				// nested key
+
+				param_id = 1;
+
+				for (int f = 0, n = 0; f < fields.size(); f++) {
+
+					PgField field = fields.get(f);
+
+					if (field.nested_key) {
+
+						Object key = rset.getObject(param_id);
+
+						if (key != null) {
+
+							test.has_child_elem |= n++ > 0;
+
+							test.mergeTest(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, test));
+
+						}
+
+					}
+
+					if (!field.omissible)
+						param_id++;
+
+				}
+
+				if (!table.virtual && table.list_holder) {
+
+					if (test.has_content && parent_test.has_simple_content)
+						xmlb.writer.writeCharacters(test.current_indent_space);
+
+					xmlb.writer.writeEndElement();
+
+					xmlb.writer.writeCharacters(xmlb.line_feed_code);
+
+					if (!test.has_content && (!test.has_child_elem || test.has_simple_content))
+						xmlb.writer.writeCharacters(test.getParentIndentSpace());
+
+				}
+
+			}
+
+			rset.close();
+
+			if (!table.virtual && !table.list_holder) {
+
+				if (test.has_content && (test.has_child_elem || !test.has_simple_content))
+					xmlb.writer.writeCharacters(test.current_indent_space);
+
+				xmlb.writer.writeEndElement();
+
+				xmlb.writer.writeCharacters(xmlb.line_feed_code);
+
+			}
+
+			return test;
+
+		} catch (XMLStreamException | SQLException | SAXException | IOException e) {
+			throw new PgSchemaException(e);
+		}
+
 	}
 
 }

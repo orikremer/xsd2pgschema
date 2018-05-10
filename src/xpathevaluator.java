@@ -47,6 +47,9 @@ public class xpathevaluator {
 	/** The PostgreSQL option. */
 	private static PgOption pg_option = new PgOption();
 
+	/** The XML builder. */
+	private static XmlBuilder xmlb = new XmlBuilder();
+
 	/** The XPath query. */
 	private static String xpath_query = "";
 
@@ -97,6 +100,15 @@ public class xpathevaluator {
 
 			else if (args[i].equals("--test-ddl"))
 				pg_option.test = true;
+
+			else if (args[i].equals("--xml-indent-offset") && i + 1 < args.length)
+				xmlb.setIndentOffset(args[++i]);
+
+			else if (args[i].equals("--xml-no-linefeed"))
+				xmlb.setLineFeed(false);
+
+			else if (args[i].equals("--xml-compact"))
+				xmlb.setCompact();
 
 			else if (args[i].equals("--doc-key"))
 				option.setDocKeyOption(true);
@@ -190,7 +202,7 @@ public class xpathevaluator {
 			evaluator.translate(xpath_query, variables);
 
 			if (!pg_option.name.isEmpty())
-				evaluator.evaluate(out_file_name);
+				evaluator.evaluate(out_file_name, xmlb);
 
 		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException | SQLException e) {
 			e.printStackTrace();
@@ -231,6 +243,9 @@ public class xpathevaluator {
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME (select --no-rel and --no-doc-key options by default)");
 		System.err.println("        --doc-key-if-no-inplace (select --no-rel and --no-doc-key options by default)");
+		System.err.println("        --xml-indent-offset INTEGER (default=" + xmlb.getIndentOffset() + ", min=0, max=4)");
+		System.err.println("        --xml-no-linefeed (avoid to use linefeed code)");
+		System.err.println("        --xml-compact (equals to set --xml-indent-offset 0 --xml-no-linefeed)");
 		System.err.println("        --verbose");
 		System.exit(1);
 

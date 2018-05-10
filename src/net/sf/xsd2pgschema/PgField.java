@@ -22,9 +22,13 @@ package net.sf.xsd2pgschema;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLXML;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.LocalTime;
 import java.time.OffsetTime;
@@ -53,14 +57,20 @@ import org.w3c.dom.Node;
  */
 public class PgField {
 
-	/** The target namespace URI. */
+	/** The target namespace. */
 	protected String target_namespace = PgSchemaUtil.xs_namespace_uri;
+
+	/** The prefix of target namespace. */
+	protected String prefix = "";
 
 	/** The field name in XML document. */
 	protected String xname = "";
 
 	/** The field name in PostgreSQL. */
 	protected String name = "";
+
+	/** The data type in XML document. */
+	protected String xtype = null;
 
 	/** The data type. */
 	protected String type = null;
@@ -82,6 +92,9 @@ public class PgField {
 
 	/** The XML Schema data type. */
 	protected XsDataType xs_type;
+
+	/** Whether target namespace equals namespace URI of XML Schema. */
+	protected boolean is_xs_namespace = true;
 
 	/** Whether xs:element. */
 	protected boolean element = false;
@@ -160,6 +173,9 @@ public class PgField {
 
 	/** The foreign field name in PostgreSQL. */
 	protected String foreign_field_name = null;
+
+	/** The ancestor node names. */
+	protected String ancestor_node = null;
 
 	/** The parent node names. */
 	protected String parent_node = null;
@@ -388,7 +404,7 @@ public class PgField {
 			if (type == null)
 				return;
 
-			type = type.trim();
+			type = xtype = type.trim();
 
 			if (!type.contains(" "))
 				return;
@@ -820,7 +836,7 @@ public class PgField {
 
 						if (value != null && !value.isEmpty()) {
 
-							String enum_value = value.replaceAll("'", "''");
+							String enum_value = value.replace("'", "''");
 
 							xenumeration[_length] = enum_value;
 							enumeration[_length] = enum_value.length() <= PgSchemaUtil.max_enum_len ? enum_value : enum_value.substring(0, PgSchemaUtil.max_enum_len);
@@ -2802,11 +2818,11 @@ public class PgField {
 		case xs_IDREF:
 		case xs_ENTITY:
 			if (enum_name == null)
-				return "'" + value.replaceAll("'", "''") + "'";
+				return "'" + value.replace("'", "''") + "'";
 			else {
 				if (value.length() > PgSchemaUtil.max_enum_len)
 					value = value.substring(0, PgSchemaUtil.max_enum_len);
-				return "'" + value.replaceAll("'", "''") + "'";
+				return "'" + value.replace("'", "''") + "'";
 			}
 		case xs_any:
 		case xs_anyAttribute:
@@ -3777,6 +3793,7 @@ public class PgField {
 			cal.set(Calendar.MINUTE, 0);
 			cal.set(Calendar.SECOND, 0);
 			cal.set(Calendar.MILLISECOND, 0);
+			cal.setTimeZone(TimeZone.getTimeZone("UTC"));
 
 			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -3815,9 +3832,9 @@ public class PgField {
 			if (white_space != null) {
 
 				if (white_space.equals("replace"))
-					value = value.replaceAll("[\t\n\r]", " ");
+					value = PgSchemaUtil.replaceWhiteSpace(value);
 				else if (white_space.equals("collapse"))
-					value = value.trim().replaceAll("[\t\n\r]", " ").replaceAll("\\s+", " ");
+					value = PgSchemaUtil.collapseWhiteSpace(value);
 
 			}
 
@@ -3933,6 +3950,7 @@ public class PgField {
 			cal.set(Calendar.MINUTE, 0);
 			cal.set(Calendar.SECOND, 0);
 			cal.set(Calendar.MILLISECOND, 0);
+			cal.setTimeZone(TimeZone.getTimeZone("UTC"));
 
 			ps.setDate(par_idx, new java.sql.Date(cal.getTimeInMillis()));
 			break;
@@ -4311,6 +4329,158 @@ public class PgField {
 		jsonb.append("," + json_key_value_space);
 
 		return true;
+	}
+
+	/**
+	 * Retrieve value from ResultSet.
+	 *
+	 * @param rset result set
+	 * @param par_idx parameter index id
+	 * @return String retrieved value
+	 * @throws SQLException the SQL exception
+	 */
+	public String retrieveValue(ResultSet rset, int par_idx) throws SQLException {
+
+		if (enum_name != null) {
+
+			String ret = rset.getString(par_idx);
+
+			if (ret == null)
+				return null;
+
+			if (ret.length() < PgSchemaUtil.max_enum_len)
+				return ret;
+
+			for (String enum_string : xenumeration) {
+
+				if (enum_string.startsWith(ret))
+					return enum_string;
+
+			}
+
+			return null;
+		}
+
+		switch (xs_type) {
+		case xs_boolean:
+			return DatatypeConverter.printBoolean(rset.getBoolean(par_idx));
+		case xs_hexBinary:
+			return DatatypeConverter.printHexBinary(rset.getBytes(par_idx));
+		case xs_base64Binary:
+			return DatatypeConverter.printBase64Binary(rset.getBytes(par_idx));
+		case xs_dateTime:
+			Timestamp ts = rset.getTimestamp(par_idx);
+
+			if (ts == null)
+				return null;
+
+			Calendar dt_cal = Calendar.getInstance();
+			dt_cal.setTimeInMillis(ts.getTime());
+
+			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) { }
+			else
+				dt_cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+			return DatatypeConverter.printDateTime(dt_cal);
+		case xs_time:
+			Time tm = rset.getTime(par_idx);
+
+			if (tm == null)
+				return null;
+
+			Calendar t_cal = Calendar.getInstance();
+			t_cal.setTimeInMillis(tm.getTime());
+
+			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) { }
+			else
+				t_cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+			return DatatypeConverter.printTime(t_cal);
+		case xs_date:
+		case xs_gYearMonth:
+		case xs_gYear:
+			Date d = rset.getDate(par_idx);
+
+			if (d == null)
+				return null;
+
+			Calendar d_cal = Calendar.getInstance();
+			d_cal.setTime(d);
+			d_cal.set(Calendar.HOUR_OF_DAY, 0);
+			d_cal.set(Calendar.MINUTE, 0);
+			d_cal.set(Calendar.SECOND, 0);
+			d_cal.set(Calendar.MILLISECOND, 0);
+			d_cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+			String ret = DatatypeConverter.printDate(d_cal);
+
+			switch (xs_type) {
+			case xs_date:
+				return ret.replaceFirst("Z$", "");
+			case xs_gYearMonth:
+				return ret.substring(0, ret.lastIndexOf('-'));
+			default:
+				return ret.substring(0, ret.indexOf('-'));
+			}
+		case xs_float:
+		case xs_double:
+			Object num = rset.getObject(par_idx);
+
+			if (num == null)
+				return null;
+
+			switch (xs_type) {
+			case xs_float:
+				return String.valueOf((float) num); // rset.getFloat(par_idx));
+			default:
+				return String.valueOf((double) num); // rset.getDouble(par_idx));
+			}
+		case xs_decimal:
+			BigDecimal bd = rset.getBigDecimal(par_idx);
+
+			return bd != null ? bd.toString() : null;
+		case xs_bigserial:
+		case xs_long:
+		case xs_bigint:
+		case xs_unsignedLong:
+		case xs_serial:
+		case xs_integer:
+		case xs_int:
+		case xs_nonPositiveInteger:
+		case xs_negativeInteger:
+		case xs_nonNegativeInteger:
+		case xs_positiveInteger:
+		case xs_unsignedInt:
+		case xs_short:
+		case xs_byte:
+		case xs_unsignedShort:
+		case xs_unsignedByte:
+		case xs_gMonthDay:
+		case xs_gMonth:
+		case xs_gDay:
+		case xs_duration:
+		case xs_anyType:
+		case xs_string:
+		case xs_normalizedString:
+		case xs_token:
+		case xs_NMTOKEN:
+		case xs_NMTOKENS:
+		case xs_IDREFS:
+		case xs_ENTITIES:
+		case xs_NOTATION:
+		case xs_language:
+		case xs_Name:
+		case xs_QName:
+		case xs_NCName:
+		case xs_anyURI:
+		case xs_ID:
+		case xs_IDREF:
+		case xs_ENTITY:
+			return rset.getString(par_idx);
+		default: // xs_any, xs_anyAttribute
+		}
+
+		return null;
 	}
 
 }

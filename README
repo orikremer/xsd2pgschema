@@ -1,7 +1,15 @@
-﻿ Changes in xsd2pgschema 2.9.3 (release 2018-05-01)
+﻿ Changes in xsd2pgschema 2.10.0-rc (release 2018-05-10)
+
+  Added XPath evaluator main class, xpathevaluator, to retrive XML document from PostgreSQL by XPath->SQL query translation.
+  Fixed missing of data of simple content on virtual table.
+  Fixed time zone of value of xs:date, xs:gYearMonth, and xs:gYear from local time to UTC.
+  Fixed declaration of enumerated type if PostgreSQL named schema is enabled.
+  Added ancestor node checker to remove nonsense nest key.
+
+ Changes in xsd2pgschema 2.9.3 (release 2018-05-01)
 
   Added reporter of check sum files (chksumstat main class).
- 
+
  Changes in xsd2pgschema 2.9.2 (release 2018-04-27)
 
   Added support for TSV format as PostgreSQL data migration format (xml2pgtsv, tsv2pgsql main classes).

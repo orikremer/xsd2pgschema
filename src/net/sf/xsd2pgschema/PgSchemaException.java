@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2017 Masashi Yokochi
+    Copyright 2014-2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -120,7 +120,7 @@ public class PgSchemaException extends Exception {
 	 */
 	public PgSchemaException(ParseTree tree, boolean wild_card, String composite_text, String schema_location) {
 
-		super("Not found node for XPath expression (" + tree.getSourceInterval().toString() + ": " + tree.getClass().getSimpleName() + " '" + (wild_card ? composite_text.replaceAll("\\.\\*", "\\*") : tree.getText()) + "') in XML Schema: " + schema_location);
+		super("Not found node for XPath expression (" + tree.getSourceInterval().toString() + ": " + tree.getClass().getSimpleName() + " '" + (wild_card ? composite_text.replace("\\.\\*", "\\*") : tree.getText()) + "') in XML Schema: " + schema_location);
 
 	}
 
@@ -148,7 +148,7 @@ public class PgSchemaException extends Exception {
 	 */
 	public PgSchemaException(ParseTree tree, boolean wild_card, String composite_text, String schema_location, String prefix_ns_uri) {
 
-		super("Not found prefix (" + prefix_ns_uri + ") of target namespace URL for XPath expression (" + tree.getSourceInterval().toString() + ": " + tree.getClass().getSimpleName() + " '" + (wild_card ? composite_text.replaceAll("\\.\\*", "\\*") : tree.getText()) + "') in XML Schema: " + schema_location);
+		super("Not found prefix (" + prefix_ns_uri + ") of target namespace URL for XPath expression (" + tree.getSourceInterval().toString() + ": " + tree.getClass().getSimpleName() + " '" + (wild_card ? composite_text.replace("\\.\\*", "\\*") : tree.getText()) + "') in XML Schema: " + schema_location);
 
 	}
 

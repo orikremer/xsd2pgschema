@@ -76,14 +76,14 @@ public class xsd2jsonschema {
 			else if (args[i].equals("--simple-cont-json-key") && i + 1 < args.length)
 				jsonb_option.setSimpleContentKey(args[++i]);
 
-			else if (args[i].equals("--json-indent-spaces") && i + 1 < args.length)
-				jsonb_option.setIndentSpaces(args[++i]);
+			else if (args[i].equals("--json-indent-offset") && i + 1 < args.length)
+				jsonb_option.setIndentOffset(args[++i]);
 
-			else if (args[i].equals("--json-key-value-spaces") && i + 1 < args.length)
-				jsonb_option.setKeyValueSpaces(args[++i]);
+			else if (args[i].equals("--json-key-value-offset") && i + 1 < args.length)
+				jsonb_option.setKeyValueOffset(args[++i]);
 
 			else if (args[i].equals("--json-no-linefeed"))
-				jsonb_option.linefeed = false;
+				jsonb_option.setLineFeed(false);
 
 			else if (args[i].equals("--json-compact"))
 				jsonb_option.setCompact();
@@ -197,12 +197,12 @@ public class xsd2jsonschema {
 		System.err.println("        --field-annotation (retrieve field annotation, default)");
 		System.err.println("        --no-field-annotation (do not retrieve field annotation)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
-		System.err.println("        --attr-json-prefix ATTR_PREFIX_CODE (default=\"" + jsonb_option.attr_prefix + "\")");
-		System.err.println("        --simple-cont-json-key SIMPLE_CONTENT_NAME (default=\"" + jsonb_option.simple_content_key + "\")");
-		System.err.println("        --json-indent-spaces INTEGER (default=" + jsonb_option.indent_spaces + ", min=0, max=4)");
-		System.err.println("        --json-key-value-spaces INTEGER (default=" + jsonb_option.key_value_spaces + ", min=0, max=1)");
+		System.err.println("        --attr-json-prefix ATTR_PREFIX_CODE (default=\"" + jsonb_option.getAttrPrefix() + "\")");
+		System.err.println("        --simple-cont-json-key SIMPLE_CONTENT_NAME (default=\"" + jsonb_option.getSimpleContentKey() + "\")");
+		System.err.println("        --json-indent-offset INTEGER (default=" + jsonb_option.getIndentOffset() + ", min=0, max=4)");
+		System.err.println("        --json-key-value-offset INTEGER (default=" + jsonb_option.getKeyValueOffset() + ", min=0, max=1)");
 		System.err.println("        --json-no-linefeed (avoid to use linefeed code)");
-		System.err.println("        --json-compact (equals to set --json-indent-spaces 0 --json-key-value-spaces 0 --json-no-linefeed)");
+		System.err.println("        --json-compact (equals to set --json-indent-offset 0 --json-key-value-offset 0 --json-no-linefeed)");
 		System.err.println("        --json-array-all (use JSON array uniformly for descendants, effective only in column- and relational-oriented JSON format)");
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.exit(1);

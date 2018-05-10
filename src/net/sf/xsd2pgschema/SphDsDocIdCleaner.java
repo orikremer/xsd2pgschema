@@ -104,10 +104,10 @@ public class SphDsDocIdCleaner {
 		this.sph_data_out = sph_data_out;
 		this.del_doc_set = del_doc_set;
 
-		attr_doc_key = doc_key_path.substring(doc_key_path.lastIndexOf("/") + 1, doc_key_path.length()).startsWith("@");
+		attr_doc_key = doc_key_path.substring(doc_key_path.lastIndexOf('/') + 1, doc_key_path.length()).startsWith("@");
 
 		if (attr_doc_key)
-			attr_doc_key_holder = doc_key_path.substring(0, doc_key_path.lastIndexOf("/"));
+			attr_doc_key_holder = doc_key_path.substring(0, doc_key_path.lastIndexOf('/'));
 
 		// StAX read event handlers
 

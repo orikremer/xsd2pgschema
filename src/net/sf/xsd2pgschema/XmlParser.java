@@ -138,43 +138,23 @@ public class XmlParser {
 	 */
 	private void init(String xml_file_name, XmlFileFilter xml_file_filter) {
 
-		String _xml_file_ext = xml_file_filter.ext;
-		String _xml_file_ext_digest = xml_file_filter.ext_digest;
+		String ext = xml_file_filter.ext;
 
-		if (!_xml_file_ext_digest.endsWith("."))
-			_xml_file_ext_digest += ".";
+		basename = FilenameUtils.getBaseName(xml_file_name);
 
-		if (_xml_file_ext_digest.endsWith("xml."))
-			_xml_file_ext_digest = _xml_file_ext_digest.replaceFirst("xml\\.$", "");
-
-		// xml.gz file
-
-		if (FilenameUtils.getExtension(xml_file_name).equals("gz")) {
-
-			_xml_file_ext_digest += "xml.";
-			_xml_file_ext = "gz";
-
-		}
-
-		// xml.zip file
-
-		else if (FilenameUtils.getExtension(xml_file_name).equals("zip")) {
-
-			_xml_file_ext_digest += "xml.";
-			_xml_file_ext = "zip";
-
+		switch (ext) {
+		case "gz":
+		case "zip":
+			basename = FilenameUtils.getBaseName(basename);
+			break;
 		}
 
 		// decide document id quoting XML file name
 
-		document_id = xml_file_name.replaceFirst("^" + xml_file_filter.prefix_digest, "").replaceFirst(_xml_file_ext_digest + _xml_file_ext + "$", "");
+		document_id = xml_file_name.replaceFirst(xml_file_filter.prefix_digest, "").replaceFirst(xml_file_filter.ext_digest, "");
 
 		if (!xml_file_filter.case_sense_doc_key)
 			document_id = (xml_file_filter.lower_case_doc_key ? document_id.toLowerCase() : document_id.toUpperCase());
-
-		// decide base name of XML file name
-
-		basename = xml_file_name.replaceFirst(_xml_file_ext + "$", "");
 
 	}
 
@@ -373,7 +353,7 @@ public class XmlParser {
 	}
 
 	/**
-	 * Remove document.
+	 * Clear document.
 	 */
 	public void clear() {
 

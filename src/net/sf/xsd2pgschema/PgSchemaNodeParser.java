@@ -229,6 +229,9 @@ public abstract class PgSchemaNodeParser {
 		if (!matchesParentNode(proc_key, field.parent_node))
 			return false;
 
+		if (!matchesAncestorNode(proc_key, field.ancestor_node))
+			return false;
+
 		PgTable nested_table = schema.getTable(field.foreign_table_id);
 
 		list_holder[nested_fields] = field.list_holder;
@@ -258,11 +261,40 @@ public abstract class PgSchemaNodeParser {
 		String node_name = path[path.length - (table.virtual ? 1 : 2)];
 
 		if (node_name.contains("[")) // list case
-			node_name = node_name.substring(0, node_name.lastIndexOf("["));
+			node_name = node_name.substring(0, node_name.lastIndexOf('['));
 
 		for (String _parent_node : parent_node.split(" ")) {
 
 			if (_parent_node.equals(node_name))
+				return true;
+
+		}
+
+		return false;
+	}
+
+	/**
+	 * Return whether ancestor node's name matches.
+	 *
+	 * @param proc_key processing key name
+	 * @param ancestor_node the ancestor node
+	 * @return boolean whether parent node's name matches
+	 */
+	private boolean matchesAncestorNode(final String proc_key, final String ancestor_node) {
+
+		if (ancestor_node == null)
+			return true;
+
+		String[] path = proc_key.substring(document_id_len).split("\\/"); // XPath notation
+
+		String node_name = path[path.length - (table.virtual ? 2 : 3)];
+
+		if (node_name.contains("[")) // list case
+			node_name = node_name.substring(0, node_name.lastIndexOf('['));
+
+		for (String _ancestor_node : ancestor_node.split(" ")) {
+
+			if (_ancestor_node.equals(node_name))
 				return true;
 
 		}
@@ -293,8 +325,13 @@ public abstract class PgSchemaNodeParser {
 
 		if (applyContentFilter(field, pg_enum_limit)) {
 
-			if (content != null && field.validate(content))
+			if (content != null && field.validate(content)) {
+
+				if (pg_enum_limit) // normalize data for PostgreSQL
+					content = field.normalize(content);
+
 				return true;
+			}
 
 		}
 
@@ -554,7 +591,7 @@ public abstract class PgSchemaNodeParser {
 	public boolean existsNestedNode(final PgTable nested_table, final Node node) {
 
 		if (nested_table.virtual)
-			return false;
+			return nested_table.content_holder;
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 

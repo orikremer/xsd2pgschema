@@ -178,7 +178,7 @@ public class xml2pgtsv {
 				option.pg_named_schema = true;
 
 			else if (args[i].equals("--pg-comma-delimiter"))
-				option.pg_tab_delimiter = false;
+				option.usePgCsv();
 
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
@@ -337,6 +337,8 @@ public class xml2pgtsv {
 		Xml2PgCsvThrd[] proc_thrd = new Xml2PgCsvThrd[max_thrds];
 		Thread[] thrd = new Thread[max_thrds];
 
+		long start_time = System.currentTimeMillis();
+
 		for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
 
 			String thrd_name = "xml2pgtsv-" + thrd_id;
@@ -372,6 +374,10 @@ public class xml2pgtsv {
 			}
 
 		}
+
+		long end_time = System.currentTimeMillis();
+
+		System.out.println("Execution time: " + (end_time - start_time) + " ms");
 
 		if (!pg_option.name.isEmpty() && option.isSynchronizable(false) && total > 1)
 			System.out.println(pg_option.getDbUrl() + " is up-to-date.");

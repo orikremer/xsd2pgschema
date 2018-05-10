@@ -4355,7 +4355,7 @@ public class XPathCompList {
 					String subject_table_name = schema.getPgNameOf(path_expr.sql_subject.table);
 
 					if (path_expr.sql.contains(subject_table_name + "."))
-						path_expr.sql = path_expr.sql.replaceAll(subject_table_name.replaceAll("\\.", "\\\\.").replaceAll("\"", "\\\"") + "\\.", "");
+						path_expr.sql = path_expr.sql.replace(subject_table_name.replace("\\.", "\\\\.").replace("\"", "\\\"") + "\\.", "");
 
 				}
 
@@ -4363,7 +4363,7 @@ public class XPathCompList {
 					path_expr.sql = path_expr.sql.replaceFirst(" WHERE $", "");
 
 				if (sub_alias_id == 0)
-					path_expr.sql = path_expr.sql.replaceAll(" as t[1-9]", "");
+					path_expr.sql = path_expr.sql.replaceAll(" as t[0-9]+", "");
 
 			} catch (PgSchemaException e) {
 				e.printStackTrace();
@@ -5893,11 +5893,11 @@ public class XPathCompList {
 
 				if (sql_predicates == null) {
 
-					sb.append("regexp_replace( regexp_replace( btrim( ");
+					sb.append("btrim( regexp_replace( regexp_replace( ");
 
 					appendSqlColumnName(getXPathSqlExprOfPath(src_path_expr.path, src_path_expr.terminus), sb);
 
-					sb.append(" ), E'[\\t\\n\\r]+', ' ', 'g' ), E'\\s+', ' ', 'g' )");
+					sb.append(" , E'[\\t\\n\\r]+', ' ', 'g' ), E'\\s+', ' ', 'g' ) )");
 
 				}
 
@@ -5910,17 +5910,17 @@ public class XPathCompList {
 						String first_arg = sql_expr_str.predicate;
 						first_arg = first_arg.substring(1, first_arg.length() - 1);
 
-						sb.append("'" + first_arg.trim().replaceAll("[\\t\\n\\r]", " ").replaceAll("\\s+", " ") + "'");
+						sb.append("'" + PgSchemaUtil.collapseWhiteSpace(first_arg) + "'");
 
 					}
 
 					else {
 
-						sb.append("regexp_replace( regexp_replace( btrim( ");
+						sb.append("btrim( regexp_replace( regexp_replace( ");
 
 						appendSqlColumnName(sql_expr_str, sb);
 
-						sb.append(" ), E'[\\t\\n\\r]+', ' ', 'g' ), E'\\s+', ' ', 'g' )");
+						sb.append(" , E'[\\t\\n\\r]+', ' ', 'g' ), E'\\s+', ' ', 'g' ) )");
 
 					}
 
@@ -7157,7 +7157,7 @@ public class XPathCompList {
 			table_name = _path[position - 1];
 			table = getTable(new XPathExpr(path.substring(0, path.lastIndexOf(table_name)) + table_name, XPathCompType.table));
 			field_name = PgSchemaUtil.any_name;
-			pg_xpath_code = "xpath('/" + table_name + "/" + _path[position].replaceAll(" ", "/") + "', " + schema.getPgNameOf(table) + "." + PgSchemaUtil.avoidPgReservedWords(field_name) + ")";
+			pg_xpath_code = "xpath('/" + table_name + "/" + _path[position].replace(" ", "/") + "', " + schema.getPgNameOf(table) + "." + PgSchemaUtil.avoidPgReservedWords(field_name) + ")";
 			break;
 		case any_attribute:
 			if (position - 1 < 0)
@@ -7165,7 +7165,7 @@ public class XPathCompList {
 			table_name = _path[position - 1];
 			table = getTable(new XPathExpr(path.substring(0, path.lastIndexOf(table_name)) + table_name, XPathCompType.table));
 			field_name = PgSchemaUtil.any_attribute_name;
-			pg_xpath_code = "xpath('/" + table_name + "/" + _path[position].replaceAll(" ", "/") + "', " + schema.getPgNameOf(table) + "." + PgSchemaUtil.avoidPgReservedWords(field_name) + ")";
+			pg_xpath_code = "xpath('/" + table_name + "/" + _path[position].replace(" ", "/") + "', " + schema.getPgNameOf(table) + "." + PgSchemaUtil.avoidPgReservedWords(field_name) + ")";
 			break;
 		default:
 			return null;
@@ -7362,7 +7362,7 @@ public class XPathCompList {
 
 						if (foreign_table.fields.stream().anyMatch(field -> field.any)) {
 
-							pg_xpath_code = "xpath('/" + foreign_table.name + "/" + _path[position].replaceAll(" ", "/") + "', " + schema.getPgNameOf(foreign_table) + "." + PgSchemaUtil.avoidPgReservedWords(_field_name) + ")";
+							pg_xpath_code = "xpath('/" + foreign_table.name + "/" + _path[position].replace(" ", "/") + "', " + schema.getPgNameOf(foreign_table) + "." + PgSchemaUtil.avoidPgReservedWords(_field_name) + ")";
 
 							try {
 								return new XPathSqlExpr(schema, path, foreign_table, _field_name, pg_xpath_code, null, terminus);
@@ -7414,7 +7414,7 @@ public class XPathCompList {
 
 						if (foreign_table.fields.stream().anyMatch(field -> field.any_attribute)) {
 
-							pg_xpath_code = "xpath('/" + foreign_table.name + "/" + _path[position].replaceAll(" ", "/") + "', " + schema.getPgNameOf(foreign_table) + "." + PgSchemaUtil.avoidPgReservedWords(_field_name) + ")";
+							pg_xpath_code = "xpath('/" + foreign_table.name + "/" + _path[position].replace(" ", "/") + "', " + schema.getPgNameOf(foreign_table) + "." + PgSchemaUtil.avoidPgReservedWords(_field_name) + ")";
 
 							try {
 								return new XPathSqlExpr(schema, path, foreign_table, _field_name, pg_xpath_code, null, terminus);

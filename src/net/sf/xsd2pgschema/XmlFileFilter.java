@@ -19,6 +19,8 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.util.regex.Pattern;
+
 /**
  * XML file filter.
  *
@@ -40,6 +42,9 @@ public class XmlFileFilter {
 
 	/** Whether lower-case document key or not. */
 	protected boolean lower_case_doc_key = true;
+
+	/** Whether ext_digest is resolved. */
+	private boolean resolved = false;
 
 	/**
 	 * Set extension of target file.
@@ -68,10 +73,10 @@ public class XmlFileFilter {
 	 */
 	public void setPrefixDigest(String prefix_digest) {
 
-		this.prefix_digest = prefix_digest;
-
 		if (prefix_digest == null)
-			this.prefix_digest = "";
+			prefix_digest = "";
+
+		this.prefix_digest = "^" + Pattern.quote(prefix_digest);
 
 	}
 
@@ -86,6 +91,11 @@ public class XmlFileFilter {
 
 		if (ext_digest == null)
 			this.ext_digest = ".";
+
+		else if (!this.ext_digest.endsWith("."))
+			this.ext_digest += ".";
+
+		resolved = false;
 
 	}
 
@@ -116,10 +126,40 @@ public class XmlFileFilter {
 	 */
 	public String getAbsoluteExt() {
 
-		if (ext.equals("xml"))
-			return ext;
+		if (!resolved) {
 
-		return ".xml." + ext;
+			switch (ext) {
+			case "gz":
+			case "zip":
+				if (ext_digest.endsWith(ext + "."))
+					ext_digest = ext_digest.replaceFirst(ext + "\\.$", "");
+
+				if (!ext_digest.endsWith("xml."))
+					ext_digest += "xml.";
+
+				ext_digest += ext;
+				break;
+			default:
+				if (ext_digest.endsWith("xml."))
+					ext_digest = ext_digest.substring(0, ext_digest.length() - 1);
+				else
+					ext_digest += "xml";
+			}
+
+			ext_digest = Pattern.quote(ext_digest) + "$";
+
+			resolved = true;
+
+		}
+
+		switch (ext) {
+		case "gz":
+		case "zip":
+			return ".xml." + ext;
+		default:
+			return ext;
+		}
+
 	}
 
 }

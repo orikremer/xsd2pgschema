@@ -110,7 +110,7 @@ public class tsv2pgsql {
 				option.pg_named_schema = true;
 
 			else if (args[i].equals("--pg-comma-delimiter"))
-				option.pg_tab_delimiter = false;
+				option.usePgCsv();
 
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
@@ -201,7 +201,7 @@ public class tsv2pgsql {
 
 			schema.pgCsv2PgSql(db_conn, work_dir);
 
-			System.out.println("Done " + (option.pg_tab_delimiter ? "tsv" : "csv") + " -> db (" + pg_option.name + ").");
+			System.out.println("Done " + (option.pg_delimiter == '\t' ? "tsv" : "csv") + " -> db (" + pg_option.name + ").");
 
 		} catch (ParserConfigurationException | SAXException | IOException | SQLException | PgSchemaException e) {
 			e.printStackTrace();

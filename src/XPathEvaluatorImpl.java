@@ -255,51 +255,25 @@ public class XPathEvaluatorImpl {
 
 						int column_count = meta.getColumnCount();
 
-						if (option.pg_tab_delimiter) {
+						for (int i = 1; i <= column_count; i++) {
 
-							for (int i = 1; i <= column_count; i++) {
-
-								_bout.write(meta.getColumnName(i).getBytes());
-								_bout.write((i < column_count ? '\t' : '\n'));
-
-							}
-
-							while (rset.next()) {
-
-								for (int i = 1; i <= column_count; i++) {
-
-									String value = rset.getString(i);
-
-									if (value == null || value.isEmpty())
-										_bout.write(String.valueOf("\\N").getBytes());
-									else
-										_bout.write(value.replaceAll("\t", "\\t").replaceAll("\n", "\\n").getBytes());
-
-									_bout.write((i < column_count ? '\t' : '\n'));
-
-								}
-
-							}
+							_bout.write(meta.getColumnName(i).getBytes());
+							_bout.write((i < column_count ? option.pg_delimiter : '\n'));
 
 						}
 
-						else {
+						while (rset.next()) {
 
 							for (int i = 1; i <= column_count; i++) {
 
-								_bout.write(meta.getColumnName(i).getBytes());
-								_bout.write((i < column_count ? ',' : '\n'));
+								String value = rset.getString(i);
 
-							}
+								if (value == null || value.isEmpty())
+									_bout.write(option.pg_null.getBytes());
+								else
+									_bout.write(option.pg_delimiter == '\t' ? PgSchemaUtil.escapeTsv(value).getBytes() : StringEscapeUtils.escapeCsv(value).getBytes());
 
-							while (rset.next()) {
-
-								for (int i = 1; i <= column_count; i++) {
-
-									_bout.write(StringEscapeUtils.escapeCsv(rset.getString(i)).getBytes());
-									_bout.write((i < column_count ? ',' : '\n'));
-
-								}
+								_bout.write((i < column_count ? option.pg_delimiter : '\n'));
 
 							}
 
@@ -331,12 +305,8 @@ public class XPathEvaluatorImpl {
 
 			}
 
-			else {
-
+			else
 				bout.write(String.valueOf("\nSQL execution time: " + (end_time - start_time) + " ms\n").getBytes());
-				bout.close();
-
-			}
 
 		} catch (SQLException | IOException e) {
 			throw new PgSchemaException(e);
@@ -348,9 +318,10 @@ public class XPathEvaluatorImpl {
 	 * Execute translated SQL and compose XML document.
 	 *
 	 * @param out_file_name output file name
+	 * @param xmlb XML builder
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void evaluate(String out_file_name) throws PgSchemaException {
+	public void evaluate(String out_file_name, XmlBuilder xmlb) throws PgSchemaException {
 
 		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 
@@ -431,6 +402,7 @@ public class XPathEvaluatorImpl {
 							case any_attribute:
 								SQLXML xml_object = rset.getSQLXML(1);
 								xml_writer.writeCharacters(xml_object.getString());
+								xml_object.free();
 								break;
 							case text:
 								xml_writer.writeCharacters(rset.getString(1));
@@ -455,11 +427,13 @@ public class XPathEvaluatorImpl {
 
 					else {
 
-						while (rset.next()) {
+						xmlb.setInitIndentOffset(0);
+						xmlb.setXmlWriter(xml_writer);
 
-							schema.pgSql2Xml(path_expr, db_conn, rset, xml_writer);
+						while (rset.next())
+							schema.pgSql2Xml(db_conn, table, rset, xmlb);
 
-						}
+						schema.closePgSql2Xml();
 
 					}
 

@@ -45,11 +45,11 @@ public class JsonBuilder {
 	/** The white spaces between JSON item and JSON data. */
 	protected String key_value_space = " ";
 
-	/** The length of the key_value_space. */
-	protected int key_value_spaces = key_value_space.length();
+	/** The indent offset between key and value. */
+	protected int key_value_offset = key_value_space.length();
 
 	/** The line feed code in JSON document. */
-	protected String linefeed = "\n";
+	protected String line_feed_code = "\n";
 
 	/** Use JSON array uniformly for descendants. */
 	protected boolean array_all = false;
@@ -67,11 +67,11 @@ public class JsonBuilder {
 		this.array_all = option.array_all;
 		this.no_field_anno = option.no_field_anno;
 
-		if (indent_space.length() != option.indent_spaces) {
+		if (indent_space.length() != option.indent_offset) {
 
 			StringBuilder sb = new StringBuilder();
 
-			for (int l = 0; l < option.indent_spaces; l++)
+			for (int l = 0; l < option.indent_offset; l++)
 				sb.append(" ");
 
 			indent_space = sb.toString();
@@ -80,19 +80,19 @@ public class JsonBuilder {
 
 		}
 
-		if (key_value_space.length() != option.key_value_spaces) {
+		if (key_value_space.length() != option.key_value_offset) {
 
 			StringBuilder sb = new StringBuilder();
 
-			for (int l = 0; l < option.key_value_spaces; l++)
+			for (int l = 0; l < option.key_value_offset; l++)
 				sb.append(" ");
 
 			key_value_space = sb.toString();
-			key_value_spaces = sb.length();
+			key_value_offset = sb.length();
 
 		}
 
-		linefeed = option.linefeed ? "\n" : "";
+		line_feed_code = option.line_feed_code;
 
 		if ((attr_prefix = option.attr_prefix) == null)
 			attr_prefix = "";
@@ -192,46 +192,46 @@ public class JsonBuilder {
 
 			writeSchemaFieldProperty(field, true, indent_level);
 
-			builder.setLength(builder.length() - (linefeed.equals("\n") ? 1 : 0));
-			builder.append("," + linefeed);
+			builder.setLength(builder.length() - (line_feed_code.equals("\n") ? 1 : 0));
+			builder.append("," + line_feed_code);
 
 		}
 
 		else if (!object && array) { // array
 
-			builder.append(getIndentSpaces(indent_level) + "\"type\":" + key_value_space + "\"array\"," + linefeed);
+			builder.append(getIndentSpaces(indent_level) + "\"type\":" + key_value_space + "\"array\"," + line_feed_code);
 
-			builder.append(getIndentSpaces(indent_level++) + "\"items\":" + key_value_space + "{" + linefeed); // JSON items start
+			builder.append(getIndentSpaces(indent_level++) + "\"items\":" + key_value_space + "{" + line_feed_code); // JSON items start
 
 			writeSchemaFieldProperty(field, true, indent_level);
 
-			builder.append(getIndentSpaces(--indent_level) + "}," + linefeed); // JSON items end
+			builder.append(getIndentSpaces(--indent_level) + "}," + line_feed_code); // JSON items end
 
 		}
 
 		else { // object or array
 
-			builder.append(getIndentSpaces(indent_level++) + "\"oneOf\":" + key_value_space + "[" + linefeed); // JSON oneOf start
+			builder.append(getIndentSpaces(indent_level++) + "\"oneOf\":" + key_value_space + "[" + line_feed_code); // JSON oneOf start
 
-			builder.append(getIndentSpaces(indent_level++) + "{" + linefeed);
+			builder.append(getIndentSpaces(indent_level++) + "{" + line_feed_code);
 
 			writeSchemaFieldProperty(field, true, indent_level);
 
-			builder.append(getIndentSpaces(--indent_level) + "}," + linefeed);
+			builder.append(getIndentSpaces(--indent_level) + "}," + line_feed_code);
 
-			builder.append(getIndentSpaces(indent_level++) + "{" + linefeed);
+			builder.append(getIndentSpaces(indent_level++) + "{" + line_feed_code);
 
-			builder.append(getIndentSpaces(indent_level) + "\"type\":" + key_value_space + "\"array\"," + linefeed);
+			builder.append(getIndentSpaces(indent_level) + "\"type\":" + key_value_space + "\"array\"," + line_feed_code);
 
-			builder.append(getIndentSpaces(indent_level++) + "\"items\":" + key_value_space + "{" + linefeed); // JSON items start
+			builder.append(getIndentSpaces(indent_level++) + "\"items\":" + key_value_space + "{" + line_feed_code); // JSON items start
 
 			writeSchemaFieldProperty(field, false, indent_level);
 
-			builder.append(getIndentSpaces(--indent_level) + "}" + linefeed); // JSON items end
+			builder.append(getIndentSpaces(--indent_level) + "}" + line_feed_code); // JSON items end
 
-			builder.append(getIndentSpaces(--indent_level) + "}" + linefeed);
+			builder.append(getIndentSpaces(--indent_level) + "}" + line_feed_code);
 
-			builder.append(getIndentSpaces(--indent_level) + "]," + linefeed); // JSON oneOf end
+			builder.append(getIndentSpaces(--indent_level) + "]," + line_feed_code); // JSON oneOf end
 
 		}
 
@@ -248,61 +248,61 @@ public class JsonBuilder {
 
 		String schema_type = field.xs_type.getJsonSchemaType();
 
-		builder.append(getIndentSpaces(indent_level) + "\"type\":" + key_value_space + schema_type + "," + linefeed);
+		builder.append(getIndentSpaces(indent_level) + "\"type\":" + key_value_space + schema_type + "," + line_feed_code);
 
-		builder.append(getIndentSpaces(indent_level) + "\"$ref\":" + key_value_space + "\"" + field.xs_type.getJsonSchemaRef() + "\"," + linefeed);
+		builder.append(getIndentSpaces(indent_level) + "\"$ref\":" + key_value_space + "\"" + field.xs_type.getJsonSchemaRef() + "\"," + line_feed_code);
 
-		builder.append(getIndentSpaces(indent_level) + "\"title\":" + key_value_space + "\"" + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_content ? simple_content_key : field.xname) + "\"," + linefeed);
+		builder.append(getIndentSpaces(indent_level) + "\"title\":" + key_value_space + "\"" + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_content ? simple_content_key : field.xname) + "\"," + line_feed_code);
 
 		if (field.xs_type.equals(XsDataType.xs_anyURI))
-			builder.append(getIndentSpaces(indent_level) + "\"format\":" + key_value_space + "\"uri\"," + linefeed);
+			builder.append(getIndentSpaces(indent_level) + "\"format\":" + key_value_space + "\"uri\"," + line_feed_code);
 
 		if (field.default_value != null)
-			builder.append(getIndentSpaces(indent_level) + "\"default\":" + key_value_space + field.getJsonSchemaDefaultValue() + "," + linefeed);
+			builder.append(getIndentSpaces(indent_level) + "\"default\":" + key_value_space + field.getJsonSchemaDefaultValue() + "," + line_feed_code);
 
 		if (field.enum_name != null) {
 
 			String enum_array = field.getJsonSchemaEnumArray(key_value_space);
 
 			if (enum_array.length() > 2)
-				builder.append(getIndentSpaces(indent_level) + "\"enum\":" + key_value_space + "[" + enum_array.substring(0, enum_array.length() - (key_value_spaces + 1)) + "]," + linefeed);
+				builder.append(getIndentSpaces(indent_level) + "\"enum\":" + key_value_space + "[" + enum_array.substring(0, enum_array.length() - (key_value_offset + 1)) + "]," + line_feed_code);
 
 		}
 
 		if (field.length != null) {
 
-			builder.append(getIndentSpaces(indent_level) + "\"maxLength\":" + key_value_space + field.length + "," + linefeed);
-			builder.append(getIndentSpaces(indent_level) + "\"minLength\":" + key_value_space + field.length + "," + linefeed);
+			builder.append(getIndentSpaces(indent_level) + "\"maxLength\":" + key_value_space + field.length + "," + line_feed_code);
+			builder.append(getIndentSpaces(indent_level) + "\"minLength\":" + key_value_space + field.length + "," + line_feed_code);
 
 		}
 
 		else {
 
 			if (field.max_length != null)
-				builder.append(getIndentSpaces(indent_level) + "\"maxLength\":" + key_value_space + field.max_length + "," + linefeed);
+				builder.append(getIndentSpaces(indent_level) + "\"maxLength\":" + key_value_space + field.max_length + "," + line_feed_code);
 
 			if (field.min_length != null)
-				builder.append(getIndentSpaces(indent_level) + "\"minLength\":" + key_value_space + field.min_length + "," + linefeed);
+				builder.append(getIndentSpaces(indent_level) + "\"minLength\":" + key_value_space + field.min_length + "," + line_feed_code);
 
 		}
 
 		if (field.pattern != null)
-			builder.append(getIndentSpaces(indent_level) + "\"pattern\":" + key_value_space + "\"" + field.pattern + "\"," + linefeed);
+			builder.append(getIndentSpaces(indent_level) + "\"pattern\":" + key_value_space + "\"" + field.pattern + "\"," + line_feed_code);
 
 		String schema_maximum = field.getJsonSchemaMaximumValue(key_value_space);
 
 		if (schema_maximum != null)
-			builder.append(getIndentSpaces(indent_level) + "\"maximum\":" + key_value_space + schema_maximum + "," + linefeed);
+			builder.append(getIndentSpaces(indent_level) + "\"maximum\":" + key_value_space + schema_maximum + "," + line_feed_code);
 
 		String schema_minimum = field.getJsonSchemaMinimumValue(key_value_space);
 
 		if (schema_minimum != null)
-			builder.append(getIndentSpaces(indent_level) + "\"minimum\":" + key_value_space + schema_minimum + "," + linefeed);
+			builder.append(getIndentSpaces(indent_level) + "\"minimum\":" + key_value_space + schema_minimum + "," + line_feed_code);
 
 		String multiple_of = field.getJsonSchemaMultipleOfValue();
 
 		if (multiple_of != null)
-			builder.append(getIndentSpaces(indent_level) + "\"multipleOf\":" + key_value_space + multiple_of + "," + linefeed);
+			builder.append(getIndentSpaces(indent_level) + "\"multipleOf\":" + key_value_space + multiple_of + "," + line_feed_code);
 
 		if (!no_field_anno) {
 
@@ -313,17 +313,17 @@ public class JsonBuilder {
 				if (!anno.startsWith("\""))
 					anno = "\"" + anno + "\"";
 
-				builder.append(getIndentSpaces(indent_level) + "\"description\":" + key_value_space + anno + "," + linefeed);
+				builder.append(getIndentSpaces(indent_level) + "\"description\":" + key_value_space + anno + "," + line_feed_code);
 
 			}
 
 			else if (!field_anno)
-				builder.append(getIndentSpaces(indent_level) + "\"description\":" + key_value_space + "\"array of previous object: " + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_content ? simple_content_key : field.xname) + "\"" + "," + linefeed);
+				builder.append(getIndentSpaces(indent_level) + "\"description\":" + key_value_space + "\"array of previous object: " + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_content ? simple_content_key : field.xname) + "\"" + "," + line_feed_code);
 
 		}
 
-		builder.setLength(builder.length() - (linefeed.equals("\n") ? 2 : 1));
-		builder.append(linefeed);
+		builder.setLength(builder.length() - (line_feed_code.equals("\n") ? 2 : 1));
+		builder.append(line_feed_code);
 
 	}
 
@@ -338,34 +338,34 @@ public class JsonBuilder {
 	public int writeHeader(PgTable table, boolean object, final int indent_level) {
 
 		int jsonb_len = builder.length();
-		int jsonb_end = jsonb_len - (linefeed.equals("\n") ? 2 : 1);
+		int jsonb_end = jsonb_len - (line_feed_code.equals("\n") ? 2 : 1);
 
 		if (jsonb_end > 0) {
 
 			String jsonb_term = builder.substring(jsonb_end);
 
-			if (jsonb_term.equals("[" + linefeed)) {
+			if (jsonb_term.equals("[" + line_feed_code)) {
 			}
 
-			else if (jsonb_term.equals("}" + linefeed)) {
+			else if (jsonb_term.equals("}" + line_feed_code)) {
 
 				builder.setLength(jsonb_end);
-				builder.append("}," + linefeed);
+				builder.append("}," + line_feed_code);
 
 			}
 
-			else if (!jsonb_term.equals("{" + linefeed)) {
+			else if (!jsonb_term.equals("{" + line_feed_code)) {
 
-				if (linefeed.equals("\n"))
+				if (line_feed_code.equals("\n"))
 					builder.setLength(jsonb_len - 1);
 
-				builder.append("," + linefeed);
+				builder.append("," + line_feed_code);
 
 			}
 
 		}
 
-		builder.append(getIndentSpaces(indent_level) + (object ? "\"" + table.name + "\":" + key_value_space : "") + "{" + linefeed); // JSON object start
+		builder.append(getIndentSpaces(indent_level) + (object ? "\"" + table.name + "\":" + key_value_space : "") + "{" + line_feed_code); // JSON object start
 
 		return builder.length();
 	}
@@ -380,34 +380,34 @@ public class JsonBuilder {
 	public int writeArrayHeader(PgTable table, final int indent_level) {
 
 		int jsonb_len = builder.length();
-		int jsonb_end = jsonb_len - (linefeed.equals("\n") ? 2 : 1);
+		int jsonb_end = jsonb_len - (line_feed_code.equals("\n") ? 2 : 1);
 
 		if (jsonb_end > 0) {
 
 			String jsonb_term = builder.substring(jsonb_end);
 
-			if (jsonb_term.equals("[" + linefeed)) {
+			if (jsonb_term.equals("[" + line_feed_code)) {
 			}
 
-			else if (jsonb_term.equals("}" + linefeed)) {
+			else if (jsonb_term.equals("}" + line_feed_code)) {
 
 				builder.setLength(jsonb_end);
-				builder.append("}," + linefeed);
+				builder.append("}," + line_feed_code);
 
 			}
 
-			else if (!jsonb_term.equals("{" + linefeed)) {
+			else if (!jsonb_term.equals("{" + line_feed_code)) {
 
-				if (linefeed.equals("\n"))
+				if (line_feed_code.equals("\n"))
 					builder.setLength(jsonb_len - 1);
 
-				builder.append("," + linefeed);
+				builder.append("," + line_feed_code);
 
 			}
 
 		}
 
-		builder.append(getIndentSpaces(indent_level) + "\"" + table.name + "\":" + key_value_space + "[" + linefeed); // JSON array start
+		builder.append(getIndentSpaces(indent_level) + "\"" + table.name + "\":" + key_value_space + "[" + line_feed_code); // JSON array start
 
 		return builder.length();
 	}
@@ -437,11 +437,11 @@ public class JsonBuilder {
 				boolean array_field = array_json || field.list_holder || field.jsonb_col_size > 1;
 
 				if (has_field)
-					builder.append("," + linefeed);
+					builder.append("," + line_feed_code);
 
 				builder.append(getIndentSpaces(indent_level) + "\"" + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_content ? simple_content_key : field.xname) + "\":" + key_value_space + (array_field ? "[" : ""));
 
-				field.jsonb.setLength(field.jsonb.length() - (key_value_spaces + 1));
+				field.jsonb.setLength(field.jsonb.length() - (key_value_offset + 1));
 				builder.append(field.jsonb);
 
 				if (array_field)
@@ -459,7 +459,7 @@ public class JsonBuilder {
 		}
 
 		if (has_field)
-			builder.append(linefeed);
+			builder.append(line_feed_code);
 
 	}
 
@@ -485,18 +485,18 @@ public class JsonBuilder {
 			if (jsonb_end.equals("},")) {
 
 				builder.setLength(jsonb_len - 1);
-				builder.append(linefeed);
+				builder.append(line_feed_code);
 
 			}
 
 			else if (jsonb_end.equals("],")) {
 
 				builder.setLength(jsonb_len - 1);
-				builder.append(linefeed);
+				builder.append(line_feed_code);
 
 			}
 
-			builder.append(getIndentSpaces(indent_level) + "}" + linefeed); // JSON object end
+			builder.append(getIndentSpaces(indent_level) + "}" + line_feed_code); // JSON object end
 
 		}
 
@@ -524,11 +524,11 @@ public class JsonBuilder {
 			if (jsonb_end.equals("},")) {
 
 				builder.setLength(jsonb_len - 1);
-				builder.append(linefeed);
+				builder.append(line_feed_code);
 
 			}
 
-			builder.append(getIndentSpaces(indent_level) + "]" + linefeed); // JSON object end
+			builder.append(getIndentSpaces(indent_level) + "]" + line_feed_code); // JSON object end
 
 		}
 
@@ -542,7 +542,7 @@ public class JsonBuilder {
 	 * @return String escaped annotation
 	 */
 	public String escapeAnnotation(String annotation, boolean is_table) {
-		return is_table ? StringEscapeUtils.escapeCsv(annotation.replaceAll("\n--", "")) : StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(annotation).replaceAll("\\\\/", "/").replaceAll("\\\\'", "'"));
+		return is_table ? StringEscapeUtils.escapeCsv(annotation.replace("\n--", "")) : StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(annotation).replace("\\\\/", "/").replace("\\\\'", "'"));
 	}
 
 }

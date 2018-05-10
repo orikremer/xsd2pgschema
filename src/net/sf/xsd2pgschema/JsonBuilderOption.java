@@ -27,19 +27,19 @@ package net.sf.xsd2pgschema;
 public class JsonBuilderOption {
 
 	/** The prefix of JSON item name of xs:attribute. */
-	public String attr_prefix = "";
+	protected String attr_prefix = "";
 
 	/** The JSON item name of xs:simpleContent. */
-	public String simple_content_key = PgSchemaUtil.simple_content_name;
+	protected String simple_content_key = PgSchemaUtil.simple_content_name;
 
-	/** The length of white spaces for indent. */
-	public int indent_spaces = PgSchemaUtil.indent_spaces;
+	/** The indent offset. */
+	protected int indent_offset = PgSchemaUtil.indent_offset;
 
-	/** The length of white spaces between key and value. */
-	public int key_value_spaces = 1;
+	/** The indent offset between key and value. */
+	protected int key_value_offset = 1;
 
-	/** Whether use line feed code in JSON document. */
-	public boolean linefeed = true;
+	/** The current line feed code. */
+	protected String line_feed_code = "\n";
 
 	/** Whether use JSON array uniformly for descendants. */
 	public boolean array_all = false;
@@ -76,34 +76,34 @@ public class JsonBuilderOption {
 	}
 
 	/**
-	 * Set length of indent spaces.
+	 * Set indent offset.
 	 *
-	 * @param indent_spaces length of indent spaces in JSON document
+	 * @param indent_offset indent offset
 	 */
-	public void setIndentSpaces(String indent_spaces) {
+	public void setIndentOffset(String indent_offset) {
 
-		this.indent_spaces = Integer.valueOf(indent_spaces);
+		this.indent_offset = Integer.valueOf(indent_offset);
 
-		if (this.indent_spaces < 0)
-			this.indent_spaces = 0;
-		else if (this.indent_spaces > 4)
-			this.indent_spaces = 4;
+		if (this.indent_offset < 0)
+			this.indent_offset = 0;
+		else if (this.indent_offset > 4)
+			this.indent_offset = 4;
 
 	}
 
 	/**
-	 * Set length of key-value spaces.
+	 * Set key-value offset.
 	 *
-	 * @param key_value_spaces length of key-value spaces in JSON document
+	 * @param key_value_offset indent offset between key and value
 	 */
-	public void setKeyValueSpaces(String key_value_spaces) {
+	public void setKeyValueOffset(String key_value_offset) {
 
-		this.key_value_spaces = Integer.valueOf(key_value_spaces);
+		this.key_value_offset = Integer.valueOf(key_value_offset);
 
-		if (this.key_value_spaces < 0)
-			this.key_value_spaces = 0;
-		else if (this.key_value_spaces > 1)
-			this.key_value_spaces = 1;
+		if (this.key_value_offset < 0)
+			this.key_value_offset = 0;
+		else if (this.key_value_offset > 1)
+			this.key_value_offset = 1;
 
 	}
 
@@ -112,9 +112,56 @@ public class JsonBuilderOption {
 	 */
 	public void setCompact() {
 
-		indent_spaces = key_value_spaces = 0;
-		linefeed = false;
+		indent_offset = key_value_offset = 0;
+		setLineFeed(false);
 
+	}
+
+	/**
+	 * Set line feed code.
+	 *
+	 * @param line_feed whether use line feed code or not.
+	 */
+	public void setLineFeed(boolean line_feed) {
+
+		line_feed_code = line_feed ? "\n" : "";
+
+	}
+
+	/**
+	 * Return prefix for xs:attribute.
+	 *
+	 * @return String prefix for attribute
+	 */
+	public String getAttrPrefix() {
+		return attr_prefix;
+	}
+
+	/**
+	 * Return item name for xs:simpleContent.
+	 *
+	 * @return String item name for simple content
+	 */
+	public String getSimpleContentKey() {
+		return simple_content_key;
+	}
+
+	/**
+	 * Return current indent offset.
+	 *
+	 * @return int indent offset
+	 */
+	public int getIndentOffset() {
+		return indent_offset;
+	}
+
+	/**
+	 * Return current indent offset between key and value.
+	 *
+	 * @return int indent offset between key and value
+	 */
+	public int getKeyValueOffset() {
+		return key_value_offset;
 	}
 
 }

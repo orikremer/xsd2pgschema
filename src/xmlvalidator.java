@@ -191,6 +191,8 @@ public class xmlvalidator {
 		XmlValidatorThrd[] proc_thrd = new XmlValidatorThrd[max_thrds];
 		Thread[] thrd = new Thread[max_thrds];
 
+		long start_time = System.currentTimeMillis();
+
 		for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
 
 			String thrd_name = "xmlvalidator-" + thrd_id;
@@ -226,6 +228,10 @@ public class xmlvalidator {
 			}
 
 		}
+
+		long end_time = System.currentTimeMillis();
+
+		System.out.println("Execution time: " + (end_time - start_time) + " ms");
 
 	}
 

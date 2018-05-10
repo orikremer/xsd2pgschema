@@ -329,6 +329,8 @@ public class xml2luceneidx {
 		Xml2LuceneIdxThrd[] proc_thrd = new Xml2LuceneIdxThrd[shard_size * max_thrds];
 		Thread[] thrd = new Thread[shard_size * max_thrds];
 
+		long start_time = System.currentTimeMillis();
+
 		for (int shard_id = 0; shard_id < shard_size; shard_id++) {
 
 			for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
@@ -384,6 +386,10 @@ public class xml2luceneidx {
 			}
 
 		}
+
+		long end_time = System.currentTimeMillis();
+
+		System.out.println("Execution time: " + (end_time - start_time) + " ms");
 
 	}
 
