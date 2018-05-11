@@ -4355,7 +4355,7 @@ public class XPathCompList {
 					String subject_table_name = schema.getPgNameOf(path_expr.sql_subject.table);
 
 					if (path_expr.sql.contains(subject_table_name + "."))
-						path_expr.sql = path_expr.sql.replace(subject_table_name.replace("\\.", "\\\\.").replace("\"", "\\\"") + "\\.", "");
+						path_expr.sql = path_expr.sql.replace(subject_table_name.replace(".", "\\.").replace("\"", "\\\"") + ".", "");
 
 				}
 

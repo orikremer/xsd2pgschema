@@ -542,7 +542,7 @@ public class JsonBuilder {
 	 * @return String escaped annotation
 	 */
 	public String escapeAnnotation(String annotation, boolean is_table) {
-		return is_table ? StringEscapeUtils.escapeCsv(annotation.replace("\n--", "")) : StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(annotation).replace("\\\\/", "/").replace("\\\\'", "'"));
+		return is_table ? StringEscapeUtils.escapeCsv(annotation.replace("\n--", "")) : StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(annotation).replace("\\/", "/").replace("\\'", "'"));
 	}
 
 }
