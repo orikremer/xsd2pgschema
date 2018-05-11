@@ -114,7 +114,7 @@ public class PgAnyRetriever extends DefaultHandler {
 	 * @param test nest test result of this node
 	 * @param xmlb XML builder
 	 * @return PgSchemaNestTetster result of nest test
-	 * @throws XMLStreamException
+	 * @throws XMLStreamException the XML stream exception
 	 */
 	public PgSchemaNestTester exec(InputStream in, PgTable table, PgSchemaNestTester test, XmlBuilder xmlb) throws XMLStreamException {
 

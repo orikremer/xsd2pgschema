@@ -39,7 +39,7 @@ public class PgTable {
 	protected String pg_schema_name = PgSchemaUtil.pg_public_schema_name;
 
 	/** The target namespace. */
-	protected String target_namespace = null;
+	protected String target_namespace = "";
 
 	/** The prefix of target namespace. */
 	protected String prefix = "";
