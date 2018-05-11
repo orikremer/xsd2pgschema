@@ -386,6 +386,9 @@ public abstract class PgSchemaNodeParser {
 
 		content = child.getNodeValue();
 
+		if (PgSchemaUtil.null_simple_cont_pattern.matcher(content).matches())
+			content = null;
+
 	}
 
 	/**

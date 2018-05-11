@@ -1,4 +1,4 @@
-﻿ Changes in xsd2pgschema 2.10.0-rc (release 2018-05-10)
+﻿ Changes in xsd2pgschema 2.10.0 (release 2018-05-11)
 
   Added XPath evaluator main class, xpathevaluator, to retrive XML document from PostgreSQL by XPath->SQL query translation.
   Fixed missing of data of simple content on virtual table.

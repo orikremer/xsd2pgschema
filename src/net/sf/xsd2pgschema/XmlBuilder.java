@@ -31,6 +31,9 @@ public class XmlBuilder {
 	/** Whether append namespace declaration. */
 	public boolean append_xmlns = true;
 
+	/** Whether insert document key. */
+	public boolean insert_doc_key = false;
+
 	/** The indent offset. */
 	protected int indent_offset = PgSchemaUtil.indent_offset;
 

@@ -162,8 +162,8 @@ public class PgSchemaUtil {
 	/** The compiled pattern matches URL. */
 	public static final Pattern url_pattern = Pattern.compile("^https?:\\/\\/.*", Pattern.MULTILINE);
 
-	/** The compiled pattern matches excess spaces. */
-	public static final Pattern space_pattern = Pattern.compile("\\s+", Pattern.MULTILINE);
+	/** The compiled pattern for collapsing white spaces. */
+	public static final Pattern ws_col_pattern = Pattern.compile("\\s+", Pattern.MULTILINE);
 
 	/** The compiled pattern for replacing white spaces. */
 	public static final Pattern ws_rep_pattern = Pattern.compile("[\\t\\n\\r]", Pattern.MULTILINE);
@@ -173,6 +173,9 @@ public class PgSchemaUtil {
 
 	/** The compiled pattern matches line feed code. */
 	public static final Pattern lf_pattern = Pattern.compile("\\n", Pattern.MULTILINE);
+
+	/** The compiled pattern matches simple content. */
+	public static final Pattern null_simple_cont_pattern = Pattern.compile("^\\s+$", Pattern.MULTILINE);
 
 	/**
 	 * Return input stream of XSD file with decompression.
@@ -690,7 +693,7 @@ public class PgSchemaUtil {
 	 * @return String collapsed string
 	 */
 	public static String collapseWhiteSpace(String text) {
-		return PgSchemaUtil.space_pattern.matcher(replaceWhiteSpace(text)).replaceAll(" ").trim();
+		return PgSchemaUtil.ws_col_pattern.matcher(replaceWhiteSpace(text)).replaceAll(" ").trim();
 	}
 
 	/**

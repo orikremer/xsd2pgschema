@@ -107,6 +107,9 @@ public class xpathevaluator {
 			else if (args[i].equals("--xml-indent-offset") && i + 1 < args.length)
 				xmlb.setIndentOffset(args[++i]);
 
+			else if (args[i].equals("--xml-insert-doc-key"))
+				xmlb.insert_doc_key = true;
+
 			else if (args[i].equals("--xml-no-linefeed"))
 				xmlb.setLineFeed(false);
 
@@ -248,6 +251,7 @@ public class xpathevaluator {
 		System.err.println("        --doc-key-if-no-inplace (select --no-rel and --no-doc-key options by default)");
 		System.err.println("        --xml-no-xmlns (dismiss XML namespace declaration)");
 		System.err.println("        --xml-indent-offset INTEGER (default=" + xmlb.getIndentOffset() + ", min=0, max=4)");
+		System.err.println("        --xml-insert-doc-key (insert document key in result)");
 		System.err.println("        --xml-no-linefeed (dismiss line feed code)");
 		System.err.println("        --xml-compact (equals to set --xml-indent-offset 0 --xml-no-linefeed)");
 		System.err.println("        --verbose");

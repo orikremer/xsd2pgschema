@@ -6259,11 +6259,23 @@ public class PgSchema {
 	/** The XML builder. */
 	private XmlBuilder xmlb = null;
 
+	/** The declared namespaces. */
+	private HashSet<String> appended_xmlns = null;
+
 	/** SAX parser for any attribute. */
 	private SAXParser any_attr_parser = null;
 
 	/** The instance of any retriever. */
 	private PgAnyRetriever any_retriever = null;
+
+	/** Whether indent is opened. */
+	private boolean open_indent = false;
+
+	/** Whether indent is required. */
+	private boolean require_indent = false;
+
+	/** Whether list holder is closed. */
+	private boolean close_list_holder = false;
 
 	/**
 	 * Compose XML document
@@ -6277,6 +6289,11 @@ public class PgSchema {
 	public void pgSql2Xml(Connection db_conn, PgTable table, ResultSet rset, XmlBuilder xmlb) throws PgSchemaException {
 
 		this.xmlb = xmlb;
+
+		if (xmlb.append_xmlns && appended_xmlns == null)
+			appended_xmlns = new HashSet<String>();
+		else if (appended_xmlns.size() > 0)
+			appended_xmlns.clear();
 
 		try {
 
@@ -6298,8 +6315,12 @@ public class PgSchema {
 
 			xmlb.writer.writeStartElement(table.prefix, table.name, table.target_namespace);
 
-			if (xmlb.append_xmlns)
-				xmlb.writer.writeAttribute("xmlns" + (table.prefix.isEmpty() ? "" : ":" + table.prefix), table.target_namespace);
+			if (xmlb.append_xmlns) {
+
+				xmlb.writer.writeNamespace(table.prefix, table.target_namespace);
+				appended_xmlns.add(table.prefix);
+
+			}
 
 			List<PgField> fields = table.fields;
 
@@ -6369,7 +6390,22 @@ public class PgSchema {
 
 				PgField field = fields.get(f);
 
-				if (field.simple_content) {
+				if (xmlb.insert_doc_key && field.document_key) {
+
+					xmlb.writer.writeCharacters((test.has_child_elem ? "" : xmlb.line_feed_code) + test.child_indent_space);
+
+					if (field.is_xs_namespace)
+						xmlb.writer.writeStartElement(table.prefix, field.name, table.target_namespace);
+					else
+						xmlb.writer.writeStartElement(field.prefix, field.name, field.target_namespace);
+
+					xmlb.writer.writeCharacters(rset.getString(param_id));
+
+					xmlb.writer.writeEndElement();
+
+				}
+
+				else if (field.simple_content) {
 
 					String content = field.retrieveValue(rset, param_id);
 
@@ -6397,6 +6433,7 @@ public class PgSchema {
 							xmlb.writer.writeStartElement(field.prefix, field.name, field.target_namespace);
 
 						xmlb.writer.writeCharacters(content);
+
 						xmlb.writer.writeEndElement();
 
 						xmlb.writer.writeCharacters(xmlb.line_feed_code);
@@ -6470,6 +6507,8 @@ public class PgSchema {
 	 */
 	public void closePgSql2Xml() {
 
+		appended_xmlns.clear();
+
 		tables.stream().filter(table -> table.ps != null).forEach(table -> {
 
 			try {
@@ -6500,15 +6539,26 @@ public class PgSchema {
 	 */	
 	private PgSchemaNestTester nestChildNode2Xml(final Connection db_conn, final PgTable table, final Object parent_key, PgSchemaNestTester parent_test) throws PgSchemaException {
 
+		level = 0;
+
 		try {
 
 			PgSchemaNestTester test = new PgSchemaNestTester(table, parent_test);
 
 			if (!table.virtual && !table.list_holder) {
 
-				xmlb.writer.writeCharacters((parent_test.has_child_elem ? "" : xmlb.line_feed_code) + test.current_indent_space);
+				xmlb.writer.writeCharacters((parent_test.has_child_elem ? "" : xmlb.line_feed_code) + (open_indent ? test.indent_space : test.current_indent_space));
+
+				require_indent = close_list_holder = false;
 
 				xmlb.writer.writeStartElement(table.prefix, table.name, table.target_namespace);
+
+				if (xmlb.append_xmlns && !appended_xmlns.contains(table.prefix)) {
+
+					xmlb.writer.writeNamespace(table.prefix, table.target_namespace);
+					appended_xmlns.add(table.prefix);
+
+				}
 
 			}
 
@@ -6542,9 +6592,18 @@ public class PgSchema {
 
 				if (!table.virtual && table.list_holder) {
 
-					xmlb.writer.writeCharacters((parent_test.has_content ? "" : xmlb.line_feed_code) + test.current_indent_space);
+					xmlb.writer.writeCharacters((parent_test.has_content || close_list_holder ? "" : xmlb.line_feed_code) + (open_indent ? test.indent_space : test.current_indent_space));
+
+					require_indent = close_list_holder = false;
 
 					xmlb.writer.writeStartElement(table.prefix, table.name, table.target_namespace);
+
+					if (xmlb.append_xmlns && !appended_xmlns.contains(table.prefix)) {
+
+						xmlb.writer.writeNamespace(table.prefix, table.target_namespace);
+						appended_xmlns.add(table.prefix);
+
+					}
 
 				}
 
@@ -6642,6 +6701,7 @@ public class PgSchema {
 								xmlb.writer.writeStartElement(field.prefix, field.name, field.target_namespace);
 
 							xmlb.writer.writeCharacters(content);
+
 							xmlb.writer.writeEndElement();
 
 							xmlb.writer.writeCharacters(xmlb.line_feed_code);
@@ -6707,15 +6767,24 @@ public class PgSchema {
 
 				if (!table.virtual && table.list_holder) {
 
-					if (test.has_content && parent_test.has_simple_content)
+					if ((test.has_content && parent_test.has_simple_content) || require_indent)
 						xmlb.writer.writeCharacters(test.current_indent_space);
+
+					open_indent = require_indent = false;
 
 					xmlb.writer.writeEndElement();
 
 					xmlb.writer.writeCharacters(xmlb.line_feed_code);
 
-					if (!test.has_content && (!test.has_child_elem || test.has_simple_content))
+					close_list_holder = true;
+
+					if (!parent_test.has_child_elem && !test.has_content && (!test.has_child_elem || test.has_simple_content)) {
 						xmlb.writer.writeCharacters(test.getParentIndentSpace());
+						open_indent = true;
+					}
+
+					else
+						require_indent = true;
 
 				}
 
@@ -6725,12 +6794,22 @@ public class PgSchema {
 
 			if (!table.virtual && !table.list_holder) {
 
-				if (test.has_content && (test.has_child_elem || !test.has_simple_content))
+				if ((test.has_content && (test.has_child_elem || !test.has_simple_content)) || require_indent)
 					xmlb.writer.writeCharacters(test.current_indent_space);
+
+				open_indent = require_indent = false;
 
 				xmlb.writer.writeEndElement();
 
 				xmlb.writer.writeCharacters(xmlb.line_feed_code);
+
+				if (!parent_test.has_child_elem && !test.has_content && (!test.has_child_elem || test.has_simple_content)) {
+					xmlb.writer.writeCharacters(test.getParentIndentSpace());
+					open_indent = true;
+				}
+
+				else
+					require_indent = true;
 
 			}
 

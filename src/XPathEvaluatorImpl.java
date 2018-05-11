@@ -405,15 +405,26 @@ public class XPathEvaluatorImpl {
 
 								if (content != null && !content.isEmpty()) {
 
-									if (field.isXsNamespace())
+									if (field.isXsNamespace()) {
+
 										xml_writer.writeStartElement(table_prefix, field.getName(), table_ns);
-									else
+
+										if (xmlb.append_xmlns)
+											xml_writer.writeNamespace(table_prefix, table_ns);
+
+									}
+
+									else {
+
 										xml_writer.writeStartElement(field_prefix, field.getName(), field_ns);
 
-									if (xmlb.append_xmlns)
-										xml_writer.writeAttribute("xmlns" + (table_prefix.isEmpty() ? "" : ":" + table_prefix), table_ns);
+										if (xmlb.append_xmlns)
+											xml_writer.writeNamespace(field_prefix, field_ns);
+
+									}
 
 									xml_writer.writeCharacters(content);
+
 									xml_writer.writeEndElement();
 
 									xml_writer.writeCharacters(xmlb.getLineFeedCode());
@@ -428,7 +439,7 @@ public class XPathEvaluatorImpl {
 									xml_writer.writeStartElement(table_prefix, table_name, table_ns);
 
 									if (xmlb.append_xmlns)
-										xml_writer.writeAttribute("xmlns" + (table_prefix.isEmpty() ? "" : ":" + table_prefix), table_ns);
+										xml_writer.writeNamespace(table_prefix, table_ns);
 
 									xml_writer.writeCharacters(content);
 
@@ -446,7 +457,7 @@ public class XPathEvaluatorImpl {
 									xml_writer.writeStartElement(table_prefix, table_name, table_ns);
 
 									if (xmlb.append_xmlns)
-										xml_writer.writeAttribute("xmlns" + (table_prefix.isEmpty() ? "" : ":" + table_prefix), table_ns);
+										xml_writer.writeNamespace(table_prefix, table_ns);
 
 									if (field_ns.equals(PgSchemaUtil.xs_namespace_uri))
 										xml_writer.writeAttribute(field_name, rset.getString(1));
@@ -472,7 +483,7 @@ public class XPathEvaluatorImpl {
 										xml_writer.writeStartElement(table_prefix, table_name, table_ns);
 
 										if (xmlb.append_xmlns)
-											xml_writer.writeAttribute("xmlns" + (table_prefix.isEmpty() ? "" : ":" + table_prefix), table_ns);
+											xml_writer.writeNamespace(table_prefix, table_ns);
 
 										switch (terminus) {
 										case any_attribute:
