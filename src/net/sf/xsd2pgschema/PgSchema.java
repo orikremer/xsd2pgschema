@@ -917,7 +917,8 @@ public class PgSchema {
 
 		tables.stream().filter(table -> table.required && !table.relational).forEach(table -> {
 
-			table.prefix = getPrefixOf(table.target_namespace.split(" ")[0], "");
+			if (table.target_namespace != null)
+				table.prefix = getPrefixOf(table.target_namespace.split(" ")[0], "");
 
 			table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
 
@@ -2940,7 +2941,7 @@ public class PgSchema {
 		}
 
 		else
-			sb.append("null, ");
+			sb.append("no namespace, ");
 
 		System.out.println("-- xmlns: " + sb.toString() + "schema location: " + table.schema_location);
 		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replace("_",  " ") + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (tables.stream().anyMatch(_table -> _table.conflict) ? ", name collision: " + table.conflict : ""));
