@@ -93,7 +93,7 @@ public class PgField {
 	/** The XML Schema data type. */
 	protected XsDataType xs_type;
 
-	/** Whether target namespace equals namespace URI of XML Schema. */
+	/** Whether target namespace equals namespace URI of XML Schema 1.x. */
 	protected boolean is_xs_namespace = true;
 
 	/** Whether xs:element. */
@@ -1591,12 +1591,30 @@ public class PgField {
 	// PostgreSQL schema generation
 
 	/**
+	 * Return whether target namespace equals namespace URI of XML Schema 1.x.
+	 *
+	 * @return boolean whether namespace equals namespace URI of XML Schema 1.x
+	 */
+	public boolean isXsNamespace() {
+		return is_xs_namespace;
+	}
+
+	/**
 	 * Return target namespace.
 	 *
 	 * @return String target namespace
 	 */
 	public String getTagetNamespace() {
 		return target_namespace;
+	}
+
+	/**
+	 * Return prefix of target namespace.
+	 *
+	 * @return String prefix of target namespace
+	 */
+	public String getPrefix() {
+		return prefix;
 	}
 
 	/**

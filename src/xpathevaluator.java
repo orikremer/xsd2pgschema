@@ -101,6 +101,9 @@ public class xpathevaluator {
 			else if (args[i].equals("--test-ddl"))
 				pg_option.test = true;
 
+			else if (args[i].equals("--xml-no-xmlns"))
+				xmlb.append_xmlns = false;
+
 			else if (args[i].equals("--xml-indent-offset") && i + 1 < args.length)
 				xmlb.setIndentOffset(args[++i]);
 
@@ -243,8 +246,9 @@ public class xpathevaluator {
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME (select --no-rel and --no-doc-key options by default)");
 		System.err.println("        --doc-key-if-no-inplace (select --no-rel and --no-doc-key options by default)");
+		System.err.println("        --xml-no-xmlns (dismiss XML namespace declaration)");
 		System.err.println("        --xml-indent-offset INTEGER (default=" + xmlb.getIndentOffset() + ", min=0, max=4)");
-		System.err.println("        --xml-no-linefeed (avoid to use linefeed code)");
+		System.err.println("        --xml-no-linefeed (dismiss line feed code)");
 		System.err.println("        --xml-compact (equals to set --xml-indent-offset 0 --xml-no-linefeed)");
 		System.err.println("        --verbose");
 		System.exit(1);

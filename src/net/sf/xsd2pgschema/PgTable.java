@@ -528,6 +528,15 @@ public class PgTable {
 	}
 
 	/**
+	 * Return prefix of target namespace.
+	 *
+	 * @return String prefix of target namespace
+	 */
+	public String getPrefix() {
+		return prefix;
+	}
+
+	/**
 	 * Return table name.
 	 *
 	 * @return String table name

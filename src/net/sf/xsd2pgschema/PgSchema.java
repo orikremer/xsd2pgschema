@@ -917,11 +917,11 @@ public class PgSchema {
 
 		tables.stream().filter(table -> table.required && !table.relational).forEach(table -> {
 
-			table.prefix = getAbsolutePrefixOf(table.target_namespace, "");
+			table.prefix = getPrefixOf(table.target_namespace.split(" ")[0], "");
 
 			table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
 
-				field.prefix = getAbsolutePrefixOf(field.target_namespace, "");
+				field.prefix = getPrefixOf(field.target_namespace.split(" ")[0], "");
 				field.is_xs_namespace = field.target_namespace.equals(PgSchemaUtil.xs_namespace_uri);
 
 
@@ -949,7 +949,7 @@ public class PgSchema {
 
 		def_namespaces.entrySet().stream().map(arg -> arg.getValue()).forEach(arg -> namespace_uri.add(arg));
 
-		namespace_uri.forEach(arg -> sb.append(arg + " (" + getAbsolutePrefixOf(arg, "default") + "), "));
+		namespace_uri.forEach(arg -> sb.append(arg + " (" + getPrefixOf(arg, "default") + "), "));
 		namespace_uri.clear();
 
 		_root_schema.def_stat_msg.append("--   Namespaces:\n");
@@ -2363,20 +2363,10 @@ public class PgSchema {
 	 * Return prefix of namespace URI.
 	 *
 	 * @param namespace_uri namespace URI
-	 * @return String prefix of namespace URI
-	 */
-	public String getPrefixOf(String namespace_uri) {
-		return def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri)).findFirst().get().getKey();
-	}
-
-	/**
-	 * Return absolute prefix of namespace URI.
-	 *
-	 * @param namespace_uri namespace URI
 	 * @param def_prefix prefix for default namespace URI
 	 * @return String prefix of namespace URI
 	 */
-	private String getAbsolutePrefixOf(String namespace_uri, String def_prefix) {
+	private String getPrefixOf(String namespace_uri, String def_prefix) {
 		return def_namespaces.entrySet().stream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()) ? def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey() : def_prefix;
 	}
 
@@ -2945,7 +2935,7 @@ public class PgSchema {
 		if (table.target_namespace != null && !table.target_namespace.isEmpty()) {
 
 			for (String namespace_uri : table.target_namespace.split(" "))
-				sb.append(namespace_uri + " (" + getAbsolutePrefixOf(namespace_uri, "default") + "), ");
+				sb.append(namespace_uri + " (" + getPrefixOf(namespace_uri, "default") + "), ");
 
 		}
 
@@ -6307,7 +6297,8 @@ public class PgSchema {
 
 			xmlb.writer.writeStartElement(table.prefix, table.name, table.target_namespace);
 
-			xmlb.writer.writeAttribute("xmlns" + (table.prefix.isEmpty() ? "" : ":" + table.prefix), table.target_namespace);
+			if (xmlb.append_xmlns)
+				xmlb.writer.writeAttribute("xmlns" + (table.prefix.isEmpty() ? "" : ":" + table.prefix), table.target_namespace);
 
 			List<PgField> fields = table.fields;
 

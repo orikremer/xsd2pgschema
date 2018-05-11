@@ -320,7 +320,7 @@ public class xml2json {
 		System.err.println("        --simple-cont-json-key SIMPLE_CONTENT_NAME (default=\"" + jsonb_option.getSimpleContentKey() + "\")");
 		System.err.println("        --json-indent-offset INTEGER (default=" + jsonb_option.getIndentOffset() + ", min=0, max=4)");
 		System.err.println("        --json-key-value-offset INTEGER (default=" + jsonb_option.getKeyValueOffset() + ", min=0, max=1)");
-		System.err.println("        --json-no-linefeed (avoid to use linefeed code)");
+		System.err.println("        --json-no-linefeed (dismiss line feed code)");
 		System.err.println("        --json-compact (equals to set --json-indent-offset 0 --json-key-value-offset 0 --json-no-linefeed)");
 		System.err.println("        --json-array-all (use JSON array uniformly for descendants, effective only in column- and relational-oriented JSON format)");
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");

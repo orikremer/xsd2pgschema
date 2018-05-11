@@ -5400,9 +5400,9 @@ public class XPathCompList {
 						switch (sql_expr.terminus) {
 						case table:
 							table = sql_expr.table;
-							prefix = schema.getPrefixOf(table.target_namespace != null ? table.target_namespace.split(" ")[0] : "");
+							prefix = table.prefix;
 
-							sb.append("'" + (prefix != null && !prefix.isEmpty() ? prefix + ":" : "") + sql_expr.table.name + "'");
+							sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + sql_expr.table.name + "'");
 							break;
 						case element:
 						case simple_content:
@@ -5411,17 +5411,17 @@ public class XPathCompList {
 						case any_attribute:
 							table = getParentTable(sql_expr);
 							PgField field = table.getField(sql_expr.column_name);
-							prefix = schema.getPrefixOf(field.target_namespace != null ? field.target_namespace.split(" ")[0] : "");
+							prefix = field.is_xs_namespace ? "" : field.prefix;
 
 							switch (sql_expr.terminus) {
 							case any_element:
-								sb.append("'" + (prefix != null && !prefix.isEmpty() ? prefix + ":" : "") + getLastNameOfPath(sql_expr.getXPathFragment()) + "'");
+								sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + getLastNameOfPath(sql_expr.getXPathFragment()) + "'");
 								break;
 							case any_attribute:
-								sb.append("'" + (prefix != null && !prefix.isEmpty() ? prefix + ":" : "") + getLastNameOfPath(sql_expr.getXPathFragment()).replaceFirst("^@", "") + "'");
+								sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + getLastNameOfPath(sql_expr.getXPathFragment()).replaceFirst("^@", "") + "'");
 								break;
 							default:
-								sb.append("'" + (prefix != null && !prefix.isEmpty() ? prefix + ":" : "") + sql_expr.column_name + "'");
+								sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + sql_expr.column_name + "'");
 							}
 							break;
 						default:

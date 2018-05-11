@@ -28,6 +28,9 @@ import javax.xml.stream.XMLStreamWriter;
  */
 public class XmlBuilder {
 
+	/** Whether append namespace declaration. */
+	public boolean append_xmlns = true;
+
 	/** The indent offset. */
 	protected int indent_offset = PgSchemaUtil.indent_offset;
 
@@ -118,6 +121,15 @@ public class XmlBuilder {
 	 */
 	public int getIndentOffset() {
 		return indent_offset;
+	}
+
+	/**
+	 * Return current line feed code.
+	 *
+	 * @return String line feed code
+	 */
+	public String getLineFeedCode() {
+		return line_feed_code;
 	}
 
 }
