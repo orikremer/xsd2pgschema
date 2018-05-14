@@ -403,29 +403,61 @@ public class XPathEvaluatorImpl {
 							case element:
 								content = field.retrieveValue(rset, 1);
 
-								if (content != null && !content.isEmpty()) {
+								if ((content != null && !content.isEmpty()) || field.isRequired()) {
 
-									if (field.isXsNamespace()) {
+									if (content != null && !content.isEmpty()) {
 
-										xml_writer.writeStartElement(table_prefix, field.getName(), table_ns);
+										if (field.isXsNamespace()) {
 
-										if (xmlb.append_xmlns)
-											xml_writer.writeNamespace(table_prefix, table_ns);
+											xml_writer.writeStartElement(table_prefix, field_name, table_ns);
+
+											if (xmlb.append_xmlns)
+												xml_writer.writeNamespace(table_prefix, table_ns);
+
+										}
+
+										else {
+
+											xml_writer.writeStartElement(field_prefix, field_name, field_ns);
+
+											if (xmlb.append_xmlns)
+												xml_writer.writeNamespace(field_prefix, field_ns);
+
+										}
+
+										xml_writer.writeCharacters(content);
+
+										xml_writer.writeEndElement();
 
 									}
 
 									else {
 
-										xml_writer.writeStartElement(field_prefix, field.getName(), field_ns);
+										if (field.isXsNamespace()) {
 
-										if (xmlb.append_xmlns)
-											xml_writer.writeNamespace(field_prefix, field_ns);
+											xml_writer.writeEmptyElement(table_prefix, field_name, table_ns);
+
+											if (xmlb.append_xmlns) {
+												xml_writer.writeNamespace(table_prefix, table_ns);
+												xml_writer.writeNamespace(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri);
+											}
+
+										}
+
+										else {
+
+											xml_writer.writeEmptyElement(field_prefix, field_name, field_ns);
+
+											if (xmlb.append_xmlns) {
+												xml_writer.writeNamespace(field_prefix, field_ns);
+												xml_writer.writeNamespace(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri);
+											}
+
+										}
+
+										xml_writer.writeAttribute(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri, "nil", "true");
 
 									}
-
-									xml_writer.writeCharacters(content);
-
-									xml_writer.writeEndElement();
 
 									xml_writer.writeCharacters(xmlb.getLineFeedCode());
 
@@ -469,6 +501,24 @@ public class XPathEvaluatorImpl {
 									xml_writer.writeCharacters(xmlb.getLineFeedCode());
 
 								}
+
+								else if (field.isRequired()) {
+
+									xml_writer.writeStartElement(table_prefix, table_name, table_ns);
+
+									if (xmlb.append_xmlns)
+										xml_writer.writeNamespace(table_prefix, table_ns);
+
+									if (field_ns.equals(PgSchemaUtil.xs_namespace_uri))
+										xml_writer.writeAttribute(field_name, rset.getString(1));
+									else
+										xml_writer.writeAttribute(field_prefix, field_ns, field_name, "");
+
+									xml_writer.writeEndElement();
+
+									xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+								}
 								break;
 							case any_attribute:
 							case any_element:
@@ -487,7 +537,7 @@ public class XPathEvaluatorImpl {
 
 										switch (terminus) {
 										case any_attribute:
-											PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table_name, xml_writer);
+											PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table_name, xmlb);
 											any_attr_parser.parse(in, any_attr);
 											break;
 										default:

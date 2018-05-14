@@ -93,7 +93,7 @@ public class PgField {
 	/** The XML Schema data type. */
 	protected XsDataType xs_type;
 
-	/** Whether target namespace equals namespace URI of XML Schema 1.x. */
+	/** Whether target namespace equals URI of XML Schema 1.x. */
 	protected boolean is_xs_namespace = true;
 
 	/** Whether xs:element. */
@@ -132,10 +132,10 @@ public class PgField {
 	/** Whether XPath key. */
 	protected boolean xpath_key = false;
 
-	/** Whether not @nillable. */
+	/** Whether @use="required" | @nillable="false". */
 	protected boolean xrequired = false;
 
-	/** Whether not @nillable, but mutable in PostgreSQL when conflict occurs. */
+	/** Whether @use="required" | @nillalbe="false", but mutable in PostgreSQL when conflict occurs. */
 	protected boolean required = false;
 
 	/** Whether @use is "prohibited". */
@@ -1591,12 +1591,21 @@ public class PgField {
 	// PostgreSQL schema generation
 
 	/**
-	 * Return whether target namespace equals namespace URI of XML Schema 1.x.
+	 * Return whether target namespace equals URI of XML Schema 1.x.
 	 *
-	 * @return boolean whether namespace equals namespace URI of XML Schema 1.x
+	 * @return boolean whether namespace equals URI of XML Schema 1.x
 	 */
 	public boolean isXsNamespace() {
 		return is_xs_namespace;
+	}
+
+	/**
+	 * Return whether it is required (@use="required" | @nillable="false").
+	 *
+	 * @return boolean whether it is required
+	 */
+	public boolean isRequired() {
+		return xrequired;
 	}
 
 	/**
@@ -1618,12 +1627,12 @@ public class PgField {
 	}
 
 	/**
-	 * Return field name.
+	 * Return field name (canonical name in XML document).
 	 *
 	 * @return String field name
 	 */
 	public String getName() {
-		return name;
+		return xname;
 	}
 
 	/**

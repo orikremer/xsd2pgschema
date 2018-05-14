@@ -44,14 +44,17 @@ public class PgSchemaNestTester {
 	/** The indent offset. */
 	protected int indent_offset = PgSchemaUtil.indent_offset;
 
+	/** Whether this node has child element. */
+	boolean has_child_elem = false;
+
 	/** Whether this node has content. */
 	boolean has_content = false;
 
 	/** Whether this node has simple content. */
 	boolean has_simple_content = false;
 
-	/** Whether this node has child element. */
-	boolean has_child_elem = false;
+	/** Whether this node has opened simple content. */
+	boolean has_open_simple_content = false;
 
 	/**
 	 * Instance of nest tester from root node.
@@ -82,7 +85,7 @@ public class PgSchemaNestTester {
 		sb.setLength(0);
 
 		current_indent_space = xmlb.init_indent_space;
-		child_indent_space = table.virtual ? current_indent_space : current_indent_space + indent_space;
+		child_indent_space = table.virtual ? current_indent_space: current_indent_space + indent_space;
 
 	}
 
@@ -108,7 +111,7 @@ public class PgSchemaNestTester {
 		indent_space = parent_test.indent_space;
 
 		current_indent_space = parent_test.child_indent_space;
-		child_indent_space = table.virtual ? current_indent_space : current_indent_space + indent_space;
+		child_indent_space = table.virtual ? current_indent_space: current_indent_space + indent_space;
 
 	}
 
@@ -119,9 +122,10 @@ public class PgSchemaNestTester {
 	 */
 	public void mergeTest(PgSchemaNestTester test) {
 
+		has_child_elem |= test.has_child_elem;
 		has_content |= test.has_content;
 		has_simple_content |= test.has_simple_content;
-		has_child_elem |= test.has_child_elem;
+		has_open_simple_content |= test.has_open_simple_content;
 
 	}
 

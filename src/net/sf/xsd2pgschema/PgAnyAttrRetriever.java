@@ -20,7 +20,6 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
@@ -35,8 +34,8 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 	/** The root node name. */
 	private String root_node_name = null;
 
-	/** The XML stream writer. */
-	private XMLStreamWriter xml_writer = null;
+	/** The XML builder. */
+	private XmlBuilder xmlb = null;
 
 	/** The current state for root node. */
 	private boolean root_node = false;
@@ -48,12 +47,12 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 	 * Instance of any attribute retriever.
 	 *
 	 * @param root_node_name root node name
-	 * @param xml_writer XML stream writer
+	 * @param xmlb XML builder
 	 */
-	public PgAnyAttrRetriever(String root_node_name, XMLStreamWriter xml_writer) {
+	public PgAnyAttrRetriever(String root_node_name, XmlBuilder xmlb) {
 
 		this.root_node_name = root_node_name;
-		this.xml_writer = xml_writer;
+		this.xmlb = xmlb;
 
 	}
 
@@ -77,7 +76,9 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 
 				if (content != null && !content.isEmpty()) {
 
-					xml_writer.writeAttribute(atts.getLocalName(i), content);
+					xmlb.writePendingTableStartElements();
+
+					xmlb.writer.writeAttribute(atts.getLocalName(i), content);
 
 					has_content = true;
 

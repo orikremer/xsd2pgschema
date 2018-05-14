@@ -220,8 +220,16 @@ public class PgSchema {
 
 				}
 
-				else if (node_name.startsWith("xmlns"))
-					def_namespaces.putIfAbsent(node_name.replaceFirst("^xmlns:?", ""), root_attr.getNodeValue().split(" ")[0]);
+				else if (node_name.startsWith("xmlns")) {
+
+					String target_namespace = root_attr.getNodeValue().split(" ")[0];
+
+					if (!target_namespace.equals(PgSchemaUtil.xsi_namespace_uri))
+						def_namespaces.putIfAbsent(node_name.replaceFirst("^xmlns:?", ""), target_namespace);
+					else
+						def_namespaces.putIfAbsent(PgSchemaUtil.xsi_prefix, target_namespace);
+
+				}
 
 				else if (node_name.equals("defaultAttributes"))
 					def_attrs = root_attr.getNodeValue();
@@ -927,6 +935,8 @@ public class PgSchema {
 
 
 			});
+
+			table.has_required_field = table.fields.stream().anyMatch(field -> field.element && field.required);
 
 		});
 
@@ -6259,23 +6269,11 @@ public class PgSchema {
 	/** The XML builder. */
 	private XmlBuilder xmlb = null;
 
-	/** The declared namespaces. */
-	private HashSet<String> appended_xmlns = null;
-
 	/** SAX parser for any attribute. */
 	private SAXParser any_attr_parser = null;
 
 	/** The instance of any retriever. */
 	private PgAnyRetriever any_retriever = null;
-
-	/** Whether indent is opened. */
-	private boolean open_indent = false;
-
-	/** Whether indent is required. */
-	private boolean require_indent = false;
-
-	/** Whether list holder is closed. */
-	private boolean close_list_holder = false;
 
 	/**
 	 * Compose XML document
@@ -6290,10 +6288,7 @@ public class PgSchema {
 
 		this.xmlb = xmlb;
 
-		if (xmlb.append_xmlns && appended_xmlns == null)
-			appended_xmlns = new HashSet<String>();
-		else if (appended_xmlns.size() > 0)
-			appended_xmlns.clear();
+		xmlb.clear();
 
 		try {
 
@@ -6313,12 +6308,20 @@ public class PgSchema {
 
 			PgSchemaNestTester test = new PgSchemaNestTester(table, xmlb);
 
+			if (!test.current_indent_space.isEmpty())
+				xmlb.writer.writeCharacters(test.current_indent_space);
+
 			xmlb.writer.writeStartElement(table.prefix, table.name, table.target_namespace);
 
 			if (xmlb.append_xmlns) {
 
 				xmlb.writer.writeNamespace(table.prefix, table.target_namespace);
-				appended_xmlns.add(table.prefix);
+				xmlb.appended_xmlns.add(table.prefix);
+
+				if (table.has_required_field) {
+					xmlb.writer.writeNamespace(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri);
+					xmlb.appended_xmlns.add(PgSchemaUtil.xsi_prefix);
+				}
 
 			}
 
@@ -6339,9 +6342,20 @@ public class PgSchema {
 					if (content != null && !content.isEmpty()) {
 
 						if (field.is_xs_namespace)
-							xmlb.writer.writeAttribute(field.name, content);
+							xmlb.writer.writeAttribute(field.xname, content);
 						else
-							xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.name, content);
+							xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.xname, content);
+
+						test.has_content = true;
+
+					}
+
+					else if (field.xrequired) {
+
+						if (field.is_xs_namespace)
+							xmlb.writer.writeAttribute(field.xname, "");
+						else
+							xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.xname, "");
 
 						test.has_content = true;
 
@@ -6359,7 +6373,7 @@ public class PgSchema {
 
 						if (in != null) {
 
-							PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table.name, xmlb.writer);
+							PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table.name, xmlb);
 
 							any_attr_parser.parse(in, any_attr);
 
@@ -6395,9 +6409,9 @@ public class PgSchema {
 					xmlb.writer.writeCharacters((test.has_child_elem ? "" : xmlb.line_feed_code) + test.child_indent_space);
 
 					if (field.is_xs_namespace)
-						xmlb.writer.writeStartElement(table.prefix, field.name, table.target_namespace);
+						xmlb.writer.writeStartElement(table.prefix, field.xname, table.target_namespace);
 					else
-						xmlb.writer.writeStartElement(field.prefix, field.name, field.target_namespace);
+						xmlb.writer.writeStartElement(field.prefix, field.xname, field.target_namespace);
 
 					xmlb.writer.writeCharacters(rset.getString(param_id));
 
@@ -6413,7 +6427,7 @@ public class PgSchema {
 
 						xmlb.writer.writeCharacters(content);
 
-						test.has_simple_content = true;
+						test.has_simple_content = test.has_open_simple_content = true;
 
 					}
 
@@ -6423,18 +6437,33 @@ public class PgSchema {
 
 					String content = field.retrieveValue(rset, param_id);
 
-					if (content != null && !content.isEmpty()) {
+					if ((content != null && !content.isEmpty()) || field.xrequired) {
 
 						xmlb.writer.writeCharacters((test.has_child_elem ? "" : xmlb.line_feed_code) + test.child_indent_space);
 
-						if (field.is_xs_namespace)
-							xmlb.writer.writeStartElement(table.prefix, field.name, table.target_namespace);
-						else
-							xmlb.writer.writeStartElement(field.prefix, field.name, field.target_namespace);
+						if (content != null && !content.isEmpty()) {
 
-						xmlb.writer.writeCharacters(content);
+							if (field.is_xs_namespace)
+								xmlb.writer.writeStartElement(table.prefix, field.xname, table.target_namespace);
+							else
+								xmlb.writer.writeStartElement(field.prefix, field.xname, field.target_namespace);
 
-						xmlb.writer.writeEndElement();
+							xmlb.writer.writeCharacters(content);
+
+							xmlb.writer.writeEndElement();
+
+						}
+
+						else {
+
+							if (field.is_xs_namespace)
+								xmlb.writer.writeEmptyElement(table.prefix, field.xname, table.target_namespace);
+							else
+								xmlb.writer.writeEmptyElement(field.prefix, field.xname, field.target_namespace);
+
+							xmlb.writer.writeAttribute(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri, "nil", "true");
+
+						}
 
 						xmlb.writer.writeCharacters(xmlb.line_feed_code);
 
@@ -6455,6 +6484,7 @@ public class PgSchema {
 						if (in != null) {
 
 							test.mergeTest(any_retriever.exec(in, table, test, xmlb));
+
 							in.close();
 
 						}
@@ -6492,9 +6522,15 @@ public class PgSchema {
 
 			}
 
+			if (!test.current_indent_space.isEmpty())
+				xmlb.writer.writeCharacters(test.current_indent_space);
+
 			xmlb.writer.writeEndElement();
 
 			xmlb.writer.writeCharacters(xmlb.line_feed_code);
+
+			if (test.has_simple_content)
+				test.has_open_simple_content = false;
 
 		} catch (SQLException | XMLStreamException | ParserConfigurationException | SAXException | IOException e) {
 			throw new PgSchemaException(e);
@@ -6507,7 +6543,7 @@ public class PgSchema {
 	 */
 	public void closePgSql2Xml() {
 
-		appended_xmlns.clear();
+		xmlb.clear();
 
 		tables.stream().filter(table -> table.ps != null).forEach(table -> {
 
@@ -6539,26 +6575,15 @@ public class PgSchema {
 	 */	
 	private PgSchemaNestTester nestChildNode2Xml(final Connection db_conn, final PgTable table, final Object parent_key, PgSchemaNestTester parent_test) throws PgSchemaException {
 
-		level = 0;
-
 		try {
 
 			PgSchemaNestTester test = new PgSchemaNestTester(table, parent_test);
 
 			if (!table.virtual && !table.list_holder) {
 
-				xmlb.writer.writeCharacters((parent_test.has_child_elem ? "" : xmlb.line_feed_code) + (open_indent ? test.indent_space : test.current_indent_space));
+				xmlb.writer.writeCharacters(parent_test.has_child_elem || xmlb.pending_table_elem.size() > 0 ? "" : xmlb.line_feed_code);
 
-				require_indent = close_list_holder = false;
-
-				xmlb.writer.writeStartElement(table.prefix, table.name, table.target_namespace);
-
-				if (xmlb.append_xmlns && !appended_xmlns.contains(table.prefix)) {
-
-					xmlb.writer.writeNamespace(table.prefix, table.target_namespace);
-					appended_xmlns.add(table.prefix);
-
-				}
+				xmlb.pending_table_elem.push(new PgPendingTableElem(test.current_indent_space, table));
 
 			}
 
@@ -6590,22 +6615,8 @@ public class PgSchema {
 
 			while (rset.next()) {
 
-				if (!table.virtual && table.list_holder) {
-
-					xmlb.writer.writeCharacters((parent_test.has_content || close_list_holder ? "" : xmlb.line_feed_code) + (open_indent ? test.indent_space : test.current_indent_space));
-
-					require_indent = close_list_holder = false;
-
-					xmlb.writer.writeStartElement(table.prefix, table.name, table.target_namespace);
-
-					if (xmlb.append_xmlns && !appended_xmlns.contains(table.prefix)) {
-
-						xmlb.writer.writeNamespace(table.prefix, table.target_namespace);
-						appended_xmlns.add(table.prefix);
-
-					}
-
-				}
+				if (!table.virtual && table.list_holder)
+					xmlb.pending_table_elem.push(new PgPendingTableElem(test.current_indent_space, table));
 
 				// attribute, any_attribute
 
@@ -6621,10 +6632,27 @@ public class PgSchema {
 
 						if (content != null && !content.isEmpty()) {
 
+							xmlb.writePendingTableStartElements();
+							
+							System.err.println(table.name + " " + field.name);
+
 							if (field.is_xs_namespace)
-								xmlb.writer.writeAttribute(field.name, content);
+								xmlb.writer.writeAttribute(field.xname, content);
 							else
-								xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.name, content);
+								xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.xname, content);
+
+							test.has_content = true;
+
+						}
+
+						else if (field.xrequired) {
+
+							xmlb.writePendingTableStartElements();
+
+							if (field.is_xs_namespace)
+								xmlb.writer.writeAttribute(field.xname, "");
+							else
+								xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.xname, "");
 
 							test.has_content = true;
 
@@ -6642,7 +6670,7 @@ public class PgSchema {
 
 							if (in != null) {
 
-								PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table.name, xmlb.writer);
+								PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table.name, xmlb);
 
 								any_attr_parser.parse(in, any_attr);
 
@@ -6679,9 +6707,11 @@ public class PgSchema {
 
 						if (content != null && !content.isEmpty()) {
 
+							xmlb.writePendingTableStartElements();
+
 							xmlb.writer.writeCharacters(content);
 
-							test.has_simple_content = true;
+							test.has_simple_content = test.has_open_simple_content = true;
 
 						}
 
@@ -6691,18 +6721,35 @@ public class PgSchema {
 
 						String content = field.retrieveValue(rset, param_id);
 
-						if (content != null && !content.isEmpty()) {
+						if ((content != null && !content.isEmpty()) || field.xrequired) {
+
+							xmlb.writePendingTableStartElements();
 
 							xmlb.writer.writeCharacters((test.has_child_elem ? "" : xmlb.line_feed_code) + test.child_indent_space);
 
-							if (field.is_xs_namespace)
-								xmlb.writer.writeStartElement(table.prefix, field.name, table.target_namespace);
-							else
-								xmlb.writer.writeStartElement(field.prefix, field.name, field.target_namespace);
+							if (content != null && !content.isEmpty()) {
 
-							xmlb.writer.writeCharacters(content);
+								if (field.is_xs_namespace)
+									xmlb.writer.writeStartElement(table.prefix, field.xname, table.target_namespace);
+								else
+									xmlb.writer.writeStartElement(field.prefix, field.xname, field.target_namespace);
 
-							xmlb.writer.writeEndElement();
+								xmlb.writer.writeCharacters(content);
+
+								xmlb.writer.writeEndElement();
+
+							}
+
+							else {
+
+								if (field.is_xs_namespace)
+									xmlb.writer.writeEmptyElement(table.prefix, field.xname, table.target_namespace);
+								else
+									xmlb.writer.writeEmptyElement(field.prefix, field.xname, field.target_namespace);
+
+								xmlb.writer.writeAttribute(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri, "nil", "true");
+
+							}
 
 							xmlb.writer.writeCharacters(xmlb.line_feed_code);
 
@@ -6723,6 +6770,7 @@ public class PgSchema {
 							if (in != null) {
 
 								test.mergeTest(any_retriever.exec(in, table, test, xmlb));
+
 								in.close();
 
 							}
@@ -6767,24 +6815,22 @@ public class PgSchema {
 
 				if (!table.virtual && table.list_holder) {
 
-					if ((test.has_content && parent_test.has_simple_content) || require_indent)
-						xmlb.writer.writeCharacters(test.current_indent_space);
+					if (test.has_content || test.has_simple_content) {
 
-					open_indent = require_indent = false;
+						if (!test.has_open_simple_content)
+							xmlb.writer.writeCharacters(test.current_indent_space);
 
-					xmlb.writer.writeEndElement();
+						xmlb.writer.writeEndElement();
 
-					xmlb.writer.writeCharacters(xmlb.line_feed_code);
+						xmlb.writer.writeCharacters(xmlb.line_feed_code);
 
-					close_list_holder = true;
+						if (test.has_simple_content)
+							test.has_open_simple_content = false;
 
-					if (!parent_test.has_child_elem && !test.has_content && (!test.has_child_elem || test.has_simple_content)) {
-						xmlb.writer.writeCharacters(test.getParentIndentSpace());
-						open_indent = true;
 					}
 
 					else
-						require_indent = true;
+						xmlb.pending_table_elem.poll();
 
 				}
 
@@ -6794,22 +6840,22 @@ public class PgSchema {
 
 			if (!table.virtual && !table.list_holder) {
 
-				if ((test.has_content && (test.has_child_elem || !test.has_simple_content)) || require_indent)
-					xmlb.writer.writeCharacters(test.current_indent_space);
+				if (test.has_content || test.has_simple_content) {
 
-				open_indent = require_indent = false;
+					if (!test.has_open_simple_content)
+						xmlb.writer.writeCharacters(test.current_indent_space);
 
-				xmlb.writer.writeEndElement();
+					xmlb.writer.writeEndElement();
 
-				xmlb.writer.writeCharacters(xmlb.line_feed_code);
+					xmlb.writer.writeCharacters(xmlb.line_feed_code);
 
-				if (!parent_test.has_child_elem && !test.has_content && (!test.has_child_elem || test.has_simple_content)) {
-					xmlb.writer.writeCharacters(test.getParentIndentSpace());
-					open_indent = true;
+					if (test.has_simple_content)
+						test.has_open_simple_content = false;
+
 				}
 
 				else
-					require_indent = true;
+					xmlb.pending_table_elem.poll();
 
 			}
 

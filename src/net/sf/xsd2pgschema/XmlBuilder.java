@@ -19,6 +19,10 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.util.HashSet;
+import java.util.LinkedList;
+
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 /**
@@ -37,14 +41,20 @@ public class XmlBuilder {
 	/** The indent offset. */
 	protected int indent_offset = PgSchemaUtil.indent_offset;
 
+	/** The initial indent space. */
+	protected String init_indent_space = "";
+
 	/** The current line feed code. */
 	protected String line_feed_code = "\n";
 
 	/** The XML stream writer. */
 	protected XMLStreamWriter writer = null;
 
-	/** The initial indent space. */
-	protected String init_indent_space = "";
+	/** The appended namespace declarations. */
+	protected HashSet<String> appended_xmlns = new HashSet<String>();
+
+	/** The pending table element. */
+	protected LinkedList<PgPendingTableElem> pending_table_elem = new LinkedList<PgPendingTableElem>();
 
 	/**
 	 * Set indent offset.
@@ -133,6 +143,36 @@ public class XmlBuilder {
 	 */
 	public String getLineFeedCode() {
 		return line_feed_code;
+	}
+
+	/**
+	 * Write start elements of pending table.
+	 *
+	 * @throws XMLStreamException the XML stream exception
+	 */
+	public synchronized void writePendingTableStartElements() throws XMLStreamException {
+
+		PgPendingTableElem table_elem;
+
+		while ((table_elem = pending_table_elem.pollLast()) != null) {
+
+			table_elem.writeStartElement(this);
+
+			if (pending_table_elem.size() > 0)
+				writer.writeCharacters(line_feed_code);
+
+		}
+
+	}
+
+	/**
+	 * Clear XML builder.
+	 */
+	public void clear() {
+
+		appended_xmlns.clear();
+		pending_table_elem.clear();
+
 	}
 
 }

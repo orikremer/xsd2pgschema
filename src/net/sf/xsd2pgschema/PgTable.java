@@ -98,6 +98,9 @@ public class PgTable {
 	/** Whether table has pending group. */
 	protected boolean has_pending_group = false;
 
+	/** Whether table has required field. */
+	protected boolean has_required_field = false;
+
 	/** Whether name collision occurs or not. */
 	protected boolean conflict = false;
 

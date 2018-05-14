@@ -69,6 +69,12 @@ public class PgSchemaUtil {
 	/** The namespace URI representing XML Schema 1.x. */
 	public static final String xs_namespace_uri = "http://www.w3.org/2001/XMLSchema";
 
+	/** The namespace URI representing XML Schema instance. */
+	public static final String xsi_namespace_uri = "http://www.w3.org/2001/XMLSchema-instance";
+
+	/** The prefix of xsi_namespace_uri. */
+	public static final String xsi_prefix = "xsi";
+
 	/** The namespace URI representing JSON Schema. */
 	public static final String json_schema_def = "http://json-schema.org/schema#";
 

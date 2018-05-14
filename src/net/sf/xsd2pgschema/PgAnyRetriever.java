@@ -33,7 +33,7 @@ import javax.xml.stream.events.XMLEvent;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Retrieve any stored in PostgreSQL.
+ * Retrieve any element stored in PostgreSQL.
  *
  * @author yokochi
  */
@@ -67,7 +67,7 @@ public class PgAnyRetriever extends DefaultHandler {
 	private HashMap<Integer, EventHandler> read_handlers = null;
 
 	/**
-	 * Instance of any retriever.
+	 * Instance of any element retriever.
 	 */
 	public PgAnyRetriever() {
 
@@ -186,6 +186,8 @@ public class PgAnyRetriever extends DefaultHandler {
 			try {
 
 				if (cur_path.length() > 0) {
+
+					xmlb.writePendingTableStartElements();
 
 					xmlb.writer.writeCharacters((test.has_child_elem ? "" : xmlb.line_feed_code) + test.child_indent_space);
 
