@@ -157,7 +157,7 @@ public class XPathEvaluatorImpl {
 		xpath_comp_list = new XPathCompList(schema, tree, variables);
 
 		if (xpath_comp_list.comps.size() == 0)
-			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
+			throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
 
 		long end_time = System.currentTimeMillis();
 
@@ -166,7 +166,7 @@ public class XPathEvaluatorImpl {
 		long end_time_ = System.currentTimeMillis();
 
 		if (xpath_comp_list.path_exprs.size() == 0)
-			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
+			throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
 
 		System.out.println("Input XPath query:");
 		System.out.println(main_text);

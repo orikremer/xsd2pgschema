@@ -208,12 +208,12 @@ public class XmlSplitterImpl {
 		XPathCompList doc_key = new XPathCompList(schema, tree, null);
 
 		if (doc_key.comps.size() == 0)
-			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
+			throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
 
 		doc_key.validate(true);
 
 		if (doc_key.path_exprs.size() == 0)
-			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
+			throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
 
 		option.verbose = false;
 

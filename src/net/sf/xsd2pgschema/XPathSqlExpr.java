@@ -343,6 +343,7 @@ public class XPathSqlExpr {
 				sb.setLength(0);
 			}
 		}
+
 	}
 
 	/**

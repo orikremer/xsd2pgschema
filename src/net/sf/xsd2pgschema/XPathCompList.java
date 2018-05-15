@@ -85,7 +85,7 @@ public class XPathCompList {
 	/** Whether serial key exists in PostgreSQL DDL. */
 	private boolean serial_key = false;
 
-	/** The serial key name in PostgreSQL. */
+	/** The serial key name in PostgreSQL DDL. */
 	private String serial_key_name;
 
 	/** Whether retain case sensitive name in PostgreSQL DDL. */
@@ -167,9 +167,9 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Serialize XPath parse tree (temporary use only).
+	 * Serialize XPath parse tree (internal use only).
 	 */
-	public XPathCompList() {
+	private XPathCompList() {
 
 		path_exprs = new ArrayList<XPathExpr>();
 
@@ -195,7 +195,7 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Clear path expressions.
+	 * Clear path expressions (internal use only).
 	 */
 	private void clearPathExprs() {
 
@@ -622,7 +622,7 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Validate XPath expression against schema.
+	 * Validate XPath expression against XML Schema.
 	 *
 	 * @param ends_with_text whether append text node in the ends, if possible
 	 * @throws PgSchemaException the pg schema exception
@@ -4355,7 +4355,7 @@ public class XPathCompList {
 					String subject_table_name = schema.getPgNameOf(path_expr.sql_subject.table);
 
 					if (path_expr.sql.contains(subject_table_name + "."))
-						path_expr.sql = path_expr.sql.replace(subject_table_name.replace(".", "\\.").replace("\"", "\\\"") + ".", "");
+						path_expr.sql = path_expr.sql.replace(subject_table_name + ".", "");
 
 				}
 
@@ -6920,6 +6920,20 @@ public class XPathCompList {
 
 				}
 
+				// the same depth
+
+				else if (distance == 0 && min_distance == -1) {
+
+					target_table = _target_table;
+					target_table_path = _target_path;
+
+					joined_table = _joined_table;
+					joined_table_path = _joined_path;
+
+					min_distance = distance;
+
+				}
+
 			}
 
 		}
@@ -6976,7 +6990,6 @@ public class XPathCompList {
 
 					}
 
-
 				}
 
 			}
@@ -6988,7 +7001,7 @@ public class XPathCompList {
 
 		// subject table is parent
 
-		if (joined_table_path.split("/").length < target_table_path.split("/").length) {
+		if (joined_table_path.split("/").length < target_table_path.split("/").length || min_distance == 0) {
 
 			src_table = joined_table;
 			dst_table = target_table;

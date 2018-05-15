@@ -28,8 +28,8 @@ import javax.xml.stream.XMLStreamException;
  */
 public class PgPendingTableElem {
 
-	/** The indent characters. */
-	protected String indent;
+	/** The indent space. */
+	protected String indent_space;
 
 	/** The table of element. */
 	protected PgTable table;
@@ -37,12 +37,12 @@ public class PgPendingTableElem {
 	/**
 	 * Instance of pending table element.
 	 *
-	 * @param indent indent space
+	 * @param indent_space current indent space
 	 * @param table current table
 	 */
-	public PgPendingTableElem(String indent, PgTable table) {
+	public PgPendingTableElem(String indent_space, PgTable table) {
 
-		this.indent = indent;
+		this.indent_space = indent_space;
 		this.table = table;
 
 	}
@@ -55,7 +55,7 @@ public class PgPendingTableElem {
 	 */
 	public void writeStartElement(XmlBuilder xmlb) throws XMLStreamException {
 
-		xmlb.writer.writeCharacters(indent);
+		xmlb.writer.writeCharacters(indent_space);
 
 		xmlb.writer.writeStartElement(table.prefix, table.name, table.target_namespace);
 

@@ -6,6 +6,7 @@
   Fixed declaration of enumerated type if PostgreSQL named schema is enabled.
   Added ancestor node checker to remove nonsense nest key.
   Fixed XPath evaluator to use writeEmptyElement for empty element.
+  Fixed XPath->SQL query translation while joining table in the same depth (null pointer exception).
 
  Changes in xsd2pgschema 2.9.3 (release 2018-05-01)
 

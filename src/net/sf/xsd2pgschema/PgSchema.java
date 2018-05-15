@@ -6308,8 +6308,7 @@ public class PgSchema {
 
 			PgSchemaNestTester test = new PgSchemaNestTester(table, xmlb);
 
-			if (!test.current_indent_space.isEmpty())
-				xmlb.writer.writeCharacters(test.current_indent_space);
+			xmlb.writer.writeCharacters(test.current_indent_space);
 
 			xmlb.writer.writeStartElement(table.prefix, table.name, table.target_namespace);
 
@@ -6406,6 +6405,9 @@ public class PgSchema {
 
 				if (xmlb.insert_doc_key && field.document_key) {
 
+					if (table.equals(root_table) && !test.has_content)
+						throw new PgSchemaException("Not allowed to insert document key to root table.");
+
 					xmlb.writer.writeCharacters((test.has_child_elem ? "" : xmlb.line_feed_code) + test.child_indent_space);
 
 					if (field.is_xs_namespace)
@@ -6416,6 +6418,8 @@ public class PgSchema {
 					xmlb.writer.writeCharacters(rset.getString(param_id));
 
 					xmlb.writer.writeEndElement();
+
+					test.has_child_elem = test.has_content = true;
 
 				}
 
@@ -6504,7 +6508,7 @@ public class PgSchema {
 
 			param_id = 1;
 
-			for (int f = 0; f < fields.size(); f++) {
+			for (int f = 0, n = 0; f < fields.size(); f++) {
 
 				PgField field = fields.get(f);
 
@@ -6512,8 +6516,13 @@ public class PgSchema {
 
 					Object key = rset.getObject(param_id);
 
-					if (key != null)
-						nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, test);
+					if (key != null) {
+
+						test.has_child_elem |= n++ > 0;
+
+						test.mergeTest(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, test));
+
+					}
 
 				}
 
@@ -6522,15 +6531,14 @@ public class PgSchema {
 
 			}
 
-			if (!test.current_indent_space.isEmpty())
+			if (!test.has_open_simple_content)
 				xmlb.writer.writeCharacters(test.current_indent_space);
+			else if (test.has_simple_content)
+				test.has_open_simple_content = false;
 
 			xmlb.writer.writeEndElement();
 
 			xmlb.writer.writeCharacters(xmlb.line_feed_code);
-
-			if (test.has_simple_content)
-				test.has_open_simple_content = false;
 
 		} catch (SQLException | XMLStreamException | ParserConfigurationException | SAXException | IOException e) {
 			throw new PgSchemaException(e);
@@ -6615,8 +6623,13 @@ public class PgSchema {
 
 			while (rset.next()) {
 
-				if (!table.virtual && table.list_holder)
+				if (!table.virtual && table.list_holder) {
+
+					xmlb.writer.writeCharacters(parent_test.has_child_elem || xmlb.pending_table_elem.size() > 0 ? "" : xmlb.line_feed_code);
+
 					xmlb.pending_table_elem.push(new PgPendingTableElem(test.current_indent_space, table));
+
+				}
 
 				// attribute, any_attribute
 
@@ -6633,8 +6646,6 @@ public class PgSchema {
 						if (content != null && !content.isEmpty()) {
 
 							xmlb.writePendingTableStartElements();
-							
-							System.err.println(table.name + " " + field.name);
 
 							if (field.is_xs_namespace)
 								xmlb.writer.writeAttribute(field.xname, content);
@@ -6819,13 +6830,12 @@ public class PgSchema {
 
 						if (!test.has_open_simple_content)
 							xmlb.writer.writeCharacters(test.current_indent_space);
+						else if (test.has_simple_content)
+							test.has_open_simple_content = false;
 
 						xmlb.writer.writeEndElement();
 
 						xmlb.writer.writeCharacters(xmlb.line_feed_code);
-
-						if (test.has_simple_content)
-							test.has_open_simple_content = false;
 
 					}
 
@@ -6844,13 +6854,12 @@ public class PgSchema {
 
 					if (!test.has_open_simple_content)
 						xmlb.writer.writeCharacters(test.current_indent_space);
+					else if (test.has_simple_content)
+						test.has_open_simple_content = false;
 
 					xmlb.writer.writeEndElement();
 
 					xmlb.writer.writeCharacters(xmlb.line_feed_code);
-
-					if (test.has_simple_content)
-						test.has_open_simple_content = false;
 
 				}
 
