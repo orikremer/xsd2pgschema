@@ -34,8 +34,11 @@ public class XPathSqlExpr {
 	/** The node path. */
 	protected String path = null;
 
-	/** The column name. */
-	protected String column_name = null;
+	/** The canonical name in XML Schema. */
+	protected String xname = null;
+
+	/** The column name in PostgreSQL. */
+	protected String name = null;
 
 	/** The PostgreSQL XPath code. */
 	protected String pg_xpath_code = null;
@@ -73,17 +76,17 @@ public class XPathSqlExpr {
 	 * @param schema PostgreSQL data model
 	 * @param path current path
 	 * @param table PostgreSQL table
-	 * @param column_name column name
+	 * @param xname canonical name of column
 	 * @param pg_xpath_code PostgreSQL XPath code
 	 * @param predicate predicate
 	 * @param terminus terminus type
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public XPathSqlExpr(PgSchema schema, String path, PgTable table, String column_name, String pg_xpath_code, String predicate, XPathCompType terminus) throws PgSchemaException {
+	public XPathSqlExpr(PgSchema schema, String path, PgTable table, String xname, String pg_xpath_code, String predicate, XPathCompType terminus) throws PgSchemaException {
 
 		this.path = path;
 		this.table = table;
-		this.column_name = column_name;
+		this.xname = name = xname;
 		this.predicate = this.value = predicate;
 		this.terminus = terminus;
 
@@ -111,7 +114,7 @@ public class XPathSqlExpr {
 	 * @param schema PostgreSQL data model
 	 * @param path current path
 	 * @param table PostgreSQL table
-	 * @param column_name column name
+	 * @param xname canonical name of column
 	 * @param pg_xpath_code PostgreSQL XPath code
 	 * @param predicate predicate
 	 * @param terminus terminus type
@@ -119,11 +122,11 @@ public class XPathSqlExpr {
 	 * @param current_tree current parse tree
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public XPathSqlExpr(PgSchema schema, String path, PgTable table, String column_name, String pg_xpath_code, String predicate, XPathCompType terminus, ParseTree parent_tree, ParseTree current_tree) throws PgSchemaException {
+	public XPathSqlExpr(PgSchema schema, String path, PgTable table, String xname, String pg_xpath_code, String predicate, XPathCompType terminus, ParseTree parent_tree, ParseTree current_tree) throws PgSchemaException {
 
 		this.path = path;
 		this.table = table;
-		this.column_name = column_name;
+		this.xname = name = xname;
 		this.predicate = this.value = predicate;
 		this.terminus = terminus;
 		this.parent_tree = parent_tree;
@@ -155,7 +158,7 @@ public class XPathSqlExpr {
 	 * @param schema PostgreSQL data model
 	 * @param path current path
 	 * @param table PostgreSQL table
-	 * @param column_name column name
+	 * @param xname canonical name of column
 	 * @param pg_xpath_code PostgreSQL XPath code
 	 * @param predicate predicate
 	 * @param terminus terminus type
@@ -165,11 +168,11 @@ public class XPathSqlExpr {
 	 * @param binary_operator binary operator code
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public XPathSqlExpr(PgSchema schema, String path, PgTable table, String column_name, String pg_xpath_code, String predicate, XPathCompType terminus, ParseTree parent_tree, ParseTree current_tree, String unary_operator, String binary_operator) throws PgSchemaException {
+	public XPathSqlExpr(PgSchema schema, String path, PgTable table, String xname, String pg_xpath_code, String predicate, XPathCompType terminus, ParseTree parent_tree, ParseTree current_tree, String unary_operator, String binary_operator) throws PgSchemaException {
 
 		this.path = path;
 		this.table = table;
-		this.column_name = column_name;
+		this.xname = name = xname;
 		this.predicate = this.value = predicate;
 		this.terminus = terminus;
 		this.parent_tree = parent_tree;
@@ -212,40 +215,40 @@ public class XPathSqlExpr {
 			else throw new PgSchemaException();
 		}
 
-		if (column_name == null || column_name.equals("*"))
+		if (xname == null || xname.equals("*"))
 			return;
 
 		switch (terminus) {
 		case element:
-			if (!table.fields.stream().anyMatch(field -> field.element && field.xname.equals(column_name))) {
+			if (!table.fields.stream().anyMatch(field -> field.element && field.xname.equals(xname))) {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();
 			}
 			break;
 		case simple_content:
-			if (!table.fields.stream().anyMatch(field -> field.simple_content && field.xname.equals(column_name))) {
+			if (!table.fields.stream().anyMatch(field -> field.simple_content && field.xname.equals(xname))) {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();
 			}
 			break;
 		case attribute:
-			if (!table.fields.stream().anyMatch(field -> field.attribute && field.xname.equals(column_name))) {
+			if (!table.fields.stream().anyMatch(field -> field.attribute && field.xname.equals(xname))) {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();
 			}
 			break;
 		case any_element:
-			if (!table.fields.stream().anyMatch(field -> field.any && field.xname.equals(column_name))) {
+			if (!table.fields.stream().anyMatch(field -> field.any && field.xname.equals(xname))) {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();
 			}
 			break;
 		case any_attribute:
-			if (!table.fields.stream().anyMatch(field -> field.any_attribute && field.xname.equals(column_name))) {
+			if (!table.fields.stream().anyMatch(field -> field.any_attribute && field.xname.equals(xname))) {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();
@@ -255,10 +258,12 @@ public class XPathSqlExpr {
 			throw new PgSchemaException();
 		}
 
-		field = table.getField(column_name);
+		field = table.getCanonicalField(xname);
 
 		if (field == null)
 			throw new PgSchemaException();
+
+		name = field.name;
 
 	}
 
@@ -291,7 +296,7 @@ public class XPathSqlExpr {
 	 * @return boolean whether the relational expression is empty or not
 	 */
 	private boolean isEmptyRelation() {
-		return table == null || column_name == null;
+		return table == null || xname == null;
 	}
 
 	/**
@@ -308,7 +313,7 @@ public class XPathSqlExpr {
 		if (!terminus.equals(sql_expr.terminus))
 			return false;
 
-		if (!table.equals(sql_expr.table) || !column_name.equals(sql_expr.column_name))
+		if (!table.equals(sql_expr.table) || !xname.equals(sql_expr.xname))
 			return false;
 
 		return pg_xpath_code == null ? true : pg_xpath_code.equals(sql_expr.pg_xpath_code);

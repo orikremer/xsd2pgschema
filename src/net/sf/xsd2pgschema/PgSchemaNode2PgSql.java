@@ -161,7 +161,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	@Override
 	public void parseRootNode(final Node proc_node) throws SQLException, TransformerException, IOException {
 
-		current_key = document_id + "/" + table.name;
+		current_key = document_id + "/" + table.xname;
 
 		parse(proc_node, null, current_key, current_key, nested, 1);
 
@@ -277,7 +277,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else if (field.foreign_key) {
 
-				if (parent_table.name.equals(field.foreign_table_name)) {
+				if (parent_table.xname.equals(field.foreign_table_xname)) {
 
 					if (ps != null && rel_data_ext)
 						writeHashKey(f, param_id, upsert ? _param_id : -1, parent_key);

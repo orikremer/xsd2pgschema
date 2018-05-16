@@ -102,8 +102,8 @@ public class JsonBuilderOption {
 
 		if (this.key_value_offset < 0)
 			this.key_value_offset = 0;
-		else if (this.key_value_offset > 1)
-			this.key_value_offset = 1;
+		else if (this.key_value_offset > 4)
+			this.key_value_offset = 4;
 
 	}
 

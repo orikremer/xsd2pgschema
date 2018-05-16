@@ -232,11 +232,13 @@ public class XPathEvaluatorImpl {
 
 					ResultSet rset = stat.executeQuery(path_expr.sql);
 
+					ResultSetMetaData meta = rset.getMetaData();
+
 					// field or text node
 
 					if (terminus.isField() || terminus.isText()) {
 
-						_bout.write(path_expr.sql_subject.field.getName().getBytes());
+						_bout.write(meta.getColumnName(1).getBytes());
 						_bout.write('\n');
 
 						while (rset.next()) {
@@ -252,8 +254,6 @@ public class XPathEvaluatorImpl {
 					// table node
 
 					else {
-
-						ResultSetMetaData meta = rset.getMetaData();
 
 						int column_count = meta.getColumnCount();
 
@@ -358,7 +358,7 @@ public class XPathEvaluatorImpl {
 
 				PgTable table = path_expr.sql_subject.table;
 
-				String table_name = table.getName();
+				String table_name = table.getCanonicalName();
 				String table_ns = table.getTargetNamespace();
 				String table_prefix = table.getPrefix();
 
@@ -391,7 +391,7 @@ public class XPathEvaluatorImpl {
 
 						PgField field = path_expr.sql_subject.field;
 
-						String field_name = field.getName();
+						String field_name = field.getCanonicalName();
 						String field_ns = field.getTagetNamespace();
 						String field_prefix = field.getPrefix();
 

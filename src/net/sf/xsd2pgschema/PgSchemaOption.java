@@ -249,10 +249,7 @@ public class PgSchemaOption {
 		if (qname.contains(" "))
 			qname = qname.trim();
 
-		if (!case_sense)
-			qname = qname.toLowerCase();
-
-		int last_pos = qname.lastIndexOf(':');
+		int last_pos = qname.indexOf(':');
 
 		return last_pos == -1 ? qname : qname.substring(last_pos + 1);
 	}

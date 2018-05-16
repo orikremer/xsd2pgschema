@@ -63,7 +63,7 @@ public class PgField {
 	/** The prefix of target namespace. */
 	protected String prefix = "";
 
-	/** The field name in XML document. */
+	/** The canonical name in XML Schema. */
 	protected String xname = "";
 
 	/** The field name in PostgreSQL. */
@@ -167,6 +167,9 @@ public class PgField {
 
 	/** The schema name of foreign table in PostgreSQL (default schema name is "public"). */
 	protected String foreign_schema = PgSchemaUtil.pg_public_schema_name;
+
+	/** The foreign table name in XML Schema. */
+	protected String foreign_table_xname = null;
 
 	/** The foreign table name in PostgreSQL. */
 	protected String foreign_table_name = null;
@@ -1627,12 +1630,21 @@ public class PgField {
 	}
 
 	/**
-	 * Return field name (canonical name in XML document).
+	 * Return canonical name in XML Schema.
+	 *
+	 * @return String canonical name of field
+	 */
+	public String getCanonicalName() {
+		return xname;
+	}
+
+	/**
+	 * Return field name in PostgreSQL.
 	 *
 	 * @return String field name
 	 */
 	public String getName() {
-		return xname;
+		return name;
 	}
 
 	/**

@@ -196,6 +196,8 @@ public class csv2pgsql {
 
 			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 
+			pg_option.clear();
+
 			// test PostgreSQL DDL with schema
 
 			if (pg_option.test)

@@ -193,6 +193,9 @@ public class xpath2pgsql {
 
 			XPathEvaluatorImpl xpath2pgsql = new XPathEvaluatorImpl(is, option, pg_option); // reuse the instance for repetition
 
+			if (!pg_option.name.isEmpty())
+				pg_option.clear();
+
 			xpath2pgsql.translate(xpath_query, variables);
 
 			if (!pg_option.name.isEmpty())

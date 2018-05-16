@@ -57,7 +57,7 @@ public class PgPendingTableElem {
 
 		xmlb.writer.writeCharacters(indent_space);
 
-		xmlb.writer.writeStartElement(table.prefix, table.name, table.target_namespace);
+		xmlb.writer.writeStartElement(table.prefix, table.xname, table.target_namespace);
 
 		if (xmlb.append_xmlns) {
 

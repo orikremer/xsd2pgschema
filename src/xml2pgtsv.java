@@ -361,6 +361,9 @@ public class xml2pgtsv {
 
 		}
 
+		if (!pg_option.name.isEmpty())
+			pg_option.clear();
+
 		for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
 
 			try {

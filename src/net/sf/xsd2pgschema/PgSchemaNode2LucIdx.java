@@ -67,7 +67,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	@Override
 	public void parseRootNode(final Node proc_node) throws TransformerException, IOException {
 
-		current_key = document_id + "/" + table.name;
+		current_key = document_id + "/" + table.xname;
 
 		parse(proc_node, null, current_key, current_key, nested, 1);
 
@@ -146,7 +146,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			else if (field.foreign_key) {
 
-				if (parent_table.name.equals(field.foreign_table_name)) {
+				if (parent_table.xname.equals(field.foreign_table_xname)) {
 
 					if (table.lucene_doc != null && rel_data_ext)
 						values[f] = schema.getHashKeyString(parent_key);
@@ -233,10 +233,10 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				PgField field = fields.get(f);
 
 				if (field.system_key)
-					table.lucene_doc.add(new NoIdxStringField(table.name + "." + field.xname, value, Field.Store.YES));
+					table.lucene_doc.add(new NoIdxStringField(table.name + "." + field.name, value, Field.Store.YES));
 
 				else if (field.indexable)
-					field.writeValue2LucIdx(table.lucene_doc, table.name + "." + field.xname, value, value.length() >= index_filter.min_word_len, index_filter.numeric_lucidx);
+					field.writeValue2LucIdx(table.lucene_doc, table.name + "." + field.name, value, value.length() >= index_filter.min_word_len, index_filter.numeric_lucidx);
 
 			}
 

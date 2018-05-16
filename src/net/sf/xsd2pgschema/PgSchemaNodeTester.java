@@ -73,18 +73,16 @@ public class PgSchemaNodeTester {
 
 		boolean virtual = table.virtual;
 
-		String node_name = node.getNodeName();
-		String node_uname;
+		String qname = node.getNodeName();
 
-		if ((node_uname = node.getLocalName()) == null)
-			node_uname = option.getUnqualifiedName(node.getNodeName());
+		String xname = option.getUnqualifiedName(qname);
 
 		if (!virtual) {
 
 			boolean parent_virtual = parent_table.virtual;
 
-			if ((!nested && !node_uname.equals(table.name)) ||
-					(nested && (parent_virtual || (!parent_virtual && !node_uname.equals(parent_table.name))) && !node_uname.equals(table.name))) {
+			if ((!nested && !xname.equals(table.xname)) ||
+					(nested && (parent_virtual || (!parent_virtual && !xname.equals(parent_table.xname))) && !xname.equals(table.xname))) {
 				omissible = true;
 				return;
 			}
@@ -106,7 +104,7 @@ public class PgSchemaNodeTester {
 				if (child.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (node_name.equals(child.getNodeName())) {
+				if (qname.equals(child.getNodeName())) {
 
 					node_count++;
 
@@ -146,7 +144,7 @@ public class PgSchemaNodeTester {
 				if ((child_name = child.getLocalName()) == null)
 					child_name = option.getUnqualifiedName(child.getNodeName());
 
-				if (!child_name.equals(table.name))
+				if (!child_name.equals(table.xname))
 					continue;
 
 				proc_node = child;

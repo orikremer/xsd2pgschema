@@ -35,14 +35,26 @@ public class PgForeignKey {
 	/** The PostgreSQL schema name. */
 	protected String pg_schema_name = null;
 
+	/** The child table name (canonical). */
+	protected String child_table_xname = null;
+
 	/** The child table name. */
 	protected String child_table_name = null;
+
+	/** The child field names (canonical), separated by comma character. */
+	protected String child_field_xnames = null;
 
 	/** The child field names, separated by comma character. */
 	protected String child_field_names = null;
 
+	/** The parent table name (canonical). */
+	protected String parent_table_xname = null;
+
 	/** The parent table name. */
 	protected String parent_table_name = null;
+
+	/** The parent field names (canonical), separated by comma character. */
+	protected String parent_field_xnames = null;
 
 	/** The parent field names, separated by comma character. */
 	protected String parent_field_names = null;
@@ -65,10 +77,13 @@ public class PgForeignKey {
 
 		this.pg_schema_name = pg_schema_name;
 
-		child_table_name = extractTableName(option, node);
-		child_field_names = extractFieldNames(option, node);
+		child_table_xname = extractTableName(option, node);
+		child_table_name = option.case_sense ? child_table_xname : child_table_xname.toLowerCase();
 
-		parent_table_name = parent_field_names = null;
+		child_field_xnames = extractFieldNames(option, node);
+		child_field_names = option.case_sense ? child_field_xnames : child_field_xnames.toLowerCase();
+
+		parent_table_xname = parent_table_name = parent_field_xnames = parent_field_names = null;
 
 		for (Node child = parent_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -80,8 +95,11 @@ public class PgForeignKey {
 			if (!key_name.equals(e.getAttribute("name")))
 				continue;
 
-			parent_table_name = extractTableName(option, child);
-			parent_field_names = extractFieldNames(option, child);
+			parent_table_xname = extractTableName(option, child);
+			parent_table_name = option.case_sense ? parent_table_xname : parent_table_xname.toLowerCase();
+
+			parent_field_xnames = extractFieldNames(option, child);
+			parent_field_names = option.case_sense ? parent_field_xnames : parent_field_xnames.toLowerCase();
 
 			break;
 		}
@@ -154,16 +172,16 @@ public class PgForeignKey {
 	 */
 	public boolean isEmpty() {
 
-		if (child_table_name == null || child_table_name.isEmpty())
+		if (child_table_xname == null || child_table_xname.isEmpty())
 			return true;
 
-		if (parent_table_name == null || parent_table_name.isEmpty())
+		if (parent_table_xname == null || parent_table_xname.isEmpty())
 			return true;
 
-		if (child_field_names == null || child_field_names.isEmpty())
+		if (child_field_xnames == null || child_field_xnames.isEmpty())
 			return true;
 
-		if (parent_field_names == null || parent_field_names.isEmpty())
+		if (parent_field_xnames == null || parent_field_xnames.isEmpty())
 			return true;
 
 		return false;
@@ -177,8 +195,8 @@ public class PgForeignKey {
 	 */
 	public boolean equals(PgForeignKey foreign_key) {
 		return pg_schema_name.equals(foreign_key.pg_schema_name) &&
-				child_table_name.equals(foreign_key.child_table_name) && parent_table_name.equals(foreign_key.parent_table_name) &&
-				child_field_names.equals(foreign_key.child_field_names) && parent_field_names.equals(foreign_key.parent_field_names);
+				child_table_xname.equals(foreign_key.child_table_xname) && parent_table_xname.equals(foreign_key.parent_table_xname) &&
+				child_field_xnames.equals(foreign_key.child_field_xnames) && parent_field_xnames.equals(foreign_key.parent_field_xnames);
 	}
 
 }

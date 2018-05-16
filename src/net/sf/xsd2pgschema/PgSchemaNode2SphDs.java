@@ -66,7 +66,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	@Override
 	public void parseRootNode(final Node proc_node) throws TransformerException, IOException {
 
-		parse(proc_node, null, current_key = document_id + "/" + table.name, nested, 1);
+		parse(proc_node, null, current_key = document_id + "/" + table.xname, nested, 1);
 
 	}
 
@@ -201,7 +201,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 				PgField field = fields.get(f);
 
 				if (field.indexable)
-					field.writeValue2SphDs(table.buffw, table.name + PgSchemaUtil.sph_member_op + field.xname, value, value.length() >= index_filter.min_word_len);
+					field.writeValue2SphDs(table.buffw, table.name + PgSchemaUtil.sph_member_op + field.name, value, value.length() >= index_filter.min_word_len);
 
 			}
 

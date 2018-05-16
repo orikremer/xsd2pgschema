@@ -239,7 +239,7 @@ public abstract class PgSchemaNodeParser {
 		nested_key[nested_fields] = proc_key;
 
 		if (!nested_table.virtual)
-			nested_key[nested_fields] += "/" + field.foreign_table_name; // XPath child
+			nested_key[nested_fields] += "/" + field.foreign_table_xname; // XPath child
 
 		return true;
 	}
@@ -606,7 +606,7 @@ public abstract class PgSchemaNodeParser {
 			if ((child_name = child.getLocalName()) == null)
 				child_name = option.getUnqualifiedName(child.getNodeName());
 
-			if (!child_name.equals(nested_table.name))
+			if (!child_name.equals(nested_table.xname))
 				continue;
 
 			return true;

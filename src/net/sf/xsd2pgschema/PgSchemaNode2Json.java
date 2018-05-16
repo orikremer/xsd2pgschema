@@ -71,7 +71,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	@Override
 	public void parseRootNode(final Node proc_node) throws TransformerException, IOException {
 
-		parse(proc_node, null, current_key = document_id + "/" + table.name, nested, 1);
+		parse(proc_node, null, current_key = document_id + "/" + table.xname, nested, 1);
 
 	}
 

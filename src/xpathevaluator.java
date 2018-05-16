@@ -205,6 +205,9 @@ public class xpathevaluator {
 
 			XPathEvaluatorImpl evaluator = new XPathEvaluatorImpl(is, option, pg_option); // reuse the instance for repetition
 
+			if (!pg_option.name.isEmpty())
+				pg_option.clear();
+
 			evaluator.translate(xpath_query, variables);
 
 			if (!pg_option.name.isEmpty())

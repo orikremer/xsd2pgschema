@@ -53,4 +53,13 @@ public class PgOption {
 		return "jdbc:postgresql://" + host + ":" + port + "/" + name;
 	}
 
+	/**
+	 * Clear authentication information.  
+	 */
+	public void clear() {
+
+		user = pass = null;
+
+	}
+
 }
