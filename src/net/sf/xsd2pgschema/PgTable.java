@@ -104,6 +104,9 @@ public class PgTable {
 	/** Whether table has required field. */
 	protected boolean has_required_field = false;
 
+	/** Whether table has unique nested key. */
+	protected boolean has_unique_nested_key = false;
+
 	/** Whether name collision occurs or not. */
 	protected boolean conflict = false;
 

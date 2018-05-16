@@ -698,6 +698,21 @@ public class PgSchema {
 
 		tables.stream().filter(table -> table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> getForeignTable(field).cancelUniqueKey()));
 
+		// decide whether table has any unique child table
+
+		tables.stream().filter(table -> table.nested_fields > 0).forEach(table -> {
+
+			table.fields.stream().filter(field -> field.nested_key).forEach(field -> {
+
+				PgTable nested_table = getForeignTable(field);
+
+				if (nested_table.fields.stream().anyMatch(nested_field -> nested_field.unique_key))
+					table.has_unique_nested_key = true;
+
+			});
+
+		});
+
 		// decide parent node name
 
 		tables.stream().filter(table -> table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> {
@@ -6703,14 +6718,18 @@ public class PgSchema {
 			ResultSet rset = table.ps.executeQuery();
 
 			List<PgField> fields = table.fields;
+			
+			int list_id = 0;
 
 			while (rset.next()) {
 
 				if (!table.virtual && table.list_holder) {
-
-					xmlb.writer.writeCharacters(parent_test.has_child_elem || xmlb.pending_table_elem.size() > 0 ? "" : xmlb.line_feed_code);
+					
+					xmlb.writer.writeCharacters(parent_test.has_child_elem || xmlb.pending_table_elem.size() > 0 || list_id > 0 ? "" : "2" + xmlb.line_feed_code);
 
 					xmlb.pending_table_elem.push(new PgPendingTableElem(test.current_indent_space, table));
+					
+					list_id++;
 
 				}
 

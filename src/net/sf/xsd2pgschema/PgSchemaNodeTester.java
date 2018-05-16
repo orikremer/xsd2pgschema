@@ -157,6 +157,9 @@ public class PgSchemaNodeTester {
 		this.nested = nested;
 		this.nest_id = nest_id;
 
+		if (table.has_unique_nested_key)
+			node_count = 1;
+
 	}
 
 	/**
