@@ -6685,13 +6685,8 @@ public class PgSchema {
 
 			PgSchemaNestTester test = new PgSchemaNestTester(table, parent_test);
 
-			if (!table.virtual && !table.list_holder) {
-
-				xmlb.writer.writeCharacters(parent_test.has_child_elem || xmlb.pending_table_elem.size() > 0 ? "" : xmlb.line_feed_code);
-
-				xmlb.pending_table_elem.push(new PgPendingTableElem(test.current_indent_space, table));
-
-			}
+			if (!table.virtual && !table.list_holder)
+				xmlb.pending_table_elem.push(new PgPendingTableElem((parent_test.has_child_elem || xmlb.pending_table_elem.size() > 0 ? "" : xmlb.line_feed_code) + test.current_indent_space, table));
 
 			if (table.ps == null || table.ps.isClosed()) {
 
@@ -6718,20 +6713,13 @@ public class PgSchema {
 			ResultSet rset = table.ps.executeQuery();
 
 			List<PgField> fields = table.fields;
-			
+
 			int list_id = 0;
 
 			while (rset.next()) {
 
-				if (!table.virtual && table.list_holder) {
-					
-					xmlb.writer.writeCharacters(parent_test.has_child_elem || xmlb.pending_table_elem.size() > 0 || list_id > 0 ? "" : "2" + xmlb.line_feed_code);
-
-					xmlb.pending_table_elem.push(new PgPendingTableElem(test.current_indent_space, table));
-					
-					list_id++;
-
-				}
+				if (!table.virtual && table.list_holder)
+					xmlb.pending_table_elem.push(new PgPendingTableElem((parent_test.has_child_elem || xmlb.pending_table_elem.size() > 0 || list_id > 0 ? "" : xmlb.line_feed_code) + test.current_indent_space, table));
 
 				// attribute, any_attribute
 
@@ -6943,6 +6931,8 @@ public class PgSchema {
 
 					else
 						xmlb.pending_table_elem.poll();
+
+					list_id++;
 
 				}
 
