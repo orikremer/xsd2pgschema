@@ -58,7 +58,7 @@ public class PgSchemaOption {
 	public boolean xpath_key = false;
 
 	/** Whether retain case sensitive name in PostgreSQL DDL. */
-	public boolean case_sense = true;
+	protected boolean case_sense = true;
 
 	/** Whether enable explicit named schema. */
 	public boolean pg_named_schema = false;
@@ -358,6 +358,41 @@ public class PgSchemaOption {
 	}
 
 	/**
+	 * Set case insensitive mode.
+	 */
+	public void setCaseInsensitive() {
+
+		case_sense = false;
+
+		document_key_name = document_key_name.toLowerCase();
+		serial_key_name = serial_key_name.toLowerCase();
+		xpath_key_name = xpath_key_name.toLowerCase();
+
+		if (!discarded_document_key_names.isEmpty()) {
+
+			String[] names = discarded_document_key_names.toArray(new String[0]);
+
+			discarded_document_key_names.clear();
+
+			for (String name : names)
+				discarded_document_key_names.add(name.toLowerCase());
+
+		}
+
+		if (!inplace_document_key_names.isEmpty()) {
+
+			String[] names = inplace_document_key_names.toArray(new String[0]);
+
+			inplace_document_key_names.clear();
+
+			for (String name : names)
+				inplace_document_key_names.add(name.toLowerCase());
+
+		}
+
+	}
+
+	/**
 	 * Set document key name.
 	 *
 	 * @param document_key_name document key name
@@ -367,7 +402,7 @@ public class PgSchemaOption {
 		if (document_key_name == null || document_key_name.isEmpty())
 			return;
 
-		this.document_key_name = document_key_name;
+		this.document_key_name = case_sense ? document_key_name : document_key_name.toLowerCase();
 
 	}
 
@@ -381,7 +416,7 @@ public class PgSchemaOption {
 		if (serial_key_name == null || serial_key_name.isEmpty())
 			return;
 
-		this.serial_key_name = serial_key_name;
+		this.serial_key_name = case_sense ? serial_key_name : serial_key_name.toLowerCase();
 
 	}
 
@@ -395,7 +430,7 @@ public class PgSchemaOption {
 		if (xpath_key_name == null || xpath_key_name.isEmpty())
 			return;
 
-		this.xpath_key_name = xpath_key_name;
+		this.xpath_key_name = case_sense ? xpath_key_name : xpath_key_name.toLowerCase();
 
 	}
 
@@ -410,10 +445,7 @@ public class PgSchemaOption {
 		if (discarded_document_key_name == null || discarded_document_key_name.isEmpty())
 			return false;
 
-		if (discarded_document_key_names == null)
-			discarded_document_key_names = new HashSet<String>();
-
-		return discarded_document_key_names.add(discarded_document_key_name);
+		return discarded_document_key_names.add(case_sense ? discarded_document_key_name : discarded_document_key_name.toLowerCase());
 	}
 
 	/**
@@ -427,10 +459,7 @@ public class PgSchemaOption {
 		if (inplace_document_key_name == null || inplace_document_key_name.isEmpty())
 			return false;
 
-		if (inplace_document_key_names == null)
-			inplace_document_key_names = new HashSet<String>();
-
-		return inplace_document_key_names.add(inplace_document_key_name);
+		return inplace_document_key_names.add(case_sense ? inplace_document_key_name : inplace_document_key_name.toLowerCase());
 	}
 
 	/**

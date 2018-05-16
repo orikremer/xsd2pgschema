@@ -166,8 +166,10 @@ public class xml2json {
 			else if (args[i].equals("--no-wild-card"))
 				option.wild_card = false;
 
-			else if (args[i].equals("--case-insensitive"))
-				option.case_sense = false;
+			else if (args[i].equals("--case-insensitive")) {
+				option.setCaseInsensitive();
+				jsonb_option.setCaseInsensitive();
+			}
 
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;

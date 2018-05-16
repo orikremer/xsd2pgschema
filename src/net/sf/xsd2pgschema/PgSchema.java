@@ -502,7 +502,8 @@ public class PgSchema {
 		if (option.pg_named_schema) {
 
 			pg_named_schemata = new HashSet<String>();
-			tables.stream().filter(table -> table.required && (option.rel_model_ext || !table.relational)).forEach(table -> pg_named_schemata.add(table.pg_schema_name));
+
+			tables.stream().filter(table -> table.required && (option.rel_model_ext || !table.relational)).filter(table -> !table.pg_schema_name.equals(PgSchemaUtil.pg_public_schema_name)).forEach(table -> pg_named_schemata.add(table.pg_schema_name));
 
 		}
 
@@ -743,7 +744,7 @@ public class PgSchema {
 
 									for (String _parent_node : _parent_nodes) {
 
-										if (option.case_sense ? _parent_node.equals(parent_field.foreign_table_xname) : _parent_node.equalsIgnoreCase(parent_field.foreign_table_xname)) {
+										if (_parent_node.equals(parent_field.foreign_table_xname)) {
 											has_parent_node = true;
 											break;
 										}
@@ -804,7 +805,7 @@ public class PgSchema {
 
 		tables.stream().filter(table -> table.has_foreign_key && table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> {
 
-			Optional<PgField> opt = table.fields.stream().filter(foreign_field -> foreign_field.foreign_key && (option.case_sense ? foreign_field.foreign_table_xname.equals(field.parent_node) : foreign_field.foreign_table_xname.equalsIgnoreCase(field.parent_node))).findFirst();
+			Optional<PgField> opt = table.fields.stream().filter(foreign_field -> foreign_field.foreign_key && foreign_field.foreign_table_xname.equals(field.parent_node)).findFirst();
 
 			if (opt.isPresent()) {
 
@@ -837,7 +838,7 @@ public class PgSchema {
 
 						for (String _ancestor_node : _ancestor_nodes) {
 
-							if (option.case_sense ? _ancestor_node.equals(ancestor_node) : _ancestor_node.equalsIgnoreCase(ancestor_node)) {
+							if (_ancestor_node.equals(ancestor_node)) {
 								has_ancestor_node = true;
 								break;
 							}
@@ -1720,7 +1721,7 @@ public class PgSchema {
 
 					String child_name = option.getUnqualifiedName(child_e.getAttribute("name"));
 
-					if ((option.case_sense ? child_name.equals(ref_xname) : child_name.equalsIgnoreCase(ref_xname)) && (
+					if (child_name.equals(ref_xname) && (
 							(table.target_namespace != null && table.target_namespace.equals(getNamespaceUriOfQName(ref))) ||
 							(table.target_namespace == null && getNamespaceUriOfQName(ref) == null))) {
 
@@ -2404,7 +2405,7 @@ public class PgSchema {
 
 		String xname = option.getUnqualifiedName(qname);
 
-		return getNamespaceUriForPrefix((option.case_sense ? xname.equals(qname) : xname.equalsIgnoreCase(qname)) ? "" : qname.substring(0, qname.length() - xname.length() - 1));
+		return getNamespaceUriForPrefix(xname.equals(qname) ? "" : qname.substring(0, qname.length() - xname.length() - 1));
 	}
 
 	/**
@@ -2425,10 +2426,7 @@ public class PgSchema {
 	 * @return String PostgreSQL schema name of namespace URI
 	 */
 	private String getPgSchemaOf(String namespace_uri) {
-
-		String pg_schema_name = option.pg_named_schema ? (def_namespaces.entrySet().stream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()) ? def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey() : PgSchemaUtil.pg_public_schema_name) : PgSchemaUtil.pg_public_schema_name;
-
-		return option.case_sense ? pg_schema_name : pg_schema_name.toLowerCase();
+		return option.pg_named_schema ? (def_namespaces.entrySet().stream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()) ? def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey() : PgSchemaUtil.pg_public_schema_name) : PgSchemaUtil.pg_public_schema_name;
 	}
 
 	/**
@@ -2631,7 +2629,7 @@ public class PgSchema {
 
 			PgTable table = tables.get(t);
 
-			if (table.pg_schema_name.equals(pg_schema_name) && (option.case_sense ? table.name.equals(table_name) : table.name.equalsIgnoreCase(table_name)))
+			if (table.pg_schema_name.equals(pg_schema_name) && table.name.equals(table_name))
 				return t;
 
 		}
@@ -2789,19 +2787,19 @@ public class PgSchema {
 
 			if (!pg_named_schemata.isEmpty()) {
 
-				pg_named_schemata.stream().filter(named_schema -> !named_schema.equals(PgSchemaUtil.pg_public_schema_name)).forEach(named_schema -> System.out.println("DROP SCHEMA IF EXISTS " + PgSchemaUtil.avoidPgReservedWords(named_schema) + " CASCADE;"));
+				pg_named_schemata.stream().forEach(named_schema -> System.out.println("DROP SCHEMA IF EXISTS " + PgSchemaUtil.avoidPgReservedWords(named_schema) + " CASCADE;"));
 
 				System.out.println("");
 
-				pg_named_schemata.stream().filter(named_schema -> !named_schema.equals(PgSchemaUtil.pg_public_schema_name)).forEach(named_schema -> System.out.println("CREATE SCHEMA " + PgSchemaUtil.avoidPgReservedWords(named_schema) + ";"));
+				pg_named_schemata.stream().forEach(named_schema -> System.out.println("CREATE SCHEMA " + PgSchemaUtil.avoidPgReservedWords(named_schema) + ";"));
 
 				System.out.print("\nSET search_path TO ");
-				pg_named_schemata.stream().filter(named_schema -> !named_schema.equals(PgSchemaUtil.pg_public_schema_name)).forEach(named_schema -> System.out.print(PgSchemaUtil.avoidPgReservedWords(named_schema) + ", "));
-				System.out.println(PgSchemaUtil.pg_public_schema_name + ";");
+
+				pg_named_schemata.stream().forEach(named_schema -> System.out.print(PgSchemaUtil.avoidPgReservedWords(named_schema) + ", "));
+
+				System.out.println(PgSchemaUtil.pg_public_schema_name + ";\n");
 
 			}
-
-			System.out.println("");
 
 		}
 
@@ -4680,7 +4678,7 @@ public class PgSchema {
 						String db_column_name = rset_col.getString("COLUMN_NAME");
 
 						if (!table.fields.stream().filter(field -> !field.omissible).anyMatch(field -> field.name.equals(db_column_name)))
-							throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found without declaration in the data model."); // found without declaration in the data model
+							throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + db_column_name + " found without declaration in the data model."); // found without declaration in the data model
 
 					}
 
@@ -4691,12 +4689,10 @@ public class PgSchema {
 						if (field.omissible)
 							continue;
 
-						String field_name = option.case_sense ? field.name : field.name.toLowerCase();
-
-						rset_col = meta.getColumns(null, pg_schema_name, db_table_name, field_name);
+						rset_col = meta.getColumns(null, pg_schema_name, db_table_name, field.name);
 
 						if (!rset_col.next())
-							throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field_name + " not found in the relation."); // not found in the relation
+							throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.name + " not found in the relation."); // not found in the relation
 
 						rset_col.close();
 
@@ -4721,10 +4717,10 @@ public class PgSchema {
 							PgField field = fields.get(col_id++);
 
 							if (!field.name.equals(db_column_name))
-								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " found in an incorrect order."); // found in an incorrect order
+								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.name + " found in an incorrect order."); // found in an incorrect order
 
 							if (field.getSqlDataType() != db_column_type)
-								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + (option.case_sense ? db_column_name : db_column_name.toLowerCase()) + " column type " + JDBCType.valueOf(db_column_type) + " is incorrect with " + JDBCType.valueOf(field.getSqlDataType()) + "."); // column type is incorrect
+								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.name + " column type " + JDBCType.valueOf(db_column_type) + " is incorrect with " + JDBCType.valueOf(field.getSqlDataType()) + "."); // column type is incorrect
 
 						}
 

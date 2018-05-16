@@ -171,7 +171,7 @@ public class xml2pgcsv {
 				option.xpath_key = true;
 
 			else if (args[i].equals("--case-insensitive"))
-				option.case_sense = false;
+				option.setCaseInsensitive();
 
 			else if (args[i].equals("--pg-public-schema"))
 				option.pg_named_schema = false;

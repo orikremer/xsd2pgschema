@@ -26,6 +26,9 @@ package net.sf.xsd2pgschema;
  */
 public class JsonBuilderOption {
 
+	/** Whether retain case sensitive name. */
+	protected boolean case_sense = true;
+
 	/** The prefix of JSON item name of xs:attribute. */
 	protected String attr_prefix = "";
 
@@ -48,6 +51,18 @@ public class JsonBuilderOption {
 	public boolean no_field_anno = false;
 
 	/**
+	 * Set case insensitive mode.
+	 */
+	public void setCaseInsensitive() {
+
+		case_sense = false;
+
+		attr_prefix = attr_prefix.toLowerCase();
+		simple_content_key = simple_content_key.toLowerCase();
+
+	}
+
+	/**
 	 * Set prefix in JSON document of xs:attribute.
 	 *
 	 * @param attr_prefix prefix code of xs:attribute in JSON document
@@ -57,7 +72,7 @@ public class JsonBuilderOption {
 		if (attr_prefix == null)
 			attr_prefix = "";
 
-		this.attr_prefix = attr_prefix;
+		this.attr_prefix = case_sense ? attr_prefix : attr_prefix.toLowerCase();
 
 	}
 
@@ -71,7 +86,7 @@ public class JsonBuilderOption {
 		if (simple_content_key == null)
 			simple_content_key= PgSchemaUtil.simple_content_name;
 
-		this.simple_content_key = simple_content_key;
+		this.simple_content_key = case_sense ? simple_content_key : simple_content_key.toLowerCase();
 
 	}
 
