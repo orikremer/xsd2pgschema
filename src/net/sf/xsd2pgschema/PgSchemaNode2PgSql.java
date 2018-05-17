@@ -110,7 +110,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				PgField pkey = fields.stream().filter(field -> field.primary_key).findFirst().get();
 
-				String pkey_name = PgSchemaUtil.avoidPgReservedWords(pkey.name);
+				String pkey_name = PgSchemaUtil.avoidPgReservedWords(pkey.pname);
 
 				if (upsert = pkey.unique_key) {
 
@@ -123,7 +123,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 						if (field.omissible || field.primary_key)
 							continue;
 
-						sql.append(PgSchemaUtil.avoidPgReservedWords(field.name) + "=");
+						sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + "=");
 
 						if (field.enum_name == null)
 							sql.append("?");
@@ -457,7 +457,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		if (!filled)
 			return;
 
-		invoked = true;
+		visited = true;
 
 		for (int n = 0; n < nested_fields; n++) {
 

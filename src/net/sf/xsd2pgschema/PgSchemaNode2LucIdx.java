@@ -272,7 +272,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 		if (!filled)
 			return;
 
-		invoked = true;
+		visited = true;
 
 		for (int n = 0; n < nested_fields; n++) {
 

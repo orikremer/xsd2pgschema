@@ -118,7 +118,7 @@ public class PgAnyRetriever extends DefaultHandler {
 	 */
 	public PgSchemaNestTester exec(InputStream in, PgTable table, PgSchemaNestTester test, XmlBuilder xmlb) throws XMLStreamException {
 
-		this.root_node_name = table.name;
+		this.root_node_name = table.pname;
 		this.target_namespace = table.target_namespace;
 		this.prefix = table.prefix;
 

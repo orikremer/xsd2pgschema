@@ -269,7 +269,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		if (!filled)
 			return;
 
-		invoked = true;
+		visited = true;
 
 		for (int n = 0; n < nested_fields; n++) {
 
@@ -295,7 +295,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		if (!filled)
 			return;
 
-		invoked = true;
+		visited = true;
 
 		for (int n = 0; n < nested_fields; n++) {
 
@@ -321,7 +321,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		if (!filled)
 			return;
 
-		invoked = true;
+		visited = true;
 
 		for (int n = 0; n < nested_fields; n++) {
 

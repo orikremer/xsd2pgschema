@@ -153,6 +153,9 @@ public class PgSchemaOption {
 	/** The xs_prefix.isEmpty() ? "" : xs_prefix + ":". */
 	protected String xs_prefix_ = null;
 
+	/** Whether fill @default value. */
+	protected boolean fill_default_value = false;
+
 	/** Whether attribute selection has been resolved. */
 	protected boolean attr_resolved = false;
 
@@ -370,7 +373,7 @@ public class PgSchemaOption {
 
 		if (!discarded_document_key_names.isEmpty()) {
 
-			String[] names = discarded_document_key_names.toArray(new String[0]);
+			String[] names = (String[]) discarded_document_key_names.toArray();
 
 			discarded_document_key_names.clear();
 
@@ -381,7 +384,7 @@ public class PgSchemaOption {
 
 		if (!inplace_document_key_names.isEmpty()) {
 
-			String[] names = inplace_document_key_names.toArray(new String[0]);
+			String[] names = (String[]) inplace_document_key_names.toArray();
 
 			inplace_document_key_names.clear();
 

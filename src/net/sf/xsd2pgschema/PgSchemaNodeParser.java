@@ -85,8 +85,8 @@ public abstract class PgSchemaNodeParser {
 	/** Whether any content was written. */
 	protected boolean written = false;
 
-	/** Whether any nested node was invoked. */
-	protected boolean invoked = false;
+	/** Whether any nested node has been visited. */
+	protected boolean visited = false;
 
 	/** Whether nested node. */
 	protected boolean nested = false;
@@ -142,7 +142,7 @@ public abstract class PgSchemaNodeParser {
 
 		fields = table.fields;
 
-		values = new String[table.fields.size()];
+		values = new String[fields.size()];
 
 		if (table.nested_fields > 0) {
 
@@ -164,6 +164,8 @@ public abstract class PgSchemaNodeParser {
 			transformer.setOutputProperty(OutputKeys.INDENT, "no");
 
 		}
+
+		visited = !table.virtual;
 
 	}
 
@@ -429,7 +431,7 @@ public abstract class PgSchemaNodeParser {
 	 */
 	private boolean applyContentFilter(final PgField field, boolean pg_enum_limit) {
 
-		if (field.default_value != null && (content == null || content.isEmpty()))
+		if (field.default_value != null && option.fill_default_value && (content == null || content.isEmpty()))
 			content = field.default_value;
 
 		if (field.fill_this)

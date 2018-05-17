@@ -32,11 +32,11 @@ import org.xml.sax.SAXException;
 import com.github.antlr.grammars_v4.xpath.xpathListenerException;
 
 /**
- * XPath 1.0 query evaluator.
+ * XPath 1.0 query evaluator to XML over PostgreSQL.
  *
  * @author yokochi
  */
-public class xpathevaluator {
+public class xpath2xml {
 
 	/** The output file name. */
 	protected static String out_file_name = "";
@@ -211,7 +211,7 @@ public class xpathevaluator {
 			evaluator.translate(xpath_query, variables);
 
 			if (!pg_option.name.isEmpty())
-				evaluator.evaluate(out_file_name, xmlb);
+				evaluator.composeXml(out_file_name, xmlb);
 
 		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException | SQLException e) {
 			e.printStackTrace();
@@ -225,7 +225,7 @@ public class xpathevaluator {
 	 */
 	private static void showUsage() {
 
-		System.err.println("xpathevaluator: XPath 1.0 qeury evaluator");
+		System.err.println("xpath2xml: XPath 1.0 qeury evaluator to XML over PostgreSQL");
 		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");

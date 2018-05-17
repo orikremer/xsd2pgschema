@@ -28,6 +28,9 @@ import java.util.HashSet;
  */
 public class XmlPostEditor {
 
+	/** Whether fill @default value. */
+	public boolean fill_default_value = false;
+
 	/** The list of --filt-in option. */
 	protected HashSet<String> filt_ins = null;
 

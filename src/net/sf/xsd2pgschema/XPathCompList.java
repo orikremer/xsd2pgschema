@@ -481,7 +481,7 @@ public class XPathCompList {
 
 			}
 
-			return list.toArray(new String[0]);
+			return (String[]) list.toArray();
 
 		} finally {
 			list.clear();
@@ -3509,7 +3509,7 @@ public class XPathCompList {
 					field_xname = name[len - 1];
 				}
 
-				PgField field = table.getCanonicalField(field_xname);
+				PgField field = table.getCanField(field_xname);
 
 				if (field != null) {
 
@@ -3537,7 +3537,7 @@ public class XPathCompList {
 
 						PgTable foreign_table = schema.getTable(foreign_table_id);
 
-						PgField foreign_field = foreign_table.getCanonicalField(field_xname);
+						PgField foreign_field = foreign_table.getCanField(field_xname);
 
 						if (foreign_field != null) {
 
@@ -4259,7 +4259,7 @@ public class XPathCompList {
 
 				String _path = path; // finalized
 
-				src_comps = predicates.stream().filter(predicate -> _path.equals(predicate.src_path_expr.path)).map(predicate -> predicate.src_comp).collect(Collectors.toSet());
+				src_comps = predicates.stream().filter(predicate -> _path.startsWith(predicate.src_path_expr.path)).map(predicate -> predicate.src_comp).collect(Collectors.toSet());
 
 				try {
 
@@ -4399,7 +4399,7 @@ public class XPathCompList {
 			sb.append(sql_expr.pg_xpath_code);
 			break;
 		default:
-			sb.append(schema.getPgNameOf(sql_expr.table) + "." + (sql_expr.terminus.equals(XPathCompType.table) ? sql_expr.name : PgSchemaUtil.avoidPgReservedWords(sql_expr.name)));
+			sb.append(schema.getPgNameOf(sql_expr.table) + "." + (sql_expr.terminus.equals(XPathCompType.table) ? sql_expr.pname : PgSchemaUtil.avoidPgReservedWords(sql_expr.pname)));
 		}
 
 	}
@@ -5290,12 +5290,12 @@ public class XPathCompList {
 
 						switch (sql_expr.terminus) {
 						case table:
-							sb.append("'" + sql_expr.table.name + "'");
+							sb.append("'" + sql_expr.table.pname + "'");
 							break;
 						case element:
 						case simple_content:
 						case attribute:
-							sb.append("'" + sql_expr.name + "'");
+							sb.append("'" + sql_expr.pname + "'");
 							break;
 						case any_element:
 							sb.append("'" + getLastNameOfPath(sql_expr.getXPathFragment()) + "'");
@@ -5341,7 +5341,7 @@ public class XPathCompList {
 						case any_element:
 						case any_attribute:
 							table = getParentTable(sql_expr);
-							PgField field = table.getCanonicalField(sql_expr.xname);
+							PgField field = table.getCanField(sql_expr.xname);
 
 							sb.append("'" + field.target_namespace != null ? field.target_namespace.split(" ")[0] : "" + "'");
 							break;
@@ -5377,7 +5377,7 @@ public class XPathCompList {
 							table = sql_expr.table;
 							prefix = table.prefix;
 
-							sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + sql_expr.table.name + "'");
+							sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + sql_expr.table.pname + "'");
 							break;
 						case element:
 						case simple_content:
@@ -5385,7 +5385,7 @@ public class XPathCompList {
 						case any_element:
 						case any_attribute:
 							table = getParentTable(sql_expr);
-							PgField field = table.getCanonicalField(sql_expr.xname);
+							PgField field = table.getCanField(sql_expr.xname);
 							prefix = field.is_xs_namespace ? "" : field.prefix;
 
 							switch (sql_expr.terminus) {
@@ -5396,7 +5396,7 @@ public class XPathCompList {
 								sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + getLastNameOfPath(sql_expr.getXPathFragment()).replaceFirst("^@", "") + "'");
 								break;
 							default:
-								sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + sql_expr.name + "'");
+								sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + sql_expr.pname + "'");
 							}
 							break;
 						default:
@@ -7045,7 +7045,7 @@ public class XPathCompList {
 		touched_ft_ids.clear();
 
 		if (!found_table)
-			throw new PgSchemaException("Not found path from " + src_table.name + " to " + dst_table.name + ".");
+			throw new PgSchemaException("Not found path from " + src_table.pname + " to " + dst_table.pname + ".");
 
 		for (int l = 1; l < table_path.size(); l++) {
 
@@ -7053,11 +7053,11 @@ public class XPathCompList {
 
 			PgField nested_key = src_table.fields.stream().filter(field -> field.nested_key && schema.getForeignTable(field).equals(_dst_table)).findFirst().get();
 
-			appendSqlColumnName(src_table, nested_key.name, sb);
+			appendSqlColumnName(src_table, nested_key.pname, sb);
 
 			sb.append(" = ");
 
-			appendSqlColumnName(schema.getForeignTable(nested_key), nested_key.foreign_field_name, sb);
+			appendSqlColumnName(schema.getForeignTable(nested_key), nested_key.foreign_field_pname, sb);
 
 			sb.append(" AND ");
 
@@ -7350,7 +7350,7 @@ public class XPathCompList {
 
 						if (foreign_table.fields.stream().anyMatch(field -> field.any)) {
 
-							pg_xpath_code = "xpath('/" + foreign_table.name + "/" + _path[position].replace(" ", "/") + "', " + schema.getPgNameOf(foreign_table) + "." + PgSchemaUtil.avoidPgReservedWords(field_xname) + ")";
+							pg_xpath_code = "xpath('/" + foreign_table.pname + "/" + _path[position].replace(" ", "/") + "', " + schema.getPgNameOf(foreign_table) + "." + PgSchemaUtil.avoidPgReservedWords(field_xname) + ")";
 
 							try {
 								return new XPathSqlExpr(schema, path, foreign_table, _field_xname, pg_xpath_code, null, terminus);
@@ -7402,7 +7402,7 @@ public class XPathCompList {
 
 						if (foreign_table.fields.stream().anyMatch(field -> field.any_attribute)) {
 
-							pg_xpath_code = "xpath('/" + foreign_table.name + "/" + _path[position].replace(" ", "/") + "', " + schema.getPgNameOf(foreign_table) + "." + PgSchemaUtil.avoidPgReservedWords(_field_xname) + ")";
+							pg_xpath_code = "xpath('/" + foreign_table.pname + "/" + _path[position].replace(" ", "/") + "', " + schema.getPgNameOf(foreign_table) + "." + PgSchemaUtil.avoidPgReservedWords(_field_xname) + ")";
 
 							try {
 								return new XPathSqlExpr(schema, path, foreign_table, _field_xname, pg_xpath_code, null, terminus);

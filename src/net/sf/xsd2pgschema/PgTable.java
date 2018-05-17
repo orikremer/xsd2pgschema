@@ -51,6 +51,9 @@ public class PgTable {
 	protected String xname = "";
 
 	/** The table name in PostgreSQL. */
+	protected String pname = "";
+
+	/** The table name. */
 	protected String name = "";
 
 	/** The xs:annotation/xs:documentation (as is). */
@@ -113,25 +116,28 @@ public class PgTable {
 	/** Whether table is referred from child table. */
 	protected boolean required = false;
 
-	/** Whether table is realized in PostgreSQL DDL. */
+	/** Whether table is realized in PostgreSQL DDL (internal use only). */
 	protected boolean realized = false;
 
-	/** Whether table is subset of database. */
+	/** Whether table is subset of database (internal use only). */
 	protected boolean filt_out = false;
 
-	/** The current file writer. */
+	/** The visited key (internal use only). */
+	protected String visited_key = "";
+
+	/** The current file writer (internal use only). */
 	protected FileWriter filew = null;
 
-	/** The current buffered writer. */
+	/** The current buffered writer (internal use only). */
 	protected BufferedWriter buffw = null;
 
-	/** Whether JSON buffer of arbitrary field is not empty. */
+	/** Whether JSON buffer of arbitrary field is not empty (internal use only). */
 	protected boolean jsonb_not_empty = false;
 
-	/** The Lucene document. */
+	/** The Lucene document (internal use only). */
 	protected org.apache.lucene.document.Document lucene_doc = null;
 
-	/** The prepared statement. */
+	/** The prepared statement (internal use only). */
 	protected PreparedStatement ps = null;
 
 	/**
@@ -258,8 +264,8 @@ public class PgTable {
 	 * Suggest new name for a given field name avoiding name collision with current ones.
 	 *
 	 * @param option PostgreSQL data model option
-	 * @param field_name candidate name of new field
-	 * @return String field name without name collision
+	 * @param field_name candidate name of field in PostgreSQL
+	 * @return String field name without name collision in PostgreSQL
 	 */
 	public String avoidFieldDuplication(PgSchemaOption option, String field_name) {
 
@@ -280,7 +286,7 @@ public class PgTable {
 				if (!option.rel_data_ext && (field.primary_key || field.foreign_key || field.nested_key))
 					continue;
 
-				if (field.name.equals(field_name)) {
+				if (field.pname.equals(field_name)) {
 
 					duplicate = true;
 
@@ -310,7 +316,7 @@ public class PgTable {
 
 			PgField field = new PgField();
 
-			field.name = field.xname = option.document_key_name;
+			field.name = field.pname = field.xname = option.document_key_name;
 			field.type = xs_prefix_ + "string";
 			field.xs_type = XsDataType.xs_string;
 			field.document_key = true;
@@ -324,7 +330,9 @@ public class PgTable {
 
 		PgField field = new PgField();
 
-		field.name = field.xname = name + "_id";
+		field.xname = xname + "_id";
+		field.name = name + "_id";
+		field.pname = pname + "_id";
 		field.setHashKeyType(option);
 		field.primary_key = true;
 		field.unique_key = unique_key;
@@ -341,13 +349,13 @@ public class PgTable {
 	 * @param xname canonical name of nested key
 	 * @param ref_field reference field
 	 * @param node current node
-	 * @return boolean whether success or not
+	 * @return boolean whether reference field is unique
 	 */
 	public boolean addNestedKey(PgSchemaOption option, String pg_schema_name, String xname, PgField ref_field, Node node) {
 
 		String xs_prefix_ = option.xs_prefix_;
 
-		if (name == null || name.isEmpty())
+		if (xname == null || xname.isEmpty())
 			return false;
 
 		if (this.pg_schema_name.equals(pg_schema_name) && this.xname.equals(xname))
@@ -357,7 +365,9 @@ public class PgTable {
 
 		PgField field = new PgField();
 
-		field.name = field.xname = avoidFieldDuplication(option, name + "_id");
+		field.xname = name + "_id";
+		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+		field.pname = avoidFieldDuplication(option, field.xname);
 		field.setHashKeyType(option);
 		field.xtype = ref_field.xtype;
 		field.nested_key = true;
@@ -367,8 +377,8 @@ public class PgTable {
 		field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
 		field.foreign_schema = pg_schema_name;
 		field.foreign_table_xname = xname;
-		field.foreign_table_name = name.equals(this.name) ? "_" + name : name;
-		field.foreign_field_name = name + "_id";
+		field.foreign_table_pname = name.equals(this.pname) ? "_" + name : name;
+		field.foreign_field_pname = name + "_id";
 
 		field.maxoccurs = ref_field.maxoccurs;
 		field.minoccurs = ref_field.minoccurs;
@@ -433,7 +443,7 @@ public class PgTable {
 		if (!option.rel_model_ext)
 			return;
 
-		if (name == null || name.isEmpty())
+		if (xname == null || xname.isEmpty())
 			return;
 
 		if (this.pg_schema_name.equals(pg_schema_name) && this.xname.equals(xname))
@@ -443,7 +453,9 @@ public class PgTable {
 
 		PgField field = new PgField();
 
-		field.name = field.xname = avoidFieldDuplication(option, name + "_id");
+		field.xname = name + "_id";
+		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+		field.pname = avoidFieldDuplication(option, field.xname);
 		field.setHashKeyType(option);
 		field.xtype = name;
 		field.nested_key = true;
@@ -453,8 +465,8 @@ public class PgTable {
 		field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
 		field.foreign_schema = pg_schema_name;
 		field.foreign_table_xname = xname;
-		field.foreign_table_name = name.equals(this.name) ? "_" + name : name;
-		field.foreign_field_name = name + "_id";
+		field.foreign_table_pname = name.equals(this.pname) ? "_" + name : name;
+		field.foreign_field_pname = name + "_id";
 
 		fields.add(field);
 
@@ -475,17 +487,19 @@ public class PgTable {
 
 			PgField field = new PgField();
 
-			field.name = field.xname = avoidFieldDuplication(option, arg.name);
+			field.xname = arg.xname;
+			field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+			field.pname = avoidFieldDuplication(option, field.xname);
 			field.setHashKeyType(option);
 			field.foreign_key = true;
-			field.constraint_name = "FK_" + name + "_" + foreign_table.name;
+			field.constraint_name = "FK_" + pname + "_" + foreign_table.pname;
 			if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
 				field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 			field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
 			field.foreign_schema = foreign_table.pg_schema_name;
 			field.foreign_table_xname = foreign_table.xname;
-			field.foreign_table_name = foreign_table.name;
-			field.foreign_field_name = arg.name;
+			field.foreign_table_pname = foreign_table.pname;
+			field.foreign_field_pname = arg.pname;
 
 			fields.add(field);
 
@@ -509,7 +523,9 @@ public class PgTable {
 
 		PgField field = new PgField();
 
-		field.name = field.xname = avoidFieldDuplication(option, option.serial_key_name);
+		field.xname = option.serial_key_name;
+		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+		field.pname = avoidFieldDuplication(option, field.xname);
 		field.setSerKeyType(option);
 		field.serial_key = true;
 
@@ -529,7 +545,9 @@ public class PgTable {
 
 		PgField field = new PgField();
 
-		field.name = field.xname = avoidFieldDuplication(option, option.xpath_key_name);
+		field.xname = option.xpath_key_name;
+		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+		field.pname = avoidFieldDuplication(option, field.xname);
 		field.setHashKeyType(option);
 		field.xpath_key = true;
 
@@ -560,12 +578,12 @@ public class PgTable {
 	 *
 	 * @return String canonical name of table
 	 */
-	public String getCanonicalName() {
+	public String getCanName() {
 		return xname;
 	}
 
 	/**
-	 * Return table name in PostgreSQL.
+	 * Return table name.
 	 *
 	 * @return String table name
 	 */
@@ -574,9 +592,9 @@ public class PgTable {
 	}
 
 	/**
-	 * Return PostgreSQL field.
+	 * Return field.
 	 *
-	 * @param field_name name of field
+	 * @param field_name field name
 	 * @return PgField PostgreSQL field
 	 */
 	public PgField getField(String field_name) {
@@ -587,14 +605,27 @@ public class PgTable {
 	}
 
 	/**
-	 * Return PostgreSQL field.
+	 * Return field.
 	 *
 	 * @param field_xname canonical name of field
 	 * @return PgField PostgreSQL field
 	 */
-	public PgField getCanonicalField(String field_xname) {
+	public PgField getCanField(String field_xname) {
 
-		int f = getCanonicalFieldId(field_xname);
+		int f = getCanFieldId(field_xname);
+
+		return f < 0 ? null : fields.get(f);
+	}
+
+	/**
+	 * Return field.
+	 *
+	 * @param field_pname field name in PostgreSQL
+	 * @return PgField PostgreSQL field
+	 */
+	public PgField getPgField(String field_pname) {
+
+		int f = getPgFieldId(field_pname);
 
 		return f < 0 ? null : fields.get(f);
 	}
@@ -602,7 +633,7 @@ public class PgTable {
 	/**
 	 * Return field id.
 	 *
-	 * @param field_name name of field
+	 * @param field_name field name
 	 * @return int the field id, -1 represents not found
 	 */
 	private int getFieldId(String field_name) {
@@ -623,11 +654,29 @@ public class PgTable {
 	 * @param field_xname canonical name of field
 	 * @return int the field id, -1 represents not found
 	 */
-	private int getCanonicalFieldId(String field_xname) {
+	private int getCanFieldId(String field_xname) {
 
 		for (int f = 0; f < fields.size(); f++) {
 
 			if (fields.get(f).xname.equals(field_xname))
+				return f;
+
+		}
+
+		return -1;
+	}
+
+	/**
+	 * Return field id.
+	 *
+	 * @param field_pname field name in PostgreSQL
+	 * @return int the field id, -1 represents not found
+	 */
+	private int getPgFieldId(String field_pname) {
+
+		for (int f = 0; f < fields.size(); f++) {
+
+			if (fields.get(f).pname.equals(field_pname))
 				return f;
 
 		}
@@ -648,7 +697,7 @@ public class PgTable {
 		if (field.substitution_group == null || field.substitution_group.isEmpty())
 			return;
 
-		PgField rep_field = getCanonicalField(field.substitution_group);
+		PgField rep_field = getCanField(field.substitution_group);
 
 		if (rep_field == null)
 			return;

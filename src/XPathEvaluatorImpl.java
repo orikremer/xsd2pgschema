@@ -199,6 +199,9 @@ public class XPathEvaluatorImpl {
 	 */
 	public void execute(String out_file_name) throws PgSchemaException {
 
+		if (xpath_comp_list == null)
+			throw new PgSchemaException("Not parsed XPath expression ever.");
+
 		FileOutputStream fout = null;
 
 		BufferedOutputStream bout = null;
@@ -323,7 +326,10 @@ public class XPathEvaluatorImpl {
 	 * @param xmlb XML builder
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void evaluate(String out_file_name, XmlBuilder xmlb) throws PgSchemaException {
+	public void composeXml(String out_file_name, XmlBuilder xmlb) throws PgSchemaException {
+
+		if (xpath_comp_list == null)
+			throw new PgSchemaException("Not parsed XPath expression ever.");
 
 		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 
@@ -358,7 +364,7 @@ public class XPathEvaluatorImpl {
 
 				PgTable table = path_expr.sql_subject.table;
 
-				String table_name = table.getCanonicalName();
+				String table_name = table.getCanName();
 				String table_ns = table.getTargetNamespace();
 				String table_prefix = table.getPrefix();
 
@@ -391,7 +397,7 @@ public class XPathEvaluatorImpl {
 
 						PgField field = path_expr.sql_subject.field;
 
-						String field_name = field.getCanonicalName();
+						String field_name = field.getCanName();
 						String field_ns = field.getTagetNamespace();
 						String field_prefix = field.getPrefix();
 

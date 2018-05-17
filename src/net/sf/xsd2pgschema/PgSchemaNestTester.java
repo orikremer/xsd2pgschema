@@ -65,12 +65,12 @@ public class PgSchemaNestTester {
 	public PgSchemaNestTester(PgTable table, XmlBuilder xmlb) {
 
 		ancestor_node = "";
-		parent_node = table.name;
+		parent_node = table.xname;
 
 		if (!table.virtual) {
 
 			ancestor_node = parent_node;
-			parent_node = table.name;
+			parent_node = table.xname;
 
 		}
 
@@ -103,7 +103,7 @@ public class PgSchemaNestTester {
 		if (!table.virtual) {
 
 			ancestor_node = parent_node;
-			parent_node = table.name;
+			parent_node = table.xname;
 
 		}
 

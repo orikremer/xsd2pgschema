@@ -67,6 +67,9 @@ public class PgField {
 	protected String xname = "";
 
 	/** The field name in PostgreSQL. */
+	protected String pname = "";
+
+	/** The field name. */
 	protected String name = "";
 
 	/** The data type in XML document. */
@@ -75,7 +78,7 @@ public class PgField {
 	/** The data type. */
 	protected String type = null;
 
-	/** The substitution group. */
+	/** The @substitutionGroup. */
 	protected String substitution_group = null;
 
 	/** The @maxOccurs. */
@@ -84,10 +87,10 @@ public class PgField {
 	/** The @minOccurs. */
 	protected String minoccurs = "1";
 
-	/** The xs:annotation/xs:documentation (as is). */
+	/** The content of xs:annotation/xs:documentation (as is). */
 	protected String xanno_doc = null;
 
-	/** The xs:annotation. */
+	/** The content of xs:annotation. */
 	protected String anno = null;
 
 	/** The XML Schema data type. */
@@ -172,10 +175,10 @@ public class PgField {
 	protected String foreign_table_xname = null;
 
 	/** The foreign table name in PostgreSQL. */
-	protected String foreign_table_name = null;
+	protected String foreign_table_pname = null;
 
 	/** The foreign field name in PostgreSQL. */
-	protected String foreign_field_name = null;
+	protected String foreign_field_pname = null;
 
 	/** The ancestor node names. */
 	protected String ancestor_node = null;
@@ -183,13 +186,13 @@ public class PgField {
 	/** The parent node names. */
 	protected String parent_node = null;
 
-	/** Whether @fixed. */
+	/** The @fixed. */
 	protected String fixed_value = null;
 
-	/** Whether @default. */
+	/** The @default. */
 	protected String default_value = null;
 
-	/** Whether @block. */
+	/** The @block. */
 	protected String block_value = null;
 
 	/** Whether field has any restriction. */
@@ -261,18 +264,6 @@ public class PgField {
 	/** The filter patterns in post XML edition. */
 	protected String[] filter_pattern = null;
 
-	/** Whether JSON buffer is not empty. */
-	protected boolean jsonb_not_empty = false;
-
-	/** The size of data in JSON buffer. */
-	protected int jsonb_col_size = 0;
-
-	/** The size of null data in JSON buffer. */
-	protected int jsonb_null_size = 0;
-
-	/** The JSON buffer. */
-	protected StringBuilder jsonb = null;
-
 	/** Whether it has any system's administrative key (primary_key || foreign_key || nested_key). */
 	protected boolean system_key = false;
 
@@ -287,6 +278,18 @@ public class PgField {
 
 	/** Whether field is JSON convertible. */
 	protected boolean jsonable = true;
+
+	/** Whether JSON buffer is not empty (internal use only). */
+	protected boolean jsonb_not_empty = false;
+
+	/** The size of data in JSON buffer (internal use only). */
+	protected int jsonb_col_size = 0;
+
+	/** The size of null data in JSON buffer (internal use only). */
+	protected int jsonb_null_size = 0;
+
+	/** The JSON buffer (internal use only). */
+	protected StringBuilder jsonb = null;
 
 	/**
 	 * Extract @type, @itemType, @memberTypes or @base and set type.
@@ -1463,7 +1466,7 @@ public class PgField {
 	 */
 	public void setOmissible(PgTable table, PgSchemaOption option) {
 
-		if ((element || attribute) && (option.discarded_document_key_names.contains(xname) || option.discarded_document_key_names.contains(table.name + "." + xname))) {
+		if ((element || attribute) && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name))) {
 			omissible = true;
 			return;
 		}
@@ -1480,7 +1483,7 @@ public class PgField {
 	 */
 	public void setIndexable(PgTable table, PgSchemaOption option) {
 
-		if (system_key || user_key || ((element || attribute) && (option.discarded_document_key_names.contains(xname) || option.discarded_document_key_names.contains(table.name + "." + xname)))) {
+		if (system_key || user_key || ((element || attribute) && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name)))) {
 			indexable = false;
 			return;
 		}
@@ -1497,7 +1500,7 @@ public class PgField {
 	 */
 	public void setJsonable(PgTable table, PgSchemaOption option) {
 
-		if (system_key || user_key || ((element || attribute) && (option.discarded_document_key_names.contains(xname) || option.discarded_document_key_names.contains(table.name + "." + xname)))) {
+		if (system_key || user_key || ((element || attribute) && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name)))) {
 			jsonable = false;
 			return;
 		}
@@ -1582,7 +1585,7 @@ public class PgField {
 	 */
 	public boolean matchesNodeName(PgSchemaOption option, String node_name, boolean wild_card) {
 
-		if ((element || attribute) && option.discarded_document_key_names.contains(xname))
+		if ((element || attribute) && option.discarded_document_key_names.contains(name))
 			return false;
 
 		if (wild_card)
@@ -1634,12 +1637,12 @@ public class PgField {
 	 *
 	 * @return String canonical name of field
 	 */
-	public String getCanonicalName() {
+	public String getCanName() {
 		return xname;
 	}
 
 	/**
-	 * Return field name in PostgreSQL.
+	 * Return field name.
 	 *
 	 * @return String field name
 	 */
@@ -1654,7 +1657,7 @@ public class PgField {
 	 */
 	public String getPgDataType() {
 
-		String _name = PgSchemaUtil.avoidPgReservedWords(name);
+		String _name = PgSchemaUtil.avoidPgReservedWords(pname);
 
 		String base;
 		StringBuilder check = null;
@@ -4380,12 +4383,14 @@ public class PgField {
 	 */
 	public String retrieveValue(ResultSet rset, int par_idx) throws SQLException {
 
+		Object obj = rset.getObject(par_idx);
+
+		if (obj == null)
+			return null;
+
 		if (enum_name != null) {
 
 			String ret = rset.getString(par_idx);
-
-			if (ret == null)
-				return null;
 
 			if (ret.length() < PgSchemaUtil.max_enum_len)
 				return ret;
@@ -4463,16 +4468,11 @@ public class PgField {
 			}
 		case xs_float:
 		case xs_double:
-			Object num = rset.getObject(par_idx);
-
-			if (num == null)
-				return null;
-
 			switch (xs_type) {
 			case xs_float:
-				return String.valueOf((float) num); // rset.getFloat(par_idx));
+				return String.valueOf((float) obj); // rset.getFloat(par_idx));
 			default:
-				return String.valueOf((double) num); // rset.getDouble(par_idx));
+				return String.valueOf((double) obj); // rset.getDouble(par_idx));
 			}
 		case xs_decimal:
 			BigDecimal bd = rset.getBigDecimal(par_idx);

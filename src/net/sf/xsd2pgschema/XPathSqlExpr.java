@@ -38,7 +38,7 @@ public class XPathSqlExpr {
 	protected String xname = null;
 
 	/** The column name in PostgreSQL. */
-	protected String name = null;
+	protected String pname = null;
 
 	/** The PostgreSQL XPath code. */
 	protected String pg_xpath_code = null;
@@ -86,7 +86,7 @@ public class XPathSqlExpr {
 
 		this.path = path;
 		this.table = table;
-		this.xname = name = xname;
+		this.xname = pname = xname;
 		this.predicate = this.value = predicate;
 		this.terminus = terminus;
 
@@ -126,7 +126,7 @@ public class XPathSqlExpr {
 
 		this.path = path;
 		this.table = table;
-		this.xname = name = xname;
+		this.xname = pname = xname;
 		this.predicate = this.value = predicate;
 		this.terminus = terminus;
 		this.parent_tree = parent_tree;
@@ -172,7 +172,7 @@ public class XPathSqlExpr {
 
 		this.path = path;
 		this.table = table;
-		this.xname = name = xname;
+		this.xname = pname = xname;
 		this.predicate = this.value = predicate;
 		this.terminus = terminus;
 		this.parent_tree = parent_tree;
@@ -258,12 +258,12 @@ public class XPathSqlExpr {
 			throw new PgSchemaException();
 		}
 
-		field = table.getCanonicalField(xname);
+		field = table.getCanField(xname);
 
 		if (field == null)
 			throw new PgSchemaException();
 
-		name = field.name;
+		pname = field.pname;
 
 	}
 
@@ -361,7 +361,7 @@ public class XPathSqlExpr {
 		if (pg_xpath_code == null)
 			return null;
 
-		Pattern pattern = Pattern.compile("^xpath\\(\\'\\/" + table.name + "\\/(.*)\\', .*\\)$");
+		Pattern pattern = Pattern.compile("^xpath\\(\\'\\/" + table.pname + "\\/(.*)\\', .*\\)$");
 
 		Matcher matcher = pattern.matcher(pg_xpath_code);
 

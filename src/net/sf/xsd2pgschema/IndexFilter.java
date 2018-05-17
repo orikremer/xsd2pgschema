@@ -160,10 +160,10 @@ public class IndexFilter {
 	/**
 	 * Append attribute by type dependency.
 	 *
-	 * @param table_name table name
-	 * @param field PostgreSQL field
+	 * @param table table
+	 * @param field field
 	 */
-	public void appendAttrByType(String table_name, PgField field) {
+	public void appendAttrByType(PgTable table, PgField field) {
 
 		switch (field.xs_type) {
 		case xs_bigserial:
@@ -183,31 +183,31 @@ public class IndexFilter {
 		case xs_unsignedShort:
 		case xs_unsignedByte:
 			if (attr_integer)
-				addAttr(table_name + "." + field.name);
+				addAttr(table.name + "." + field.name);
 			break;
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
 			if (attr_float)
-				addAttr(table_name + "." + field.name);
+				addAttr(table.name + "." + field.name);
 			break;
 		case xs_dateTime:
 		case xs_date:
 		case xs_gYearMonth:
 		case xs_gYear:
 			if (attr_date)
-				addAttr(table_name + "." + field.name);
+				addAttr(table.name + "." + field.name);
 			break;
 		case xs_time:
 		case xs_gMonthDay:
 		case xs_gMonth:
 		case xs_gDay:
 			if (attr_time)
-				addAttr(table_name + "." + field.name);
+				addAttr(table.name + "." + field.name);
 			break;
 		default: // free text
 			if (attr_string)
-				addAttr(table_name + "." + field.name);
+				addAttr(table.name + "." + field.name);
 		}
 
 	}

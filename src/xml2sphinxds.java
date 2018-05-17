@@ -178,6 +178,9 @@ public class xml2sphinxds {
 			else if (args[i].equals("--max-field-len") && i + 1 < args.length)
 				index_filter.setSphMaxFieldLen(args[++i]);
 
+			else if (args[i].equals("--fill-default-value"))
+				xml_post_editor.fill_default_value = true;
+
 			else if (args[i].equals("--filt-in") && i + 1 < args.length)
 				xml_post_editor.addFiltIn(args[++i]);
 
@@ -461,6 +464,7 @@ public class xml2sphinxds {
 		System.err.println("        --xml-file-ext-digest DIGESTIBLE_EXTENSION (default=\".\")");
 		System.err.println("        --lower-case-doc-key (lower case document key)");
 		System.err.println("        --upper-case-doc-key (upper case document key)");
+		System.err.println("        --fill-default value (fill @default value in case of empty)");
 		System.err.println("        --filt-in   table_name.column_name");
 		System.err.println("        --filt-out  table_name.column_name:regex_pattern(|regex_pattern...)");
 		System.err.println("        --fill-this table_name.column_name:filling_text");

@@ -686,8 +686,8 @@ public class PgSchema {
 				PgTable nested_table = getForeignTable(field);
 
 				if (nested_table != null && nested_table.anno == null) {
-					nested_table.anno = "(quoted from " + table.name + ")\n-- " + table.anno;
-					nested_table.xanno_doc = "(quoted from " + table.name + ")\n" + table.xanno_doc;
+					nested_table.anno = "(quoted from " + table.pname + ")\n-- " + table.anno;
+					nested_table.xanno_doc = "(quoted from " + table.pname + ")\n" + table.xanno_doc;
 				}
 
 			});
@@ -730,7 +730,7 @@ public class PgSchema {
 
 				for (String parent_node : parent_nodes) {
 
-					PgTable parent_table = getCanonicalTable(field.foreign_schema, parent_node);
+					PgTable parent_table = getCanTable(field.foreign_schema, parent_node);
 
 					if (parent_table == null)
 						continue;
@@ -898,18 +898,18 @@ public class PgSchema {
 		// add serial key if parent table is list holder
 
 		if (option.serial_key)
-			tables.stream().filter(table -> table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> getForeignTable(field).addSerialKey(option)));
+			tables.stream().filter(table -> table.required && !table.relational && table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> getForeignTable(field).addSerialKey(option)));
 
 		// add XPath key
 
 		if (option.xpath_key)
-			tables.forEach(table -> table.addXPathKey(option));
+			tables.stream().filter(table -> table.required && !table.relational).forEach(table -> table.addXPathKey(option));
 
 		// remove nested key if relational model extension is disabled
 
 		if (!option.rel_model_ext) {
 
-			tables.stream().filter(table -> table.nested_fields > 0).forEach(table -> {
+			tables.stream().filter(table -> table.required && !table.relational && table.nested_fields > 0).forEach(table -> {
 
 				table.fields.removeIf(field -> field.nested_key);
 				table.countNestedFields();
@@ -922,11 +922,11 @@ public class PgSchema {
 
 		if (!option.document_key && option.inplace_document_key && option.document_key_if_no_in_place) {
 
-			tables.stream().filter(table -> table.required && !table.relational && !table.fields.stream().anyMatch(field -> field.name.equals(option.document_key_name)) && !table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname)))).forEach(table -> {
+			tables.stream().filter(table -> table.required && !table.relational && !table.fields.stream().anyMatch(field -> field.name.equals(option.document_key_name)) && !table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))).forEach(table -> {
 
 				PgField field = new PgField();
 
-				field.name = field.xname = option.document_key_name;
+				field.name = field.pname = field.xname = option.document_key_name;
 				field.type = option.xs_prefix_ + "string";
 				field.xs_type = XsDataType.xs_string;
 				field.document_key = true;
@@ -939,7 +939,7 @@ public class PgSchema {
 
 		// update system key, user key, omissible and jsonable flags
 
-		tables.forEach(table -> table.fields.forEach(field -> {
+		tables.stream().filter(table -> table.required && !table.relational).forEach(table -> table.fields.forEach(field -> {
 
 			field.setSystemKey();
 			field.setUserKey();
@@ -1017,10 +1017,10 @@ public class PgSchema {
 		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
 		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
 		_root_schema.def_stat_msg.append("--   Contents:\n");
-		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.xname) && !option.discarded_document_key_names.contains(table.name + "." + field.xname)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes ("
-				+ (option.document_key || !option.inplace_document_key ? 0 : tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.xname) && !option.discarded_document_key_names.contains(table.name + "." + field.xname) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
-		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.xname) && !option.discarded_document_key_names.contains(table.name + "." + field.xname)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements ("
-				+ (option.document_key || !option.inplace_document_key ? 0 : tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.xname) && !option.discarded_document_key_names.contains(table.name + "." + field.xname) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
+		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes ("
+				+ (option.document_key || !option.inplace_document_key ? 0 : tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
+		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements ("
+				+ (option.document_key || !option.inplace_document_key ? 0 : tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
 		_root_schema.def_stat_msg.append(tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.simple_content).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents\n");
 		_root_schema.def_stat_msg.append("--   Wild cards:\n");
 		_root_schema.def_stat_msg.append("--    " + tables.stream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
@@ -1075,9 +1075,9 @@ public class PgSchema {
 		String name = e.getAttribute("name");
 
 		table.xname = option.getUnqualifiedName(name);
-		table.name = option.case_sense ? table.xname : table.xname.toLowerCase();
+		table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
 
-		if (table.name.isEmpty())
+		if (table.pname.isEmpty())
 			return;
 
 		table.required = true;
@@ -1170,7 +1170,7 @@ public class PgSchema {
 					String child_name = child_e.getAttribute("name");
 
 					child_table.xname = option.getUnqualifiedName(child_name);
-					child_table.name = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
+					child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
 
 					table.required = child_table.required = true;
 
@@ -1224,9 +1224,9 @@ public class PgSchema {
 		String name = e.getAttribute("name");
 
 		table.xname = option.getUnqualifiedName(name);
-		table.name = option.case_sense ? table.xname : table.xname.toLowerCase();
+		table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
 
-		if (table.name.isEmpty())
+		if (table.pname.isEmpty())
 			return;
 
 		if ((table.anno = option.extractAnnotation(node, true)) != null)
@@ -1236,7 +1236,7 @@ public class PgSchema {
 
 			if (table.anno != null && !table.anno.isEmpty()) {
 
-				PgTable known_table = getCanonicalTable(table.pg_schema_name, table.xname);
+				PgTable known_table = getCanTable(table.pg_schema_name, table.xname);
 
 				if (known_table != null) {
 
@@ -1301,9 +1301,9 @@ public class PgSchema {
 		String name = e.getAttribute("name");
 
 		table.xname = option.getUnqualifiedName(name);
-		table.name = option.case_sense ? table.xname : table.xname.toLowerCase();
+		table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
 
-		if (table.name.isEmpty())
+		if (table.pname.isEmpty())
 			return;
 
 		if ((table.anno = option.extractAnnotation(node, true)) != null)
@@ -1347,9 +1347,9 @@ public class PgSchema {
 		String name = e.getAttribute("name");
 
 		table.xname = option.getUnqualifiedName(name);
-		table.name = option.case_sense ? table.xname : table.xname.toLowerCase();
+		table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
 
-		if (table.name.isEmpty())
+		if (table.pname.isEmpty())
 			return;
 
 		if ((table.anno = option.extractAnnotation(node, true)) != null)
@@ -1513,7 +1513,9 @@ public class PgSchema {
 		field.extractMaxOccurs(option, node);
 		field.extractMinOccurs(option, node);
 
-		field.name = field.xname = table.avoidFieldDuplication(option, PgSchemaUtil.any_name);
+		field.xname = PgSchemaUtil.any_name;
+		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+		field.pname = table.avoidFieldDuplication(option, field.xname);
 
 		if ((field.anno = option.extractAnnotation(node, false)) != null)
 			field.xanno_doc = option.extractDocumentation(node, false);
@@ -1540,7 +1542,9 @@ public class PgSchema {
 
 		field.any_attribute = true;
 
-		field.name = field.xname = table.avoidFieldDuplication(option, PgSchemaUtil.any_attribute_name);
+		field.xname = PgSchemaUtil.any_attribute_name;
+		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+		field.pname = table.avoidFieldDuplication(option, field.xname);
 
 		if ((field.anno = option.extractAnnotation(node, false)) != null)
 			field.xanno_doc = option.extractDocumentation(node, false);
@@ -1613,7 +1617,8 @@ public class PgSchema {
 		if (name != null && !name.isEmpty()) {
 
 			field.xname = option.getUnqualifiedName(name);
-			field.name = table.avoidFieldDuplication(option, field.xname);
+			field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+			field.pname = table.avoidFieldDuplication(option, field.xname);
 
 			if ((field.anno = option.extractAnnotation(node, false)) != null)
 				field.xanno_doc = option.extractDocumentation(node, false);
@@ -1632,7 +1637,7 @@ public class PgSchema {
 
 			if (field.enumeration != null && field.enumeration.length > 0) {
 
-				field.enum_name = "ENUM_" + PgSchemaUtil.avoidPgReservedOps(table.name) + "_" + PgSchemaUtil.avoidPgReservedOps(field.name);
+				field.enum_name = "ENUM_" + PgSchemaUtil.avoidPgReservedOps(table.pname) + "_" + PgSchemaUtil.avoidPgReservedOps(field.pname);
 
 				if (field.enum_name.length() > PgSchemaUtil.max_enum_len)
 					field.enum_name = field.enum_name.substring(0, PgSchemaUtil.max_enum_len);
@@ -1686,7 +1691,7 @@ public class PgSchema {
 					String child_name = child_e.getAttribute("name");
 
 					child_table.xname = option.getUnqualifiedName(child_name);
-					child_table.name = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
+					child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
 
 					table.required = child_table.required = true;
 
@@ -1741,7 +1746,8 @@ public class PgSchema {
 							(table.target_namespace == null && getNamespaceUriOfQName(ref) == null))) {
 
 						field.xname = child_name;
-						field.name = table.avoidFieldDuplication(option, field.xname);
+						field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+						field.pname = table.avoidFieldDuplication(option, field.xname);
 
 						if ((field.anno = option.extractAnnotation(child, false)) != null)
 							field.xanno_doc = option.extractDocumentation(child, false);
@@ -1760,7 +1766,7 @@ public class PgSchema {
 
 						if (field.enumeration != null && field.enumeration.length > 0) {
 
-							field.enum_name = "ENUM_" + PgSchemaUtil.avoidPgReservedOps(table.name) + "_" + PgSchemaUtil.avoidPgReservedOps(field.name);
+							field.enum_name = "ENUM_" + PgSchemaUtil.avoidPgReservedOps(table.pname) + "_" + PgSchemaUtil.avoidPgReservedOps(field.pname);
 
 							if (field.enum_name.length() > PgSchemaUtil.max_enum_len)
 								field.enum_name = field.enum_name.substring(0, PgSchemaUtil.max_enum_len);
@@ -1810,7 +1816,7 @@ public class PgSchema {
 									table.cancelUniqueKey();
 
 								child_table.xname = child_name;
-								child_table.name = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
+								child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
 
 								table.required = child_table.required = true;
 
@@ -1874,7 +1880,7 @@ public class PgSchema {
 			String name = e.getAttribute("name");
 
 			table.xname = option.getUnqualifiedName(name);
-			table.name = option.case_sense ? table.xname : table.xname.toLowerCase();
+			table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
 			table.xs_type = foreign_table.xs_type.equals(XsTableType.xs_root) || foreign_table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
 
@@ -1883,12 +1889,12 @@ public class PgSchema {
 		else {
 
 			table.xname = option.getUnqualifiedName(type);
-			table.name = option.case_sense ? table.xname : table.xname.toLowerCase();
+			table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
 			table.xs_type = XsTableType.xs_admin_root;
 
 		}
 
-		if (table.name.isEmpty())
+		if (table.pname.isEmpty())
 			return;
 
 		table.required = true;
@@ -1952,7 +1958,7 @@ public class PgSchema {
 
 		if (t < 0) {
 
-			_root_schema.pending_attr_groups.add(new PgPendingGroup(ref, table.pg_schema_name, table.name, table.fields.size()));
+			_root_schema.pending_attr_groups.add(new PgPendingGroup(ref, table.pg_schema_name, table.xname, table.fields.size()));
 			table.has_pending_group = true;
 
 			return;
@@ -1984,7 +1990,7 @@ public class PgSchema {
 
 		if (t < 0) {
 
-			_root_schema.pending_model_groups.add(new PgPendingGroup(ref, table.pg_schema_name, table.name, table.fields.size()));
+			_root_schema.pending_model_groups.add(new PgPendingGroup(ref, table.pg_schema_name, table.xname, table.fields.size()));
 			table.has_pending_group = true;
 
 			return;
@@ -2006,8 +2012,10 @@ public class PgSchema {
 		PgField field = new PgField();
 
 		field.simple_content = true;
+
 		field.xname = PgSchemaUtil.simple_content_name; // anonymous simple content
-		field.name = table.avoidFieldDuplication(option, field.xname);
+		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+		field.pname = table.avoidFieldDuplication(option, field.xname);
 
 		if ((field.anno = option.extractAnnotation(node, false)) != null)
 			field.xanno_doc = option.extractDocumentation(node, false);
@@ -2026,7 +2034,7 @@ public class PgSchema {
 
 		if (field.enumeration != null && field.enumeration.length > 0) {
 
-			field.enum_name = "ENUM_" + PgSchemaUtil.avoidPgReservedOps(table.name) + "_" + PgSchemaUtil.avoidPgReservedOps(field.name);
+			field.enum_name = "ENUM_" + PgSchemaUtil.avoidPgReservedOps(table.pname) + "_" + PgSchemaUtil.avoidPgReservedOps(field.pname);
 
 			if (field.enum_name.length() > PgSchemaUtil.max_enum_len)
 				field.enum_name = field.enum_name.substring(0, PgSchemaUtil.max_enum_len);
@@ -2196,7 +2204,7 @@ public class PgSchema {
 		int known_t = -1;
 
 		try {
-			known_t = tables.equals(this.tables) ? getTableId(table.pg_schema_name, table.name) : tables.equals(_root_schema.attr_groups) ? getAttributeGroupId(table.name, false) : tables.equals(_root_schema.model_groups) ? getModelGroupId(table.name, false) : -1;
+			known_t = tables.equals(this.tables) ? getPgTableId(table.pg_schema_name, table.pname) : tables.equals(_root_schema.attr_groups) ? getAttributeGroupId(table.xname, false) : tables.equals(_root_schema.model_groups) ? getModelGroupId(table.xname, false) : -1;
 		} catch (PgSchemaException e) {
 			e.printStackTrace();
 			System.exit(1);
@@ -2207,12 +2215,14 @@ public class PgSchema {
 
 		PgTable known_table = tables.get(known_t);
 
-		if (!option.case_sense && !known_table.xname.equals(table.xname)) { // avoid table duplication (case insensitive)
+		// avoid table duplication (case insensitive)
 
-			table.name = "_" + table.name;
+		if (!option.case_sense && !known_table.xname.equals(table.xname)) {
+
+			table.pname = "_" + table.pname;
 
 			try {
-				known_t = tables.equals(this.tables) ? getCanonicalTableId(table.pg_schema_name, table.xname) : tables.equals(_root_schema.attr_groups) ? getAttributeGroupId(table.name, false) : tables.equals(_root_schema.model_groups) ? getModelGroupId(table.name, false) : -1;
+				known_t = tables.equals(this.tables) ? getCanTableId(table.pg_schema_name, table.xname) : tables.equals(_root_schema.attr_groups) ? getAttributeGroupId(table.xname, false) : tables.equals(_root_schema.model_groups) ? getModelGroupId(table.xname, false) : -1;
 			} catch (PgSchemaException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -2274,7 +2284,7 @@ public class PgSchema {
 
 		for (PgField field : fields) {
 
-			PgField known_field = known_table.getField(field.name);
+			PgField known_field = known_table.getPgField(field.pname);
 
 			if (known_field == null) { // append new field to known table
 
@@ -2324,7 +2334,7 @@ public class PgSchema {
 
 				for (PgField known_field : known_fields) {
 
-					if (table.getField(known_field.name) == null) {
+					if (table.getPgField(known_field.pname) == null) {
 
 						changed = true;
 
@@ -2461,7 +2471,7 @@ public class PgSchema {
 	 * @return String PostgreSQL name of table
 	 */
 	protected String getPgNameOf(PgTable table) {
-		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(table.name);
+		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(table.pname);
 	}
 
 	/**
@@ -2473,7 +2483,7 @@ public class PgSchema {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private String getPgNameOf(Connection db_conn, PgTable table) throws PgSchemaException {
-		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, table.name));
+		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, table.pname));
 	}
 
 	/**
@@ -2483,7 +2493,7 @@ public class PgSchema {
 	 * @return String PostgreSQL name of parent table
 	 */
 	private String getPgParentNameOf(PgForeignKey foreign_key) {
-		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(foreign_key.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_table_name);
+		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(foreign_key.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_table_pname);
 	}
 
 	/**
@@ -2493,7 +2503,7 @@ public class PgSchema {
 	 * @return String PostgreSQL name of child table
 	 */
 	private String getPgChildNameOf(PgForeignKey foreign_key) {
-		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(foreign_key.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(foreign_key.child_table_name);
+		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(foreign_key.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(foreign_key.child_table_pname);
 	}
 
 	/**
@@ -2503,7 +2513,7 @@ public class PgSchema {
 	 * @return String PostgreSQL name of foreign table
 	 */
 	private String getPgForeignNameOf(PgField field) {
-		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(field.foreign_schema) + "." : "") + PgSchemaUtil.avoidPgReservedWords(field.foreign_table_name);
+		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(field.foreign_schema) + "." : "") + PgSchemaUtil.avoidPgReservedWords(field.foreign_table_pname);
 	}
 
 	/**
@@ -2513,7 +2523,7 @@ public class PgSchema {
 	 * @return String PostgreSQL name of table
 	 */
 	protected String getDataFileNameOf(PgTable table) {
-		return (option.pg_named_schema ? table.pg_schema_name + "." : "") + table.name + (option.pg_tab_delimiter ? ".tsv" : ".csv");
+		return (option.pg_named_schema ? table.pg_schema_name + "." : "") + table.pname + (option.pg_tab_delimiter ? ".tsv" : ".csv");
 	}
 
 	/**
@@ -2552,14 +2562,9 @@ public class PgSchema {
 	 * @return PgTable table
 	 */
 	private PgTable getTable(String pg_schema_name, String table_name) {
-
-		PgTable table = getCanonicalTable(pg_schema_name, table_name);
-
-		if (table != null)
-			return table;
-
 		return getTable(getTableId(pg_schema_name, table_name));
 	}
+
 
 	/**
 	 * Return table.
@@ -2568,8 +2573,8 @@ public class PgSchema {
 	 * @param table_xname table name (canonical)
 	 * @return PgTable table
 	 */
-	private PgTable getCanonicalTable(String pg_schema_name, String table_xname) {
-		return getTable(getCanonicalTableId(pg_schema_name, table_xname));
+	private PgTable getCanTable(String pg_schema_name, String table_xname) {
+		return getTable(getCanTableId(pg_schema_name, table_xname));
 	}
 
 	/**
@@ -2579,7 +2584,7 @@ public class PgSchema {
 	 * @return PgTable pending table
 	 */
 	private PgTable getPendingTable(PgPendingGroup pending_group) {
-		return getCanonicalTable(pending_group.pg_schema_name, pending_group.name);
+		return getCanTable(pending_group.pg_schema_name, pending_group.xname);
 	}
 
 	/**
@@ -2589,7 +2594,7 @@ public class PgSchema {
 	 * @return PgTable parent table
 	 */
 	private PgTable getParentTable(PgForeignKey foreign_key) {
-		return getCanonicalTable(foreign_key.pg_schema_name, foreign_key.parent_table_xname);
+		return getCanTable(foreign_key.pg_schema_name, foreign_key.parent_table_xname);
 	}
 
 	/**
@@ -2612,7 +2617,7 @@ public class PgSchema {
 	 * @return PgTable child table
 	 */
 	private PgTable getChildTable(PgForeignKey foreign_key) {
-		return getCanonicalTable(foreign_key.pg_schema_name, foreign_key.child_table_xname);
+		return getCanTable(foreign_key.pg_schema_name, foreign_key.child_table_xname);
 	}
 
 	/**
@@ -2622,7 +2627,7 @@ public class PgSchema {
 	 * @return PgTable foreign table
 	 */
 	protected PgTable getForeignTable(PgField field) {
-		return field.foreign_table_id == -1 ? getCanonicalTable(field.foreign_schema, field.foreign_table_xname) : getTable(field.foreign_table_id);
+		return field.foreign_table_id == -1 ? getCanTable(field.foreign_schema, field.foreign_table_xname) : getTable(field.foreign_table_id);
 	}
 
 	/**
@@ -2659,7 +2664,7 @@ public class PgSchema {
 	 * @param table_xname table name (canonical)
 	 * @return int the table id, -1 represents not found
 	 */
-	private int getCanonicalTableId(String pg_schema_name, String table_xname) {
+	private int getCanTableId(String pg_schema_name, String table_xname) {
 
 		if (!option.pg_named_schema)
 			pg_schema_name = PgSchemaUtil.pg_public_schema_name;
@@ -2680,6 +2685,33 @@ public class PgSchema {
 	}
 
 	/**
+	 * Return table id.
+	 *
+	 * @param pg_schema_name PostgreSQL schema name
+	 * @param table_pname table name (in PostgreSQL)
+	 * @return int the table id, -1 represents not found
+	 */
+	private int getPgTableId(String pg_schema_name, String table_pname) {
+
+		if (!option.pg_named_schema)
+			pg_schema_name = PgSchemaUtil.pg_public_schema_name;
+
+		else if (pg_schema_name == null || pg_schema_name.isEmpty())
+			pg_schema_name = root_table.pg_schema_name;
+
+		for (int t = 0; t < tables.size(); t++) {
+
+			PgTable table = tables.get(t);
+
+			if (table.pg_schema_name.equals(pg_schema_name) && table.pname.equals(table_pname))
+				return t;
+
+		}
+
+		return -1;
+	}
+
+	/**
 	 * Return attribute group id from attribute group name.
 	 *
 	 * @param attr_group_name attribute group name
@@ -2691,7 +2723,7 @@ public class PgSchema {
 
 		for (int t = 0; t < _root_schema.attr_groups.size(); t++) {
 
-			if (_root_schema.attr_groups.get(t).name.equals(attr_group_name))
+			if (_root_schema.attr_groups.get(t).xname.equals(attr_group_name))
 				return t;
 
 		}
@@ -2714,7 +2746,7 @@ public class PgSchema {
 
 		for (int t = 0; t < _root_schema.model_groups.size(); t++) {
 
-			if (_root_schema.model_groups.get(t).name.equals(model_group_name))
+			if (_root_schema.model_groups.get(t).xname.equals(model_group_name))
 				return t;
 
 		}
@@ -2845,12 +2877,12 @@ public class PgSchema {
 				table.fields.forEach(field -> {
 
 					if (field.unique_key)
-						System.out.println("--ALTER TABLE " + getPgNameOf(table) + " ADD PRIMARY KEY ( " + PgSchemaUtil.avoidPgReservedWords(field.name) + " );\n");
+						System.out.println("--ALTER TABLE " + getPgNameOf(table) + " ADD PRIMARY KEY ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " );\n");
 
 					else if (field.foreign_key) {
 
 						if (!getForeignTable(field).bridge)
-							System.out.println("--ALTER TABLE " + getPgNameOf(table) + " ADD FOREIGN KEY " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_name) + " );\n");
+							System.out.println("--ALTER TABLE " + getPgNameOf(table) + " ADD FOREIGN KEY " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " );\n");
 
 					}
 
@@ -2889,7 +2921,7 @@ public class PgSchema {
 				if (!option.rel_model_ext && table.relational)
 					unique = false;
 
-				PgField field = table.getCanonicalField(foreign_key.parent_field_xnames);
+				PgField field = table.getCanField(foreign_key.parent_field_xnames);
 
 				if (field != null) { // specified parent field
 
@@ -2911,7 +2943,7 @@ public class PgSchema {
 			if (constraint_name.length() > PgSchemaUtil.max_enum_len)
 				constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 
-			System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + getPgParentNameOf(foreign_key) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " UNIQUE ( " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_field_names) + " );\n");
+			System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + getPgParentNameOf(foreign_key) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " UNIQUE ( " + PgSchemaUtil.avoidPgReservedWords(foreign_key.parent_field_pnames) + " );\n");
 
 		}
 
@@ -2937,22 +2969,22 @@ public class PgSchema {
 			if (!option.rel_model_ext && relational)
 				continue;
 
-			String[] child_field_names = foreign_key.child_field_names.split(" ");
-			String[] parent_field_names = foreign_key.parent_field_names.split(" ");
+			String[] child_field_pnames = foreign_key.child_field_pnames.split(" ");
+			String[] parent_field_pnames = foreign_key.parent_field_pnames.split(" ");
 
-			if (child_field_names.length == parent_field_names.length) {
+			if (child_field_pnames.length == parent_field_pnames.length) {
 
-				for (int i = 0; i < child_field_names.length; i++) {
+				for (int i = 0; i < child_field_pnames.length; i++) {
 
-					child_field_names[i] = child_field_names[i].replaceFirst(",$", "");
-					parent_field_names[i] = parent_field_names[i].replaceFirst(",$", "");
+					child_field_pnames[i] = child_field_pnames[i].replaceFirst(",$", "");
+					parent_field_pnames[i] = parent_field_pnames[i].replaceFirst(",$", "");
 
-					String constraint_name = "KR_" + foreign_key.name + (child_field_names.length > 1 ? "_" + i : "");
+					String constraint_name = "KR_" + foreign_key.name + (child_field_pnames.length > 1 ? "_" + i : "");
 
 					if (constraint_name.length() > PgSchemaUtil.max_enum_len)
 						constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 
-					System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + getPgChildNameOf(foreign_key) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " FOREIGN KEY ( " + PgSchemaUtil.avoidPgReservedWords(child_field_names[i]) + " ) REFERENCES " + getPgNameOf(getParentTable(foreign_key)) + " ( " + PgSchemaUtil.avoidPgReservedWords(parent_field_names[i]) + " ) ON DELETE CASCADE NOT VALID;\n");
+					System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + getPgChildNameOf(foreign_key) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " FOREIGN KEY ( " + PgSchemaUtil.avoidPgReservedWords(child_field_pnames[i]) + " ) REFERENCES " + getPgNameOf(getParentTable(foreign_key)) + " ( " + PgSchemaUtil.avoidPgReservedWords(parent_field_pnames[i]) + " ) ON DELETE CASCADE NOT VALID;\n");
 
 				}
 
@@ -3039,7 +3071,7 @@ public class PgSchema {
 		System.out.println("--");
 		System.out.println("-- " + (table.anno != null && !table.anno.isEmpty() ? table.anno : "No annotation is available"));
 
-		if (!table.name.equals(table.xname))
+		if (!table.pname.equals(table.xname))
 			System.out.println("-- canonical name: " + table.xname);
 
 		StringBuilder sb = new StringBuilder();
@@ -3100,17 +3132,17 @@ public class PgSchema {
 				System.out.println("-- PRIMARY KEY");
 
 			else if (field.foreign_key)
-				System.out.println("-- FOREIGN KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_name) + " )");
+				System.out.println("-- FOREIGN KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " )");
 
 			else if (field.nested_key)
-				System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_name) + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
+				System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
 
 			else if (field.attribute) {
 
-				if (option.discarded_document_key_names.contains(field.xname) || option.discarded_document_key_names.contains(table.name + "." + field.xname))
+				if (option.discarded_document_key_names.contains(field.name) || option.discarded_document_key_names.contains(table.name + "." + field.name))
 					continue;
 
-				if (!option.document_key && option.inplace_document_key && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname)))
+				if (!option.document_key && option.inplace_document_key && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))
 					System.out.println("-- ATTRIBUTE, IN-PLACE DOCUMENT KEY");
 				else
 					System.out.println("-- ATTRIBUTE");
@@ -3126,10 +3158,10 @@ public class PgSchema {
 			else if (field.any_attribute)
 				System.out.println("-- ANY ATTRIBUTE");
 
-			else if (option.discarded_document_key_names.contains(field.xname) || option.discarded_document_key_names.contains(table.name + "." + field.xname))
+			else if (option.discarded_document_key_names.contains(field.name) || option.discarded_document_key_names.contains(table.name + "." + field.name))
 				continue;
 
-			else if (!option.document_key && option.inplace_document_key && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname)))
+			else if (!option.document_key && option.inplace_document_key && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))
 				System.out.println("-- IN-PLACE DOCUMENT KEY");
 
 			if (!field.required && field.xrequired) {
@@ -3158,10 +3190,10 @@ public class PgSchema {
 					case xs_IDREFS:
 					case xs_ENTITY:
 					case xs_ENTITIES:
-						System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.name) + " = '" + field.fixed_value + "' ) ");
+						System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = '" + field.fixed_value + "' ) ");
 						break;
 					default:
-						System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.name) + " = " + field.fixed_value + " ) ");
+						System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = " + field.fixed_value + " ) ");
 					}
 
 					System.out.println(", but dismissed because of name collision");
@@ -3169,9 +3201,9 @@ public class PgSchema {
 			}
 
 			if (field.enum_name == null || field.enum_name.isEmpty())
-				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.name) + " " + field.getPgDataType());
+				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.pname) + " " + field.getPgDataType());
 			else
-				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.name) + " " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.pname) + " " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
 
 			if ((field.required || !field.xrequired) && field.fixed_value != null && !field.fixed_value.isEmpty()) {
 
@@ -3193,10 +3225,10 @@ public class PgSchema {
 				case xs_IDREFS:
 				case xs_ENTITY:
 				case xs_ENTITIES:
-					System.out.print(" CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.name) + " = '" + field.fixed_value + "' )");
+					System.out.print(" CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = '" + field.fixed_value + "' )");
 					break;
 				default:
-					System.out.print(" CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.name) + " = " + field.fixed_value + " )");
+					System.out.print(" CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = " + field.fixed_value + " )");
 				}
 
 			}
@@ -3216,12 +3248,12 @@ public class PgSchema {
 
 					PgTable foreign_table = getForeignTable(field);
 
-					PgField foreign_field = foreign_table.getCanonicalField(field.foreign_field_name);
+					PgField foreign_field = foreign_table.getPgField(field.foreign_field_pname);
 
 					if (foreign_field != null) {
 
 						if (foreign_field.unique_key)
-							System.out.print(" CONSTRAINT " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_name) + " ) ON DELETE CASCADE");
+							System.out.print(" CONSTRAINT " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " ) ON DELETE CASCADE");
 
 					}
 
@@ -3269,11 +3301,11 @@ public class PgSchema {
 			if (!option.rel_model_ext && relational)
 				continue;
 
-			String[] child_field_names = foreign_key.child_field_names.split(" ");
-			String[] parent_field_names = foreign_key.parent_field_names.split(" ");
+			String[] child_field_pnames = foreign_key.child_field_pnames.split(" ");
+			String[] parent_field_pnames = foreign_key.parent_field_pnames.split(" ");
 
-			if (child_field_names.length == parent_field_names.length)
-				key_references += child_field_names.length;
+			if (child_field_pnames.length == parent_field_pnames.length)
+				key_references += child_field_pnames.length;
 
 		}
 
@@ -3289,6 +3321,8 @@ public class PgSchema {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void applyXmlPostEditor(XmlPostEditor xml_post_editor) throws PgSchemaException {
+
+		option.fill_default_value = xml_post_editor.fill_default_value;
 
 		if (xml_post_editor.filt_ins != null) {
 
@@ -3691,7 +3725,7 @@ public class PgSchema {
 		// type dependent attribute selection
 
 		if (index_filter.attr_string || index_filter.attr_integer || index_filter.attr_float || index_filter.attr_date)
-			tables.forEach(table -> table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> index_filter.appendAttrByType(table.name, field)));
+			tables.forEach(table -> table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> index_filter.appendAttrByType(table, field)));
 
 		// select all attributes
 
@@ -4055,7 +4089,7 @@ public class PgSchema {
 		// check root element name
 
 		if (!option.getUnqualifiedName(node.getNodeName()).equals(root_table.xname))
-			throw new PgSchemaException("Not found root element (node_name: " + root_table.name + ") in XML: " + document_id);
+			throw new PgSchemaException("Not found root element (node_name: " + root_table.xname + ") in XML: " + document_id);
 
 		document_id = xml_parser.document_id;
 
@@ -4157,8 +4191,10 @@ public class PgSchema {
 			}
 
 			else {
+
 				table.buffw = null;
 				table.filew = null;
+
 			}
 
 		});
@@ -4188,19 +4224,23 @@ public class PgSchema {
 
 		closeTableLock();
 
-		tables.stream().filter(table -> table.buffw != null).forEach(table -> {
+		tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).forEach(table -> {
 
-			try {
+			if (table.buffw != null ) {
 
-				table.buffw.close();
-				table.filew.close();
+				try {
 
-				table.buffw = null;
-				table.filew = null;
+					table.buffw.close();
+					table.filew.close();
 
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.exit(1);
+					table.buffw = null;
+					table.filew = null;
+
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
 			}
 
 		});
@@ -4235,7 +4275,10 @@ public class PgSchema {
 
 				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
-				if (node_test.omissible)
+				if (node_test.visited)
+					return;
+
+				else if (node_test.omissible)
 					continue;
 
 				synchronized (table_lock[table_id]) {
@@ -4249,7 +4292,7 @@ public class PgSchema {
 
 			}
 
-			if (node2pgcsv.invoked)
+			if (node2pgcsv.visited)
 				return;
 
 			synchronized (table_lock[table_id]) {
@@ -4336,7 +4379,10 @@ public class PgSchema {
 
 				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
-				if (node_test.omissible)
+				if (node_test.visited)
+					return;
+
+				else if (node_test.omissible)
 					continue;
 
 				node2pgsql.parseChildNode(node_test);
@@ -4350,7 +4396,7 @@ public class PgSchema {
 
 			try {
 
-				if (node2pgsql.invoked)
+				if (node2pgsql.visited)
 					return;
 
 				node2pgsql.parseChildNode(parent_node, parent_key, proc_key, nested);
@@ -4382,15 +4428,15 @@ public class PgSchema {
 		if (!option.inplace_document_key)
 			throw new PgSchemaException("Not defined document key, or select either --doc-key or --doc-key-if-no-inplace option.");
 
-		if (!table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname)))) {
+		if (!table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))) {
 
 			if (option.document_key_if_no_in_place)
 				return option.document_key_name;
 
-			throw new PgSchemaException("Not found in-place document key in " + table.name + ", or select --doc-key-if-no-inplace option.");
+			throw new PgSchemaException("Not found in-place document key in " + table.pname + ", or select --doc-key-if-no-inplace option.");
 		}
 
-		return table.fields.stream().filter(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.xname) || option.inplace_document_key_names.contains(table.name + "." + field.xname))).findFirst().get().name;
+		return table.fields.stream().filter(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).findFirst().get().pname;
 	}
 
 	/**
@@ -4461,7 +4507,7 @@ public class PgSchema {
 
 				has_db_rows = new HashMap<String, Boolean>();
 
-				String doc_id_table_name = doc_id_table.name;
+				String doc_id_table_name = doc_id_table.pname;
 
 				String sql1 = "SELECT EXISTS(SELECT 1 FROM " + getPgNameOf(db_conn, doc_id_table) + " LIMIT 1)";
 
@@ -4476,7 +4522,7 @@ public class PgSchema {
 
 				tables.stream().filter(table -> table.required && !table.relational && !table.equals(doc_id_table)).forEach(table -> {
 
-					String table_name = table.name;
+					String table_name = table.pname;
 
 					if (has_doc_id) {
 
@@ -4585,7 +4631,7 @@ public class PgSchema {
 
 			boolean has_doc_id = false;
 
-			if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(doc_id_table.name))) {
+			if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(doc_id_table.pname))) {
 
 				String sql = "DELETE FROM " + getPgNameOf(db_conn, doc_id_table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + "='" + document_id + "'";
 
@@ -4597,7 +4643,7 @@ public class PgSchema {
 
 				tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational) && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
-					if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(table.name))) {
+					if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(table.pname))) {
 
 						try {
 
@@ -4683,7 +4729,7 @@ public class PgSchema {
 				try {
 
 					String pg_schema_name = getPgSchemaOf(table);
-					String table_name = table.name;
+					String table_name = table.pname;
 					String db_table_name = getDbTableName(db_conn, table_name);
 
 					ResultSet rset_col = meta.getColumns(null, pg_schema_name, db_table_name, null);
@@ -4692,7 +4738,7 @@ public class PgSchema {
 
 						String db_column_name = rset_col.getString("COLUMN_NAME");
 
-						if (!table.fields.stream().filter(field -> !field.omissible).anyMatch(field -> field.name.equals(db_column_name)))
+						if (!table.fields.stream().filter(field -> !field.omissible).anyMatch(field -> field.pname.equals(db_column_name)))
 							throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + db_column_name + " found without declaration in the data model."); // found without declaration in the data model
 
 					}
@@ -4704,10 +4750,10 @@ public class PgSchema {
 						if (field.omissible)
 							continue;
 
-						rset_col = meta.getColumns(null, pg_schema_name, db_table_name, field.name);
+						rset_col = meta.getColumns(null, pg_schema_name, db_table_name, field.pname);
 
 						if (!rset_col.next())
-							throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.name + " not found in the relation."); // not found in the relation
+							throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.pname + " not found in the relation."); // not found in the relation
 
 						rset_col.close();
 
@@ -4731,11 +4777,11 @@ public class PgSchema {
 
 							PgField field = fields.get(col_id++);
 
-							if (!field.name.equals(db_column_name))
-								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.name + " found in an incorrect order."); // found in an incorrect order
+							if (!field.pname.equals(db_column_name))
+								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.pname + " found in an incorrect order."); // found in an incorrect order
 
 							if (field.getSqlDataType() != db_column_type)
-								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.name + " column type " + JDBCType.valueOf(db_column_type) + " is incorrect with " + JDBCType.valueOf(field.getSqlDataType()) + "."); // column type is incorrect
+								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.pname + " column type " + JDBCType.valueOf(db_column_type) + " is incorrect with " + JDBCType.valueOf(field.getSqlDataType()) + "."); // column type is incorrect
 
 						}
 
@@ -4843,7 +4889,10 @@ public class PgSchema {
 
 				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
-				if (node_test.omissible)
+				if (node_test.visited)
+					return;
+
+				else if (node_test.omissible)
 					continue;
 
 				synchronized (table_lock[0]) {
@@ -4857,7 +4906,7 @@ public class PgSchema {
 
 			}
 
-			if (node2lucidx.invoked)
+			if (node2lucidx.visited)
 				return;
 
 			synchronized (table_lock[0]) {
@@ -4969,7 +5018,7 @@ public class PgSchema {
 
 				try {
 
-					buffw.write("<sphinx:attr name=\"" + table.name + PgSchemaUtil.sph_member_op + field.xname + "\"");
+					buffw.write("<sphinx:attr name=\"" + table.name + PgSchemaUtil.sph_member_op + field.name + "\"");
 
 					String attrs = null;
 
@@ -5084,7 +5133,7 @@ public class PgSchema {
 
 				try {
 
-					String attr_name = table.name + PgSchemaUtil.sph_member_op + field.xname;
+					String attr_name = table.name + PgSchemaUtil.sph_member_op + field.name;
 
 					switch (field.xs_type) {
 					case xs_boolean:
@@ -5229,7 +5278,10 @@ public class PgSchema {
 
 				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
-				if (node_test.omissible)
+				if (node_test.visited)
+					return;
+
+				else if (node_test.omissible)
 					continue;
 
 				synchronized (table_lock[0]) {
@@ -5243,7 +5295,7 @@ public class PgSchema {
 
 			}
 
-			if (node2sphds.invoked)
+			if (node2sphds.visited)
 				return;
 
 			synchronized (table_lock[0]) {
@@ -5267,7 +5319,7 @@ public class PgSchema {
 
 		HashSet<String> sph_attrs = new HashSet<String>();
 
-		tables.forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> sph_attrs.add(table.name + PgSchemaUtil.sph_member_op + field.xname)));
+		tables.forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> sph_attrs.add(table.name + PgSchemaUtil.sph_member_op + field.name)));
 
 		return sph_attrs;
 	}
@@ -5281,7 +5333,7 @@ public class PgSchema {
 
 		HashSet<String> sph_mvas = new HashSet<String>();
 
-		tables.forEach(table -> table.fields.stream().filter(field -> field.sph_mva).forEach(field -> sph_mvas.add(table.name + PgSchemaUtil.sph_member_op + field.xname)));
+		tables.forEach(table -> table.fields.stream().filter(field -> field.sph_mva).forEach(field -> sph_mvas.add(table.name + PgSchemaUtil.sph_member_op + field.name)));
 
 		return sph_mvas;
 	}
@@ -5646,7 +5698,10 @@ public class PgSchema {
 
 				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
-				if (node_test.omissible)
+				if (node_test.visited)
+					return;
+
+				else if (node_test.omissible)
 					continue;
 
 				synchronized (table_lock[0]) {
@@ -5683,7 +5738,7 @@ public class PgSchema {
 
 			try {
 
-				if (node2json.invoked)
+				if (node2json.visited)
 					return;
 
 				int _jsonb_header_begin = jsonb.builder.length();
@@ -6013,7 +6068,10 @@ public class PgSchema {
 
 				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
-				if (node_test.omissible)
+				if (node_test.visited)
+					return;
+
+				else if (node_test.omissible)
 					continue;
 
 				synchronized (table_lock[0]) {
@@ -6038,7 +6096,7 @@ public class PgSchema {
 
 			try {
 
-				if (node2json.invoked)
+				if (node2json.visited)
 					return;
 
 				synchronized (table_lock[0]) {
@@ -6333,7 +6391,10 @@ public class PgSchema {
 
 				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
 
-				if (node_test.omissible)
+				if (node_test.visited)
+					return;
+
+				else if (node_test.omissible)
 					continue;
 
 				synchronized (table_lock[table_id]) {
@@ -6347,7 +6408,7 @@ public class PgSchema {
 
 			}
 
-			if (node2json.invoked)
+			if (node2json.visited)
 				return;
 
 			synchronized (table_lock[table_id]) {
@@ -6470,7 +6531,7 @@ public class PgSchema {
 
 						if (in != null) {
 
-							PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table.name, xmlb);
+							PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table.pname, xmlb);
 
 							any_attr_parser.parse(in, any_attr);
 
@@ -6690,7 +6751,7 @@ public class PgSchema {
 
 			if (table.ps == null || table.ps.isClosed()) {
 
-				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(table.fields.stream().filter(field -> field.primary_key).findFirst().get().name) + " = ?";
+				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname) + " = ?";
 
 				table.ps = db_conn.prepareStatement(sql);
 
@@ -6771,7 +6832,7 @@ public class PgSchema {
 
 							if (in != null) {
 
-								PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table.name, xmlb);
+								PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table.pname, xmlb);
 
 								any_attr_parser.parse(in, any_attr);
 

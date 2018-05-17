@@ -46,6 +46,9 @@ public class PgSchemaNodeTester {
 	/** Whether this node is omissible. */
 	protected boolean omissible = false;
 
+	/** Whether this node has been already visited. */
+	protected boolean visited = false;
+
 	/** Whether nested node. */
 	protected boolean nested;
 
@@ -77,12 +80,14 @@ public class PgSchemaNodeTester {
 
 		String xname = option.getUnqualifiedName(qname);
 
+		String table_xname = table.xname;
+
 		if (!virtual) {
 
 			boolean parent_virtual = parent_table.virtual;
 
-			if ((!nested && !xname.equals(table.xname)) ||
-					(nested && (parent_virtual || (!parent_virtual && !xname.equals(parent_table.xname))) && !xname.equals(table.xname))) {
+			if ((!nested && !xname.equals(table_xname)) ||
+					(nested && (parent_virtual || (!parent_virtual && !xname.equals(parent_table.xname))) && !xname.equals(table_xname))) {
 				omissible = true;
 				return;
 			}
@@ -128,6 +133,16 @@ public class PgSchemaNodeTester {
 
 		}
 
+		if (table.visited_key.equals(current_key)) {
+			visited = true;
+			return;	
+		}
+
+		table.visited_key = current_key;
+
+		if (table.has_unique_nested_key && node_count > 1)
+			node_count = 1;
+
 		// processing node
 
 		proc_node = virtual ? node.getParentNode() : node;
@@ -144,7 +159,7 @@ public class PgSchemaNodeTester {
 				if ((child_name = child.getLocalName()) == null)
 					child_name = option.getUnqualifiedName(child.getNodeName());
 
-				if (!child_name.equals(table.xname))
+				if (!child_name.equals(table_xname))
 					continue;
 
 				proc_node = child;
@@ -157,9 +172,6 @@ public class PgSchemaNodeTester {
 		this.nested = nested;
 		this.nest_id = nest_id;
 
-		if (table.has_unique_nested_key)
-			node_count = 1;
-
 	}
 
 	/**
@@ -168,7 +180,7 @@ public class PgSchemaNodeTester {
 	 * @return boolean whether current node is the last one
 	 */
 	public boolean isLastNode() {
-		return node_count == 0 || (key_id == node_count) || (nested && key_id == nest_id);
+		return node_count <= 1 || (key_id == node_count) || (nested && key_id == nest_id);
 	}
 
 }
