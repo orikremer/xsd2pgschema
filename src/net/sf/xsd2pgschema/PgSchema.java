@@ -6979,8 +6979,10 @@ public class PgSchema {
 
 					if (test.has_content || test.has_simple_content) {
 
-						if (!test.has_open_simple_content)
-							xmlb.writer.writeCharacters(test.current_indent_space);
+						if (!test.has_open_simple_content) {
+							if (test.has_simple_content)
+								xmlb.writer.writeCharacters(test.current_indent_space);
+						}
 						else if (test.has_simple_content)
 							test.has_open_simple_content = false;
 
@@ -7005,8 +7007,9 @@ public class PgSchema {
 
 				if (test.has_content || test.has_simple_content) {
 
-					if (!test.has_open_simple_content)
+					if (!test.has_open_simple_content) {
 						xmlb.writer.writeCharacters(test.current_indent_space);
+					}
 					else if (test.has_simple_content)
 						test.has_open_simple_content = false;
 
