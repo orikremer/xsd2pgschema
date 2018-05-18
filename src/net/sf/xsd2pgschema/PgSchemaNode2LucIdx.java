@@ -127,6 +127,8 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		filled = true;
 
+		null_simple_primitive_type = false;
+
 		nested_fields = 0;
 
 		for (int f = 0; f < fields.size(); f++) {
@@ -179,7 +181,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			else if (field.attribute || field.simple_content || field.element) {
 
-				if (setContent(proc_node, field, false)) {
+				if (setContent(proc_node, field, current_key, false)) {
 
 					if (table.lucene_doc != null)
 						values[f] = content;
@@ -204,6 +206,9 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				break;
 
 		}
+
+		if (null_simple_primitive_type && nested_fields == 0)
+			return;
 
 		if (filled) {
 

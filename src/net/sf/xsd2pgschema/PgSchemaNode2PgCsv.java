@@ -141,6 +141,8 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		filled = true;
 
+		null_simple_primitive_type = false;
+
 		nested_fields = 0;
 
 		for (int f = 0; f < fields.size(); f++) {
@@ -215,7 +217,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			else if (field.attribute || field.simple_content || field.element) {
 
-				if (setContent(proc_node, field, true)) {
+				if (setContent(proc_node, field, current_key, true)) {
 
 					if (table.buffw != null && !content.isEmpty())
 						values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
@@ -240,6 +242,9 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				break;
 
 		}
+
+		if (null_simple_primitive_type && nested_fields == 0)
+			return;
 
 		if (filled) {
 

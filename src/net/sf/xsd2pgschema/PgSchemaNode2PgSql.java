@@ -129,7 +129,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 						if (field.omissible || field.primary_key)
 							continue;
 
-						sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + "=");
+						sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + " = ");
 
 						if (field.enum_name == null)
 							sql.append("?");
@@ -142,7 +142,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					sql.setLength(sql.length() - 2);
 
-					sql.append(" WHERE EXCLUDED." + pkey_name + "=?");
+					sql.append(" WHERE EXCLUDED." + pkey_name + " = ?");
 
 				}
 
@@ -228,6 +228,8 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		Arrays.fill(occupied, false);
 
 		filled = true;
+
+		null_simple_primitive_type = false;
 
 		nested_fields = 0;
 
@@ -315,7 +317,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else if (field.attribute || field.simple_content || field.element) {
 
-				if (setContent(proc_node, field, true) && !content.isEmpty()) {
+				if (setContent(proc_node, field, current_key, true) && !content.isEmpty()) {
 
 					if (ps != null) {
 
@@ -372,9 +374,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		}
 
+		if (null_simple_primitive_type && nested_fields == 0)
+			return;
+
 		if (filled) {
 
-			writeNull();
+			write();
 
 			this.proc_node = proc_node;
 			this.current_key = current_key;
@@ -385,11 +390,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Null writer of processing node.
+	 * Writer of processing node.
 	 *
 	 * @throws SQLException the SQL exception
 	 */
-	private void writeNull() throws SQLException {
+	private void write() throws SQLException {
 
 		written = false;
 
@@ -554,22 +559,16 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 */
 	private void writeSerKey(int field_id, int param_id, int _param_id, int key_id) throws SQLException {
 
-		if (def_ser_size ) {
-
+		if (def_ser_size) {
 			ps.setInt(param_id, key_id);
-
 			if (_param_id != -1)
 				ps.setInt(_param_id,  key_id);
-
 		}
 
 		else {
-
 			ps.setShort(param_id, (short) key_id);
-
 			if (_param_id != -1)
 				ps.setInt(_param_id,  key_id);
-
 		}
 
 		occupied[field_id] = true;

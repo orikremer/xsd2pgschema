@@ -189,6 +189,8 @@ public class PgAnyRetriever extends DefaultHandler {
 
 					xmlb.writePendingTableStartElements();
 
+					xmlb.writePendingSimpleContent();
+
 					xmlb.writer.writeCharacters((test.has_child_elem ? "" : xmlb.line_feed_code) + test.child_indent_space);
 
 					xmlb.writer.writeStartElement(prefix, start_elem_name, target_namespace);

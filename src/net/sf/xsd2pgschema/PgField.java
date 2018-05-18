@@ -108,6 +108,9 @@ public class PgField {
 	/** Whether xs:simpleContent. */
 	protected boolean simple_content = false;
 
+	/** Whether primitive type of xs:simpleContent. */
+	protected boolean simple_primitive_type = false;
+
 	/** Whether xs:any. */
 	protected boolean any = false;
 

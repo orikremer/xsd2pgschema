@@ -53,8 +53,11 @@ public class XmlBuilder {
 	/** The appended namespace declarations. */
 	protected HashSet<String> appended_xmlns = new HashSet<String>();
 
-	/** The pending table element. */
-	protected LinkedList<PgPendingTableElem> pending_table_elem = new LinkedList<PgPendingTableElem>();
+	/** The pending start element of table. */
+	protected LinkedList<PgPendingStartElem> pending_start_elem = new LinkedList<PgPendingStartElem>();
+
+	/** The pending simple content. */
+	protected StringBuilder pending_simple_cont = new StringBuilder();
 
 	/**
 	 * Set indent offset.
@@ -146,20 +149,43 @@ public class XmlBuilder {
 	}
 
 	/**
-	 * Write start elements of pending table.
+	 * Write pending start elements of table.
 	 *
 	 * @throws XMLStreamException the XML stream exception
 	 */
 	public synchronized void writePendingTableStartElements() throws XMLStreamException {
 
-		PgPendingTableElem table_elem;
+		PgPendingStartElem start_elem;
 
-		while ((table_elem = pending_table_elem.pollLast()) != null) {
+		while ((start_elem = pending_start_elem.pollLast()) != null) {
 
-			table_elem.writeStartElement(this);
+			start_elem.write(this);
 
-			if (pending_table_elem.size() > 0)
+			if (pending_start_elem.size() > 0)
 				writer.writeCharacters(line_feed_code);
+
+		}
+
+	}
+
+	public void appendSimpleContent(String content) {
+
+		pending_simple_cont.append(content);
+
+	}
+
+	/**
+	 * Write pending simple conent.
+	 *
+	 * @throws XMLStreamException the XML stream exception
+	 */
+	public synchronized void writePendingSimpleContent() throws XMLStreamException {
+
+		if (pending_simple_cont.length() > 0) {
+
+			writer.writeCharacters(pending_simple_cont.toString());
+
+			pending_simple_cont.setLength(0);
 
 		}
 
@@ -171,7 +197,10 @@ public class XmlBuilder {
 	public void clear() {
 
 		appended_xmlns.clear();
-		pending_table_elem.clear();
+
+		pending_start_elem.clear();
+
+		pending_simple_cont.setLength(0);
 
 	}
 

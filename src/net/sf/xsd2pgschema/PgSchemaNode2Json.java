@@ -123,6 +123,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		filled = true;
 
+		null_simple_primitive_type = false;
+
 		nested_fields = 0;
 
 		for (int f = 0; f < fields.size(); f++) {
@@ -147,7 +149,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			else if (field.attribute || field.simple_content || field.element) {
 
-				if (setContent(proc_node, field, false))
+				if (setContent(proc_node, field, current_key, false))
 					values[f] = content;
 
 				else if (field.required) {
@@ -170,6 +172,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				break;
 
 		}
+
+		if (null_simple_primitive_type && nested_fields == 0)
+			return;
 
 		if (filled) {
 

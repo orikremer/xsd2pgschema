@@ -82,6 +82,9 @@ public abstract class PgSchemaNodeParser {
 	/** Whether values were filled. */
 	protected boolean filled = true;
 
+	/** Whether simple content of primitive type was null. */
+	boolean null_simple_primitive_type = false;
+
 	/** Whether any content was written. */
 	protected boolean written = false;
 
@@ -309,10 +312,11 @@ public abstract class PgSchemaNodeParser {
 	 *
 	 * @param node current node
 	 * @param field current field
+	 * @param proc_key processing key name
 	 * @param pg_enum_limit whether PostgreSQL enumeration length limit is applied
 	 * @return boolean whether content has value
 	 */
-	public boolean setContent(final Node node, final PgField field, final boolean pg_enum_limit) {
+	public boolean setContent(final Node node, final PgField field, final String proc_key, final boolean pg_enum_limit) {
 
 		content = null;
 
@@ -320,7 +324,7 @@ public abstract class PgSchemaNodeParser {
 			setAttribute(node, field);
 
 		else if (field.simple_content)
-			setSimpleContent(node);
+			setSimpleContent(node, field, proc_key);
 
 		else if (field.element)
 			setElement(node, field);
@@ -377,19 +381,36 @@ public abstract class PgSchemaNodeParser {
 	 * Set simple content.
 	 *
 	 * @param node current node
+	 * @param field current field
+	 * @param proc_key processing key name
 	 * @return boolean whether simple content has value
 	 */
-	private void setSimpleContent(final Node node) {
+	private void setSimpleContent(final Node node, final PgField field, final String proc_key) {
 
-		Node child = node.getFirstChild();
+		try {
 
-		if (child == null || child.getNodeType() != Node.TEXT_NODE)
-			return;
+			Node child = node.getFirstChild();
 
-		content = child.getNodeValue();
+			if (child == null || child.getNodeType() != Node.TEXT_NODE)
+				return;
 
-		if (PgSchemaUtil.null_simple_cont_pattern.matcher(content).matches())
-			content = null;
+			content = child.getNodeValue();
+
+			if (PgSchemaUtil.null_simple_cont_pattern.matcher(content).matches())
+				content = null;
+
+		} finally {
+
+			if (field.simple_primitive_type) {
+
+				if (content != null && fields.stream().anyMatch(_field -> _field.nested_key && matchesParentNode(proc_key, _field.parent_node)))
+					content = null;
+
+				null_simple_primitive_type = content == null;
+
+			}
+
+		}
 
 	}
 

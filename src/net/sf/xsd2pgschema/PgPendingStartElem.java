@@ -22,11 +22,11 @@ package net.sf.xsd2pgschema;
 import javax.xml.stream.XMLStreamException;
 
 /**
- * Pending table element.
+ * Pending start element of table.
  *
  * @author yokochi
  */
-public class PgPendingTableElem {
+public class PgPendingStartElem {
 
 	/** The header string. */
 	protected String header;
@@ -35,12 +35,12 @@ public class PgPendingTableElem {
 	protected PgTable table;
 
 	/**
-	 * Instance of pending table element.
+	 * Instance of pending start element of table.
 	 *
 	 * @param header header string
 	 * @param table current table
 	 */
-	public PgPendingTableElem(String header, PgTable table) {
+	public PgPendingStartElem(String header, PgTable table) {
 
 		this.header = header;
 		this.table = table;
@@ -48,12 +48,12 @@ public class PgPendingTableElem {
 	}
 
 	/**
-	 * Write start element of pending table.
+	 * Write pending start element of table.
 	 * 
 	 * @param xmlb XML builder
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public void writeStartElement(XmlBuilder xmlb) throws XMLStreamException {
+	public void write(XmlBuilder xmlb) throws XMLStreamException {
 
 		xmlb.writer.writeCharacters(header);
 
