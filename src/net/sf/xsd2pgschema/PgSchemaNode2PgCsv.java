@@ -39,6 +39,18 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	/** The string builder for a line of CSV/TSV format. */
 	private StringBuilder sb = null;
 
+	/** Whether use TSV format in PostgreSQL data migration. */
+	private boolean pg_tab_delimiter = true;
+
+	/** The current delimiter code. */
+	private char pg_delimiter = '\t';
+
+	/** The current null code. */
+	private String pg_null = PgSchemaUtil.pg_tsv_null;
+
+	/** Whether use default serial key size (unsigned int 32 bit). */
+	private boolean def_ser_size = true;
+
 	/**
 	 * Node parser for CSV conversion.
 	 *
@@ -53,6 +65,14 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 		super(schema, parent_table, table);
 
 		sb = new StringBuilder();
+
+		pg_tab_delimiter = option.pg_tab_delimiter;
+
+		pg_delimiter = option.pg_delimiter;
+
+		pg_null = option.pg_null;
+
+		def_ser_size = option.ser_size.equals(PgSerSize.defaultSize());
 
 	}
 
@@ -117,7 +137,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 */
 	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean nested, final int key_id) throws IOException, TransformerException {
 
-		Arrays.fill(values, option.pg_null);
+		Arrays.fill(values, pg_null);
 
 		filled = true;
 
@@ -141,7 +161,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 			else if (field.serial_key) {
 
 				if (table.buffw != null)
-					values[f] = option.ser_size.equals(PgSerSize.unsigned_int_32) ? Integer.toString(key_id) : Short.toString((short) key_id);
+					values[f] = def_ser_size ? Integer.toString(key_id) : Short.toString((short) key_id);
 
 			}
 
@@ -198,7 +218,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				if (setContent(proc_node, field, true)) {
 
 					if (table.buffw != null && !content.isEmpty())
-						values[f] = option.pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
+						values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
 
 				} else if (field.required) {
 					filled = false;
@@ -212,7 +232,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 			else if ((field.any || field.any_attribute) && table.buffw != null) {
 
 				if (setAnyContent(proc_node, field) && !content.isEmpty())
-					values[f] = option.pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
+					values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
 
 			}
 
@@ -255,7 +275,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				String value = values[f];
 
-				sb.append(value + option.pg_delimiter);
+				sb.append(value + pg_delimiter);
 
 			}
 

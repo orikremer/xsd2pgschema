@@ -101,6 +101,9 @@ public class xpath2xml {
 			else if (args[i].equals("--test-ddl"))
 				pg_option.test = true;
 
+			else if (args[i].equals("--fill-default-value"))
+				option.fill_default_value = true;
+
 			else if (args[i].equals("--xml-no-xmlns"))
 				xmlb.append_xmlns = false;
 

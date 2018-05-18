@@ -23,6 +23,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.sql.PreparedStatement;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.w3c.dom.NamedNodeMap;
@@ -175,7 +176,7 @@ public class PgTable {
 	 */
 	private void testContentHolder() {
 
-		content_holder = fields.stream().anyMatch(arg -> !arg.document_key && !arg.primary_key && !arg.foreign_key && !arg.nested_key && !arg.serial_key && !arg.xpath_key);
+		content_holder = fields.parallelStream().anyMatch(arg -> !arg.document_key && !arg.primary_key && !arg.foreign_key && !arg.nested_key && !arg.serial_key && !arg.xpath_key);
 		relational = bridge || virtual || !content_holder;
 
 	}
@@ -185,7 +186,7 @@ public class PgTable {
 	 */
 	private void testListHolder() {
 
-		list_holder = fields.stream().filter(arg -> arg.nested_key).anyMatch(arg -> arg.list_holder);
+		list_holder = fields.parallelStream().filter(arg -> arg.nested_key).anyMatch(arg -> arg.list_holder);
 
 	}
 
@@ -238,7 +239,7 @@ public class PgTable {
 	 */
 	private void testForeignKey() {
 
-		has_foreign_key = fields.stream().anyMatch(arg -> arg.foreign_key);
+		has_foreign_key = fields.parallelStream().anyMatch(arg -> arg.foreign_key);
 
 	}
 
@@ -247,7 +248,7 @@ public class PgTable {
 	 */
 	private void testHasAny() {
 
-		has_any = fields.stream().anyMatch(arg -> arg.any);
+		has_any = fields.parallelStream().anyMatch(arg -> arg.any);
 
 	}
 
@@ -256,7 +257,7 @@ public class PgTable {
 	 */
 	private void testHasAnyAttribute() {
 
-		has_any_attribute = fields.stream().anyMatch(arg -> arg.any_attribute);
+		has_any_attribute = fields.parallelStream().anyMatch(arg -> arg.any_attribute);
 
 	}
 
@@ -518,7 +519,7 @@ public class PgTable {
 		if (!option.rel_model_ext)
 			return;
 
-		if (fields.stream().anyMatch(arg -> arg.serial_key)) // already has a serial key
+		if (fields.parallelStream().anyMatch(arg -> arg.serial_key)) // already has a serial key
 			return;
 
 		PgField field = new PgField();
@@ -540,7 +541,7 @@ public class PgTable {
 	 */
 	public void addXPathKey(PgSchemaOption option) {
 
-		if (fields.stream().anyMatch(arg -> arg.xpath_key)) // already has an xpath key
+		if (fields.parallelStream().anyMatch(arg -> arg.xpath_key)) // already has an xpath key
 			return;
 
 		PgField field = new PgField();
@@ -599,9 +600,9 @@ public class PgTable {
 	 */
 	public PgField getField(String field_name) {
 
-		int f = getFieldId(field_name);
+		Optional<PgField> opt = fields.parallelStream().filter(field -> field.name.equals(field_name)).findFirst();
 
-		return f < 0 ? null : fields.get(f);
+		return opt.isPresent() ? opt.get() : null;
 	}
 
 	/**
@@ -612,9 +613,9 @@ public class PgTable {
 	 */
 	public PgField getCanField(String field_xname) {
 
-		int f = getCanFieldId(field_xname);
+		Optional<PgField> opt = fields.parallelStream().filter(field -> field.xname.equals(field_xname)).findFirst();
 
-		return f < 0 ? null : fields.get(f);
+		return opt.isPresent() ? opt.get() : null;
 	}
 
 	/**
@@ -625,63 +626,9 @@ public class PgTable {
 	 */
 	public PgField getPgField(String field_pname) {
 
-		int f = getPgFieldId(field_pname);
+		Optional<PgField> opt = fields.parallelStream().filter(field -> field.pname.equals(field_pname)).findFirst();
 
-		return f < 0 ? null : fields.get(f);
-	}
-
-	/**
-	 * Return field id.
-	 *
-	 * @param field_name field name
-	 * @return int the field id, -1 represents not found
-	 */
-	private int getFieldId(String field_name) {
-
-		for (int f = 0; f < fields.size(); f++) {
-
-			if (fields.get(f).name.equals(field_name))
-				return f;
-
-		}
-
-		return -1;
-	}
-
-	/**
-	 * Return field id.
-	 *
-	 * @param field_xname canonical name of field
-	 * @return int the field id, -1 represents not found
-	 */
-	private int getCanFieldId(String field_xname) {
-
-		for (int f = 0; f < fields.size(); f++) {
-
-			if (fields.get(f).xname.equals(field_xname))
-				return f;
-
-		}
-
-		return -1;
-	}
-
-	/**
-	 * Return field id.
-	 *
-	 * @param field_pname field name in PostgreSQL
-	 * @return int the field id, -1 represents not found
-	 */
-	private int getPgFieldId(String field_pname) {
-
-		for (int f = 0; f < fields.size(); f++) {
-
-			if (fields.get(f).pname.equals(field_pname))
-				return f;
-
-		}
-
-		return -1;
+		return opt.isPresent() ? opt.get() : null;
 	}
 
 	/**
@@ -728,7 +675,7 @@ public class PgTable {
 	 */
 	public void removeBlockedSubstitutionGroups() {
 
-		fields.stream().filter(arg -> arg.rep_substitution_group && arg.block_value != null && arg.block_value.equals("substitution")).map(arg -> arg.xname).collect(Collectors.toList()).forEach(xname -> fields.removeIf(arg -> arg.substitution_group != null && arg.substitution_group.equals(xname)));
+		fields.parallelStream().filter(arg -> arg.rep_substitution_group && arg.block_value != null && arg.block_value.equals("substitution")).map(arg -> arg.xname).collect(Collectors.toList()).forEach(xname -> fields.removeIf(arg -> arg.substitution_group != null && arg.substitution_group.equals(xname)));
 
 	}
 
@@ -737,7 +684,7 @@ public class PgTable {
 	 */
 	public void cancelUniqueKey() {
 
-		fields.stream().filter(arg -> arg.primary_key).forEach(arg -> arg.unique_key = false);
+		fields.parallelStream().filter(arg -> arg.primary_key).forEach(arg -> arg.unique_key = false);
 
 	}
 
@@ -746,7 +693,7 @@ public class PgTable {
 	 */
 	public void countNestedFields() {
 
-		if ((nested_fields = (int) fields.stream().filter(arg -> arg.nested_key).count()) > 0)
+		if ((nested_fields = (int) fields.parallelStream().filter(arg -> arg.nested_key).count()) > 0)
 			required = true;
 
 	}

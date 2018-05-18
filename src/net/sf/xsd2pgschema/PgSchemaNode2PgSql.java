@@ -57,6 +57,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/** The database connection. */
 	private Connection db_conn;
 
+	/** The size of hash key. */
+	private PgHashSize hash_size = null;
+
+	/** Whether use default serial key size (unsigned int 32 bit). */
+	private boolean def_ser_size = true;
+
 	/**
 	 * Node parser for PostgreSQL data migration.
 	 *
@@ -108,7 +114,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			if (update && rel_data_ext) {
 
-				PgField pkey = fields.stream().filter(field -> field.primary_key).findFirst().get();
+				PgField pkey = fields.parallelStream().filter(field -> field.primary_key).findFirst().get();
 
 				String pkey_name = PgSchemaUtil.avoidPgReservedWords(pkey.pname);
 
@@ -147,6 +153,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			sql.setLength(0);
 
 		}
+
+		hash_size = option.hash_size;
+
+		def_ser_size = option.ser_size.equals(PgSerSize.defaultSize());
 
 	}
 
@@ -364,7 +374,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		if (filled) {
 
-			write();
+			writeNull();
 
 			this.proc_node = proc_node;
 			this.current_key = current_key;
@@ -375,11 +385,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Writer of processing node.
+	 * Null writer of processing node.
 	 *
 	 * @throws SQLException the SQL exception
 	 */
-	private void write() throws SQLException {
+	private void writeNull() throws SQLException {
 
 		written = false;
 
@@ -504,7 +514,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 */
 	private void writeHashKey(int field_id, int param_id, int _param_id, String key_name) throws SQLException {
 
-		switch (option.hash_size) {
+		switch (hash_size) {
 		case native_default:
 			byte[] bytes = schema.getHashKeyBytes(key_name);
 			ps.setBytes(param_id, bytes);
@@ -544,17 +554,22 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 */
 	private void writeSerKey(int field_id, int param_id, int _param_id, int key_id) throws SQLException {
 
-		switch (option.ser_size) {
-		case unsigned_int_32:
+		if (def_ser_size ) {
+
 			ps.setInt(param_id, key_id);
+
 			if (_param_id != -1)
 				ps.setInt(_param_id,  key_id);
-			break;
-		case unsigned_short_16:
+
+		}
+
+		else {
+
 			ps.setShort(param_id, (short) key_id);
+
 			if (_param_id != -1)
 				ps.setInt(_param_id,  key_id);
-			break;
+
 		}
 
 		occupied[field_id] = true;

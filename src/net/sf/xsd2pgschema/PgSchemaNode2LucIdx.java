@@ -37,8 +37,11 @@ import org.w3c.dom.Node;
  */
 public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
-	/** The full-text index filter. */
-	private IndexFilter index_filter = null;	
+	/** The minimum word length for indexing. */
+	private int min_word_len = PgSchemaUtil.min_word_len;
+
+	/** Whether numeric values are stored in Lucene index. */
+	private boolean numeric_lucidx = false;
 
 	/**
 	 * Node parser for Lucene document conversion.
@@ -53,7 +56,9 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		super(schema, parent_table, table);
 
-		index_filter = schema.index_filter;
+		min_word_len = schema.index_filter.min_word_len;
+
+		numeric_lucidx = schema.index_filter.numeric_lucidx;
 
 	}
 
@@ -236,7 +241,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 					table.lucene_doc.add(new NoIdxStringField(table.name + "." + field.name, value, Field.Store.YES));
 
 				else if (field.indexable)
-					field.writeValue2LucIdx(table.lucene_doc, table.name + "." + field.name, value, value.length() >= index_filter.min_word_len, index_filter.numeric_lucidx);
+					field.writeValue2LucIdx(table.lucene_doc, table.name + "." + field.name, value, value.length() >= min_word_len, numeric_lucidx);
 
 			}
 

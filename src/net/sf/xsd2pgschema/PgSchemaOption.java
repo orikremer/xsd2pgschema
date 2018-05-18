@@ -141,6 +141,9 @@ public class PgSchemaOption {
 	/** Whether append document key if in-place key not exists. */
 	public boolean document_key_if_no_in_place = false;
 
+	/** Whether fill @default value. */
+	public boolean fill_default_value = false;
+
 	/** The directory contains check sum files. */
 	public File check_sum_dir = null;
 
@@ -152,9 +155,6 @@ public class PgSchemaOption {
 
 	/** The xs_prefix.isEmpty() ? "" : xs_prefix + ":". */
 	protected String xs_prefix_ = null;
-
-	/** Whether fill @default value. */
-	protected boolean fill_default_value = false;
 
 	/** Whether attribute selection has been resolved. */
 	protected boolean attr_resolved = false;

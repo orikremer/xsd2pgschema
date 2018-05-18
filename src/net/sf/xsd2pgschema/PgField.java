@@ -4378,15 +4378,16 @@ public class PgField {
 	 *
 	 * @param rset result set
 	 * @param par_idx parameter index id
+	 * @param fill_default_value whether fill default value in case of empty
 	 * @return String retrieved value
 	 * @throws SQLException the SQL exception
 	 */
-	public String retrieveValue(ResultSet rset, int par_idx) throws SQLException {
+	public String retrieveValue(ResultSet rset, int par_idx, boolean fill_default_value) throws SQLException {
 
 		Object obj = rset.getObject(par_idx);
 
 		if (obj == null)
-			return null;
+			return fill_default_value ? default_value : null;
 
 		if (enum_name != null) {
 

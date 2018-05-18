@@ -46,12 +46,12 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 	/**
 	 * Instance of any attribute retriever.
 	 *
-	 * @param root_node_name root node name
+	 * @param table_pname table name in PostgreSQL
 	 * @param xmlb XML builder
 	 */
-	public PgAnyAttrRetriever(String root_node_name, XmlBuilder xmlb) {
+	public PgAnyAttrRetriever(String table_pname, XmlBuilder xmlb) {
 
-		this.root_node_name = root_node_name;
+		root_node_name = table_pname;
 		this.xmlb = xmlb;
 
 	}

@@ -490,7 +490,7 @@ public abstract class PgSchemaNodeParser {
 
 			String _child_name = child_name;
 
-			if (fields.stream().filter(field -> field.element).anyMatch(field -> _child_name.equals(field.xname)))
+			if (fields.parallelStream().filter(field -> field.element).anyMatch(field -> _child_name.equals(field.xname)))
 				continue;
 
 			if (!has_any) { // initial instance of new document
@@ -547,7 +547,7 @@ public abstract class PgSchemaNodeParser {
 
 				if (attr != null) {
 
-					if (fields.stream().filter(field -> field.attribute).anyMatch(field -> attr.getNodeName().equals(field.xname)))
+					if (fields.parallelStream().filter(field -> field.attribute).anyMatch(field -> attr.getNodeName().equals(field.xname)))
 						continue;
 
 					if (!has_any_attr) { // initial instance of new document

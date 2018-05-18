@@ -220,35 +220,35 @@ public class XPathSqlExpr {
 
 		switch (terminus) {
 		case element:
-			if (!table.fields.stream().anyMatch(field -> field.element && field.xname.equals(xname))) {
+			if (!table.fields.parallelStream().anyMatch(field -> field.element && field.xname.equals(xname))) {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();
 			}
 			break;
 		case simple_content:
-			if (!table.fields.stream().anyMatch(field -> field.simple_content && field.xname.equals(xname))) {
+			if (!table.fields.parallelStream().anyMatch(field -> field.simple_content && field.xname.equals(xname))) {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();
 			}
 			break;
 		case attribute:
-			if (!table.fields.stream().anyMatch(field -> field.attribute && field.xname.equals(xname))) {
+			if (!table.fields.parallelStream().anyMatch(field -> field.attribute && field.xname.equals(xname))) {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();
 			}
 			break;
 		case any_element:
-			if (!table.fields.stream().anyMatch(field -> field.any && field.xname.equals(xname))) {
+			if (!table.fields.parallelStream().anyMatch(field -> field.any && field.xname.equals(xname))) {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();
 			}
 			break;
 		case any_attribute:
-			if (!table.fields.stream().anyMatch(field -> field.any_attribute && field.xname.equals(xname))) {
+			if (!table.fields.parallelStream().anyMatch(field -> field.any_attribute && field.xname.equals(xname))) {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();

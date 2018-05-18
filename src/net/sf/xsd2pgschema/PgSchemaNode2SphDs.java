@@ -36,8 +36,8 @@ import org.w3c.dom.Node;
  */
 public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
-	/** The full-text index filter. */
-	private IndexFilter index_filter = null;
+	/** The minimum word length for indexing. */
+	private int min_word_len = PgSchemaUtil.min_word_len;
 
 	/**
 	 * Node parser for Sphinx xmlpipe2 conversion.
@@ -52,7 +52,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 		super(schema, parent_table, table);
 
-		index_filter = schema.index_filter;
+		min_word_len = schema.index_filter.min_word_len;
 
 	}
 
@@ -201,7 +201,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 				PgField field = fields.get(f);
 
 				if (field.indexable)
-					field.writeValue2SphDs(table.buffw, table.name + PgSchemaUtil.sph_member_op + field.name, value, value.length() >= index_filter.min_word_len);
+					field.writeValue2SphDs(table.buffw, table.name + PgSchemaUtil.sph_member_op + field.name, value, value.length() >= min_word_len);
 
 			}
 

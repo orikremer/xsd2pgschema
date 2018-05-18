@@ -395,6 +395,8 @@ public class XPathEvaluatorImpl {
 
 						}
 
+						boolean fill_default_value = option.fill_default_value;
+
 						PgField field = path_expr.sql_subject.field;
 
 						String field_name = field.getCanName();
@@ -407,7 +409,7 @@ public class XPathEvaluatorImpl {
 
 							switch (terminus) {
 							case element:
-								content = field.retrieveValue(rset, 1);
+								content = field.retrieveValue(rset, 1, fill_default_value);
 
 								if ((content != null && !content.isEmpty()) || field.isRequired()) {
 
@@ -470,7 +472,7 @@ public class XPathEvaluatorImpl {
 								}
 								break;
 							case simple_content:
-								content = field.retrieveValue(rset, 1);
+								content = field.retrieveValue(rset, 1, fill_default_value);
 
 								if (content != null && !content.isEmpty()) {
 
@@ -488,7 +490,7 @@ public class XPathEvaluatorImpl {
 								}
 								break;
 							case attribute:
-								content = field.retrieveValue(rset, 1);
+								content = field.retrieveValue(rset, 1, fill_default_value);
 
 								if (content != null && !content.isEmpty()) {
 
@@ -572,7 +574,7 @@ public class XPathEvaluatorImpl {
 									PgField _field = table.getField(column_name);
 
 									if (_field != null)
-										content = field.retrieveValue(rset, 1);
+										content = field.retrieveValue(rset, 1, fill_default_value);
 
 									xml_writer.writeCharacters(content);
 									xml_writer.writeCharacters(xmlb.getLineFeedCode());
