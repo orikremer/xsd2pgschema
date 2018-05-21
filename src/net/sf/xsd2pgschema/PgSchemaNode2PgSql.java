@@ -229,7 +229,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		filled = true;
 
-		null_simple_primitive_type = false;
+		null_simple_primitive_list = false;
 
 		nested_fields = 0;
 
@@ -374,7 +374,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		}
 
-		if (null_simple_primitive_type && nested_fields == 0)
+		if (null_simple_primitive_list && nested_fields == 0)
 			return;
 
 		if (filled) {

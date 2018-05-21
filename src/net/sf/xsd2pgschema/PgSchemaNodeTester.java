@@ -88,8 +88,12 @@ public class PgSchemaNodeTester {
 
 			if ((!nested && !xname.equals(table_xname)) ||
 					(nested && (parent_virtual || (!parent_virtual && !xname.equals(parent_table.xname))) && !xname.equals(table_xname))) {
-				omissible = true;
-				return;
+
+				if (!table.has_nested_key_as_attr || (table.has_nested_key_as_attr && !parent_node.hasAttributes())) {
+					omissible = true;
+					return;
+				}
+
 			}
 
 		}

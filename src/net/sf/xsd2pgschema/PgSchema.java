@@ -603,6 +603,20 @@ public class PgSchema {
 							field.foreign_table_id = tables.indexOf(foreign_table);
 							foreign_table.required = true;
 
+							if (field.nested_key_as_attr) {
+
+								foreign_table.fields.stream().filter(foreign_field -> foreign_field.simple_content).forEach(foreign_field -> {
+
+									foreign_field.simple_attribute = true;
+									foreign_field.foreign_table_xname = table.xname;
+
+									table.has_nested_key_as_attr = true;
+									foreign_table.has_simple_attribute = true;
+
+								});
+
+							}
+
 						}
 
 						else
@@ -819,7 +833,7 @@ public class PgSchema {
 
 		// decide ancestor node name
 
-		tables.parallelStream().filter(table -> table.has_foreign_key && table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> {
+		tables.parallelStream().filter(table -> table.has_foreign_key && table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && !field.nested_key_as_attr && field.parent_node != null).forEach(field -> {
 
 			Optional<PgField> opt = table.fields.stream().filter(foreign_field -> foreign_field.foreign_key && foreign_field.foreign_table_xname.equals(field.parent_node)).findFirst();
 
@@ -2108,15 +2122,15 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param table current table
-	 * @param primitive_type whether primitive type
+	 * @param primitive_list whether primitive list
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractSimpleContent(Node node, PgTable table, boolean primitive_type) throws PgSchemaException {
+	private void extractSimpleContent(Node node, PgTable table, boolean primitive_list) throws PgSchemaException {
 
 		PgField field = new PgField();
 
 		field.simple_content = true;
-		field.simple_primitive_type = primitive_type;
+		field.simple_primitive_list = primitive_list;
 
 		field.xname = PgSchemaUtil.simple_content_name; // anonymous simple content
 		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
@@ -3193,8 +3207,14 @@ public class PgSchema {
 			else if (field.foreign_key)
 				System.out.println("-- FOREIGN KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " )");
 
-			else if (field.nested_key)
-				System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
+			else if (field.nested_key) {
+
+				if (field.nested_key_as_attr)
+					System.out.println("-- NESTED KEY AS ATTRIBUTE : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
+				else
+					System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
+
+			}
 
 			else if (field.attribute) {
 
@@ -3210,8 +3230,10 @@ public class PgSchema {
 
 			else if (field.simple_content) {
 
-				if (field.simple_primitive_type)
-					System.out.println("-- SIMPLE CONTENT, PRIMITIVE TYPE");
+				if (field.simple_primitive_list)
+					System.out.println("-- SIMPLE CONTENT AS PRIMITIVE LIST");
+				else if (field.simple_attribute)
+					System.out.println("-- SIMPLE CONTENT AS ATTRIBUTE, ATTRIBUTE NODE: " + field.foreign_table_xname);
 				else
 					System.out.println("-- SIMPLE CONTENT");
 
@@ -6654,7 +6676,7 @@ public class PgSchema {
 
 				}
 
-				else if (field.simple_content) {
+				else if (field.simple_content && !field.simple_attribute) {
 
 					String content = field.retrieveValue(rset, param_id, fill_default_value);
 
@@ -6751,7 +6773,7 @@ public class PgSchema {
 
 						test.has_child_elem |= n++ > 0;
 
-						test.mergeTest(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, test));
+						test.mergeTest(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, field.nested_key_as_attr, test));
 
 					}
 
@@ -6808,11 +6830,12 @@ public class PgSchema {
 	 * @param db_conn database connection
 	 * @param table current table
 	 * @param parent_key parent key
+	 * @param parent_key_as_attr whether parent key is simple attribute
 	 * @param parent_test nest test result of parent node
 	 * @return PgSchemaNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */	
-	private PgSchemaNestTester nestChildNode2Xml(final Connection db_conn, final PgTable table, final Object parent_key, PgSchemaNestTester parent_test) throws PgSchemaException {
+	private PgSchemaNestTester nestChildNode2Xml(final Connection db_conn, final PgTable table, final Object parent_key, final boolean parent_key_as_attr, PgSchemaNestTester parent_test) throws PgSchemaException {
 
 		XMLStreamWriter xml_writer = xmlb.writer;
 
@@ -6823,7 +6846,7 @@ public class PgSchema {
 			String table_ns = table.target_namespace;
 			String table_prefix = table.prefix;
 
-			if (!table.virtual && !table.list_holder)
+			if (!table.virtual && !table.list_holder && !parent_key_as_attr)
 				xmlb.pending_start_elem.push(new PgPendingStartElem((parent_test.has_child_elem || xmlb.pending_start_elem.size() > 0 ? "" : xmlb.line_feed_code) + test.current_indent_space, table));
 
 			if (table.ps == null || table.ps.isClosed()) {
@@ -6858,10 +6881,10 @@ public class PgSchema {
 
 			while (rset.next()) {
 
-				if (!table.virtual && table.list_holder)
+				if (!table.virtual && table.list_holder && !parent_key_as_attr)
 					xmlb.pending_start_elem.push(new PgPendingStartElem((parent_test.has_child_elem || xmlb.pending_start_elem.size() > 0 || list_id > 0 ? "" : xmlb.line_feed_code) + test.current_indent_space, table));
 
-				// attribute, any_attribute
+				// attribute, simple attribute, any_attribute
 
 				int param_id = 1;
 
@@ -6901,6 +6924,38 @@ public class PgSchema {
 
 					}
 
+					else if (field.simple_attribute) {
+
+						String content = field.retrieveValue(rset, param_id, fill_default_value);
+
+						if (content != null && !content.isEmpty()) {
+
+							xmlb.writePendingTableStartElements();
+
+							if (field.is_xs_namespace)
+								xml_writer.writeAttribute(field.foreign_table_xname, content);
+							else
+								xml_writer.writeAttribute(field.prefix, field.target_namespace, field.foreign_table_xname, content);
+
+							test.has_content = true;
+
+						}
+
+						else if (field.xrequired) {
+
+							xmlb.writePendingTableStartElements();
+
+							if (field.is_xs_namespace)
+								xml_writer.writeAttribute(field.foreign_table_xname, "");
+							else
+								xml_writer.writeAttribute(field.prefix, field.target_namespace, field.foreign_table_xname, "");
+
+							test.has_content = true;
+
+						}
+
+					}
+
 					else if (field.any_attribute) {
 
 						SQLXML xml_object = rset.getSQLXML(param_id);
@@ -6928,6 +6983,15 @@ public class PgSchema {
 						}
 
 					}
+					
+					else if (field.nested_key_as_attr) {
+
+						Object key = rset.getObject(param_id);
+
+						if (key != null)
+							test.mergeTest(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, true, test));
+
+					}
 
 					if (!field.omissible)
 						param_id++;
@@ -6942,7 +7006,7 @@ public class PgSchema {
 
 					PgField field = fields.get(f);
 
-					if (field.simple_content) {
+					if (field.simple_content && !field.simple_attribute) {
 
 						String content = field.retrieveValue(rset, param_id, fill_default_value);
 
@@ -6950,7 +7014,7 @@ public class PgSchema {
 
 							xmlb.writePendingTableStartElements();
 
-							if (field.simple_primitive_type) {
+							if (field.simple_primitive_list) {
 
 								if (xmlb.pending_simple_cont.length() > 0) {
 
@@ -7053,7 +7117,7 @@ public class PgSchema {
 
 					PgField field = fields.get(f);
 
-					if (field.nested_key) {
+					if (field.nested_key && !field.nested_key_as_attr) {
 
 						Object key = rset.getObject(param_id);
 
@@ -7061,7 +7125,7 @@ public class PgSchema {
 
 							test.has_child_elem |= n++ > 0;
 
-							test.mergeTest(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, test));
+							test.mergeTest(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, false, test));
 
 						}
 
@@ -7072,7 +7136,7 @@ public class PgSchema {
 
 				}
 
-				if (!table.virtual && table.list_holder) {
+				if (!table.virtual && table.list_holder && !parent_key_as_attr) {
 
 					if (test.has_content || test.has_simple_content) {
 
@@ -7100,7 +7164,7 @@ public class PgSchema {
 
 			rset.close();
 
-			if (!table.virtual && !table.list_holder) {
+			if (!table.virtual && !table.list_holder && !parent_key_as_attr) {
 
 				if (test.has_content || test.has_simple_content) {
 

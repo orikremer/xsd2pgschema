@@ -108,8 +108,11 @@ public class PgField {
 	/** Whether xs:simpleContent. */
 	protected boolean simple_content = false;
 
-	/** Whether primitive type of xs:simpleContent. */
-	protected boolean simple_primitive_type = false;
+	/** Whether xs:simpleContent as primitive list. */
+	protected boolean simple_primitive_list = false;
+
+	/** Whether xs:simpleContent as attribute. */
+	protected boolean simple_attribute = false;
 
 	/** Whether xs:any. */
 	protected boolean any = false;
@@ -128,6 +131,9 @@ public class PgField {
 
 	/** Whether nested key. */
 	protected boolean nested_key = false;
+
+	/** Whether nested key as attribute. */
+	protected boolean nested_key_as_attr = false;
 
 	/** Whether document key. */
 	protected boolean document_key = false;

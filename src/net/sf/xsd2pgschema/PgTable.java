@@ -111,6 +111,12 @@ public class PgTable {
 	/** Whether table has unique nested key. */
 	protected boolean has_unique_nested_key = false;
 
+	/** Whether table has nested key as attribute. */
+	protected boolean has_nested_key_as_attr = false;
+
+	/** Whether table has simple content as attribute. */
+	protected boolean has_simple_attribute = false;
+
 	/** Whether name collision occurs or not. */
 	protected boolean conflict = false;
 
@@ -372,6 +378,7 @@ public class PgTable {
 		field.setHashKeyType(option);
 		field.xtype = ref_field.xtype;
 		field.nested_key = true;
+		field.nested_key_as_attr = ref_field.attribute;
 		field.constraint_name = "FK_" + name;
 		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
 			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);

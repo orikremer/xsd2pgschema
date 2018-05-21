@@ -79,11 +79,11 @@ public abstract class PgSchemaNodeParser {
 	/** The nested key name. */
 	protected String[] nested_key = null;
 
-	/** Whether values were filled. */
+	/** Whether values were adequately filled. */
 	protected boolean filled = true;
 
-	/** Whether simple content of primitive type was null. */
-	boolean null_simple_primitive_type = false;
+	/** Whether simple content as primitive list was null. */
+	boolean null_simple_primitive_list = false;
 
 	/** Whether any content was written. */
 	protected boolean written = false;
@@ -234,7 +234,10 @@ public abstract class PgSchemaNodeParser {
 		if (!matchesParentNode(proc_key, field.parent_node))
 			return false;
 
-		if (!matchesAncestorNode(proc_key, field.ancestor_node))
+		if (!field.nested_key_as_attr && !matchesAncestorNode(proc_key, field.ancestor_node))
+			return false;
+
+		if (table.has_nested_key_as_attr && !field.nested_key_as_attr && proc_key.contains("@"))
 			return false;
 
 		PgTable nested_table = schema.getTable(field.foreign_table_id);
@@ -244,7 +247,7 @@ public abstract class PgSchemaNodeParser {
 		nested_key[nested_fields] = proc_key;
 
 		if (!nested_table.virtual)
-			nested_key[nested_fields] += "/" + field.foreign_table_xname; // XPath child
+			nested_key[nested_fields] += "/" + (field.nested_key_as_attr ? "@" : "") + field.foreign_table_xname; // XPath child
 
 		return true;
 	}
@@ -320,7 +323,7 @@ public abstract class PgSchemaNodeParser {
 
 		content = null;
 
-		if (field.attribute)
+		if (field.attribute || field.simple_attribute)
 			setAttribute(node, field);
 
 		else if (field.simple_content)
@@ -368,12 +371,33 @@ public abstract class PgSchemaNodeParser {
 	 */
 	private void setAttribute(final Node node, final PgField field) {
 
-		if (!node.hasAttributes())
-			return;
+		// attribute
 
-		Element e = (Element) node;
+		if (field.attribute) {
 
-		content = e.getAttribute(field.xname);
+			if (!node.hasAttributes())
+				return;
+
+			Element e = (Element) node;
+
+			content = e.getAttribute(field.xname);
+
+		}
+
+		// simple attribute
+
+		else {
+
+			Node parent_node = node.getParentNode();
+
+			if (!parent_node.hasAttributes())
+				return;
+
+			Element e = (Element) parent_node;
+
+			content = e.getAttribute(field.foreign_table_xname);
+
+		}
 
 	}
 
@@ -401,12 +425,12 @@ public abstract class PgSchemaNodeParser {
 
 		} finally {
 
-			if (field.simple_primitive_type) {
+			if (field.simple_primitive_list) {
 
 				if (content != null && fields.stream().anyMatch(_field -> _field.nested_key && matchesParentNode(proc_key, _field.parent_node)))
 					content = null;
 
-				null_simple_primitive_type = content == null;
+				null_simple_primitive_list = content == null;
 
 			}
 
