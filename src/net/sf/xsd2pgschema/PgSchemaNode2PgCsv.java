@@ -88,7 +88,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		current_key = document_id + "/" + table.xname;
 
-		parse(proc_node, null, current_key, current_key, nested, 1);
+		parse(proc_node, null, current_key, current_key, false, indirect, 1);
 
 	}
 
@@ -102,7 +102,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	@Override
 	public void parseChildNode(final PgSchemaNodeTester node_test) throws IOException, TransformerException {
 
-		parse(node_test.proc_node, node_test.parent_key, node_test.primary_key, node_test.current_key, node_test.nested, node_test.key_id);
+		parse(node_test.proc_node, node_test.parent_key, node_test.primary_key, node_test.current_key, node_test.as_attr, node_test.indirect, node_test.ordinal);
 
 	}
 
@@ -110,16 +110,14 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 * Parser processing node (child).
 	 *
 	 * @param proc_node processing node
-	 * @param parent_key key name of parent node
-	 * @param proc_key processing key name
-	 * @param nested whether it is nested
+	 * @param nested_key nested key
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws TransformerException the transformer exception
 	 */
 	@Override
-	public void parseChildNode(final Node proc_node, final String parent_key, final String proc_key, final boolean nested) throws IOException, TransformerException {
+	public void parseChildNode(final Node proc_node, PgSchemaNestedKey nested_key) throws IOException, TransformerException {
 
-		parse(proc_node, parent_key, proc_key, proc_key, nested, 1);
+		parse(proc_node, nested_key.parent_key, nested_key.current_key, nested_key.current_key, nested_key.as_attr, nested_key.indirect, 1);
 
 	}
 
@@ -127,15 +125,16 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 * Parse processing node.
 	 *
 	 * @param proc_node processing node
-	 * @param parent_key name of parent node
-	 * @param primary_key name of primary key
-	 * @param current_key name of current node
-	 * @param nested whether it is nested
-	 * @param key_id ordinal number of current node
+	 * @param parent_key parent key
+	 * @param primary_key primary key
+	 * @param current_key current key
+	 * @param as_attr whether parent key as attribute
+	 * @param indirect whether child node is not nested node
+	 * @param ordinal ordinal number of current node
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws TransformerException the transformer exception
 	 */
-	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean nested, final int key_id) throws IOException, TransformerException {
+	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean as_attr, final boolean indirect, final int ordinal) throws IOException, TransformerException {
 
 		Arrays.fill(values, pg_null);
 
@@ -143,7 +142,8 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		null_simple_primitive_list = false;
 
-		nested_fields = 0;
+		if (nested_keys != null && nested_keys.size() > 0)
+			nested_keys.clear();
 
 		for (int f = 0; f < fields.size(); f++) {
 
@@ -163,7 +163,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 			else if (field.serial_key) {
 
 				if (table.buffw != null)
-					values[f] = def_ser_size ? Integer.toString(key_id) : Short.toString((short) key_id);
+					values[f] = def_ser_size ? Integer.toString(ordinal) : Short.toString((short) ordinal);
 
 			}
 
@@ -202,12 +202,12 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			else if (field.nested_key) {
 
-				if (setNestedKey(field, current_key, key_id)) {
+				String nested_key;
+
+				if ((nested_key = setNestedKey(proc_node, field, current_key)) != null) {
 
 					if (table.buffw != null && rel_data_ext)
-						values[f] = schema.getHashKeyString(nested_key[nested_fields]);
-
-					nested_fields++;
+						values[f] = schema.getHashKeyString(nested_key);
 
 				}
 
@@ -217,7 +217,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			else if (field.attribute || field.simple_content || field.element) {
 
-				if (setContent(proc_node, field, current_key, true)) {
+				if (setContent(proc_node, field, current_key, as_attr, true)) {
 
 					if (table.buffw != null && !content.isEmpty())
 						values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
@@ -243,7 +243,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		}
 
-		if (null_simple_primitive_list && nested_fields == 0)
+		if (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0))
 			return;
 
 		if (filled) {
@@ -252,7 +252,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			this.proc_node = proc_node;
 			this.current_key = current_key;
-			this.nested = nested;
+			this.indirect = indirect;
 
 		}
 
@@ -265,30 +265,25 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 */
 	private void write() throws IOException {
 
-		written = false;
+		if (table.buffw == null)
+			return;
 
-		if (table.buffw != null) {
+		for (int f = 0; f < fields.size(); f++) {
 
-			written = true;
+			PgField field = fields.get(f);
 
-			for (int f = 0; f < fields.size(); f++) {
+			if (field.omissible)
+				continue;
 
-				PgField field = fields.get(f);
+			String value = values[f];
 
-				if (field.omissible)
-					continue;
-
-				String value = values[f];
-
-				sb.append(value + pg_delimiter);
-
-			}
-
-			table.buffw.write(sb.substring(0, sb.length() - 1) + "\n");
-
-			sb.setLength(0);
+			sb.append(value + pg_delimiter);
 
 		}
+
+		table.buffw.write(sb.substring(0, sb.length() - 1) + "\n");
+
+		sb.setLength(0);
 
 	}
 
@@ -300,11 +295,11 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	@Override
 	public void invokeRootNestedNode() throws PgSchemaException {
 
-		if (!filled)
+		if (!filled || nested_keys == null)
 			return;
 
-		for (int n = 0; n < nested_fields; n++)
-			schema.parseChildNode2PgCsv(proc_node, table, schema.getTable(nested_table_id[n]), current_key, nested_key[n], list_holder[n], table.bridge, 0);
+		for (PgSchemaNestedKey nested_key : nested_keys)
+			schema.parseChildNode2PgCsv(proc_node, table, nested_key.asOfRoot(this));
 
 	}
 
@@ -322,13 +317,14 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		visited = true;
 
-		for (int n = 0; n < nested_fields; n++) {
+		if (nested_keys == null)
+			return;
 
-			PgTable nested_table = schema.getTable(nested_table_id[n]);
+		for (PgSchemaNestedKey nested_key : nested_keys) {
 
-			boolean exists = existsNestedNode(nested_table, node_test.proc_node);
+			boolean exists = existsNestedNode(nested_key.table, node_test.proc_node);
 
-			schema.parseChildNode2PgCsv(exists || nested ? node_test.proc_node : proc_node, table, nested_table, node_test.primary_key, nested_key[n], list_holder[n], !exists, exists ? 0 : node_test.key_id);
+			schema.parseChildNode2PgCsv(exists || indirect ? node_test.proc_node : proc_node, table, nested_key.asOfChild(node_test, exists));
 
 		}
 
@@ -342,15 +338,13 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	@Override
 	public void invokeChildNestedNode() throws PgSchemaException {
 
-		if (!filled)
+		if (!filled || nested_keys == null)
 			return;
 
-		for (int n = 0; n < nested_fields; n++) {
+		for (PgSchemaNestedKey nested_key : nested_keys) {
 
-			PgTable nested_table = schema.getTable(nested_table_id[n]);
-
-			if (existsNestedNode(nested_table, proc_node))
-				schema.parseChildNode2PgCsv(proc_node, table, nested_table, current_key, nested_key[n], list_holder[n], false, 0);
+			if (existsNestedNode(nested_key.table, proc_node))
+				schema.parseChildNode2PgCsv(proc_node, table, nested_key.asOfChild(this));
 
 		}
 

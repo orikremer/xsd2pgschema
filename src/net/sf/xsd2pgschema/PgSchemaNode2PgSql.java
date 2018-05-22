@@ -173,7 +173,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		current_key = document_id + "/" + table.xname;
 
-		parse(proc_node, null, current_key, current_key, nested, 1);
+		parse(proc_node, null, current_key, current_key, false, indirect, 1);
 
 	}
 
@@ -188,7 +188,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	@Override
 	public void parseChildNode(final PgSchemaNodeTester node_test) throws IOException, TransformerException, SQLException {
 
-		parse(node_test.proc_node, node_test.parent_key, node_test.primary_key, node_test.current_key, node_test.nested, node_test.key_id);
+		parse(node_test.proc_node, node_test.parent_key, node_test.primary_key, node_test.current_key, node_test.as_attr, node_test.indirect, node_test.ordinal);
 
 	}
 
@@ -196,17 +196,15 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * Parse processing node (child).
 	 *
 	 * @param proc_node processing node
-	 * @param parent_key key name of parent node
-	 * @param proc_key processing key name
-	 * @param nested whether it is nested
+	 * @param nested_key nested key
 	 * @throws SQLException the SQL exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	@Override
-	public void parseChildNode(final Node proc_node, final String parent_key, final String proc_key, final boolean nested) throws SQLException, TransformerException, IOException {
+	public void parseChildNode(final Node proc_node, final PgSchemaNestedKey nested_key) throws SQLException, TransformerException, IOException {
 
-		parse(proc_node, parent_key, proc_key, proc_key, nested, 1);
+		parse(proc_node, nested_key.parent_key, nested_key.current_key, nested_key.current_key, nested_key.as_attr, nested_key.indirect, 1);
 
 	}
 
@@ -214,16 +212,17 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * Parse processing node.
 	 *
 	 * @param proc_node processing node
-	 * @param parent_key name of parent node
-	 * @param primary_key name of primary key
-	 * @param current_key name of current node
-	 * @param nested whether it is nested
-	 * @param key_id ordinal number of current node
+	 * @param parent_key parent key
+	 * @param primary_key primary key
+	 * @param current_key current key
+	 * @param as_attr whether parent key as attribute
+	 * @param indirect whether child node is not nested node
+	 * @param ordinal ordinal number of current node
 	 * @throws SQLException the SQL exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean nested, final int key_id) throws SQLException, TransformerException, IOException {
+	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean as_attr, final boolean indirect, final int ordinal) throws SQLException, TransformerException, IOException {
 
 		Arrays.fill(occupied, false);
 
@@ -231,7 +230,8 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		null_simple_primitive_list = false;
 
-		nested_fields = 0;
+		if (nested_keys != null && nested_keys.size() > 0)
+			nested_keys.clear();
 
 		int param_id = 1;
 
@@ -263,7 +263,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			else if (field.serial_key) {
 
 				if (ps != null)
-					writeSerKey(f, param_id, upsert ? _param_id : -1, key_id);
+					writeSerKey(f, param_id, upsert ? _param_id : -1, ordinal);
 
 			}
 
@@ -302,12 +302,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else if (field.nested_key) {
 
-				if (setNestedKey(field, current_key, key_id)) {
+				String nested_key;
+
+				if ((nested_key = setNestedKey(proc_node, field, current_key)) != null) {
 
 					if (ps != null && rel_data_ext)
-						writeHashKey(f, param_id, upsert ? _param_id : -1, nested_key[nested_fields]);
-
-					nested_fields++;
+						writeHashKey(f, param_id, upsert ? _param_id : -1, nested_key);
 
 				}
 
@@ -317,7 +317,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else if (field.attribute || field.simple_content || field.element) {
 
-				if (setContent(proc_node, field, current_key, true) && !content.isEmpty()) {
+				if (setContent(proc_node, field, current_key, as_attr, true) && !content.isEmpty()) {
 
 					if (ps != null) {
 
@@ -374,7 +374,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		}
 
-		if (null_simple_primitive_list && nested_fields == 0)
+		if (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0))
 			return;
 
 		if (filled) {
@@ -383,7 +383,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			this.proc_node = proc_node;
 			this.current_key = current_key;
-			this.nested = nested;
+			this.indirect = indirect;
 
 		}
 
@@ -396,51 +396,46 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 */
 	private void write() throws SQLException {
 
-		written = false;
+		if (ps == null)
+			return;
 
-		if (ps != null) {
+		int param_id = 1;
 
-			written = true;
+		for (int f = 0; f < fields.size(); f++) {
 
-			int param_id = 1;
+			PgField field = fields.get(f);
+
+			if (field.omissible)
+				continue;
+
+			if (!occupied[f])
+				ps.setNull(param_id, field.getSqlDataType());
+
+			param_id++;
+
+		}
+
+		if (upsert) {
+
+			int _param_id = param_size;
 
 			for (int f = 0; f < fields.size(); f++) {
 
 				PgField field = fields.get(f);
 
-				if (field.omissible)
+				if (field.omissible || field.primary_key)
 					continue;
 
 				if (!occupied[f])
-					ps.setNull(param_id, field.getSqlDataType());
+					ps.setNull(_param_id, field.getSqlDataType());
 
-				param_id++;
-
-			}
-
-			if (upsert) {
-
-				int _param_id = param_size;
-
-				for (int f = 0; f < fields.size(); f++) {
-
-					PgField field = fields.get(f);
-
-					if (field.omissible || field.primary_key)
-						continue;
-
-					if (!occupied[f])
-						ps.setNull(_param_id, field.getSqlDataType());
-
-					_param_id++;
-
-				}
+				_param_id++;
 
 			}
-
-			ps.addBatch();
 
 		}
+
+		ps.addBatch();
 
 	}
 
@@ -452,11 +447,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	@Override
 	public void invokeRootNestedNode() throws PgSchemaException {
 
-		if (!filled)
+		if (!filled || nested_keys == null)
 			return;
 
-		for (int n = 0; n < nested_fields; n++)
-			schema.parseChildNode2PgSql(proc_node, table, schema.getTable(nested_table_id[n]), current_key, nested_key[n], list_holder[n], table.bridge, 0, update, db_conn);
+		for (PgSchemaNestedKey nested_key : nested_keys)
+			schema.parseChildNode2PgSql(proc_node, table, nested_key.asOfRoot(this), update, db_conn);
 
 	}
 
@@ -474,13 +469,14 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		visited = true;
 
-		for (int n = 0; n < nested_fields; n++) {
+		if (nested_keys == null)
+			return;
 
-			PgTable nested_table = schema.getTable(nested_table_id[n]);
+		for (PgSchemaNestedKey nested_key : nested_keys) {
 
-			boolean exists = existsNestedNode(nested_table, node_test.proc_node);
+			boolean exists = existsNestedNode(nested_key.table, node_test.proc_node);
 
-			schema.parseChildNode2PgSql(exists || nested ? node_test.proc_node : proc_node, table, nested_table, node_test.primary_key, nested_key[n], list_holder[n], !exists, exists ? 0 : node_test.key_id, update, db_conn);
+			schema.parseChildNode2PgSql(exists || indirect ? node_test.proc_node : proc_node, table, nested_key.asOfChild(node_test, exists), update, db_conn);
 
 		}
 
@@ -494,15 +490,13 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	@Override
 	public void invokeChildNestedNode() throws PgSchemaException {
 
-		if (!filled)
+		if (!filled || nested_keys == null)
 			return;
 
-		for (int n = 0; n < nested_fields; n++) {
+		for (PgSchemaNestedKey nested_key : nested_keys) {
 
-			PgTable nested_table = schema.getTable(nested_table_id[n]);
-
-			if (existsNestedNode(nested_table, proc_node))
-				schema.parseChildNode2PgSql(proc_node, table, nested_table, current_key, nested_key[n], list_holder[n], false, 0, update, db_conn);
+			if (existsNestedNode(nested_key.table, proc_node))
+				schema.parseChildNode2PgSql(proc_node, table, nested_key.asOfChild(this), update, db_conn);
 
 		}
 
@@ -514,34 +508,34 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @param field_id field id
 	 * @param param_id parameter index
 	 * @param _param_id parameter index for upsert
-	 * @param proc_key source string
+	 * @param current_key current key
 	 * @throws SQLException the SQL exception
 	 */
-	private void writeHashKey(int field_id, int param_id, int _param_id, String key_name) throws SQLException {
+	private void writeHashKey(int field_id, int param_id, int _param_id, String current_key) throws SQLException {
 
 		switch (hash_size) {
 		case native_default:
-			byte[] bytes = schema.getHashKeyBytes(key_name);
+			byte[] bytes = schema.getHashKeyBytes(current_key);
 			ps.setBytes(param_id, bytes);
 			if (_param_id != -1)
 				ps.setBytes(_param_id, bytes);
 			break;
 		case unsigned_int_32:
-			int int_key = schema.getHashKeyInt(key_name);
+			int int_key = schema.getHashKeyInt(current_key);
 			ps.setInt(param_id, int_key);
 			if (_param_id != -1)
 				ps.setInt(_param_id, int_key);
 			break;
 		case unsigned_long_64:
-			long long_key = schema.getHashKeyLong(key_name);
+			long long_key = schema.getHashKeyLong(current_key);
 			ps.setLong(param_id, long_key);
 			if (_param_id != -1)
 				ps.setLong(_param_id, long_key);
 			break;
 		default:
-			ps.setString(param_id, key_name);
+			ps.setString(param_id, current_key);
 			if (_param_id != -1)
-				ps.setString(_param_id, key_name);
+				ps.setString(_param_id, current_key);
 		}
 
 		occupied[field_id] = true;
@@ -554,21 +548,21 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @param field_id field id
 	 * @param param_id parameter index
 	 * @param _param_id parameter index for upsert
-	 * @param key_id serial id
+	 * @param ordinal serial id
 	 * @throws SQLException the SQL exception
 	 */
-	private void writeSerKey(int field_id, int param_id, int _param_id, int key_id) throws SQLException {
+	private void writeSerKey(int field_id, int param_id, int _param_id, int ordinal) throws SQLException {
 
 		if (def_ser_size) {
-			ps.setInt(param_id, key_id);
+			ps.setInt(param_id, ordinal);
 			if (_param_id != -1)
-				ps.setInt(_param_id,  key_id);
+				ps.setInt(_param_id,  ordinal);
 		}
 
 		else {
-			ps.setShort(param_id, (short) key_id);
+			ps.setShort(param_id, (short) ordinal);
 			if (_param_id != -1)
-				ps.setInt(_param_id,  key_id);
+				ps.setInt(_param_id,  ordinal);
 		}
 
 		occupied[field_id] = true;

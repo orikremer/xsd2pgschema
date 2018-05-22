@@ -487,7 +487,7 @@ public class PgSchema {
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			if (child.getNodeName().equals(option.xs_prefix_ + "complexType"))
+			else if (child.getNodeName().equals(option.xs_prefix_ + "complexType"))
 				extractAdminElement(child, true, true);
 
 			else if (child.getNodeName().equals(option.xs_prefix_ + "simpleType"))
@@ -625,6 +625,23 @@ public class PgSchema {
 					}
 
 				}
+
+			}
+
+		});
+
+		// find simple content, which depends on parent
+
+		tables.stream().filter(foreign_table -> foreign_table.has_simple_attribute).forEach(foreign_table -> {
+
+			if (tables.parallelStream().anyMatch(table -> table.nested_fields > 0 && table.fields.stream().anyMatch(field -> field.nested_key && !field.nested_key_as_attr && getForeignTable(field).equals(foreign_table)))) {
+
+				foreign_table.fields.stream().filter(foreign_field -> foreign_field.simple_attribute).forEach(foreign_field -> {
+
+					foreign_field.simple_attribute = false;
+					foreign_field.simple_attr_cond = true;
+
+				});
 
 			}
 
@@ -3234,6 +3251,8 @@ public class PgSchema {
 					System.out.println("-- SIMPLE CONTENT AS PRIMITIVE LIST");
 				else if (field.simple_attribute)
 					System.out.println("-- SIMPLE CONTENT AS ATTRIBUTE, ATTRIBUTE NODE: " + field.foreign_table_xname);
+				else if (field.simple_attr_cond)
+					System.out.println("-- SIMPLE CONTENT AS CONDITIONAL ATTRIBUTE, ATTRIBUTE NODE: " + field.foreign_table_xname);
 				else
 					System.out.println("-- SIMPLE CONTENT");
 
@@ -4296,6 +4315,8 @@ public class PgSchema {
 
 			node2pgcsv.invokeRootNestedNode();
 
+			node2pgcsv.clear();
+
 		} catch (IOException | ParserConfigurationException | TransformerException e) {
 			throw new PgSchemaException(e);
 		}
@@ -4339,28 +4360,27 @@ public class PgSchema {
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
-	 * @param table current table
-	 * @param parent_key name of parent node
-	 * @param proc_key name of processing node
-	 * @param list_holder whether parent field is list holder
-	 * @param nested whether it is nested
-	 * @param nest_id ordinal number of current node
+	 * @param nested_key nested key
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void parseChildNode2PgCsv(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id) throws PgSchemaException {
+	protected void parseChildNode2PgCsv(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		final int table_id = tables.indexOf(table);
+		int table_id = nested_key.table_id;
+
+		PgTable table = nested_key.table;
+
+		PgSchemaNode2PgCsv node2pgcsv = null;
 
 		try {
 
-			PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(this, parent_table, table);
+			node2pgcsv = new PgSchemaNode2PgCsv(this, parent_table, table);
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
 
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key);
 
 				if (node_test.visited)
 					return;
@@ -4383,13 +4403,15 @@ public class PgSchema {
 				return;
 
 			synchronized (table_lock[table_id]) {
-				node2pgcsv.parseChildNode(parent_node, parent_key, proc_key, nested);
+				node2pgcsv.parseChildNode(parent_node, nested_key);
 			}
 
 			node2pgcsv.invokeChildNestedNode();
 
 		} catch (ParserConfigurationException | IOException | TransformerException e) {
 			throw new PgSchemaException(e);
+		} finally {
+			node2pgcsv.clear();
 		}
 
 	}
@@ -4424,9 +4446,12 @@ public class PgSchema {
 			PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, null, root_table, update, db_conn);
 
 			node2pgsql.parseRootNode(node);
+
 			node2pgsql.executeBatch();
 
 			node2pgsql.invokeRootNestedNode();
+
+			node2pgsql.clear();
 
 			db_conn.commit(); // transaction ends
 
@@ -4443,28 +4468,27 @@ public class PgSchema {
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
-	 * @param table current table
-	 * @param parent_key name of parent node
-	 * @param proc_key name of processing node
-	 * @param list_holder whether parent field is list holder
-	 * @param nested whether it is nested
-	 * @param nest_id ordinal number of current node
+	 * @param nested_key nested key
 	 * @param update whether update or insert
 	 * @param db_conn database connection
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void parseChildNode2PgSql(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id, final boolean update, final Connection db_conn) throws PgSchemaException {
+	protected void parseChildNode2PgSql(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key, final boolean update, final Connection db_conn) throws PgSchemaException {
+
+		PgTable table = nested_key.table;
+
+		PgSchemaNode2PgSql node2pgsql = null;
 
 		try {
 
-			PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, parent_table, table, update, db_conn);
+			node2pgsql = new PgSchemaNode2PgSql(this, parent_table, table, update, db_conn);
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
 
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key);
 
 				if (node_test.visited)
 					return;
@@ -4486,7 +4510,7 @@ public class PgSchema {
 				if (node2pgsql.visited)
 					return;
 
-				node2pgsql.parseChildNode(parent_node, parent_key, proc_key, nested);
+				node2pgsql.parseChildNode(parent_node, nested_key);
 
 				node2pgsql.invokeChildNestedNode();
 
@@ -4496,6 +4520,8 @@ public class PgSchema {
 
 		} catch (SQLException | ParserConfigurationException | IOException | TransformerException e) {
 			throw new PgSchemaException(e);
+		} finally {
+			node2pgsql.clear();
 		}
 
 	}
@@ -4931,6 +4957,8 @@ public class PgSchema {
 
 			node2lucidx.invokeRootNestedNode();
 
+			node2lucidx.clear();
+
 		} catch (ParserConfigurationException | TransformerException | IOException e) {
 			throw new PgSchemaException(e);
 		}
@@ -4955,26 +4983,25 @@ public class PgSchema {
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
-	 * @param table current table
-	 * @param parent_key name of parent node
-	 * @param proc_key name of processing node
-	 * @param list_holder whether parent field is list holder
-	 * @param nested whether it is nested
-	 * @param nest_id ordinal number of current node
+	 * @param nested_key nested key
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void parseChildNode2LucIdx(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id) throws PgSchemaException {
+	protected void parseChildNode2LucIdx(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key) throws PgSchemaException {
+
+		PgTable table = nested_key.table;
+
+		PgSchemaNode2LucIdx node2lucidx = null;
 
 		try {
 
-			PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(this, parent_table, table);
+			node2lucidx = new PgSchemaNode2LucIdx(this, parent_table, table);
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
 
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key);
 
 				if (node_test.visited)
 					return;
@@ -4997,13 +5024,15 @@ public class PgSchema {
 				return;
 
 			synchronized (table_lock[0]) {
-				node2lucidx.parseChildNode(parent_node, parent_key, proc_key, nested);
+				node2lucidx.parseChildNode(parent_node, nested_key);
 			}
 
 			node2lucidx.invokeChildNestedNode();
 
 		} catch (ParserConfigurationException | IOException | TransformerException e) {
 			throw new PgSchemaException(e);
+		} finally {
+			node2lucidx.clear();
 		}
 
 	}
@@ -5318,6 +5347,8 @@ public class PgSchema {
 
 			node2sphds.invokeRootNestedNode();
 
+			node2sphds.clear();
+
 			buffw.write("</sphinx:document>\n");
 
 		} catch (ParserConfigurationException | TransformerException | IOException e) {
@@ -5344,26 +5375,25 @@ public class PgSchema {
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
-	 * @param table current table
-	 * @param parent_key name of parent node
-	 * @param proc_key name of processing node
-	 * @param list_holder whether parent field is list holder
-	 * @param nested whether it is nested
-	 * @param nest_id ordinal number of current node
+	 * @param nested_key nested_key
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void parseChildNode2SphDs(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id) throws PgSchemaException {
+	protected void parseChildNode2SphDs(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key) throws PgSchemaException {
+
+		PgTable table = nested_key.table;
+
+		PgSchemaNode2SphDs node2sphds = null;
 
 		try {
 
-			PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(this, parent_table, table);
+			node2sphds = new PgSchemaNode2SphDs(this, parent_table, table);
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
 
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key);
 
 				if (node_test.visited)
 					return;
@@ -5386,13 +5416,15 @@ public class PgSchema {
 				return;
 
 			synchronized (table_lock[0]) {
-				node2sphds.parseChildNode(parent_node, parent_key, proc_key, nested);
+				node2sphds.parseChildNode(parent_node, nested_key);
 			}
 
 			node2sphds.invokeChildNestedNode();
 
 		} catch (ParserConfigurationException | IOException | TransformerException e) {
 			throw new PgSchemaException(e);
+		} finally {
+			node2sphds.clear();
 		}
 
 	}
@@ -5717,6 +5749,8 @@ public class PgSchema {
 
 				node2json.invokeRootNestedNodeObj(json_indent_level);
 
+				node2json.clear();
+
 				jsonb.writeFooter(root_table, json_indent_level--, 0, jsonb_header_end);
 
 			}
@@ -5756,20 +5790,19 @@ public class PgSchema {
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
-	 * @param table current table
-	 * @param parent_key name of parent node
-	 * @param proc_key name of processing node
-	 * @param list_holder whether parent field is list holder
-	 * @param nested whether it is nested
-	 * @param nest_id ordinal number of current node
+	 * @param nested_key nested key
 	 * @param json_indent_level current indent level
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void parseChildNode2ObjJson(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id, int json_indent_level) throws PgSchemaException {
+	protected void parseChildNode2ObjJson(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key, int json_indent_level) throws PgSchemaException {
+
+		PgTable table = nested_key.table;
+
+		PgSchemaNode2Json node2json = null;
 
 		try {
 
-			PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, parent_table, table);
+			node2json = new PgSchemaNode2Json(this, parent_table, table);
 
 			node2json.jsonb_header_begin = node2json.jsonb_header_end = jsonb.builder.length();
 
@@ -5783,7 +5816,7 @@ public class PgSchema {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key);
 
 				if (node_test.visited)
 					return;
@@ -5833,7 +5866,7 @@ public class PgSchema {
 
 				synchronized (table_lock[0]) {
 
-					node2json.parseChildNode(parent_node, parent_key, proc_key, nested);
+					node2json.parseChildNode(parent_node, nested_key);
 
 					if (node2json.written) {
 
@@ -5866,6 +5899,8 @@ public class PgSchema {
 
 		} catch (ParserConfigurationException | IOException | TransformerException e) {
 			throw new PgSchemaException(e);
+		} finally {
+			node2json.clear();
 		}
 
 	}
@@ -6097,6 +6132,8 @@ public class PgSchema {
 
 				node2json.invokeRootNestedNodeCol(json_indent_level);
 
+				node2json.clear();
+
 				jsonb.writeFooter(root_table, json_indent_level--, 0, jsonb_header_end);
 
 			}
@@ -6126,20 +6163,19 @@ public class PgSchema {
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
-	 * @param table current table
-	 * @param parent_key name of parent node
-	 * @param proc_key name of processing node
-	 * @param list_holder whether parent field is list holder
-	 * @param nested whether it is nested
-	 * @param nest_id ordinal number of current node
+	 * @param nested_key nested key
 	 * @param json_indent_level current indent level
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void parseChildNode2ColJson(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id, int json_indent_level) throws PgSchemaException {
+	protected void parseChildNode2ColJson(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key, int json_indent_level) throws PgSchemaException {
+
+		PgTable table = nested_key.table;
+
+		PgSchemaNode2Json node2json = null;
 
 		try {
 
-			PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, parent_table, table);
+			node2json = new PgSchemaNode2Json(this, parent_table, table);
 
 			if (!table.virtual) {
 
@@ -6153,7 +6189,7 @@ public class PgSchema {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key);
 
 				if (node_test.visited)
 					return;
@@ -6188,7 +6224,7 @@ public class PgSchema {
 
 				synchronized (table_lock[0]) {
 
-					node2json.parseChildNode(parent_node, parent_key, proc_key, nested);
+					node2json.parseChildNode(parent_node, nested_key);
 
 					if (node2json.written)
 						jsonb.writeContent(table, json_indent_level + (table.virtual ? 0 : 1));
@@ -6206,6 +6242,8 @@ public class PgSchema {
 
 		} catch (ParserConfigurationException | IOException | TransformerException e) {
 			throw new PgSchemaException(e);
+		} finally {
+			node2json.clear();
 		}
 
 	}
@@ -6363,6 +6401,8 @@ public class PgSchema {
 
 			node2json.invokeRootNestedNode();
 
+			node2json.clear();
+
 		} catch (ParserConfigurationException | TransformerException | IOException e) {
 			throw new PgSchemaException(e);
 		}
@@ -6455,28 +6495,27 @@ public class PgSchema {
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
-	 * @param table current table
-	 * @param parent_key name of parent node
-	 * @param proc_key name of processing node
-	 * @param list_holder whether parent field is list holder
-	 * @param nested whether it is nested
-	 * @param nest_id ordinal number of current node
+	 * @param nested_key nested key
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void parseChildNode2Json(final Node parent_node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id) throws PgSchemaException {
+	protected void parseChildNode2Json(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		final int table_id = tables.indexOf(table);
+		int table_id = nested_key.table_id;
+
+		PgTable table = nested_key.table;
+
+		PgSchemaNode2Json node2json = null;
 
 		try {
 
-			PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, parent_table, table);
+			node2json = new PgSchemaNode2Json(this, parent_table, table);
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
 
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, parent_key, proc_key, list_holder, nested, nest_id);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key);
 
 				if (node_test.visited)
 					return;
@@ -6499,13 +6538,15 @@ public class PgSchema {
 				return;
 
 			synchronized (table_lock[table_id]) {
-				node2json.parseChildNode(parent_node, parent_key, proc_key, nested);
+				node2json.parseChildNode(parent_node, nested_key);
 			}
 
 			node2json.invokeChildNestedNode();
 
 		} catch (ParserConfigurationException | IOException | TransformerException e) {
 			throw new PgSchemaException(e);
+		} finally {
+			node2json.clear();
 		}
 
 	}
@@ -6643,6 +6684,15 @@ public class PgSchema {
 
 				}
 
+				else if (field.nested_key_as_attr) {
+
+					Object key = rset.getObject(param_id);
+
+					if (key != null)
+						test.mergeTest(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, true, test));
+
+				}
+
 				if (!field.omissible)
 					param_id++;
 
@@ -6676,7 +6726,7 @@ public class PgSchema {
 
 				}
 
-				else if (field.simple_content && !field.simple_attribute) {
+				else if (field.simple_content) {
 
 					String content = field.retrieveValue(rset, param_id, fill_default_value);
 
@@ -6765,7 +6815,7 @@ public class PgSchema {
 
 				PgField field = fields.get(f);
 
-				if (field.nested_key) {
+				if (field.nested_key && !field.nested_key_as_attr) {
 
 					Object key = rset.getObject(param_id);
 
@@ -6773,7 +6823,7 @@ public class PgSchema {
 
 						test.has_child_elem |= n++ > 0;
 
-						test.mergeTest(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, field.nested_key_as_attr, test));
+						test.mergeTest(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, false, test));
 
 					}
 
@@ -6924,7 +6974,7 @@ public class PgSchema {
 
 					}
 
-					else if (field.simple_attribute) {
+					else if (parent_key_as_attr && field.simple_attribute) {
 
 						String content = field.retrieveValue(rset, param_id, fill_default_value);
 
@@ -6983,7 +7033,7 @@ public class PgSchema {
 						}
 
 					}
-					
+
 					else if (field.nested_key_as_attr) {
 
 						Object key = rset.getObject(param_id);
@@ -7006,7 +7056,7 @@ public class PgSchema {
 
 					PgField field = fields.get(f);
 
-					if (field.simple_content && !field.simple_attribute) {
+					if (field.simple_content && !parent_key_as_attr) {
 
 						String content = field.retrieveValue(rset, param_id, fill_default_value);
 

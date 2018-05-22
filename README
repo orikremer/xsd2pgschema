@@ -1,11 +1,12 @@
-﻿ Changes in xsd2pgschema 2.10.2-rc3 (release 2018-05-21)
+﻿ Changes in xsd2pgschema 2.10.2-rc4 (release 2018-05-22)
 
   Added --fill-default-value option and changed policy not to fill default value.
   Changed name of main class from xpathevaluator to xpath2xml, XPath 1.0 query evaluator to XML over PostgreSQL.
   Revised XML parse process not to violate unique constraint and to remove invalid nest key.
   Fixed missing predicate in some case while XPath->SQL query translation.
   Fixed missing of data of simple content of primitive type in list.
-  Added support for xs:attribute extended by xs:simpleType (non-primitive type attribute).
+  Added support for xs:attribute extended by xs:simpleType (introducing simple content as attribute).
+  Fixed simple content override with attribute defined by simple type extension. (introducing simple content as conditional attribute).
 
  Changes in xsd2pgschema 2.10.1 (release 2018-05-16)
 

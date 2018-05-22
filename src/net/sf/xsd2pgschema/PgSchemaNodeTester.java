@@ -29,7 +29,7 @@ import org.w3c.dom.Node;
 public class PgSchemaNodeTester {
 
 	/** The ordinal number in sibling node. */
-	protected int key_id = 1;
+	protected int ordinal = 1;
 
 	/** The parent key name. */
 	protected String parent_key = null;
@@ -49,11 +49,14 @@ public class PgSchemaNodeTester {
 	/** Whether this node has been already visited. */
 	protected boolean visited = false;
 
-	/** Whether nested node. */
-	protected boolean nested;
+	/** Whether parent node as attribute. */
+	protected boolean as_attr;
 
-	/** The ordinal number of current node in nested case. */
-	private int nest_id;
+	/** Whether child node is not nested node (indirect). */
+	protected boolean indirect;
+
+	/** The target ordinal number of current node. */
+	private int target_ordinal;
 
 	/** The total number of sibling node. */
 	private int node_count = 0;
@@ -66,13 +69,9 @@ public class PgSchemaNodeTester {
 	 * @param node current node
 	 * @param parent_table parent table
 	 * @param table current table
-	 * @param parent_key name of parent node
-	 * @param proc_key name of processing node
-	 * @param list_holder whether parent field is list holder
-	 * @param nested whether it is nested
-	 * @param nest_id ordinal number of current node in nested case
+	 * @param nested_key nested key
 	 */
-	public PgSchemaNodeTester(final PgSchemaOption option, final Node parent_node, final Node node, final PgTable parent_table, final PgTable table, final String parent_key, final String proc_key, final boolean list_holder, final boolean nested, final int nest_id) {
+	public PgSchemaNodeTester(final PgSchemaOption option, final Node parent_node, final Node node, final PgTable parent_table, final PgTable table, final PgSchemaNestedKey nested_key) {
 
 		boolean virtual = table.virtual;
 
@@ -82,14 +81,18 @@ public class PgSchemaNodeTester {
 
 		String table_xname = table.xname;
 
+		as_attr = nested_key.as_attr;
+		indirect = nested_key.indirect;
+		target_ordinal = nested_key.target_ordinal;
+
 		if (!virtual) {
 
 			boolean parent_virtual = parent_table.virtual;
 
-			if ((!nested && !xname.equals(table_xname)) ||
-					(nested && (parent_virtual || (!parent_virtual && !xname.equals(parent_table.xname))) && !xname.equals(table_xname))) {
+			if ((!indirect && !xname.equals(table_xname)) ||
+					(indirect && (parent_virtual || (!parent_virtual && !xname.equals(parent_table.xname))) && !xname.equals(table_xname))) {
 
-				if (!table.has_nested_key_as_attr || (table.has_nested_key_as_attr && !parent_node.hasAttributes())) {
+				if (!as_attr || (as_attr && !parent_node.hasAttributes())) {
 					omissible = true;
 					return;
 				}
@@ -98,13 +101,13 @@ public class PgSchemaNodeTester {
 
 		}
 
-		this.parent_key = parent_key;
+		this.parent_key = nested_key.parent_key;
 
 		// processing key name
 
-		primary_key = current_key = proc_key;
+		primary_key = current_key = nested_key.current_key;
 
-		if (list_holder) {
+		if (nested_key.list_holder) {
 
 			boolean node_test = false;
 
@@ -121,19 +124,19 @@ public class PgSchemaNodeTester {
 						node_test = true;
 
 					if (!node_test)
-						key_id++;
+						ordinal++;
 
 				}
 
 			}
 
-			if (key_id < nest_id) {
+			if (ordinal < target_ordinal) {
 				omissible = true;
 				return;
 			}
 
 			if (!virtual)
-				current_key += "[" + key_id + "]"; // XPath predicate
+				current_key += "[" + ordinal + "]"; // XPath predicate
 
 		}
 
@@ -151,7 +154,7 @@ public class PgSchemaNodeTester {
 
 		proc_node = virtual ? node.getParentNode() : node;
 
-		if (!virtual && nested) {
+		if (!virtual && indirect) {
 
 			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -173,9 +176,6 @@ public class PgSchemaNodeTester {
 
 		}
 
-		this.nested = nested;
-		this.nest_id = nest_id;
-
 	}
 
 	/**
@@ -184,7 +184,7 @@ public class PgSchemaNodeTester {
 	 * @return boolean whether current node is the last one
 	 */
 	public boolean isLastNode() {
-		return node_count <= 1 || (key_id == node_count) || (nested && key_id == nest_id);
+		return node_count <= 1 || (ordinal == node_count) || (indirect && ordinal == target_ordinal);
 	}
 
 }

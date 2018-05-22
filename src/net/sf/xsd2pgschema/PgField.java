@@ -114,6 +114,9 @@ public class PgField {
 	/** Whether xs:simpleContent as attribute. */
 	protected boolean simple_attribute = false;
 
+	/** Whether xs:simpleContent as attribute conditionally, which depends on parent node. */
+	protected boolean simple_attr_cond = false;
+
 	/** Whether xs:any. */
 	protected boolean any = false;
 
