@@ -54,6 +54,16 @@ public class PgOption {
 	}
 
 	/**
+	 * Return database URL for JDBC connection.
+	 *
+	 * @param encoding default encoding
+	 * @return String database URL
+	 */
+	public String getDbUrl(String encoding) {
+		return "jdbc:postgresql://" + host + ":" + port + "/" + name + "?charSet=" + encoding;
+	}
+
+	/**
 	 * Clear authentication information.  
 	 */
 	public void clear() {

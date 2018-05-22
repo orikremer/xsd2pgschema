@@ -128,7 +128,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		if (!pg_option.name.isEmpty()) {
 
-			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
+			db_conn = DriverManager.getConnection(pg_option.getDbUrl(PgSchemaUtil.def_encoding), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 
 			// test PostgreSQL DDL with schema
 

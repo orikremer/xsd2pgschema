@@ -125,7 +125,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
 
-		db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
+		db_conn = DriverManager.getConnection(pg_option.getDbUrl(PgSchemaUtil.def_encoding), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 
 		// test PostgreSQL DDL with schema
 

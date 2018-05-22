@@ -32,6 +32,9 @@ import javax.xml.stream.XMLStreamWriter;
  */
 public class XmlBuilder {
 
+	/** Whether append XML processing instruction. */
+	public boolean append_proc_inst = true;
+
 	/** Whether append namespace declaration. */
 	public boolean append_xmlns = true;
 
@@ -151,15 +154,23 @@ public class XmlBuilder {
 	/**
 	 * Write pending start elements of table.
 	 *
+	 * @param attr_only whether start element has attribute only
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public synchronized void writePendingTableStartElements() throws XMLStreamException {
+	public synchronized void writePendingTableStartElements(boolean attr_only) throws XMLStreamException {
+
+		boolean init = true;
 
 		PgPendingStartElem start_elem;
 
 		while ((start_elem = pending_start_elem.pollLast()) != null) {
 
+			if (!attr_only || !init)
+				start_elem.attr_only = false;
+
 			start_elem.write(this);
+
+			init = false;
 
 			if (pending_start_elem.size() > 0)
 				writer.writeCharacters(line_feed_code);
@@ -175,7 +186,7 @@ public class XmlBuilder {
 	}
 
 	/**
-	 * Write pending simple conent.
+	 * Write pending simple content.
 	 *
 	 * @throws XMLStreamException the XML stream exception
 	 */

@@ -19,6 +19,8 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.util.HashMap;
+
 import javax.xml.stream.XMLStreamException;
 
 /**
@@ -34,22 +36,41 @@ public class PgPendingStartElem {
 	/** The table of element. */
 	protected PgTable table;
 
+	/** Whether start element has attribute only. */
+	protected boolean attr_only = true;
+
+	/** The pending attribute. */
+	protected HashMap<String, PgPendingAttr> pending_attrs = new HashMap<String, PgPendingAttr>();
+
 	/**
 	 * Instance of pending start element of table.
 	 *
 	 * @param header header string
 	 * @param table current table
+	 * @param attr_only whether start element has attribute only.
 	 */
-	public PgPendingStartElem(String header, PgTable table) {
+	public PgPendingStartElem(String header, PgTable table, boolean attr_only) {
 
 		this.header = header;
 		this.table = table;
+		this.attr_only = attr_only;
+
+	}
+
+	/**
+	 * Append pending attribute.
+	 *
+	 * @param attr pending attribute
+	 */
+	public void appendPendingAttr(PgPendingAttr attr) {
+
+		pending_attrs.put(attr.field.xname, attr);
 
 	}
 
 	/**
 	 * Write pending start element of table.
-	 * 
+	 *
 	 * @param xmlb XML builder
 	 * @throws XMLStreamException the XML stream exception
 	 */
@@ -57,7 +78,10 @@ public class PgPendingStartElem {
 
 		xmlb.writer.writeCharacters(header);
 
-		xmlb.writer.writeStartElement(table.prefix, table.xname, table.target_namespace);
+		if (attr_only)
+			xmlb.writer.writeEmptyElement(table.prefix, table.xname, table.target_namespace);
+		else
+			xmlb.writer.writeStartElement(table.prefix, table.xname, table.target_namespace);
 
 		if (xmlb.append_xmlns) {
 
@@ -72,6 +96,19 @@ public class PgPendingStartElem {
 			}
 
 		}
+
+		pending_attrs.values().forEach(pending_attr -> {
+
+			try {
+				pending_attr.write(xmlb);
+			} catch (XMLStreamException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+
+		});
+
+		pending_attrs.clear();
 
 	}
 

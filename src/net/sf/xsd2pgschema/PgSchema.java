@@ -102,10 +102,10 @@ public class PgSchema {
 	private List<PgForeignKey> foreign_keys = null;
 
 	/** The pending list of attribute groups. */
-	private List<PgPendingGroup> pending_attr_groups = null;
+	private List<PgSchemaPendingGroup> pending_attr_groups = null;
 
 	/** The pending list of model groups. */
-	private List<PgPendingGroup> pending_model_groups = null;
+	private List<PgSchemaPendingGroup> pending_model_groups = null;
 
 	/** The PostgreSQL data model option. */
 	protected PgSchemaOption option = null;
@@ -272,8 +272,8 @@ public class PgSchema {
 
 			foreign_keys = new ArrayList<PgForeignKey>();
 
-			pending_attr_groups = new ArrayList<PgPendingGroup>();
-			pending_model_groups = new ArrayList<PgPendingGroup>();
+			pending_attr_groups = new ArrayList<PgSchemaPendingGroup>();
+			pending_model_groups = new ArrayList<PgSchemaPendingGroup>();
 
 		}
 
@@ -603,6 +603,8 @@ public class PgSchema {
 							field.foreign_table_id = tables.indexOf(foreign_table);
 							foreign_table.required = true;
 
+							// detect simple content as attribute
+
 							if (field.nested_key_as_attr) {
 
 								foreign_table.fields.stream().filter(foreign_field -> foreign_field.simple_content).forEach(foreign_field -> {
@@ -630,7 +632,7 @@ public class PgSchema {
 
 		});
 
-		// find simple content, which depends on parent
+		// detect simple content as conditional attribute
 
 		tables.stream().filter(foreign_table -> foreign_table.has_simple_attribute).forEach(foreign_table -> {
 
@@ -2092,7 +2094,7 @@ public class PgSchema {
 
 		if (attr_group == null) {
 
-			_root_schema.pending_attr_groups.add(new PgPendingGroup(ref, table.pg_schema_name, table.xname, table.fields.size()));
+			_root_schema.pending_attr_groups.add(new PgSchemaPendingGroup(ref, table.pg_schema_name, table.xname, table.fields.size()));
 			table.has_pending_group = true;
 
 			return;
@@ -2124,7 +2126,7 @@ public class PgSchema {
 
 		if (model_group == null) {
 
-			_root_schema.pending_model_groups.add(new PgPendingGroup(ref, table.pg_schema_name, table.xname, table.fields.size()));
+			_root_schema.pending_model_groups.add(new PgSchemaPendingGroup(ref, table.pg_schema_name, table.xname, table.fields.size()));
 			table.has_pending_group = true;
 
 			return;
@@ -2758,7 +2760,7 @@ public class PgSchema {
 	 * @param pending_group pending group
 	 * @return PgTable pending table
 	 */
-	private PgTable getPendingTable(PgPendingGroup pending_group) {
+	private PgTable getPendingTable(PgSchemaPendingGroup pending_group) {
 		return getCanTable(pending_group.pg_schema_name, pending_group.xname);
 	}
 
@@ -6595,26 +6597,12 @@ public class PgSchema {
 
 			}
 
-			PgSchemaNestTester test = new PgSchemaNestTester(table, xmlb);
+			PgNestTester test = new PgNestTester(table, xmlb);
 
 			String table_ns = table.target_namespace;
 			String table_prefix = table.prefix;
 
-			xml_writer.writeCharacters(test.current_indent_space);
-
-			xml_writer.writeStartElement(table_prefix, table.xname, table_ns);
-
-			if (xmlb.append_xmlns) {
-
-				xml_writer.writeNamespace(table_prefix, table_ns);
-				xmlb.appended_xmlns.add(table_prefix);
-
-				if (table.has_required_field) {
-					xml_writer.writeNamespace(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri);
-					xmlb.appended_xmlns.add(PgSchemaUtil.xsi_prefix);
-				}
-
-			}
+			xmlb.pending_start_elem.push(new PgPendingStartElem(test.current_indent_space, table, true));
 
 			boolean fill_default_value = option.fill_default_value;
 
@@ -6632,23 +6620,16 @@ public class PgSchema {
 
 					String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-					if (content != null && !content.isEmpty()) {
+					if ((content != null && !content.isEmpty()) || (field.xrequired && !table.conflict)) {
 
-						if (field.is_xs_namespace)
-							xml_writer.writeAttribute(field.xname, content);
+						PgPendingAttr attr = new PgPendingAttr(field, content);
+
+						PgPendingStartElem elem = xmlb.pending_start_elem.peek();
+
+						if (elem != null)
+							elem.appendPendingAttr(attr);
 						else
-							xml_writer.writeAttribute(field.prefix, field.target_namespace, field.xname, content);
-
-						test.has_content = true;
-
-					}
-
-					else if (field.xrequired) {
-
-						if (field.is_xs_namespace)
-							xml_writer.writeAttribute(field.xname, "");
-						else
-							xml_writer.writeAttribute(field.prefix, field.target_namespace, field.xname, "");
+							attr.write(xmlb);
 
 						test.has_content = true;
 
@@ -6689,7 +6670,7 @@ public class PgSchema {
 					Object key = rset.getObject(param_id);
 
 					if (key != null)
-						test.mergeTest(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, true, test));
+						test.merge(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, true, test));
 
 				}
 
@@ -6711,6 +6692,13 @@ public class PgSchema {
 					if (table.equals(root_table) && !test.has_content)
 						throw new PgSchemaException("Not allowed to insert document key to root table.");
 
+					PgPendingStartElem elem = xmlb.pending_start_elem.peek();
+
+					if (elem != null)
+						xmlb.writePendingTableStartElements(false);
+
+					xmlb.writePendingSimpleContent();
+
 					xml_writer.writeCharacters((test.has_child_elem ? "" : xmlb.line_feed_code) + test.child_indent_space);
 
 					if (field.is_xs_namespace)
@@ -6726,13 +6714,34 @@ public class PgSchema {
 
 				}
 
-				else if (field.simple_content) {
+				else if (field.simple_content && !field.simple_attribute) {
 
 					String content = field.retrieveValue(rset, param_id, fill_default_value);
 
 					if (content != null && !content.isEmpty()) {
 
-						xml_writer.writeCharacters(content);
+						PgPendingStartElem elem = xmlb.pending_start_elem.peek();
+
+						if (elem != null)
+							xmlb.writePendingTableStartElements(false);
+
+						if (field.simple_primitive_list) {
+
+							if (xmlb.pending_simple_cont.length() > 0) {
+
+								xmlb.writePendingSimpleContent();
+
+								xml_writer.writeEndElement();
+
+								xmlb.pending_start_elem.push(new PgPendingStartElem((xmlb.pending_start_elem.size() > 0 ? "" : xmlb.line_feed_code) + test.current_indent_space, table, false));
+
+								xmlb.writePendingTableStartElements(false);
+
+							}
+
+						}
+
+						xmlb.appendSimpleContent(content);
 
 						test.has_simple_content = test.has_open_simple_content = true;
 
@@ -6744,7 +6753,14 @@ public class PgSchema {
 
 					String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-					if ((content != null && !content.isEmpty()) || field.xrequired) {
+					if ((content != null && !content.isEmpty()) || (field.xrequired && !table.conflict)) {
+
+						PgPendingStartElem elem = xmlb.pending_start_elem.peek();
+
+						if (elem != null)
+							xmlb.writePendingTableStartElements(false);
+
+						xmlb.writePendingSimpleContent();
 
 						xml_writer.writeCharacters((test.has_child_elem ? "" : xmlb.line_feed_code) + test.child_indent_space);
 
@@ -6790,7 +6806,7 @@ public class PgSchema {
 
 						if (in != null) {
 
-							test.mergeTest(any_retriever.exec(in, table, test, xmlb));
+							test.merge(any_retriever.exec(in, table, test, xmlb));
 
 							in.close();
 
@@ -6823,7 +6839,7 @@ public class PgSchema {
 
 						test.has_child_elem |= n++ > 0;
 
-						test.mergeTest(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, false, test));
+						test.merge(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, false, test));
 
 					}
 
@@ -6834,14 +6850,31 @@ public class PgSchema {
 
 			}
 
-			if (!test.has_open_simple_content)
-				xml_writer.writeCharacters(test.current_indent_space);
-			else if (test.has_simple_content)
-				test.has_open_simple_content = false;
+			if (test.has_content || test.has_simple_content) {
 
-			xml_writer.writeEndElement();
+				boolean attr_only = false;
 
-			xml_writer.writeCharacters(xmlb.line_feed_code);
+				PgPendingStartElem elem = xmlb.pending_start_elem.peek();
+
+				if (elem != null)
+					xmlb.writePendingTableStartElements(attr_only = true);
+
+				xmlb.writePendingSimpleContent();
+
+				if (!test.has_open_simple_content)
+					xml_writer.writeCharacters(test.current_indent_space);
+				else if (test.has_simple_content)
+					test.has_open_simple_content = false;
+
+				if (!attr_only)
+					xml_writer.writeEndElement();
+
+				xml_writer.writeCharacters(xmlb.line_feed_code);
+
+			}
+
+			else
+				xmlb.pending_start_elem.poll();
 
 		} catch (SQLException | XMLStreamException | ParserConfigurationException | SAXException | IOException e) {
 			throw new PgSchemaException(e);
@@ -6880,24 +6913,24 @@ public class PgSchema {
 	 * @param db_conn database connection
 	 * @param table current table
 	 * @param parent_key parent key
-	 * @param parent_key_as_attr whether parent key is simple attribute
+	 * @param as_attr whether parent key is simple attribute
 	 * @param parent_test nest test result of parent node
-	 * @return PgSchemaNestTester nest test of this node
+	 * @return PgNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */	
-	private PgSchemaNestTester nestChildNode2Xml(final Connection db_conn, final PgTable table, final Object parent_key, final boolean parent_key_as_attr, PgSchemaNestTester parent_test) throws PgSchemaException {
+	private PgNestTester nestChildNode2Xml(final Connection db_conn, final PgTable table, final Object parent_key, final boolean as_attr, PgNestTester parent_test) throws PgSchemaException {
 
 		XMLStreamWriter xml_writer = xmlb.writer;
 
 		try {
 
-			PgSchemaNestTester test = new PgSchemaNestTester(table, parent_test);
+			PgNestTester test = new PgNestTester(table, parent_test);
 
 			String table_ns = table.target_namespace;
 			String table_prefix = table.prefix;
 
-			if (!table.virtual && !table.list_holder && !parent_key_as_attr)
-				xmlb.pending_start_elem.push(new PgPendingStartElem((parent_test.has_child_elem || xmlb.pending_start_elem.size() > 0 ? "" : xmlb.line_feed_code) + test.current_indent_space, table));
+			if (!table.virtual && !table.list_holder && !as_attr)
+				xmlb.pending_start_elem.push(new PgPendingStartElem((parent_test.has_child_elem || xmlb.pending_start_elem.size() > 0 ? "" : xmlb.line_feed_code) + test.current_indent_space, table, true));
 
 			if (table.ps == null || table.ps.isClosed()) {
 
@@ -6931,8 +6964,8 @@ public class PgSchema {
 
 			while (rset.next()) {
 
-				if (!table.virtual && table.list_holder && !parent_key_as_attr)
-					xmlb.pending_start_elem.push(new PgPendingStartElem((parent_test.has_child_elem || xmlb.pending_start_elem.size() > 0 || list_id > 0 ? "" : xmlb.line_feed_code) + test.current_indent_space, table));
+				if (!table.virtual && table.list_holder && !as_attr)
+					xmlb.pending_start_elem.push(new PgPendingStartElem((parent_test.has_child_elem || xmlb.pending_start_elem.size() > 0 || list_id > 0 ? "" : xmlb.line_feed_code) + test.current_indent_space, table, true));
 
 				// attribute, simple attribute, any_attribute
 
@@ -6946,27 +6979,16 @@ public class PgSchema {
 
 						String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-						if (content != null && !content.isEmpty()) {
+						if ((content != null && !content.isEmpty()) || (field.xrequired && !table.conflict)) {
 
-							xmlb.writePendingTableStartElements();
+							PgPendingAttr attr = new PgPendingAttr(field, content);
 
-							if (field.is_xs_namespace)
-								xml_writer.writeAttribute(field.xname, content);
+							PgPendingStartElem elem = xmlb.pending_start_elem.peek();
+
+							if (elem != null)
+								elem.appendPendingAttr(attr);
 							else
-								xml_writer.writeAttribute(field.prefix, field.target_namespace, field.xname, content);
-
-							test.has_content = true;
-
-						}
-
-						else if (field.xrequired) {
-
-							xmlb.writePendingTableStartElements();
-
-							if (field.is_xs_namespace)
-								xml_writer.writeAttribute(field.xname, "");
-							else
-								xml_writer.writeAttribute(field.prefix, field.target_namespace, field.xname, "");
+								attr.write(xmlb);
 
 							test.has_content = true;
 
@@ -6974,31 +6996,20 @@ public class PgSchema {
 
 					}
 
-					else if (parent_key_as_attr && field.simple_attribute) {
+					else if ((field.simple_attribute || field.simple_attr_cond) && as_attr) {
 
 						String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-						if (content != null && !content.isEmpty()) {
+						if ((content != null && !content.isEmpty()) || (field.xrequired && !table.conflict)) {
 
-							xmlb.writePendingTableStartElements();
+							PgPendingAttr attr = new PgPendingAttr(field, content);
 
-							if (field.is_xs_namespace)
-								xml_writer.writeAttribute(field.foreign_table_xname, content);
+							PgPendingStartElem elem = xmlb.pending_start_elem.peek();
+
+							if (elem != null)
+								elem.appendPendingAttr(attr);
 							else
-								xml_writer.writeAttribute(field.prefix, field.target_namespace, field.foreign_table_xname, content);
-
-							test.has_content = true;
-
-						}
-
-						else if (field.xrequired) {
-
-							xmlb.writePendingTableStartElements();
-
-							if (field.is_xs_namespace)
-								xml_writer.writeAttribute(field.foreign_table_xname, "");
-							else
-								xml_writer.writeAttribute(field.prefix, field.target_namespace, field.foreign_table_xname, "");
+								attr.write(xmlb);
 
 							test.has_content = true;
 
@@ -7039,7 +7050,7 @@ public class PgSchema {
 						Object key = rset.getObject(param_id);
 
 						if (key != null)
-							test.mergeTest(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, true, test));
+							test.merge(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, true, test));
 
 					}
 
@@ -7056,13 +7067,16 @@ public class PgSchema {
 
 					PgField field = fields.get(f);
 
-					if (field.simple_content && !parent_key_as_attr) {
+					if (field.simple_content && !field.simple_attribute && !as_attr) {
 
 						String content = field.retrieveValue(rset, param_id, fill_default_value);
 
 						if (content != null && !content.isEmpty()) {
 
-							xmlb.writePendingTableStartElements();
+							PgPendingStartElem elem = xmlb.pending_start_elem.peek();
+
+							if (elem != null)
+								xmlb.writePendingTableStartElements(false);
 
 							if (field.simple_primitive_list) {
 
@@ -7072,9 +7086,9 @@ public class PgSchema {
 
 									xml_writer.writeEndElement();
 
-									xmlb.pending_start_elem.push(new PgPendingStartElem((parent_test.has_child_elem || xmlb.pending_start_elem.size() > 0 || list_id > 0 ? "" : xmlb.line_feed_code) + test.current_indent_space, table));
+									xmlb.pending_start_elem.push(new PgPendingStartElem((parent_test.has_child_elem || xmlb.pending_start_elem.size() > 0 || list_id > 0 ? "" : xmlb.line_feed_code) + test.current_indent_space, table, false));
 
-									xmlb.writePendingTableStartElements();
+									xmlb.writePendingTableStartElements(false);
 
 								}
 
@@ -7092,9 +7106,12 @@ public class PgSchema {
 
 						String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-						if ((content != null && !content.isEmpty()) || field.xrequired) {
+						if ((content != null && !content.isEmpty()) || (field.xrequired && !table.conflict)) {
 
-							xmlb.writePendingTableStartElements();
+							PgPendingStartElem elem = xmlb.pending_start_elem.peek();
+
+							if (elem != null)
+								xmlb.writePendingTableStartElements(false);
 
 							xmlb.writePendingSimpleContent();
 
@@ -7142,7 +7159,7 @@ public class PgSchema {
 
 							if (in != null) {
 
-								test.mergeTest(any_retriever.exec(in, table, test, xmlb));
+								test.merge(any_retriever.exec(in, table, test, xmlb));
 
 								in.close();
 
@@ -7175,7 +7192,7 @@ public class PgSchema {
 
 							test.has_child_elem |= n++ > 0;
 
-							test.mergeTest(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, false, test));
+							test.merge(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, false, test));
 
 						}
 
@@ -7186,9 +7203,16 @@ public class PgSchema {
 
 				}
 
-				if (!table.virtual && table.list_holder && !parent_key_as_attr) {
+				if (!table.virtual && table.list_holder && !as_attr) {
 
 					if (test.has_content || test.has_simple_content) {
+
+						boolean attr_only = false;
+
+						PgPendingStartElem elem = xmlb.pending_start_elem.peek();
+
+						if (elem != null)
+							xmlb.writePendingTableStartElements(attr_only = true);
 
 						xmlb.writePendingSimpleContent();
 
@@ -7197,7 +7221,8 @@ public class PgSchema {
 						else if (test.has_simple_content)
 							test.has_open_simple_content = false;
 
-						xml_writer.writeEndElement();
+						if (!attr_only)
+							xml_writer.writeEndElement();
 
 						xml_writer.writeCharacters(xmlb.line_feed_code);
 
@@ -7214,9 +7239,16 @@ public class PgSchema {
 
 			rset.close();
 
-			if (!table.virtual && !table.list_holder && !parent_key_as_attr) {
+			if (!table.virtual && !table.list_holder && !as_attr) {
 
 				if (test.has_content || test.has_simple_content) {
+
+					boolean attr_only = false;
+
+					PgPendingStartElem elem = xmlb.pending_start_elem.peek();
+
+					if (elem != null)
+						xmlb.writePendingTableStartElements(attr_only = true);
 
 					xmlb.writePendingSimpleContent();
 
@@ -7225,7 +7257,8 @@ public class PgSchema {
 					else if (test.has_simple_content)
 						test.has_open_simple_content = false;
 
-					xml_writer.writeEndElement();
+					if (!attr_only)
+						xml_writer.writeEndElement();
 
 					xml_writer.writeCharacters(xmlb.line_feed_code);
 

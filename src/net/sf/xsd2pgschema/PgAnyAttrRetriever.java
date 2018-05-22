@@ -68,27 +68,34 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 		else if (!root_node)
 			return;
 
-		try {
+		for (int i = 0; i < atts.getLength(); i++) {
 
-			for (int i = 0; i < atts.getLength(); i++) {
+			String content = atts.getValue(i);
 
-				String content = atts.getValue(i);
+			if (content != null && !content.isEmpty()) {
 
-				if (content != null && !content.isEmpty()) {
+				PgPendingAttr attr = new PgPendingAttr(atts.getLocalName(i), content);
 
-					xmlb.writePendingTableStartElements();
+				PgPendingStartElem elem = xmlb.pending_start_elem.peek();
 
-					xmlb.writer.writeAttribute(atts.getLocalName(i), content);
+				if (elem != null)
+					elem.appendPendingAttr(attr);
 
-					has_content = true;
+				else {
+
+					try {
+						attr.write(xmlb);
+					} catch (XMLStreamException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
 
 				}
 
+				has_content = true;
+
 			}
 
-		} catch (XMLStreamException e) {
-			e.printStackTrace();
-			System.exit(1);
 		}
 
 	}

@@ -93,6 +93,9 @@ public class PgSchemaUtil {
 	/** The name of xs:anyAttribute in PostgreSQL. */
 	public static final String any_attribute_name = "any_attribute";
 
+	/** The default encoding. */
+	public static final String def_encoding = "UTF-8";
+
 	/** The default hash algorithm. */
 	public static final String def_hash_algorithm = "SHA-1";
 

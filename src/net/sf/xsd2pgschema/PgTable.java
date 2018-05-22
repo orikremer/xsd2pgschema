@@ -639,6 +639,15 @@ public class PgTable {
 	}
 
 	/**
+	 * Return whether name collision occurs.
+	 * 
+	 * @return boolean whether name collision occurs
+	 */
+	public boolean conflict() {
+		return conflict;
+	}
+
+	/**
 	 * Append substitution group property.
 	 *
 	 * @param field field

@@ -24,7 +24,7 @@ package net.sf.xsd2pgschema;
  *
  * @author yokochi
  */
-public class PgPendingGroup {
+public class PgSchemaPendingGroup {
 
 	/** The reference to either attribute group or model group. */
 	protected String ref_group;
@@ -46,7 +46,7 @@ public class PgPendingGroup {
 	 * @param xname canonical group name
 	 * @param insert_position insert position in fields
 	 */
-	public PgPendingGroup(String ref_group, String pg_schema_name, String xname, int insert_position) {
+	public PgSchemaPendingGroup(String ref_group, String pg_schema_name, String xname, int insert_position) {
 
 		this.ref_group = ref_group;
 		this.pg_schema_name = pg_schema_name;

@@ -24,7 +24,7 @@ package net.sf.xsd2pgschema;
  *
  * @author yokochi
  */
-public class PgSchemaNestTester {
+public class PgNestTester {
 
 	/** The ancestor node name. */
 	protected String ancestor_node = null;
@@ -62,7 +62,7 @@ public class PgSchemaNestTester {
 	 * @param table current table
 	 * @param xmlb XML builder
 	 */
-	public PgSchemaNestTester(PgTable table, XmlBuilder xmlb) {
+	public PgNestTester(PgTable table, XmlBuilder xmlb) {
 
 		ancestor_node = "";
 		parent_node = table.xname;
@@ -95,7 +95,7 @@ public class PgSchemaNestTester {
 	 * @param table current table
 	 * @param parent_test nest test of parent node
 	 */
-	public PgSchemaNestTester(PgTable table, PgSchemaNestTester parent_test) {
+	public PgNestTester(PgTable table, PgNestTester parent_test) {
 
 		ancestor_node = parent_test.ancestor_node;
 		parent_node = parent_test.parent_node;
@@ -120,7 +120,7 @@ public class PgSchemaNestTester {
 	 *
 	 * @param test nest test of child node
 	 */
-	public void mergeTest(PgSchemaNestTester test) {
+	public void merge(PgNestTester test) {
 
 		has_child_elem |= test.has_child_elem;
 		has_content |= test.has_content;

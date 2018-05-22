@@ -104,6 +104,9 @@ public class xpath2xml {
 			else if (args[i].equals("--fill-default-value"))
 				option.fill_default_value = true;
 
+			else if (args[i].equals("--xml-no-declare"))
+				xmlb.append_proc_inst = false;
+
 			else if (args[i].equals("--xml-no-xmlns"))
 				xmlb.append_xmlns = false;
 
@@ -255,6 +258,7 @@ public class xpath2xml {
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME (select --no-rel and --no-doc-key options by default)");
 		System.err.println("        --doc-key-if-no-inplace (select --no-rel and --no-doc-key options by default)");
+		System.err.println("        --xml-no-declare (dismiss XML declaration)");
 		System.err.println("        --xml-no-xmlns (dismiss XML namespace declaration)");
 		System.err.println("        --xml-indent-offset INTEGER (default=" + xmlb.getIndentOffset() + ", min=0, max=4)");
 		System.err.println("        --xml-insert-doc-key (insert document key in result)");

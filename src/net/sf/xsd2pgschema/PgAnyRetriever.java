@@ -49,7 +49,7 @@ public class PgAnyRetriever extends DefaultHandler {
 	private String prefix = null;
 
 	/** The nest tester. */
-	private PgSchemaNestTester test = null;
+	private PgNestTester test = null;
 
 	/** The XML builder. */
 	private XmlBuilder xmlb = null;
@@ -116,7 +116,7 @@ public class PgAnyRetriever extends DefaultHandler {
 	 * @return PgSchemaNestTetster result of nest test
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public PgSchemaNestTester exec(InputStream in, PgTable table, PgSchemaNestTester test, XmlBuilder xmlb) throws XMLStreamException {
+	public PgNestTester exec(InputStream in, PgTable table, PgNestTester test, XmlBuilder xmlb) throws XMLStreamException {
 
 		this.root_node_name = table.pname;
 		this.target_namespace = table.target_namespace;
@@ -187,7 +187,10 @@ public class PgAnyRetriever extends DefaultHandler {
 
 				if (cur_path.length() > 0) {
 
-					xmlb.writePendingTableStartElements();
+					PgPendingStartElem elem = xmlb.pending_start_elem.peek();
+
+					if (elem != null)
+						xmlb.writePendingTableStartElements(false);
 
 					xmlb.writePendingSimpleContent();
 

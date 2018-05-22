@@ -216,6 +216,7 @@ public abstract class PgSchemaNodeParser {
 	/**
 	 * Set nested key.
 	 *
+	 * @param node current node
 	 * @param field current field
 	 * @param current_key current key
 	 * @return String nested key name, null if invalid
@@ -231,7 +232,7 @@ public abstract class PgSchemaNodeParser {
 		if (table.has_nested_key_as_attr && !field.nested_key_as_attr && current_key.contains("@"))
 			return null;
 
-		if (field.nested_key_as_attr && !node.hasAttributes())
+		if (field.nested_key_as_attr && !node.getParentNode().hasAttributes())
 			return null;
 
 		PgTable nested_table = schema.getTable(field.foreign_table_id);
@@ -318,7 +319,7 @@ public abstract class PgSchemaNodeParser {
 		if (field.attribute || field.simple_attribute || (field.simple_attr_cond && as_attr))
 			setAttribute(node, field);
 
-		else if (field.simple_content || (field.simple_attr_cond && !as_attr))
+		else if (field.simple_content)
 			setSimpleContent(node, field, current_key);
 
 		else if (field.element)

@@ -194,7 +194,7 @@ public class csv2pgsql {
 
 			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
 
-			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
+			db_conn = DriverManager.getConnection(pg_option.getDbUrl(PgSchemaUtil.def_encoding), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 
 			pg_option.clear();
 

@@ -113,7 +113,7 @@ public class XPathEvaluatorImpl {
 
 		if (!pg_option.name.isEmpty()) {
 
-			db_conn = DriverManager.getConnection(pg_option.getDbUrl(), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
+			db_conn = DriverManager.getConnection(pg_option.getDbUrl(PgSchemaUtil.def_encoding), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 
 			// test PostgreSQL DDL with schema
 
@@ -354,6 +354,13 @@ public class XPathEvaluatorImpl {
 			else
 				xml_writer = out_factory.createXMLStreamWriter(System.out);
 
+			if (xmlb.append_proc_inst) {
+
+				xml_writer.writeStartDocument(PgSchemaUtil.def_encoding, "1.0");
+				xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+			}
+
 			Statement stat = db_conn.createStatement();
 
 			long start_time = System.currentTimeMillis();
@@ -411,7 +418,7 @@ public class XPathEvaluatorImpl {
 							case element:
 								content = field.retrieveValue(rset, 1, fill_default_value);
 
-								if ((content != null && !content.isEmpty()) || field.isRequired()) {
+								if ((content != null && !content.isEmpty()) || (field.isRequired() && !table.conflict())) {
 
 									if (content != null && !content.isEmpty()) {
 
@@ -494,7 +501,7 @@ public class XPathEvaluatorImpl {
 
 								if (content != null && !content.isEmpty()) {
 
-									xml_writer.writeStartElement(table_prefix, table_name, table_ns);
+									xml_writer.writeEmptyElement(table_prefix, table_name, table_ns);
 
 									if (xmlb.append_xmlns)
 										xml_writer.writeNamespace(table_prefix, table_ns);
@@ -504,15 +511,13 @@ public class XPathEvaluatorImpl {
 									else
 										xml_writer.writeAttribute(field_prefix, field_ns, field_name, content);
 
-									xml_writer.writeEndElement();
-
 									xml_writer.writeCharacters(xmlb.getLineFeedCode());
 
 								}
 
-								else if (field.isRequired()) {
+								else if (field.isRequired() && !table.conflict()) {
 
-									xml_writer.writeStartElement(table_prefix, table_name, table_ns);
+									xml_writer.writeEmptyElement(table_prefix, table_name, table_ns);
 
 									if (xmlb.append_xmlns)
 										xml_writer.writeNamespace(table_prefix, table_ns);
@@ -521,8 +526,6 @@ public class XPathEvaluatorImpl {
 										xml_writer.writeAttribute(field_name, rset.getString(1));
 									else
 										xml_writer.writeAttribute(field_prefix, field_ns, field_name, "");
-
-									xml_writer.writeEndElement();
 
 									xml_writer.writeCharacters(xmlb.getLineFeedCode());
 
@@ -538,21 +541,27 @@ public class XPathEvaluatorImpl {
 
 									if (in != null) {
 
-										xml_writer.writeStartElement(table_prefix, table_name, table_ns);
-
-										if (xmlb.append_xmlns)
-											xml_writer.writeNamespace(table_prefix, table_ns);
-
 										switch (terminus) {
 										case any_attribute:
+											xml_writer.writeEmptyElement(table_prefix, table_name, table_ns);
+
+											if (xmlb.append_xmlns)
+												xml_writer.writeNamespace(table_prefix, table_ns);
+
 											PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table_name, xmlb);
+
 											any_attr_parser.parse(in, any_attr);
 											break;
 										default:
-											any_retriever.exec(in, table, new PgSchemaNestTester(table, xmlb), xmlb);
-										}
+											xml_writer.writeStartElement(table_prefix, table_name, table_ns);
 
-										xml_writer.writeEndElement();
+											if (xmlb.append_xmlns)
+												xml_writer.writeNamespace(table_prefix, table_ns);
+
+											any_retriever.exec(in, table, new PgNestTester(table, xmlb), xmlb);
+
+											xml_writer.writeEndElement();
+										}
 
 										xml_writer.writeCharacters(xmlb.getLineFeedCode());
 
@@ -622,6 +631,7 @@ public class XPathEvaluatorImpl {
 
 						schema.closePgSql2Xml();
 
+
 					}
 
 					rset.close();
@@ -636,6 +646,9 @@ public class XPathEvaluatorImpl {
 			long end_time = System.currentTimeMillis();
 
 			stat.close();
+
+			if (xmlb.append_proc_inst)
+				xml_writer.writeEndDocument();
 
 			if (fout != null) {
 
