@@ -1,4 +1,4 @@
-﻿ Changes in xsd2pgschema 2.10.2-rc5 (release 2018-05-22)
+﻿ Changes in xsd2pgschema 2.10.2 (release 2018-05-22)
 
   Added --fill-default-value option and changed policy not to fill default value.
   Changed name of main class from xpathevaluator to xpath2xml, XPath 1.0 query evaluator to XML over PostgreSQL.
@@ -8,6 +8,7 @@
   Added support for xs:attribute extended by xs:simpleType (introducing simple content as attribute).
   Fixed simple content override with attribute defined by simple type extension. (introducing simple content as conditional attribute).
   Fixed XML format issues; XML declaration, proper indent, empty element for element contains attribute only.
+  [Ticket #6] Added --no-key option to xml2pgsql main class for differential update without primary/foreign key constraints.
 
  Changes in xsd2pgschema 2.10.1 (release 2018-05-16)
 

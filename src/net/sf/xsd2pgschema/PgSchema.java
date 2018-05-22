@@ -4440,7 +4440,7 @@ public class PgSchema {
 
 				deleteBeforeUpdate(db_conn, option.rel_data_ext);
 
-				if (!option.rel_data_ext)
+				if (!option.rel_data_ext || !option.retain_key)
 					update = false;
 
 			}
