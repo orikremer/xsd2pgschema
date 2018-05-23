@@ -93,6 +93,9 @@ public class PgSchemaUtil {
 	/** The name of xs:anyAttribute in PostgreSQL. */
 	public static final String any_attribute_name = "any_attribute";
 
+	/** The default XML version. */
+	public static final String def_xml_version = "1.0";
+
 	/** The default encoding. */
 	public static final String def_encoding = "UTF-8";
 

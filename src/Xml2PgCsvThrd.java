@@ -58,6 +58,9 @@ public class Xml2PgCsvThrd implements Runnable {
 	/** The PostgreSQL data model option. */
 	private PgSchemaOption option = null;
 
+	/** The database name. */
+	private String db_name = null;
+
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
@@ -134,6 +137,8 @@ public class Xml2PgCsvThrd implements Runnable {
 
 			if (pg_option.test)
 				schema.testPgSql(db_conn, true);
+
+			db_name = pg_option.name;
 
 		}
 
@@ -241,13 +246,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 			if (work_dir.isDirectory()) {
 
-				try {
-
-					System.out.println("Done xml (" + polled + " entries) -> db (" + db_conn.getMetaData().getURL().split("/")[3] + ").");
-
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
+				System.out.println("Done xml (" + polled + " entries) -> db (" + db_name + ").");
 
 				try {
 					FileUtils.deleteDirectory(work_dir);

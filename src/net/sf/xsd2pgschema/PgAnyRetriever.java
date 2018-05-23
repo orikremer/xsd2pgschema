@@ -49,7 +49,7 @@ public class PgAnyRetriever extends DefaultHandler {
 	private String prefix = null;
 
 	/** The nest tester. */
-	private PgNestTester test = null;
+	private PgNestTester nest_test = null;
 
 	/** The XML builder. */
 	private XmlBuilder xmlb = null;
@@ -111,18 +111,18 @@ public class PgAnyRetriever extends DefaultHandler {
 	 *
 	 * @param in XML input stream
 	 * @param table current table
-	 * @param test nest test result of this node
+	 * @param nest_test nest test result of this node
 	 * @param xmlb XML builder
 	 * @return PgSchemaNestTetster result of nest test
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public PgNestTester exec(InputStream in, PgTable table, PgNestTester test, XmlBuilder xmlb) throws XMLStreamException {
+	public PgNestTester exec(InputStream in, PgTable table, PgNestTester nest_test, XmlBuilder xmlb) throws XMLStreamException {
 
 		this.root_node_name = table.pname;
 		this.target_namespace = table.target_namespace;
 		this.prefix = table.prefix;
 
-		this.test = test;
+		this.nest_test = nest_test;
 		this.xmlb = xmlb;
 
 		root_node = false;
@@ -143,7 +143,7 @@ public class PgAnyRetriever extends DefaultHandler {
 
 		cur_path.setLength(0);
 
-		return test;
+		return nest_test;
 	}
 
 	/**
@@ -187,21 +187,21 @@ public class PgAnyRetriever extends DefaultHandler {
 
 				if (cur_path.length() > 0) {
 
-					PgPendingStartElem elem = xmlb.pending_start_elem.peek();
+					PgPendingElem elem = xmlb.pending_elem.peek();
 
 					if (elem != null)
-						xmlb.writePendingTableStartElements(false);
+						xmlb.writePendingElems(false);
 
-					xmlb.writePendingSimpleContent();
+					xmlb.writePendingSimpleCont();
 
-					xmlb.writer.writeCharacters((test.has_child_elem ? "" : xmlb.line_feed_code) + test.child_indent_space);
+					xmlb.writer.writeCharacters((nest_test.has_child_elem ? "" : xmlb.line_feed_code) + nest_test.child_indent_space);
 
 					xmlb.writer.writeStartElement(prefix, start_elem_name, target_namespace);
 
-					test.child_indent_space += test.indent_space;
-					test.current_indent_space = test.child_indent_space;
+					nest_test.child_indent_space += nest_test.indent_space;
+					nest_test.current_indent_space = nest_test.child_indent_space;
 
-					test.has_child_elem = true;
+					nest_test.has_child_elem = true;
 
 				}
 
@@ -219,7 +219,7 @@ public class PgAnyRetriever extends DefaultHandler {
 
 							xmlb.writer.writeAttribute(attr.getName().getLocalPart(), content);
 
-							test.has_content = true;
+							nest_test.has_content = true;
 
 						}
 
@@ -264,8 +264,8 @@ public class PgAnyRetriever extends DefaultHandler {
 					xmlb.writer.writeEndElement();
 					xmlb.writer.writeCharacters(xmlb.line_feed_code);
 
-					test.child_indent_space = test.getParentIndentSpace();
-					test.current_indent_space = test.child_indent_space;
+					nest_test.child_indent_space = nest_test.getParentIndentSpace();
+					nest_test.current_indent_space = nest_test.child_indent_space;
 
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
@@ -314,7 +314,7 @@ public class PgAnyRetriever extends DefaultHandler {
 
 					xmlb.writer.writeCharacters(content);
 
-					test.has_content = true;
+					nest_test.has_content = true;
 
 				}
 

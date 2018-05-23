@@ -142,7 +142,7 @@ public class dicmerge4sphinx {
 			FileWriter filew = new FileWriter(sphinx_data_source);
 			BufferedWriter buffw = new BufferedWriter(filew);
 
-			buffw.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
+			buffw.write("<?xml version=\"" + PgSchemaUtil.def_xml_version + "\" encoding=\"" + PgSchemaUtil.def_encoding + "\"?>\n");
 
 			buffw.write("<sphinx:docset>\n");
 

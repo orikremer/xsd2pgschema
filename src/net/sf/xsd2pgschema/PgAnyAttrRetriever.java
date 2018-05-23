@@ -76,7 +76,7 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 
 				PgPendingAttr attr = new PgPendingAttr(atts.getLocalName(i), content);
 
-				PgPendingStartElem elem = xmlb.pending_start_elem.peek();
+				PgPendingElem elem = xmlb.pending_elem.peek();
 
 				if (elem != null)
 					elem.appendPendingAttr(attr);

@@ -24,11 +24,11 @@ import java.util.HashMap;
 import javax.xml.stream.XMLStreamException;
 
 /**
- * Pending start element of table.
+ * Pending element.
  *
  * @author yokochi
  */
-public class PgPendingStartElem {
+public class PgPendingElem {
 
 	/** The header string. */
 	protected String header;
@@ -36,20 +36,20 @@ public class PgPendingStartElem {
 	/** The table of element. */
 	protected PgTable table;
 
-	/** Whether start element has attribute only. */
+	/** Whether element has attribute only. */
 	protected boolean attr_only = true;
 
 	/** The pending attribute. */
 	protected HashMap<String, PgPendingAttr> pending_attrs = new HashMap<String, PgPendingAttr>();
 
 	/**
-	 * Instance of pending start element of table.
+	 * Instance of pending element.
 	 *
 	 * @param header header string
 	 * @param table current table
-	 * @param attr_only whether start element has attribute only.
+	 * @param attr_only whether element has attribute only.
 	 */
-	public PgPendingStartElem(String header, PgTable table, boolean attr_only) {
+	public PgPendingElem(String header, PgTable table, boolean attr_only) {
 
 		this.header = header;
 		this.table = table;
@@ -69,7 +69,7 @@ public class PgPendingStartElem {
 	}
 
 	/**
-	 * Write pending start element of table.
+	 * Write pending element.
 	 *
 	 * @param xmlb XML builder
 	 * @throws XMLStreamException the XML stream exception
@@ -97,16 +97,29 @@ public class PgPendingStartElem {
 
 		}
 
-		pending_attrs.values().forEach(pending_attr -> {
+		if (pending_attrs.size() > 0) {
 
-			try {
-				pending_attr.write(xmlb);
-			} catch (XMLStreamException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
+			pending_attrs.values().forEach(pending_attr -> {
 
-		});
+				try {
+					pending_attr.write(xmlb);
+				} catch (XMLStreamException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			});
+
+			clear();
+
+		}
+
+	}
+
+	/**
+	 * Clear pending element.
+	 */
+	public void clear() {
 
 		pending_attrs.clear();
 

@@ -373,7 +373,7 @@ public class PgSchemaOption {
 
 		if (!discarded_document_key_names.isEmpty()) {
 
-			String[] names = (String[]) discarded_document_key_names.toArray();
+			String[] names = discarded_document_key_names.toArray(new String[0]);
 
 			discarded_document_key_names.clear();
 
@@ -384,7 +384,7 @@ public class PgSchemaOption {
 
 		if (!inplace_document_key_names.isEmpty()) {
 
-			String[] names = (String[]) inplace_document_key_names.toArray();
+			String[] names = inplace_document_key_names.toArray(new String[0]);
 
 			inplace_document_key_names.clear();
 

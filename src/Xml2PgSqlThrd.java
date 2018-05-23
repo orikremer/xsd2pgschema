@@ -58,6 +58,9 @@ public class Xml2PgSqlThrd implements Runnable {
 	/** The PostgreSQL data model option. */
 	private PgSchemaOption option = null;
 
+	/** The database name. */
+	private String db_name = null;
+
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
@@ -131,6 +134,8 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		if (pg_option.test)
 			schema.testPgSql(db_conn, true);
+
+		db_name = pg_option.name;
 
 		db_conn.setAutoCommit(false);
 
@@ -253,15 +258,8 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		}
 
-		if (polled > 0) {
-
-			try {
-				System.out.println("Done xml (" + polled + " entries) -> db (" + db_conn.getMetaData().getURL().split("/")[3] + ").");
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-
-		}
+		if (polled > 0)
+			System.out.println("Done xml (" + polled + " entries) -> db (" + db_name + ").");
 
 		else if (show_progress)
 			System.out.println("\nDone");

@@ -1,4 +1,12 @@
-﻿ Changes in xsd2pgschema 2.10.2 (release 2018-05-22)
+﻿ Changes in xsd2pgschema 2.10.3 (release 2018-05-23)
+
+  Fixed ClassCastException in 2.10.2 while setting discarded document key or in-place document key.
+  Fixed XML Schema->object- and column-oriented JSON Schema conversion in 2.10.2.
+  Added --no-key option to xml2pgcsv and xml2pgtsv for argument's compatibility.
+  Added statistics about simple type attribute, conditional simple type attribute and nested key pointing simple type attribute.
+  Set UTF-8 as default client encoding.
+
+ Changes in xsd2pgschema 2.10.2 (release 2018-05-22)
 
   Added --fill-default-value option and changed policy not to fill default value.
   Changed name of main class from xpathevaluator to xpath2xml, XPath 1.0 query evaluator to XML over PostgreSQL.

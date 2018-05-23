@@ -354,9 +354,9 @@ public class XPathEvaluatorImpl {
 			else
 				xml_writer = out_factory.createXMLStreamWriter(System.out);
 
-			if (xmlb.append_proc_inst) {
+			if (xmlb.append_declare) {
 
-				xml_writer.writeStartDocument(PgSchemaUtil.def_encoding, "1.0");
+				xml_writer.writeStartDocument(PgSchemaUtil.def_encoding, PgSchemaUtil.def_xml_version);
 				xml_writer.writeCharacters(xmlb.getLineFeedCode());
 
 			}
@@ -647,7 +647,7 @@ public class XPathEvaluatorImpl {
 
 			stat.close();
 
-			if (xmlb.append_proc_inst)
+			if (xmlb.append_declare)
 				xml_writer.writeEndDocument();
 
 			if (fout != null) {

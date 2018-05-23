@@ -481,7 +481,7 @@ public class XPathCompList {
 
 			}
 
-			return (String[]) list.toArray();
+			return list.toArray(new String[0]);
 
 		} finally {
 			list.clear();
@@ -3758,7 +3758,7 @@ public class XPathCompList {
 		if (parent_table != null)
 			return getAbsoluteXPathOfTable(parent_table, sb);
 
-		return getAbsoluteXPathOfTable(tables.parallelStream().filter(foreign_table -> foreign_table.nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key && schema.getForeignTable(field).equals(table))).findFirst().get(), sb);
+		return getAbsoluteXPathOfTable(tables.parallelStream().filter(foreign_table -> foreign_table.nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key && schema.getTable(field.foreign_table_id).equals(table))).findFirst().get(), sb);
 	}
 
 	/**
@@ -7051,13 +7051,13 @@ public class XPathCompList {
 
 			PgTable _dst_table = table_path.get(l);
 
-			PgField nested_key = src_table.fields.parallelStream().filter(field -> field.nested_key && schema.getForeignTable(field).equals(_dst_table)).findFirst().get();
+			PgField nested_key = src_table.fields.parallelStream().filter(field -> field.nested_key && schema.getTable(field.foreign_table_id).equals(_dst_table)).findFirst().get();
 
 			appendSqlColumnName(src_table, nested_key.pname, sb);
 
 			sb.append(" = ");
 
-			appendSqlColumnName(schema.getForeignTable(nested_key), nested_key.foreign_field_pname, sb);
+			appendSqlColumnName(schema.getTable(nested_key.foreign_table_id), nested_key.foreign_field_pname, sb);
 
 			sb.append(" AND ");
 

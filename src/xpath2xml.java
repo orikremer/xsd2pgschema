@@ -105,7 +105,7 @@ public class xpath2xml {
 				option.fill_default_value = true;
 
 			else if (args[i].equals("--xml-no-declare"))
-				xmlb.append_proc_inst = false;
+				xmlb.append_declare = false;
 
 			else if (args[i].equals("--xml-no-xmlns"))
 				xmlb.append_xmlns = false;

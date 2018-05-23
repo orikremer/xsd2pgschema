@@ -374,18 +374,14 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		}
 
-		if (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0))
+		if (!filled || (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0)))
 			return;
 
-		if (filled) {
+		write();
 
-			write();
-
-			this.proc_node = proc_node;
-			this.current_key = current_key;
-			this.indirect = indirect;
-
-		}
+		this.proc_node = proc_node;
+		this.current_key = current_key;
+		this.indirect = indirect;
 
 	}
 

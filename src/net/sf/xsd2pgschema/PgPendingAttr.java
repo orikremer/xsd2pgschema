@@ -51,7 +51,7 @@ public class PgPendingAttr {
 	}
 
 	/**
-	 * Instance of pending attribute (any attribute).
+	 * Instance of pending any attribute.
 	 *
 	 * @param local_name local name
 	 * @param content content
@@ -66,12 +66,14 @@ public class PgPendingAttr {
 	}
 
 	/**
-	 * Write pending start element of table.
+	 * Write pending attribute.
 	 *
 	 * @param xmlb XML builder
 	 * @throws XMLStreamException the XML stream exception
 	 */
 	public void write(XmlBuilder xmlb) throws XMLStreamException {
+
+		// attribute
 
 		if (field != null) {
 
@@ -81,6 +83,8 @@ public class PgPendingAttr {
 				xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.xname, content);
 
 		}
+
+		// any attribute
 
 		else
 			xmlb.writer.writeAttribute(local_name, content);

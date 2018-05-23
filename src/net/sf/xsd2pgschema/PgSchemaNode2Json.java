@@ -34,7 +34,7 @@ import org.w3c.dom.Node;
  * @author yokochi
  */
 public class PgSchemaNode2Json extends PgSchemaNodeParser {
-	
+
 	/** Whether any content was written. */
 	protected boolean written = false;
 
@@ -170,18 +170,14 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		}
 
-		if (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0))
+		if (!filled || (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0)))
 			return;
 
-		if (filled) {
+		write();
 
-			write();
-
-			this.proc_node = proc_node;
-			this.current_key = current_key;
-			this.indirect = indirect;
-
-		}
+		this.proc_node = proc_node;
+		this.current_key = current_key;
+		this.indirect = indirect;
 
 	}
 

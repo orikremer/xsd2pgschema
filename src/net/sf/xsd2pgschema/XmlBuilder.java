@@ -32,8 +32,8 @@ import javax.xml.stream.XMLStreamWriter;
  */
 public class XmlBuilder {
 
-	/** Whether append XML processing instruction. */
-	public boolean append_proc_inst = true;
+	/** Whether append XML declaration. */
+	public boolean append_declare = true;
 
 	/** Whether append namespace declaration. */
 	public boolean append_xmlns = true;
@@ -56,8 +56,8 @@ public class XmlBuilder {
 	/** The appended namespace declarations. */
 	protected HashSet<String> appended_xmlns = new HashSet<String>();
 
-	/** The pending start element of table. */
-	protected LinkedList<PgPendingStartElem> pending_start_elem = new LinkedList<PgPendingStartElem>();
+	/** The pending element. */
+	protected LinkedList<PgPendingElem> pending_elem = new LinkedList<PgPendingElem>();
 
 	/** The pending simple content. */
 	protected StringBuilder pending_simple_cont = new StringBuilder();
@@ -152,34 +152,39 @@ public class XmlBuilder {
 	}
 
 	/**
-	 * Write pending start elements of table.
+	 * Write pending elements.
 	 *
-	 * @param attr_only whether start element has attribute only
+	 * @param attr_only whether element has attribute only
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public synchronized void writePendingTableStartElements(boolean attr_only) throws XMLStreamException {
+	public void writePendingElems(boolean attr_only) throws XMLStreamException {
 
 		boolean init = true;
 
-		PgPendingStartElem start_elem;
+		PgPendingElem elem;
 
-		while ((start_elem = pending_start_elem.pollLast()) != null) {
+		while ((elem = pending_elem.pollLast()) != null) {
 
 			if (!attr_only || !init)
-				start_elem.attr_only = false;
+				elem.attr_only = false;
 
-			start_elem.write(this);
+			elem.write(this);
 
 			init = false;
 
-			if (pending_start_elem.size() > 0)
+			if (pending_elem.size() > 0)
 				writer.writeCharacters(line_feed_code);
 
 		}
 
 	}
 
-	public void appendSimpleContent(String content) {
+	/**
+	 * Append simple content.
+	 *
+	 * @param content simple content
+	 */
+	public void appendSimpleCont(String content) {
 
 		pending_simple_cont.append(content);
 
@@ -190,15 +195,14 @@ public class XmlBuilder {
 	 *
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public synchronized void writePendingSimpleContent() throws XMLStreamException {
+	public void writePendingSimpleCont() throws XMLStreamException {
 
-		if (pending_simple_cont.length() > 0) {
+		if (pending_simple_cont.length() == 0)
+			return;
 
-			writer.writeCharacters(pending_simple_cont.toString());
+		writer.writeCharacters(pending_simple_cont.toString());
 
-			pending_simple_cont.setLength(0);
-
-		}
+		pending_simple_cont.setLength(0);
 
 	}
 
@@ -209,7 +213,10 @@ public class XmlBuilder {
 
 		appended_xmlns.clear();
 
-		pending_start_elem.clear();
+		PgPendingElem elem;
+
+		while ((elem = pending_elem.pollLast()) != null)
+			elem.clear();
 
 		pending_simple_cont.setLength(0);
 
