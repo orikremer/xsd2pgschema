@@ -166,7 +166,7 @@ public class Xml2JsonThrd implements Runnable {
 				}
 
 			} catch (Exception e) {
-				System.err.println("Exception occurred while processing XML document: " + xml_file.getName());
+				System.err.println("Exception occurred while processing XML document: " + xml_file.getAbsolutePath());
 				e.printStackTrace();
 				System.exit(1);
 			}

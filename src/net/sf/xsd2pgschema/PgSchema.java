@@ -749,9 +749,11 @@ public class PgSchema {
 
 		// decide parent node name constraint
 
-		tables.stream().filter(table -> table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> {
+		tables.stream().filter(table -> table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> { // do not parallelize this stream which causes null pointer exception
 
-			if (table.conflict) // tolerate parent node name constraint due to name collision
+			// tolerate parent node name constraint due to name collision
+
+			if (table.conflict)
 				field.parent_node = null;
 
 			else {
@@ -974,7 +976,7 @@ public class PgSchema {
 
 		// update system key, user key, omissible and jsonable flags
 
-		tables.parallelStream().forEach(table -> table.fields.forEach(field -> { // should touch all tables for JSON Schema conversion
+		tables.parallelStream().forEach(table -> table.fields.forEach(field -> { // touch all tables for JSON Schema conversion
 
 			field.setSystemKey();
 			field.setUserKey();
@@ -4817,15 +4819,20 @@ public class PgSchema {
 
 				File data_file = new File(work_dir, getDataFileNameOf(table));
 
-				try {
+				if (data_file.length() > 0) {
 
-					String sql = "COPY " + getPgNameOf(db_conn, table) + " FROM STDIN" + (option.pg_tab_delimiter ? "" : " CSV");
+					try {
 
-					copy_man.copyIn(sql, new FileInputStream(data_file));
+						String sql = "COPY " + getPgNameOf(db_conn, table) + " FROM STDIN" + (option.pg_tab_delimiter ? "" : " CSV");
 
-				} catch (SQLException | IOException | PgSchemaException e) {
-					e.printStackTrace();
-					System.exit(1);
+						copy_man.copyIn(sql, new FileInputStream(data_file));
+
+					} catch (SQLException | IOException | PgSchemaException e) {
+						System.err.println("Exception occurred while processing " + (option.pg_tab_delimiter ? "TSV" : "CSV") + " document: " + data_file.getAbsolutePath());
+						e.printStackTrace();
+						System.exit(1);
+					}
+
 				}
 
 			});
