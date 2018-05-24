@@ -251,7 +251,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 			} catch (Exception e) {
 				StackTraceElement[] stack = e.getStackTrace();
-				System.err.println(e.getClass().getName() + "; fileName: " + xml_file.getName() + "; " + e.getMessage());
+				System.err.println(e.getClass().getName() + "; fileName: " + xml_file.getName() + "; lineNumber: " + stack[0].getLineNumber() + "; " + e.getMessage());
 				for (StackTraceElement elem : stack)
 					System.err.println("\t " + elem.toString());
 				System.exit(1);
