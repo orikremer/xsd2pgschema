@@ -250,10 +250,8 @@ public class Xml2PgSqlThrd implements Runnable {
 				schema.xml2PgSql(xml_parser, update, db_conn);
 
 			} catch (Exception e) {
-				StackTraceElement[] stack = e.getStackTrace();
-				System.err.println(e.getClass().getName() + "; fileName: " + xml_file.getName() + "; lineNumber: " + stack[0].getLineNumber() + "; " + e.getMessage());
-				for (StackTraceElement elem : stack)
-					System.err.println("\t " + elem.toString());
+				System.err.println("Exception while processing XML document: " + xml_file.getName());
+				e.printStackTrace();
 				System.exit(1);
 			}
 
