@@ -216,7 +216,7 @@ public class Xml2PgCsvThrd implements Runnable {
 				schema.xml2PgCsv(xml_parser, work_dir);
 
 			} catch (Exception e) {
-				System.err.println("Exception while processing XML document: " + xml_file.getName());
+				System.err.println("Exception occurred while processing XML document: " + xml_file.getName());
 				e.printStackTrace();
 				System.exit(1);
 			}

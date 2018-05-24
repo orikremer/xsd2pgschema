@@ -338,7 +338,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 				lucene_doc.clear();
 
 			} catch (Exception e) {
-				System.err.println("Exception while processing XML document: " + xml_file.getName());
+				System.err.println("Exception occurred while processing XML document: " + xml_file.getName());
 				e.printStackTrace();
 				System.exit(1);
 			}
