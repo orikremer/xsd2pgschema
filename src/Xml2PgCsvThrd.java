@@ -216,7 +216,10 @@ public class Xml2PgCsvThrd implements Runnable {
 				schema.xml2PgCsv(xml_parser, work_dir);
 
 			} catch (Exception e) {
-				e.printStackTrace();
+				StackTraceElement[] stack = e.getStackTrace();
+				System.err.println(e.getClass().getName() + "; fileName: " + xml_file.getName() + "; " + e.getMessage());
+				for (StackTraceElement elem : stack)
+					System.err.println("\t " + elem.toString());
 				System.exit(1);
 			}
 

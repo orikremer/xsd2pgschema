@@ -747,11 +747,11 @@ public class PgSchema {
 
 		});
 
-		// decide parent node name
+		// decide parent node name constraint
 
-		tables.parallelStream().filter(table -> table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> {
+		tables.stream().filter(table -> table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> {
 
-			if (table.conflict) // tolerate parent node name check because of name collision
+			if (table.conflict) // tolerate parent node name constraint due to name collision
 				field.parent_node = null;
 
 			else {
@@ -850,7 +850,7 @@ public class PgSchema {
 
 		}));
 
-		// decide ancestor node name
+		// decide ancestor node name constraint
 
 		tables.parallelStream().filter(table -> table.has_foreign_key && table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && !field.nested_key_as_attr && field.parent_node != null).forEach(field -> {
 
@@ -906,13 +906,14 @@ public class PgSchema {
 			if (sb.length() > 0) {
 
 				field.ancestor_node = sb.substring(0, sb.length() - 1);
+
 				sb.setLength(0);
 
 			}
 
 		}));
 
-		// update requirement flag because of foreign keys
+		// update requirement flag due to foreign key
 
 		foreign_keys.forEach(foreign_key -> {
 
@@ -929,12 +930,12 @@ public class PgSchema {
 
 		});
 
-		// add serial key if parent table is list holder
+		// add serial key on demand in case that parent table is list holder
 
 		if (option.serial_key)
 			tables.parallelStream().filter(table -> table.required && !table.relational && table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> getForeignTable(field).addSerialKey(option)));
 
-		// add XPath key
+		// add XPath key on demand
 
 		if (option.xpath_key)
 			tables.parallelStream().filter(table -> table.required && !table.relational).forEach(table -> table.addXPathKey(option));
@@ -973,7 +974,7 @@ public class PgSchema {
 
 		// update system key, user key, omissible and jsonable flags
 
-		tables.parallelStream().forEach(table -> table.fields.forEach(field -> {
+		tables.parallelStream().forEach(table -> table.fields.forEach(field -> { // should touch all tables for JSON Schema conversion
 
 			field.setSystemKey();
 			field.setUserKey();
@@ -2331,7 +2332,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Avoid table duplication while merging two equivalent tables.
+	 * Avoid table duplication while merging equivalent tables.
 	 *
 	 * @param tables target table list
 	 * @param table current table having table name at least
@@ -2425,7 +2426,9 @@ public class PgSchema {
 
 			PgField known_field = known_table.getPgField(field.pname);
 
-			if (known_field == null) { // append new field to known table
+			// append new field to known table
+
+			if (known_field == null) {
 
 				changed = true;
 
@@ -2436,7 +2439,9 @@ public class PgSchema {
 
 			}
 
-			else { // update field
+			// update field
+
+			else {
 
 				// append target namespace if available
 
@@ -2499,7 +2504,9 @@ public class PgSchema {
 
 			known_table.countNestedFields();
 
-			if (conflict) { // avoid conflict
+			// avoid conflict
+
+			if (conflict) {
 
 				known_fields.parallelStream().filter(field -> !field.system_key && !field.user_key && field.required).forEach(field -> field.required = false);
 				known_table.conflict = true;
@@ -3280,7 +3287,7 @@ public class PgSchema {
 			if (!field.required && field.xrequired) {
 
 				if (field.fixed_value == null || field.fixed_value.isEmpty())
-					System.out.println("-- must not be NULL, but dismissed because of name collision");
+					System.out.println("-- must not be NULL, but dismissed due to name collision");
 
 				else {
 					System.out.print("-- must have a constraint ");
@@ -3309,7 +3316,7 @@ public class PgSchema {
 						System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = " + field.fixed_value + " ) ");
 					}
 
-					System.out.println(", but dismissed because of name collision");
+					System.out.println(", but dismissed due to name collision");
 				}
 			}
 
@@ -4443,7 +4450,7 @@ public class PgSchema {
 
 			if (update) {
 
-				deleteBeforeUpdate(db_conn, option.rel_data_ext);
+				deleteBeforeUpdate(db_conn, option.rel_data_ext && option.retain_key);
 
 				if (!option.rel_data_ext || !option.retain_key)
 					update = false;
@@ -5516,14 +5523,7 @@ public class PgSchema {
 
 		jsonb.close();
 
-		tables.parallelStream().filter(table -> table.required && table.content_holder).forEach(table -> table.fields.stream().filter(field -> field.jsonb != null).forEach(field -> {
-
-			if (field.jsonb.length() > 0)
-				field.jsonb.setLength(0);
-
-			field.jsonb = null;
-
-		}));
+		tables.parallelStream().filter(table -> table.required && table.content_holder).forEach(table -> table.fields.stream().filter(field -> field.jsonb != null && field.jsonb.length() > 0).forEach(field -> field.jsonb.setLength(0)));
 
 	}
 

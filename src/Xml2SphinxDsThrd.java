@@ -319,7 +319,10 @@ public class Xml2SphinxDsThrd implements Runnable {
 				filew.close();
 
 			} catch (IOException | SAXException | PgSchemaException e) {
-				e.printStackTrace();
+				StackTraceElement[] stack = e.getStackTrace();
+				System.err.println(e.getClass().getName() + "; fileName: " + xml_file.getName() + "; " + e.getMessage());
+				for (StackTraceElement elem : stack)
+					System.err.println("\t " + elem.toString());
 				System.exit(1);
 			}
 
