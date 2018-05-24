@@ -186,8 +186,8 @@ public class PgSchemaUtil {
 	/** The compiled pattern matches line feed code. */
 	public static final Pattern lf_pattern = Pattern.compile("\\n", Pattern.MULTILINE);
 
-	/** the compiled pattern matches back slash in last position. */
-	public static final Pattern bs_end_pattern = Pattern.compile("\\\\$", Pattern.MULTILINE);
+	/** the compiled pattern matches back slash code. */
+	public static final Pattern bs_pattern = Pattern.compile("\\\\", Pattern.MULTILINE);
 
 	/** The compiled pattern matches simple content. */
 	public static final Pattern null_simple_cont_pattern = Pattern.compile("^\\s+$", Pattern.MULTILINE);
@@ -718,7 +718,7 @@ public class PgSchemaUtil {
 	 * @return String escaped string
 	 */
 	public static String escapeTsv(String text) {
-		return PgSchemaUtil.bs_end_pattern.matcher(PgSchemaUtil.tab_pattern.matcher(PgSchemaUtil.lf_pattern.matcher(text).replaceAll("\\\\n")).replaceAll("\\\\t")).replaceAll("\\\\\\\\");
+		return PgSchemaUtil.tab_pattern.matcher(PgSchemaUtil.lf_pattern.matcher(PgSchemaUtil.bs_pattern.matcher(text).replaceAll("\\\\\\\\")).replaceAll("\\\\n")).replaceAll("\\\\t");
 	}
 
 }
