@@ -45,3 +45,5 @@ date
 
 ./sphinx_shard_uniprotkb.sh
 
+./eval_xpath_uniprotkb.sh
+

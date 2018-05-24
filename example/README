@@ -23,7 +23,8 @@ B. Replication of UniProtKB/Swiss-Prot
 (http://www.uniprot.org/uniprot/) on your PostgreSQL DB (dbname: uniprotkb) from
 XML documents (downloaded from public FTP site) and its XML Schema (uniprot.xsd).
  This script also shows a way to process single large XML file and allows you to
-create full-text index by either Apache Lucene and Sphinx Search, together.
+create full-text index by either Apache Lucene or Sphinx Search, and XPath 1.0
+query evaluation over PostgreSQL.
 
  Usage:
 
