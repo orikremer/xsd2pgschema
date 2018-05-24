@@ -118,7 +118,7 @@ public class PgTable {
 	protected boolean has_simple_attribute = false;
 
 	/** Whether name collision occurs or not. */
-	protected boolean conflict = false;
+	protected boolean name_collision = false;
 
 	/** Whether table is referred from child table. */
 	protected boolean required = false;
@@ -643,8 +643,8 @@ public class PgTable {
 	 * 
 	 * @return boolean whether name collision occurs
 	 */
-	public boolean conflict() {
-		return conflict;
+	public boolean nameCollision() {
+		return name_collision;
 	}
 
 	/**

@@ -68,9 +68,6 @@ import org.xml.sax.SAXException;
  */
 public class PgSchema {
 
-	/** The root node (internal use only). */
-	private Node root_node = null;
-
 	/** The parent of default schema location. */
 	private String def_schema_parent = null;
 
@@ -113,9 +110,6 @@ public class PgSchema {
 	/** The full-text index filter. */
 	protected IndexFilter index_filter = null;
 
-	/** The current depth of table (internal use only). */
-	private int level;
-
 	/** The PostgreSQL root table. */
 	private PgTable root_table = null;
 
@@ -153,20 +147,29 @@ public class PgSchema {
 	/** The instance of message digest for hash_key. */
 	private MessageDigest md_hash_key = null;
 
-	/** The root schema object. */
-	private PgSchema _root_schema = null;
+	/** The root node (internal use only). */
+	private Node root_node = null;
+
+	/** The root schema object (internal use only). */
+	private PgSchema root_schema = null;
+
+	/** Whether name collision occurs in schema (internal use only). */
+	private boolean name_collision = false;
+
+	/** The current depth of table (internal use only). */
+	private int level;
 
 	/**
 	 * PostgreSQL schema constructor.
 	 *
 	 * @param doc_builder Document builder used for xs:include or xs:import
 	 * @param doc XML Schema document
-	 * @param root_schema root schema object (should be null at first)
+	 * @param parent_schema parent schema object (should be null at first)
 	 * @param def_schema_location default schema location
 	 * @param option PostgreSQL data model option
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchema(DocumentBuilder doc_builder, Document doc, PgSchema root_schema, String def_schema_location, PgSchemaOption option) throws PgSchemaException {
+	public PgSchema(DocumentBuilder doc_builder, Document doc, PgSchema parent_schema, String def_schema_location, PgSchemaOption option) throws PgSchemaException {
 
 		this.option = option;
 		this.def_schema_location = def_schema_location;
@@ -187,13 +190,13 @@ public class PgSchema {
 
 		// detect entry point of XML schemata
 
-		_root_schema = root_schema == null ? this : root_schema;
+		root_schema = parent_schema == null ? this : parent_schema;
 
-		def_schema_parent = root_schema == null ? PgSchemaUtil.getSchemaParent(def_schema_location) : root_schema.def_schema_parent;
+		def_schema_parent = parent_schema == null ? PgSchemaUtil.getSchemaParent(def_schema_location) : parent_schema.def_schema_parent;
 
 		// prepare dictionary of unique schema locations and duplicated schema locations
 
-		if (root_schema == null) {
+		if (parent_schema == null) {
 
 			unq_schema_locations = new HashMap<String, String>();
 			dup_schema_locations = new HashMap<String, String>();
@@ -218,7 +221,7 @@ public class PgSchema {
 
 					String target_namespace = root_attr.getNodeValue().split(" ")[0];
 
-					_root_schema.unq_schema_locations.putIfAbsent(target_namespace, def_schema_location);
+					root_schema.unq_schema_locations.putIfAbsent(target_namespace, def_schema_location);
 
 					def_namespaces.putIfAbsent("", target_namespace);
 
@@ -268,7 +271,7 @@ public class PgSchema {
 
 		// prepare foreign key holder, and pending group holder for attribute group and model group
 
-		if (root_schema == null) {
+		if (parent_schema == null) {
 
 			foreign_keys = new ArrayList<PgForeignKey>();
 
@@ -305,7 +308,7 @@ public class PgSchema {
 
 					// prevent infinite cyclic reference which is allowed in XML Schema 1.1
 
-					if (!_root_schema.schema_locations.add(schema_location))
+					if (!root_schema.schema_locations.add(schema_location))
 						continue;
 
 					// copy XML Schema if not exists
@@ -329,30 +332,30 @@ public class PgSchema {
 
 						// referred XML Schema (xs:include|xs:import/@schemaLocation) analysis
 
-						PgSchema schema2 = new PgSchema(doc_builder, doc2, _root_schema, schema_location, option);
+						PgSchema schema2 = new PgSchema(doc_builder, doc2, root_schema, schema_location, option);
 
 						if ((schema2.tables == null || schema2.tables.size() == 0) && (schema2.attr_groups == null || schema2.attr_groups.size() == 0) && (schema2.model_groups == null || schema2.model_groups.size() == 0)) {
 							/*
-							_root_schema.def_stat_msg.append("--  Not found any root element (/" + option.xs_prefix_ + "schema/" + option.xs_prefix_ + "element) or administrative elements (/" + option.xs_prefix_ + "schema/[" + option.xs_prefix_ + "complexType | " + option.xs_prefix_ + "simpleType | " + option.xs_prefix_ + "attributeGroup | " + option.xs_prefix_ + "group]) in XML Schema: " + schema_location + "\n");
+							root_schema.def_stat_msg.append("--  Not found any root element (/" + option.xs_prefix_ + "schema/" + option.xs_prefix_ + "element) or administrative elements (/" + option.xs_prefix_ + "schema/[" + option.xs_prefix_ + "complexType | " + option.xs_prefix_ + "simpleType | " + option.xs_prefix_ + "attributeGroup | " + option.xs_prefix_ + "group]) in XML Schema: " + schema_location + "\n");
 							 */
 							continue;
 						}
 
 						// add schema location to prevent infinite cyclic reference
 
-						schema2.schema_locations.forEach(arg -> _root_schema.schema_locations.add(arg));
+						schema2.schema_locations.forEach(arg -> root_schema.schema_locations.add(arg));
 
 						// copy default namespace from referred XML Schema
 
 						if (!schema2.def_namespaces.isEmpty())
-							schema2.def_namespaces.entrySet().forEach(arg -> _root_schema.def_namespaces.putIfAbsent(arg.getKey(), arg.getValue()));
+							schema2.def_namespaces.entrySet().forEach(arg -> root_schema.def_namespaces.putIfAbsent(arg.getKey(), arg.getValue()));
 
 						// copy administrative tables from referred XML Schema
 
 						schema2.tables.stream().filter(arg -> arg.xs_type.equals(XsTableType.xs_admin_root) || arg.xs_type.equals(XsTableType.xs_admin_child)).forEach(arg -> {
 
-							if (_root_schema.avoidTableDuplication(tables, arg))
-								_root_schema.tables.add(arg);
+							if (root_schema.avoidTableDuplication(tables, arg))
+								root_schema.tables.add(arg);
 
 						});
 
@@ -396,7 +399,7 @@ public class PgSchema {
 
 		// create table for root element
 
-		boolean root_element = root_schema == null;
+		boolean root_element = parent_schema == null;
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -414,7 +417,7 @@ public class PgSchema {
 
 				extractRootElement(child, root_element);
 
-				if (root_schema == null)
+				if (parent_schema == null)
 					break;
 
 				root_element = false;
@@ -440,7 +443,7 @@ public class PgSchema {
 
 		if (tables.size() == 0) {
 
-			if (root_schema == null)
+			if (parent_schema == null)
 				throw new PgSchemaException("Not found any root element (/" + option.xs_prefix_ + "schema/" + option.xs_prefix_ + "element) or administrative elements (/" + option.xs_prefix_ + "schema/[" + option.xs_prefix_ + "complexType | " + option.xs_prefix_ + "simpleType]) in XML Schema: " + def_schema_location);
 
 		}
@@ -450,8 +453,8 @@ public class PgSchema {
 			if (!option.rel_model_ext)
 				tables.parallelStream().forEach(table -> table.classify());
 
-			if (!_root_schema.dup_schema_locations.containsKey(def_schema_location))
-				_root_schema.def_stat_msg.append("--  " + (root_schema == null ? "Generated" : "Found") + " " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.parallelStream().map(table -> option.rel_model_ext || !table.relational ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups " + (root_schema == null ? "in total" : "in XML Schema: " + def_schema_location) + "\n");
+			if (!root_schema.dup_schema_locations.containsKey(def_schema_location))
+				root_schema.def_stat_msg.append("--  " + (parent_schema == null ? "Generated" : "Found") + " " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.parallelStream().map(table -> option.rel_model_ext || !table.relational ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups " + (parent_schema == null ? "in total" : "in XML Schema: " + def_schema_location) + "\n");
 
 		}
 
@@ -473,7 +476,7 @@ public class PgSchema {
 
 				extractAdminElement(child, false, true);
 
-				if (root_schema == null)
+				if (parent_schema == null)
 					break;
 
 			}
@@ -495,7 +498,7 @@ public class PgSchema {
 
 		}
 
-		if (root_schema != null)
+		if (parent_schema != null)
 			return;
 
 		// collect PostgreSQL named schemata
@@ -753,7 +756,7 @@ public class PgSchema {
 
 			// tolerate parent node name constraint due to name collision
 
-			if (table.conflict)
+			if (table.name_collision)
 				field.parent_node = null;
 
 			else {
@@ -1028,45 +1031,45 @@ public class PgSchema {
 		namespace_uri.forEach(arg -> sb.append(arg + " (" + getPrefixOf(arg, "default") + "), "));
 		namespace_uri.clear();
 
-		_root_schema.def_stat_msg.append("--   Namespaces:\n");
-		_root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
+		root_schema.def_stat_msg.append("--   Namespaces:\n");
+		root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
 
 		sb.setLength(0);
 
 		schema_locations.stream().filter(arg -> !dup_schema_locations.containsKey(arg)).forEach(arg -> sb.append(arg + ", "));
 
-		_root_schema.def_stat_msg.append("--   Schema locations:\n");
-		_root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
+		root_schema.def_stat_msg.append("--   Schema locations:\n");
+		root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
 
 		sb.setLength(0);
 
-		_root_schema.def_stat_msg.append("--   Table types:\n");
-		_root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root) && (option.rel_model_ext || !table.relational)).count() + " root, ");
-		_root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) && (option.rel_model_ext || !table.relational)).count() + " root children, ");
-		_root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root) && (option.rel_model_ext || !table.relational)).count() + " admin roots, ");
-		_root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_child) && (option.rel_model_ext || !table.relational)).count() + " admin children\n");
-		_root_schema.def_stat_msg.append("--   System keys:\n");
-		_root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.primary_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " primary keys ("
+		root_schema.def_stat_msg.append("--   Table types:\n");
+		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root) && (option.rel_model_ext || !table.relational)).count() + " root, ");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) && (option.rel_model_ext || !table.relational)).count() + " root children, ");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root) && (option.rel_model_ext || !table.relational)).count() + " admin roots, ");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_child) && (option.rel_model_ext || !table.relational)).count() + " admin children\n");
+		root_schema.def_stat_msg.append("--   System keys:\n");
+		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.primary_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " primary keys ("
 				+ tables.parallelStream().map(table -> table.fields.stream().filter(field -> field.unique_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " unique constraints), ");
-		_root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys ("
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys ("
 				+ countForeignKeyReferences() + " key references), ");
-		_root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.nested_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " nested keys ("
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.nested_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " nested keys ("
 				+ tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.nested_key_as_attr).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute)\n");
-		_root_schema.def_stat_msg.append("--   User keys:\n");
-		_root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.document_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " document keys, ");
-		_root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
-		_root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
-		_root_schema.def_stat_msg.append("--   Contents:\n");
-		_root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes ("
+		root_schema.def_stat_msg.append("--   User keys:\n");
+		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.document_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " document keys, ");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
+		root_schema.def_stat_msg.append("--   Contents:\n");
+		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes ("
 				+ (option.document_key || !option.inplace_document_key ? 0 : tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
-		_root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements ("
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements ("
 				+ (option.document_key || !option.inplace_document_key ? 0 : tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
-		_root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.simple_content).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents ("
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.simple_content).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents ("
 				+ tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.simple_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute, "
 				+ tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.simple_attr_cond).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as conditional attribute)\n");
-		_root_schema.def_stat_msg.append("--   Wild cards:\n");
-		_root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
-		_root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
+		root_schema.def_stat_msg.append("--   Wild cards:\n");
+		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
 
 		// update schema locations to unique ones
 
@@ -1359,16 +1362,13 @@ public class PgSchema {
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling())
 			extractField(child, table, false);
-		/*
-		if (table.fields.size() == 0)
-			return;
-		 */
-		if (avoidTableDuplication(_root_schema.attr_groups, table)) {
+
+		if (avoidTableDuplication(root_schema.attr_groups, table)) {
 
 			attr_groups.add(table);
 
-			if (!this.equals(_root_schema))
-				_root_schema.attr_groups.add(table);
+			if (!this.equals(root_schema))
+				root_schema.attr_groups.add(table);
 
 		}
 
@@ -1405,16 +1405,13 @@ public class PgSchema {
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling())
 			extractField(child, table, false);
-		/*
-		if (table.fields.size() == 0)
-			return;
-		 */
-		if (avoidTableDuplication(_root_schema.model_groups, table)) {
+
+		if (avoidTableDuplication(root_schema.model_groups, table)) {
 
 			model_groups.add(table);
 
-			if (!this.equals(_root_schema))
-				_root_schema.model_groups.add(table);
+			if (!this.equals(root_schema))
+				root_schema.model_groups.add(table);
 
 		}
 
@@ -1537,10 +1534,10 @@ public class PgSchema {
 		if (foreign_key.isEmpty())
 			return;
 
-		if (_root_schema.foreign_keys.parallelStream().anyMatch(_foreign_key -> _foreign_key.equals(foreign_key)))
+		if (root_schema.foreign_keys.parallelStream().anyMatch(_foreign_key -> _foreign_key.equals(foreign_key)))
 			return;
 
-		_root_schema.foreign_keys.add(foreign_key);
+		root_schema.foreign_keys.add(foreign_key);
 
 	}
 
@@ -2102,7 +2099,7 @@ public class PgSchema {
 
 		if (attr_group == null) {
 
-			_root_schema.pending_attr_groups.add(new PgSchemaPendingGroup(ref, table.pg_schema_name, table.xname, table.fields.size()));
+			root_schema.pending_attr_groups.add(new PgSchemaPendingGroup(ref, table.pg_schema_name, table.xname, table.fields.size()));
 			table.has_pending_group = true;
 
 			return;
@@ -2134,7 +2131,7 @@ public class PgSchema {
 
 		if (model_group == null) {
 
-			_root_schema.pending_model_groups.add(new PgSchemaPendingGroup(ref, table.pg_schema_name, table.xname, table.fields.size()));
+			root_schema.pending_model_groups.add(new PgSchemaPendingGroup(ref, table.pg_schema_name, table.xname, table.fields.size()));
 			table.has_pending_group = true;
 
 			return;
@@ -2350,7 +2347,7 @@ public class PgSchema {
 		PgTable known_table = null;
 
 		try {
-			known_table = tables.equals(this.tables) ? getPgTable(table.pg_schema_name, table.pname) : tables.equals(_root_schema.attr_groups) ? getAttributeGroup(table.xname, false) : tables.equals(_root_schema.model_groups) ? getModelGroup(table.xname, false) : null;
+			known_table = tables.equals(this.tables) ? getPgTable(table.pg_schema_name, table.pname) : tables.equals(root_schema.attr_groups) ? getAttributeGroup(table.xname, false) : tables.equals(root_schema.model_groups) ? getModelGroup(table.xname, false) : null;
 		} catch (PgSchemaException e) {
 			e.printStackTrace();
 			System.exit(1);
@@ -2366,7 +2363,7 @@ public class PgSchema {
 			table.pname = "_" + table.pname;
 
 			try {
-				known_table = tables.equals(this.tables) ? getCanTable(table.pg_schema_name, table.xname) : tables.equals(_root_schema.attr_groups) ? getAttributeGroup(table.xname, false) : tables.equals(_root_schema.model_groups) ? getModelGroup(table.xname, false) : null;
+				known_table = tables.equals(this.tables) ? getCanTable(table.pg_schema_name, table.xname) : tables.equals(root_schema.attr_groups) ? getAttributeGroup(table.xname, false) : tables.equals(root_schema.model_groups) ? getModelGroup(table.xname, false) : null;
 			} catch (PgSchemaException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -2378,7 +2375,7 @@ public class PgSchema {
 		}
 
 		boolean changed = false;
-		boolean conflict = false;
+		boolean name_collision = false;
 
 		if (table.required && !known_table.required)
 			known_table.required = true;
@@ -2413,10 +2410,10 @@ public class PgSchema {
 
 			else if (!known_table.schema_location.contains(table.schema_location)) {
 
-				if (!known_table.schema_location.contains(_root_schema.unq_schema_locations.get(table.target_namespace)))
+				if (!known_table.schema_location.contains(root_schema.unq_schema_locations.get(table.target_namespace)))
 					known_table.schema_location += " " + table.schema_location;
 				else
-					_root_schema.dup_schema_locations.put(table.schema_location, _root_schema.unq_schema_locations.get(table.target_namespace));
+					root_schema.dup_schema_locations.put(table.schema_location, root_schema.unq_schema_locations.get(table.target_namespace));
 
 			}
 
@@ -2435,7 +2432,7 @@ public class PgSchema {
 				changed = true;
 
 				if (!field.primary_key && field.required && !table.xs_type.equals(XsTableType.xs_admin_root) && known_table.xs_type.equals(XsTableType.xs_admin_root))
-					conflict = true;
+					name_collision = true;
 
 				known_fields.add(field);
 
@@ -2485,7 +2482,7 @@ public class PgSchema {
 						changed = true;
 
 						if (!known_field.primary_key && known_field.required)
-							conflict = true;
+							name_collision = true;
 
 					}
 
@@ -2506,12 +2503,12 @@ public class PgSchema {
 
 			known_table.countNestedFields();
 
-			// avoid conflict
+			// avoid name_collision
 
-			if (conflict) {
+			if (name_collision) {
 
 				known_fields.parallelStream().filter(field -> !field.system_key && !field.user_key && field.required).forEach(field -> field.required = false);
-				known_table.conflict = true;
+				known_table.name_collision = true;
 
 			}
 
@@ -2543,8 +2540,8 @@ public class PgSchema {
 
 			for (String schema_location : schema_locations.split(" ")) {
 
-				if (_root_schema.dup_schema_locations.containsKey(schema_location))
-					sb.append(_root_schema.dup_schema_locations.get(schema_location) + " ");
+				if (root_schema.dup_schema_locations.containsKey(schema_location))
+					sb.append(root_schema.dup_schema_locations.get(schema_location) + " ");
 				else
 					sb.append(schema_location + " ");
 
@@ -2831,7 +2828,7 @@ public class PgSchema {
 	 */
 	private PgTable getAttributeGroup(String attr_group_name, boolean throwable) throws PgSchemaException {
 
-		Optional<PgTable> opt = _root_schema.attr_groups.parallelStream().filter(attr_group -> attr_group.xname.equals(attr_group_name)).findFirst();
+		Optional<PgTable> opt = root_schema.attr_groups.parallelStream().filter(attr_group -> attr_group.xname.equals(attr_group_name)).findFirst();
 
 		if (opt.isPresent())
 			return opt.get();
@@ -2852,7 +2849,7 @@ public class PgSchema {
 	 */
 	private PgTable getModelGroup(String model_group_name, boolean throwable) throws PgSchemaException {
 
-		Optional<PgTable> opt = _root_schema.model_groups.parallelStream().filter(model_group -> model_group.xname.equals(model_group_name)).findFirst();
+		Optional<PgTable> opt = root_schema.model_groups.parallelStream().filter(model_group -> model_group.xname.equals(model_group_name)).findFirst();
 
 		if (opt.isPresent())
 			return opt.get();
@@ -2906,6 +2903,8 @@ public class PgSchema {
 
 		setDocIdTable();
 
+		name_collision = tables.parallelStream().anyMatch(table -> table.name_collision);
+
 		if (!option.ddl_output)
 			return;
 
@@ -2919,7 +2918,7 @@ public class PgSchema {
 		System.out.println("--  relational extension: " + option.rel_model_ext);
 		System.out.println("--  wild card extension: " + option.wild_card);
 		System.out.println("--  case sensitive name: " + option.case_sense);
-		System.out.println("--  no name collision: " + !tables.parallelStream().anyMatch(table -> table.conflict));
+		System.out.println("--  no name collision: " + !name_collision);
 		System.out.println("--  append document key: " + option.document_key);
 		System.out.println("--  append serial key: " + option.serial_key);
 		System.out.println("--  append xpath key: " + option.xpath_key);
@@ -3193,7 +3192,7 @@ public class PgSchema {
 			sb.append("no namespace, ");
 
 		System.out.println("-- xmlns: " + sb.toString() + "schema location: " + table.schema_location);
-		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replace("_",  " ") + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (tables.parallelStream().anyMatch(_table -> _table.conflict) ? ", name collision: " + table.conflict : ""));
+		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replace("_",  " ") + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (name_collision ? ", name collision: " + table.name_collision : ""));
 		System.out.println("--");
 
 		sb.setLength(0);
@@ -6632,7 +6631,7 @@ public class PgSchema {
 
 					String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-					if ((content != null && !content.isEmpty()) || (field.xrequired && !table.conflict)) {
+					if ((content != null && !content.isEmpty()) || (field.xrequired && !table.name_collision)) {
 
 						PgPendingAttr attr = new PgPendingAttr(field, content);
 
@@ -6765,7 +6764,7 @@ public class PgSchema {
 
 					String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-					if ((content != null && !content.isEmpty()) || (field.xrequired && !table.conflict)) {
+					if ((content != null && !content.isEmpty()) || (field.xrequired && !table.name_collision)) {
 
 						PgPendingElem elem = xmlb.pending_elem.peek();
 
@@ -6991,7 +6990,7 @@ public class PgSchema {
 
 						String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-						if ((content != null && !content.isEmpty()) || (field.xrequired && !table.conflict)) {
+						if ((content != null && !content.isEmpty()) || (field.xrequired && !table.name_collision)) {
 
 							PgPendingAttr attr = new PgPendingAttr(field, content);
 
@@ -7012,7 +7011,7 @@ public class PgSchema {
 
 						String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-						if ((content != null && !content.isEmpty()) || (field.xrequired && !table.conflict)) {
+						if ((content != null && !content.isEmpty()) || (field.xrequired && !table.name_collision)) {
 
 							PgPendingAttr attr = new PgPendingAttr(field, content);
 
@@ -7118,7 +7117,7 @@ public class PgSchema {
 
 						String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-						if ((content != null && !content.isEmpty()) || (field.xrequired && !table.conflict)) {
+						if ((content != null && !content.isEmpty()) || (field.xrequired && !table.name_collision)) {
 
 							PgPendingElem elem = xmlb.pending_elem.peek();
 

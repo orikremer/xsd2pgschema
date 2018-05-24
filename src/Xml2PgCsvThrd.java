@@ -236,6 +236,9 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		else if (polled > 0) {
 
+			if (show_progress)
+				System.out.println("\nCopying...");
+
 			try {
 
 				schema.pgCsv2PgSql(db_conn, work_dir);

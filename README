@@ -1,11 +1,17 @@
-﻿ Changes in xsd2pgschema 2.10.3 (release 2018-05-24)
+﻿ Changes in xsd2pgschema 2.10.4 (release 2018-05-24)
 
-  Fixed ClassCastException in 2.10.2 while setting discarded document key or in-place document key.
+  [Ticket #6] Fixed differential update in case of --no-key option.
+  Fixed string escape function for TSV format.
+  Fixed issues while XPath->SQL query translation (ArrayIndexOutOfBoundsException, invalid path to simple content, invalid JOIN clause).
+  Added example script to demonstrate XPath 1.0 query evaluation over PostgreSQL.
+
+ Changes in xsd2pgschema 2.10.3 (release 2018-05-23)
+
+  Fixed ClassCastException in 2.10.2 during setting discarded document key or in-place document key.
   Fixed XML Schema->object- and column-oriented JSON Schema conversion in 2.10.2.
   [Ticket #6] Added --no-key option to xml2pgcsv and xml2pgtsv for argument's compatibility.
   Added statistics about simple type attribute, conditional simple type attribute and nested key pointing simple type attribute.
   Set UTF-8 as default client encoding.
-  [Ticket #6] Fixed differential update in case of --no-key option.
 
  Changes in xsd2pgschema 2.10.2 (release 2018-05-22)
 
@@ -22,10 +28,10 @@
  Changes in xsd2pgschema 2.10.1 (release 2018-05-16)
 
   Fixed XPath evaluator to use writeEmptyElement for empty element.
-  Fixed XPath->SQL query translation while joining table in the same depth (null pointer exception).
+  Fixed XPath->SQL query translation in case of joining table in the same depth (null pointer exception).
   [Ticket #5] Fixed issues caused by --case-insensitive option.
   [Ticket #5] Revised implementation of table, field, foreign key, and so forth by separation of canonical name in XML Schema and name in PostgreSQL DDL.
-  Removed invalid nest key which caused violation of unique constraint while PostgreSQL data migration.
+  Removed invalid nest key which caused violation of unique constraint during PostgreSQL data migration.
 
  Changes in xsd2pgschema 2.10.0 (release 2018-05-14)
 

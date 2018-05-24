@@ -418,7 +418,7 @@ public class XPathEvaluatorImpl {
 							case element:
 								content = field.retrieveValue(rset, 1, fill_default_value);
 
-								if ((content != null && !content.isEmpty()) || (field.isRequired() && !table.conflict())) {
+								if ((content != null && !content.isEmpty()) || (field.isRequired() && !table.nameCollision())) {
 
 									if (content != null && !content.isEmpty()) {
 
@@ -515,7 +515,7 @@ public class XPathEvaluatorImpl {
 
 								}
 
-								else if (field.isRequired() && !table.conflict()) {
+								else if (field.isRequired() && !table.nameCollision()) {
 
 									xml_writer.writeEmptyElement(table_prefix, table_name, table_ns);
 

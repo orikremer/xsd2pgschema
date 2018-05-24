@@ -4289,10 +4289,10 @@ public class XPathCompList {
 				HashMap<PgTable, String> target_tables = new HashMap<PgTable, String>(); // key = table, value = table path
 				HashMap<PgTable, String> joined_tables = new HashMap<PgTable, String>();
 
-				target_tables.put(path_expr.sql_subject.table, path_expr.terminus.equals(XPathCompType.table) ? path_expr.sql_subject.path : path_expr.sql_subject.getParentPath());
+				target_tables.put(path_expr.sql_subject.table, path_expr.terminus.equals(XPathCompType.table) || path_expr.terminus.equals(XPathCompType.simple_content) ? path_expr.sql_subject.path : path_expr.sql_subject.getParentPath());
 
 				if (path_expr.sql_predicates != null)
-					path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.table != null).forEach(sql_expr -> target_tables.put(sql_expr.table, sql_expr.terminus.equals(XPathCompType.table) ? sql_expr.path : sql_expr.getParentPath()));
+					path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.table != null).forEach(sql_expr -> target_tables.put(sql_expr.table, sql_expr.terminus.equals(XPathCompType.table) || sql_expr.terminus.equals(XPathCompType.simple_content) ? sql_expr.path : sql_expr.getParentPath()));
 
 				boolean single = target_tables.size() == 1;
 
@@ -4302,7 +4302,34 @@ public class XPathCompList {
 
 				sb.append(" FROM ");
 
-				target_tables.forEach((_table_, _path_) -> appendSqlTable(_table_, sb));
+				if (src_comps != null) {
+
+					// remove subject table from target
+
+					joined_tables.put(path_expr.sql_subject.table, target_tables.get(path_expr.sql_subject.table));
+					target_tables.remove(path_expr.sql_subject.table);
+
+					HashMap<PgTable, String> _target_tables = new HashMap<PgTable, String>(target_tables);
+					HashMap<PgTable, String> _joined_tables = new HashMap<PgTable, String>(joined_tables);
+					HashMap<PgTable, String> linking_tables = new HashMap<PgTable, String>();
+
+					testJoinSqlTables(_target_tables, _joined_tables, linking_tables);
+
+					if (linking_tables.size() > 0) {
+
+						target_tables.putAll(linking_tables);
+						linking_tables.clear();
+
+					}
+
+					_joined_tables.forEach((_table_, _path_) -> appendSqlTable(_table_, sb));
+
+					_joined_tables.clear();
+
+				}
+
+				else 
+					target_tables.forEach((_table_, _path_) -> appendSqlTable(_table_, sb));
 
 				sb.setLength(sb.length() - 2); // remove last ", "
 
@@ -4317,21 +4344,17 @@ public class XPathCompList {
 
 					}
 
-					// remove subject table from target
-
-					joined_tables.put(path_expr.sql_subject.table, target_tables.get(path_expr.sql_subject.table));
-					target_tables.remove(path_expr.sql_subject.table);
-
 					joinSqlTables(target_tables, joined_tables, sb);
 
 					sb.setLength(sb.length() - 5); // remove last " AND "
+
+					joined_tables.clear();
 
 				}
 
 				main_aliases.clear();
 
 				target_tables.clear();
-				joined_tables.clear();
 
 				path_expr.sql = sb.toString();
 
@@ -6847,6 +6870,246 @@ public class XPathCompList {
 	}
 
 	/**
+	 * Test SQL JOIN clause.
+	 * 
+	 * @param target_tables target SQL tables
+	 * @param joined_tables joined SQL tables
+	 * @param linking_tables additional linking SQL tables
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void testJoinSqlTables(HashMap<PgTable, String> target_tables, HashMap<PgTable, String> joined_tables, HashMap<PgTable, String> linking_tables) throws PgSchemaException {
+
+		if (target_tables.isEmpty())
+			return;
+
+		PgTable target_table = null;
+		String target_table_path = null;
+
+		PgTable joined_table = null;
+		String joined_table_path = null;
+
+		int min_distance = -1;
+
+		for (Entry<PgTable, String> joined : joined_tables.entrySet()) {
+
+			PgTable _joined_table = joined.getKey();
+			String _joined_path = joined.getValue();
+
+			for (Entry<PgTable, String> target : target_tables.entrySet()) {
+
+				PgTable _target_table = target.getKey();
+				String _target_path = target.getValue();
+
+				int distance = getDistanceOfTables(_joined_path, _target_path);
+
+				if (distance > 0) {
+
+					if (min_distance == -1 || distance < min_distance) {
+
+						target_table = _target_table;
+						target_table_path = _target_path;
+
+						joined_table = _joined_table;
+						joined_table_path = _joined_path;
+
+						min_distance = distance;
+
+					}
+
+				}
+
+				// the same depth
+
+				else if (distance == 0 && min_distance == -1) {
+
+					target_table = _target_table;
+					target_table_path = _target_path;
+
+					joined_table = _joined_table;
+					joined_table_path = _joined_path;
+
+					min_distance = distance;
+
+				}
+
+			}
+
+		}
+
+		// branched case
+
+		if (min_distance != 1) {
+
+			for (Entry<PgTable, String> joined : joined_tables.entrySet()) {
+
+				PgTable _joined_table = joined.getKey();
+				String _joined_path = joined.getValue();
+
+				char[] joined_char = _joined_path.toCharArray();
+
+				for (Entry<PgTable, String> target : target_tables.entrySet()) {
+
+					PgTable _target_table = target.getKey();
+					String _target_path = target.getValue();
+
+					char[] target_char = _target_path.toCharArray();
+
+					int last_match = 0;
+
+					for (int l = 0; l < joined_char.length && l < target_char.length; l++) {
+
+						if (joined_char[l] == target_char[l])
+							last_match = l;
+						else
+							break;
+
+					}
+
+					if (last_match == 0 || last_match == target_char.length - 1)
+						continue;
+
+					String common_path = _target_path.substring(0, last_match + 1);
+
+					int distance = getDistanceOfTables(joined.getValue(), common_path);
+
+					if (distance > 0) {
+
+						if (min_distance == -1 || distance < min_distance) {
+
+							target_table = _target_table;
+							target_table_path = common_path;
+
+							joined_table = _joined_table;
+							joined_table_path = _joined_path;
+
+							min_distance = distance;
+
+						}
+
+					}
+
+					else if (distance == 0) {
+
+						XPathExpr target_path_expr = new XPathExpr(_target_path, XPathCompType.table);
+
+						String parent_path = target_path_expr.getParentPath();
+
+						XPathExpr parent_path_expr = new XPathExpr(parent_path, XPathCompType.table);
+
+						PgTable parent_table = getTable(parent_path_expr);
+
+						if (parent_table != null) {
+
+							target_tables.put(parent_table, parent_path);
+							linking_tables.put(parent_table, parent_path);
+
+							testJoinSqlTables(target_tables, joined_tables, linking_tables);
+
+							return;
+						}
+
+					}
+
+				}
+
+			}
+
+		}
+
+		PgTable src_table;
+		PgTable dst_table;
+
+		// subject table is parent
+
+		if (joined_table_path.split("/").length < target_table_path.split("/").length || min_distance == 0) {
+
+			src_table = joined_table;
+			dst_table = target_table;
+
+		}
+
+		// subject table is child
+
+		else {
+
+			src_table = target_table;
+			dst_table = joined_table;
+
+		}
+
+		List<PgTable> table_path = new ArrayList<PgTable>();
+		table_path.add(src_table);
+
+		HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
+
+		Integer[] ft_ids = src_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+		Integer[] _ft_ids = null;
+
+		boolean found_table = false;
+
+		while (ft_ids != null && ft_ids.length > 0 && !found_table) {
+
+			int _touched_size = touched_ft_ids.size();
+
+			for (Integer foreign_table_id : ft_ids) {
+
+				if (!touched_ft_ids.add(foreign_table_id))
+					continue;
+
+				PgTable foreign_table = schema.getTable(foreign_table_id);
+
+				if (foreign_table.equals(dst_table)) {
+
+					table_path.add(dst_table);
+
+					found_table = true;
+
+					break;
+				}
+
+				else if (foreign_table.virtual && !found_table) {
+
+					table_path.add(foreign_table);
+
+					Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+
+					if (__ft_ids != null && __ft_ids.length > 0)
+						_ft_ids = __ft_ids;
+
+				}
+
+			}
+
+			ft_ids = _ft_ids;
+
+			if (touched_ft_ids.size() == _touched_size)
+				break;
+
+		}
+
+		touched_ft_ids.clear();
+
+		if (!found_table)
+			throw new PgSchemaException("Not found path from " + src_table.pname + " to " + dst_table.pname + ".");
+
+		// no need to join stop over tables
+
+		table_path.forEach(_table -> {
+
+			String _table_path = target_tables.get(_table);
+
+			if (_table_path != null)
+				joined_tables.put(_table, _table_path);
+
+			target_tables.remove(_table);
+
+		});
+
+		testJoinSqlTables(target_tables, joined_tables, linking_tables);
+
+	}	
+
+	/**
 	 * Append SQL JOIN clause.
 	 *
 	 * @param target_tables target SQL tables
@@ -6915,7 +7178,7 @@ public class XPathCompList {
 
 		// branched case
 
-		if (min_distance != -1) {
+		if (min_distance != 1) {
 
 			for (Entry<PgTable, String> joined : joined_tables.entrySet()) {
 
@@ -6933,7 +7196,7 @@ public class XPathCompList {
 
 					int last_match = 0;
 
-					for (int l = 0; l < target_char.length; l++) {
+					for (int l = 0; l < joined_char.length && l < target_char.length; l++) {
 
 						if (joined_char[l] == target_char[l])
 							last_match = l;
