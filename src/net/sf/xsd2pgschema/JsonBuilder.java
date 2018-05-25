@@ -176,21 +176,34 @@ public class JsonBuilder {
 	}
 
 	/**
+	 * Return JSON item name of field.
+	 *
+	 * @param field current field
+	 * @param as_attr whether parent node as attribute
+	 * @return String JSON item name of field
+	 */
+	public String getItemTitle(PgField field, boolean as_attr) {
+		return (field.attribute || field.simple_attribute || (field.simple_attr_cond && as_attr) || field.any_attribute ? attr_prefix : "")
+				+ (field.simple_content ? (field.simple_attribute || (field.simple_attr_cond && as_attr) ? field.foreign_table_xname : simple_content_key) : field.xname);
+	}
+
+	/**
 	 * Write schema property of field.
 	 *
 	 * @param field current field
+	 * @param as_attr whether parent node as attribute
 	 * @param object whether object
 	 * @param array whether array
 	 * @param indent_level current indent level
 	 */
-	public void writeSchemaFieldProperty(PgField field, boolean object, boolean array, int indent_level) {
+	public void writeSchemaFieldProperty(PgField field, boolean as_attr, boolean object, boolean array, int indent_level) {
 
 		if (!object && !array)
 			return;
 
 		if (object && !array) { // object
 
-			writeSchemaFieldProperty(field, true, indent_level);
+			writeSchemaFieldProperty(field, as_attr, true, indent_level);
 
 			builder.setLength(builder.length() - (line_feed_code.equals("\n") ? 1 : 0));
 			builder.append("," + line_feed_code);
@@ -203,7 +216,7 @@ public class JsonBuilder {
 
 			builder.append(getIndentSpaces(indent_level++) + "\"items\":" + key_value_space + "{" + line_feed_code); // JSON items start
 
-			writeSchemaFieldProperty(field, true, indent_level);
+			writeSchemaFieldProperty(field, as_attr, true, indent_level);
 
 			builder.append(getIndentSpaces(--indent_level) + "}," + line_feed_code); // JSON items end
 
@@ -215,7 +228,7 @@ public class JsonBuilder {
 
 			builder.append(getIndentSpaces(indent_level++) + "{" + line_feed_code);
 
-			writeSchemaFieldProperty(field, true, indent_level);
+			writeSchemaFieldProperty(field, as_attr, true, indent_level);
 
 			builder.append(getIndentSpaces(--indent_level) + "}," + line_feed_code);
 
@@ -225,7 +238,7 @@ public class JsonBuilder {
 
 			builder.append(getIndentSpaces(indent_level++) + "\"items\":" + key_value_space + "{" + line_feed_code); // JSON items start
 
-			writeSchemaFieldProperty(field, false, indent_level);
+			writeSchemaFieldProperty(field, as_attr, false, indent_level);
 
 			builder.append(getIndentSpaces(--indent_level) + "}" + line_feed_code); // JSON items end
 
@@ -241,10 +254,11 @@ public class JsonBuilder {
 	 * Write schema property of field.
 	 *
 	 * @param field current field
+	 * @param as_attr whether parent node as attribute
 	 * @param field_anno field annotation
 	 * @param indent_level current indent level
 	 */
-	private void writeSchemaFieldProperty(PgField field, boolean field_anno, final int indent_level) {
+	private void writeSchemaFieldProperty(PgField field, boolean as_attr, boolean field_anno, final int indent_level) {
 
 		String schema_type = field.xs_type.getJsonSchemaType();
 
@@ -252,7 +266,7 @@ public class JsonBuilder {
 
 		builder.append(getIndentSpaces(indent_level) + "\"$ref\":" + key_value_space + "\"" + field.xs_type.getJsonSchemaRef() + "\"," + line_feed_code);
 
-		builder.append(getIndentSpaces(indent_level) + "\"title\":" + key_value_space + "\"" + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_content ? simple_content_key : field.xname) + "\"," + line_feed_code);
+		builder.append(getIndentSpaces(indent_level) + "\"title\":" + key_value_space + "\"" + getItemTitle(field, as_attr) + "\"," + line_feed_code);
 
 		if (field.xs_type.equals(XsDataType.xs_anyURI))
 			builder.append(getIndentSpaces(indent_level) + "\"format\":" + key_value_space + "\"uri\"," + line_feed_code);
@@ -318,7 +332,7 @@ public class JsonBuilder {
 			}
 
 			else if (!field_anno)
-				builder.append(getIndentSpaces(indent_level) + "\"description\":" + key_value_space + "\"array of previous object: " + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_content ? simple_content_key : field.xname) + "\"" + "," + line_feed_code);
+				builder.append(getIndentSpaces(indent_level) + "\"description\":" + key_value_space + "\"array of previous object: " + getItemTitle(field, as_attr) + "\"" + "," + line_feed_code);
 
 		}
 
@@ -416,9 +430,10 @@ public class JsonBuilder {
 	 * Write field content.
 	 *
 	 * @param table current table
+	 * @param as_attr whether parent node as attribute
 	 * @param indent_level current indent level
 	 */
-	public void writeContent(final PgTable table, final int indent_level) {
+	public void writeContent(final PgTable table, final boolean as_attr, final int indent_level) {
 
 		List<PgField> fields = table.fields;
 
@@ -439,7 +454,7 @@ public class JsonBuilder {
 				if (has_field)
 					builder.append("," + line_feed_code);
 
-				builder.append(getIndentSpaces(indent_level) + "\"" + (field.attribute || field.any_attribute ? attr_prefix : "") + (field.simple_content ? simple_content_key : field.xname) + "\":" + key_value_space + (array_field ? "[" : ""));
+				builder.append(getIndentSpaces(indent_level) + "\"" + getItemTitle(field, as_attr) + "\":" + key_value_space + (array_field ? "[" : ""));
 
 				field.jsonb.setLength(field.jsonb.length() - (key_value_offset + 1));
 				builder.append(field.jsonb);

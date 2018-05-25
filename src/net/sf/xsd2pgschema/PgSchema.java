@@ -5605,13 +5605,7 @@ public class PgSchema {
 
 		if (fields.parallelStream().anyMatch(field -> field.required && field.jsonable)) {
 
-			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> {
-
-				String field_name = (field.attribute || field.simple_attribute || field.any_attribute ? jsonb.attr_prefix : "") + (field.simple_content ? (field.simple_attribute ? field.foreign_table_xname : jsonb.simple_content_key) : field.xname);
-
-				jsonb.builder.append("\"" + field_name + "\"," + jsonb.key_value_space);
-
-			});
+			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, false) + "\"," + jsonb.key_value_space));
 
 			if (jsonb.builder.length() > 2)
 				System.out.print(jsonb.getIndentSpaces(1) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
@@ -5623,7 +5617,7 @@ public class PgSchema {
 		if (!root_table.virtual)
 			System.out.print(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
 
-		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, true, false, 2));
+		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, false, true, false, 2));
 
 		if (jsonb.builder.length() > 2)
 			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.line_feed_code.equals("\n") ? 2 : 1) + (root_table.virtual ? 1 : 0)) + jsonb.line_feed_code);
@@ -5635,7 +5629,7 @@ public class PgSchema {
 
 		int[] list_id = { 0 };
 
-		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(root_table, getForeignTable(field), list_id[0]++, root_table.nested_fields, root_table.virtual ? 1 : 3));
+		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(root_table, getForeignTable(field), field.nested_key_as_attr, list_id[0]++, root_table.nested_fields, root_table.virtual ? 1 : 3));
 
 		if (!root_table.virtual) {
 
@@ -5656,11 +5650,12 @@ public class PgSchema {
 	 *
 	 * @param parent_table parent table
 	 * @param table current table
+	 * @param as_attr whether parent node as attribute
 	 * @param list_id the list id
 	 * @param list_size the list size
 	 * @param json_indent_level current indent level
 	 */
-	private void realizeObjJsonSchema(final PgTable parent_table, final PgTable table, final int list_id, final int list_size, int json_indent_level) {
+	private void realizeObjJsonSchema(final PgTable parent_table, final PgTable table, final boolean as_attr, final int list_id, final int list_size, int json_indent_level) {
 
 		List<PgField> fields = table.fields;
 
@@ -5689,13 +5684,7 @@ public class PgSchema {
 
 		if (fields.parallelStream().anyMatch(field -> field.required && field.jsonable)) {
 
-			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> {
-
-				String field_name = (field.attribute || field.any_attribute ? jsonb.attr_prefix : "") + (field.simple_content ? jsonb.simple_content_key : field.xname);
-
-				jsonb.builder.append("\"" + field_name + "\"," + jsonb.key_value_space);
-
-			});
+			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, as_attr) + "\"," + jsonb.key_value_space));
 
 			if (jsonb.builder.length() > 2)
 				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
@@ -5707,7 +5696,7 @@ public class PgSchema {
 		if (!table.virtual)
 			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.line_feed_code); // JSON own object start
 
-		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, true, false, json_indent_level + (table.virtual ? 0 : 1)));
+		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, as_attr, true, false, json_indent_level + (table.virtual ? 0 : 1)));
 
 		if (jsonb.builder.length() > 2)
 			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.line_feed_code.equals("\n") ? 2 : 1) + (table.virtual ? 1 : 0)) + jsonb.line_feed_code);
@@ -5721,7 +5710,7 @@ public class PgSchema {
 
 			int[] _list_id = { 0 };
 
-			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(table, getForeignTable(field), _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : 2)));
+			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(table, getForeignTable(field), field.nested_key_as_attr, _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : 2)));
 
 			if (!table.virtual)
 				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.line_feed_code); // JSON child items end
@@ -5761,7 +5750,7 @@ public class PgSchema {
 				int json_indent_level = 0;
 
 				int jsonb_header_end = jsonb.writeHeader(root_table, true, ++json_indent_level);
-				jsonb.writeContent(root_table, json_indent_level + 1);
+				jsonb.writeContent(root_table, false, json_indent_level + 1);
 
 				node2json.invokeRootNestedNodeObj(json_indent_level);
 
@@ -5850,13 +5839,13 @@ public class PgSchema {
 
 							int _jsonb_header_begin = jsonb.builder.length();
 							int _jsonb_header_end = jsonb.writeHeader(table, true, json_indent_level);
-							jsonb.writeContent(table, json_indent_level + 1);
+							jsonb.writeContent(table, nested_key.as_attr, json_indent_level + 1);
 							jsonb.writeFooter(table, json_indent_level, _jsonb_header_begin, _jsonb_header_end);
 
 						}
 
 						else
-							jsonb.writeContent(table, json_indent_level + 1);
+							jsonb.writeContent(table, nested_key.as_attr, json_indent_level + 1);
 
 					}
 
@@ -5889,7 +5878,7 @@ public class PgSchema {
 						if (!table.virtual)
 							_jsonb_header_end = jsonb.writeHeader(table, !parent_table.bridge, json_indent_level);
 
-						jsonb.writeContent(table, json_indent_level + 1);
+						jsonb.writeContent(table, nested_key.as_attr, json_indent_level + 1);
 
 					}
 
@@ -5990,13 +5979,7 @@ public class PgSchema {
 
 		if (fields.parallelStream().anyMatch(field -> field.required && field.jsonable)) {
 
-			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> {
-
-				String field_name = (field.attribute || field.any_attribute ? jsonb.attr_prefix : "") + (field.simple_content ? jsonb.simple_content_key : field.xname);
-
-				jsonb.builder.append("\"" + field_name + "\"," + jsonb.key_value_space);
-
-			});
+			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, false) + "\"," + jsonb.key_value_space));
 
 			if (jsonb.builder.length() > 2)
 				System.out.print(jsonb.getIndentSpaces(1) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
@@ -6008,7 +5991,7 @@ public class PgSchema {
 		if (!root_table.virtual)
 			System.out.print(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
 
-		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, !field.list_holder, field.list_holder, 2));
+		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, false, !field.list_holder, field.list_holder, 2));
 
 		if (jsonb.builder.length() > 2)
 			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.line_feed_code.equals("\n") ? 2 : 1) + (root_table.virtual ? 1 : 0)) + jsonb.line_feed_code);
@@ -6020,7 +6003,7 @@ public class PgSchema {
 
 		int[] list_id = { 0 };
 
-		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(root_table, getForeignTable(field), list_id[0]++, root_table.nested_fields, root_table.virtual ? 1 : 3));
+		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(root_table, getForeignTable(field), field.nested_key_as_attr, list_id[0]++, root_table.nested_fields, root_table.virtual ? 1 : 3));
 
 		if (!root_table.virtual) {
 
@@ -6041,11 +6024,12 @@ public class PgSchema {
 	 *
 	 * @param parent_table parent table
 	 * @param table current table
+	 * @param as_attr whether parent node as attribute
 	 * @param list_id the list id
 	 * @param list_size the list size
 	 * @param json_indent_level current indent level
 	 */
-	private void realizeColJsonSchema(final PgTable parent_table, final PgTable table, final int list_id, final int list_size, final int json_indent_level) {
+	private void realizeColJsonSchema(final PgTable parent_table, final PgTable table, final boolean as_attr, final int list_id, final int list_size, final int json_indent_level) {
 
 		List<PgField> fields = table.fields;
 
@@ -6072,13 +6056,7 @@ public class PgSchema {
 
 		if (fields.parallelStream().anyMatch(field -> field.required && field.jsonable)) {
 
-			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> {
-
-				String field_name = (field.attribute || field.any_attribute ? jsonb.attr_prefix : "") + (field.simple_content ? jsonb.simple_content_key : field.xname);
-
-				jsonb.builder.append("\"" + field_name + "\"," + jsonb.key_value_space);
-
-			});
+			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, as_attr) + "\"," + jsonb.key_value_space));
 
 			if (jsonb.builder.length() > 2)
 				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
@@ -6090,7 +6068,7 @@ public class PgSchema {
 		if (!table.virtual)
 			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
 
-		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, obj_json && !field.list_holder, !table.virtual || field.list_holder, json_indent_level + (table.virtual ? 0 : 1)));
+		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, as_attr, obj_json && !field.list_holder, !table.virtual || field.list_holder, json_indent_level + (table.virtual ? 0 : 1)));
 
 		if (jsonb.builder.length() > 2)
 			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.line_feed_code.equals("\n") ? 2 : 1) + (table.virtual ? 1 : 0)) + jsonb.line_feed_code);
@@ -6104,7 +6082,7 @@ public class PgSchema {
 
 			int[] _list_id = { 0 };
 
-			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(table, getForeignTable(field), _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : 2)));
+			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(table, getForeignTable(field), field.nested_key_as_attr, _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : 2)));
 
 			if (!table.virtual)
 				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.line_feed_code); // JSON child items end
@@ -6144,7 +6122,7 @@ public class PgSchema {
 				int json_indent_level = 0;
 
 				int jsonb_header_end = jsonb.writeHeader(root_table, true, ++json_indent_level);
-				jsonb.writeContent(root_table, json_indent_level + 1);
+				jsonb.writeContent(root_table, false, json_indent_level + 1);
 
 				node2json.invokeRootNestedNodeCol(json_indent_level);
 
@@ -6222,7 +6200,7 @@ public class PgSchema {
 					if (node2json.filled) {
 
 						if (table.jsonb_not_empty)
-							jsonb.writeContent(table, json_indent_level + (table.virtual ? 0 : 1));
+							jsonb.writeContent(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
 
 						node2json.invokeChildNestedNodeCol(node_test, json_indent_level);
 
@@ -6243,7 +6221,7 @@ public class PgSchema {
 					node2json.parseChildNode(parent_node, nested_key);
 
 					if (node2json.written)
-						jsonb.writeContent(table, json_indent_level + (table.virtual ? 0 : 1));
+						jsonb.writeContent(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
 
 				}
 
@@ -6356,13 +6334,7 @@ public class PgSchema {
 
 		if (fields.parallelStream().anyMatch(field -> field.required)) {
 
-			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> {
-
-				String field_name = (field.attribute || field.any_attribute ? jsonb.attr_prefix : "") + (field.simple_content ? jsonb.simple_content_key : field.xname);
-
-				jsonb.builder.append("\"" + field_name + "\"," + jsonb.key_value_space);
-
-			});
+			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, false) + "\"," + jsonb.key_value_space));
 
 			if (jsonb.builder.length() > 2)
 				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
@@ -6376,9 +6348,9 @@ public class PgSchema {
 		fields.stream().filter(field -> field.jsonable).forEach(field -> {
 
 			if (table.xs_type.equals(XsTableType.xs_root))
-				jsonb.writeSchemaFieldProperty(field, !field.list_holder, field.list_holder, json_indent_level + 1);
+				jsonb.writeSchemaFieldProperty(field, false, !field.list_holder, field.list_holder, json_indent_level + 1);
 			else
-				jsonb.writeSchemaFieldProperty(field, obj_json && !field.list_holder, !table.virtual || field.list_holder, json_indent_level + 1);
+				jsonb.writeSchemaFieldProperty(field, false, obj_json && !field.list_holder, !table.virtual || field.list_holder, json_indent_level + 1);
 
 		});
 
@@ -6461,7 +6433,7 @@ public class PgSchema {
 							if (has_field)
 								buffw.write("," + jsonb.line_feed_code);
 
-							buffw.write(jsonb.getIndentSpaces(2) + "\"" + (_field.attribute || _field.any_attribute ? jsonb.attr_prefix : "") + (_field.simple_content ? jsonb.simple_content_key : _field.xname) + "\":" + jsonb.key_value_space + (array_field ? "[" : ""));
+							buffw.write(jsonb.getIndentSpaces(2) + "\"" + jsonb.getItemTitle(_field, false) + "\":" + jsonb.key_value_space + (array_field ? "[" : ""));
 
 							_field.jsonb.setLength(_field.jsonb.length() - (jsonb.key_value_offset + 1));
 							buffw.write(_field.jsonb.toString());

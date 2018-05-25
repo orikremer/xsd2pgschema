@@ -4,6 +4,7 @@
   Fixed string escape function for TSV format.
   Fixed issues while XPath->SQL query translation (ArrayIndexOutOfBoundsException, invalid path to simple content, invalid JOIN clause).
   Added example script to demonstrate XPath 1.0 query evaluation over PostgreSQL.
+  Added support for simple type attribute and conditional simple type attribute in XML->JSON conversion.
 
  Changes in xsd2pgschema 2.10.3 (release 2018-05-23)
 
