@@ -165,7 +165,7 @@ public class PgTable {
 	/**
 	 * Classify table type: content_holder, list_holder, bridge, hub, virtual.
 	 */
-	public void classify() {
+	protected void classify() {
 
 		testContentHolder();
 		testListHolder();
@@ -274,7 +274,7 @@ public class PgTable {
 	 * @param field_name candidate name of field in PostgreSQL
 	 * @return String field name without name collision in PostgreSQL
 	 */
-	public String avoidFieldDuplication(PgSchemaOption option, String field_name) {
+	protected String avoidFieldDuplication(PgSchemaOption option, String field_name) {
 
 		if (!option.case_sense)
 			field_name = field_name.toLowerCase();
@@ -315,7 +315,7 @@ public class PgTable {
 	 * @param option PostgreSQL data model option
 	 * @param unique_key whether primary key should be unique
 	 */
-	public void addPrimaryKey(PgSchemaOption option, boolean unique_key) {
+	protected void addPrimaryKey(PgSchemaOption option, boolean unique_key) {
 
 		String xs_prefix_ = option.xs_prefix_;
 
@@ -358,7 +358,7 @@ public class PgTable {
 	 * @param node current node
 	 * @return boolean whether reference field is unique
 	 */
-	public boolean addNestedKey(PgSchemaOption option, String pg_schema_name, String xname, PgField ref_field, Node node) {
+	protected boolean addNestedKey(PgSchemaOption option, String pg_schema_name, String xname, PgField ref_field, Node node) {
 
 		String xs_prefix_ = option.xs_prefix_;
 
@@ -446,7 +446,7 @@ public class PgTable {
 	 * @param pg_schema_name PostgreSQL schema name
 	 * @param xname canonical name of foreign table
 	 */
-	public void addNestedKey(PgSchemaOption option, String pg_schema_name, String xname) {
+	protected void addNestedKey(PgSchemaOption option, String pg_schema_name, String xname) {
 
 		if (!option.rel_model_ext)
 			return;
@@ -486,7 +486,7 @@ public class PgTable {
 	 * @param option PostgreSQL data model option
 	 * @param foreign_table foreign table
 	 */
-	public void addForeignKey(PgSchemaOption option, PgTable foreign_table) {
+	protected void addForeignKey(PgSchemaOption option, PgTable foreign_table) {
 
 		if (pg_schema_name.equals(foreign_table.pg_schema_name) && xname.equals(foreign_table.xname))
 			return;
@@ -521,7 +521,7 @@ public class PgTable {
 	 *
 	 * @param option PostgreSQL data model option
 	 */
-	public void addSerialKey(PgSchemaOption option) {
+	protected void addSerialKey(PgSchemaOption option) {
 
 		if (!option.rel_model_ext)
 			return;
@@ -546,7 +546,7 @@ public class PgTable {
 	 *
 	 * @param option PostgreSQL data model option
 	 */
-	public void addXPathKey(PgSchemaOption option) {
+	protected void addXPathKey(PgSchemaOption option) {
 
 		if (fields.parallelStream().anyMatch(arg -> arg.xpath_key)) // already has an xpath key
 			return;
@@ -639,20 +639,11 @@ public class PgTable {
 	}
 
 	/**
-	 * Return whether name collision occurs.
-	 * 
-	 * @return boolean whether name collision occurs
-	 */
-	public boolean nameCollision() {
-		return name_collision;
-	}
-
-	/**
 	 * Append substitution group property.
 	 *
 	 * @param field field
 	 */
-	public void appendSubstitutionGroup(PgField field) {
+	protected void appendSubstitutionGroup(PgField field) {
 
 		if (field == null)
 			return;
@@ -680,7 +671,7 @@ public class PgTable {
 	/**
 	 * Remove prohibited attributes.
 	 */
-	public void removeProhibitedAttrs() {
+	protected void removeProhibitedAttrs() {
 
 		fields.removeIf(arg -> arg.prohibited);
 
@@ -689,7 +680,7 @@ public class PgTable {
 	/**
 	 * Remove blocked substitution group elements.
 	 */
-	public void removeBlockedSubstitutionGroups() {
+	protected void removeBlockedSubstitutionGroups() {
 
 		fields.parallelStream().filter(arg -> arg.rep_substitution_group && arg.block_value != null && arg.block_value.equals("substitution")).map(arg -> arg.xname).collect(Collectors.toList()).forEach(xname -> fields.removeIf(arg -> arg.substitution_group != null && arg.substitution_group.equals(xname)));
 
@@ -698,7 +689,7 @@ public class PgTable {
 	/**
 	 * Cancel unique key because of name collision.
 	 */
-	public void cancelUniqueKey() {
+	protected void cancelUniqueKey() {
 
 		fields.parallelStream().filter(arg -> arg.primary_key).forEach(arg -> arg.unique_key = false);
 
@@ -707,7 +698,7 @@ public class PgTable {
 	/**
 	 * Determine the total number of nested keys.
 	 */
-	public void countNestedFields() {
+	protected void countNestedFields() {
 
 		if ((nested_fields = (int) fields.parallelStream().filter(arg -> arg.nested_key).count()) > 0)
 			required = true;

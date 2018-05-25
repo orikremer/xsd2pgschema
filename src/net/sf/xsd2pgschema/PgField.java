@@ -150,7 +150,7 @@ public class PgField {
 	/** Whether @use="required" | @nillable="false". */
 	protected boolean xrequired = false;
 
-	/** Whether @use="required" | @nillalbe="false", but mutable in PostgreSQL when conflict occurs. */
+	/** Whether @use="required" | @nillalbe="false", but mutable in PostgreSQL when name collision occurs. */
 	protected boolean required = false;
 
 	/** Whether @use is "prohibited". */
@@ -309,7 +309,7 @@ public class PgField {
 	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	public void extractType(PgSchemaOption option, Node node) {
+	protected void extractType(PgSchemaOption option, Node node) {
 
 		String xs_prefix = option.xs_prefix;
 		String xs_prefix_ = option.xs_prefix_;
@@ -465,7 +465,7 @@ public class PgField {
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 */
-	public void extractNamespace(PgSchema schema, Node node) {
+	protected void extractNamespace(PgSchema schema, Node node) {
 
 		target_namespace = null;
 
@@ -497,7 +497,7 @@ public class PgField {
 	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	public void extractMaxOccurs(PgSchemaOption option, Node node) {
+	protected void extractMaxOccurs(PgSchemaOption option, Node node) {
 
 		String xs_prefix_ = option.xs_prefix_;
 
@@ -594,7 +594,7 @@ public class PgField {
 	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	public void extractMinOccurs(PgSchemaOption option, Node node) {
+	protected void extractMinOccurs(PgSchemaOption option, Node node) {
 
 		String xs_prefix_ = option.xs_prefix_;
 
@@ -690,7 +690,7 @@ public class PgField {
 	 *
 	 * @param node current node
 	 */
-	public void extractRequired(Node node) {
+	protected void extractRequired(Node node) {
 
 		required = false;
 
@@ -723,7 +723,7 @@ public class PgField {
 	 *
 	 * @param node current node
 	 */
-	public void extractFixedValue(Node node) {
+	protected void extractFixedValue(Node node) {
 
 		fixed_value = null;
 
@@ -749,7 +749,7 @@ public class PgField {
 	 *
 	 * @param node current node
 	 */
-	public void extractDefaultValue(Node node) {
+	protected void extractDefaultValue(Node node) {
 
 		default_value = null;
 
@@ -771,7 +771,7 @@ public class PgField {
 	 *
 	 * @param node current node
 	 */
-	public void extractBlockValue(Node node) {
+	protected void extractBlockValue(Node node) {
 
 		block_value = null;
 
@@ -794,7 +794,7 @@ public class PgField {
 	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	public void extractEnumeration(PgSchemaOption option, Node node) {
+	protected void extractEnumeration(PgSchemaOption option, Node node) {
 
 		String xs_prefix_ = option.xs_prefix_;
 
@@ -956,7 +956,7 @@ public class PgField {
 	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	public void extractRestriction(PgSchemaOption option, Node node) {
+	protected void extractRestriction(PgSchemaOption option, Node node) {
 
 		String xs_prefix_ = option.xs_prefix_;
 
@@ -1406,7 +1406,7 @@ public class PgField {
 	 *
 	 * @param option PostgreSQL data model option
 	 */
-	public void setHashKeyType(PgSchemaOption option) {
+	protected void setHashKeyType(PgSchemaOption option) {
 
 		String xs_prefix_ = option.xs_prefix_;
 
@@ -1435,7 +1435,7 @@ public class PgField {
 	 *
 	 * @param option PostgreSQL data model option
 	 */
-	public void setSerKeyType(PgSchemaOption option) {
+	protected void setSerKeyType(PgSchemaOption option) {
 
 		String xs_prefix_ = option.xs_prefix_;
 
@@ -1455,7 +1455,7 @@ public class PgField {
 	/**
 	 * Decide whether field is system key.
 	 */
-	public void setSystemKey() {
+	protected void setSystemKey() {
 
 		system_key = primary_key || foreign_key || nested_key;
 
@@ -1464,7 +1464,7 @@ public class PgField {
 	/**
 	 * Decide whether field is user key.
 	 */
-	public void setUserKey() {
+	protected void setUserKey() {
 
 		user_key = document_key || serial_key || xpath_key;
 
@@ -1476,7 +1476,7 @@ public class PgField {
 	 * @param table current table
 	 * @param option PostgreSQL data model option
 	 */
-	public void setOmissible(PgTable table, PgSchemaOption option) {
+	protected void setOmissible(PgTable table, PgSchemaOption option) {
 
 		if ((element || attribute) && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name))) {
 			omissible = true;
@@ -1493,7 +1493,7 @@ public class PgField {
 	 * @param table current table
 	 * @param option PostgreSQL data model option
 	 */
-	public void setIndexable(PgTable table, PgSchemaOption option) {
+	protected void setIndexable(PgTable table, PgSchemaOption option) {
 
 		if (system_key || user_key || ((element || attribute) && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name)))) {
 			indexable = false;
@@ -1510,7 +1510,7 @@ public class PgField {
 	 * @param table current table
 	 * @param option PostgreSQL data model option
 	 */
-	public void setJsonable(PgTable table, PgSchemaOption option) {
+	protected void setJsonable(PgTable table, PgSchemaOption option) {
 
 		if (system_key || user_key || ((element || attribute) && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name)))) {
 			jsonable = false;
@@ -1623,7 +1623,7 @@ public class PgField {
 	 * @return boolean whether it is required
 	 */
 	public boolean isRequired() {
-		return xrequired;
+		return required;
 	}
 
 	/**
@@ -3907,7 +3907,7 @@ public class PgField {
 	 * @param value content
 	 * @throws SQLException the SQL exception
 	 */
-	public void writeValue2PgSql(PreparedStatement ps, int par_idx, String value) throws SQLException {
+	protected void writeValue2PgSql(PreparedStatement ps, int par_idx, String value) throws SQLException {
 
 		if (enum_name != null) {
 			ps.setString(par_idx, value);
@@ -4044,7 +4044,7 @@ public class PgField {
 	 * @param value content
 	 * @throws SQLException the SQL exception
 	 */
-	public void writeValue2PgSql(PreparedStatement ps, int par_idx, SQLXML value) throws SQLException {
+	protected void writeValue2PgSql(PreparedStatement ps, int par_idx, SQLXML value) throws SQLException {
 
 		switch (xs_type) {
 		case xs_any:
@@ -4066,7 +4066,7 @@ public class PgField {
 	 * @param min_word_len_filter whether it exceeds minimum word length
 	 * @param numeric_lucidx whether numeric values are stored in index
 	 */
-	public void writeValue2LucIdx(org.apache.lucene.document.Document lucene_doc, String name, String value, boolean min_word_len_filter, boolean numeric_lucidx) {
+	protected void writeValue2LucIdx(org.apache.lucene.document.Document lucene_doc, String name, String value, boolean min_word_len_filter, boolean numeric_lucidx) {
 
 		if (attr_sel_rdy) {
 
@@ -4184,7 +4184,7 @@ public class PgField {
 	 * @param value content
 	 * @param min_word_len_filter whether it exceeds minimum word length
 	 */
-	public void writeValue2SphDs(BufferedWriter buffw, String attr_name, String value, boolean min_word_len_filter) {
+	protected void writeValue2SphDs(BufferedWriter buffw, String attr_name, String value, boolean min_word_len_filter) {
 
 		try {
 
@@ -4281,7 +4281,7 @@ public class PgField {
 	 * @param json_key_value_space the JSON key value space
 	 * @return boolean whether value is successfully set
 	 */
-	public boolean writeValue2JsonBuf(String value, String json_key_value_space) {
+	protected boolean writeValue2JsonBuf(String value, String json_key_value_space) {
 
 		if (jsonb == null)
 			return false;

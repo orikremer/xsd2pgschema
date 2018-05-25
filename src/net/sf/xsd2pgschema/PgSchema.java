@@ -2503,7 +2503,7 @@ public class PgSchema {
 
 			known_table.countNestedFields();
 
-			// avoid name_collision
+			// avoid name collision
 
 			if (name_collision) {
 
@@ -6631,7 +6631,7 @@ public class PgSchema {
 
 					String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-					if ((content != null && !content.isEmpty()) || (field.xrequired && !table.name_collision)) {
+					if ((content != null && !content.isEmpty()) || field.required) {
 
 						PgPendingAttr attr = new PgPendingAttr(field, content);
 
@@ -6764,7 +6764,7 @@ public class PgSchema {
 
 					String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-					if ((content != null && !content.isEmpty()) || (field.xrequired && !table.name_collision)) {
+					if ((content != null && !content.isEmpty()) || field.required) {
 
 						PgPendingElem elem = xmlb.pending_elem.peek();
 
@@ -6990,7 +6990,7 @@ public class PgSchema {
 
 						String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-						if ((content != null && !content.isEmpty()) || (field.xrequired && !table.name_collision)) {
+						if ((content != null && !content.isEmpty()) || field.required) {
 
 							PgPendingAttr attr = new PgPendingAttr(field, content);
 
@@ -7011,7 +7011,7 @@ public class PgSchema {
 
 						String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-						if ((content != null && !content.isEmpty()) || (field.xrequired && !table.name_collision)) {
+						if ((content != null && !content.isEmpty()) || field.required) {
 
 							PgPendingAttr attr = new PgPendingAttr(field, content);
 
@@ -7117,7 +7117,7 @@ public class PgSchema {
 
 						String content = field.retrieveValue(rset, param_id, fill_default_value);
 
-						if ((content != null && !content.isEmpty()) || (field.xrequired && !table.name_collision)) {
+						if ((content != null && !content.isEmpty()) || field.required) {
 
 							PgPendingElem elem = xmlb.pending_elem.peek();
 

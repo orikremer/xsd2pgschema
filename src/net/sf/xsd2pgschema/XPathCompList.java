@@ -4326,14 +4326,7 @@ public class XPathCompList {
 
 					_joined_tables.clear();
 
-				}
-
-				else 
-					target_tables.forEach((_table_, _path_) -> appendSqlTable(_table_, sb));
-
-				sb.setLength(sb.length() - 2); // remove last ", "
-
-				if (src_comps != null) {
+					sb.setLength(sb.length() - 2); // remove last ", "
 
 					sb.append(" WHERE ");
 
@@ -4352,9 +4345,17 @@ public class XPathCompList {
 
 				}
 
-				main_aliases.clear();
+				else  {
 
-				target_tables.clear();
+					target_tables.forEach((_table_, _path_) -> appendSqlTable(_table_, sb));
+
+					sb.setLength(sb.length() - 2); // remove last ", "
+
+					target_tables.clear();
+
+				}
+
+				main_aliases.clear();
 
 				path_expr.sql = sb.toString();
 
