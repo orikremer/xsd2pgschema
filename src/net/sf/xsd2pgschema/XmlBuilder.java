@@ -159,20 +159,17 @@ public class XmlBuilder {
 	 */
 	public void writePendingElems(boolean attr_only) throws XMLStreamException {
 
-		boolean init = true;
-
 		PgPendingElem elem;
 
 		while ((elem = pending_elem.pollLast()) != null) {
 
-			if (!attr_only || !init)
-				elem.attr_only = false;
+			int size = pending_elem.size();
+
+			elem.attr_only = size > 0 ? false : attr_only;
 
 			elem.write(this);
 
-			init = false;
-
-			if (pending_elem.size() > 0)
+			if (size > 0)
 				writer.writeCharacters(line_feed_code);
 
 		}

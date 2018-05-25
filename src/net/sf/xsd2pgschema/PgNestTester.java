@@ -56,6 +56,9 @@ public class PgNestTester {
 	/** Whether this node has opened simple content. */
 	boolean has_open_simple_content = false;
 
+	/** Whether this node has inserted document key. */
+	boolean has_insert_doc_key = false;
+
 	/**
 	 * Instance of nest tester from root node.
 	 *
@@ -112,6 +115,8 @@ public class PgNestTester {
 
 		current_indent_space = parent_test.child_indent_space;
 		child_indent_space = table.virtual ? current_indent_space: current_indent_space + indent_space;
+
+		has_insert_doc_key = parent_test.has_insert_doc_key;
 
 	}
 

@@ -19,8 +19,6 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import javax.xml.stream.XMLStreamException;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -85,9 +83,8 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 
 					try {
 						attr.write(xmlb);
-					} catch (XMLStreamException e) {
+					} catch (PgSchemaException e) {
 						e.printStackTrace();
-						System.exit(1);
 					}
 
 				}

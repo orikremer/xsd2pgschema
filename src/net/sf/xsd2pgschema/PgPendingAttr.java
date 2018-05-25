@@ -28,10 +28,13 @@ import javax.xml.stream.XMLStreamException;
  */
 public class PgPendingAttr {
 
-	/** The field. */
+	/** The field (attribute). */
 	protected PgField field;
 
-	/** The local name. */
+	/** The foreign table (simple attribute). */
+	protected PgTable foreign_table;
+
+	/** The local name (any attribute). */
 	protected String local_name = null;
 
 	/** The content. */
@@ -46,6 +49,21 @@ public class PgPendingAttr {
 	public PgPendingAttr(PgField field, String content) {
 
 		this.field = field;
+		this.content = content != null ? content : "";
+
+	}
+
+	/**
+	 * Instance of pending simple attribute.
+	 *
+	 * @param field current field
+	 * @param foreign_table foregin table
+	 * @param content content
+	 */
+	public PgPendingAttr(PgField field, PgTable foreign_table, String content) {
+
+		this.field = field;
+		this.foreign_table = foreign_table;
 		this.content = content != null ? content : "";
 
 	}
@@ -69,25 +87,48 @@ public class PgPendingAttr {
 	 * Write pending attribute.
 	 *
 	 * @param xmlb XML builder
-	 * @throws XMLStreamException the XML stream exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void write(XmlBuilder xmlb) throws XMLStreamException {
+	public void write(XmlBuilder xmlb) throws PgSchemaException {
 
-		// attribute
+		try {
 
-		if (field != null) {
+			if (field != null) {
 
-			if (field.is_xs_namespace)
-				xmlb.writer.writeAttribute(field.xname, content);
+				// attribute
+
+				if (field.attribute) {
+
+					if (field.is_xs_namespace)
+						xmlb.writer.writeAttribute(field.xname, content);
+					else
+						xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.xname, content);
+
+				}
+
+				// simple attribute
+
+				else {
+
+					if (field.is_xs_namespace)
+						xmlb.writer.writeAttribute(field.foreign_table_xname, content);
+					else	
+						xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.foreign_table_xname, content);
+
+				}
+
+			}
+
+			// any attribute
+
 			else
-				xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.xname, content);
+				xmlb.writer.writeAttribute(local_name, content);
 
+		} catch (XMLStreamException e) {
+			if (xmlb.insert_doc_key)
+				System.err.println("Not allowed to insert document key to element has any child element.");
+			throw new PgSchemaException(e);
 		}
-
-		// any attribute
-
-		else
-			xmlb.writer.writeAttribute(local_name, content);
 
 	}
 

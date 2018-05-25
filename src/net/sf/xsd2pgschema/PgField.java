@@ -150,7 +150,7 @@ public class PgField {
 	/** Whether @use="required" | @nillable="false". */
 	protected boolean xrequired = false;
 
-	/** Whether @use="required" | @nillalbe="false", but mutable in PostgreSQL when name collision occurs. */
+	/** Whether @use="required" | @nillalbe="false", but be false in PostgreSQL when name collision occurs. */
 	protected boolean required = false;
 
 	/** Whether @use is "prohibited". */
@@ -1607,24 +1607,6 @@ public class PgField {
 	}
 
 	// PostgreSQL schema generation
-
-	/**
-	 * Return whether target namespace equals URI of XML Schema 1.x.
-	 *
-	 * @return boolean whether namespace equals URI of XML Schema 1.x
-	 */
-	public boolean isXsNamespace() {
-		return is_xs_namespace;
-	}
-
-	/**
-	 * Return whether it is required (@use="required" | @nillable="false").
-	 *
-	 * @return boolean whether it is required
-	 */
-	public boolean isRequired() {
-		return required;
-	}
 
 	/**
 	 * Return target namespace.

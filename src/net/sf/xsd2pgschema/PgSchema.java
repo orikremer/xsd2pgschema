@@ -613,6 +613,9 @@ public class PgSchema {
 								foreign_table.fields.stream().filter(foreign_field -> foreign_field.simple_content).forEach(foreign_field -> {
 
 									foreign_field.simple_attribute = true;
+
+									foreign_field.foreign_table_id = tables.indexOf(table);
+									foreign_field.foreign_schema = table.pg_schema_name;
 									foreign_field.foreign_table_xname = table.xname;
 
 									table.has_nested_key_as_attr = true;
@@ -2786,6 +2789,16 @@ public class PgSchema {
 	}
 
 	/**
+	 * Return child table of foreign key.
+	 *
+	 * @param foreign_key foreign key
+	 * @return PgTable child table
+	 */
+	private PgTable getChildTable(PgForeignKey foreign_key) {
+		return getCanTable(foreign_key.pg_schema_name, foreign_key.child_table_xname);
+	}
+
+	/**
 	 * Return parent table of child table from foreign keys.
 	 *
 	 * @param child_table child table
@@ -2799,22 +2812,12 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return child table of foreign key.
-	 *
-	 * @param foreign_key foreign key
-	 * @return PgTable child table
-	 */
-	private PgTable getChildTable(PgForeignKey foreign_key) {
-		return getCanTable(foreign_key.pg_schema_name, foreign_key.child_table_xname);
-	}
-
-	/**
 	 * Return foreign table of either nested key or foreign key.
 	 *
 	 * @param field field of either nested key of foreign key
 	 * @return PgTable foreign table
 	 */
-	private PgTable getForeignTable(PgField field) {
+	protected PgTable getForeignTable(PgField field) {
 		return field.foreign_table_id == -1 ? getCanTable(field.foreign_schema, field.foreign_table_xname) : getTable(field.foreign_table_id);
 	}
 
@@ -5604,7 +5607,7 @@ public class PgSchema {
 
 			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> {
 
-				String field_name = (field.attribute || field.any_attribute ? jsonb.attr_prefix : "") + (field.simple_content ? jsonb.simple_content_key : field.xname);
+				String field_name = (field.attribute || field.simple_attribute || field.any_attribute ? jsonb.attr_prefix : "") + (field.simple_content ? (field.simple_attribute ? field.foreign_table_xname : jsonb.simple_content_key) : field.xname);
 
 				jsonb.builder.append("\"" + field_name + "\"," + jsonb.key_value_space);
 
@@ -6567,7 +6570,19 @@ public class PgSchema {
 	// XML composer from PostgreSQL
 
 	/** The XML builder. */
-	private XmlBuilder xmlb = null;
+	protected XmlBuilder xmlb = null;
+
+	/**
+	 * Initialize XML builder.
+	 *
+	 * @param xmlb XML builder
+	 */
+	public void initXmlBuilder(XmlBuilder xmlb) {
+
+		this.xmlb = xmlb;
+		this.xmlb.clear();
+
+	}
 
 	/** SAX parser for any attribute. */
 	private SAXParser any_attr_parser = null;
@@ -6576,19 +6591,376 @@ public class PgSchema {
 	private PgAnyRetriever any_retriever = null;
 
 	/**
-	 * Compose XML document
+	 * Compose XML fragment (field or text node)
 	 *
-	 * @param db_conn database connection
-	 * @param table current table
+	 * @param xpath_comp_list current XPath compoent list
+	 * @param path_expr current XPath expression
 	 * @param rset current result set
-	 * @param xmlb XML builder
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void pgSql2Xml(Connection db_conn, PgTable table, ResultSet rset, XmlBuilder xmlb) throws PgSchemaException {
+	public void pgSql2XmlFrag(XPathCompList xpath_comp_list, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
 
-		xmlb.clear();
+		XPathCompType terminus = path_expr.terminus;
 
-		this.xmlb = xmlb;
+		if (terminus.equals(XPathCompType.table))
+			return;
+
+		PgTable table = path_expr.sql_subject.table;
+
+		String table_name = table.xname;
+		String table_ns = table.target_namespace;
+		String table_prefix = table.prefix;
+
+		PgField field = path_expr.sql_subject.field;
+
+		String field_name = field.getCanName();
+		String field_ns = field.getTagetNamespace();
+		String field_prefix = field.getPrefix();
+
+		boolean fill_default_value = option.fill_default_value;
+
+		XMLStreamWriter xml_writer = xmlb.writer;
+
+		try {
+
+			if (option.wild_card) {
+
+				if (any_attr_parser == null) {
+
+					SAXParserFactory spf = SAXParserFactory.newInstance();
+					any_attr_parser = spf.newSAXParser();
+
+				}
+
+				if (any_retriever == null)
+					any_retriever = new PgAnyRetriever();
+
+			}
+
+			while (rset.next()) {
+
+				String content;
+
+				switch (terminus) {
+				case element:
+					content = field.retrieveValue(rset, 1, fill_default_value);
+
+					if (content != null && !content.isEmpty()) {
+
+						if (field.is_xs_namespace) {
+
+							xml_writer.writeStartElement(table_prefix, field_name, table_ns);
+
+							if (xmlb.append_xmlns)
+								xml_writer.writeNamespace(table_prefix, table_ns);
+
+						}
+
+						else {
+
+							xml_writer.writeStartElement(field_prefix, field_name, field_ns);
+
+							if (xmlb.append_xmlns)
+								xml_writer.writeNamespace(field_prefix, field_ns);
+
+						}
+
+						xml_writer.writeCharacters(content);
+
+						xml_writer.writeEndElement();
+
+						xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+					}
+
+					else {
+
+						if (field.is_xs_namespace) {
+
+							xml_writer.writeEmptyElement(table_prefix, field_name, table_ns);
+
+							if (xmlb.append_xmlns) {
+								xml_writer.writeNamespace(table_prefix, table_ns);
+								xml_writer.writeNamespace(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri);
+							}
+
+						}
+
+						else {
+
+							xml_writer.writeEmptyElement(field_prefix, field_name, field_ns);
+
+							if (xmlb.append_xmlns) {
+								xml_writer.writeNamespace(field_prefix, field_ns);
+								xml_writer.writeNamespace(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri);
+							}
+
+						}
+
+						xml_writer.writeAttribute(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri, "nil", "true");
+
+						xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+					}
+					break;
+				case simple_content:
+					content = field.retrieveValue(rset, 1, fill_default_value);
+
+					// simple content
+
+					if (!field.simple_attribute) {
+
+						if (content != null && !content.isEmpty()) {
+
+							xml_writer.writeStartElement(table_prefix, table_name, table_ns);
+
+							if (xmlb.append_xmlns)
+								xml_writer.writeNamespace(table_prefix, table_ns);
+
+							xml_writer.writeCharacters(content);
+
+							xml_writer.writeEndElement();
+
+							xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+						}
+
+					}
+
+					// simple attribute
+
+					else {
+
+						PgTable parent_table = xpath_comp_list.getParentTable(path_expr);
+
+						if (content != null && !content.isEmpty()) {
+
+							xml_writer.writeEmptyElement(parent_table.prefix, parent_table.xname, parent_table.target_namespace);
+
+							if (xmlb.append_xmlns)
+								xml_writer.writeNamespace(parent_table.prefix, parent_table.target_namespace);
+
+							if (field.is_xs_namespace)
+								xmlb.writer.writeAttribute(field.foreign_table_xname, content);
+							else	
+								xmlb.writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, content);
+
+							xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+						}
+
+						else if (field.required) {
+
+							xml_writer.writeEmptyElement(parent_table.prefix, parent_table.xname, parent_table.target_namespace);
+
+							if (xmlb.append_xmlns)
+								xml_writer.writeNamespace(parent_table.prefix, parent_table.target_namespace);
+
+							if (field.is_xs_namespace)
+								xmlb.writer.writeAttribute(field.foreign_table_xname, "");
+							else	
+								xmlb.writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, "");
+
+							xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+						}
+
+					}
+					break;
+				case attribute:
+					content = field.retrieveValue(rset, 1, fill_default_value);
+
+					// attribute
+
+					if (field.attribute) {
+
+						if (content != null && !content.isEmpty()) {
+
+							xml_writer.writeEmptyElement(table_prefix, table_name, table_ns);
+
+							if (xmlb.append_xmlns)
+								xml_writer.writeNamespace(table_prefix, table_ns);
+
+							if (field_ns.equals(PgSchemaUtil.xs_namespace_uri))
+								xml_writer.writeAttribute(field_name, content);
+							else
+								xml_writer.writeAttribute(field_prefix, field_ns, field_name, content);
+
+							xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+						}
+
+						else if (field.required) {
+
+							xml_writer.writeEmptyElement(table_prefix, table_name, table_ns);
+
+							if (xmlb.append_xmlns)
+								xml_writer.writeNamespace(table_prefix, table_ns);
+
+							if (field_ns.equals(PgSchemaUtil.xs_namespace_uri))
+								xml_writer.writeAttribute(field_name, "");
+							else
+								xml_writer.writeAttribute(field_prefix, field_ns, field_name, "");
+
+							xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+						}
+
+					}
+
+					// simple attribute
+
+					else {
+
+						PgTable parent_table = xpath_comp_list.getParentTable(path_expr);
+
+						if (content != null && !content.isEmpty()) {
+
+							xml_writer.writeEmptyElement(parent_table.prefix, parent_table.xname, parent_table.target_namespace);
+
+							if (xmlb.append_xmlns)
+								xml_writer.writeNamespace(parent_table.prefix, parent_table.target_namespace);
+
+							if (field.is_xs_namespace)
+								xmlb.writer.writeAttribute(field.foreign_table_xname, content);
+							else	
+								xmlb.writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, content);
+
+							xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+						}
+
+						else if (field.required) {
+
+							xml_writer.writeEmptyElement(parent_table.prefix, parent_table.xname, parent_table.target_namespace);
+
+							if (xmlb.append_xmlns)
+								xml_writer.writeNamespace(parent_table.prefix, parent_table.target_namespace);
+
+
+							if (field.is_xs_namespace)
+								xmlb.writer.writeAttribute(field.foreign_table_xname, "");
+							else	
+								xmlb.writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, "");
+
+							xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+						}
+
+					}
+					break;
+				case any_attribute:
+				case any_element:
+					SQLXML xml_object = rset.getSQLXML(1);
+
+					if (xml_object != null) {
+
+						InputStream in = xml_object.getBinaryStream();
+
+						if (in != null) {
+
+							switch (terminus) {
+							case any_attribute:
+								xml_writer.writeEmptyElement(table_prefix, table_name, table_ns);
+
+								if (xmlb.append_xmlns)
+									xml_writer.writeNamespace(table_prefix, table_ns);
+
+								PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table_name, xmlb);
+
+								any_attr_parser.parse(in, any_attr);
+								break;
+							default:
+								xml_writer.writeStartElement(table_prefix, table_name, table_ns);
+
+								if (xmlb.append_xmlns)
+									xml_writer.writeNamespace(table_prefix, table_ns);
+
+								any_retriever.exec(in, table, new PgNestTester(table, xmlb), xmlb);
+
+								xml_writer.writeEndElement();
+							}
+
+							xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+							in.close();
+
+						}
+
+						xml_object.free();
+
+					}
+					break;
+				case text:
+					content = rset.getString(1);
+
+					if (content != null && !content.isEmpty()) {
+
+						String column_name = rset.getMetaData().getColumnName(1);
+
+						PgField _field = table.getField(column_name);
+
+						if (_field != null)
+							content = field.retrieveValue(rset, 1, fill_default_value);
+
+						xml_writer.writeCharacters(content);
+						xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+					}
+					break;
+				case comment:
+					content = rset.getString(1);
+
+					if (content != null && !content.isEmpty()) {
+
+						xml_writer.writeComment(content);
+						xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+					}
+					break;
+				case processing_instruction:
+					content = rset.getString(1);
+
+					if (content != null && !content.isEmpty()) {
+
+						xml_writer.writeProcessingInstruction(content);
+						xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+					}
+					break;
+				default:
+					continue;
+				}
+
+			}
+
+		} catch (SQLException | XMLStreamException | ParserConfigurationException | SAXException | IOException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
+	/**
+	 * Compose XML document (table node)
+	 *
+	 * @param db_conn database connection
+	 * @param path_expr current XPath expression
+	 * @param rset current result set
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void pgSql2Xml(Connection db_conn, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
+
+		XPathCompType terminus = path_expr.terminus;
+
+		if (!terminus.equals(XPathCompType.table))
+			return;
+
+		PgTable table = path_expr.sql_subject.table;
+
+		String table_ns = table.target_namespace;
+		String table_prefix = table.prefix;
+
+		boolean fill_default_value = option.fill_default_value;
 
 		XMLStreamWriter xml_writer = xmlb.writer;
 
@@ -6610,12 +6982,7 @@ public class PgSchema {
 
 			PgNestTester nest_test = new PgNestTester(table, xmlb);
 
-			String table_ns = table.target_namespace;
-			String table_prefix = table.prefix;
-
 			xmlb.pending_elem.push(new PgPendingElem(nest_test.current_indent_space, table, true));
-
-			boolean fill_default_value = option.fill_default_value;
 
 			List<PgField> fields = table.fields;
 
@@ -6700,8 +7067,8 @@ public class PgSchema {
 
 				if (xmlb.insert_doc_key && field.document_key) {
 
-					if (table.equals(root_table) && !nest_test.has_content)
-						throw new PgSchemaException("Not allowed to insert document key to root table.");
+					if (table.equals(root_table))
+						throw new PgSchemaException("Not allowed to insert document key to root element.");
 
 					PgPendingElem elem = xmlb.pending_elem.peek();
 
@@ -6721,7 +7088,7 @@ public class PgSchema {
 
 					xml_writer.writeEndElement();
 
-					nest_test.has_child_elem = nest_test.has_content = true;
+					nest_test.has_child_elem = nest_test.has_content = nest_test.has_insert_doc_key = true;
 
 				}
 
@@ -6803,6 +7170,9 @@ public class PgSchema {
 
 						nest_test.has_child_elem = nest_test.has_content = true;
 
+						if (nest_test.has_insert_doc_key)
+							nest_test.has_insert_doc_key = false;
+
 					}
 
 				}
@@ -6818,6 +7188,9 @@ public class PgSchema {
 						if (in != null) {
 
 							nest_test.merge(any_retriever.exec(in, table, nest_test, xmlb));
+
+							if (nest_test.has_insert_doc_key)
+								nest_test.has_insert_doc_key = false;
 
 							in.close();
 
@@ -6887,9 +7260,15 @@ public class PgSchema {
 			else
 				xmlb.pending_elem.poll();
 
-		} catch (SQLException | XMLStreamException | ParserConfigurationException | SAXException | IOException e) {
+		} catch (XMLStreamException e) {
+			if (xmlb.insert_doc_key)
+				System.err.println("Not allowed insert document key to element has any child element.");
+			throw new PgSchemaException(e);
+		} catch (SQLException | ParserConfigurationException | SAXException | IOException e) {
 			throw new PgSchemaException(e);
 		}
+
+		xmlb.clear();
 
 	}
 
@@ -6897,8 +7276,6 @@ public class PgSchema {
 	 * Close pgSql2Xml.
 	 */
 	public void closePgSql2Xml() {
-
-		xmlb.clear();
 
 		tables.parallelStream().filter(table -> table.ps != null).forEach(table -> {
 
@@ -6931,6 +7308,8 @@ public class PgSchema {
 	 */	
 	private PgNestTester nestChildNode2Xml(final Connection db_conn, final PgTable table, final Object parent_key, final boolean as_attr, PgNestTester parent_nest_test) throws PgSchemaException {
 
+		boolean fill_default_value = option.fill_default_value;
+
 		XMLStreamWriter xml_writer = xmlb.writer;
 
 		try {
@@ -6940,8 +7319,14 @@ public class PgSchema {
 			String table_ns = table.target_namespace;
 			String table_prefix = table.prefix;
 
-			if (!table.virtual && !table.list_holder && !as_attr)
+			if (!table.virtual && !table.list_holder && !as_attr) {
+
 				xmlb.pending_elem.push(new PgPendingElem((parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 ? "" : xmlb.line_feed_code) + nest_test.current_indent_space, table, true));
+
+				if (parent_nest_test.has_insert_doc_key)
+					parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+
+			}
 
 			if (table.ps == null || table.ps.isClosed()) {
 
@@ -6967,16 +7352,20 @@ public class PgSchema {
 
 			ResultSet rset = table.ps.executeQuery();
 
-			boolean fill_default_value = option.fill_default_value;
-
 			List<PgField> fields = table.fields;
 
 			int list_id = 0;
 
 			while (rset.next()) {
 
-				if (!table.virtual && table.list_holder && !as_attr)
-					xmlb.pending_elem.push(new PgPendingElem((parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 || list_id > 0 ? "" : xmlb.line_feed_code) + nest_test.current_indent_space, table, true));
+				if (!table.virtual && table.list_holder && !as_attr) {
+
+					xmlb.pending_elem.push(new PgPendingElem((parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 || list_id > 0 ? (parent_nest_test.has_insert_doc_key ? xmlb.line_feed_code : "") : xmlb.line_feed_code) + nest_test.current_indent_space, table, true));
+
+					if (parent_nest_test.has_insert_doc_key)
+						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+
+				}
 
 				// attribute, simple attribute, any_attribute
 
@@ -7013,7 +7402,7 @@ public class PgSchema {
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
-							PgPendingAttr attr = new PgPendingAttr(field, content);
+							PgPendingAttr attr = new PgPendingAttr(field, getForeignTable(field), content);
 
 							PgPendingElem elem = xmlb.pending_elem.peek();
 
@@ -7156,6 +7545,9 @@ public class PgSchema {
 
 							nest_test.has_child_elem = nest_test.has_content = true;
 
+							if (parent_nest_test.has_insert_doc_key)
+								parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+
 						}
 
 					}
@@ -7171,6 +7563,9 @@ public class PgSchema {
 							if (in != null) {
 
 								nest_test.merge(any_retriever.exec(in, table, nest_test, xmlb));
+
+								if (nest_test.has_insert_doc_key)
+									parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
 
 								in.close();
 
@@ -7282,7 +7677,7 @@ public class PgSchema {
 
 			return nest_test;
 
-		} catch (XMLStreamException | SQLException | SAXException | IOException e) {
+		} catch (SQLException | XMLStreamException | SAXException | IOException e) {
 			throw new PgSchemaException(e);
 		}
 

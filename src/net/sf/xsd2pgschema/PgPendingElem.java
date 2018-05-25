@@ -103,9 +103,8 @@ public class PgPendingElem {
 
 				try {
 					pending_attr.write(xmlb);
-				} catch (XMLStreamException e) {
+				} catch (PgSchemaException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			});

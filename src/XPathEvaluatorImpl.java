@@ -30,15 +30,12 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.SQLXML;
 import java.sql.Statement;
 import java.util.HashMap;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -361,6 +358,11 @@ public class XPathEvaluatorImpl {
 
 			}
 
+			xmlb.setInitIndentOffset(0);
+			xmlb.setXmlWriter(xml_writer);
+
+			schema.initXmlBuilder(xmlb);
+
 			Statement stat = db_conn.createStatement();
 
 			long start_time = System.currentTimeMillis();
@@ -369,274 +371,29 @@ public class XPathEvaluatorImpl {
 
 				XPathCompType terminus = path_expr.terminus;
 
-				PgTable table = path_expr.sql_subject.table;
-
-				String table_name = table.getCanName();
-				String table_ns = table.getTargetNamespace();
-				String table_prefix = table.getPrefix();
-
 				try {
 
 					ResultSet rset = stat.executeQuery(path_expr.sql);
 
-					// field or text node
+					// table node
 
-					if (terminus.isField() || terminus.isText()) {
-
-						SAXParser any_attr_parser = null;
-
-						PgAnyRetriever any_retriever = null;
-
-						if (option.wild_card) {
-
-							switch (terminus) {
-							case any_attribute:
-								SAXParserFactory spf = SAXParserFactory.newInstance();
-								any_attr_parser = spf.newSAXParser();
-								break;
-							case any_element:
-								any_retriever = new PgAnyRetriever();
-								break;
-							default:
-							}
-
-						}
-
-						boolean fill_default_value = option.fill_default_value;
-
-						PgField field = path_expr.sql_subject.field;
-
-						String field_name = field.getCanName();
-						String field_ns = field.getTagetNamespace();
-						String field_prefix = field.getPrefix();
-
-						while (rset.next()) {
-
-							String content;
-
-							switch (terminus) {
-							case element:
-								content = field.retrieveValue(rset, 1, fill_default_value);
-
-								if ((content != null && !content.isEmpty()) || field.isRequired()) {
-
-									if (content != null && !content.isEmpty()) {
-
-										if (field.isXsNamespace()) {
-
-											xml_writer.writeStartElement(table_prefix, field_name, table_ns);
-
-											if (xmlb.append_xmlns)
-												xml_writer.writeNamespace(table_prefix, table_ns);
-
-										}
-
-										else {
-
-											xml_writer.writeStartElement(field_prefix, field_name, field_ns);
-
-											if (xmlb.append_xmlns)
-												xml_writer.writeNamespace(field_prefix, field_ns);
-
-										}
-
-										xml_writer.writeCharacters(content);
-
-										xml_writer.writeEndElement();
-
-									}
-
-									else {
-
-										if (field.isXsNamespace()) {
-
-											xml_writer.writeEmptyElement(table_prefix, field_name, table_ns);
-
-											if (xmlb.append_xmlns) {
-												xml_writer.writeNamespace(table_prefix, table_ns);
-												xml_writer.writeNamespace(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri);
-											}
-
-										}
-
-										else {
-
-											xml_writer.writeEmptyElement(field_prefix, field_name, field_ns);
-
-											if (xmlb.append_xmlns) {
-												xml_writer.writeNamespace(field_prefix, field_ns);
-												xml_writer.writeNamespace(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri);
-											}
-
-										}
-
-										xml_writer.writeAttribute(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri, "nil", "true");
-
-									}
-
-									xml_writer.writeCharacters(xmlb.getLineFeedCode());
-
-								}
-								break;
-							case simple_content:
-								content = field.retrieveValue(rset, 1, fill_default_value);
-
-								if (content != null && !content.isEmpty()) {
-
-									xml_writer.writeStartElement(table_prefix, table_name, table_ns);
-
-									if (xmlb.append_xmlns)
-										xml_writer.writeNamespace(table_prefix, table_ns);
-
-									xml_writer.writeCharacters(content);
-
-									xml_writer.writeEndElement();
-
-									xml_writer.writeCharacters(xmlb.getLineFeedCode());
-
-								}
-								break;
-							case attribute:
-								content = field.retrieveValue(rset, 1, fill_default_value);
-
-								if (content != null && !content.isEmpty()) {
-
-									xml_writer.writeEmptyElement(table_prefix, table_name, table_ns);
-
-									if (xmlb.append_xmlns)
-										xml_writer.writeNamespace(table_prefix, table_ns);
-
-									if (field_ns.equals(PgSchemaUtil.xs_namespace_uri))
-										xml_writer.writeAttribute(field_name, rset.getString(1));
-									else
-										xml_writer.writeAttribute(field_prefix, field_ns, field_name, content);
-
-									xml_writer.writeCharacters(xmlb.getLineFeedCode());
-
-								}
-
-								else if (field.isRequired()) {
-
-									xml_writer.writeEmptyElement(table_prefix, table_name, table_ns);
-
-									if (xmlb.append_xmlns)
-										xml_writer.writeNamespace(table_prefix, table_ns);
-
-									if (field_ns.equals(PgSchemaUtil.xs_namespace_uri))
-										xml_writer.writeAttribute(field_name, rset.getString(1));
-									else
-										xml_writer.writeAttribute(field_prefix, field_ns, field_name, "");
-
-									xml_writer.writeCharacters(xmlb.getLineFeedCode());
-
-								}
-								break;
-							case any_attribute:
-							case any_element:
-								SQLXML xml_object = rset.getSQLXML(1);
-
-								if (xml_object != null) {
-
-									InputStream in = xml_object.getBinaryStream();
-
-									if (in != null) {
-
-										switch (terminus) {
-										case any_attribute:
-											xml_writer.writeEmptyElement(table_prefix, table_name, table_ns);
-
-											if (xmlb.append_xmlns)
-												xml_writer.writeNamespace(table_prefix, table_ns);
-
-											PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table_name, xmlb);
-
-											any_attr_parser.parse(in, any_attr);
-											break;
-										default:
-											xml_writer.writeStartElement(table_prefix, table_name, table_ns);
-
-											if (xmlb.append_xmlns)
-												xml_writer.writeNamespace(table_prefix, table_ns);
-
-											any_retriever.exec(in, table, new PgNestTester(table, xmlb), xmlb);
-
-											xml_writer.writeEndElement();
-										}
-
-										xml_writer.writeCharacters(xmlb.getLineFeedCode());
-
-										in.close();
-
-									}
-
-									xml_object.free();
-
-								}
-								break;
-							case text:
-								content = rset.getString(1);
-
-								if (content != null && !content.isEmpty()) {
-
-									String column_name = rset.getMetaData().getColumnName(1);
-
-									PgField _field = table.getField(column_name);
-
-									if (_field != null)
-										content = field.retrieveValue(rset, 1, fill_default_value);
-
-									xml_writer.writeCharacters(content);
-									xml_writer.writeCharacters(xmlb.getLineFeedCode());
-
-								}
-
-								break;
-							case comment:
-								content = rset.getString(1);
-
-								if (content != null && !content.isEmpty()) {
-
-									xml_writer.writeComment(content);
-									xml_writer.writeCharacters(xmlb.getLineFeedCode());
-
-								}
-								break;
-							case processing_instruction:
-								content = rset.getString(1);
-
-								if (content != null && !content.isEmpty()) {
-
-									xml_writer.writeProcessingInstruction(content);
-									xml_writer.writeCharacters(xmlb.getLineFeedCode());
-
-								}
-								break;
-							default:
-								continue;
-							}
-
-						}
-
-					}
-
-					// table node (not implemented yet)
-
-					else {
-
-						xmlb.setInitIndentOffset(0);
-						xmlb.setXmlWriter(xml_writer);
+					if (terminus.equals(XPathCompType.table)) {
 
 						while (rset.next())
-							schema.pgSql2Xml(db_conn, table, rset, xmlb);
+							schema.pgSql2Xml(db_conn, path_expr, rset);
 
-						schema.closePgSql2Xml();
-
+						// schema.closePgSql2Xml(); // reuse resource (prepared statement) for repetition
 
 					}
+
+					// field or text node
+
+					else 
+						schema.pgSql2XmlFrag(xpath_comp_list, path_expr, rset);
 
 					rset.close();
 
-				} catch (SQLException | XMLStreamException | PgSchemaException | SAXException | IOException | ParserConfigurationException e) {
+				} catch (SQLException | PgSchemaException e) {
 					e.printStackTrace();
 					System.exit(1);
 				}

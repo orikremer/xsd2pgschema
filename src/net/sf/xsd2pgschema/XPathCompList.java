@@ -3799,7 +3799,7 @@ public class XPathCompList {
 	 * @param path_expr XPath expression
 	 * @return PgTable table
 	 */
-	private PgTable getTable(XPathExpr path_expr) {
+	protected PgTable getTable(XPathExpr path_expr) {
 
 		String table_xname = path_expr.getLastPathName();
 
@@ -3825,7 +3825,7 @@ public class XPathCompList {
 	 * @param path_expr XPath expression
 	 * @return PgTable parent table
 	 */
-	private PgTable getParentTable(XPathExpr path_expr) {
+	protected PgTable getParentTable(XPathExpr path_expr) {
 		return getTable(new XPathExpr(path_expr.getParentPath(), XPathCompType.table));
 	}
 
@@ -3835,7 +3835,7 @@ public class XPathCompList {
 	 * @param sql_expr XPath SQL expression
 	 * @return PgTable parent table
 	 */
-	private PgTable getParentTable(XPathSqlExpr sql_expr) {
+	protected PgTable getParentTable(XPathSqlExpr sql_expr) {
 		return getTable(new XPathExpr(sql_expr.getParentPath(), XPathCompType.table));
 	}
 
