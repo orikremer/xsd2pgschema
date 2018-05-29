@@ -19,6 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -218,37 +219,54 @@ public class XPathSqlExpr {
 		if (xname == null || xname.equals("*"))
 			return;
 
+		Optional<PgField> opt;
+
 		switch (terminus) {
 		case element:
-			if (!table.fields.parallelStream().anyMatch(field -> field.element && field.xname.equals(xname))) {
+			opt = table.fields.parallelStream().filter(field -> field.element && field.xname.equals(xname)).findFirst();
+			if (opt.isPresent())
+				field = opt.get();
+			else {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();
 			}
 			break;
 		case simple_content:
-			if (!table.fields.parallelStream().anyMatch(field -> field.simple_content && field.xname.equals(xname))) {
+			opt = table.fields.parallelStream().filter(field -> field.simple_content && !field.simple_attribute && field.xname.equals(xname)).findFirst();
+			if (opt.isPresent()) 
+				field = opt.get();
+			else {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();
 			}
 			break;
 		case attribute:
-			if (!table.fields.parallelStream().anyMatch(field -> field.attribute && field.xname.equals(xname))) {
+			opt = table.fields.parallelStream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && (field.attribute ? field.xname.equals(xname) : field.foreign_table_xname.equals(xname))).findFirst();
+			if (opt.isPresent())
+				field = opt.get();
+			else {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();
 			}
 			break;
 		case any_element:
-			if (!table.fields.parallelStream().anyMatch(field -> field.any && field.xname.equals(xname))) {
+			opt = table.fields.parallelStream().filter(field -> field.any && field.xname.equals(xname)).findFirst();
+			if (opt.isPresent())
+				field = opt.get();
+			else {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();
 			}
 			break;
 		case any_attribute:
-			if (!table.fields.parallelStream().anyMatch(field -> field.any_attribute && field.xname.equals(xname))) {
+			opt = table.fields.parallelStream().filter(field -> field.any_attribute && field.xname.equals(xname)).findFirst();
+			if (opt.isPresent())
+				field = opt.get();
+			else {
 				if (current_tree != null)
 					throw new PgSchemaException(current_tree);
 				else throw new PgSchemaException();
@@ -257,11 +275,6 @@ public class XPathSqlExpr {
 		default:
 			throw new PgSchemaException();
 		}
-
-		field = table.getCanField(xname);
-
-		if (field == null)
-			throw new PgSchemaException();
 
 		pname = field.pname;
 

@@ -1592,18 +1592,21 @@ public class PgField {
 	 *
 	 * @param option PostgreSQL data model option
 	 * @param node_name node name
+	 * @param as_attr whether evaluate this node as attribute
 	 * @param wild_card whether wild card follows or not
 	 * @return boolean whether node name matches
 	 */
-	public boolean matchesNodeName(PgSchemaOption option, String node_name, boolean wild_card) {
+	public boolean matchesNodeName(PgSchemaOption option, String node_name, boolean as_attr, boolean wild_card) {
 
 		if ((element || attribute) && option.discarded_document_key_names.contains(name))
 			return false;
 
-		if (wild_card)
-			return xname.matches(node_name);
+		String _xname = as_attr ? (simple_attribute || simple_attr_cond ? foreign_table_xname : xname) : xname;
 
-		return node_name.equals("*") || xname.equals(node_name);
+		if (wild_card)
+			return _xname.matches(node_name);
+
+		return node_name.equals("*") || _xname.equals(node_name);
 	}
 
 	// PostgreSQL schema generation

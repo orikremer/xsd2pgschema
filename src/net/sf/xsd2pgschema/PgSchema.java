@@ -7217,7 +7217,7 @@ public class PgSchema {
 
 				xmlb.writePendingSimpleCont();
 
-				if (!nest_test.has_open_simple_content)
+				if (!nest_test.has_open_simple_content && !attr_only)
 					xml_writer.writeCharacters(nest_test.current_indent_space);
 				else if (nest_test.has_simple_content)
 					nest_test.has_open_simple_content = false;
@@ -7293,7 +7293,7 @@ public class PgSchema {
 
 			if (!table.virtual && !table.list_holder && !as_attr) {
 
-				xmlb.pending_elem.push(new PgPendingElem((parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 ? "" : xmlb.line_feed_code) + nest_test.current_indent_space, table, true));
+				xmlb.pending_elem.push(new PgPendingElem((parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? xmlb.line_feed_code : "") : xmlb.line_feed_code) + nest_test.current_indent_space, table, true));
 
 				if (parent_nest_test.has_insert_doc_key)
 					parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
@@ -7594,7 +7594,7 @@ public class PgSchema {
 
 						xmlb.writePendingSimpleCont();
 
-						if (!nest_test.has_open_simple_content)
+						if (!nest_test.has_open_simple_content && !attr_only)
 							xml_writer.writeCharacters(nest_test.current_indent_space);
 						else if (nest_test.has_simple_content)
 							nest_test.has_open_simple_content = false;
@@ -7630,7 +7630,7 @@ public class PgSchema {
 
 					xmlb.writePendingSimpleCont();
 
-					if (!nest_test.has_open_simple_content)
+					if (!nest_test.has_open_simple_content && !attr_only)
 						xml_writer.writeCharacters(nest_test.current_indent_space);
 					else if (nest_test.has_simple_content)
 						nest_test.has_open_simple_content = false;

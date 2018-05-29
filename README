@@ -1,10 +1,11 @@
-﻿ Changes in xsd2pgschema 2.10.4 (release 2018-05-24)
+﻿ Changes in xsd2pgschema 2.10.4 (release 2018-05-29)
 
   [Ticket #6] Fixed differential update in case of --no-key option.
   Fixed string escape function for TSV format.
   Fixed issues while XPath->SQL query translation (ArrayIndexOutOfBoundsException, invalid path to simple content, invalid JOIN clause).
   Added example script to demonstrate XPath 1.0 query evaluation over PostgreSQL.
   Added support for simple type attribute and conditional simple type attribute in XML->JSON conversion.
+  Added support for simple type attribute and conditional simple type attribute in XPath->SQL query translation.
 
  Changes in xsd2pgschema 2.10.3 (release 2018-05-23)
 
