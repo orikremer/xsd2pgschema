@@ -1,4 +1,4 @@
-﻿ Changes in xsd2pgschema 2.10.4 (release 2018-05-29)
+﻿ Changes in xsd2pgschema 2.10.4 (release 2018-05-30)
 
   [Ticket #6] Fixed differential update in case of --no-key option.
   Fixed string escape function for TSV format.
