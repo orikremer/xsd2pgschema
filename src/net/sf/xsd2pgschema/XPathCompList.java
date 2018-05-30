@@ -4345,9 +4345,15 @@ public class XPathCompList {
 					joined_tables.put(path_expr.sql_subject.table, target_tables.get(path_expr.sql_subject.table));
 
 					HashMap<PgTable, String> linking_tables = new HashMap<PgTable, String>();
-					LinkedList<PgTable> linking_order = new LinkedList<PgTable>();
+
+					LinkedList<LinkedList<PgTable>> linking_orders = new LinkedList<LinkedList<PgTable>>();
+					LinkedList<LinkedList<PgTable>> _linking_orders = new LinkedList<LinkedList<PgTable>>();
+
+					// simple type attribute in subject expression
 
 					if (path_expr.terminus.equals(XPathCompType.attribute) && !path_expr.sql_subject.field.attribute) {
+
+						LinkedList<PgTable> linking_order = new LinkedList<PgTable>();
 
 						testJoinClauseForSimpleTypeAttr(path_expr.sql_subject.table, path_expr.sql_subject.path, linking_tables, linking_order);
 
@@ -4358,15 +4364,37 @@ public class XPathCompList {
 
 						}
 
+						linking_orders.add(linking_order);
+						_linking_orders.add(new LinkedList<PgTable>(linking_order));
+
 					}
 
 					target_tables.remove(path_expr.sql_subject.table);
 
+					// simple type attribute in predicate expression
+
+					path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.terminus.equals(XPathCompType.attribute) && !sql_expr.field.attribute).forEach(sql_expr -> {
+
+						LinkedList<PgTable> linking_order = new LinkedList<PgTable>();
+
+						testJoinClauseForSimpleTypeAttr(sql_expr.table, sql_expr.path, linking_tables, linking_order);
+
+						if (linking_tables.size() > 0) {
+
+							target_tables.putAll(linking_tables);
+							linking_tables.clear();
+
+						}
+
+						linking_orders.add(linking_order);
+						_linking_orders.add(new LinkedList<PgTable>(linking_order));
+
+					});
+
 					HashMap<PgTable, String> _target_tables = new HashMap<PgTable, String>(target_tables);
 					HashMap<PgTable, String> _joined_tables = new HashMap<PgTable, String>(joined_tables);
-					LinkedList<PgTable> _linking_order = new LinkedList<PgTable>(linking_order);
 
-					testJoinClause(_target_tables, _joined_tables, linking_tables, _linking_order);
+					testJoinClause(_target_tables, _joined_tables, linking_tables, _linking_orders);
 
 					if (linking_tables.size() > 0) {
 
@@ -4374,6 +4402,8 @@ public class XPathCompList {
 						linking_tables.clear();
 
 					}
+					
+					System.err.println(_linking_orders.size());
 
 					_joined_tables.forEach((_table_, _path_) -> appendSqlTable(_table_, sb));
 
@@ -4390,7 +4420,9 @@ public class XPathCompList {
 
 					}
 
-					appendJoinClause(target_tables, joined_tables, linking_order, sb);
+					appendJoinClause(target_tables, joined_tables, linking_orders, sb);
+					
+					System.err.println(linking_orders.size());
 
 					sb.setLength(sb.length() - 5); // remove last " AND "
 
@@ -6947,13 +6979,33 @@ public class XPathCompList {
 	 * @param target_tables target SQL tables
 	 * @param joined_tables joined SQL tables
 	 * @param linking_tables additional linking SQL tables
-	 * @param linking_order order of linking SQL tables
+	 * @param linking_orders order of linking SQL tables
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void testJoinClause(HashMap<PgTable, String> target_tables, HashMap<PgTable, String> joined_tables, HashMap<PgTable, String> linking_tables, LinkedList<PgTable> linking_order) throws PgSchemaException {
+	private void testJoinClause(HashMap<PgTable, String> target_tables, HashMap<PgTable, String> joined_tables, HashMap<PgTable, String> linking_tables, LinkedList<LinkedList<PgTable>> linking_orders) throws PgSchemaException {
 
 		if (target_tables.isEmpty())
 			return;
+
+		PgTable dst_table;
+
+		LinkedList<PgTable> linking_order = linking_orders.poll();
+
+		if (linking_order != null && linking_order.size() > 0) {
+
+			while ((dst_table = linking_order.poll()) != null) {
+
+				if (!joined_tables.containsKey(dst_table))
+					joined_tables.put(dst_table, target_tables.get(dst_table));
+
+				target_tables.remove(dst_table);
+
+			}
+
+			testJoinClause(target_tables, joined_tables, linking_tables, linking_orders);
+
+			return;
+		}
 
 		PgTable target_table = null;
 		String target_table_path = null;
@@ -7078,7 +7130,7 @@ public class XPathCompList {
 							if (!linking_tables.containsKey(parent_table))
 								linking_tables.put(parent_table, parent_path);
 
-							testJoinClause(target_tables, joined_tables, linking_tables, linking_order);
+							testJoinClause(target_tables, joined_tables, linking_tables, linking_orders);
 
 							return;
 						}
@@ -7092,7 +7144,6 @@ public class XPathCompList {
 		}
 
 		PgTable src_table;
-		PgTable dst_table;
 
 		String dst_path;
 
@@ -7116,22 +7167,6 @@ public class XPathCompList {
 
 			dst_path = joined_table_path;
 
-		}
-
-		if (linking_order.size() > 0) {
-
-			while ((dst_table = linking_order.poll()) != null) {
-
-				if (!joined_tables.containsKey(dst_table))
-					joined_tables.put(dst_table, target_tables.get(dst_table));
-
-				target_tables.remove(dst_table);
-
-			}
-
-			testJoinClause(target_tables, joined_tables, linking_tables, linking_order);
-
-			return;
 		}
 
 		LinkedList<PgTable> touched_tables = new LinkedList<PgTable>();
@@ -7204,7 +7239,7 @@ public class XPathCompList {
 				if (!linking_tables.containsKey(parent_table))
 					linking_tables.put(parent_table, parent_path);
 
-				testJoinClause(target_tables, joined_tables, linking_tables, linking_order);
+				testJoinClause(target_tables, joined_tables, linking_tables, linking_orders);
 
 				return;
 			}
@@ -7230,7 +7265,7 @@ public class XPathCompList {
 
 		}
 
-		testJoinClause(target_tables, joined_tables, linking_tables, linking_order);
+		testJoinClause(target_tables, joined_tables, linking_tables, linking_orders);
 
 	}	
 
@@ -7239,14 +7274,56 @@ public class XPathCompList {
 	 *
 	 * @param target_tables target SQL tables
 	 * @param joined_tables joined SQL tables
-	 * @param linking_order order of linking SQL tables
+	 * @param linking_orders order of linking SQL tables
 	 * @param sb StringBuilder to store SQL expression
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void appendJoinClause(HashMap<PgTable, String> target_tables, HashMap<PgTable, String> joined_tables, LinkedList<PgTable> linking_order, StringBuilder sb) throws PgSchemaException {
+	private void appendJoinClause(HashMap<PgTable, String> target_tables, HashMap<PgTable, String> joined_tables, LinkedList<LinkedList<PgTable>> linking_orders, StringBuilder sb) throws PgSchemaException {
 
 		if (target_tables.isEmpty())
 			return;
+
+		PgTable src_table;
+		PgTable dst_table;
+
+		LinkedList<PgTable> linking_order = linking_orders.poll();
+
+		if (linking_order != null && linking_order.size() > 0)  {
+
+			src_table = linking_order.poll();
+
+			if (!joined_tables.containsKey(src_table))
+				joined_tables.put(src_table, target_tables.get(src_table));
+
+			target_tables.remove(src_table);
+
+			while ((dst_table = linking_order.poll()) != null) {
+
+				if (!joined_tables.containsKey(dst_table))
+					joined_tables.put(dst_table, target_tables.get(dst_table));
+
+				target_tables.remove(dst_table);
+
+				PgTable _dst_table = dst_table;
+
+				PgField nested_key = src_table.fields.stream().filter(field -> field.nested_key && schema.getTable(field.foreign_table_id).equals(_dst_table)).findFirst().get();
+
+				appendSqlColumnName(src_table, nested_key.pname, sb);
+
+				sb.append(" = ");
+
+				appendSqlColumnName(schema.getTable(nested_key.foreign_table_id), nested_key.foreign_field_pname, sb);
+
+				sb.append(" AND ");
+
+				src_table = _dst_table;
+
+			}
+
+			appendJoinClause(target_tables, joined_tables, linking_orders, sb);
+
+			return;
+		}
 
 		PgTable target_table = null;
 		String target_table_path = null;
@@ -7360,9 +7437,6 @@ public class XPathCompList {
 
 		}
 
-		PgTable src_table;
-		PgTable dst_table;
-
 		// subject table is parent
 
 		if (joined_table_path.split("/").length < target_table_path.split("/").length || min_distance == 0) {
@@ -7379,43 +7453,6 @@ public class XPathCompList {
 			src_table = target_table;
 			dst_table = joined_table;
 
-		}
-
-		if (linking_order.size() > 0 && (linking_order.contains(src_table) || linking_order.contains(dst_table))) {
-
-			src_table = linking_order.poll();
-
-			if (!joined_tables.containsKey(src_table))
-				joined_tables.put(src_table, target_tables.get(src_table));
-
-			target_tables.remove(src_table);
-
-			while ((dst_table = linking_order.poll()) != null) {
-
-				if (!joined_tables.containsKey(dst_table))
-					joined_tables.put(dst_table, target_tables.get(dst_table));
-
-				target_tables.remove(dst_table);
-
-				PgTable _dst_table = dst_table;
-
-				PgField nested_key = src_table.fields.stream().filter(field -> field.nested_key && schema.getTable(field.foreign_table_id).equals(_dst_table)).findFirst().get();
-
-				appendSqlColumnName(src_table, nested_key.pname, sb);
-
-				sb.append(" = ");
-
-				appendSqlColumnName(schema.getTable(nested_key.foreign_table_id), nested_key.foreign_field_pname, sb);
-
-				sb.append(" AND ");
-
-				src_table = _dst_table;
-
-			}
-
-			appendJoinClause(target_tables, joined_tables, linking_order, sb);
-
-			return;
 		}
 
 		LinkedList<PgTable> touched_tables = new LinkedList<PgTable>();
@@ -7504,7 +7541,7 @@ public class XPathCompList {
 
 		}
 
-		appendJoinClause(target_tables, joined_tables, linking_order, sb);
+		appendJoinClause(target_tables, joined_tables, linking_orders, sb);
 
 	}
 
