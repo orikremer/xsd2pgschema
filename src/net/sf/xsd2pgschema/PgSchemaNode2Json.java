@@ -26,6 +26,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.w3c.dom.Node;
 
 /**
@@ -147,7 +148,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			else if (field.attribute || field.simple_content || field.element) {
 
 				if (setContent(proc_node, field, current_key, as_attr, false))
-					values[f] = content;
+					values[f] = StringEscapeUtils.escapeEcmaScript(content);
 
 				else if (field.required) {
 					filled = false;
@@ -161,7 +162,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			else if (field.any || field.any_attribute) {
 
 				if (setAnyContent(proc_node, field))
-					values[f] = content;
+					values[f] = StringEscapeUtils.escapeEcmaScript(content);
 
 			}
 

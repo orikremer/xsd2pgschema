@@ -6303,6 +6303,22 @@ public class PgSchema {
 
 		jsonb.builder.setLength(0);
 
+		// no support on conditional attribute
+
+		tables.stream().filter(table -> table.content_holder).forEach(table -> {
+
+			table.fields.stream().filter(field -> field.simple_attr_cond).forEach(field -> {
+
+				try {
+					throw new PgSchemaException("Conditional attribute , " + table.name + "." + field.name + ", is not handled in relational-oriented JSON document.");
+				} catch (PgSchemaException e) {
+					e.printStackTrace();
+				}
+
+			});
+
+		});
+
 	}
 
 	/**
@@ -6475,6 +6491,22 @@ public class PgSchema {
 		}
 
 		xml_parser.clear();
+
+		// no support on conditional attribute
+
+		tables.stream().filter(table -> table.content_holder).forEach(table -> {
+
+			table.fields.stream().filter(field -> field.simple_attr_cond).forEach(field -> {
+
+				try {
+					throw new PgSchemaException("Conditional attribute , " + table.name + "." + field.name + ", is not handled in relational-oriented JSON document.");
+				} catch (PgSchemaException e) {
+					e.printStackTrace();
+				}
+
+			});
+
+		});
 
 	}
 

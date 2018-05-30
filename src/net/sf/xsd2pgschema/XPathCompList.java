@@ -4402,8 +4402,6 @@ public class XPathCompList {
 						linking_tables.clear();
 
 					}
-					
-					System.err.println(_linking_orders.size());
 
 					_joined_tables.forEach((_table_, _path_) -> appendSqlTable(_table_, sb));
 
@@ -4421,8 +4419,6 @@ public class XPathCompList {
 					}
 
 					appendJoinClause(target_tables, joined_tables, linking_orders, sb);
-					
-					System.err.println(linking_orders.size());
 
 					sb.setLength(sb.length() - 5); // remove last " AND "
 
