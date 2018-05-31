@@ -30,6 +30,9 @@ import org.apache.commons.text.StringEscapeUtils;
  */
 public class JsonBuilder {
 
+	/** The JSON type. */
+	protected JsonType type = JsonType.defaultType();
+
 	/** The JSON buffer. */
 	protected StringBuilder builder = null;
 
@@ -51,6 +54,9 @@ public class JsonBuilder {
 	/** The line feed code in JSON document. */
 	protected String line_feed_code = "\n";
 
+	/** Whether retain case sensitive name. */
+	protected boolean case_sense = true;
+
 	/** Use JSON array uniformly for descendants. */
 	protected boolean array_all = false;
 
@@ -64,6 +70,8 @@ public class JsonBuilder {
 	 */
 	public JsonBuilder(JsonBuilderOption option) {
 
+		this.type = option.type;
+		this.case_sense = option.case_sense;
 		this.array_all = option.array_all;
 		this.no_field_anno = option.no_field_anno;
 
@@ -184,7 +192,7 @@ public class JsonBuilder {
 	 */
 	public String getItemTitle(PgField field, boolean as_attr) {
 		return (field.attribute || field.simple_attribute || (field.simple_attr_cond && as_attr) || field.any_attribute ? attr_prefix : "")
-				+ (field.simple_content ? (field.simple_attribute || (field.simple_attr_cond && as_attr) ? field.foreign_table_xname : simple_content_key) : field.xname);
+				+ (field.simple_content ? (field.simple_attribute || (field.simple_attr_cond && as_attr) ? (case_sense ? field.foreign_table_xname : field.foreign_table_xname.toLowerCase()) : simple_content_key) : (case_sense ? field.xname : field.xname.toLowerCase()));
 	}
 
 	/**
@@ -379,7 +387,7 @@ public class JsonBuilder {
 
 		}
 
-		builder.append(getIndentSpaces(indent_level) + (object ? "\"" + table.name + "\":" + key_value_space : "") + "{" + line_feed_code); // JSON object start
+		builder.append(getIndentSpaces(indent_level) + (object ? "\"" + (case_sense ? table.name : table.name.toLowerCase()) + "\":" + key_value_space : "") + "{" + line_feed_code); // JSON object start
 
 		return builder.length();
 	}
@@ -421,7 +429,7 @@ public class JsonBuilder {
 
 		}
 
-		builder.append(getIndentSpaces(indent_level) + "\"" + table.name + "\":" + key_value_space + "[" + line_feed_code); // JSON array start
+		builder.append(getIndentSpaces(indent_level) + "\"" + (case_sense ? table.name : table.name.toLowerCase()) + "\":" + key_value_space + "[" + line_feed_code); // JSON array start
 
 		return builder.length();
 	}

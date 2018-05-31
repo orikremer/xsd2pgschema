@@ -148,7 +148,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			else if (field.attribute || field.simple_content || field.element) {
 
 				if (setContent(proc_node, field, current_key, as_attr, false))
-					values[f] = StringEscapeUtils.escapeEcmaScript(content);
+					values[f] = StringEscapeUtils.escapeEcmaScript(content).replace("\\/", "/").replace("\\'", "'");
 
 				else if (field.required) {
 					filled = false;
@@ -162,7 +162,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			else if (field.any || field.any_attribute) {
 
 				if (setAnyContent(proc_node, field))
-					values[f] = StringEscapeUtils.escapeEcmaScript(content);
+					values[f] = StringEscapeUtils.escapeEcmaScript(content).replace("\\/", "/").replace("\\'", "'");
 
 			}
 

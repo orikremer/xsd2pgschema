@@ -2476,7 +2476,7 @@ public class PgSchema {
 
 		if (fields.size() > 0) {
 
-			if (fields.parallelStream().anyMatch(field -> !field.primary_key && field.required)) {
+			if (fields.stream().anyMatch(field -> !field.primary_key && field.required)) {
 
 				for (PgField known_field : known_fields) {
 
@@ -2510,7 +2510,7 @@ public class PgSchema {
 
 			if (name_collision) {
 
-				known_fields.parallelStream().filter(field -> !field.system_key && !field.user_key && field.required).forEach(field -> field.required = false);
+				known_fields.stream().filter(field -> !field.system_key && !field.user_key && field.required).forEach(field -> field.required = false);
 				known_table.name_collision = true;
 
 			}
@@ -3698,7 +3698,7 @@ public class PgSchema {
 
 			else {
 
-				table.fields.parallelStream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
+				table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
 
 					field.filt_out = true;
 					field.filter_pattern = rex_pattern;
@@ -3910,7 +3910,7 @@ public class PgSchema {
 			}
 
 			else
-				table.fields.parallelStream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true);
+				table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true);
 
 		}
 
@@ -4076,7 +4076,7 @@ public class PgSchema {
 			}
 
 			else
-				_table.fields.parallelStream().filter(_field -> !_field.system_key && !_field.user_key).forEach(_field -> _field.field_sel = true);
+				_table.fields.stream().filter(_field -> !_field.system_key && !_field.user_key).forEach(_field -> _field.field_sel = true);
 
 		}
 
@@ -4559,7 +4559,7 @@ public class PgSchema {
 		if (!option.inplace_document_key)
 			throw new PgSchemaException("Not defined document key, or select either --doc-key or --doc-key-if-no-inplace option.");
 
-		if (!table.fields.parallelStream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))) {
+		if (!table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))) {
 
 			if (option.document_key_if_no_in_place)
 				return option.document_key_name;
@@ -4567,7 +4567,7 @@ public class PgSchema {
 			throw new PgSchemaException("Not found in-place document key in " + table.pname + ", or select --doc-key-if-no-inplace option.");
 		}
 
-		return table.fields.parallelStream().filter(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).findFirst().get().pname;
+		return table.fields.stream().filter(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).findFirst().get().pname;
 	}
 
 	/**
@@ -4772,7 +4772,7 @@ public class PgSchema {
 
 			if (has_doc_id) {
 
-				tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational) && !table.equals(doc_id_table) && ((no_pkey && !table.fields.parallelStream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+				tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational) && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 					if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(table.pname))) {
 
@@ -4874,7 +4874,7 @@ public class PgSchema {
 
 						String db_column_name = rset_col.getString("COLUMN_NAME");
 
-						if (!table.fields.parallelStream().filter(field -> !field.omissible).anyMatch(field -> field.pname.equals(db_column_name)))
+						if (!table.fields.stream().filter(field -> !field.omissible).anyMatch(field -> field.pname.equals(db_column_name)))
 							throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + db_column_name + " found without declaration in the data model."); // found without declaration in the data model
 
 					}
@@ -5492,6 +5492,25 @@ public class PgSchema {
 	 */
 	public void initJsonBuilder(JsonBuilderOption option) {
 
+		if (option.type.equals(JsonType.object) && tables.parallelStream().anyMatch(table -> table.list_holder && !table.virtual)) {
+
+			option.type = JsonType.column;
+
+			StringBuilder sb = new StringBuilder();
+
+			tables.stream().filter(table -> table.list_holder && !table.virtual).forEach(table -> sb.append(table.name + ", "));
+
+			sb.setLength(sb.length() - 2);
+
+			System.err.println("Warning! Changed JSON format from object- to column-oriented because explicit element (e.g. " + (option.case_sense ? sb.toString() : sb.toString().toLowerCase()) + ") were defined as list holder.");
+
+			sb.setLength(0);
+
+		}
+
+		if (option.array_all && option.type.equals(JsonType.object))
+			option.array_all = false;
+
 		jsonb = new JsonBuilder(option);
 
 	}
@@ -5588,7 +5607,7 @@ public class PgSchema {
 
 			System.out.print(jsonb.getIndentSpaces(1) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + "\"" + root_table.name + "\"," + jsonb.line_feed_code);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + "\"" + (jsonb.case_sense ? root_table.name : root_table.name.toLowerCase()) + "\"," + jsonb.line_feed_code);
 
 			if (root_table.anno != null && !root_table.anno.isEmpty()) {
 
@@ -5603,7 +5622,7 @@ public class PgSchema {
 
 		}
 
-		if (fields.parallelStream().anyMatch(field -> field.required && field.jsonable)) {
+		if (fields.stream().anyMatch(field -> field.required && field.jsonable)) {
 
 			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, false) + "\"," + jsonb.key_value_space));
 
@@ -5624,16 +5643,19 @@ public class PgSchema {
 
 		jsonb.builder.setLength(0);
 
-		if (!root_table.virtual)
+		boolean has_own_item = fields.stream().anyMatch(field -> field.jsonable);
+
+		if (!root_table.virtual && has_own_item)
 			System.out.print(jsonb.getIndentSpaces(2) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON child items start
 
 		int[] list_id = { 0 };
 
-		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(root_table, getForeignTable(field), field.nested_key_as_attr, list_id[0]++, root_table.nested_fields, root_table.virtual ? 1 : 3));
+		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(root_table, getForeignTable(field), field.nested_key_as_attr, list_id[0]++, root_table.nested_fields, root_table.virtual ? 1 : has_own_item ? 3 : 2));
 
 		if (!root_table.virtual) {
 
-			System.out.print(jsonb.getIndentSpaces(2) + "}" + jsonb.line_feed_code); // JSON child items end
+			if (has_own_item)
+				System.out.print(jsonb.getIndentSpaces(2) + "}" + jsonb.line_feed_code); // JSON child items end
 
 			System.out.print(jsonb.getIndentSpaces(1) + "}" + jsonb.line_feed_code); // JSON own items end
 
@@ -5667,7 +5689,7 @@ public class PgSchema {
 			if (!parent_table.list_holder)
 				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
 
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + table.name + "\"," + jsonb.line_feed_code);
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + (jsonb.case_sense ? table.name : table.name.toLowerCase()) + "\"," + jsonb.line_feed_code);
 
 			if (table.anno != null && !table.anno.isEmpty()) {
 
@@ -5682,7 +5704,7 @@ public class PgSchema {
 
 		}
 
-		if (fields.parallelStream().anyMatch(field -> field.required && field.jsonable)) {
+		if (fields.stream().anyMatch(field -> field.required && field.jsonable)) {
 
 			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, as_attr) + "\"," + jsonb.key_value_space));
 
@@ -5705,14 +5727,16 @@ public class PgSchema {
 
 		if (table.nested_fields > 0) {
 
-			if (!table.virtual)
+			boolean has_own_item = fields.stream().anyMatch(field -> field.jsonable);
+
+			if (!table.virtual && has_own_item)
 				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON child items start
 
 			int[] _list_id = { 0 };
 
-			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(table, getForeignTable(field), field.nested_key_as_attr, _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : 2)));
+			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(table, getForeignTable(field), field.nested_key_as_attr, _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : has_own_item ? 2 : 1)));
 
-			if (!table.virtual)
+			if (!table.virtual && has_own_item)
 				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.line_feed_code); // JSON child items end
 
 		}
@@ -5962,7 +5986,7 @@ public class PgSchema {
 
 			System.out.print(jsonb.getIndentSpaces(1) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
 
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + "\"" + root_table.name + "\"," + jsonb.line_feed_code);
+			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + "\"" + (jsonb.case_sense ? root_table.name : root_table.name.toLowerCase()) + "\"," + jsonb.line_feed_code);
 
 			if (root_table.anno != null && !root_table.anno.isEmpty()) {
 
@@ -5977,7 +6001,7 @@ public class PgSchema {
 
 		}
 
-		if (fields.parallelStream().anyMatch(field -> field.required && field.jsonable)) {
+		if (fields.stream().anyMatch(field -> field.required && field.jsonable)) {
 
 			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, false) + "\"," + jsonb.key_value_space));
 
@@ -5998,16 +6022,19 @@ public class PgSchema {
 
 		jsonb.builder.setLength(0);
 
-		if (!root_table.virtual)
+		boolean has_own_item = fields.stream().anyMatch(field -> field.jsonable);
+
+		if (!root_table.virtual && has_own_item)
 			System.out.print(jsonb.getIndentSpaces(2) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON child items start
 
 		int[] list_id = { 0 };
 
-		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(root_table, getForeignTable(field), field.nested_key_as_attr, list_id[0]++, root_table.nested_fields, root_table.virtual ? 1 : 3));
+		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(root_table, getForeignTable(field), field.nested_key_as_attr, list_id[0]++, root_table.nested_fields, root_table.virtual ? 1 : has_own_item ? 3 : 2));
 
 		if (!root_table.virtual) {
 
-			System.out.print(jsonb.getIndentSpaces(2) + "}" + jsonb.line_feed_code); // JSON child items end
+			if (has_own_item)
+				System.out.print(jsonb.getIndentSpaces(2) + "}" + jsonb.line_feed_code); // JSON child items end
 
 			System.out.print(jsonb.getIndentSpaces(1) + "}" + jsonb.line_feed_code); // JSON own items end
 
@@ -6039,7 +6066,7 @@ public class PgSchema {
 
 			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
 
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + table.name + "\"," + jsonb.line_feed_code);
+			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + (jsonb.case_sense ? table.name : table.name.toLowerCase()) + "\"," + jsonb.line_feed_code);
 
 			if (table.anno != null && !table.anno.isEmpty()) {
 
@@ -6054,7 +6081,7 @@ public class PgSchema {
 
 		}
 
-		if (fields.parallelStream().anyMatch(field -> field.required && field.jsonable)) {
+		if (fields.stream().anyMatch(field -> field.required && field.jsonable)) {
 
 			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, as_attr) + "\"," + jsonb.key_value_space));
 
@@ -6077,14 +6104,16 @@ public class PgSchema {
 
 		if (table.nested_fields > 0) {
 
-			if (!table.virtual)
+			boolean has_own_item = fields.stream().anyMatch(field -> field.jsonable);
+
+			if (!table.virtual && has_own_item)
 				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON child items start
 
 			int[] _list_id = { 0 };
 
-			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(table, getForeignTable(field), field.nested_key_as_attr, _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : 2)));
+			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(table, getForeignTable(field), field.nested_key_as_attr, _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : has_own_item ? 2 : 1)));
 
-			if (!table.virtual)
+			if (!table.virtual && has_own_item)
 				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.line_feed_code); // JSON child items end
 
 		}
@@ -6251,6 +6280,16 @@ public class PgSchema {
 	 */
 	public void realizeJsonSchema() throws PgSchemaException {
 
+		switch (jsonb.type) {
+		case object:
+			realizeObjJsonSchema();
+			return;
+		case column:
+			realizeColJsonSchema();
+			return;
+		default:
+		}
+
 		hasRootTable();
 
 		System.out.print("{" + jsonb.line_feed_code); // JSON document start
@@ -6309,11 +6348,10 @@ public class PgSchema {
 
 			table.fields.stream().filter(field -> field.simple_attr_cond).forEach(field -> {
 
-				try {
-					throw new PgSchemaException("Conditional attribute , " + table.name + "." + field.name + ", is not handled in relational-oriented JSON document.");
-				} catch (PgSchemaException e) {
-					e.printStackTrace();
-				}
+				String cont_name = table.name + "." + field.name;
+				String attr_name = getForeignTable(field).fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.foreign_table_xname;
+
+				System.err.println("Warning! Simple content \"" + (jsonb.case_sense ? cont_name : cont_name.toLowerCase()) + "\" may be confused with attribute \"" + (jsonb.case_sense ? attr_name : attr_name.toLowerCase()) + "\" in relational-oriented JSON format.");
 
 			});
 
@@ -6335,7 +6373,7 @@ public class PgSchema {
 
 		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
 
-		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + table.name + "\"," + jsonb.line_feed_code);
+		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + (jsonb.case_sense ? table.name : table.name.toLowerCase()) + "\"," + jsonb.line_feed_code);
 
 		if (table.anno != null && !table.anno.isEmpty()) {
 
@@ -6348,7 +6386,7 @@ public class PgSchema {
 
 		}
 
-		if (fields.parallelStream().anyMatch(field -> field.required)) {
+		if (fields.stream().anyMatch(field -> field.required)) {
 
 			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, false) + "\"," + jsonb.key_value_space));
 
@@ -6388,6 +6426,16 @@ public class PgSchema {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void xml2Json(XmlParser xml_parser, File json_file) throws PgSchemaException {
+
+		switch (jsonb.type) {
+		case object:
+			xml2ObjJson(xml_parser, json_file);
+			return;
+		case column:
+			xml2ColJson(xml_parser, json_file);
+			return;
+		default:
+		}
 
 		Node node = getRootNode(xml_parser);
 
@@ -6429,7 +6477,7 @@ public class PgSchema {
 					if (!_table.equals(first))
 						buffw.write("," + jsonb.line_feed_code);
 
-					buffw.write(jsonb.getIndentSpaces(1) + "\"" + _table.name + "\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON object start
+					buffw.write(jsonb.getIndentSpaces(1) + "\"" + (jsonb.case_sense ? _table.name : _table.name.toLowerCase()) + "\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON object start
 
 					boolean has_field = false;
 
@@ -6498,11 +6546,10 @@ public class PgSchema {
 
 			table.fields.stream().filter(field -> field.simple_attr_cond).forEach(field -> {
 
-				try {
-					throw new PgSchemaException("Conditional attribute , " + table.name + "." + field.name + ", is not handled in relational-oriented JSON document.");
-				} catch (PgSchemaException e) {
-					e.printStackTrace();
-				}
+				String cont_name = table.name + "." + field.name;
+				String attr_name = getForeignTable(field).fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.foreign_table_xname;
+
+				System.err.println("Warning! Simple content \"" + (jsonb.case_sense ? cont_name : cont_name.toLowerCase()) + "\" may be confused with attribute \"" + (jsonb.case_sense ? attr_name : attr_name.toLowerCase()) + "\" in relational-oriented JSON format.");
 
 			});
 
@@ -7334,7 +7381,7 @@ public class PgSchema {
 
 			if (table.ps == null || table.ps.isClosed()) {
 
-				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(table.fields.parallelStream().filter(field -> field.primary_key).findFirst().get().pname) + " = ?";
+				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname) + " = ?";
 
 				table.ps = db_conn.prepareStatement(sql);
 

@@ -26,6 +26,9 @@ package net.sf.xsd2pgschema;
  */
 public class JsonBuilderOption {
 
+	/** The JSON type. */
+	public JsonType type = JsonType.defaultType();
+
 	/** Whether retain case sensitive name. */
 	protected boolean case_sense = true;
 

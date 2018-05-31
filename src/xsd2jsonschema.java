@@ -46,10 +46,9 @@ public class xsd2jsonschema {
 	 */
 	public static void main(String[] args) {
 
-		JsonType json_type = JsonType.defaultType();
-
-		PgSchemaOption option = new PgSchemaOption(json_type);
 		JsonBuilderOption jsonb_option = new JsonBuilderOption();
+
+		PgSchemaOption option = new PgSchemaOption(jsonb_option.type);
 
 		String json_file_name = "";
 
@@ -100,13 +99,13 @@ public class xsd2jsonschema {
 				option.cache_xsd = false;
 
 			else if (args[i].equals("--obj-json"))
-				option.setDefaultForJsonSchema(json_type = JsonType.object);
+				option.setDefaultForJsonSchema(jsonb_option.type = JsonType.object);
 
 			else if (args[i].equals("--col-json"))
-				option.setDefaultForJsonSchema(json_type = JsonType.column);
+				option.setDefaultForJsonSchema(jsonb_option.type = JsonType.column);
 
 			else if (args[i].equals("--rel-json"))
-				option.setDefaultForJsonSchema(json_type = JsonType.relational);
+				option.setDefaultForJsonSchema(jsonb_option.type = JsonType.relational);
 
 			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);
@@ -163,17 +162,7 @@ public class xsd2jsonschema {
 
 			schema.initJsonBuilder(jsonb_option);
 
-			switch (json_type) {
-			case column:
-				schema.realizeColJsonSchema();
-				break;
-			case object:
-				schema.realizeObjJsonSchema();
-				break;
-			case relational:
-				schema.realizeJsonSchema();
-				break;
-			}
+			schema.realizeJsonSchema();
 
 		} catch (ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 			e.printStackTrace();

@@ -7657,7 +7657,7 @@ public class XPathCompList {
 
 						// check foreign element
 
-						if (foreign_table.fields.parallelStream().anyMatch(field -> field.element && field.xname.equals(_field_xname))) {
+						if (foreign_table.fields.stream().anyMatch(field -> field.element && field.xname.equals(_field_xname))) {
 
 							try {
 								return new XPathSqlExpr(schema, path, foreign_table, _field_xname, null, null, terminus);
@@ -7707,7 +7707,7 @@ public class XPathCompList {
 
 						// check foreign simple_cont
 
-						if (foreign_table.fields.parallelStream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+						if (foreign_table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 							try {
 								return new XPathSqlExpr(schema, path, foreign_table, _field_xname, null, null, terminus);
@@ -7809,7 +7809,7 @@ public class XPathCompList {
 
 						// check foreign attribute
 
-						if (foreign_table.fields.parallelStream().anyMatch(field -> field.any)) {
+						if (foreign_table.fields.stream().anyMatch(field -> field.any)) {
 
 							pg_xpath_code = "xpath('/" + foreign_table.pname + "/" + _path[position].replace(" ", "/") + "', " + schema.getPgNameOf(foreign_table) + "." + PgSchemaUtil.avoidPgReservedWords(field_xname) + ")";
 
@@ -7861,7 +7861,7 @@ public class XPathCompList {
 
 						// check foreign attribute
 
-						if (foreign_table.fields.parallelStream().anyMatch(field -> field.any_attribute)) {
+						if (foreign_table.fields.stream().anyMatch(field -> field.any_attribute)) {
 
 							pg_xpath_code = "xpath('/" + foreign_table.pname + "/" + _path[position].replace(" ", "/") + "', " + schema.getPgNameOf(foreign_table) + "." + PgSchemaUtil.avoidPgReservedWords(_field_xname) + ")";
 

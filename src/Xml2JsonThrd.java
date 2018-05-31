@@ -153,17 +153,7 @@ public class Xml2JsonThrd implements Runnable {
 
 				File json_file = new File(json_dir, xml_parser.basename + ".json");
 
-				switch (xml2json.json_type) {
-				case column:
-					schema.xml2ColJson(xml_parser, json_file);
-					break;
-				case object:
-					schema.xml2ObjJson(xml_parser, json_file);
-					break;
-				case relational:
-					schema.xml2Json(xml_parser, json_file);
-					break;
-				}
+				schema.xml2Json(xml_parser, json_file);
 
 			} catch (Exception e) {
 				System.err.println("Exception occurred while processing XML document: " + xml_file.getAbsolutePath());

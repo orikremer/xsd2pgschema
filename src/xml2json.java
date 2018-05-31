@@ -41,9 +41,6 @@ public class xml2json {
 	/** The JSON directory name. */
 	private static String json_dir_name = "json_work";
 
-	/** The JSON type. */
-	protected static JsonType json_type = JsonType.defaultType();
-
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(false);
 
@@ -122,13 +119,13 @@ public class xml2json {
 				xml_file_filter.setUpperCaseDocKey();
 
 			else if (args[i].equals("--obj-json"))
-				json_type = JsonType.object;
+				jsonb_option.type = JsonType.object;
 
 			else if (args[i].equals("--col-json"))
-				json_type = JsonType.column;
+				jsonb_option.type = JsonType.column;
 
 			else if (args[i].equals("--rel-json"))
-				json_type = JsonType.relational;
+				jsonb_option.type = JsonType.relational;
 
 			else if (args[i].equals("--json-array-all"))
 				jsonb_option.array_all = true;
