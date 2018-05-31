@@ -1,6 +1,7 @@
+// Generated from xpath.g4 by ANTLR 4.7.1
+
 package com.github.antlr.grammars_v4.xpath;
 
-// Generated from xpath.g4 by ANTLR 4.7
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**

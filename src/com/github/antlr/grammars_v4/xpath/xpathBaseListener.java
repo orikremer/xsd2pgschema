@@ -1,6 +1,6 @@
-package com.github.antlr.grammars_v4.xpath;
+// Generated from xpath.g4 by ANTLR 4.7.1
 
-// Generated from xpath.g4 by ANTLR 4.7
+package com.github.antlr.grammars_v4.xpath;
 
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
@@ -12,7 +12,6 @@ import org.antlr.v4.runtime.tree.TerminalNode;
  * of the available methods.
  */
 public class xpathBaseListener implements xpathListener {
-
 	/**
 	 * {@inheritDoc}
 	 *
@@ -294,7 +293,7 @@ public class xpathBaseListener implements xpathListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFunctionName(xpathParser.FunctionNameContext ctx) { } 
+	@Override public void enterFunctionName(xpathParser.FunctionNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -337,6 +336,7 @@ public class xpathBaseListener implements xpathListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitNCName(xpathParser.NCNameContext ctx) { }
+
 	/**
 	 * {@inheritDoc}
 	 *

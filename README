@@ -7,6 +7,7 @@
   Added support for simple type attribute and conditional simple type attribute in XML->JSON conversion.
   Added support for simple type attribute and conditional simple type attribute in XPath->SQL query translation.
   Fixed issues while XML->JSON conversion (remove non-sense item definition in JSON Schema, case-insensitive, conditional attribute, string escape, avoid collapsing in object-oriented JSON format).
+  Updated https://github.com/antlr/grammars-v4 module to fix qName and functionName rules.
 
  Changes in xsd2pgschema 2.10.3 (release 2018-05-23)
 
