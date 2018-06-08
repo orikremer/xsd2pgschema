@@ -313,6 +313,8 @@ public class JsonBuilder {
 
 			writeSchemaFieldProperty(field, as_attr, true, indent_level);
 
+			trimComma();
+
 			builder.append(getIndentSpaces(--indent_level) + "}," + line_feed_code); // JSON items end
 
 		}
@@ -327,6 +329,8 @@ public class JsonBuilder {
 
 			writeSchemaFieldProperty(field, as_attr, true, indent_level);
 
+			trimComma();
+
 			builder.append(getIndentSpaces(--indent_level) + "}," + line_feed_code);
 
 			builder.append(getIndentSpaces(indent_level++) + "{" + line_feed_code);
@@ -336,6 +340,8 @@ public class JsonBuilder {
 			builder.append(getIndentSpaces(indent_level++) + "\"items\":" + key_value_space + "{" + line_feed_code); // JSON items start
 
 			writeSchemaFieldProperty(field, as_attr, false, indent_level);
+
+			trimComma();
 
 			builder.append(getIndentSpaces(--indent_level) + "}" + line_feed_code); // JSON items end
 
