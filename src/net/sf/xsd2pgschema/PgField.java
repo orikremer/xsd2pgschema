@@ -2931,7 +2931,7 @@ public class PgField {
 		case xs_ID:
 		case xs_IDREF:
 		case xs_ENTITY:
-			return "\"" + default_value + "\"";
+			return "\"" + StringEscapeUtils.escapeEcmaScript(default_value) + "\"";
 		default: // xs_any, xs_anyAttribute
 		}
 
@@ -3003,7 +3003,7 @@ public class PgField {
 			case xs_IDREF:
 			case xs_ENTITY:
 				for (String enumeration : xenumeration)
-					sb.append("\"" + enumeration + "\"," + json_key_value_space);
+					sb.append("\"" + StringEscapeUtils.escapeEcmaScript(enumeration) + "\"," + json_key_value_space);
 				break;
 			default: // xs_any, xs_anyAttribute
 			}
@@ -4356,7 +4356,7 @@ public class PgField {
 			jsonb.append(Integer.parseInt(value));
 			break;
 		default: // free text
-			value = StringEscapeUtils.escapeCsv(value);
+			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
 
 			if (value.startsWith("\""))
 				jsonb.append(value);
@@ -4368,6 +4368,77 @@ public class PgField {
 		jsonb.append("," + json_key_value_space);
 
 		return true;
+	}
+
+	/**
+	 * Normalize content as JSON value.
+	 *
+	 * @param value content
+	 * @return String normalized content
+	 */
+	public String normalizeAsJson(String value) {
+
+		if (value == null || value.isEmpty()) {
+
+			switch (xs_type) {
+			case xs_boolean:
+			case xs_bigserial:
+			case xs_serial:
+			case xs_float:
+			case xs_double:
+			case xs_decimal:
+			case xs_long:
+			case xs_bigint:
+			case xs_unsignedLong:
+			case xs_integer:
+			case xs_int:
+			case xs_nonPositiveInteger:
+			case xs_negativeInteger:
+			case xs_nonNegativeInteger:
+			case xs_positiveInteger:
+			case xs_unsignedInt:
+			case xs_short:
+			case xs_byte:
+			case xs_unsignedShort:
+			case xs_unsignedByte:
+				return "null";
+			default: // string
+				return "\"\"";
+			}
+
+		}
+
+		switch (xs_type) {
+		case xs_boolean:
+		case xs_bigserial:
+		case xs_serial:
+		case xs_float:
+		case xs_double:
+		case xs_decimal:
+		case xs_long:
+		case xs_bigint:
+		case xs_unsignedLong:
+		case xs_integer:
+		case xs_int:
+		case xs_nonPositiveInteger:
+		case xs_negativeInteger:
+		case xs_nonNegativeInteger:
+		case xs_positiveInteger:
+		case xs_unsignedInt:
+		case xs_short:
+		case xs_byte:
+		case xs_unsignedShort:
+		case xs_unsignedByte:
+			return value;
+		default: // free text
+			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
+
+			if (value.startsWith("\""))
+				return value;
+			else
+				return "\"" + value + "\"";
+		}
+
 	}
 
 	/**

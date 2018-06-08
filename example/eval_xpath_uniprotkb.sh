@@ -27,3 +27,6 @@ XSD_SCHEMA=uniprot.xsd
 java -classpath ../xsd2pgschema.jar xpath2xml --xsd $XSD_SCHEMA --out result.xml --db-name $DB_NAME --db-user $DB_USER \
 --xpath-query "/uniprot[entry/accession/text()='B2ZDY1']"
 
+java -classpath ../xsd2pgschema.jar xpath2json --xsd $XSD_SCHEMA --out result.json --db-name $DB_NAME --db-user $DB_USER \
+--xpath-query "/uniprot[entry/accession/text()='B2ZDY1']"
+

@@ -23,6 +23,9 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,7 +65,7 @@ public class xml2sphinxds {
 	private static IndexFilter index_filter = new IndexFilter();
 
 	/** The XML file queue. */
-	private static LinkedBlockingQueue<File> xml_file_queue = null;
+	private static LinkedBlockingQueue<Path> xml_file_queue = null;
 
 	/** The document id stored in data source (key=document id, value=shard id). */
 	protected static HashMap<String, Integer> doc_rows = null;
@@ -321,12 +324,14 @@ public class xml2sphinxds {
 
 		}
 
-		File ds_dir = new File(ds_dir_name);
+		Path ds_dir_path = Paths.get(ds_dir_name);
 
-		if (!ds_dir.isDirectory()) {
+		if (!Files.isDirectory(ds_dir_path)) {
 
-			if (!ds_dir.mkdir()) {
-				System.err.println("Couldn't create directory '" + ds_dir_name + "'.");
+			try {
+				Files.createDirectory(ds_dir_path);
+			} catch (IOException e) {
+				e.printStackTrace();
 				System.exit(1);
 			}
 
@@ -339,18 +344,20 @@ public class xml2sphinxds {
 				showUsage();
 			}
 
-			File check_sum_dir = new File(check_sum_dir_name);
+			Path check_sum_dir_path = Paths.get(check_sum_dir_name);
 
-			if (!check_sum_dir.isDirectory()) {
+			if (!Files.isDirectory(check_sum_dir_path)) {
 
-				if (!check_sum_dir.mkdir()) {
-					System.err.println("Couldn't create directory '" + check_sum_dir_name + "'.");
+				try {
+					Files.createDirectory(check_sum_dir_path);
+				} catch (IOException e) {
+					e.printStackTrace();
 					System.exit(1);
 				}
 
 			}
 
-			option.check_sum_dir = check_sum_dir;
+			option.check_sum_dir_path = check_sum_dir_path;
 
 			doc_rows = new HashMap<String, Integer>();
 

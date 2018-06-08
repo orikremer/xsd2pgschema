@@ -3778,11 +3778,6 @@ public class XPathCompList {
 		if (!table.virtual && !as_attr)
 			sb.append((sb.length() > 0 ? "/" : "") + table_xname);
 
-		PgTable parent_table = schema.getFKParentTable(table);
-
-		if (parent_table != null)
-			return getAbsoluteXPathOfTable(parent_table, ref_path, attr, false, sb);
-
 		Optional<PgTable> opt;
 
 		if (attr) {
@@ -4714,6 +4709,7 @@ public class XPathCompList {
 			case any_element:
 			case any_attribute:
 				XPathSqlExpr sql_expr = getXPathSqlExprOfPath(path, terminus);
+
 				try {
 					src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, path, sql_expr.table, sql_expr.xname, sql_expr.pg_xpath_code, null, terminus, parent, tree));
 				} catch (PgSchemaException e) {
@@ -6950,11 +6946,6 @@ public class XPathCompList {
 		if (!table.has_simple_attribute && !has_nested_key_as_attr)
 			return;
 
-		PgTable parent_table = schema.getFKParentTable(table);
-
-		if (parent_table != null)
-			testJoinClauseForSimpleTypeAttr(parent_table, ref_path, linking_tables, linking_order);
-
 		Optional<PgTable> opt;
 
 		opt = tables.parallelStream().filter(foreign_table -> foreign_table.nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key_as_attr && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && (field.parent_node == null || (ref_path.contains(field.parent_node)))) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
@@ -6971,7 +6962,7 @@ public class XPathCompList {
 
 	/**
 	 * Test SQL JOIN clause.
-	 * 
+	 *
 	 * @param target_tables target SQL tables
 	 * @param joined_tables joined SQL tables
 	 * @param linking_tables additional linking SQL tables
@@ -7578,6 +7569,7 @@ public class XPathCompList {
 		PgTable table = null;
 
 		String table_xname = null;
+		String _table_xname;
 		String field_xname;
 		String pg_xpath_code = null;
 
@@ -7602,24 +7594,30 @@ public class XPathCompList {
 			if (position - 1 < 0)
 				return null;
 			table_xname = _path[position - 1];
-			table = getTable(new XPathExpr(path.substring(0, path.lastIndexOf(table_xname)) + table_xname, XPathCompType.table));
+			_table_xname = "/" + table_xname;
+			table = getTable(new XPathExpr(path.substring(0, path.lastIndexOf(_table_xname)) + _table_xname, XPathCompType.table));
 			field_xname = PgSchemaUtil.any_name;
-			pg_xpath_code = "xpath('/" + table_xname + "/" + _path[position].replace(" ", "/") + "', " + schema.getPgNameOf(table) + "." + PgSchemaUtil.avoidPgReservedWords(field_xname) + ")";
+			pg_xpath_code = "xpath('" + _table_xname + "/" + _path[position].replace(" ", "/") + "', " + schema.getPgNameOf(table) + "." + PgSchemaUtil.avoidPgReservedWords(field_xname) + ")";
 			break;
 		case any_attribute:
 			if (position - 1 < 0)
 				return null;
 			table_xname = _path[position - 1];
-			table = getTable(new XPathExpr(path.substring(0, path.lastIndexOf(table_xname)) + table_xname, XPathCompType.table));
+			_table_xname = "/" + table_xname;
+			table = getTable(new XPathExpr(path.substring(0, path.lastIndexOf(_table_xname)) + _table_xname, XPathCompType.table));
 			field_xname = PgSchemaUtil.any_attribute_name;
-			pg_xpath_code = "xpath('/" + table_xname + "/" + _path[position].replace(" ", "/") + "', " + schema.getPgNameOf(table) + "." + PgSchemaUtil.avoidPgReservedWords(field_xname) + ")";
+			pg_xpath_code = "xpath('" + _table_xname + "/" + _path[position].replace(" ", "/") + "', " + schema.getPgNameOf(table) + "." + PgSchemaUtil.avoidPgReservedWords(field_xname) + ")";
 			break;
 		default:
 			return null;
 		}
 
-		if (table == null)
-			table = getTable(new XPathExpr(path.substring(0, path.lastIndexOf(table_xname)) + table_xname, XPathCompType.table));
+		if (table == null) {
+
+			_table_xname = "/" + table_xname;
+			table = getTable(new XPathExpr(path.substring(0, path.lastIndexOf(_table_xname)) + _table_xname, XPathCompType.table));
+
+		}
 
 		if (table == null)
 			return null;

@@ -20,7 +20,6 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Optional;
@@ -129,11 +128,11 @@ public class PgTable {
 	/** Whether table is subset of database (internal use only). */
 	protected boolean filt_out = false;
 
+	/** Whether table could have writer. */
+	protected boolean writable = false;
+
 	/** The visited key (internal use only). */
 	protected String visited_key = "";
-
-	/** The current file writer (internal use only). */
-	protected FileWriter filew = null;
 
 	/** The current buffered writer (internal use only). */
 	protected BufferedWriter buffw = null;

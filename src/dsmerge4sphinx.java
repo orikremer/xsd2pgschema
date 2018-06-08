@@ -21,11 +21,11 @@ import net.sf.xsd2pgschema.*;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -99,41 +99,40 @@ public class dsmerge4sphinx {
 
 		for (String src_ds_dir_name : src_ds_dir_list) {
 
-			File src_ds_dir = new File(src_ds_dir_name);
+			Path src_ds_dir_path = Paths.get(src_ds_dir_name);
 
-			if (!src_ds_dir.isDirectory()) {
+			if (!Files.isDirectory(src_ds_dir_path)) {
 				System.err.println("Not a directory '" + src_ds_dir_name + "'.");
 				System.exit(1);
 			}
 
-			File src_sphinx_schema = new File(src_ds_dir, PgSchemaUtil.sph_schema_name);
+			Path src_sphinx_schema_path = Paths.get(src_ds_dir_name, PgSchemaUtil.sph_schema_name);
 
-			if (!src_sphinx_schema.exists()) {
+			if (!Files.isRegularFile(src_sphinx_schema_path)) {
 				System.err.println("Not found '" + PgSchemaUtil.sph_schema_name + "' in '" + src_ds_dir_name + "' directory.");
 				System.exit(1);
 			}
 
-			File src_sphinx_data_source = new File(src_ds_dir, PgSchemaUtil.sph_data_source_name);
+			Path src_sphinx_data_source_path = Paths.get(src_ds_dir_name, PgSchemaUtil.sph_data_source_name);
 
-			if (!src_sphinx_data_source.exists()) {
+			if (!Files.isRegularFile(src_sphinx_data_source_path)) {
 				System.err.println("Not found '" + PgSchemaUtil.sph_data_source_name + "' in '" + src_ds_dir_name + "' directory.");
 				System.exit(1);
 			}
 
 			if (ds_name.isEmpty()) {
 
-				File src_sphinx_conf = new File(src_ds_dir, PgSchemaUtil.sph_conf_name);
+				Path src_sphinx_conf_path = Paths.get(src_ds_dir_name, PgSchemaUtil.sph_conf_name);
 
-				if (src_sphinx_conf.exists()) {
+				if (Files.isRegularFile(src_sphinx_conf_path)) {
 
 					try {
 
-						FileReader filer = new FileReader(src_sphinx_conf);
-						BufferedReader bufferr = new BufferedReader(filer);
+						BufferedReader buffr = Files.newBufferedReader(src_sphinx_conf_path);
 
 						String line = null;
 
-						while ((line = bufferr.readLine()) != null) {
+						while ((line = buffr.readLine()) != null) {
 
 							if (line.startsWith("source ")) {
 
@@ -150,8 +149,7 @@ public class dsmerge4sphinx {
 
 						}
 
-						bufferr.close();
-						filer.close();
+						buffr.close();
 
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -174,18 +172,12 @@ public class dsmerge4sphinx {
 
 		}
 
-		File dst_ds_dir = new File(dst_ds_dir_name);
-
-		if (!dst_ds_dir.isDirectory()) {
-
-			if (!dst_ds_dir.mkdir()) {
-				System.err.println("Couldn't create directory '" + dst_ds_dir_name + "'.");
-				System.exit(1);
-			}
-
-		}
+		Path dst_ds_dir_path = Paths.get(dst_ds_dir_name);
 
 		try {
+
+			if (!Files.isDirectory(dst_ds_dir_path))
+				Files.createDirectory(dst_ds_dir_path);
 
 			// parse XSD document
 
@@ -208,12 +200,12 @@ public class dsmerge4sphinx {
 
 			for (String src_ds_dir_name : src_ds_dir_list) {
 
-				File src_sphinx_schema = new File(src_ds_dir_name, PgSchemaUtil.sph_schema_name);
+				Path src_sphinx_schema_path = Paths.get(src_ds_dir_name, PgSchemaUtil.sph_schema_name);
 
 				doc_builder_fac.setNamespaceAware(false);
 				doc_builder = doc_builder_fac.newDocumentBuilder();
 
-				Document src_sphinx_doc = doc_builder.parse(src_sphinx_schema);
+				Document src_sphinx_doc = doc_builder.parse(Files.newInputStream(src_sphinx_schema_path));
 
 				doc_builder.reset();
 
@@ -225,35 +217,35 @@ public class dsmerge4sphinx {
 
 			// Sphinx xmlpipe2 writer
 
-			File dst_sphinx_data_source = new File(dst_ds_dir, PgSchemaUtil.sph_data_source_name);
-			schema.writeSphSchema(dst_sphinx_data_source, true);
+			Path dst_sphinx_data_source_path = Paths.get(dst_ds_dir_name, PgSchemaUtil.sph_data_source_name);
 
-			FileWriter filew = new FileWriter(dst_sphinx_data_source, true);
-			BufferedWriter buffw = new BufferedWriter(filew);
+			schema.writeSphSchema(dst_sphinx_data_source_path, true);
+
+			BufferedWriter buffw = Files.newBufferedWriter(dst_sphinx_data_source_path);
 
 			for (String src_ds_dir_name : src_ds_dir_list) {
 
-				File src_sphinx_data_source = new File(src_ds_dir_name, PgSchemaUtil.sph_data_source_name);
+				Path src_sphinx_data_source_path = Paths.get(src_ds_dir_name, PgSchemaUtil.sph_data_source_name);
 
-				mergeDataSource(schema, buffw, src_sphinx_data_source);
+				mergeDataSource(schema, buffw, src_sphinx_data_source_path);
 
 			}
 
 			buffw.write("</sphinx:docset>\n");
 
 			buffw.close();
-			filew.close();
 
 			// Sphinx schema writer for next update or merge
 
-			File dst_sphinx_schema = new File(dst_ds_dir, PgSchemaUtil.sph_schema_name);
+			Path dst_sphinx_schema_path = Paths.get(dst_ds_dir_name, PgSchemaUtil.sph_schema_name);
 
-			schema.writeSphSchema(dst_sphinx_schema, false);
+			schema.writeSphSchema(dst_sphinx_schema_path, false);
 
 			// Sphinx configuration writer
 
-			File sphinx_conf = new File(dst_ds_dir, PgSchemaUtil.sph_conf_name);
-			schema.writeSphConf(sphinx_conf, ds_name, dst_sphinx_data_source);
+			Path sphinx_conf_path = Paths.get(dst_ds_dir_name, PgSchemaUtil.sph_conf_name);
+
+			schema.writeSphConf(sphinx_conf_path, ds_name, dst_sphinx_data_source_path);
 
 		} catch (ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 			e.printStackTrace();
@@ -267,20 +259,19 @@ public class dsmerge4sphinx {
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param buffw buffered writer for Sphinx data source
-	 * @param sph_doc Sphinx data source file
+	 * @param sph_doc_path Sphinx data source file path
 	 */
-	private static void mergeDataSource(PgSchema schema, BufferedWriter buffw, File sph_doc) {
+	private static void mergeDataSource(PgSchema schema, BufferedWriter buffw, Path sph_doc_path) {
 
 		try {
 
-			FileReader filer = new FileReader(sph_doc);
-			BufferedReader bufferr = new BufferedReader(filer);
+			BufferedReader buffr = Files.newBufferedReader(sph_doc_path);
 
 			boolean doc_start = false;
 
 			String line = null;
 
-			while ((line = bufferr.readLine()) != null) {
+			while ((line = buffr.readLine()) != null) {
 
 				if (line.contains("</sphinx:schema>"))
 					doc_start = true;
@@ -296,8 +287,7 @@ public class dsmerge4sphinx {
 
 			}
 
-			bufferr.close();
-			filer.close();
+			buffr.close();
 
 		} catch (IOException e) {
 			e.printStackTrace();

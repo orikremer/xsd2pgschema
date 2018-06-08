@@ -19,13 +19,14 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
@@ -313,7 +314,7 @@ public class PgSchema {
 
 					// copy XML Schema if not exists
 
-					PgSchemaUtil.getSchemaFile(schema_location, def_schema_parent, option.cache_xsd);
+					PgSchemaUtil.getSchemaFilePath(schema_location, def_schema_parent, option.cache_xsd);
 
 					// local XML Schema file
 
@@ -505,9 +506,13 @@ public class PgSchema {
 
 		if (option.pg_named_schema) {
 
+			// decide whether writable table
+
+			tables.parallelStream().filter(table -> table.required && (option.rel_model_ext || !table.relational)).forEach(table -> table.writable = true);
+
 			pg_named_schemata = new HashSet<String>();
 
-			tables.stream().filter(table -> table.required && (option.rel_model_ext || !table.relational)).filter(table -> !table.pg_schema_name.equals(PgSchemaUtil.pg_public_schema_name)).forEach(table -> pg_named_schemata.add(table.pg_schema_name));
+			tables.stream().filter(table -> table.writable).filter(table -> !table.pg_schema_name.equals(PgSchemaUtil.pg_public_schema_name)).forEach(table -> pg_named_schemata.add(table.pg_schema_name));
 
 		}
 
@@ -535,7 +540,6 @@ public class PgSchema {
 
 				} catch (PgSchemaException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			});
@@ -568,7 +572,6 @@ public class PgSchema {
 
 				} catch (PgSchemaException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			});
@@ -938,21 +941,25 @@ public class PgSchema {
 
 		});
 
+		// decide whether writable table
+
+		tables.parallelStream().filter(table -> table.required && (option.rel_model_ext || !table.relational)).forEach(table -> table.writable = true);
+
 		// add serial key on demand in case that parent table is list holder
 
 		if (option.serial_key)
-			tables.parallelStream().filter(table -> table.required && !table.relational && table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> getForeignTable(field).addSerialKey(option)));
+			tables.parallelStream().filter(table -> table.writable && table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> getForeignTable(field).addSerialKey(option)));
 
 		// add XPath key on demand
 
 		if (option.xpath_key)
-			tables.parallelStream().filter(table -> table.required && !table.relational).forEach(table -> table.addXPathKey(option));
+			tables.parallelStream().filter(table -> table.writable).forEach(table -> table.addXPathKey(option));
 
 		// remove nested key if relational model extension is disabled
 
 		if (!option.rel_model_ext) {
 
-			tables.parallelStream().filter(table -> table.required && !table.relational && table.nested_fields > 0).forEach(table -> {
+			tables.parallelStream().filter(table -> table.writable && table.nested_fields > 0).forEach(table -> {
 
 				table.fields.removeIf(field -> field.nested_key);
 				table.countNestedFields();
@@ -965,7 +972,7 @@ public class PgSchema {
 
 		if (!option.document_key && option.inplace_document_key && option.document_key_if_no_in_place) {
 
-			tables.parallelStream().filter(table -> table.required && !table.relational && !table.fields.stream().anyMatch(field -> field.name.equals(option.document_key_name)) && !table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))).forEach(table -> {
+			tables.parallelStream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> field.name.equals(option.document_key_name)) && !table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))).forEach(table -> {
 
 				PgField field = new PgField();
 
@@ -982,7 +989,7 @@ public class PgSchema {
 
 		// update system key, user key, omissible and jsonable flags
 
-		tables.parallelStream().forEach(table -> table.fields.forEach(field -> { // touch all tables for JSON Schema conversion
+		tables.parallelStream().forEach(table -> table.fields.forEach(field -> {
 
 			field.setSystemKey();
 			field.setUserKey();
@@ -994,16 +1001,19 @@ public class PgSchema {
 
 		// decide prefix of target namespace
 
-		tables.parallelStream().filter(table -> table.required && !table.relational).forEach(table -> {
+		tables.parallelStream().forEach(table -> {
 
 			if (table.target_namespace != null)
 				table.prefix = getPrefixOf(table.target_namespace.split(" ")[0], "");
 
 			table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
 
-				field.prefix = getPrefixOf(field.target_namespace.split(" ")[0], "");
-				field.is_xs_namespace = field.target_namespace.equals(PgSchemaUtil.xs_namespace_uri);
+				if (field.target_namespace != null) {
 
+					field.prefix = getPrefixOf(field.target_namespace.split(" ")[0], "");
+					field.is_xs_namespace = field.target_namespace.equals(PgSchemaUtil.xs_namespace_uri);
+
+				}
 
 			});
 
@@ -1047,32 +1057,32 @@ public class PgSchema {
 		sb.setLength(0);
 
 		root_schema.def_stat_msg.append("--   Table types:\n");
-		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root) && (option.rel_model_ext || !table.relational)).count() + " root, ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) && (option.rel_model_ext || !table.relational)).count() + " root children, ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root) && (option.rel_model_ext || !table.relational)).count() + " admin roots, ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_child) && (option.rel_model_ext || !table.relational)).count() + " admin children\n");
+		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root) && table.writable).count() + " root, ");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) && table.writable).count() + " root children, ");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root) && table.writable).count() + " admin roots, ");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_child) && table.writable).count() + " admin children\n");
 		root_schema.def_stat_msg.append("--   System keys:\n");
-		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.primary_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " primary keys ("
+		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.primary_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " primary keys ("
 				+ tables.parallelStream().map(table -> table.fields.stream().filter(field -> field.unique_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " unique constraints), ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys ("
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys ("
 				+ countForeignKeyReferences() + " key references), ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.nested_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " nested keys ("
-				+ tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.nested_key_as_attr).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute)\n");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.nested_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " nested keys ("
+				+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.nested_key_as_attr).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute)\n");
 		root_schema.def_stat_msg.append("--   User keys:\n");
-		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.document_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " document keys, ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
+		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.document_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " document keys, ");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
 		root_schema.def_stat_msg.append("--   Contents:\n");
-		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes ("
-				+ (option.document_key || !option.inplace_document_key ? 0 : tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements ("
-				+ (option.document_key || !option.inplace_document_key ? 0 : tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.simple_content).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents ("
-				+ tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.simple_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute, "
-				+ tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.simple_attr_cond).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as conditional attribute)\n");
+		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes ("
+				+ (option.document_key || !option.inplace_document_key ? 0 : tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements ("
+				+ (option.document_key || !option.inplace_document_key ? 0 : tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_content).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents ("
+				+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute, "
+				+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_attr_cond).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as conditional attribute)\n");
 		root_schema.def_stat_msg.append("--   Wild cards:\n");
-		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
+		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
+		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
 
 		// update schema locations to unique ones
 
@@ -1088,17 +1098,25 @@ public class PgSchema {
 
 		hasRootTable();
 
+		// reset whether writable table in case of relational data extension
+
+		if (!option.rel_data_ext)
+			tables.parallelStream().filter(table -> table.writable && !(table.required && (option.rel_data_ext || !table.relational))).forEach(table -> table.writable = false);
+
+		// decide primary table for questing document id
+
+		setDocIdTable();
+
 		// check in-place document keys
 
 		if (!option.document_key && option.inplace_document_key) {
 
-			tables.parallelStream().filter(table -> table.required && !table.relational).forEach(table -> {
+			tables.parallelStream().filter(table -> table.writable).forEach(table -> {
 
 				try {
 					getDocKeyName(table);
 				} catch (PgSchemaException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			});
@@ -2353,7 +2371,6 @@ public class PgSchema {
 			known_table = tables.equals(this.tables) ? getPgTable(table.pg_schema_name, table.pname) : tables.equals(root_schema.attr_groups) ? getAttributeGroup(table.xname, false) : tables.equals(root_schema.model_groups) ? getModelGroup(table.xname, false) : null;
 		} catch (PgSchemaException e) {
 			e.printStackTrace();
-			System.exit(1);
 		}
 
 		if (known_table == null)
@@ -2369,7 +2386,6 @@ public class PgSchema {
 				known_table = tables.equals(this.tables) ? getCanTable(table.pg_schema_name, table.xname) : tables.equals(root_schema.attr_groups) ? getAttributeGroup(table.xname, false) : tables.equals(root_schema.model_groups) ? getModelGroup(table.xname, false) : null;
 			} catch (PgSchemaException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 			if (known_table == null)
@@ -2799,19 +2815,6 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return parent table of child table from foreign keys.
-	 *
-	 * @param child_table child table
-	 * @return PgTable parent table
-	 */
-	protected PgTable getFKParentTable(PgTable child_table) {
-
-		Optional<PgForeignKey> opt = foreign_keys.parallelStream().filter(foreign_key -> foreign_key.pg_schema_name.equals(child_table.pg_schema_name) && foreign_key.child_table_xname.equals(child_table.xname)).findFirst();
-
-		return opt.isPresent() ? getParentTable(opt.get()) : null;	
-	}
-
-	/**
 	 * Return foreign table of either nested key or foreign key.
 	 *
 	 * @param field field of either nested key of foreign key
@@ -2904,8 +2907,6 @@ public class PgSchema {
 
 		});
 
-		setDocIdTable();
-
 		name_collision = tables.parallelStream().anyMatch(table -> table.name_collision);
 
 		if (!option.ddl_output)
@@ -2942,11 +2943,11 @@ public class PgSchema {
 
 			if (!pg_named_schemata.isEmpty()) {
 
-				pg_named_schemata.stream().forEach(named_schema -> System.out.println("DROP SCHEMA IF EXISTS " + PgSchemaUtil.avoidPgReservedWords(named_schema) + " CASCADE;"));
+				// short of memory in case of huge database
+				// pg_named_schemata.stream().forEach(named_schema -> System.out.println("DROP SCHEMA IF EXISTS " + PgSchemaUtil.avoidPgReservedWords(named_schema) + " CASCADE;"));
+				// System.out.println("");
 
-				System.out.println("");
-
-				pg_named_schemata.stream().forEach(named_schema -> System.out.println("CREATE SCHEMA " + PgSchemaUtil.avoidPgReservedWords(named_schema) + ";"));
+				pg_named_schemata.stream().forEach(named_schema -> System.out.println("CREATE SCHEMA IF NOT EXISTS " + PgSchemaUtil.avoidPgReservedWords(named_schema) + ";"));
 
 				System.out.print("\nSET search_path TO ");
 
@@ -2966,7 +2967,7 @@ public class PgSchema {
 
 		}
 
-		tables.stream().filter(table -> table.required && (option.rel_model_ext || !table.relational)).sorted(Comparator.comparingInt(table -> -table.order)).forEach(table -> {
+		tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> -table.order)).forEach(table -> {
 
 			System.out.println("DROP TABLE IF EXISTS " + getPgNameOf(table) + " CASCADE;");
 
@@ -3600,7 +3601,7 @@ public class PgSchema {
 			table.filt_out = !table.filt_out;
 
 			if (table.filt_out)
-				table.required = false;
+				table.required = table.writable = false;
 
 		});
 
@@ -4083,7 +4084,7 @@ public class PgSchema {
 		tables.parallelStream().forEach(_table -> {
 
 			if (!_table.fields.stream().anyMatch(_field -> !_field.system_key && !_field.user_key && (_field.attr_sel || _field.field_sel)))
-				_table.required = false;
+				_table.required = _table.writable = false;
 
 		});
 
@@ -4277,6 +4278,28 @@ public class PgSchema {
 
 	}
 
+	/**
+	 * Close prepared statement.
+	 */
+	private void closePreparedStatement() {
+
+		tables.parallelStream().filter(table -> table.ps != null).forEach(table -> {
+
+			try {
+
+				if (!table.ps.isClosed())
+					table.ps.close();
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			table.ps = null;
+
+		});
+
+	}
+
 	// Data (CSV/TSV) conversion
 
 	/**
@@ -4286,7 +4309,7 @@ public class PgSchema {
 	 * @param work_dir working directory contains data (CSV/TSV) files
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2PgCsv(XmlParser xml_parser, File work_dir) throws PgSchemaException {
+	public void xml2PgCsv(XmlParser xml_parser, Path work_dir) throws PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -4294,32 +4317,26 @@ public class PgSchema {
 
 		tables.parallelStream().forEach(table -> {
 
-			if (table.required && (option.rel_data_ext || !table.relational)) {
+			if (table.writable) {
 
 				if (table.buffw == null) {
 
-					File data_file = new File(work_dir, getDataFileNameOf(table));
+					Path data_path = Paths.get(work_dir.toString(), getDataFileNameOf(table));
 
 					try {
 
-						table.filew = new FileWriter(data_file);
-						table.buffw = new BufferedWriter(table.filew);
+						table.buffw = Files.newBufferedWriter(data_path);
 
 					} catch (IOException e) {
 						e.printStackTrace();
-						System.exit(1);
 					}
 
 				}
 
 			}
 
-			else {
-
+			else 
 				table.buffw = null;
-				table.filew = null;
-
-			}
 
 		});
 
@@ -4339,8 +4356,6 @@ public class PgSchema {
 			throw new PgSchemaException(e);
 		}
 
-		xml_parser.clear();
-
 	}
 
 	/**
@@ -4350,21 +4365,17 @@ public class PgSchema {
 
 		closeTableLock();
 
-		tables.parallelStream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).forEach(table -> {
+		tables.parallelStream().forEach(table -> {
 
 			if (table.buffw != null ) {
 
 				try {
 
 					table.buffw.close();
-					table.filew.close();
-
 					table.buffw = null;
-					table.filew = null;
 
 				} catch (IOException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			}
@@ -4448,6 +4459,8 @@ public class PgSchema {
 
 		Node node = getRootNode(xml_parser);
 
+		initTableLock(false);
+
 		// parse root node and send to PostgreSQL
 
 		try {
@@ -4477,7 +4490,15 @@ public class PgSchema {
 			throw new PgSchemaException(e);
 		}
 
-		xml_parser.clear();
+	}
+
+	/**
+	 * Close xml2PgSql.
+	 */
+	public void closeXml2PgSql() {
+
+		closeTableLock();
+		closePreparedStatement();
 
 	}
 
@@ -4492,6 +4513,8 @@ public class PgSchema {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	protected void parseChildNode2PgSql(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key, final boolean update, final Connection db_conn) throws PgSchemaException {
+
+		int table_id = nested_key.table_id;
 
 		PgTable table = nested_key.table;
 
@@ -4514,7 +4537,9 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				node2pgsql.parseChildNode(node_test);
+				synchronized (table_lock[table_id]) {
+					node2pgsql.parseChildNode(node_test);
+				}
 
 				node2pgsql.invokeChildNestedNode(node_test);
 
@@ -4523,22 +4548,25 @@ public class PgSchema {
 
 			}
 
-			try {
+			if (node2pgsql.visited)
+				return;
 
-				if (node2pgsql.visited)
-					return;
-
+			synchronized (table_lock[table_id]) {
 				node2pgsql.parseChildNode(parent_node, nested_key);
-
-				node2pgsql.invokeChildNestedNode();
-
-			} finally {
-				node2pgsql.executeBatch();
 			}
+
+			node2pgsql.invokeChildNestedNode();
 
 		} catch (SQLException | ParserConfigurationException | IOException | TransformerException e) {
 			throw new PgSchemaException(e);
 		} finally {
+
+			try {
+				node2pgsql.executeBatch();
+			} catch (SQLException e) {
+				throw new PgSchemaException(e);
+			}
+
 			node2pgsql.clear();
 		}
 
@@ -4581,7 +4609,7 @@ public class PgSchema {
 		doc_id_table = root_table;
 
 		if (!option.rel_data_ext)
-			doc_id_table = tables.parallelStream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).min(Comparator.comparingInt(table -> table.order)).get();
+			doc_id_table = tables.parallelStream().filter(table -> table.writable).min(Comparator.comparingInt(table -> table.order)).get();
 
 	}
 
@@ -4651,7 +4679,7 @@ public class PgSchema {
 
 				boolean has_doc_id = has_db_rows.get(doc_id_table_name);
 
-				tables.stream().filter(table -> table.required && !table.relational && !table.equals(doc_id_table)).forEach(table -> {
+				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table)).forEach(table -> {
 
 					String table_name = table.pname;
 
@@ -4670,7 +4698,6 @@ public class PgSchema {
 
 						} catch (SQLException | PgSchemaException e) {
 							e.printStackTrace();
-							System.exit(1);
 						}
 
 					}
@@ -4698,7 +4725,6 @@ public class PgSchema {
 
 			} catch (PgSchemaException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 		});
@@ -4772,7 +4798,7 @@ public class PgSchema {
 
 			if (has_doc_id) {
 
-				tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational) && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 					if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(table.pname))) {
 
@@ -4784,7 +4810,6 @@ public class PgSchema {
 
 						} catch (PgSchemaException | SQLException e) {
 							e.printStackTrace();
-							System.exit(1);
 						}
 
 					}
@@ -4811,30 +4836,29 @@ public class PgSchema {
 	 * @param work_dir working directory contains data (CSV/TSV) files
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void pgCsv2PgSql(Connection db_conn, File work_dir) throws PgSchemaException {
+	public void pgCsv2PgSql(Connection db_conn, Path work_dir) throws PgSchemaException {
 
 		try {
 
 			CopyManager copy_man = new CopyManager((BaseConnection) db_conn);
 
-			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+			tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
-				File data_file = new File(work_dir, getDataFileNameOf(table));
+				Path data_path = Paths.get(work_dir.toString(), getDataFileNameOf(table));
 
-				if (data_file.length() > 0) {
+				try {
 
-					try {
+					if (Files.size(data_path) > 0) {
 
 						String sql = "COPY " + getPgNameOf(db_conn, table) + " FROM STDIN" + (option.pg_tab_delimiter ? "" : " CSV");
 
-						copy_man.copyIn(sql, new FileInputStream(data_file));
+						copy_man.copyIn(sql, Files.newInputStream(data_path));
 
-					} catch (SQLException | IOException | PgSchemaException e) {
-						System.err.println("Exception occurred while processing " + (option.pg_tab_delimiter ? "TSV" : "CSV") + " document: " + data_file.getAbsolutePath());
-						e.printStackTrace();
-						System.exit(1);
 					}
 
+				} catch (SQLException | IOException | PgSchemaException e) {
+					System.err.println("Exception occurred while processing " + (option.pg_tab_delimiter ? "TSV" : "CSV") + " document: " + data_path.toAbsolutePath().toString());
+					e.printStackTrace();
 				}
 
 			});
@@ -4860,7 +4884,7 @@ public class PgSchema {
 
 			Statement stat = db_conn.createStatement();
 
-			tables.stream().filter(table -> table.required && (option.rel_data_ext || !table.relational)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+			tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 				try {
 
@@ -4929,7 +4953,6 @@ public class PgSchema {
 
 				} catch (SQLException | PgSchemaException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			});
@@ -4985,8 +5008,6 @@ public class PgSchema {
 		} catch (ParserConfigurationException | TransformerException | IOException e) {
 			throw new PgSchemaException(e);
 		}
-
-		xml_parser.clear();
 
 	}
 
@@ -5128,16 +5149,15 @@ public class PgSchema {
 	/**
 	 * Write Sphinx schema part.
 	 *
-	 * @param sphinx_schema Sphinx xmlpipe2 file
+	 * @param sphinx_schema_path Sphinx xmlpipe2 file
 	 * @param data_source whether it is data source or schema
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void writeSphSchema(File sphinx_schema, boolean data_source) throws PgSchemaException {
+	public void writeSphSchema(Path sphinx_schema_path, boolean data_source) throws PgSchemaException {
 
 		try {
 
-			FileWriter filew = new FileWriter(sphinx_schema);
-			BufferedWriter buffw = new BufferedWriter(filew);
+			BufferedWriter buffw = Files.newBufferedWriter(sphinx_schema_path);
 
 			buffw.write("<?xml version=\"" + PgSchemaUtil.def_xml_version + "\" encoding=\"" + PgSchemaUtil.def_encoding + "\"?>\n");
 
@@ -5229,7 +5249,6 @@ public class PgSchema {
 
 				} catch (IOException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			}));
@@ -5237,7 +5256,6 @@ public class PgSchema {
 			buffw.write("</sphinx:schema>\n");
 
 			buffw.close();
-			filew.close();
 
 		} catch (IOException e) {
 			throw new PgSchemaException(e);
@@ -5248,23 +5266,22 @@ public class PgSchema {
 	/**
 	 * Write Sphinx configuration file.
 	 *
-	 * @param sphinx_conf Sphinx configuration file
+	 * @param sphinx_conf_path Sphinx configuration file path
 	 * @param idx_name name of Sphinx index
-	 * @param data_source Sphinx xmlpipe2 file
+	 * @param data_source_path Sphinx xmlpipe2 file path
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void writeSphConf(File sphinx_conf, String idx_name, File data_source) throws PgSchemaException {
+	public void writeSphConf(Path sphinx_conf_path, String idx_name, Path data_source_path) throws PgSchemaException {
 
 		try {
 
-			FileWriter filew = new FileWriter(sphinx_conf);
-			BufferedWriter buffw = new BufferedWriter(filew);
+			BufferedWriter buffw = Files.newBufferedWriter(sphinx_conf_path);
 
 			buffw.write("#\n# Sphinx configuration file sample\n#\n# WARNING! While this sample file mentions all available options,\n#\n# it contains (very) short helper descriptions only. Please refer to\n# doc/sphinx.html for details.\n#\n\n#############################################################################\n## data source definition\n#############################################################################\n\n");
 
 			buffw.write("source " + idx_name + "\n{\n");
 			buffw.write("\ttype                    = xmlpipe2\n");
-			buffw.write("\txmlpipe_command         = cat " + data_source.getAbsolutePath() + "\n");
+			buffw.write("\txmlpipe_command         = cat " + data_source_path.toAbsolutePath().toString() + "\n");
 			buffw.write("\txmlpipe_attr_string     = " + option.document_key_name + "\n");
 			buffw.write("\txmlpipe_field           = " + PgSchemaUtil.simple_content_name + "\n");
 
@@ -5323,7 +5340,6 @@ public class PgSchema {
 
 				} catch (IOException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			}));
@@ -5331,7 +5347,6 @@ public class PgSchema {
 			buffw.write("}\n\n");
 
 			buffw.close();
-			filew.close();
 
 		} catch (IOException e) {
 			throw new PgSchemaException(e);
@@ -5361,7 +5376,7 @@ public class PgSchema {
 		try {
 
 			buffw.write("<?xml version=\"" + PgSchemaUtil.def_xml_version + "\" encoding=\"" + PgSchemaUtil.def_encoding + "\"?>\n");
-			buffw.write("<sphinx:document id=\"" + getHashKeyString(document_id) + "\">\n");
+			buffw.write("<sphinx:document id=\"" + getHashKeyString(document_id) + "\" xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
 			buffw.write("<" + option.document_key_name + ">" + StringEscapeUtils.escapeXml10(document_id) + "</" + option.document_key_name + ">\n");
 
 			PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(this, null, root_table);
@@ -5377,8 +5392,6 @@ public class PgSchema {
 		} catch (ParserConfigurationException | TransformerException | IOException e) {
 			throw new PgSchemaException(e);
 		}
-
-		xml_parser.clear();
 
 	}
 
@@ -5492,19 +5505,10 @@ public class PgSchema {
 	 */
 	public void initJsonBuilder(JsonBuilderOption option) {
 
-		if (option.type.equals(JsonType.object) && tables.parallelStream().anyMatch(table -> table.list_holder && !table.virtual)) {
+		if (option.type.equals(JsonType.object) && tables.parallelStream().anyMatch(table -> !table.virtual && table.list_holder)) {
 
 			option.type = JsonType.column;
-
-			StringBuilder sb = new StringBuilder();
-
-			tables.stream().filter(table -> table.list_holder && !table.virtual).forEach(table -> sb.append(table.name + ", "));
-
-			sb.setLength(sb.length() - 2);
-
-			System.err.println("Warning! Changed JSON format from object- to column-oriented because explicit element (e.g. " + (option.case_sense ? sb.toString() : sb.toString().toLowerCase()) + ") were defined as list holder.");
-
-			sb.setLength(0);
+			option.array_all = false;
 
 		}
 
@@ -5512,15 +5516,6 @@ public class PgSchema {
 			option.array_all = false;
 
 		jsonb = new JsonBuilder(option);
-
-	}
-
-	/**
-	 * Clear JSON builder.
-	 */
-	private void clearJsonBuilder() {
-
-		jsonb.clear();
 
 		tables.parallelStream().filter(table -> table.required && table.content_holder).forEach(table -> {
 
@@ -5533,7 +5528,7 @@ public class PgSchema {
 				if (field.jsonb == null)
 					field.jsonb = new StringBuilder();
 
-				else if (field.jsonb.length() > 0)
+				else
 					field.jsonb.setLength(0);
 
 				field.jsonb_col_size = field.jsonb_null_size = 0;
@@ -5545,13 +5540,53 @@ public class PgSchema {
 	}
 
 	/**
-	 * Close JSON builder.
+	 * Clear JSON builder.
 	 */
-	private void closeJsonBuilder() {
+	private void clearJsonBuilder() {
 
-		jsonb.close();
+		jsonb.clear(true);
 
-		tables.parallelStream().filter(table -> table.required && table.content_holder).forEach(table -> table.fields.stream().filter(field -> field.jsonb != null && field.jsonb.length() > 0).forEach(field -> field.jsonb.setLength(0)));
+		tables.parallelStream().filter(table -> table.required && table.content_holder).forEach(table -> {
+
+			table.jsonb_not_empty = false;
+
+			table.fields.forEach(field -> {
+
+				field.jsonb_not_empty = false;
+
+				if (field.jsonb == null)
+					field.jsonb = new StringBuilder();
+
+				else
+					field.jsonb.setLength(0);
+
+				field.jsonb_col_size = field.jsonb_null_size = 0;
+
+			});
+
+		});
+
+	}
+
+	/**
+	 * Write JSON buffer
+	 *
+	 * @param bout buffered output stream
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void writeJsonBuilder(BufferedOutputStream bout) throws PgSchemaException {
+
+		try {
+
+			jsonb.trimComma();
+
+			bout.write(jsonb.builder.toString().getBytes());
+
+			jsonb.builder.setLength(0);
+
+		} catch (IOException e) {
+			throw new PgSchemaException(e);
+		}
 
 	}
 
@@ -5568,85 +5603,25 @@ public class PgSchema {
 
 		List<PgField> fields = root_table.fields;
 
-		System.out.print("{" + jsonb.line_feed_code); // JSON document start
+		jsonb.builder.append("{" + jsonb.line_feed_code); // JSON document start
 
-		System.out.print(jsonb.getIndentSpaces(1) + "\"$schema\":" + jsonb.key_value_space + "\"" + PgSchemaUtil.json_schema_def + "\"," + jsonb.line_feed_code); // declaring a JSON Schema
-
-		if (def_namespaces != null) {
-
-			String def_namespace = def_namespaces.get("");
-
-			if (def_namespace != null)
-				System.out.print(jsonb.getIndentSpaces(1) + "\"id\":" + jsonb.key_value_space + "\"" + def_namespace + "\"," + jsonb.line_feed_code); // declaring a unique identifier
-
-		}
-
-		if (def_anno_appinfo != null) {
-
-			String _def_anno_appinfo = jsonb.escapeAnnotation(def_anno_appinfo, false);
-
-			if (!_def_anno_appinfo.startsWith("\""))
-				_def_anno_appinfo = "\"" + _def_anno_appinfo + "\"";
-
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_anno_appinfo + "," + jsonb.line_feed_code);
-
-		}
-
-		if (def_anno_doc != null) {
-
-			String _def_anno_doc = jsonb.escapeAnnotation(def_anno_doc, false);
-
-			if (!_def_anno_doc.startsWith("\""))
-				_def_anno_doc = "\"" + _def_anno_doc + "\"";
-
-			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_anno_doc + "," + jsonb.line_feed_code);
-
-		}
-
-		if (!root_table.virtual) {
-
-			System.out.print(jsonb.getIndentSpaces(1) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
-
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + "\"" + (jsonb.case_sense ? root_table.name : root_table.name.toLowerCase()) + "\"," + jsonb.line_feed_code);
-
-			if (root_table.anno != null && !root_table.anno.isEmpty()) {
-
-				String table_anno = jsonb.escapeAnnotation(root_table.anno, true);
-
-				if (!table_anno.startsWith("\""))
-					table_anno = "\"" + table_anno + "\"";
-
-				System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.line_feed_code);
-
-			}
-
-		}
-
-		if (fields.stream().anyMatch(field -> field.required && field.jsonable)) {
-
-			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, false) + "\"," + jsonb.key_value_space));
-
-			if (jsonb.builder.length() > 2)
-				System.out.print(jsonb.getIndentSpaces(1) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
-
-			jsonb.builder.setLength(0);
-
-		}
+		jsonb.writeSchemaHeader(def_namespaces, def_anno_appinfo, def_anno_doc);
 
 		if (!root_table.virtual)
-			System.out.print(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
+			jsonb.writeSchemaTableTitle(root_table, 1);
+
+		if (fields.stream().anyMatch(field -> field.required && field.jsonable))
+			jsonb.writeSchemaRequiredField(root_table, false, 1);
+
+		if (!root_table.virtual)
+			jsonb.builder.append(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
 
 		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, false, true, false, 2));
 
-		if (jsonb.builder.length() > 2)
-			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.line_feed_code.equals("\n") ? 2 : 1) + (root_table.virtual ? 1 : 0)) + jsonb.line_feed_code);
-
-		jsonb.builder.setLength(0);
-
 		boolean has_own_item = fields.stream().anyMatch(field -> field.jsonable);
 
-		if (!root_table.virtual && has_own_item)
-			System.out.print(jsonb.getIndentSpaces(2) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON child items start
+		if (has_own_item && root_table.virtual)
+			jsonb.appendComma();
 
 		int[] list_id = { 0 };
 
@@ -5654,14 +5629,15 @@ public class PgSchema {
 
 		if (!root_table.virtual) {
 
-			if (has_own_item)
-				System.out.print(jsonb.getIndentSpaces(2) + "}" + jsonb.line_feed_code); // JSON child items end
+			jsonb.trimComma();
 
-			System.out.print(jsonb.getIndentSpaces(1) + "}" + jsonb.line_feed_code); // JSON own items end
+			jsonb.builder.append(jsonb.getIndentSpaces(1) + "}" + jsonb.line_feed_code); // JSON own items end
 
 		}
 
-		System.out.print("}" + jsonb.line_feed_code); // JSON document end
+		jsonb.builder.append("}" + jsonb.line_feed_code); // JSON document end
+
+		System.out.print(jsonb.builder.toString());
 
 		jsonb.builder.setLength(0);
 
@@ -5682,67 +5658,39 @@ public class PgSchema {
 		List<PgField> fields = table.fields;
 
 		if (table.list_holder)
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"array\"," + jsonb.line_feed_code);
-
-		if (!table.virtual) {
-
-			if (!parent_table.list_holder)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
-
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + (jsonb.case_sense ? table.name : table.name.toLowerCase()) + "\"," + jsonb.line_feed_code);
-
-			if (table.anno != null && !table.anno.isEmpty()) {
-
-				String table_anno = jsonb.escapeAnnotation(table.anno, true);
-
-				if (!table_anno.startsWith("\""))
-					table_anno = "\"" + table_anno + "\"";
-
-				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.line_feed_code);
-
-			}
-
-		}
-
-		if (fields.stream().anyMatch(field -> field.required && field.jsonable)) {
-
-			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, as_attr) + "\"," + jsonb.key_value_space));
-
-			if (jsonb.builder.length() > 2)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
-
-			jsonb.builder.setLength(0);
-
-		}
+			jsonb.builder.append(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"array\"," + jsonb.line_feed_code);
 
 		if (!table.virtual)
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.line_feed_code); // JSON own object start
+			jsonb.writeSchemaTableTitle(table, json_indent_level);
+
+		if (fields.stream().anyMatch(field -> field.required && field.jsonable))
+			jsonb.writeSchemaRequiredField(table, as_attr, json_indent_level);
+
+		if (!table.virtual)
+			jsonb.builder.append(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.line_feed_code); // JSON own object start
 
 		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, as_attr, true, false, json_indent_level + (table.virtual ? 0 : 1)));
 
-		if (jsonb.builder.length() > 2)
-			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.line_feed_code.equals("\n") ? 2 : 1) + (table.virtual ? 1 : 0)) + jsonb.line_feed_code);
+		boolean has_own_item = fields.stream().anyMatch(field -> field.jsonable);
 
-		jsonb.builder.setLength(0);
+		if (has_own_item && table.virtual)
+			jsonb.appendComma();
 
 		if (table.nested_fields > 0) {
-
-			boolean has_own_item = fields.stream().anyMatch(field -> field.jsonable);
-
-			if (!table.virtual && has_own_item)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON child items start
 
 			int[] _list_id = { 0 };
 
 			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(table, getForeignTable(field), field.nested_key_as_attr, _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : has_own_item ? 2 : 1)));
 
-			if (!table.virtual && has_own_item)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.line_feed_code); // JSON child items end
-
 		}
 
-		if (!table.virtual)
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "}" + (list_id < list_size - 1 ? "," : "") + jsonb.line_feed_code); // JSON own items end
+		if (!table.virtual) {
+
+			jsonb.trimComma();
+
+			jsonb.builder.append(jsonb.getIndentSpaces(json_indent_level) + "}," + jsonb.line_feed_code); // JSON own items end
+
+		}
 
 	}
 
@@ -5750,10 +5698,10 @@ public class PgSchema {
 	 * Object-oriented JSON conversion.
 	 *
 	 * @param xml_parser XML document
-	 * @param json_file JSON file
+	 * @param json_file_path JSON file path
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2ObjJson(XmlParser xml_parser, File json_file) throws PgSchemaException {
+	public void xml2ObjJson(XmlParser xml_parser, Path json_file_path) throws PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -5773,14 +5721,14 @@ public class PgSchema {
 
 				int json_indent_level = 0;
 
-				int jsonb_header_end = jsonb.writeHeader(root_table, true, ++json_indent_level);
-				jsonb.writeContent(root_table, false, json_indent_level + 1);
+				int jsonb_header_end = jsonb.writeTableHeader(root_table, true, ++json_indent_level);
+				jsonb.mergeTableBuffer(root_table, false, json_indent_level + 1);
 
 				node2json.invokeRootNestedNodeObj(json_indent_level);
 
 				node2json.clear();
 
-				jsonb.writeFooter(root_table, json_indent_level--, 0, jsonb_header_end);
+				jsonb.writeTableFooter(json_indent_level--, 0, jsonb_header_end);
 
 			}
 
@@ -5790,17 +5738,15 @@ public class PgSchema {
 
 		try {
 
-			FileWriter filew = new FileWriter(json_file);
+			BufferedWriter buffw = Files.newBufferedWriter(json_file_path);
 
-			filew.write("{" + jsonb.line_feed_code + jsonb.builder.toString() + "}" + jsonb.line_feed_code);
+			buffw.write("{" + jsonb.line_feed_code + jsonb.builder.toString() + "}" + jsonb.line_feed_code);
 
-			filew.close();
+			buffw.close();
 
 		} catch (IOException e) {
 			throw new PgSchemaException(e);
 		}
-
-		xml_parser.clear();
 
 	}
 
@@ -5810,7 +5756,7 @@ public class PgSchema {
 	public void closeXml2Json() {
 
 		closeTableLock();
-		closeJsonBuilder();
+		clearJsonBuilder();
 
 	}
 
@@ -5836,7 +5782,7 @@ public class PgSchema {
 			node2json.jsonb_header_begin = node2json.jsonb_header_end = jsonb.builder.length();
 
 			if (!table.virtual && table.bridge) {
-				node2json.jsonb_header_end = jsonb.writeArrayHeader(table, ++json_indent_level);
+				node2json.jsonb_header_end = jsonb.writeArrayTableHeader(table, ++json_indent_level);
 				++json_indent_level;
 			}
 
@@ -5862,14 +5808,14 @@ public class PgSchema {
 						if (!table.virtual) {
 
 							int _jsonb_header_begin = jsonb.builder.length();
-							int _jsonb_header_end = jsonb.writeHeader(table, true, json_indent_level);
-							jsonb.writeContent(table, nested_key.as_attr, json_indent_level + 1);
-							jsonb.writeFooter(table, json_indent_level, _jsonb_header_begin, _jsonb_header_end);
+							int _jsonb_header_end = jsonb.writeTableHeader(table, true, json_indent_level);
+							jsonb.mergeTableBuffer(table, nested_key.as_attr, json_indent_level + 1);
+							jsonb.writeTableFooter(json_indent_level, _jsonb_header_begin, _jsonb_header_end);
 
 						}
 
 						else
-							jsonb.writeContent(table, nested_key.as_attr, json_indent_level + 1);
+							jsonb.mergeTableBuffer(table, nested_key.as_attr, json_indent_level + 1);
 
 					}
 
@@ -5900,9 +5846,9 @@ public class PgSchema {
 					if (node2json.written) {
 
 						if (!table.virtual)
-							_jsonb_header_end = jsonb.writeHeader(table, !parent_table.bridge, json_indent_level);
+							_jsonb_header_end = jsonb.writeTableHeader(table, !parent_table.bridge, json_indent_level);
 
-						jsonb.writeContent(table, nested_key.as_attr, json_indent_level + 1);
+						jsonb.mergeTableBuffer(table, nested_key.as_attr, json_indent_level + 1);
 
 					}
 
@@ -5913,7 +5859,7 @@ public class PgSchema {
 					node2json.invokeChildNestedNodeObj(json_indent_level);
 
 					if (!table.virtual)
-						jsonb.writeFooter(table, json_indent_level + 1, _jsonb_header_begin, _jsonb_header_end);
+						jsonb.writeTableFooter(json_indent_level + 1, _jsonb_header_begin, _jsonb_header_end);
 
 				}
 
@@ -5921,7 +5867,7 @@ public class PgSchema {
 
 				if (!table.virtual && table.bridge) {
 					json_indent_level--;
-					jsonb.writeArrayFooter(table, json_indent_level--, node2json.jsonb_header_begin, node2json.jsonb_header_end);
+					jsonb.writeArrayTableFooter(json_indent_level--, node2json.jsonb_header_begin, node2json.jsonb_header_end);
 				}
 
 			}
@@ -5947,85 +5893,25 @@ public class PgSchema {
 
 		List<PgField> fields = root_table.fields;
 
-		System.out.print("{" + jsonb.line_feed_code); // JSON document start
+		jsonb.builder.append("{" + jsonb.line_feed_code); // JSON document start
 
-		System.out.print(jsonb.getIndentSpaces(1) + "\"$schema\":" + jsonb.key_value_space + "\"" + PgSchemaUtil.json_schema_def + "\"," + jsonb.line_feed_code); // declaring a JSON Schema
-
-		if (def_namespaces != null) {
-
-			String def_namespace = def_namespaces.get("");
-
-			if (def_namespace != null)
-				System.out.print(jsonb.getIndentSpaces(1) + "\"id\":" + jsonb.key_value_space + "\"" + def_namespace + "\"," + jsonb.line_feed_code); // declaring a unique identifier
-
-		}
-
-		if (def_anno_appinfo != null) {
-
-			String _def_anno_appinfo = jsonb.escapeAnnotation(def_anno_appinfo, false);
-
-			if (!_def_anno_appinfo.startsWith("\""))
-				_def_anno_appinfo = "\"" + _def_anno_appinfo + "\"";
-
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_anno_appinfo + "," + jsonb.line_feed_code);
-
-		}
-
-		if (def_anno_doc != null) {
-
-			String _def_anno_doc = jsonb.escapeAnnotation(def_anno_doc, false);
-
-			if (!_def_anno_doc.startsWith("\""))
-				_def_anno_doc = "\"" + _def_anno_doc + "\"";
-
-			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_anno_doc + "," + jsonb.line_feed_code);
-
-		}
-
-		if (!root_table.virtual) {
-
-			System.out.print(jsonb.getIndentSpaces(1) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
-
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + "\"" + (jsonb.case_sense ? root_table.name : root_table.name.toLowerCase()) + "\"," + jsonb.line_feed_code);
-
-			if (root_table.anno != null && !root_table.anno.isEmpty()) {
-
-				String table_anno = jsonb.escapeAnnotation(root_table.anno, true);
-
-				if (!table_anno.startsWith("\""))
-					table_anno = "\"" + table_anno + "\"";
-
-				System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.line_feed_code);
-
-			}
-
-		}
-
-		if (fields.stream().anyMatch(field -> field.required && field.jsonable)) {
-
-			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, false) + "\"," + jsonb.key_value_space));
-
-			if (jsonb.builder.length() > 2)
-				System.out.print(jsonb.getIndentSpaces(1) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
-
-			jsonb.builder.setLength(0);
-
-		}
+		jsonb.writeSchemaHeader(def_namespaces, def_anno_appinfo, def_anno_doc);
 
 		if (!root_table.virtual)
-			System.out.print(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
+			jsonb.writeSchemaTableTitle(root_table, 1);
+
+		if (fields.stream().anyMatch(field -> field.required && field.jsonable))
+			jsonb.writeSchemaRequiredField(root_table, false, 1);
+
+		if (!root_table.virtual)
+			jsonb.builder.append(jsonb.getIndentSpaces(1) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
 
 		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, false, !field.list_holder, field.list_holder, 2));
 
-		if (jsonb.builder.length() > 2)
-			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.line_feed_code.equals("\n") ? 2 : 1) + (root_table.virtual ? 1 : 0)) + jsonb.line_feed_code);
-
-		jsonb.builder.setLength(0);
-
 		boolean has_own_item = fields.stream().anyMatch(field -> field.jsonable);
 
-		if (!root_table.virtual && has_own_item)
-			System.out.print(jsonb.getIndentSpaces(2) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON child items start
+		if (has_own_item && root_table.virtual)
+			jsonb.appendComma();
 
 		int[] list_id = { 0 };
 
@@ -6033,14 +5919,15 @@ public class PgSchema {
 
 		if (!root_table.virtual) {
 
-			if (has_own_item)
-				System.out.print(jsonb.getIndentSpaces(2) + "}" + jsonb.line_feed_code); // JSON child items end
+			jsonb.trimComma();
 
-			System.out.print(jsonb.getIndentSpaces(1) + "}" + jsonb.line_feed_code); // JSON own items end
+			jsonb.builder.append(jsonb.getIndentSpaces(1) + "}" + jsonb.line_feed_code); // JSON own items end
 
 		}
 
-		System.out.print("}" + jsonb.line_feed_code); // JSON document end
+		jsonb.builder.append("}" + jsonb.line_feed_code); // JSON document end
+
+		System.out.print(jsonb.builder.toString());
 
 		jsonb.builder.setLength(0);
 
@@ -6062,64 +5949,37 @@ public class PgSchema {
 
 		boolean obj_json = table.virtual || !jsonb.array_all;
 
-		if (!table.virtual) {
+		if (!table.virtual)
+			jsonb.writeSchemaTableTitle(table, json_indent_level);
 
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
-
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + (jsonb.case_sense ? table.name : table.name.toLowerCase()) + "\"," + jsonb.line_feed_code);
-
-			if (table.anno != null && !table.anno.isEmpty()) {
-
-				String table_anno = jsonb.escapeAnnotation(table.anno, true);
-
-				if (!table_anno.startsWith("\""))
-					table_anno = "\"" + table_anno + "\"";
-
-				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.line_feed_code);
-
-			}
-
-		}
-
-		if (fields.stream().anyMatch(field -> field.required && field.jsonable)) {
-
-			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, as_attr) + "\"," + jsonb.key_value_space));
-
-			if (jsonb.builder.length() > 2)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
-
-			jsonb.builder.setLength(0);
-
-		}
+		if (fields.stream().anyMatch(field -> field.required && field.jsonable))
+			jsonb.writeSchemaRequiredField(table, false, json_indent_level);
 
 		if (!table.virtual)
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
+			jsonb.builder.append(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
 
 		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, as_attr, obj_json && !field.list_holder, !table.virtual || field.list_holder, json_indent_level + (table.virtual ? 0 : 1)));
 
-		if (jsonb.builder.length() > 2)
-			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.line_feed_code.equals("\n") ? 2 : 1) + (table.virtual ? 1 : 0)) + jsonb.line_feed_code);
+		boolean has_own_item = fields.stream().anyMatch(field -> field.jsonable);
 
-		jsonb.builder.setLength(0);
+		if (has_own_item && table.virtual)
+			jsonb.appendComma();
 
 		if (table.nested_fields > 0) {
-
-			boolean has_own_item = fields.stream().anyMatch(field -> field.jsonable);
-
-			if (!table.virtual && has_own_item)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "\"items\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON child items start
 
 			int[] _list_id = { 0 };
 
 			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(table, getForeignTable(field), field.nested_key_as_attr, _list_id[0]++, table.nested_fields, json_indent_level + (table.virtual ? 0 : has_own_item ? 2 : 1)));
 
-			if (!table.virtual && has_own_item)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level + 1) + "}" + jsonb.line_feed_code); // JSON child items end
-
 		}
 
-		if (!table.virtual)
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "}" + jsonb.line_feed_code); // JSON own items end
+		if (!table.virtual) {
+
+			jsonb.trimComma();
+
+			jsonb.builder.append(jsonb.getIndentSpaces(json_indent_level) + "}," + jsonb.line_feed_code); // JSON own items end
+
+		}
 
 	}
 
@@ -6127,10 +5987,10 @@ public class PgSchema {
 	 * Column-oriented JSON conversion.
 	 *
 	 * @param xml_parser XML document
-	 * @param json_file JSON file
+	 * @param json_file_path JSON file path
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2ColJson(XmlParser xml_parser, File json_file) throws PgSchemaException {
+	public void xml2ColJson(XmlParser xml_parser, Path json_file_path) throws PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -6150,14 +6010,14 @@ public class PgSchema {
 
 				int json_indent_level = 0;
 
-				int jsonb_header_end = jsonb.writeHeader(root_table, true, ++json_indent_level);
-				jsonb.writeContent(root_table, false, json_indent_level + 1);
+				int jsonb_header_end = jsonb.writeTableHeader(root_table, true, ++json_indent_level);
+				jsonb.mergeTableBuffer(root_table, false, json_indent_level + 1);
 
 				node2json.invokeRootNestedNodeCol(json_indent_level);
 
 				node2json.clear();
 
-				jsonb.writeFooter(root_table, json_indent_level--, 0, jsonb_header_end);
+				jsonb.writeTableFooter(json_indent_level--, 0, jsonb_header_end);
 
 			}
 
@@ -6167,17 +6027,15 @@ public class PgSchema {
 
 		try {
 
-			FileWriter filew = new FileWriter(json_file);
+			BufferedWriter buffw = Files.newBufferedWriter(json_file_path);
 
-			filew.write("{" + jsonb.line_feed_code + jsonb.builder.toString() + "}" + jsonb.line_feed_code);
+			buffw.write("{" + jsonb.line_feed_code + jsonb.builder.toString() + "}" + jsonb.line_feed_code);
 
-			filew.close();
+			buffw.close();
 
 		} catch (IOException e) {
 			throw new PgSchemaException(e);
 		}
-
-		xml_parser.clear();
 
 	}
 
@@ -6198,12 +6056,14 @@ public class PgSchema {
 
 		try {
 
+			boolean list_and_bridge = table.list_holder && table.bridge;
+
 			node2json = new PgSchemaNode2Json(this, parent_table, table);
 
-			if (!table.virtual) {
+			if (!table.virtual && !list_and_bridge) {
 
 				node2json.jsonb_header_begin = jsonb.builder.length();
-				node2json.jsonb_header_end = jsonb.writeHeader(table, true, json_indent_level);
+				node2json.jsonb_header_end = jsonb.writeTableHeader(table, true, json_indent_level);
 
 			}
 
@@ -6224,16 +6084,25 @@ public class PgSchema {
 					node2json.parseChildNode(node_test);
 				}
 
-				if (node_test.isLastNode()) {
+				if (!table.virtual && list_and_bridge) {
 
-					if (node2json.filled) {
+					node2json.jsonb_header_begin = jsonb.builder.length();
+					node2json.jsonb_header_end = jsonb.writeTableHeader(table, true, json_indent_level);
 
-						if (table.jsonb_not_empty)
-							jsonb.writeContent(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
+					jsonb.mergeTableBuffer(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
 
-						node2json.invokeChildNestedNodeCol(node_test, json_indent_level);
+					node2json.invokeChildNestedNodeCol(node_test, json_indent_level);
 
-					}
+					jsonb.writeTableFooter(json_indent_level, node2json.jsonb_header_begin, node2json.jsonb_header_end);
+
+				}
+
+				else if (node_test.isLastNode()) {
+
+					if (node2json.filled && table.jsonb_not_empty)
+						jsonb.mergeTableBuffer(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
+
+					node2json.invokeChildNestedNodeCol(node_test, json_indent_level);
 
 					break;
 				}
@@ -6250,7 +6119,7 @@ public class PgSchema {
 					node2json.parseChildNode(parent_node, nested_key);
 
 					if (node2json.written)
-						jsonb.writeContent(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
+						jsonb.mergeTableBuffer(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
 
 				}
 
@@ -6258,8 +6127,8 @@ public class PgSchema {
 
 			} finally {
 
-				if (!table.virtual)
-					jsonb.writeFooter(table, json_indent_level, node2json.jsonb_header_begin, node2json.jsonb_header_end);
+				if (!table.virtual && !list_and_bridge)
+					jsonb.writeTableFooter(json_indent_level, node2json.jsonb_header_begin, node2json.jsonb_header_end);
 
 			}
 
@@ -6292,53 +6161,17 @@ public class PgSchema {
 
 		hasRootTable();
 
-		System.out.print("{" + jsonb.line_feed_code); // JSON document start
+		jsonb.builder.append("{" + jsonb.line_feed_code); // JSON document start
 
-		System.out.print(jsonb.getIndentSpaces(1) + "\"$schema\":" + jsonb.key_value_space + "\"" + PgSchemaUtil.json_schema_def + "\"," + jsonb.line_feed_code); // declaring a JSON Schema
+		jsonb.writeSchemaHeader(def_namespaces, def_anno_appinfo, def_anno_doc);
 
-		if (def_namespaces != null) {
+		tables.stream().filter(table -> table.content_holder).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> realizeJsonSchema(table, 1));
 
-			String def_namespace = def_namespaces.get("");
+		jsonb.trimComma();
 
-			if (def_namespace != null)
-				System.out.print(jsonb.getIndentSpaces(1) + "\"id\":" + jsonb.key_value_space + "\"" + def_namespace + "\"," + jsonb.line_feed_code); // declaring a unique identifier
+		jsonb.builder.append("}" + jsonb.line_feed_code); // JSON document end
 
-		}
-
-		if (def_anno_appinfo != null) {
-
-			String _def_anno_appinfo = jsonb.escapeAnnotation(def_anno_appinfo, false);
-
-			if (!_def_anno_appinfo.startsWith("\""))
-				_def_anno_appinfo = "\"" + _def_anno_appinfo + "\"";
-
-			System.out.print(jsonb.getIndentSpaces(1) + "\"title\":" + jsonb.key_value_space + _def_anno_appinfo + "," + jsonb.line_feed_code);
-
-		}
-
-		if (def_anno_doc != null) {
-
-			String _def_anno_doc = jsonb.escapeAnnotation(def_anno_doc, false);
-
-			if (!_def_anno_doc.startsWith("\""))
-				_def_anno_doc = "\"" + _def_anno_doc + "\"";
-
-			System.out.print(jsonb.getIndentSpaces(1) + "\"description\":" + jsonb.key_value_space + _def_anno_doc + "," + jsonb.line_feed_code);
-
-		}
-
-		PgTable first = tables.stream().filter(table -> table.content_holder).sorted(Comparator.comparingInt(table -> table.order)).findFirst().get();
-
-		tables.stream().filter(table -> table.content_holder).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
-
-			if (!table.equals(first))
-				System.out.print("," + jsonb.line_feed_code);
-
-			realizeJsonSchema(table, 1);
-
-		});
-
-		System.out.print(jsonb.line_feed_code + "}" + jsonb.line_feed_code); // JSON document end
+		System.out.print(jsonb.builder.toString());
 
 		jsonb.builder.setLength(0);
 
@@ -6351,7 +6184,7 @@ public class PgSchema {
 				String cont_name = table.name + "." + field.name;
 				String attr_name = getForeignTable(field).fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.foreign_table_xname;
 
-				System.err.println("Warning! Simple content \"" + (jsonb.case_sense ? cont_name : cont_name.toLowerCase()) + "\" may be confused with attribute \"" + (jsonb.case_sense ? attr_name : attr_name.toLowerCase()) + "\" in relational-oriented JSON format.");
+				System.err.println("[WARNING] Simple content \"" + (jsonb.case_sense ? cont_name : cont_name.toLowerCase()) + "\" may be confused with attribute \"" + (jsonb.case_sense ? attr_name : attr_name.toLowerCase()) + "\" in relational-oriented JSON format.");
 
 			});
 
@@ -6371,33 +6204,12 @@ public class PgSchema {
 
 		boolean obj_json = table.virtual || !jsonb.array_all;
 
-		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"type\":" + jsonb.key_value_space + "\"object\"," + jsonb.line_feed_code);
+		jsonb.writeSchemaTableTitle(table, json_indent_level);
 
-		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"title\":" + jsonb.key_value_space + "\"" + (jsonb.case_sense ? table.name : table.name.toLowerCase()) + "\"," + jsonb.line_feed_code);
+		jsonb.builder.append(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
 
-		if (table.anno != null && !table.anno.isEmpty()) {
-
-			String table_anno = jsonb.escapeAnnotation(table.anno, true);
-
-			if (!table_anno.startsWith("\""))
-				table_anno = "\"" + table_anno + "\"";
-
-			System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"description\":" + jsonb.key_value_space + table_anno + "," + jsonb.line_feed_code);
-
-		}
-
-		if (fields.stream().anyMatch(field -> field.required)) {
-
-			fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> jsonb.builder.append("\"" + jsonb.getItemTitle(field, false) + "\"," + jsonb.key_value_space));
-
-			if (jsonb.builder.length() > 2)
-				System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"required\":" + jsonb.key_value_space + "[" + jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.key_value_offset + 1)) + "]," + jsonb.line_feed_code);
-
-			jsonb.builder.setLength(0);
-
-		}
-
-		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "\"items\": {" + jsonb.line_feed_code); // JSON own items start
+		if (fields.stream().anyMatch(field -> field.required && field.jsonable))
+			jsonb.writeSchemaRequiredField(table, false, json_indent_level + 1);
 
 		fields.stream().filter(field -> field.jsonable).forEach(field -> {
 
@@ -6408,13 +6220,9 @@ public class PgSchema {
 
 		});
 
+		jsonb.trimComma();
 
-		if (jsonb.builder.length() > 2)
-			System.out.print(jsonb.builder.substring(0, jsonb.builder.length() - (jsonb.line_feed_code.equals("\n") ? 2 : 1)) + jsonb.line_feed_code);
-
-		jsonb.builder.setLength(0);
-
-		System.out.print(jsonb.getIndentSpaces(json_indent_level) + "}"); // JSON own items end
+		jsonb.builder.append(jsonb.getIndentSpaces(json_indent_level) + "}," + jsonb.line_feed_code); // JSON own items end
 
 	}
 
@@ -6422,17 +6230,17 @@ public class PgSchema {
 	 * Relational-oriented JSON conversion.
 	 *
 	 * @param xml_parser XML document
-	 * @param json_file JSON file
+	 * @param json_file_path JSON file path
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2Json(XmlParser xml_parser, File json_file) throws PgSchemaException {
+	public void xml2Json(XmlParser xml_parser, Path json_file_path) throws PgSchemaException {
 
 		switch (jsonb.type) {
 		case object:
-			xml2ObjJson(xml_parser, json_file);
+			xml2ObjJson(xml_parser, json_file_path);
 			return;
 		case column:
-			xml2ColJson(xml_parser, json_file);
+			xml2ColJson(xml_parser, json_file_path);
 			return;
 		default:
 		}
@@ -6461,8 +6269,7 @@ public class PgSchema {
 
 		try {
 
-			FileWriter filew = new FileWriter(json_file);
-			BufferedWriter buffw = new BufferedWriter(filew);
+			BufferedWriter buffw = Files.newBufferedWriter(json_file_path);
 
 			buffw.write("{" + jsonb.line_feed_code); // JSON document start
 
@@ -6492,7 +6299,7 @@ public class PgSchema {
 
 						if ((_field.required || _field.jsonb_not_empty) && _field.jsonb_col_size > 0 && _field.jsonb.length() > 2) {
 
-							boolean array_field = (!_table.equals(root_table) && array_json) || _field.list_holder || _field.jsonb_col_size > 1;
+							boolean array_field = (!_table.equals(root_table) && array_json) || _field.jsonb_col_size > 1;
 
 							if (has_field)
 								buffw.write("," + jsonb.line_feed_code);
@@ -6509,8 +6316,7 @@ public class PgSchema {
 
 						}
 
-						if (_field.jsonb.length() > 0)
-							_field.jsonb.setLength(0);
+						_field.jsonb.setLength(0);
 
 					}
 
@@ -6521,7 +6327,6 @@ public class PgSchema {
 
 				} catch (IOException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			});
@@ -6532,13 +6337,10 @@ public class PgSchema {
 			buffw.write("}" + jsonb.line_feed_code); // JSON document end
 
 			buffw.close();
-			filew.close();
 
 		} catch (IOException e) {
 			throw new PgSchemaException(e);
 		}
-
-		xml_parser.clear();
 
 		// no support on conditional attribute
 
@@ -6549,7 +6351,7 @@ public class PgSchema {
 				String cont_name = table.name + "." + field.name;
 				String attr_name = getForeignTable(field).fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.foreign_table_xname;
 
-				System.err.println("Warning! Simple content \"" + (jsonb.case_sense ? cont_name : cont_name.toLowerCase()) + "\" may be confused with attribute \"" + (jsonb.case_sense ? attr_name : attr_name.toLowerCase()) + "\" in relational-oriented JSON format.");
+				System.err.println("[WARNING] Simple content \"" + (jsonb.case_sense ? cont_name : cont_name.toLowerCase()) + "\" may be confused with attribute \"" + (jsonb.case_sense ? attr_name : attr_name.toLowerCase()) + "\" in relational-oriented JSON format.");
 
 			});
 
@@ -6618,7 +6420,7 @@ public class PgSchema {
 
 	}
 
-	// XML composer from PostgreSQL
+	// XML composer over PostgreSQL
 
 	/** The XML builder. */
 	protected XmlBuilder xmlb = null;
@@ -6644,7 +6446,7 @@ public class PgSchema {
 	/**
 	 * Compose XML fragment (field or text node)
 	 *
-	 * @param xpath_comp_list current XPath compoent list
+	 * @param xpath_comp_list current XPath component list
 	 * @param path_expr current XPath expression
 	 * @param rset current result set
 	 * @throws PgSchemaException the pg schema exception
@@ -6679,6 +6481,8 @@ public class PgSchema {
 				if (any_attr_parser == null) {
 
 					SAXParserFactory spf = SAXParserFactory.newInstance();
+					spf.setValidating(false);
+					spf.setNamespaceAware(false);
 					any_attr_parser = spf.newSAXParser();
 
 				}
@@ -6917,7 +6721,7 @@ public class PgSchema {
 								if (xmlb.append_xmlns)
 									xml_writer.writeNamespace(table_prefix, table_ns);
 
-								PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table_name, xmlb);
+								PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table, xmlb);
 
 								any_attr_parser.parse(in, any_attr);
 								break;
@@ -6927,7 +6731,7 @@ public class PgSchema {
 								if (xmlb.append_xmlns)
 									xml_writer.writeNamespace(table_prefix, table_ns);
 
-								any_retriever.exec(in, table, new PgNestTester(table, xmlb), xmlb);
+								any_retriever.exec(in, table, new PgNestTesterForXml(table, xmlb), xmlb);
 
 								xml_writer.writeEndElement();
 							}
@@ -7022,6 +6826,8 @@ public class PgSchema {
 				if (any_attr_parser == null) {
 
 					SAXParserFactory spf = SAXParserFactory.newInstance();
+					spf.setValidating(false);
+					spf.setNamespaceAware(false);
 					any_attr_parser = spf.newSAXParser();
 
 				}
@@ -7031,9 +6837,9 @@ public class PgSchema {
 
 			}
 
-			PgNestTester nest_test = new PgNestTester(table, xmlb);
+			PgNestTesterForXml nest_test = new PgNestTesterForXml(table, xmlb);
 
-			xmlb.pending_elem.push(new PgPendingElem(nest_test.current_indent_space, table, true));
+			xmlb.pending_elem.push(new PgPendingElem(table, nest_test.current_indent_space, true));
 
 			List<PgField> fields = table.fields;
 
@@ -7076,7 +6882,7 @@ public class PgSchema {
 
 						if (in != null) {
 
-							PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table.pname, xmlb);
+							PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table, xmlb);
 
 							any_attr_parser.parse(in, any_attr);
 
@@ -7162,7 +6968,7 @@ public class PgSchema {
 
 								xml_writer.writeEndElement();
 
-								elem = new PgPendingElem((xmlb.pending_elem.size() > 0 ? "" : xmlb.line_feed_code) + nest_test.current_indent_space, table, false);
+								elem = new PgPendingElem(table, (xmlb.pending_elem.size() > 0 ? "" : xmlb.line_feed_code) + nest_test.current_indent_space, false);
 
 								elem.write(xmlb);
 
@@ -7328,21 +7134,7 @@ public class PgSchema {
 	 */
 	public void closePgSql2Xml() {
 
-		tables.parallelStream().filter(table -> table.ps != null).forEach(table -> {
-
-			try {
-
-				if (!table.ps.isClosed())
-					table.ps.close();
-
-			} catch (SQLException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-
-			table.ps = null;
-
-		});
+		closePreparedStatement();
 
 	}
 
@@ -7354,10 +7146,10 @@ public class PgSchema {
 	 * @param parent_key parent key
 	 * @param as_attr whether parent key is simple attribute
 	 * @param parent_nest_test nest test result of parent node
-	 * @return PgNestTester nest test of this node
+	 * @return PgNestTesterForXml nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */	
-	private PgNestTester nestChildNode2Xml(final Connection db_conn, final PgTable table, final Object parent_key, final boolean as_attr, PgNestTester parent_nest_test) throws PgSchemaException {
+	private PgNestTesterForXml nestChildNode2Xml(final Connection db_conn, final PgTable table, final Object parent_key, final boolean as_attr, PgNestTesterForXml parent_nest_test) throws PgSchemaException {
 
 		boolean fill_default_value = option.fill_default_value;
 
@@ -7365,14 +7157,16 @@ public class PgSchema {
 
 		try {
 
-			PgNestTester nest_test = new PgNestTester(table, parent_nest_test);
+			PgNestTesterForXml nest_test = new PgNestTesterForXml(table, parent_nest_test);
 
 			String table_ns = table.target_namespace;
 			String table_prefix = table.prefix;
 
-			if (!table.virtual && !table.list_holder && !as_attr) {
+			boolean no_list_and_bridge = !table.list_holder && table.bridge;
 
-				xmlb.pending_elem.push(new PgPendingElem((parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? xmlb.line_feed_code : "") : xmlb.line_feed_code) + nest_test.current_indent_space, table, true));
+			if (!table.virtual && no_list_and_bridge && !as_attr) {
+
+				xmlb.pending_elem.push(new PgPendingElem(table, (parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? xmlb.line_feed_code : "") : xmlb.line_feed_code) + nest_test.current_indent_space, true));
 
 				if (parent_nest_test.has_insert_doc_key)
 					parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
@@ -7409,12 +7203,15 @@ public class PgSchema {
 
 			while (rset.next()) {
 
-				if (!table.virtual && table.list_holder && !as_attr) {
+				if (!table.virtual && !no_list_and_bridge && !as_attr) {
 
-					xmlb.pending_elem.push(new PgPendingElem((parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 || list_id > 0 ? (parent_nest_test.has_insert_doc_key ? xmlb.line_feed_code : "") : xmlb.line_feed_code) + nest_test.current_indent_space, table, true));
+					xmlb.pending_elem.push(new PgPendingElem(table, (parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 || list_id > 0 ? (parent_nest_test.has_insert_doc_key ? xmlb.line_feed_code : "") : xmlb.line_feed_code) + nest_test.current_indent_space, true));
 
 					if (parent_nest_test.has_insert_doc_key)
 						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+
+					if (!table.bridge)
+						nest_test.has_child_elem = false;
 
 				}
 
@@ -7478,7 +7275,7 @@ public class PgSchema {
 
 							if (in != null) {
 
-								PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table.pname, xmlb);
+								PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table, xmlb);
 
 								any_attr_parser.parse(in, any_attr);
 
@@ -7537,7 +7334,7 @@ public class PgSchema {
 
 									xml_writer.writeEndElement();
 
-									elem = new PgPendingElem((parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 || list_id > 0 ? "" : xmlb.line_feed_code) + nest_test.current_indent_space, table, false);
+									elem = new PgPendingElem(table, (parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 || list_id > 0 ? "" : xmlb.line_feed_code) + nest_test.current_indent_space, false);
 
 									elem.write(xmlb);
 
@@ -7660,7 +7457,7 @@ public class PgSchema {
 
 				}
 
-				if (!table.virtual && table.list_holder && !as_attr) {
+				if (!table.virtual && !no_list_and_bridge && !as_attr) {
 
 					if (nest_test.has_content || nest_test.has_simple_content) {
 
@@ -7696,7 +7493,7 @@ public class PgSchema {
 
 			rset.close();
 
-			if (!table.virtual && !table.list_holder && !as_attr) {
+			if (!table.virtual && no_list_and_bridge && !as_attr) {
 
 				if (nest_test.has_content || nest_test.has_simple_content) {
 
@@ -7729,6 +7526,790 @@ public class PgSchema {
 			return nest_test;
 
 		} catch (SQLException | XMLStreamException | SAXException | IOException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
+	// JSON composer over PostgreSQL
+
+	/**
+	 * Compose JSON fragment (field or text node)
+	 *
+	 * @param xpath_comp_list current XPath component list
+	 * @param path_expr current XPath expression
+	 * @param rset current result set
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void pgSql2JsonFrag(XPathCompList xpath_comp_list, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
+
+		XPathCompType terminus = path_expr.terminus;
+
+		if (terminus.equals(XPathCompType.table))
+			return;
+
+		PgTable table = path_expr.sql_subject.table;
+
+		PgField field = path_expr.sql_subject.field;
+
+		boolean fill_default_value = option.fill_default_value;
+
+		boolean as_attr = false;
+
+		try {
+
+			if (option.wild_card && any_attr_parser == null) {
+
+				SAXParserFactory spf = SAXParserFactory.newInstance();
+				spf.setValidating(false);
+				spf.setNamespaceAware(false);
+				any_attr_parser = spf.newSAXParser();
+
+			}
+
+			while (rset.next()) {
+
+				String content;
+
+				switch (terminus) {
+				case element:
+					content = field.retrieveValue(rset, 1, fill_default_value);
+					jsonb.writeFieldFrag(field, as_attr, content);
+					break;
+				case simple_content:
+					content = field.retrieveValue(rset, 1, fill_default_value);
+
+					// simple content
+
+					if (!field.simple_attribute) {
+
+						if (content != null && !content.isEmpty())
+							jsonb.writeFieldFrag(field, as_attr, content);
+
+					}
+
+					// simple attribute
+
+					else if ((content != null && !content.isEmpty()) || field.required)
+						jsonb.writeFieldFrag(field, as_attr = true, content);
+					break;
+				case attribute:
+					content = field.retrieveValue(rset, 1, fill_default_value);
+
+					// attribute
+
+					if (field.attribute) {
+
+						if ((content != null && !content.isEmpty()) || field.required)
+							jsonb.writeFieldFrag(field, as_attr, content);
+
+					}
+
+					// simple attribute
+
+					else if ((content != null && !content.isEmpty()) || field.required)
+						jsonb.writeFieldFrag(field, as_attr = true, content);
+					break;
+				case any_attribute:
+				case any_element:
+					SQLXML xml_object = rset.getSQLXML(1);
+
+					if (xml_object != null) {
+
+						switch (terminus) {
+						case any_attribute:
+							InputStream in = xml_object.getBinaryStream();
+
+							if (in != null) {
+
+								PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table, jsonb, 1);
+								any_attr_parser.parse(in, any_attr);
+
+							}
+
+							in.close();
+							break;
+						default:
+							String node_name = (table.prefix == null || table.prefix.isEmpty() ? "" : table.prefix + ":") + table.xname;
+							content = xml_object.toString().replace("<" + node_name + ">", "").replace("</" + node_name + ">", "").replace("<" + node_name + "/>", "");
+
+							if (content != null && !content.isEmpty())
+								jsonb.writeFieldFrag(field, false, content);
+						}
+
+						xml_object.free();
+					}
+					break;
+				case text:
+					content = rset.getString(1);
+
+					if (content != null && !content.isEmpty()) {
+
+						String column_name = rset.getMetaData().getColumnName(1);
+
+						PgField _field = table.getField(column_name);
+
+						if (_field != null)
+							content = field.retrieveValue(rset, 1, fill_default_value);
+
+						jsonb.builder.append(content + "," + jsonb.line_feed_code);
+
+					}
+					break;
+				case comment:
+				case processing_instruction:
+					content = rset.getString(1);
+
+					if (content != null && !content.isEmpty())
+						jsonb.builder.append(content + "," + jsonb.line_feed_code);
+					break;
+				default:
+					continue;
+				}
+
+			}
+
+			if (jsonb.array_all && terminus.isField())
+				jsonb.mergeFieldFragBuffer(field, as_attr);
+
+		} catch (SQLException | ParserConfigurationException | SAXException | IOException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
+	/**
+	 * Compose JSON document (table node)
+	 *
+	 * @param db_conn database connection
+	 * @param path_expr current XPath expression
+	 * @param rset current result set
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void pgSql2Json(Connection db_conn, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
+
+		XPathCompType terminus = path_expr.terminus;
+
+		if (!terminus.equals(XPathCompType.table))
+			return;
+
+		PgTable table = path_expr.sql_subject.table;
+
+		boolean fill_default_value = option.fill_default_value;
+
+		try {
+
+			PgNestTesterForJson nest_test = new PgNestTesterForJson(table, jsonb);
+
+			jsonb.builder.append("{" + jsonb.line_feed_code);
+
+			jsonb.pending_elem.push(new PgPendingElem(table, nest_test.current_indent_level));
+
+			List<PgField> fields = table.fields;
+
+			// attribute, any_attribute
+
+			int param_id = 1;
+
+			for (int f = 0; f < fields.size(); f++) {
+
+				PgField field = fields.get(f);
+
+				if (field.attribute) {
+
+					String content = field.retrieveValue(rset, param_id, fill_default_value);
+
+					if ((content != null && !content.isEmpty()) || field.required) {
+
+						PgPendingAttr attr = new PgPendingAttr(field, content, nest_test.child_indent_level);
+
+						PgPendingElem elem = jsonb.pending_elem.peek();
+
+						if (elem != null)
+							elem.appendPendingAttr(attr);
+						else
+							attr.write(jsonb);
+
+						nest_test.has_content = true;
+
+					}
+
+				}
+
+				else if (field.any_attribute) {
+
+					SQLXML xml_object = rset.getSQLXML(param_id);
+
+					if (xml_object != null) {
+
+						InputStream in = xml_object.getBinaryStream();
+
+						if (in != null) {
+
+							PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table, jsonb, nest_test.child_indent_level);
+
+							any_attr_parser.parse(in, any_attr);
+
+							nest_test.has_content |= any_attr.has_content;
+
+							in.close();
+
+						}
+
+						any_attr_parser.reset();
+
+						xml_object.free();
+
+					}
+
+				}
+
+				else if (field.nested_key_as_attr) {
+
+					Object key = rset.getObject(param_id);
+
+					if (key != null)
+						nest_test.merge(nestChildNode2Json(db_conn, getTable(field.foreign_table_id), key, true, nest_test));
+
+				}
+
+				if (!field.omissible)
+					param_id++;
+
+			}
+
+			// simple_content, element, any
+
+			param_id = 1;
+
+			for (int f = 0; f < fields.size(); f++) {
+
+				PgField field = fields.get(f);
+
+				if (jsonb.insert_doc_key && field.document_key) {
+
+					if (table.equals(root_table))
+						throw new PgSchemaException("Not allowed to insert document key to root element.");
+
+					PgPendingElem elem = jsonb.pending_elem.peek();
+
+					if (elem != null)
+						jsonb.writePendingElems(false);
+
+					jsonb.writePendingSimpleCont();
+
+					jsonb.writeField(table, field, false, rset.getString(param_id), nest_test.child_indent_level);
+
+					nest_test.has_child_elem = nest_test.has_content = nest_test.has_insert_doc_key = true;
+
+				}
+
+				else if (field.simple_content && !field.simple_attribute) {
+
+					String content = field.retrieveValue(rset, param_id, fill_default_value);
+
+					if (content != null && !content.isEmpty()) {
+
+						PgPendingElem elem = jsonb.pending_elem.peek();
+
+						if (elem != null)
+							jsonb.writePendingElems(false);
+
+						jsonb.writePendingSimpleCont();
+
+						jsonb.writeField(table, field, false, content, nest_test.child_indent_level);
+
+						nest_test.has_simple_content = nest_test.has_open_simple_content = true;
+
+					}
+
+				}
+
+				else if (field.element) {
+
+					String content = field.retrieveValue(rset, param_id, fill_default_value);
+
+					if ((content != null && !content.isEmpty()) || field.required) {
+
+						PgPendingElem elem = jsonb.pending_elem.peek();
+
+						if (elem != null)
+							jsonb.writePendingElems(false);
+
+						jsonb.writePendingSimpleCont();
+
+						jsonb.writeField(table, field, false, content, nest_test.child_indent_level);
+
+						nest_test.has_child_elem = nest_test.has_content = true;
+
+						if (nest_test.has_insert_doc_key)
+							nest_test.has_insert_doc_key = false;
+
+					}
+
+				}
+
+				else if (field.any) {
+
+					SQLXML xml_object = rset.getSQLXML(param_id);
+
+					if (xml_object != null) {
+
+						String node_name = (table.prefix == null || table.prefix.isEmpty() ? "" : table.prefix + ":") + table.xname;
+						String content = xml_object.toString().replace("<" + node_name + ">", "").replace("</" + node_name + ">", "").replace("<" + node_name + "/>", "");
+
+						if (content != null && !content.isEmpty())
+							jsonb.writeFieldFrag(field, false, content);
+
+						xml_object.free();
+
+					}
+
+				}
+
+				if (!field.omissible)
+					param_id++;
+
+			}
+
+			// nested key
+
+			param_id = 1;
+
+			for (int f = 0, n = 0; f < fields.size(); f++) {
+
+				PgField field = fields.get(f);
+
+				if (field.nested_key && !field.nested_key_as_attr) {
+
+					Object key = rset.getObject(param_id);
+
+					if (key != null) {
+
+						nest_test.has_child_elem |= n++ > 0;
+
+						nest_test.merge(nestChildNode2Json(db_conn, getTable(field.foreign_table_id), key, false, nest_test));
+
+					}
+
+				}
+
+				if (!field.omissible)
+					param_id++;
+
+			}
+
+			if (nest_test.has_content || nest_test.has_simple_content) {
+
+				boolean attr_only = false;
+
+				PgPendingElem elem = jsonb.pending_elem.peek();
+
+				if (elem != null)
+					jsonb.writePendingElems(attr_only = true);
+
+				jsonb.writePendingSimpleCont();
+
+				if (!nest_test.has_open_simple_content && !attr_only) {}
+				else if (nest_test.has_simple_content)
+					nest_test.has_open_simple_content = false;
+
+				jsonb.writeTableFooter(nest_test.current_indent_level, 0, 0);
+
+			}
+
+			else
+				jsonb.pending_elem.poll();
+
+			jsonb.builder.append("}," + jsonb.line_feed_code);
+
+		} catch (SQLException | SAXException | IOException e) {
+			throw new PgSchemaException(e);
+		}
+
+		jsonb.clear(false);
+
+	}
+
+	/**
+	 * Close pgSql2Json.
+	 */
+	public void closePgSql2Json() {
+
+		closePgSql2Xml();
+		clearJsonBuilder();
+
+	}
+
+	/**
+	 * Nest node and compose Json document.
+	 *
+	 * @param db_conn database connection
+	 * @param table current table
+	 * @param parent_key parent key
+	 * @param as_attr whether parent key is simple attribute
+	 * @param parent_nest_test nest test result of parent node
+	 * @return PgNestTesterForJson nest test of this node
+	 * @throws PgSchemaException the pg schema exception
+	 */	
+	private PgNestTesterForJson nestChildNode2Json(final Connection db_conn, final PgTable table, final Object parent_key, final boolean as_attr, PgNestTesterForJson parent_nest_test) throws PgSchemaException {
+
+		boolean fill_default_value = option.fill_default_value;
+
+		try {
+
+			PgNestTesterForJson nest_test = new PgNestTesterForJson(table, parent_nest_test);
+
+			boolean no_list_and_bridge = !table.list_holder && table.bridge;
+			boolean array_field = !table.virtual && !no_list_and_bridge && table.nested_fields == 0 && !as_attr && jsonb.type.equals(JsonType.column);
+
+			if (!table.virtual && (no_list_and_bridge || array_field) && !as_attr) {
+
+				jsonb.pending_elem.push(new PgPendingElem(table, nest_test.current_indent_level));
+
+				if (parent_nest_test.has_insert_doc_key)
+					parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+
+			}
+
+			if (table.ps == null || table.ps.isClosed()) {
+
+				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname) + " = ?";
+
+				table.ps = db_conn.prepareStatement(sql);
+
+			}
+
+			switch (option.hash_size) {
+			case native_default:
+				table.ps.setBytes(1, (byte[]) parent_key);
+				break;
+			case unsigned_int_32:
+				table.ps.setInt(1, (int) (parent_key));
+				break;
+			case unsigned_long_64:
+				table.ps.setLong(1, (long) parent_key);
+				break;
+			default:
+				table.ps.setString(1, (String) parent_key);
+			}
+
+			ResultSet rset = table.ps.executeQuery();
+
+			List<PgField> fields = table.fields;
+
+			while (rset.next()) {
+
+				if (!table.virtual && !(no_list_and_bridge || array_field) && !as_attr) {
+
+					jsonb.pending_elem.push(new PgPendingElem(table, nest_test.current_indent_level));
+
+					if (parent_nest_test.has_insert_doc_key)
+						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+
+					if (!table.bridge)
+						nest_test.has_child_elem = false;
+
+				}
+
+				// attribute, simple attribute, any_attribute
+
+				int param_id = 1;
+
+				for (int f = 0; f < fields.size(); f++) {
+
+					PgField field = fields.get(f);
+
+					if (field.attribute) {
+
+						String content = field.retrieveValue(rset, param_id, fill_default_value);
+
+						if ((content != null && !content.isEmpty()) || field.required) {
+
+							if (array_field)
+								field.writeValue2JsonBuf(content, jsonb.key_value_space);
+
+							else {
+
+								PgPendingAttr attr = new PgPendingAttr(field, content, nest_test.child_indent_level);
+
+								PgPendingElem elem = jsonb.pending_elem.peek();
+
+								if (elem != null)
+									elem.appendPendingAttr(attr);
+								else
+									attr.write(jsonb);
+
+							}
+
+							nest_test.has_content = true;
+
+						}
+
+					}
+
+					else if ((field.simple_attribute || field.simple_attr_cond) && as_attr) {
+
+						String content = field.retrieveValue(rset, param_id, fill_default_value);
+
+						if ((content != null && !content.isEmpty()) || field.required) {
+
+							if (array_field)
+								field.writeValue2JsonBuf(content, jsonb.key_value_space);
+
+							else {
+
+								PgPendingAttr attr = new PgPendingAttr(field, getForeignTable(field), content, nest_test.child_indent_level);
+
+								PgPendingElem elem = jsonb.pending_elem.peek();
+
+								if (elem != null)
+									elem.appendPendingAttr(attr);
+								else
+									attr.write(jsonb);
+
+							}
+
+							nest_test.has_content = true;
+
+						}
+
+					}
+
+					else if (field.any_attribute) {
+
+						SQLXML xml_object = rset.getSQLXML(param_id);
+
+						if (xml_object != null) {
+
+							InputStream in = xml_object.getBinaryStream();
+
+							if (in != null) {
+
+								PgAnyAttrRetriever any_attr;
+
+								if (array_field)
+									any_attr = new PgAnyAttrRetriever(table, field, jsonb.key_value_space);
+
+								else 
+									any_attr = new PgAnyAttrRetriever(table, jsonb, nest_test.child_indent_level);
+
+								any_attr_parser.parse(in, any_attr);
+
+								nest_test.has_content |= any_attr.has_content;
+
+								in.close();
+
+							}
+
+							any_attr_parser.reset();
+
+							xml_object.free();
+
+						}
+
+					}
+
+					else if (field.nested_key_as_attr) {
+
+						Object key = rset.getObject(param_id);
+
+						if (key != null)
+							nest_test.merge(nestChildNode2Json(db_conn, getTable(field.foreign_table_id), key, true, nest_test));
+
+					}
+
+					if (!field.omissible)
+						param_id++;
+
+				}
+
+				// simple_content, element, any
+
+				param_id = 1;
+
+				for (int f = 0; f < fields.size(); f++) {
+
+					PgField field = fields.get(f);
+
+					if (field.simple_content && !field.simple_attribute && !as_attr) {
+
+						String content = field.retrieveValue(rset, param_id, fill_default_value);
+
+						if (content != null && !content.isEmpty()) {
+
+							if (array_field)
+								field.writeValue2JsonBuf(content, jsonb.key_value_space);
+
+							else {
+
+								PgPendingElem elem = jsonb.pending_elem.peek();
+
+								if (elem != null)
+									jsonb.writePendingElems(false);
+
+								jsonb.writePendingSimpleCont();
+
+								jsonb.writeField(table, field, false, content, nest_test.child_indent_level);
+
+							}
+
+							nest_test.has_simple_content = nest_test.has_open_simple_content = true;
+
+						}
+
+					}
+
+					else if (field.element) {
+
+						String content = field.retrieveValue(rset, param_id, fill_default_value);
+
+						if ((content != null && !content.isEmpty()) || field.required) {
+
+							if (array_field)
+								field.writeValue2JsonBuf(content, jsonb.key_value_space);
+
+							else {
+
+								PgPendingElem elem = jsonb.pending_elem.peek();
+
+								if (elem != null)
+									jsonb.writePendingElems(false);
+
+								jsonb.writePendingSimpleCont();
+
+								jsonb.writeField(table, field, false, content, nest_test.child_indent_level);
+
+							}
+
+							nest_test.has_child_elem = nest_test.has_content = true;
+
+							if (parent_nest_test.has_insert_doc_key)
+								parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+
+						}
+
+					}
+
+					else if (field.any) {
+
+						SQLXML xml_object = rset.getSQLXML(param_id);
+
+						if (xml_object != null) {
+
+							String node_name = (table.prefix == null || table.prefix.isEmpty() ? "" : table.prefix + ":") + table.xname;
+							String content = xml_object.toString().replace("<" + node_name + ">", "").replace("</" + node_name + ">", "").replace("<" + node_name + "/>", "");
+
+							if (content != null && !content.isEmpty()) {
+
+								if (array_field)
+									field.writeValue2JsonBuf(content, jsonb.key_value_space);
+
+								else
+									jsonb.writeFieldFrag(field, false, content);
+
+							}
+
+							xml_object.free();
+
+						}
+
+					}
+
+					if (!field.omissible)
+						param_id++;
+
+				}
+
+				// nested key
+
+				param_id = 1;
+
+				for (int f = 0, n = 0; f < fields.size(); f++) {
+
+					PgField field = fields.get(f);
+
+					if (field.nested_key && !field.nested_key_as_attr) {
+
+						Object key = rset.getObject(param_id);
+
+						if (key != null) {
+
+							nest_test.has_child_elem |= n++ > 0;
+
+							nest_test.merge(nestChildNode2Json(db_conn, getTable(field.foreign_table_id), key, false, nest_test));
+
+						}
+
+					}
+
+					if (!field.omissible)
+						param_id++;
+
+				}
+
+				if (!table.virtual && !(no_list_and_bridge || array_field) && !as_attr) {
+
+					if (nest_test.has_content || nest_test.has_simple_content) {
+
+						boolean attr_only = false;
+
+						PgPendingElem elem = jsonb.pending_elem.peek();
+
+						if (elem != null)
+							jsonb.writePendingElems(attr_only = true);
+
+						jsonb.writePendingSimpleCont();
+
+						if (!nest_test.has_open_simple_content && !attr_only) { }
+						else if (nest_test.has_simple_content)
+							nest_test.has_open_simple_content = false;
+
+						jsonb.writeTableFooter(nest_test.current_indent_level, 0, 0);
+
+					}
+
+					else
+						jsonb.pending_elem.poll();
+
+				}
+
+			}
+
+			rset.close();
+
+			if (!table.virtual && (no_list_and_bridge || array_field) && !as_attr) {
+
+				if (nest_test.has_content || nest_test.has_simple_content) {
+
+					boolean attr_only = false;
+
+					PgPendingElem elem = jsonb.pending_elem.peek();
+
+					if (elem != null)
+						jsonb.writePendingElems(attr_only = true);
+
+					jsonb.writePendingSimpleCont();
+
+					if (array_field)
+						jsonb.mergeTableBuffer(table, false, nest_test.child_indent_level);
+
+					if (!nest_test.has_open_simple_content && !attr_only) {}
+					else if (nest_test.has_simple_content)
+						nest_test.has_open_simple_content = false;
+
+					jsonb.writeTableFooter(nest_test.current_indent_level, 0, 0);
+
+				}
+
+				else
+					jsonb.pending_elem.poll();
+
+			}
+
+			return nest_test;
+
+		} catch (SQLException | SAXException | IOException e) {
 			throw new PgSchemaException(e);
 		}
 

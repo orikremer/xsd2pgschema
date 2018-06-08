@@ -19,9 +19,9 @@ limitations under the License.
 
 import net.sf.xsd2pgschema.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
@@ -68,7 +68,7 @@ public class Xml2PgSqlThrd implements Runnable {
 	private XmlFileFilter xml_file_filter = null;
 
 	/** The XML file queue. */
-	private LinkedBlockingQueue<File> xml_file_queue = null;
+	private LinkedBlockingQueue<Path> xml_file_queue = null;
 
 	/** The instance of message digest for check sum. */
 	private MessageDigest md_chk_sum = null;
@@ -96,7 +96,7 @@ public class Xml2PgSqlThrd implements Runnable {
 	 * @throws SQLException the SQL exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2PgSqlThrd(final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
+	public Xml2PgSqlThrd(final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
 
@@ -126,7 +126,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		// prepare XML validator
 
-		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
+		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFilePath(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
 
 		db_conn = DriverManager.getConnection(pg_option.getDbUrl(PgSchemaUtil.def_encoding), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 
@@ -153,9 +153,9 @@ public class Xml2PgSqlThrd implements Runnable {
 
 					_doc_rows.addAll(doc_rows);
 
-					xml_file_queue.forEach(xml_file -> {
+					xml_file_queue.forEach(xml_file_path -> {
 
-						XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
+						XmlParser xml_parser = new XmlParser(xml_file_path, xml_file_filter);
 
 						_doc_rows.remove(xml_parser.document_id);
 
@@ -197,9 +197,9 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		int polled = 0;
 
-		File xml_file;
+		Path xml_file_path;
 
-		while ((xml_file = xml_file_queue.poll()) != null) {
+		while ((xml_file_path = xml_file_queue.poll()) != null) {
 
 			if (show_progress) {
 
@@ -219,7 +219,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 				try {
 
-					XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
+					XmlParser xml_parser = new XmlParser(xml_file_path, xml_file_filter);
 
 					update = doc_rows.contains(xml_parser.document_id);
 
@@ -245,12 +245,12 @@ public class Xml2PgSqlThrd implements Runnable {
 
 			try {
 
-				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file_path, xml_file_filter);
 
 				schema.xml2PgSql(xml_parser, update, db_conn);
 
 			} catch (Exception e) {
-				System.err.println("Exception occurred while processing XML document: " + xml_file.getAbsolutePath());
+				System.err.println("Exception occurred while processing XML document: " + xml_file_path.toAbsolutePath().toString());
 				e.printStackTrace();
 				System.exit(1);
 			}
@@ -258,6 +258,8 @@ public class Xml2PgSqlThrd implements Runnable {
 			++polled;
 
 		}
+
+		schema.closeXml2PgSql();
 
 		if (polled > 0)
 			System.out.println("Done xml (" + polled + " entries) -> db (" + db_name + ").");

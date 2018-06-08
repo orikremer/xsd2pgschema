@@ -19,11 +19,11 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,11 +46,11 @@ import javax.xml.stream.events.XMLEvent;
  */
 public class SphDsDocIdCleaner {
 
-	/** The Sphinx data source input file. */
-	private File sph_data_in = null;
+	/** The Sphinx data source input file path. */
+	private Path sph_data_in_path = null;
 
-	/** The Sphinx data source output file. */
-	private File sph_data_out = null;
+	/** The Sphinx data source output file path. */
+	private Path sph_data_out_path = null;
 
 	/** The set of deleting document id while synchronization. */
 	private HashSet<String> del_doc_set = null;
@@ -92,16 +92,16 @@ public class SphDsDocIdCleaner {
 	 * Instance of Sphinx xmlpipe2 document id cleaner.
 	 *
 	 * @param document_key_name document key name
-	 * @param sph_data_in Sphinx data source input file
-	 * @param sph_data_out Sphinx data source output file
+	 * @param sph_data_in_path Sphinx data source input file path
+	 * @param sph_data_out_path Sphinx data source output file path
 	 * @param del_doc_set set of deleting document id while synchronization
 	 */
-	public SphDsDocIdCleaner(String document_key_name, File sph_data_in, File sph_data_out, HashSet<String> del_doc_set) {
+	public SphDsDocIdCleaner(String document_key_name, Path sph_data_in_path, Path sph_data_out_path, HashSet<String> del_doc_set) {
 
 		doc_key_path = doc_unit_path + "/" + document_key_name;
 
-		this.sph_data_in = sph_data_in;
-		this.sph_data_out = sph_data_out;
+		this.sph_data_in_path = sph_data_in_path;
+		this.sph_data_out_path = sph_data_out_path;
 		this.del_doc_set = del_doc_set;
 
 		attr_doc_key = doc_key_path.substring(doc_key_path.lastIndexOf('/') + 1, doc_key_path.length()).startsWith("@");
@@ -154,7 +154,7 @@ public class SphDsDocIdCleaner {
 
 		XMLInputFactory in_factory = XMLInputFactory.newInstance();
 
-		InputStream in = PgSchemaUtil.getSchemaInputStream(sph_data_in);
+		InputStream in = PgSchemaUtil.getSchemaInputStream(sph_data_in_path);
 
 		XMLEventReader reader = in_factory.createXMLEventReader(in);
 
@@ -164,9 +164,7 @@ public class SphDsDocIdCleaner {
 
 		// XML event writer of extracted XML file
 
-		FileOutputStream fout = new FileOutputStream(sph_data_out);
-
-		BufferedOutputStream bout = new BufferedOutputStream(fout);
+		BufferedWriter bout = Files.newBufferedWriter(sph_data_out_path);
 
 		xml_writer = out_factory.createXMLEventWriter(bout);
 
@@ -187,8 +185,6 @@ public class SphDsDocIdCleaner {
 		interim_events.clear();
 
 		bout.close();
-
-		fout.close();
 
 		reader.close();
 
@@ -230,7 +226,6 @@ public class SphDsDocIdCleaner {
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 		}
@@ -255,7 +250,6 @@ public class SphDsDocIdCleaner {
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 			cur_path.setLength(0);
@@ -325,7 +319,6 @@ public class SphDsDocIdCleaner {
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 		}
@@ -349,7 +342,6 @@ public class SphDsDocIdCleaner {
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 			int len = cur_path.length() - element.asEndElement().getName().getLocalPart().length() - 1;
@@ -377,7 +369,6 @@ public class SphDsDocIdCleaner {
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 		}
@@ -418,7 +409,6 @@ public class SphDsDocIdCleaner {
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 		}
@@ -453,7 +443,6 @@ public class SphDsDocIdCleaner {
 
 					} catch (XMLStreamException e) {
 						e.printStackTrace();
-						System.exit(1);
 					}
 
 				});

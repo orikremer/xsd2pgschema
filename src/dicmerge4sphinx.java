@@ -21,10 +21,10 @@ import net.sf.xsd2pgschema.*;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -78,12 +78,14 @@ public class dicmerge4sphinx {
 			showUsage();
 		}
 
-		File ds_dir = new File(ds_dir_name);
+		Path ds_dir_path = Paths.get(ds_dir_name);
 
-		if (!ds_dir.isDirectory()) {
+		if (!Files.isDirectory(ds_dir_path)) {
 
-			if (!ds_dir.mkdir()) {
-				System.err.println("Couldn't create directory '" + ds_dir_name + "'.");
+			try {
+				Files.createDirectory(ds_dir_path);
+			} catch (IOException e) {
+				e.printStackTrace();
 				System.exit(1);
 			}
 
@@ -97,19 +99,18 @@ public class dicmerge4sphinx {
 
 			for (String dic_file_name : dic_file_list) {
 
-				File dic_file = new File(dic_file_name);
+				Path dic_file_path = Paths.get(dic_file_name);
 
-				if (!dic_file.isFile()) {
+				if (!Files.isRegularFile(dic_file_path)) {
 					System.err.println("Not a file '" + dic_file_name + "'.");
 					System.exit(1);
 				}
 
-				FileReader filer = new FileReader(dic_file);
-				BufferedReader bufferr = new BufferedReader(filer);
+				BufferedReader buffr = Files.newBufferedReader(dic_file_path);
 
 				String line = null;
 
-				while ((line = bufferr.readLine()) != null) {
+				while ((line = buffr.readLine()) != null) {
 
 					String[] parsed_line = line.split("[\\s,]+");
 
@@ -130,17 +131,15 @@ public class dicmerge4sphinx {
 
 				}
 
-				bufferr.close();
-				filer.close();
+				buffr.close();
 
 				dic_files++;
 
 			}
 
-			File sphinx_data_source = new File(ds_dir, PgSchemaUtil.sph_data_source_name);
+			Path sphinx_data_source_path = Paths.get(ds_dir_name, PgSchemaUtil.sph_data_source_name);
 
-			FileWriter filew = new FileWriter(sphinx_data_source);
-			BufferedWriter buffw = new BufferedWriter(filew);
+			BufferedWriter buffw = Files.newBufferedWriter(sphinx_data_source_path);
 
 			buffw.write("<?xml version=\"" + PgSchemaUtil.def_xml_version + "\" encoding=\"" + PgSchemaUtil.def_encoding + "\"?>\n");
 
@@ -175,7 +174,6 @@ public class dicmerge4sphinx {
 			buffw.write("</sphinx:docset>\n");
 
 			buffw.close();
-			filew.close();
 
 		} catch (IOException e) {
 			e.printStackTrace();

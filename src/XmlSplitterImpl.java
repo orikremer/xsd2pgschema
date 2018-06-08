@@ -17,11 +17,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,7 +80,7 @@ public class XmlSplitterImpl {
 	private PgSchema schema = null;
 
 	/** The XML file queue. */
-	private LinkedBlockingQueue<File> xml_file_queue = null;
+	private LinkedBlockingQueue<Path> xml_file_queue = null;
 
 	/** The StAX read event handlers. */
 	private HashMap<Integer, EventHandler> read_handlers = null;
@@ -120,15 +121,15 @@ public class XmlSplitterImpl {
 	/** The XML event writer. */
 	private XMLEventWriter xml_writer = null;
 
-	/** The XML directories. */
-	private File[] xml_dirs = null;
+	/** The XML directory paths. */
+	private Path[] xml_dir_paths = null;
 
 	/**
 	 * Instance of XmlSplitterImpl.
 	 *
 	 * @param shard_size shard size
 	 * @param is InputStream of XML Schema
-	 * @param xml_dir XML directory
+	 * @param xml_dir_path XML directory path
 	 * @param xml_file_queue XML file queue
 	 * @param option PostgreSQL data model option
 	 * @param xpath_doc_key XPath expression pointing document key
@@ -139,7 +140,7 @@ public class XmlSplitterImpl {
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws xpathListenerException the xpath listener exception
 	 */
-	public XmlSplitterImpl(final int shard_size, final InputStream is, final File xml_dir, final LinkedBlockingQueue<File> xml_file_queue, final PgSchemaOption option, final String xpath_doc_key) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, xpathListenerException {
+	public XmlSplitterImpl(final int shard_size, final InputStream is, final Path xml_dir_path, final LinkedBlockingQueue<Path> xml_file_queue, final PgSchemaOption option, final String xpath_doc_key) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, xpathListenerException {
 
 		this.shard_size = shard_size <= 0 ? 1 : shard_size;
 
@@ -166,23 +167,19 @@ public class XmlSplitterImpl {
 
 		// prepare shard directories
 
-		xml_dirs = new File[shard_size];
+		xml_dir_paths = new Path[shard_size];
 
 		if (shard_size == 1)
-			xml_dirs[0] = xml_dir;
+			xml_dir_paths[0] = xml_dir_path;
 
 		else {
 
 			for (int shard_id = 0; shard_id < shard_size; shard_id++) {
 
-				xml_dirs[shard_id] = new File(xml_dir, PgSchemaUtil.shard_dir_prefix + shard_id);
+				xml_dir_paths[shard_id] = Paths.get(xml_dir_path.toString(), PgSchemaUtil.shard_dir_prefix + shard_id);
 
-				if (!xml_dirs[shard_id].isDirectory()) {
-
-					if (!xml_dirs[shard_id].mkdir())
-						throw new PgSchemaException("Couldn't create directory '" + xml_dirs[shard_id].getPath() + "'.");
-
-				}
+				if (!Files.isDirectory(xml_dir_paths[shard_id]))
+					Files.createDirectory(xml_dir_paths[shard_id]);
 
 			}
 
@@ -308,17 +305,17 @@ public class XmlSplitterImpl {
 
 			xml_event_factory = XMLEventFactory.newInstance();
 
-			File xml_file;
+			Path xml_file_path;
 
-			while ((xml_file = xml_file_queue.poll()) != null) {
+			while ((xml_file_path = xml_file_queue.poll()) != null) {
 
-				System.out.println("Splitting " + xml_file.getName() + "...");
+				System.out.println("Splitting " + xml_file_path.getFileName().toString() + "...");
 
 				// XML event reader of source XML file
 
 				XMLInputFactory in_factory = XMLInputFactory.newInstance();
 
-				InputStream in = PgSchemaUtil.getSchemaInputStream(xml_file);
+				InputStream in = PgSchemaUtil.getSchemaInputStream(xml_file_path);
 
 				XMLEventReader reader = in_factory.createXMLEventReader(in);
 
@@ -669,11 +666,8 @@ public class XmlSplitterImpl {
 
 	}
 
-	/** The file output stream for split XML file. */
-	private FileOutputStream fout = null;
-
-	/** The buffered output stream for split XML file. */
-	private BufferedOutputStream bout = null;
+	/** The buffered writer for split XML file. */
+	private BufferedWriter bout = null;
 
 	/**
 	 * Create XML event writer.
@@ -690,13 +684,11 @@ public class XmlSplitterImpl {
 
 		no_document_key = false;
 
-		File xml_file = new File(xml_dirs[proc_id++ % shard_size], document_id + ".xml");
+		Path xml_file_path = Paths.get(xml_dir_paths[proc_id++ % shard_size].toString(), document_id + ".xml");
 
 		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 
-		fout = new FileOutputStream(xml_file);
-
-		bout = new BufferedOutputStream(fout);
+		bout = Files.newBufferedWriter(xml_file_path);
 
 		// XML event writer of split XML file
 
@@ -760,8 +752,6 @@ public class XmlSplitterImpl {
 		xml_writer.close();
 
 		bout.close();
-
-		fout.close();
 
 		// set null for recursive document generation
 

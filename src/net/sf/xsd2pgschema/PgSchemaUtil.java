@@ -19,10 +19,6 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +28,7 @@ import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -45,6 +42,7 @@ import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipInputStream;
 
@@ -193,17 +191,17 @@ public class PgSchemaUtil {
 	public static final Pattern null_simple_cont_pattern = Pattern.compile("^\\s+$", Pattern.MULTILINE);
 
 	/**
-	 * Return input stream of XSD file with decompression.
+	 * Return input stream of XSD file path with decompression.
 	 *
-	 * @param  file plane file or compressed file
+	 * @param  file_path XSD file path
 	 * @return InputStream input stream of file
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public static InputStream getSchemaInputStream(File file) throws IOException {
+	public static InputStream getSchemaInputStream(Path file_path) throws IOException {
 
-		String ext = FilenameUtils.getExtension(file.getName());
+		String ext = FilenameUtils.getExtension(file_path.getFileName().toString());
 
-		FileInputStream in = new FileInputStream(file);
+		InputStream in = Files.newInputStream(file_path);
 
 		return ext.equals("gz") ? new GZIPInputStream(in) : ext.equals("zip") ? new ZipInputStream(in) : in;
 	}
@@ -225,16 +223,16 @@ public class PgSchemaUtil {
 
 		if (!url_pattern.matcher(schema_location).matches()) {
 
-			File schema_file = new File(schema_location);
+			Path schema_file_path = Paths.get(schema_location);
 
-			if (!schema_file.exists() && schema_parent != null) // schema_parent indicates either URL or file path
+			if (!Files.isRegularFile(schema_file_path) && schema_parent != null) // schema_parent indicates either URL or file path
 				return getSchemaInputStream(schema_parent + "/" + getSchemaFileName(schema_location), null, cache_xsd);
 
 			try {
 
-				return new FileInputStream(schema_file);
+				return Files.newInputStream(schema_file_path);
 
-			} catch (FileNotFoundException e) {
+			} catch (IOException e) {
 				e.printStackTrace();
 				return null;
 			}
@@ -314,40 +312,40 @@ public class PgSchemaUtil {
 	}
 
 	/**
-	 * Return XSD file of schema location.
+	 * Return XSD file path of schema location.
 	 *
 	 * @param schema_location schema location
 	 * @param schema_parent parent of schema location
 	 * @param cache_xsd enable XSD file caching
-	 * @return File file of schema location
+	 * @return Path file path of schema location
 	 */
-	public static File getSchemaFile(String schema_location, String schema_parent, boolean cache_xsd) {
+	public static Path getSchemaFilePath(String schema_location, String schema_parent, boolean cache_xsd) {
 
 		boolean is_url = schema_parent != null && url_pattern.matcher(schema_parent).matches();
 		boolean use_cache = (is_url && cache_xsd) || !is_url;
 
 		if (use_cache && !url_pattern.matcher(schema_location).matches()) {
 
-			File schema_location_file = new File(schema_location);
+			Path schema_location_file_path = Paths.get(schema_location);
 
-			if (schema_location_file.exists())
-				return schema_location_file;
+			if (Files.isRegularFile(schema_location_file_path))
+				return schema_location_file_path;
 
 		}
 
 		String schema_file_name = getSchemaFileName(schema_location);
 
-		File schema_file = new File(schema_file_name);
+		Path schema_file_path = Paths.get(schema_file_name);
 
-		if (use_cache && schema_file.exists())
-			return schema_file;
+		if (use_cache && Files.isRegularFile(schema_file_path))
+			return schema_file_path;
 
 		if (!is_url && schema_parent != null) { // schema_parent indicates file path
 
-			schema_file = new File(schema_parent + "/" + schema_file_name);
+			schema_file_path = Paths.get(schema_parent, schema_file_name);
 
-			if (schema_file.exists())
-				return schema_file;
+			if (Files.isRegularFile(schema_file_path))
+				return schema_file_path;
 
 		}
 
@@ -359,25 +357,26 @@ public class PgSchemaUtil {
 		try {
 
 			if (cache_xsd)
-				IOUtils.copy(is, new FileOutputStream(schema_file));
+				IOUtils.copy(is, Files.newOutputStream(schema_file_path));
 
 			else {
 
-				File schema_file_part;
+				Path schema_file_path_part;
 
 				do {
 
 					schema_file_name += "~"; // prevent corruption of schema file
-					schema_file_part = new File(schema_file_name);
+					schema_file_path_part = Paths.get(schema_file_name);
 
-				} while (schema_file_part.exists());
+				} while (Files.isRegularFile(schema_file_path_part));
 
-				IOUtils.copy(is, new FileOutputStream(schema_file_part));
-				schema_file_part.renameTo(schema_file);
+				IOUtils.copy(is, Files.newOutputStream(schema_file_path_part));
+
+				Files.move(schema_file_path_part, schema_file_path, StandardCopyOption.REPLACE_EXISTING);
 
 			}
 
-			return schema_file;
+			return schema_file_path;
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -397,9 +396,9 @@ public class PgSchemaUtil {
 		if (url_pattern.matcher(schema_location).matches())
 			return schema_location;
 
-		File schema_file = new File(schema_location);
+		Path schema_file_path = Paths.get(schema_location);
 
-		return schema_file.getName();
+		return schema_file_path.getFileName().toString();
 	}
 
 	/**
@@ -424,9 +423,9 @@ public class PgSchemaUtil {
 
 		}
 
-		File schema_file = new File(schema_location);
+		Path schema_file_path = Paths.get(schema_location);
 
-		return schema_file.getName();
+		return schema_file_path.getFileName().toString();
 	}
 
 	/**
@@ -451,29 +450,29 @@ public class PgSchemaUtil {
 
 		}
 
-		File schema_file = new File(schema_location);
+		Path parent_path = Paths.get(schema_location).getParent();
 
-		return schema_file.getParent();
+		return parent_path != null ? parent_path.toString() : null;
 	}
 
 	/**
-	 * Return blocking queue of target files.
+	 * Return blocking queue of target file path.
 	 *
 	 * @param file_names list of file name
 	 * @param filter file name filter
-	 * @return LinkedBlockingQueue blocking queue of target files
+	 * @return LinkedBlockingQueue blocking queue of target file path
 	 */
-	public static LinkedBlockingQueue<File> getQueueOfTargetFiles(HashSet<String> file_names, FilenameFilter filter) {
+	public static LinkedBlockingQueue<Path> getQueueOfTargetFiles(HashSet<String> file_names, FilenameFilter filter) {
 
-		LinkedBlockingQueue<File> queue = new LinkedBlockingQueue<File>();
+		LinkedBlockingQueue<Path> queue = new LinkedBlockingQueue<Path>();
 
 		boolean has_regex_path = file_names.parallelStream().anyMatch(file_name -> !Files.exists(Paths.get(file_name)));
 
 		file_names.forEach(file_name -> {
 
-			File file = new File(file_name);
+			Path file_path = Paths.get(file_name);
 
-			if (!file.exists()) {
+			if (!Files.exists(file_path)) {
 
 				Pattern pattern = null;
 
@@ -482,8 +481,7 @@ public class PgSchemaUtil {
 					pattern = Pattern.compile(file_name);
 
 				} catch (PatternSyntaxException e) {
-					System.err.println("Not found + " + file.getPath());
-					System.exit(1);
+					System.err.println("Not found + " + file_path.toAbsolutePath().toString());
 				}
 
 				Pattern _pattern = pattern;
@@ -518,11 +516,18 @@ public class PgSchemaUtil {
 
 								Files.find(path, depth, matcher).forEach(_path -> {
 
-									if (Files.isDirectory(_path))
-										queue.addAll(Arrays.asList(_path.toFile().listFiles(filter)));
+									if (Files.isDirectory(_path)) {
 
-									else if (Files.isRegularFile(_path) && filter.accept(null, _path.toString()))
-										queue.add(_path.toFile());
+										try {
+											queue.addAll(Files.list(_path).filter(__path -> Files.isReadable(__path) && filter.accept(null, __path.getFileName().toString())).collect(Collectors.toSet()));
+										} catch (IOException e) {
+											e.printStackTrace();
+										}
+
+									}
+
+									else if (Files.isRegularFile(_path) && filter.accept(null, _path.getFileName().toString()))
+										queue.add(_path);
 
 								});
 
@@ -536,8 +541,8 @@ public class PgSchemaUtil {
 
 							Matcher _matcher = _pattern.matcher(path.toString());
 
-							if (_matcher.matches() && filter.accept(null, path.toString()))
-								queue.add(path.toFile());
+							if (_matcher.matches() && filter.accept(null, path.getFileName().toString()))
+								queue.add(path);
 
 						}
 
@@ -550,22 +555,29 @@ public class PgSchemaUtil {
 
 			}
 
-			if (file.isFile()) {
+			if (Files.isRegularFile(file_path)) {
 
 				if (filter.accept(null, file_name))
-					queue.add(file);
+					queue.add(file_path);
 
 			}
 
-			else if (file.isDirectory())
-				queue.addAll(Arrays.asList(file.listFiles(filter)));
+			else if (Files.isDirectory(file_path)) {
+
+				try {
+					queue.addAll(Files.list(file_path).filter(path -> Files.isReadable(path) && filter.accept(null, path.getFileName().toString())).collect(Collectors.toSet()));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+			}
 
 		});
 
 		if (!has_regex_path)
 			return queue;
 
-		HashSet<File> set = new HashSet<File>();
+		HashSet<Path> set = new HashSet<Path>();
 
 		try {
 

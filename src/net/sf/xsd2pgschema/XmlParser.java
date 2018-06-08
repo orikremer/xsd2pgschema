@@ -20,12 +20,12 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.BufferedWriter;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipInputStream;
@@ -45,8 +45,11 @@ import org.xml.sax.SAXException;
  */
 public class XmlParser {
 
-	/** The XML file.*/
-	private File xml_file;
+	/** The XML file path.*/
+	private Path xml_file_path;
+
+	/** The XML file name.*/
+	private String xml_file_name;
 
 	/** The XML document. */
 	protected Document document;
@@ -62,14 +65,14 @@ public class XmlParser {
 	 *
 	 * @param doc_builder instance of DocumentBuilder
 	 * @param validator instance of XmlValidator
-	 * @param xml_file XML file
+	 * @param xml_file_path XML file path
 	 * @param xml_file_filter XML file filter
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws SAXException the SAX exception
 	 */
-	public XmlParser(DocumentBuilder doc_builder, XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter) throws IOException, SAXException {
+	public XmlParser(DocumentBuilder doc_builder, XmlValidator validator, Path xml_file_path, XmlFileFilter xml_file_filter) throws IOException, SAXException {
 
-		init(xml_file, xml_file_filter);
+		init(xml_file_path, xml_file_filter);
 
 		parse(doc_builder, validator, xml_file_filter);
 
@@ -79,28 +82,28 @@ public class XmlParser {
 	 * Instance of XML parser for XML Schema validation only.
 	 *
 	 * @param validator instance of XmlValidator
-	 * @param xml_file XML file
+	 * @param xml_file_path XML file path
 	 * @param xml_file_filter XML file filter
 	 * @param option PostgreSQL data model option
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public XmlParser(XmlValidator validator, File xml_file, XmlFileFilter xml_file_filter, PgSchemaOption option) throws IOException {
+	public XmlParser(XmlValidator validator, Path xml_file_path, XmlFileFilter xml_file_filter, PgSchemaOption option) throws IOException {
 
-		init(xml_file, xml_file_filter);
+		init(xml_file_path, xml_file_filter);
 
-		validate(validator, option.isSynchronizable(false) ? getCheckSumFile(option) : null, option.verbose);
+		validate(validator, option.isSynchronizable(false) ? getCheckSumFilePath(option) : null, option.verbose);
 
 	}
 
 	/**
 	 * Instance of XML parser (dummy).
 	 *
-	 * @param xml_file XML file
+	 * @param xml_file_path XML file path
 	 * @param xml_file_filter XML file filter
 	 */
-	public XmlParser(File xml_file, XmlFileFilter xml_file_filter) {
+	public XmlParser(Path xml_file_path, XmlFileFilter xml_file_filter) {
 
-		init(xml_file, xml_file_filter);
+		init(xml_file_path, xml_file_filter);
 
 	}
 
@@ -112,37 +115,37 @@ public class XmlParser {
 	 */
 	public XmlParser(String xml_file_name, XmlFileFilter xml_file_filter) {
 
-		init(xml_file_name, xml_file_filter);
+		this.xml_file_name = xml_file_name;
+
+		init(xml_file_filter);
 
 	}
 
 	/**
 	 * Set document id and basename.
 	 *
-	 * @param xml_file XML file
+	 * @param xml_file_path XML file path
 	 * @param xml_file_filter XML file filter
 	 */
-	private void init(File xml_file, XmlFileFilter xml_file_filter) {
+	private void init(Path xml_file_path, XmlFileFilter xml_file_filter) {
 
-		this.xml_file = xml_file;
+		this.xml_file_path = xml_file_path;
+		this.xml_file_name = xml_file_path.getFileName().toString();
 
-		init(xml_file.getName(), xml_file_filter);
+		init(xml_file_filter);
 
 	}
 
 	/**
 	 * Set document id and basename.
 	 *
-	 * @param xml_file_name XML file name
 	 * @param xml_file_filter XML file filter
 	 */
-	private void init(String xml_file_name, XmlFileFilter xml_file_filter) {
-
-		String ext = xml_file_filter.ext;
+	private void init(XmlFileFilter xml_file_filter) {
 
 		basename = FilenameUtils.getBaseName(xml_file_name);
 
-		switch (ext) {
+		switch (xml_file_filter.ext) {
 		case "gz":
 		case "zip":
 			basename = FilenameUtils.getBaseName(basename);
@@ -169,11 +172,11 @@ public class XmlParser {
 	 */
 	private void parse(DocumentBuilder doc_builder, XmlValidator validator, XmlFileFilter xml_file_filter) throws IOException, SAXException {
 
-		FileInputStream in = new FileInputStream(xml_file);
+		InputStream in = Files.newInputStream(xml_file_path);
 
 		// xml.gz file
 
-		if (FilenameUtils.getExtension(xml_file.getName()).equals("gz")) {
+		if (FilenameUtils.getExtension(xml_file_name).equals("gz")) {
 
 			GZIPInputStream gzin = new GZIPInputStream(in);
 
@@ -184,10 +187,10 @@ public class XmlParser {
 				gzin.close();
 				in.close();
 
-				in = new FileInputStream(xml_file);
+				in = Files.newInputStream(xml_file_path);
 				gzin = new GZIPInputStream(in);
 
-				validator.exec(xml_file.getPath(), gzin, null, false);
+				validator.exec(xml_file_name, gzin, null, false);
 
 			}
 
@@ -197,7 +200,7 @@ public class XmlParser {
 
 		// xml.zip file
 
-		else if (FilenameUtils.getExtension(xml_file.getName()).equals("zip")) {
+		else if (FilenameUtils.getExtension(xml_file_name).equals("zip")) {
 
 			ZipInputStream zin = new ZipInputStream(in);
 
@@ -208,10 +211,10 @@ public class XmlParser {
 				zin.close();
 				in.close();
 
-				in = new FileInputStream(xml_file);
+				in = Files.newInputStream(xml_file_path);
 				zin = new ZipInputStream(in);
 
-				validator.exec(xml_file.getPath(), zin, null, false);
+				validator.exec(xml_file_name, zin, null, false);
 
 			}
 
@@ -229,9 +232,9 @@ public class XmlParser {
 
 				in.close();
 
-				in = new FileInputStream(xml_file);
+				in = Files.newInputStream(xml_file_path);
 
-				validator.exec(xml_file.getPath(), in, null, false);
+				validator.exec(xml_file_name, in, null, false);
 
 			}
 
@@ -247,31 +250,31 @@ public class XmlParser {
 	 * Validate XML document.
 	 *
 	 * @param validator instance of XmlValidator
-	 * @param check_sum check sum file to be deleted in case of invalid XML
+	 * @param check_sum_file_path check sum file path to be deleted in case of validation error
 	 * @param verbose verbose mode
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void validate(XmlValidator validator, File check_sum, boolean verbose) throws IOException {
+	private void validate(XmlValidator validator, Path check_sum_file_path, boolean verbose) throws IOException {
 
-		FileInputStream in = new FileInputStream(xml_file);
+		InputStream in = Files.newInputStream(xml_file_path);
 
 		// xml.gz file
 
-		if (FilenameUtils.getExtension(xml_file.getName()).equals("gz")) {
+		if (FilenameUtils.getExtension(xml_file_name).equals("gz")) {
 
 			GZIPInputStream gzin = new GZIPInputStream(in);
 
-			validator.exec(xml_file.getPath(), gzin, check_sum, verbose);
+			validator.exec(xml_file_name, gzin, check_sum_file_path, verbose);
 
 			gzin.close();
 
 		}
 
-		else if (FilenameUtils.getExtension(xml_file.getName()).equals("zip")) {
+		else if (FilenameUtils.getExtension(xml_file_name).equals("zip")) {
 
 			ZipInputStream zin = new ZipInputStream(in);
 
-			validator.exec(xml_file.getPath(), zin, check_sum, verbose);
+			validator.exec(xml_file_name, zin, check_sum_file_path, verbose);
 
 			zin.close();
 
@@ -280,20 +283,20 @@ public class XmlParser {
 		// xml file
 
 		else
-			validator.exec(xml_file.getPath(), in, check_sum, verbose);
+			validator.exec(xml_file_name, in, check_sum_file_path, verbose);
 
 		in.close();
 
 	}
 
 	/**
-	 * Return check sum file.
+	 * Return check sum file path.
 	 *
 	 * @param option PostgreSQL data model option
-	 * @return File check sum file
+	 * @return Path check sum file path
 	 */
-	private File getCheckSumFile(PgSchemaOption option) {
-		return new File(option.check_sum_dir, xml_file.getName() + "." + option.check_sum_algorithm.toLowerCase());
+	private Path getCheckSumFilePath(PgSchemaOption option) {
+		return Paths.get(option.check_sum_dir_path.toString(), xml_file_name + "." + option.check_sum_algorithm.toLowerCase());
 	}
 
 	/**
@@ -310,22 +313,17 @@ public class XmlParser {
 
 		if (option.isSynchronizable(false)) {
 
-			FileInputStream in = new FileInputStream(xml_file);
+			InputStream in = Files.newInputStream(xml_file_path);
 
-			FileChannel ch = in.getChannel();
-
-			String new_check_sum = String.valueOf(Hex.encodeHex(md_chk_sum.digest(IOUtils.readFully(in, (int) ch.size()))));
-
-			ch.close();
+			String new_check_sum = String.valueOf(Hex.encodeHex(md_chk_sum.digest(IOUtils.readFully(in, (int) Files.size(xml_file_path)))));
 
 			in.close();
 
-			File check_sum = getCheckSumFile(option);
+			Path check_sum_path = getCheckSumFilePath(option);
 
-			if (check_sum.exists()) {
+			if (Files.exists(check_sum_path)) {
 
-				FileReader fr = new FileReader(check_sum);
-				BufferedReader br = new BufferedReader(fr);
+				BufferedReader br = Files.newBufferedReader(check_sum_path);
 
 				String old_check_sum = br.readLine();
 
@@ -333,15 +331,16 @@ public class XmlParser {
 					identity = true;
 
 				br.close();
-				fr.close();
 
 			}
 
 			if (!identity && !option.sync_dry_run) {
 
-				FileWriter fw = new FileWriter(check_sum);
-				fw.write(new_check_sum);
-				fw.close();
+				BufferedWriter bw = Files.newBufferedWriter(check_sum_path);
+
+				bw.write(new_check_sum);
+
+				bw.close();
 
 			}
 
@@ -350,16 +349,6 @@ public class XmlParser {
 		}
 
 		return identity;
-	}
-
-	/**
-	 * Clear document.
-	 */
-	public void clear() {
-
-		xml_file = null;
-		document = null;
-
 	}
 
 }

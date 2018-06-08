@@ -19,11 +19,11 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 
 import javax.xml.stream.XMLEventReader;
@@ -40,14 +40,14 @@ import javax.xml.stream.events.XMLEvent;
  */
 public class SphDsDocIdUpdater {
 
-	/** The Sphinx data source input file (base). */
-	private File sph_data_base = null;
+	/** The Sphinx data source input file path (base). */
+	private Path sph_data_in_base_path = null;
 
-	/** The Sphinx data source input file (extracted). */
-	private File sph_data_ext = null;
+	/** The Sphinx data source input file path (extracted). */
+	private Path sph_data_in_ext_path = null;
 
 	/** The Sphinx data source output file. */
-	private File sph_data_out = null;
+	private Path sph_data_out_path = null;
 
 	/** Whether current document is base file or extracted one. */
 	private boolean base = true;
@@ -67,15 +67,15 @@ public class SphDsDocIdUpdater {
 	/**
 	 * Instance of Sphinx xmlpipe2 document id updater.
 	 *
-	 * @param sph_data_base Sphinx data source input file (base)
-	 * @param sph_data_ext Sphinx data source input file (extracted)
-	 * @param sph_data_out Sphix data source output file
+	 * @param sph_data_in_base_path Sphinx data source input file path (base)
+	 * @param sph_data_in_ext_path Sphinx data source input file path (extracted)
+	 * @param sph_data_out_path Sphix data source output file path
 	 */
-	public SphDsDocIdUpdater(File sph_data_base, File sph_data_ext, File sph_data_out) {
+	public SphDsDocIdUpdater(Path sph_data_in_base_path, Path sph_data_in_ext_path, Path sph_data_out_path) {
 
-		this.sph_data_base = sph_data_base;
-		this.sph_data_ext = sph_data_ext;
-		this.sph_data_out = sph_data_out;
+		this.sph_data_in_base_path = sph_data_in_base_path;
+		this.sph_data_in_ext_path = sph_data_in_ext_path;
+		this.sph_data_out_path = sph_data_out_path;
 
 		// StAX read event handlers
 
@@ -118,9 +118,7 @@ public class SphDsDocIdUpdater {
 
 		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 
-		FileOutputStream fout = new FileOutputStream(sph_data_out);
-
-		BufferedOutputStream bout = new BufferedOutputStream(fout);
+		BufferedWriter bout = Files.newBufferedWriter(sph_data_out_path);
 
 		// XML event writer
 
@@ -130,7 +128,7 @@ public class SphDsDocIdUpdater {
 
 		XMLInputFactory in_factory = XMLInputFactory.newInstance();
 
-		InputStream in = PgSchemaUtil.getSchemaInputStream(sph_data_base);
+		InputStream in = PgSchemaUtil.getSchemaInputStream(sph_data_in_base_path);
 
 		// XML event reader of source XML file
 
@@ -150,11 +148,11 @@ public class SphDsDocIdUpdater {
 
 		in.close();
 
-		// Processing sph_data_ext
+		// Processing sph_data_in_ext_path
 
 		base = false;
 
-		in = PgSchemaUtil.getSchemaInputStream(sph_data_ext);
+		in = PgSchemaUtil.getSchemaInputStream(sph_data_in_ext_path);
 
 		// XML event reader of extracted XML file
 
@@ -175,8 +173,6 @@ public class SphDsDocIdUpdater {
 		in.close();
 
 		bout.close();
-
-		fout.close();
 
 	}
 
@@ -214,7 +210,6 @@ public class SphDsDocIdUpdater {
 
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			}
@@ -243,7 +238,6 @@ public class SphDsDocIdUpdater {
 
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			}
@@ -273,7 +267,6 @@ public class SphDsDocIdUpdater {
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 		}
@@ -303,7 +296,6 @@ public class SphDsDocIdUpdater {
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 			int len = cur_path.length() - local_name.length() - 1;
@@ -331,7 +323,6 @@ public class SphDsDocIdUpdater {
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 		}
@@ -355,7 +346,6 @@ public class SphDsDocIdUpdater {
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 		}

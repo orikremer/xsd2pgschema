@@ -39,6 +39,9 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	/** The string builder for a line of CSV/TSV format. */
 	private StringBuilder sb = null;
 
+	/** Whether table could have writer. */
+	private boolean writable = false;
+
 	/** Whether use TSV format in PostgreSQL data migration. */
 	private boolean pg_tab_delimiter = true;
 
@@ -65,6 +68,8 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 		super(schema, parent_table, table);
 
 		sb = new StringBuilder();
+
+		writable = table.writable;
 
 		pg_tab_delimiter = option.pg_tab_delimiter;
 
@@ -153,7 +158,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			if (field.document_key) {
 
-				if (table.buffw != null)
+				if (writable)
 					values[f] = document_id;
 
 			}
@@ -162,7 +167,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			else if (field.serial_key) {
 
-				if (table.buffw != null)
+				if (writable)
 					values[f] = def_ser_size ? Integer.toString(ordinal) : Short.toString((short) ordinal);
 
 			}
@@ -171,7 +176,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			else if (field.xpath_key) {
 
-				if (table.buffw != null)
+				if (writable)
 					values[f] = schema.getHashKeyString(current_key.substring(document_id_len));
 
 			}
@@ -180,7 +185,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			else if (field.primary_key) {
 
-				if (table.buffw != null && rel_data_ext)
+				if (writable && rel_data_ext)
 					values[f] = schema.getHashKeyString(primary_key);
 
 			}
@@ -191,7 +196,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				if (parent_table.xname.equals(field.foreign_table_xname)) {
 
-					if (table.buffw != null && rel_data_ext)
+					if (writable && rel_data_ext)
 						values[f] = schema.getHashKeyString(parent_key);
 
 				}
@@ -206,7 +211,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				if ((nested_key = setNestedKey(proc_node, field, current_key)) != null) {
 
-					if (table.buffw != null && rel_data_ext)
+					if (writable && rel_data_ext)
 						values[f] = schema.getHashKeyString(nested_key);
 
 				}
@@ -219,7 +224,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				if (setContent(proc_node, field, current_key, as_attr, true)) {
 
-					if (table.buffw != null && !content.isEmpty())
+					if (writable && !content.isEmpty())
 						values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
 
 				} else if (field.required) {
@@ -231,7 +236,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			// any, any_attribute
 
-			else if ((field.any || field.any_attribute) && table.buffw != null) {
+			else if ((field.any || field.any_attribute) && writable) {
 
 				if (setAnyContent(proc_node, field) && !content.isEmpty())
 					values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
@@ -246,7 +251,8 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 		if (!filled || (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0)))
 			return;
 
-		write();
+		if (writable)
+			write();
 
 		this.proc_node = proc_node;
 		this.current_key = current_key;
@@ -260,9 +266,6 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	private void write() throws IOException {
-
-		if (table.buffw == null)
-			return;
 
 		for (int f = 0; f < fields.size(); f++) {
 

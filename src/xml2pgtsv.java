@@ -23,6 +23,9 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.HashSet;
@@ -58,7 +61,7 @@ public class xml2pgtsv {
 	protected static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
 	/** The XML file queue. */
-	private static LinkedBlockingQueue<File> xml_file_queue = null;
+	private static LinkedBlockingQueue<Path> xml_file_queue = null;
 
 	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
@@ -305,12 +308,14 @@ public class xml2pgtsv {
 		if (xml_file_queue.size() < max_thrds)
 			max_thrds = xml_file_queue.size();
 
-		File work_dir = new File(work_dir_name);
+		Path work_dir = Paths.get(work_dir_name);
 
-		if (!work_dir.isDirectory()) {
+		if (!Files.isDirectory(work_dir)) {
 
-			if (!work_dir.mkdir()) {
-				System.err.println("Couldn't create directory '" + work_dir_name + "'.");
+			try {
+				Files.createDirectory(work_dir);
+			} catch (IOException e) {
+				e.printStackTrace();
 				System.exit(1);
 			}
 
@@ -323,18 +328,20 @@ public class xml2pgtsv {
 				showUsage();
 			}
 
-			File check_sum_dir = new File(check_sum_dir_name);
+			Path check_sum_dir_path = Paths.get(check_sum_dir_name);
 
-			if (!check_sum_dir.isDirectory()) {
+			if (!Files.isDirectory(check_sum_dir_path)) {
 
-				if (!check_sum_dir.mkdir()) {
-					System.err.println("Couldn't create directory '" + check_sum_dir_name + "'.");
+				try {
+					Files.createDirectory(check_sum_dir_path);
+				} catch (IOException e) {
+					e.printStackTrace();
 					System.exit(1);
 				}
 
 			}
 
-			option.check_sum_dir = check_sum_dir;
+			option.check_sum_dir_path = check_sum_dir_path;
 
 		}
 

@@ -1,4 +1,11 @@
-﻿ Changes in xsd2pgschema 2.10.4 (release 2018-05-31)
+﻿ Changes in xsd2pgschema 2.11.0 (release 2018-06-08)
+
+  Added XPath evaluator main class, xpath2json, to retrieve JSON document over PostgreSQL.
+  Fixed issues while XML Schema->JSON Schema conversion.
+  Allowed multiple XPath query evaluation, just repeat --xpath-query options.
+  Rewrote code base using java.nio.Path and java.nio.Files.
+
+ Changes in xsd2pgschema 2.10.4 (release 2018-05-31)
 
   [Ticket #6] Fixed differential update in case of --no-key option.
   Fixed string escape function for TSV format.
@@ -39,7 +46,7 @@
 
  Changes in xsd2pgschema 2.10.0 (release 2018-05-14)
 
-  Added XPath evaluator main class, xpathevaluator, to retrive XML document from PostgreSQL by XPath->SQL query translation.
+  Added XPath evaluator main class, xpathevaluator, to retrieve XML document over PostgreSQL.
   Fixed missing of data of simple content on virtual table.
   Fixed time zone of value of xs:date, xs:gYearMonth, and xs:gYear from local time to UTC.
   Fixed declaration of enumerated type if PostgreSQL named schema is enabled.

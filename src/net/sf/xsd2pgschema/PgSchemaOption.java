@@ -19,7 +19,8 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
@@ -144,8 +145,8 @@ public class PgSchemaOption {
 	/** Whether fill @default value. */
 	public boolean fill_default_value = false;
 
-	/** The directory contains check sum files. */
-	public File check_sum_dir = null;
+	/** The directory path contains check sum files. */
+	public Path check_sum_dir_path = null;
 
 	/** The default algorithm for check sum. */
 	public String check_sum_algorithm = PgSchemaUtil.def_check_sum_algorithm;
@@ -639,7 +640,7 @@ public class PgSchemaOption {
 	 * @return boolean whether if synchronizable or not
 	 */
 	public boolean isSynchronizable(boolean allow_sync_weak) {
-		return (allow_sync_weak && sync_weak) || (sync && check_sum_dir != null && check_sum_dir.isDirectory());
+		return (allow_sync_weak && sync_weak) || (sync && check_sum_dir_path != null && Files.isDirectory(check_sum_dir_path));
 	}
 
 }

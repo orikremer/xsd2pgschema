@@ -23,6 +23,9 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -54,7 +57,7 @@ public class xml2json {
 	protected static XmlPostEditor xml_post_editor = new XmlPostEditor();
 
 	/** The XML file queue. */
-	private static LinkedBlockingQueue<File> xml_file_queue = null;
+	private static LinkedBlockingQueue<Path> xml_file_queue = null;
 
 	/** The runtime. */
 	private static Runtime runtime = Runtime.getRuntime();
@@ -130,11 +133,11 @@ public class xml2json {
 			else if (args[i].equals("--json-array-all"))
 				jsonb_option.array_all = true;
 
-			else if (args[i].equals("--attr-json-prefix") && i + 1 < args.length)
+			else if (args[i].equals("--json-attr-prefix") && i + 1 < args.length)
 				jsonb_option.setAttrPrefix(args[++i]);
 
-			else if (args[i].equals("--simple-cont-json-key") && i + 1 < args.length)
-				jsonb_option.setSimpleContentKey(args[++i]);
+			else if (args[i].equals("--json-simple-cont-name") && i + 1 < args.length)
+				jsonb_option.setSimpleContentName(args[++i]);
 
 			else if (args[i].equals("--json-indent-offset") && i + 1 < args.length)
 				jsonb_option.setIndentOffset(args[++i]);
@@ -243,12 +246,14 @@ public class xml2json {
 		if (xml_file_queue.size() < max_thrds)
 			max_thrds = xml_file_queue.size();
 
-		File json_dir = new File(json_dir_name);
+		Path json_dir_path = Paths.get(json_dir_name);
 
-		if (!json_dir.isDirectory()) {
+		if (!Files.isDirectory(json_dir_path)) {
 
-			if (!json_dir.mkdir()) {
-				System.err.println("Couldn't create directory '" + json_dir_name + "'.");
+			try {
+				Files.createDirectory(json_dir_path);
+			} catch (IOException e) {
+				e.printStackTrace();
 				System.exit(1);
 			}
 
@@ -268,7 +273,7 @@ public class xml2json {
 				if (thrd_id > 0)
 					is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
-				proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, is, json_dir, xml_file_filter, xml_file_queue, xml_post_editor, option, jsonb_option);
+				proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, is, json_dir_path, xml_file_filter, xml_file_queue, xml_post_editor, option, jsonb_option);
 
 			} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 				e.printStackTrace();
@@ -315,11 +320,11 @@ public class xml2json {
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
 		System.err.println("        --well-formed (validate only whether document is well-formed)");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix) | zip (indicates xml.zip suffix)]");
-		System.err.println("        --obj-json (use column-oriented JSON format)");
+		System.err.println("        --obj-json (use object-oriented JSON format)");
 		System.err.println("        --col-json (use column-oriented JSON format, default)");
 		System.err.println("        --rel-json (use relational-oriented JSON format)");
-		System.err.println("Option: --attr-json-prefix ATTR_PREFIX_CODE (default=\"" + jsonb_option.getAttrPrefix() + "\")");
-		System.err.println("        --simple-cont-json-key SIMPLE_CONTENT_NAME (default=\"" + jsonb_option.getSimpleContentKey() + "\")");
+		System.err.println("Option: --json-attr-prefix ATTR_PREFIX_CODE (default=\"" + jsonb_option.getAttrPrefix() + "\")");
+		System.err.println("        --json-simple-cont-name SIMPLE_CONTENT_NAME (default=\"" + jsonb_option.getSimpleContentName() + "\")");
 		System.err.println("        --json-indent-offset INTEGER (default=" + jsonb_option.getIndentOffset() + ", min=0, max=4)");
 		System.err.println("        --json-key-value-offset INTEGER (default=" + jsonb_option.getKeyValueOffset() + ", min=0, max=4)");
 		System.err.println("        --json-no-linefeed (dismiss line feed code)");

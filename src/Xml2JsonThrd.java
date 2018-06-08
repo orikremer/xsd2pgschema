@@ -19,9 +19,10 @@ limitations under the License.
 
 import net.sf.xsd2pgschema.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -53,21 +54,21 @@ public class Xml2JsonThrd implements Runnable {
 	/** The XML validator. */
 	private XmlValidator validator = null;
 
-	/** The JSON directory. */
-	private File json_dir = null;
+	/** The JSON directory path. */
+	private Path json_dir_path = null;
 
 	/** The XML file filter. */
 	private XmlFileFilter xml_file_filter = null;
 
 	/** The XML file queue. */
-	private LinkedBlockingQueue<File> xml_file_queue = null;
+	private LinkedBlockingQueue<Path> xml_file_queue = null;
 
 	/**
 	 * Instance of Xml2JsonThrd.
 	 *
 	 * @param thrd_id thread id
 	 * @param is InputStream of XML Schema
-	 * @param json_dir directory contains JSON files
+	 * @param json_dir_path directory path contains JSON files
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue
 	 * @param xml_post_editor XML post editor
@@ -79,10 +80,10 @@ public class Xml2JsonThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2JsonThrd(final int thrd_id, final InputStream is, final File json_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2JsonThrd(final int thrd_id, final InputStream is, final Path json_dir_path, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
-		this.json_dir = json_dir;
+		this.json_dir_path = json_dir_path;
 
 		this.xml_file_filter = xml_file_filter;
 		this.xml_file_queue = xml_file_queue;
@@ -112,7 +113,7 @@ public class Xml2JsonThrd implements Runnable {
 
 		// prepare XML validator
 
-		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
+		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFilePath(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
 
 	}
 
@@ -129,9 +130,9 @@ public class Xml2JsonThrd implements Runnable {
 
 		long start_time = System.currentTimeMillis();
 
-		File xml_file;
+		Path xml_file_path;
 
-		while ((xml_file = xml_file_queue.poll()) != null) {
+		while ((xml_file_path = xml_file_queue.poll()) != null) {
 
 			if (show_progress) {
 
@@ -149,14 +150,14 @@ public class Xml2JsonThrd implements Runnable {
 
 			try {
 
-				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file_path, xml_file_filter);
 
-				File json_file = new File(json_dir, xml_parser.basename + ".json");
+				Path json_file_path = Paths.get(json_dir_path.toString(), xml_parser.basename + ".json");
 
-				schema.xml2Json(xml_parser, json_file);
+				schema.xml2Json(xml_parser, json_file_path);
 
 			} catch (Exception e) {
-				System.err.println("Exception occurred while processing XML document: " + xml_file.getAbsolutePath());
+				System.err.println("Exception occurred while processing XML document: " + xml_file_path.toAbsolutePath().toString());
 				e.printStackTrace();
 				System.exit(1);
 			}

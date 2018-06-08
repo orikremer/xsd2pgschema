@@ -85,7 +85,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	private XmlFileFilter xml_file_filter = null;
 
 	/** The XML file queue. */
-	private LinkedBlockingQueue<File> xml_file_queue = null;
+	private LinkedBlockingQueue<Path> xml_file_queue = null;
 
 	/** The instance of message digest for check sum. */
 	private MessageDigest md_chk_sum = null;
@@ -108,7 +108,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2LuceneIdxThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2LuceneIdxThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.shard_id = shard_id;
 		this.shard_size = shard_size;
@@ -143,7 +143,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		// prepare XML validator
 
-		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
+		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFilePath(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
 
 		synchronizable = option.isSynchronizable(true);
 
@@ -192,9 +192,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 					_doc_map.putAll(doc_map);
 
-					xml_file_queue.forEach(xml_file -> {
+					xml_file_queue.forEach(xml_file_path -> {
 
-						XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
+						XmlParser xml_parser = new XmlParser(xml_file_path, xml_file_filter);
 
 						_doc_map.remove(xml_parser.document_id);
 
@@ -267,9 +267,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		long start_time = System.currentTimeMillis();
 
-		File xml_file;
+		Path xml_file_path;
 
-		while ((xml_file = xml_file_queue.poll()) != null) {
+		while ((xml_file_path = xml_file_queue.poll()) != null) {
 
 			if (show_progress) {
 
@@ -289,7 +289,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 				try {
 
-					XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
+					XmlParser xml_parser = new XmlParser(xml_file_path, xml_file_filter);
 
 					_shard_id = xml2luceneidx.doc_rows != null ? xml2luceneidx.doc_rows.get(xml_parser.document_id) : null;
 
@@ -315,7 +315,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 			try {
 
-				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file_path, xml_file_filter);
 
 				org.apache.lucene.document.Document lucene_doc = new org.apache.lucene.document.Document();
 
@@ -338,7 +338,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 				lucene_doc.clear();
 
 			} catch (Exception e) {
-				System.err.println("Exception occurred while processing XML document: " + xml_file.getAbsolutePath());
+				System.err.println("Exception occurred while processing XML document: " + xml_file_path.toAbsolutePath().toString());
 				e.printStackTrace();
 				System.exit(1);
 			}

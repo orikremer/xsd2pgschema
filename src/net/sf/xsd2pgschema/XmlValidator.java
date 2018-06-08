@@ -19,10 +19,12 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.apache.xerces.parsers.DOMParser;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
@@ -47,10 +49,10 @@ public class XmlValidator {
 	/**
 	 * Instance of XML validator.
 	 *
-	 * @param xsd_file XML Schema file
+	 * @param xsd_file_path XML Schema file path
 	 * @param full_check whether enable canonical XML Schema validation or not (validate well-formed only)
 	 */
-	public XmlValidator(File xsd_file, boolean full_check) {
+	public XmlValidator(Path xsd_file_path, boolean full_check) {
 
 		dom_parser = new DOMParser();
 
@@ -62,7 +64,7 @@ public class XmlValidator {
 				dom_parser.setFeature("http://apache.org/xml/features/validation/schema", true);
 				dom_parser.setFeature("http://apache.org/xml/features/validation/schema-full-checking", true);
 				dom_parser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaLanguage", PgSchemaUtil.xs_namespace_uri);
-				dom_parser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaSource", xsd_file);
+				dom_parser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaSource", xsd_file_path.toAbsolutePath().toString());
 
 			} catch (SAXNotRecognizedException e) {
 				e.printStackTrace();
@@ -83,10 +85,11 @@ public class XmlValidator {
 	 *
 	 * @param xml_file_name XML file name
 	 * @param in InputStream of XML file
-	 * @param chk_sum check sum file to be deleted in case of invalid XML
+	 * @param chk_sum_file_path check sum file path to be deleted in case of invalid XML
 	 * @param verbose verbose mode
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public void exec(String xml_file_name, InputStream in, File chk_sum, boolean verbose) {
+	public void exec(String xml_file_name, InputStream in, Path chk_sum_file_path, boolean verbose) throws IOException {
 
 		err_handler.init();
 
@@ -104,10 +107,8 @@ public class XmlValidator {
 
 			System.err.println(xml_file_name + " is invalid.");
 
-			if (chk_sum != null && chk_sum.exists())
-				chk_sum.delete();
-
-			System.exit(1);
+			if (chk_sum_file_path != null)
+				Files.deleteIfExists(chk_sum_file_path);
 
 		}
 

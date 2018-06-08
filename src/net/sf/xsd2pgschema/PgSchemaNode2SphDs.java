@@ -36,6 +36,9 @@ import org.w3c.dom.Node;
  */
 public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
+	/** Whether table is referred from child table. */
+	private boolean required = false;
+
 	/** The minimum word length for indexing. */
 	private int min_word_len = PgSchemaUtil.min_word_len;
 
@@ -51,6 +54,8 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	public PgSchemaNode2SphDs(final PgSchema schema, final PgTable parent_table, final PgTable table) throws TransformerConfigurationException, ParserConfigurationException {
 
 		super(schema, parent_table, table);
+
+		required = table.required;
 
 		min_word_len = schema.index_filter.min_word_len;
 
@@ -140,7 +145,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 				if (setContent(proc_node, field, current_key, as_attr, false)) {
 
-					if (table.buffw != null)
+					if (required)
 						values[f] = content;
 
 				} else if (field.required) {
@@ -152,7 +157,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 			// any, any_attribute
 
-			else if ((field.any || field.any_attribute) && table.buffw != null) {
+			else if ((field.any || field.any_attribute) && required) {
 
 				if (setAnyContent(proc_node, field))
 					values[f] = Jsoup.parse(content).text();
@@ -167,7 +172,8 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 		if (!filled || (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0)))
 			return;
 
-		write();
+		if (required)
+			write();
 
 		this.proc_node = proc_node;
 		this.current_key = current_key;
@@ -179,9 +185,6 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	 * Writer of processing node.
 	 */
 	private void write() {
-
-		if (table.buffw == null)
-			return;
 
 		for (int f = 0; f < fields.size(); f++) {
 

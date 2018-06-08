@@ -42,6 +42,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/** The prepared statement. */
 	private PreparedStatement ps = null;
 
+	/** Whether table could have writer. */
+	private boolean writable = false;
+
 	/** Whether field is occupied or not. */
 	private boolean[] occupied = null;
 
@@ -50,6 +53,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 	/** Whether upsert or insert. */
 	private boolean upsert = false;
+
+	/** Whether any content was written. */
+	protected boolean written = false;
 
 	/** The size of parameters. */
 	private int param_size = 1;
@@ -85,72 +91,96 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		this.db_conn = db_conn;
 
-		if (table.required && (rel_data_ext || !table.relational)) {
+		if (this.writable = table.writable) {
 
-			StringBuilder sql = new StringBuilder();
+			if (table.ps == null || table.ps.isClosed()) {
 
-			sql.append("INSERT INTO " + schema.getPgNameOf(table) + " VALUES ( ");
+				StringBuilder sql = new StringBuilder();
 
-			for (int f = 0; f < fields.size(); f++) {
+				sql.append("INSERT INTO " + schema.getPgNameOf(table) + " VALUES ( ");
 
-				PgField field = fields.get(f);
+				for (int f = 0; f < fields.size(); f++) {
 
-				if (field.omissible)
-					continue;
+					PgField field = fields.get(f);
 
-				if (field.enum_name == null)
-					sql.append("?");
-				else
-					sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+					if (field.omissible)
+						continue;
 
-				sql.append(", ");
+					if (field.enum_name == null)
+						sql.append("?");
+					else
+						sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
 
-				param_size++;
+					sql.append(", ");
 
-			}
-
-			sql.setLength(sql.length() - 2);
-			sql.append(" )");
-
-			if (update && rel_data_ext) {
-
-				PgField pkey = fields.parallelStream().filter(field -> field.primary_key).findFirst().get();
-
-				String pkey_name = PgSchemaUtil.avoidPgReservedWords(pkey.pname);
-
-				if (upsert = pkey.unique_key) {
-
-					sql.append(" ON CONFLICT ( " + pkey_name + " ) DO UPDATE SET ");
-
-					for (int f = 0; f < fields.size(); f++) {
-
-						PgField field = fields.get(f);
-
-						if (field.omissible || field.primary_key)
-							continue;
-
-						sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + " = ");
-
-						if (field.enum_name == null)
-							sql.append("?");
-						else
-							sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
-
-						sql.append(", ");
-
-					}
-
-					sql.setLength(sql.length() - 2);
-
-					sql.append(" WHERE EXCLUDED." + pkey_name + " = ?");
+					param_size++;
 
 				}
 
+				sql.setLength(sql.length() - 2);
+				sql.append(" )");
+
+				if (update && rel_data_ext) {
+
+					PgField pkey = fields.parallelStream().filter(field -> field.primary_key).findFirst().get();
+
+					String pkey_name = PgSchemaUtil.avoidPgReservedWords(pkey.pname);
+
+					if (upsert = pkey.unique_key) {
+
+						sql.append(" ON CONFLICT ( " + pkey_name + " ) DO UPDATE SET ");
+
+						for (int f = 0; f < fields.size(); f++) {
+
+							PgField field = fields.get(f);
+
+							if (field.omissible || field.primary_key)
+								continue;
+
+							sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + " = ");
+
+							if (field.enum_name == null)
+								sql.append("?");
+							else
+								sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+
+							sql.append(", ");
+
+						}
+
+						sql.setLength(sql.length() - 2);
+
+						sql.append(" WHERE EXCLUDED." + pkey_name + " = ?");
+
+					}
+
+				}
+
+				table.ps = db_conn.prepareStatement(sql.toString());
+
+				sql.setLength(0);
+
 			}
 
-			ps = db_conn.prepareStatement(sql.toString());
+			else {
 
-			sql.setLength(0);
+				for (int f = 0; f < fields.size(); f++) {
+
+					PgField field = fields.get(f);
+
+					if (field.omissible)
+						continue;
+
+					param_size++;
+
+				}
+
+				if (update && rel_data_ext)
+					upsert = fields.parallelStream().filter(field -> field.primary_key).findFirst().get().unique_key;
+
+			}
+
+			ps = table.ps;
 
 		}
 
@@ -245,7 +275,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			if (field.document_key) {
 
-				if (ps != null) {
+				if (writable) {
 
 					field.writeValue2PgSql(ps, param_id, document_id);
 
@@ -262,7 +292,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else if (field.serial_key) {
 
-				if (ps != null)
+				if (writable)
 					writeSerKey(f, param_id, upsert ? _param_id : -1, ordinal);
 
 			}
@@ -271,7 +301,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else if (field.xpath_key) {
 
-				if (ps != null)
+				if (writable)
 					writeHashKey(f, param_id, upsert ? _param_id : -1, current_key.substring(document_id_len));
 
 			}
@@ -280,7 +310,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else if (field.primary_key) {
 
-				if (ps != null && rel_data_ext)
+				if (writable && rel_data_ext)
 					writeHashKey(f, param_id, upsert ? (param_size - 1) * 2 : -1, primary_key);
 
 			}
@@ -291,7 +321,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				if (parent_table.xname.equals(field.foreign_table_xname)) {
 
-					if (ps != null && rel_data_ext)
+					if (writable && rel_data_ext)
 						writeHashKey(f, param_id, upsert ? _param_id : -1, parent_key);
 
 				}
@@ -306,7 +336,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				if ((nested_key = setNestedKey(proc_node, field, current_key)) != null) {
 
-					if (ps != null && rel_data_ext)
+					if (writable && rel_data_ext)
 						writeHashKey(f, param_id, upsert ? _param_id : -1, nested_key);
 
 				}
@@ -319,7 +349,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				if (setContent(proc_node, field, current_key, as_attr, true) && !content.isEmpty()) {
 
-					if (ps != null) {
+					if (writable) {
 
 						field.writeValue2PgSql(ps, param_id, content);
 
@@ -339,7 +369,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			// any, any_attribute
 
-			else if ((field.any || field.any_attribute) && ps != null) {
+			else if ((field.any || field.any_attribute) && writable) {
 
 				if (setAnyContent(proc_node, field)) {
 
@@ -377,7 +407,8 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		if (!filled || (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0)))
 			return;
 
-		write();
+		if (writable)
+			write();
 
 		this.proc_node = proc_node;
 		this.current_key = current_key;
@@ -392,8 +423,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 */
 	private void write() throws SQLException {
 
-		if (ps == null)
-			return;
+		written = true;
 
 		int param_id = 1;
 
@@ -572,12 +602,8 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 */
 	public void executeBatch() throws SQLException {
 
-		if (ps != null && !ps.isClosed()) {
-
+		if (written && ps != null && !ps.isClosed())
 			ps.executeBatch();
-			ps.close();
-
-		}
 
 	}
 

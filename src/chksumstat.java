@@ -22,6 +22,9 @@ import net.sf.xsd2pgschema.*;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -47,7 +50,7 @@ public class chksumstat {
 	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
 
 	/** The XML file queue. */
-	private static LinkedBlockingQueue<File> xml_file_queue = null;
+	private static LinkedBlockingQueue<Path> xml_file_queue = null;
 
 	/** The set of new document id while synchronization. */
 	private static HashSet<String> sync_new_doc_rows = null;
@@ -55,8 +58,8 @@ public class chksumstat {
 	/** The set of updating document id while synchronization. */
 	private static HashSet<String> sync_up_doc_rows = null;
 
-	/** The set of deleting document id while synchronization (key=document id, value=check sum file). */
-	private static HashMap<String, String> sync_del_doc_rows = null;
+	/** The set of deleting document id while synchronization (key=document id, value=check sum file path). */
+	private static HashMap<String, Path> sync_del_doc_rows = null;
 
 	/**
 	 * The main method.
@@ -155,18 +158,20 @@ public class chksumstat {
 			showUsage();
 		}
 
-		File check_sum_dir = new File(check_sum_dir_name);
+		Path check_sum_dir_path = Paths.get(check_sum_dir_name);
 
-		if (!check_sum_dir.isDirectory()) {
+		if (!Files.isDirectory(check_sum_dir_path)) {
 
-			if (!check_sum_dir.mkdir()) {
-				System.err.println("Couldn't create directory '" + check_sum_dir_name + "'.");
+			try {
+				Files.createDirectory(check_sum_dir_path);
+			} catch (IOException e) {
+				e.printStackTrace();
 				System.exit(1);
 			}
 
 		}
 
-		option.check_sum_dir = check_sum_dir;
+		option.check_sum_dir_path = check_sum_dir_path;
 
 		String chk_sum_file_ext = option.check_sum_algorithm.toLowerCase();
 
@@ -180,25 +185,25 @@ public class chksumstat {
 
 		sync_new_doc_rows = new HashSet<String>();
 		sync_up_doc_rows = new HashSet<String>();
-		sync_del_doc_rows = new HashMap<String, String>();
-
-		for (String check_sum_file_name : check_sum_dir.list(chk_sum_file_filter)) {
-
-			XmlParser xml_parser = new XmlParser(check_sum_file_name.replaceFirst("\\." + chk_sum_file_ext + "$", ""), xml_file_filter);
-
-			sync_del_doc_rows.put(xml_parser.document_id, check_sum_file_name);
-
-		}
+		sync_del_doc_rows = new HashMap<String, Path>();
 
 		try {
 
+			Files.list(check_sum_dir_path).filter(check_sum_path -> Files.isRegularFile(check_sum_path) && chk_sum_file_filter.accept(null, check_sum_path.getFileName().toString())).forEach(check_sum_path -> {
+
+				XmlParser xml_parser = new XmlParser(check_sum_path.getFileName().toString().replaceFirst("\\." + chk_sum_file_ext + "$", ""), xml_file_filter);
+
+				sync_del_doc_rows.put(xml_parser.document_id, check_sum_path);
+
+			});
+
 			MessageDigest md_chk_sum = MessageDigest.getInstance(option.check_sum_algorithm);
 
-			File xml_file;
+			Path xml_file_path;
 
-			while ((xml_file = xml_file_queue.poll()) != null) {
+			while ((xml_file_path = xml_file_queue.poll()) != null) {
 
-				XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
+				XmlParser xml_parser = new XmlParser(xml_file_path, xml_file_filter);
 
 				String document_id = xml_parser.document_id;
 
@@ -224,12 +229,14 @@ public class chksumstat {
 
 			if (!option.sync_dry_run && sync_del_doc_rows.size() > 0) {
 
-				sync_del_doc_rows.values().forEach(chk_sum_file_name -> {
+				sync_del_doc_rows.values().forEach(chk_sum_file_path -> {
 
-					File check_sum_file = new File(check_sum_dir, chk_sum_file_name);
-
-					if (check_sum_file.exists())
-						check_sum_file.delete();
+					try {
+						Files.deleteIfExists(chk_sum_file_path);
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
 
 				});
 

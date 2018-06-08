@@ -19,8 +19,10 @@ limitations under the License.
 
 import net.sf.xsd2pgschema.*;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -77,19 +79,21 @@ public class luceneidx2infix {
 
 		}
 
-		File idx_dir = new File(idx_dir_name);
+		Path idx_dir_path = Paths.get(idx_dir_name);
 
-		if (!idx_dir.isDirectory()) {
+		if (!Files.isDirectory(idx_dir_path)) {
 			System.err.println("Couldn't find directory '" + idx_dir_name + "'.");
 			System.exit(1);
 		}
 
-		File infix_dir = new File(infix_dir_name);
+		Path infix_dir_path = Paths.get(infix_dir_name);
 
-		if (!infix_dir.isDirectory()) {
+		if (!Files.isDirectory(infix_dir_path)) {
 
-			if (!infix_dir.mkdir()) {
-				System.err.println("Couldn't create directory '" + infix_dir_name + "'.");
+			try {
+				Files.createDirectory(infix_dir_path);
+			} catch (IOException e) {
+				e.printStackTrace();
 				System.exit(1);
 			}
 
@@ -97,7 +101,7 @@ public class luceneidx2infix {
 
 		try {
 
-			Directory idx = FSDirectory.open(idx_dir.toPath());
+			Directory idx = FSDirectory.open(idx_dir_path);
 
 			Analyzer analyzer = new StandardAnalyzer();
 
@@ -105,7 +109,7 @@ public class luceneidx2infix {
 
 			// Lucene dictionary for AnalyzingInfixSuggester
 
-			Directory infix = FSDirectory.open(infix_dir.toPath());
+			Directory infix = FSDirectory.open(infix_dir_path);
 
 			AnalyzingInfixSuggester suggester = new AnalyzingInfixSuggester(infix, analyzer);
 
@@ -163,7 +167,7 @@ public class luceneidx2infix {
 			suggester.commit();
 			suggester.close();
 
-			System.out.println("Done index -> infix (" + infix_dir.getPath() + ").");
+			System.out.println("Done index -> infix (" + infix_dir_path.toString() + ").");
 
 		} catch (IOException e) {
 			e.printStackTrace();

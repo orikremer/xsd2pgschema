@@ -44,9 +44,6 @@ public class XmlBuilder {
 	/** The indent offset. */
 	protected int indent_offset = PgSchemaUtil.indent_offset;
 
-	/** The initial indent space. */
-	protected String init_indent_space = "";
-
 	/** The current line feed code. */
 	protected String line_feed_code = "\n";
 
@@ -96,29 +93,6 @@ public class XmlBuilder {
 	public void setLineFeed(boolean line_feed) {
 
 		line_feed_code = line_feed ? "\n" : "";
-
-	}
-
-	/**
-	 * Set initial indent offset.
-	 *
-	 * @param init_indent_offset initial indent offset
-	 */
-	public void setInitIndentOffset(int init_indent_offset) {
-
-		if (init_indent_offset < 0)
-			init_indent_offset = 0;
-		else if (init_indent_offset > 4)
-			init_indent_offset = 4;
-
-		StringBuilder sb = new StringBuilder();
-
-		for (int l = 0; l < init_indent_offset; l++)
-			sb.append(" ");
-
-		init_indent_space = sb.toString();
-
-		sb.setLength(0);
 
 	}
 

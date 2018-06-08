@@ -49,7 +49,7 @@ public class PgAnyRetriever extends DefaultHandler {
 	private String prefix = null;
 
 	/** The nest tester. */
-	private PgNestTester nest_test = null;
+	private PgNestTesterForXml nest_test = null;
 
 	/** The XML builder. */
 	private XmlBuilder xmlb = null;
@@ -113,10 +113,10 @@ public class PgAnyRetriever extends DefaultHandler {
 	 * @param table current table
 	 * @param nest_test nest test result of this node
 	 * @param xmlb XML builder
-	 * @return PgSchemaNestTetster result of nest test
+	 * @return PgNestTetsterForXml result of nest test
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public PgNestTester exec(InputStream in, PgTable table, PgNestTester nest_test, XmlBuilder xmlb) throws XMLStreamException {
+	public PgNestTesterForXml exec(InputStream in, PgTable table, PgNestTesterForXml nest_test, XmlBuilder xmlb) throws XMLStreamException {
 
 		this.root_node_name = table.pname;
 		this.target_namespace = table.target_namespace;
@@ -229,7 +229,6 @@ public class PgAnyRetriever extends DefaultHandler {
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 		}
@@ -269,7 +268,6 @@ public class PgAnyRetriever extends DefaultHandler {
 
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			}
@@ -320,7 +318,6 @@ public class PgAnyRetriever extends DefaultHandler {
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 		}

@@ -19,9 +19,11 @@ limitations under the License.
 
 import net.sf.xsd2pgschema.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
@@ -65,13 +67,13 @@ public class Xml2PgCsvThrd implements Runnable {
 	private XmlValidator validator = null;
 
 	/** The working directory. */
-	private File work_dir = null;
+	private Path work_dir = null;
 
 	/** The XML file filter. */
 	private XmlFileFilter xml_file_filter = null;
 
 	/** The XML file queue. */
-	private LinkedBlockingQueue<File> xml_file_queue = null;
+	private LinkedBlockingQueue<Path> xml_file_queue = null;
 
 	/** The instance of message digest for check sum. */
 	private MessageDigest md_chk_sum = null;
@@ -97,7 +99,7 @@ public class Xml2PgCsvThrd implements Runnable {
 	 * @throws SQLException the SQL exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2PgCsvThrd(final int thrd_id, final InputStream is, final File work_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
+	public Xml2PgCsvThrd(final int thrd_id, final InputStream is, final Path work_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
 
@@ -127,7 +129,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		// prepare XML validator
 
-		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFile(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
+		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFilePath(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
 
 		if (!pg_option.name.isEmpty()) {
 
@@ -142,14 +144,10 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		}
 
-		this.work_dir = new File(work_dir, PgSchemaUtil.thrd_dir_prefix + thrd_id);
+		this.work_dir = Paths.get(work_dir.toString(), PgSchemaUtil.thrd_dir_prefix + thrd_id);
 
-		if (!this.work_dir.isDirectory()) {
-
-			if (!this.work_dir.mkdir())
-				throw new PgSchemaException("Couldn't create directory '" + this.work_dir + "'.");
-
-		}
+		if (!Files.isDirectory(this.work_dir))
+			Files.createDirectory(this.work_dir);
 
 		synchronizable = option.isSynchronizable(false);
 
@@ -178,9 +176,9 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		int polled = 0;
 
-		File xml_file;
+		Path xml_file_path;
 
-		while ((xml_file = xml_file_queue.poll()) != null) {
+		while ((xml_file_path = xml_file_queue.poll()) != null) {
 
 			if (show_progress) {
 
@@ -200,7 +198,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 				try {
 
-					new XmlParser(xml_file, xml_file_filter).identify(option, md_chk_sum);
+					new XmlParser(xml_file_path, xml_file_filter).identify(option, md_chk_sum);
 
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -211,12 +209,12 @@ public class Xml2PgCsvThrd implements Runnable {
 
 			try {
 
-				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file, xml_file_filter);
+				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file_path, xml_file_filter);
 
 				schema.xml2PgCsv(xml_parser, work_dir);
 
 			} catch (Exception e) {
-				System.err.println("Exception occurred while processing XML document: " + xml_file.getAbsolutePath());
+				System.err.println("Exception occurred while processing XML document: " + xml_file_path.toAbsolutePath().toString());
 				e.printStackTrace();
 				System.exit(1);
 			}
@@ -248,12 +246,12 @@ public class Xml2PgCsvThrd implements Runnable {
 				System.exit(1);
 			}
 
-			if (work_dir.isDirectory()) {
+			if (Files.isDirectory(work_dir)) {
 
 				System.out.println("Done xml (" + polled + " entries) -> db (" + db_name + ").");
 
 				try {
-					FileUtils.deleteDirectory(work_dir);
+					FileUtils.deleteDirectory(work_dir.toFile());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

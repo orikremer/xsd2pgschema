@@ -30,14 +30,17 @@ import javax.xml.stream.XMLStreamException;
  */
 public class PgPendingElem {
 
-	/** The header string. */
-	protected String header;
-
 	/** The table of element. */
 	protected PgTable table;
 
+	/** The header string. */
+	protected String header;
+
 	/** Whether element has attribute only. */
 	protected boolean attr_only = true;
+
+	/** the current indent level (JSON). */
+	protected int indent_level;
 
 	/** The pending attribute. */
 	protected HashMap<String, PgPendingAttr> pending_attrs = new HashMap<String, PgPendingAttr>();
@@ -45,15 +48,28 @@ public class PgPendingElem {
 	/**
 	 * Instance of pending element.
 	 *
-	 * @param header header string
 	 * @param table current table
+	 * @param header header string
 	 * @param attr_only whether element has attribute only.
 	 */
-	public PgPendingElem(String header, PgTable table, boolean attr_only) {
+	public PgPendingElem(PgTable table, String header, boolean attr_only) {
 
-		this.header = header;
 		this.table = table;
+		this.header = header;
 		this.attr_only = attr_only;
+
+	}
+
+	/**
+	 * Instance of pending element (JSON).
+	 *
+	 * @param table current table
+	 * @param indent_level current indent level
+	 */
+	public PgPendingElem(PgTable table, int indent_level) {
+
+		this.table = table;
+		this.indent_level = indent_level;
 
 	}
 
@@ -108,6 +124,25 @@ public class PgPendingElem {
 				}
 
 			});
+
+			clear();
+
+		}
+
+	}
+
+	/**
+	 * Write pending element (JSON).
+	 *
+	 * @param jsonb JSON builder
+	 */
+	public void write(JsonBuilder jsonb) {
+
+		jsonb.writeTableHeader(table, true, indent_level);
+
+		if (pending_attrs.size() > 0) {
+
+			pending_attrs.values().forEach(pending_attr -> pending_attr.write(jsonb));
 
 			clear();
 

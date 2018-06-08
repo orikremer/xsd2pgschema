@@ -20,11 +20,12 @@ limitations under the License.
 import net.sf.xsd2pgschema.*;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import javax.xml.parsers.*;
 
@@ -154,11 +155,11 @@ public class xsd2pgschema {
 
 		if (!ddl_file_name.isEmpty() && !ddl_file_name.equals("stdout")) {
 
-			File ddl_file = new File(ddl_file_name);
+			Path ddl_file_path = Paths.get(ddl_file_name);
 
 			try {
-				System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(ddl_file)), true));
-			} catch (FileNotFoundException e) {
+				System.setOut(new PrintStream(new BufferedOutputStream(Files.newOutputStream(ddl_file_path)), true));
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
 

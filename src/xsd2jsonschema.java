@@ -20,12 +20,12 @@ limitations under the License.
 import net.sf.xsd2pgschema.*;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import javax.xml.parsers.*;
 
@@ -69,11 +69,11 @@ public class xsd2jsonschema {
 			else if (args[i].equals("--json-array-all"))
 				jsonb_option.array_all = true;
 
-			else if (args[i].equals("--attr-json-prefix") && i + 1 < args.length)
+			else if (args[i].equals("--json-attr-prefix") && i + 1 < args.length)
 				jsonb_option.setAttrPrefix(args[++i]);
 
-			else if (args[i].equals("--simple-cont-json-key") && i + 1 < args.length)
-				jsonb_option.setSimpleContentKey(args[++i]);
+			else if (args[i].equals("--json-simple-cont-name") && i + 1 < args.length)
+				jsonb_option.setSimpleContentName(args[++i]);
 
 			else if (args[i].equals("--json-indent-offset") && i + 1 < args.length)
 				jsonb_option.setIndentOffset(args[++i]);
@@ -129,11 +129,11 @@ public class xsd2jsonschema {
 
 		if (!json_file_name.isEmpty() && !json_file_name.equals("stdout")) {
 
-			File json_file = new File(json_file_name);
+			Path json_file_path = Paths.get(json_file_name);
 
 			try {
-				System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream(json_file)), true));
-			} catch (FileNotFoundException e) {
+				System.setOut(new PrintStream(new BufferedOutputStream(Files.newOutputStream(json_file_path)), true));
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
 
@@ -188,8 +188,8 @@ public class xsd2jsonschema {
 		System.err.println("        --field-annotation (retrieve field annotation, default)");
 		System.err.println("        --no-field-annotation (do not retrieve field annotation)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
-		System.err.println("        --attr-json-prefix ATTR_PREFIX_CODE (default=\"" + jsonb_option.getAttrPrefix() + "\")");
-		System.err.println("        --simple-cont-json-key SIMPLE_CONTENT_NAME (default=\"" + jsonb_option.getSimpleContentKey() + "\")");
+		System.err.println("        --json-attr-prefix ATTR_PREFIX_CODE (default=\"" + jsonb_option.getAttrPrefix() + "\")");
+		System.err.println("        --json-simple-cont-name SIMPLE_CONTENT_NAME (default=\"" + jsonb_option.getSimpleContentName() + "\")");
 		System.err.println("        --json-indent-offset INTEGER (default=" + jsonb_option.getIndentOffset() + ", min=0, max=4)");
 		System.err.println("        --json-key-value-offset INTEGER (default=" + jsonb_option.getKeyValueOffset() + ", min=0, max=4)");
 		System.err.println("        --json-no-linefeed (dismiss line feed code)");

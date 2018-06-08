@@ -21,8 +21,12 @@ import net.sf.xsd2pgschema.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -32,13 +36,16 @@ import org.xml.sax.SAXException;
 import com.github.antlr.grammars_v4.xpath.xpathListenerException;
 
 /**
- * XPath 1.0 query evaluator to XML over PostgreSQL.
+ * XPath 1.0 query evaluator to compose XML over PostgreSQL.
  *
  * @author yokochi
  */
 public class xpath2xml {
 
-	/** The output file name. */
+	/** The XML directory name. */
+	private static String xml_dir_name = "xml_result";
+
+	/** The output file name or pattern. */
 	protected static String out_file_name = "";
 
 	/** The schema option. */
@@ -50,8 +57,8 @@ public class xpath2xml {
 	/** The XML builder. */
 	private static XmlBuilder xmlb = new XmlBuilder();
 
-	/** The XPath query. */
-	private static String xpath_query = "";
+	/** The XPath queries. */
+	private static ArrayList<String> xpath_queries = new ArrayList<String>();
 
 	/** The XPath variable reference. */
 	private static HashMap<String, String> variables = new HashMap<String, String>();
@@ -72,7 +79,7 @@ public class xpath2xml {
 				out_file_name = args[++i];
 
 			else if (args[i].equals("--xpath-query") && i + 1 < args.length)
-				xpath_query = args[++i];
+				xpath_queries.add(args[++i]);
 
 			else if (args[i].equals("--xpath-var") && i + 1 < args.length) {
 				String[] variable = args[++i].split("=");
@@ -121,6 +128,9 @@ public class xpath2xml {
 
 			else if (args[i].equals("--xml-compact"))
 				xmlb.setCompact();
+
+			else if (args[i].equals("--out-dir") && i + 1 < args.length)
+				xml_dir_name = args[++i];
 
 			else if (args[i].equals("--doc-key"))
 				option.setDocKeyOption(true);
@@ -202,6 +212,23 @@ public class xpath2xml {
 			showUsage();
 		}
 
+		if (!out_file_name.isEmpty() && !out_file_name.equals("stdout")) {
+
+			Path xml_dir_path = Paths.get(xml_dir_name);
+
+			if (!Files.isDirectory(xml_dir_path)) {
+
+				try {
+					Files.createDirectory(xml_dir_path);
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			}
+
+		}
+
 		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
 		if (is == null)
@@ -214,10 +241,16 @@ public class xpath2xml {
 			if (!pg_option.name.isEmpty())
 				pg_option.clear();
 
-			evaluator.translate(xpath_query, variables);
+			for (int id = 0; id < xpath_queries.size(); id++) {
 
-			if (!pg_option.name.isEmpty())
-				evaluator.composeXml(out_file_name, xmlb);
+				String xpath_query = xpath_queries.get(id);
+
+				evaluator.translate(xpath_query, variables);
+
+				if (!pg_option.name.isEmpty())
+					evaluator.composeXml(id, xpath_queries.size(), xml_dir_name, out_file_name, xmlb);
+
+			}
 
 		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException | SQLException e) {
 			e.printStackTrace();
@@ -231,14 +264,15 @@ public class xpath2xml {
 	 */
 	private static void showUsage() {
 
-		System.err.println("xpath2xml: XPath 1.0 qeury evaluator to XML over PostgreSQL");
+		System.err.println("xpath2xml: XPath 1.0 qeury evaluator to compose XML over PostgreSQL");
 		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
-		System.err.println("        --xpath-query XPATH_QUERY");
+		System.err.println("        --xpath-query XPATH_QUERY (repeatable)");
 		System.err.println("        --xpath-var KEY=VALUE");
-		System.err.println("        --out OUTPUT_FILE (default=stdout)");
+		System.err.println("        --out OUTPUT_FILE_OR_PATTERN (default=stdout)");
+		System.err.println("        --out-dir OUTPUT_DIRECTORY");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");

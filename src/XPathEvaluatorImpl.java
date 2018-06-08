@@ -20,10 +20,11 @@ limitations under the License.
 import net.sf.xsd2pgschema.*;
 
 import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -42,6 +43,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -89,6 +91,8 @@ public class XPathEvaluatorImpl {
 	 */
 	public XPathEvaluatorImpl(final InputStream is, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
+		long start_time = System.currentTimeMillis();
+
 		// parse XSD document
 
 		DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
@@ -108,6 +112,8 @@ public class XPathEvaluatorImpl {
 
 		schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, this.option = option);
 
+		long end_time = System.currentTimeMillis();
+
 		if (!pg_option.name.isEmpty()) {
 
 			db_conn = DriverManager.getConnection(pg_option.getDbUrl(PgSchemaUtil.def_encoding), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
@@ -118,6 +124,8 @@ public class XPathEvaluatorImpl {
 				schema.testPgSql(db_conn, false);
 
 		}
+
+		System.out.println("XML Schema parse time: " + (end_time - start_time) + " ms\n");
 
 	}
 
@@ -191,27 +199,39 @@ public class XPathEvaluatorImpl {
 	/**
 	 * Execute translated SQL.
 	 *
+	 * @param id query id
+	 * @param total the total number of query
+	 * @param out_dir_name output directory name
 	 * @param out_file_name output file name
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void execute(String out_file_name) throws PgSchemaException {
+	public void execute(int id, int total, String out_dir_name, String out_file_name) throws PgSchemaException {
 
 		if (xpath_comp_list == null)
 			throw new PgSchemaException("Not parsed XPath expression ever.");
 
-		FileOutputStream fout = null;
-
-		BufferedOutputStream bout = null;
-
 		try {
+
+			Path out_file_path = null;
+
+			BufferedOutputStream bout = null;
 
 			if (!out_file_name.isEmpty() && !out_file_name.equals("stdout")) {
 
-				File out_file = new File(out_file_name);
+				if (total > 1) {
 
-				fout = new FileOutputStream(out_file);
+					String file_ext = FilenameUtils.getExtension(out_file_name);
 
-				bout = new BufferedOutputStream(fout);
+					if (file_ext != null && !file_ext.isEmpty())
+						out_file_name = FilenameUtils.removeExtension(out_file_name) + (id + 1) + "." + file_ext;
+					else
+						out_file_name += (id + 1);
+
+				}
+
+				out_file_path = Paths.get(out_dir_name, out_file_name);
+
+				bout = new BufferedOutputStream(Files.newOutputStream(out_file_path));
 
 			}
 
@@ -296,19 +316,21 @@ public class XPathEvaluatorImpl {
 
 			stat.close();
 
-			if (fout != null) {
+			if (out_file_path != null) {
 
 				bout.close();
-				fout.close();
 
-				System.out.println("Generated result document: " + out_file_name);
-
+				System.out.println("Generated result document: " + out_file_path.toAbsolutePath().toString());
 				System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
 
 			}
 
-			else
+			else {
+
 				bout.write(String.valueOf("\nSQL execution time: " + (end_time - start_time) + " ms\n").getBytes());
+				bout.flush();
+
+			}
 
 		} catch (SQLException | IOException e) {
 			throw new PgSchemaException(e);
@@ -319,30 +341,42 @@ public class XPathEvaluatorImpl {
 	/**
 	 * Execute translated SQL and compose XML document.
 	 *
-	 * @param out_file_name output file name
+	 * @param id query id
+	 * @param total the total number of query
+	 * @param out_dir_name output directory name
+	 * @param out_file_name output file name or pattern
 	 * @param xmlb XML builder
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void composeXml(String out_file_name, XmlBuilder xmlb) throws PgSchemaException {
+	public void composeXml(int id, int total, String out_dir_name, String out_file_name, XmlBuilder xmlb) throws PgSchemaException {
 
 		if (xpath_comp_list == null)
 			throw new PgSchemaException("Not parsed XPath expression ever.");
 
 		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 
-		FileOutputStream fout = null;
-
-		BufferedOutputStream bout = null;
-
 		try {
+
+			Path out_file_path = null;
+
+			BufferedOutputStream bout = null;
 
 			if (!out_file_name.isEmpty() && !out_file_name.equals("stdout")) {
 
-				File out_file = new File(out_file_name);
+				if (total > 1) {
 
-				fout = new FileOutputStream(out_file);
+					String file_ext = FilenameUtils.getExtension(out_file_name);
 
-				bout = new BufferedOutputStream(fout);
+					if (file_ext != null && !file_ext.isEmpty())
+						out_file_name = FilenameUtils.removeExtension(out_file_name) + (id + 1) + "." + file_ext;
+					else
+						out_file_name += (id + 1);
+
+				}
+
+				out_file_path = Paths.get(out_dir_name, out_file_name);
+
+				bout = new BufferedOutputStream(Files.newOutputStream(out_file_path));
 
 				xml_writer = out_factory.createXMLStreamWriter(bout);
 
@@ -358,7 +392,6 @@ public class XPathEvaluatorImpl {
 
 			}
 
-			xmlb.setInitIndentOffset(0);
 			xmlb.setXmlWriter(xml_writer);
 
 			schema.initXmlBuilder(xmlb);
@@ -382,13 +415,11 @@ public class XPathEvaluatorImpl {
 						while (rset.next())
 							schema.pgSql2Xml(db_conn, path_expr, rset);
 
-						// schema.closePgSql2Xml(); // reuse resource (prepared statement) for repetition
-
 					}
 
 					// field or text node
 
-					else 
+					else
 						schema.pgSql2XmlFrag(xpath_comp_list, path_expr, rset);
 
 					rset.close();
@@ -407,22 +438,131 @@ public class XPathEvaluatorImpl {
 			if (xmlb.append_declare)
 				xml_writer.writeEndDocument();
 
-			if (fout != null) {
+			if (out_file_path != null) {
 
 				bout.close();
-				fout.close();
 
-				System.out.println("Generated result document: " + out_file_name);
+				System.out.println("Generated result document: " + out_file_path.toAbsolutePath().toString());
+				System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
 
 			}
 
-			System.out.println("");
+			else {
 
-			xml_writer.close();
+				xml_writer.close();
+				System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
 
-			System.out.println("SQL execution time: " + (end_time - start_time) + " ms");
+			}
 
 		} catch (IOException | XMLStreamException | SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
+	/**
+	 * Execute translated SQL and compose JSON document.
+	 *
+	 * @param id query id
+	 * @param total the total number of query
+	 * @param out_dir_name output directory name
+	 * @param out_file_name output file name or pattern
+	 * @param jsonb_option JSON builder option
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void composeJson(int id, int total, String out_dir_name, String out_file_name, JsonBuilderOption jsonb_option) throws PgSchemaException {
+
+		if (xpath_comp_list == null)
+			throw new PgSchemaException("Not parsed XPath expression ever.");
+
+		schema.initJsonBuilder(jsonb_option);
+
+		try {
+
+			Path out_file_path = null;
+
+			BufferedOutputStream bout = null;
+
+			if (!out_file_name.isEmpty() && !out_file_name.equals("stdout")) {
+
+				if (total > 1) {
+
+					String file_ext = FilenameUtils.getExtension(out_file_name);
+
+					if (file_ext != null && !file_ext.isEmpty())
+						out_file_name = FilenameUtils.removeExtension(out_file_name) + (id + 1) + "." + file_ext;
+					else
+						out_file_name += (id + 1);
+
+				}
+
+				out_file_path = Paths.get(out_dir_name, out_file_name);
+
+				bout = new BufferedOutputStream(Files.newOutputStream(out_file_path));
+
+			}
+
+			else
+				bout = new BufferedOutputStream(System.out);
+
+			Statement stat = db_conn.createStatement();
+
+			long start_time = System.currentTimeMillis();
+
+			xpath_comp_list.path_exprs.forEach(path_expr -> {
+
+				XPathCompType terminus = path_expr.terminus;
+
+				try {
+
+					ResultSet rset = stat.executeQuery(path_expr.sql);
+
+					// table node
+
+					if (terminus.equals(XPathCompType.table)) {
+
+						while (rset.next())
+							schema.pgSql2Json(db_conn, path_expr, rset);
+
+					}
+
+					// field or text node
+
+					else
+						schema.pgSql2JsonFrag(xpath_comp_list, path_expr, rset);
+
+					rset.close();
+
+				} catch (SQLException | PgSchemaException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			});
+
+			schema.writeJsonBuilder(bout);
+
+			long end_time = System.currentTimeMillis();
+
+			stat.close();
+
+			if (out_file_path != null) {
+
+				bout.close();
+
+				System.out.println("Generated result document: " + out_file_path.toAbsolutePath().toString());
+				System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
+
+			}
+
+			else {
+
+				bout.write(String.valueOf("\nSQL execution time: " + (end_time - start_time) + " ms\n").getBytes());
+				bout.flush();
+
+			}
+
+		} catch (IOException | SQLException e) {
 			throw new PgSchemaException(e);
 		}
 

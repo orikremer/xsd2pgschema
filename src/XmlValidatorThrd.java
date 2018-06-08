@@ -19,8 +19,8 @@ limitations under the License.
 
 import net.sf.xsd2pgschema.*;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
@@ -47,7 +47,7 @@ public class XmlValidatorThrd implements Runnable {
 	private XmlFileFilter xml_file_filter = null;
 
 	/** The XML file queue. */
-	private LinkedBlockingQueue<File> xml_file_queue = null;
+	private LinkedBlockingQueue<Path> xml_file_queue = null;
 
 	/** The instance of message digest for check sum. */
 	private MessageDigest md_chk_sum = null;
@@ -61,7 +61,7 @@ public class XmlValidatorThrd implements Runnable {
 	 * @param option PostgreSQL data model option
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 */
-	public XmlValidatorThrd(final int thrd_id, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<File> xml_file_queue, PgSchemaOption option) throws NoSuchAlgorithmException {
+	public XmlValidatorThrd(final int thrd_id, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, PgSchemaOption option) throws NoSuchAlgorithmException {
 
 		this.thrd_id = thrd_id;
 
@@ -70,7 +70,7 @@ public class XmlValidatorThrd implements Runnable {
 
 		this.option = option;
 
-		validator = new XmlValidator(PgSchemaUtil.getSchemaFile(option.root_schema_location, null, true), option.full_check);
+		validator = new XmlValidator(PgSchemaUtil.getSchemaFilePath(option.root_schema_location, null, true), option.full_check);
 
 		synchronizable = option.isSynchronizable(false);
 
@@ -97,9 +97,9 @@ public class XmlValidatorThrd implements Runnable {
 
 		long start_time = System.currentTimeMillis();
 
-		File xml_file;
+		Path xml_file_path;
 
-		while ((xml_file = xml_file_queue.poll()) != null) {
+		while ((xml_file_path = xml_file_queue.poll()) != null) {
 
 			if (show_progress) {
 
@@ -119,7 +119,7 @@ public class XmlValidatorThrd implements Runnable {
 
 				try {
 
-					XmlParser xml_parser = new XmlParser(xml_file, xml_file_filter);
+					XmlParser xml_parser = new XmlParser(xml_file_path, xml_file_filter);
 
 					if (xml_parser.identify(option, md_chk_sum))
 						continue;
@@ -133,7 +133,7 @@ public class XmlValidatorThrd implements Runnable {
 
 			try {
 
-				new XmlParser(validator, xml_file, xml_file_filter, option);
+				new XmlParser(validator, xml_file_path, xml_file_filter, option);
 
 			} catch (Exception e) {
 				e.printStackTrace();

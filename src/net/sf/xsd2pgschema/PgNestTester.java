@@ -20,29 +20,17 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * Nest tester.
+ * Abstract nest tester.
  *
  * @author yokochi
  */
-public class PgNestTester {
+public abstract class PgNestTester {
 
 	/** The ancestor node name. */
 	protected String ancestor_node = null;
 
 	/** The parent node name. */
 	protected String parent_node = null;
-
-	/** The current indent space. */
-	protected String current_indent_space = "";
-
-	/** The child indent space. */
-	protected String child_indent_space = "";
-
-	/** The unit of indent space. */
-	protected String indent_space = null;
-
-	/** The indent offset. */
-	protected int indent_offset = PgSchemaUtil.indent_offset;
 
 	/** Whether this node has child element. */
 	boolean has_child_elem = false;
@@ -63,9 +51,8 @@ public class PgNestTester {
 	 * Instance of nest tester from root node.
 	 *
 	 * @param table current table
-	 * @param xmlb XML builder
 	 */
-	public PgNestTester(PgTable table, XmlBuilder xmlb) {
+	public PgNestTester(PgTable table) {
 
 		ancestor_node = "";
 		parent_node = table.xname;
@@ -76,19 +63,6 @@ public class PgNestTester {
 			parent_node = table.xname;
 
 		}
-
-		StringBuilder sb = new StringBuilder();
-
-		for (int l = 0; l < xmlb.indent_offset; l++)
-			sb.append(" ");
-
-		indent_offset = xmlb.indent_offset;
-		indent_space = sb.toString();
-
-		sb.setLength(0);
-
-		current_indent_space = xmlb.init_indent_space;
-		child_indent_space = table.virtual ? current_indent_space: current_indent_space + indent_space;
 
 	}
 
@@ -110,12 +84,6 @@ public class PgNestTester {
 
 		}
 
-		indent_offset = parent_test.indent_offset;
-		indent_space = parent_test.indent_space;
-
-		current_indent_space = parent_test.child_indent_space;
-		child_indent_space = table.virtual ? current_indent_space: current_indent_space + indent_space;
-
 		has_insert_doc_key = parent_test.has_insert_doc_key;
 
 	}
@@ -132,15 +100,6 @@ public class PgNestTester {
 		has_simple_content |= test.has_simple_content;
 		has_open_simple_content |= test.has_open_simple_content;
 
-	}
-
-	/**
-	 * Return indent space of parent node.
-	 *
-	 * @return String indent space of parent node
-	 */
-	public String getParentIndentSpace() {
-		return current_indent_space.length() > indent_offset ? current_indent_space.substring(indent_offset) : "";
 	}
 
 }

@@ -19,10 +19,11 @@ limitations under the License.
 
 import net.sf.xsd2pgschema.*;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -87,19 +88,21 @@ public class luceneidx2ftxt {
 
 		}
 
-		File idx_dir = new File(idx_dir_name);
+		Path idx_dir_path = Paths.get(idx_dir_name);
 
-		if (!idx_dir.isDirectory()) {
+		if (!Files.isDirectory(idx_dir_path)) {
 			System.err.println("Couldn't find directory '" + idx_dir_name + "'.");
 			System.exit(1);
 		}
 
-		File ftxt_dir = new File(ftxt_dir_name);
+		Path ftxt_dir_path = Paths.get(ftxt_dir_name);
 
-		if (!ftxt_dir.isDirectory()) {
+		if (!Files.isDirectory(ftxt_dir_path)) {
 
-			if (!ftxt_dir.mkdir()) {
-				System.err.println("Couldn't create directory '" + ftxt_dir_name + "'.");
+			try {
+				Files.createDirectory(ftxt_dir_path);
+			} catch (IOException e) {
+				e.printStackTrace();
 				System.exit(1);
 			}
 
@@ -107,7 +110,7 @@ public class luceneidx2ftxt {
 
 		try {
 
-			Directory dir = FSDirectory.open(idx_dir.toPath());
+			Directory dir = FSDirectory.open(idx_dir_path);
 
 			Analyzer analyzer = new StandardAnalyzer();
 
@@ -168,11 +171,9 @@ public class luceneidx2ftxt {
 
 			}
 
-			File dic = new File(ftxt_dir, dic_file_name);
+			Path dic_path = Paths.get(ftxt_dir_name, dic_file_name);
 
-			FileOutputStream fout = new FileOutputStream(dic);
-
-			BufferedOutputStream bout = new BufferedOutputStream(fout);
+			OutputStream bout = Files.newOutputStream(dic_path);
 
 			DataOutput output = new OutputStreamDataOutput(bout);
 
@@ -180,9 +181,7 @@ public class luceneidx2ftxt {
 
 			bout.close();
 
-			fout.close();
-
-			System.out.println("Done index -> ftxt (" + dic.getPath() + ").");
+			System.out.println("Done index -> ftxt (" + dic_path.toString() + ").");
 
 		} catch (IOException e) {
 			e.printStackTrace();

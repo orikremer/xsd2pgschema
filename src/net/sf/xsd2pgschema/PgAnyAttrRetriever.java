@@ -29,11 +29,23 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class PgAnyAttrRetriever extends DefaultHandler {
 
-	/** The root node name. */
-	private String root_node_name = null;
+	/** The current table. */
+	private PgTable table;
 
 	/** The XML builder. */
 	private XmlBuilder xmlb = null;
+
+	/** The JSON builder. */
+	private JsonBuilder jsonb = null;
+
+	/** The current indent level (JSON). */
+	private int indent_level;
+
+	/** The current field (column-oriented JSON). */
+	private PgField field = null;
+
+	/** The JSON key value space (column-oriented JSON). */
+	private String key_value_space = null;
 
 	/** The current state for root node. */
 	private boolean root_node = false;
@@ -44,13 +56,43 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 	/**
 	 * Instance of any attribute retriever.
 	 *
-	 * @param table_pname table name in PostgreSQL
+	 * @param table current table
 	 * @param xmlb XML builder
 	 */
-	public PgAnyAttrRetriever(String table_pname, XmlBuilder xmlb) {
+	public PgAnyAttrRetriever(PgTable table, XmlBuilder xmlb) {
 
-		root_node_name = table_pname;
+		this.table = table;
 		this.xmlb = xmlb;
+
+	}
+
+	/**
+	 * Instance of any attribute retriever (JSON).
+	 *
+	 * @param table current table
+	 * @param jsonb JSON builder
+	 * @param indent_level current indent level
+	 */
+	public PgAnyAttrRetriever(PgTable table, JsonBuilder jsonb, int indent_level) {
+
+		this.table = table;
+		this.jsonb = jsonb;
+		this.indent_level = indent_level;
+
+	}
+
+	/**
+	 * Instance of any attribute retriever (column-oriented JSON).
+	 *
+	 * @param table current table
+	 * @param field current field
+	 * @param key_value_space the JSON key value space
+	 */
+	public PgAnyAttrRetriever(PgTable table, PgField field, String key_value_space) {
+
+		this.table = table;
+		this.field = field;
+		this.key_value_space = key_value_space;
 
 	}
 
@@ -60,7 +102,7 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 	 */
 	public void startElement(String namespaceURI, String localName, String qName, Attributes atts) {
 
-		if (localName.equals(root_node_name))
+		if (localName.equals(table.pname))
 			root_node = true;
 
 		else if (!root_node)
@@ -72,22 +114,48 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 
 			if (content != null && !content.isEmpty()) {
 
-				PgPendingAttr attr = new PgPendingAttr(atts.getLocalName(i), content);
+				// compose XML document
 
-				PgPendingElem elem = xmlb.pending_elem.peek();
+				if (xmlb != null) {
 
-				if (elem != null)
-					elem.appendPendingAttr(attr);
+					PgPendingAttr attr = new PgPendingAttr(atts.getLocalName(i), content);
 
-				else {
+					PgPendingElem elem = xmlb.pending_elem.peek();
 
-					try {
-						attr.write(xmlb);
-					} catch (PgSchemaException e) {
-						e.printStackTrace();
+					if (elem != null)
+						elem.appendPendingAttr(attr);
+
+					else {
+
+						try {
+							attr.write(xmlb);
+						} catch (PgSchemaException e) {
+							e.printStackTrace();
+						}
+
 					}
 
 				}
+
+				// compose JSON document
+
+				else if (jsonb != null) {
+
+					PgPendingAttr attr = new PgPendingAttr(atts.getLocalName(i), content, indent_level);
+
+					PgPendingElem elem = jsonb.pending_elem.peek();
+
+					if (elem != null)
+						elem.appendPendingAttr(attr);
+					else
+						attr.write(jsonb);
+
+				}
+
+				// compose column-oriented JSON document
+
+				else if (field != null)
+					field.writeValue2JsonBuf(content, key_value_space);
 
 				has_content = true;
 
@@ -106,7 +174,7 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 		if (!root_node)
 			return;
 
-		if (localName.equals(root_node_name))
+		if (localName.equals(table.pname))
 			root_node = false;
 
 	}

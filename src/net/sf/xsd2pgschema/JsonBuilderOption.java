@@ -36,7 +36,7 @@ public class JsonBuilderOption {
 	protected String attr_prefix = "";
 
 	/** The JSON item name of xs:simpleContent. */
-	protected String simple_content_key = PgSchemaUtil.simple_content_name;
+	protected String simple_content_name = PgSchemaUtil.simple_content_name;
 
 	/** The indent offset. */
 	protected int indent_offset = PgSchemaUtil.indent_offset;
@@ -53,6 +53,9 @@ public class JsonBuilderOption {
 	/** Whether retain field annotation or not. */
 	public boolean no_field_anno = false;
 
+	/** Whether insert document key. */
+	public boolean insert_doc_key = false;
+
 	/**
 	 * Set case insensitive mode.
 	 */
@@ -61,7 +64,7 @@ public class JsonBuilderOption {
 		case_sense = false;
 
 		attr_prefix = attr_prefix.toLowerCase();
-		simple_content_key = simple_content_key.toLowerCase();
+		simple_content_name = simple_content_name.toLowerCase();
 
 	}
 
@@ -82,14 +85,14 @@ public class JsonBuilderOption {
 	/**
 	 * Set item name in JSON document of xs:simpleContent.
 	 *
-	 * @param simple_content_key item name of xs:simpleContent in JSON document
+	 * @param simple_content_name item name of xs:simpleContent in JSON document
 	 */
-	public void setSimpleContentKey(String simple_content_key) {
+	public void setSimpleContentName(String simple_content_name) {
 
-		if (simple_content_key == null)
-			simple_content_key= PgSchemaUtil.simple_content_name;
+		if (simple_content_name == null)
+			simple_content_name= PgSchemaUtil.simple_content_name;
 
-		this.simple_content_key = case_sense ? simple_content_key : simple_content_key.toLowerCase();
+		this.simple_content_name = case_sense ? simple_content_name : simple_content_name.toLowerCase();
 
 	}
 
@@ -160,8 +163,8 @@ public class JsonBuilderOption {
 	 *
 	 * @return String item name for simple content
 	 */
-	public String getSimpleContentKey() {
-		return simple_content_key;
+	public String getSimpleContentName() {
+		return simple_content_name;
 	}
 
 	/**

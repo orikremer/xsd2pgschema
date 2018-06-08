@@ -23,6 +23,9 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -50,7 +53,7 @@ public class xmlsplitter {
 	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
 
 	/** The source XML file queue. */
-	private static LinkedBlockingQueue<File> xml_file_queue = null;
+	private static LinkedBlockingQueue<Path> xml_file_queue = null;
 
 	/** The XPath expression pointing document key. */
 	private static String xpath_doc_key = "";
@@ -170,12 +173,14 @@ public class xmlsplitter {
 
 		xml_file_queue = PgSchemaUtil.getQueueOfTargetFiles(xml_file_names, filename_filter);
 
-		File xml_dir = new File(xml_dir_name);
+		Path xml_dir_path = Paths.get(xml_dir_name);
 
-		if (!xml_dir.isDirectory()) {
+		if (!Files.isDirectory(xml_dir_path)) {
 
-			if (!xml_dir.mkdir()) {
-				System.err.println("Couldn't create directory '" + xml_dir_name + "'.");
+			try {
+				Files.createDirectory(xml_dir_path);
+			} catch (IOException e) {
+				e.printStackTrace();
 				System.exit(1);
 			}
 
@@ -183,7 +188,7 @@ public class xmlsplitter {
 
 		try {
 
-			XmlSplitterImpl splitter = new XmlSplitterImpl(shard_size, is, xml_dir, xml_file_queue, option, xpath_doc_key);
+			XmlSplitterImpl splitter = new XmlSplitterImpl(shard_size, is, xml_dir_path, xml_file_queue, option, xpath_doc_key);
 
 			splitter.exec();
 

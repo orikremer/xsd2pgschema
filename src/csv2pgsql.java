@@ -19,9 +19,11 @@ limitations under the License.
 
 import net.sf.xsd2pgschema.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -160,12 +162,14 @@ public class csv2pgsql {
 		if (is == null)
 			showUsage();
 
-		File work_dir = new File(work_dir_name);
+		Path work_dir = Paths.get(work_dir_name);
 
-		if (!work_dir.isDirectory()) {
+		if (!Files.isDirectory(work_dir)) {
 
-			if (!work_dir.mkdir()) {
-				System.err.println("Couldn't create directory '" + work_dir_name + "'.");
+			try {
+				Files.createDirectory(work_dir);
+			} catch (IOException e) {
+				e.printStackTrace();
 				System.exit(1);
 			}
 

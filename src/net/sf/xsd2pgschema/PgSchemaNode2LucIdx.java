@@ -37,6 +37,9 @@ import org.w3c.dom.Node;
  */
 public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
+	/** Whether table is referred from child table. */
+	private boolean required = false;
+
 	/** The minimum word length for indexing. */
 	private int min_word_len = PgSchemaUtil.min_word_len;
 
@@ -55,6 +58,8 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	public PgSchemaNode2LucIdx(final PgSchema schema, final PgTable parent_table, final PgTable table) throws TransformerConfigurationException, ParserConfigurationException {
 
 		super(schema, parent_table, table);
+
+		required = table.required;
 
 		min_word_len = schema.index_filter.min_word_len;
 
@@ -143,7 +148,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			else if (field.primary_key) {
 
-				if (table.lucene_doc != null && rel_data_ext)
+				if (required && rel_data_ext)
 					values[f] = schema.getHashKeyString(primary_key);
 
 			}
@@ -154,7 +159,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 				if (parent_table.xname.equals(field.foreign_table_xname)) {
 
-					if (table.lucene_doc != null && rel_data_ext)
+					if (required && rel_data_ext)
 						values[f] = schema.getHashKeyString(parent_key);
 
 				}
@@ -169,7 +174,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 				if ((nested_key = setNestedKey(proc_node, field, current_key)) != null) {
 
-					if (table.lucene_doc != null && rel_data_ext)
+					if (required && rel_data_ext)
 						values[f] = schema.getHashKeyString(nested_key);
 
 				}
@@ -182,7 +187,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 				if (setContent(proc_node, field, current_key, as_attr, false)) {
 
-					if (table.lucene_doc != null)
+					if (required)
 						values[f] = content;
 
 				} else if (field.required) {
@@ -194,7 +199,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			// any, any_attribute
 
-			else if ((field.any || field.any_attribute) && table.lucene_doc != null) {
+			else if ((field.any || field.any_attribute) && required) {
 
 				if (setAnyContent(proc_node, field))
 					values[f] = Jsoup.parse(content).text();
@@ -209,7 +214,8 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 		if (!filled || (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0)))
 			return;
 
-		write();
+		if (required)
+			write();
 
 		this.proc_node = proc_node;
 		this.current_key = current_key;
@@ -221,9 +227,6 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 * Writer of processing node.
 	 */
 	private void write() {
-
-		if (table.lucene_doc == null)
-			return;
 
 		for (int f = 0; f < fields.size(); f++) {
 

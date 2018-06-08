@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017-2018 Masashi Yokochi
+    Copyright 2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -36,14 +36,14 @@ import org.xml.sax.SAXException;
 import com.github.antlr.grammars_v4.xpath.xpathListenerException;
 
 /**
- * Query translator from XPath to SQL.
+ * XPath 1.0 query evaluator to compose JSON over PostgreSQL.
  *
  * @author yokochi
  */
-public class xpath2pgsql {
+public class xpath2json {
 
-	/** The output directory name. */
-	private static String out_dir_name = "sql_result";
+	/** The JSON directory name. */
+	private static String json_dir_name = "json_result";
 
 	/** The output file name or pattern. */
 	protected static String out_file_name = "";
@@ -53,6 +53,9 @@ public class xpath2pgsql {
 
 	/** The PostgreSQL option. */
 	private static PgOption pg_option = new PgOption();
+
+	/** The JSON builder option. */
+	private static JsonBuilderOption jsonb_option = new JsonBuilderOption();
 
 	/** The XPath queries. */
 	private static ArrayList<String> xpath_queries = new ArrayList<String>();
@@ -105,8 +108,41 @@ public class xpath2pgsql {
 			else if (args[i].equals("--test-ddl"))
 				pg_option.test = true;
 
+			else if (args[i].equals("--fill-default-value"))
+				option.fill_default_value = true;
+
+			else if (args[i].equals("--obj-json"))
+				jsonb_option.type = JsonType.object;
+
+			else if (args[i].equals("--col-json"))
+				jsonb_option.type = JsonType.column;
+
+			else if (args[i].equals("--json-array-all"))
+				jsonb_option.array_all = true;
+
+			else if (args[i].equals("--json-attr-prefix") && i + 1 < args.length)
+				jsonb_option.setAttrPrefix(args[++i]);
+
+			else if (args[i].equals("--json-simple-cont-name") && i + 1 < args.length)
+				jsonb_option.setSimpleContentName(args[++i]);
+
+			else if (args[i].equals("--json-indent-offset") && i + 1 < args.length)
+				jsonb_option.setIndentOffset(args[++i]);
+
+			else if (args[i].equals("--json-key-value-offset") && i + 1 < args.length)
+				jsonb_option.setKeyValueOffset(args[++i]);
+
+			else if (args[i].equals("--json-insert-doc-key"))
+				jsonb_option.insert_doc_key = true;
+
+			else if (args[i].equals("--json-no-linefeed"))
+				jsonb_option.setLineFeed(false);
+
+			else if (args[i].equals("--json-compact"))
+				jsonb_option.setCompact();
+
 			else if (args[i].equals("--out-dir") && i + 1 < args.length)
-				out_dir_name = args[++i];
+				json_dir_name = args[++i];
 
 			else if (args[i].equals("--doc-key"))
 				option.setDocKeyOption(true);
@@ -126,20 +162,16 @@ public class xpath2pgsql {
 			else if (args[i].equals("--xpath-key"))
 				option.xpath_key = true;
 
-			else if (args[i].equals("--case-insensitive"))
+			else if (args[i].equals("--case-insensitive")) {
 				option.setCaseInsensitive();
+				jsonb_option.setCaseInsensitive();
+			}
 
 			else if (args[i].equals("--pg-public-schema"))
 				option.pg_named_schema = false;
 
 			else if (args[i].equals("--pg-named-schema"))
 				option.pg_named_schema = true;
-
-			else if (args[i].equals("--pg-tab-delimiter"))
-				option.usePgTsv();
-
-			else if (args[i].equals("--pg-comma-delimiter"))
-				option.usePgCsv();
 
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
@@ -196,12 +228,12 @@ public class xpath2pgsql {
 
 		if (!out_file_name.isEmpty() && !out_file_name.equals("stdout")) {
 
-			Path out_dir_path = Paths.get(out_dir_name);
+			Path json_dir_path = Paths.get(json_dir_name);
 
-			if (!Files.isDirectory(out_dir_path)) {
+			if (!Files.isDirectory(json_dir_path)) {
 
 				try {
-					Files.createDirectory(out_dir_path);
+					Files.createDirectory(json_dir_path);
 				} catch (IOException e) {
 					e.printStackTrace();
 					System.exit(1);
@@ -218,7 +250,7 @@ public class xpath2pgsql {
 
 		try {
 
-			XPathEvaluatorImpl xpath2pgsql = new XPathEvaluatorImpl(is, option, pg_option); // reuse the instance for repetition
+			XPathEvaluatorImpl evaluator = new XPathEvaluatorImpl(is, option, pg_option); // reuse the instance for repetition
 
 			if (!pg_option.name.isEmpty())
 				pg_option.clear();
@@ -227,10 +259,10 @@ public class xpath2pgsql {
 
 				String xpath_query = xpath_queries.get(id);
 
-				xpath2pgsql.translate(xpath_query, variables);
+				evaluator.translate(xpath_query, variables);
 
 				if (!pg_option.name.isEmpty())
-					xpath2pgsql.execute(id, xpath_queries.size(), out_dir_name, out_file_name);
+					evaluator.composeJson(id, xpath_queries.size(), json_dir_name, out_file_name, jsonb_option);
 
 			}
 
@@ -246,7 +278,9 @@ public class xpath2pgsql {
 	 */
 	private static void showUsage() {
 
-		System.err.println("xpath2pgsql: Qeury translator from XPath to SQL");
+		JsonBuilderOption jsonb_option = new JsonBuilderOption();
+
+		System.err.println("xpath2json: XPath 1.0 qeury evaluator to compose JSON over PostgreSQL");
 		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
@@ -255,6 +289,8 @@ public class xpath2pgsql {
 		System.err.println("        --xpath-var KEY=VALUE");
 		System.err.println("        --out OUTPUT_FILE_OR_PATTERN (default=stdout)");
 		System.err.println("        --out-dir OUTPUT_DIRECTORY");
+		System.err.println("        --obj-json (use object-oriented JSON format)");
+		System.err.println("        --col-json (use column-oriented JSON format, default)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");
@@ -264,8 +300,6 @@ public class xpath2pgsql {
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
-		System.err.println("        --pg-tab-delimiter (use tab separated file, default)");
-		System.err.println("        --pg-comma-delimiter (use comma separated file)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
@@ -276,6 +310,14 @@ public class xpath2pgsql {
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME (select --no-rel and --no-doc-key options by default)");
 		System.err.println("        --doc-key-if-no-inplace (select --no-rel and --no-doc-key options by default)");
+		System.err.println("        --json-attr-prefix ATTR_PREFIX_CODE (default=\"" + jsonb_option.getAttrPrefix() + "\")");
+		System.err.println("        --json-simple-cont-name SIMPLE_CONTENT_NAME (default=\"" + jsonb_option.getSimpleContentName() + "\")");
+		System.err.println("        --json-indent-offset INTEGER (default=" + jsonb_option.getIndentOffset() + ", min=0, max=4)");
+		System.err.println("        --json-key-value-offset INTEGER (default=" + jsonb_option.getKeyValueOffset() + ", min=0, max=4)");
+		System.err.println("        --json-insert-doc-key (insert document key in result)");
+		System.err.println("        --json-no-linefeed (dismiss line feed code)");
+		System.err.println("        --json-compact (equals to set --json-indent-offset 0 --json-key-value-offset 0 --json-no-linefeed)");
+		System.err.println("        --json-array-all (use JSON array if possible)");
 		System.err.println("        --verbose");
 		System.exit(1);
 
