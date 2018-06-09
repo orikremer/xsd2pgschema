@@ -151,7 +151,7 @@ public class IndexFilter {
 	/**
 	 * Add all fields.
 	 */
-	public void setFiledAll() {
+	public void setFieldAll() {
 
 		fields.clear();
 

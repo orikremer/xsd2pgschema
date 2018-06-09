@@ -158,7 +158,7 @@ public class xml2sphinxds {
 				index_filter.setAttrAll();
 
 			else if (args[i].equals("--field-all"))
-				index_filter.setFiledAll();
+				index_filter.setFieldAll();
 
 			else if (args[i].equals("--attr-string"))
 				index_filter.attr_string = true;
