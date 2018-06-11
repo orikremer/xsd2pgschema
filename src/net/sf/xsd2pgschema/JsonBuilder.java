@@ -69,7 +69,7 @@ public class JsonBuilder {
 	private boolean no_field_anno = false;
 
 	/** Whether insert document key. */
-	public boolean insert_doc_key = false;
+	protected boolean insert_doc_key = false;
 
 	/** The pending element. */
 	protected LinkedList<PgPendingElem> pending_elem = new LinkedList<PgPendingElem>();

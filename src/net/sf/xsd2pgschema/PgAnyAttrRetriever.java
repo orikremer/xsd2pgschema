@@ -51,7 +51,7 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 	private boolean root_node = false;
 
 	/** Whether root node has content. */
-	public boolean has_content = false;
+	protected boolean has_content = false;
 
 	/**
 	 * Instance of any attribute retriever.

@@ -75,7 +75,7 @@ public abstract class PgSchemaNodeParser {
 	protected boolean filled = true;
 
 	/** Whether simple content as primitive list was null. */
-	boolean null_simple_primitive_list = false;
+	protected boolean null_simple_primitive_list = false;
 
 	/** Whether any nested node has been visited. */
 	protected boolean visited = false;

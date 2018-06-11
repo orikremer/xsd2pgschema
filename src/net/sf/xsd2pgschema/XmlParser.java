@@ -307,7 +307,7 @@ public class XmlParser {
 	 * @return boolean identity of XML document
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public synchronized boolean identify(PgSchemaOption option, MessageDigest md_chk_sum) throws IOException {
+	public boolean identify(PgSchemaOption option, MessageDigest md_chk_sum) throws IOException {
 
 		boolean identity = false;
 

@@ -33,19 +33,19 @@ public abstract class PgNestTester {
 	protected String parent_node = null;
 
 	/** Whether this node has child element. */
-	boolean has_child_elem = false;
+	protected boolean has_child_elem = false;
 
 	/** Whether this node has content. */
-	boolean has_content = false;
+	protected boolean has_content = false;
 
 	/** Whether this node has simple content. */
-	boolean has_simple_content = false;
+	protected boolean has_simple_content = false;
 
 	/** Whether this node has opened simple content. */
-	boolean has_open_simple_content = false;
+	protected boolean has_open_simple_content = false;
 
 	/** Whether this node has inserted document key. */
-	boolean has_insert_doc_key = false;
+	protected boolean has_insert_doc_key = false;
 
 	/**
 	 * Instance of nest tester from root node.
