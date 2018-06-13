@@ -752,7 +752,7 @@ public class JsonBuilder {
 
 			if ((field.required || field.jsonb_not_empty) && field.jsonb_col_size > 0 && field.jsonb.length() > 2) {
 
-				if (field.jsonb_null_size == 1 && schema_ver.is_latest() && (field.xs_type.equals(XsDataType.xs_dateTime) || field.xs_type.equals(XsDataType.xs_date) || field.xs_type.equals(XsDataType.xs_time)))
+				if (field.jsonb_null_size == 1 && field.getJsonSchemaFormat(schema_ver) != null)
 					continue;
 
 				boolean array_field = array_json || field.jsonb_col_size > 1;

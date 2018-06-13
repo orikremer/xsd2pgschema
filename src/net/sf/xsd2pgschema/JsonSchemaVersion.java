@@ -45,6 +45,26 @@ public enum JsonSchemaVersion {
 	}
 
 	/**
+	 * Return JSON Schema version.
+	 *
+	 * @param name version name of JSON Schema
+	 * @return JsonSchemaVersion matched JSON Schema version
+	 */
+	public static JsonSchemaVersion getVersion(String name) {
+
+		name = name.toLowerCase().replace("-0", "_v").replace("-", "_");
+
+		for (JsonSchemaVersion schema_ver : values()) {
+
+			if (schema_ver.name().equals(name))
+				return schema_ver;
+
+		}
+
+		return defaultVersion();
+	}
+
+	/**
 	 * Return namespace URI of JSON Schema.
 	 *
 	 * @return String namespace URI of JSON Schema
@@ -69,7 +89,7 @@ public enum JsonSchemaVersion {
 	 *
 	 * @return boolean whether JSON Schema version is latest
 	 */
-	public boolean is_latest() {
+	public boolean isLatest() {
 		return this.equals(latest) || this.equals(defaultVersion());
 	}
 

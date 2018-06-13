@@ -214,7 +214,7 @@ public class xml2sphinxds {
 				option.hash_algorithm = args[++i];
 
 			else if (args[i].equals("--hash-size") && i + 1 < args.length) {
-				option.hash_size = PgHashSize.getPgHashSize(args[++i]);
+				option.hash_size = PgHashSize.getSize(args[++i]);
 
 				if (option.hash_size.equals(PgHashSize.debug_string) || option.hash_size.equals(PgHashSize.native_default))
 					option.hash_size = PgHashSize.defaultSize(); // long or int is required

@@ -207,10 +207,10 @@ public class xml2pgtsv {
 				option.hash_algorithm = args[++i];
 
 			else if (args[i].equals("--hash-size") && i + 1 < args.length)
-				option.hash_size = PgHashSize.getPgHashSize(args[++i]);
+				option.hash_size = PgHashSize.getSize(args[++i]);
 
 			else if (args[i].equals("--ser-size") && i + 1 < args.length)
-				option.ser_size = PgSerSize.getPgSerSize(args[++i]);
+				option.ser_size = PgSerSize.getSize(args[++i]);
 
 			else if (args[i].equals("--doc-key-name") && i + 1 < args.length)
 				option.setDocumentKeyName(args[++i]);

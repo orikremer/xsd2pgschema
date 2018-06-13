@@ -46,7 +46,7 @@ public enum PgSerSize {
 	 * @param name name of serial key size
 	 * @return PgSerSize matched serial key size
 	 */
-	public static PgSerSize getPgSerSize(String name) {
+	public static PgSerSize getSize(String name) {
 
 		name = name.toLowerCase();
 

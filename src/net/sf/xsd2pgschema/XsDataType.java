@@ -592,7 +592,7 @@ public enum XsDataType {
 	 * @return String JSON Schema $ref definition
 	 */
 	public String getJsonSchemaRef() {
-		return "http://www.jsonix.org/jsonschemas/w3c/2001/XMLSchema.jsonschema#/definitions/" + this.toString().replaceFirst("^xs_", "");
+		return "http://www.jsonix.org/jsonschemas/w3c/2001/XMLSchema.jsonschema#/definitions/" + this.toString().substring(3);
 	}
 
 }

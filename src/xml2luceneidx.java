@@ -205,7 +205,7 @@ public class xml2luceneidx {
 				option.hash_algorithm = args[++i];
 
 			else if (args[i].equals("--hash-size") && i + 1 < args.length)
-				option.hash_size = PgHashSize.getPgHashSize(args[++i]);
+				option.hash_size = PgHashSize.getSize(args[++i]);
 
 			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);

@@ -4184,7 +4184,7 @@ public class PgField {
 	 */
 	public String getJsonSchemaFormat(JsonSchemaVersion schema_ver) {
 
-		boolean latest = schema_ver.is_latest();
+		boolean latest = schema_ver.isLatest();
 
 		switch (xs_type) {
 		case xs_dateTime:
@@ -4935,8 +4935,8 @@ public class PgField {
 			jsonb.append(Integer.parseInt(value));
 			break;
 		case xs_date:
-			if (value.endsWith("Z") && schema_ver.is_latest())
-				value = value.substring(0, value.length() - 1);
+			if (schema_ver.isLatest())
+				value = value.replaceFirst("Z$", "");
 		default: // free text
 			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
 
@@ -5166,8 +5166,8 @@ public class PgField {
 		case xs_unsignedByte:
 			return value;
 		case xs_date:
-			if (value.endsWith("Z") && schema_ver.is_latest())
-				value = value.substring(0, value.length() - 1);
+			if (schema_ver.isLatest())
+				value = value.replaceFirst("Z$", "");
 		default: // free text
 			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
 

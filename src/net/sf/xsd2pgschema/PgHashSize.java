@@ -50,7 +50,7 @@ public enum PgHashSize {
 	 * @param name name of hash size
 	 * @return PgHashSize matched hash size
 	 */
-	public static PgHashSize getPgHashSize(String name) {
+	public static PgHashSize getSize(String name) {
 
 		name = name.toLowerCase();
 

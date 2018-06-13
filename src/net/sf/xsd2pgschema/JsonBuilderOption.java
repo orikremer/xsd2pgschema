@@ -62,21 +62,12 @@ public class JsonBuilderOption {
 	/**
 	 * Set JSON Schema version.
 	 *
-	 * @param version JSON Schema version
-	 * @return boolean whether success or not
+	 * @param name version name of JSON Schema
 	 */
-	public boolean setSchemaVer(String version) {
+	public void setSchemaVer(String name) {
 
-		try {
+		schema_ver = JsonSchemaVersion.getVersion(name);
 
-			schema_ver = JsonSchemaVersion.valueOf(version);
-
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-			return false;
-		}
-
-		return true;
 	}
 
 	/**
