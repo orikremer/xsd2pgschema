@@ -2880,7 +2880,7 @@ public class PgField {
 	 *
 	 * @return String JSON Schema default value
 	 */
-	public String getJsonSchemaDefaultValue() {
+	protected String getJsonSchemaDefaultValue() {
 
 		switch (xs_type) {
 		case xs_boolean:
@@ -2946,7 +2946,7 @@ public class PgField {
 	 * @param json_key_value_space the JSON key value space
 	 * @return String JSON Schema enumeration array
 	 */
-	public String getJsonSchemaEnumArray(String json_key_value_space) {
+	protected String getJsonSchemaEnumArray(String json_key_value_space) {
 
 		StringBuilder sb = new StringBuilder();
 
@@ -3025,7 +3025,7 @@ public class PgField {
 	 * @return String JSON Schema maximum value
 	 */
 	@Deprecated
-	public String getJsonSchemaMaximumValueDraftV4(String json_key_value_space) {
+	protected String getJsonSchemaMaximumValueDraftV4(String json_key_value_space) {
 
 		switch (xs_type) {
 		case xs_bigserial:
@@ -3316,7 +3316,7 @@ public class PgField {
 	 * @return String JSON Schema minimum value
 	 */
 	@Deprecated
-	public String getJsonSchemaMinimumValueDraftV4(String json_key_value_space) {
+	protected String getJsonSchemaMinimumValueDraftV4(String json_key_value_space) {
 
 		switch (xs_type) {
 		case xs_bigserial:
@@ -3570,7 +3570,7 @@ public class PgField {
 	 * @param json_key_value_space the JSON key value space
 	 * @return String JSON Schema maximum value
 	 */
-	public String getJsonSchemaMaximumValue(String json_key_value_space) {
+	protected String getJsonSchemaMaximumValue(String json_key_value_space) {
 
 		switch (xs_type) {
 		case xs_bigserial:
@@ -3860,7 +3860,7 @@ public class PgField {
 	 * @param json_key_value_space the JSON key value space
 	 * @return String JSON Schema minimum value
 	 */
-	public String getJsonSchemaMinimumValue(String json_key_value_space) {
+	protected String getJsonSchemaMinimumValue(String json_key_value_space) {
 
 		switch (xs_type) {
 		case xs_bigserial:
@@ -4113,7 +4113,7 @@ public class PgField {
 	 *
 	 * @return String JSON Schema multipleOf value
 	 */
-	public String getJsonSchemaMultipleOfValue() {
+	protected String getJsonSchemaMultipleOfValue() {
 
 		switch (xs_type) {
 		case xs_float:
@@ -4182,7 +4182,7 @@ public class PgField {
 	 * @param schema_ver JSON Schema version assumed
 	 * @return String JSON Schema format definition
 	 */
-	public String getJsonSchemaFormat(JsonSchemaVersion schema_ver) {
+	protected String getJsonSchemaFormat(JsonSchemaVersion schema_ver) {
 
 		boolean latest = schema_ver.isLatest();
 
@@ -4755,13 +4755,13 @@ public class PgField {
 
 			if (attr_sel_rdy || sph_mva) {
 
+				buffw.write("<" + attr_name + ">");
+
 				switch (xs_type) {
 				case xs_bigserial:
 				case xs_long:
 				case xs_bigint:
 				case xs_unsignedLong:
-					buffw.write("<" + attr_name + ">" + Long.valueOf(value) + "</" + attr_name + ">\n");
-					break;
 				case xs_serial:
 				case xs_integer:
 				case xs_int:
@@ -4770,37 +4770,34 @@ public class PgField {
 				case xs_nonNegativeInteger:
 				case xs_positiveInteger:
 				case xs_unsignedInt:
-					buffw.write("<" + attr_name + ">" + Integer.valueOf(value) + "</" + attr_name + ">\n");
-					break;
 				case xs_float:
-					buffw.write("<" + attr_name + ">" + Float.valueOf(value) + "</" + attr_name + ">\n");
-					break;
 				case xs_double:
 				case xs_decimal:
-					buffw.write("<" + attr_name + ">" + Double.valueOf(value) + "</" + attr_name + ">\n");
-					break;
 				case xs_short:
 				case xs_byte:
 				case xs_unsignedShort:
 				case xs_unsignedByte:
-					buffw.write("<" + attr_name + ">" + Integer.valueOf(value) + "</" + attr_name + ">\n");
+					buffw.write(value);
 					break;
 				case xs_dateTime:
 				case xs_date:
 				case xs_gYearMonth:
 				case xs_gYear:
 					java.util.Date util_time = PgSchemaUtil.parseDate(value);
-					buffw.write("<" + attr_name + ">" + util_time.getTime() / 1000L + "</" + attr_name + ">\n");
+					buffw.write(String.valueOf(util_time.getTime() / 1000L));
 					break;
 				default: // free text
-					value = StringEscapeUtils.escapeXml10(value);
-					buffw.write("<" + attr_name + ">" + value + "</" + attr_name + ">\n");
+					buffw.write(value = StringEscapeUtils.escapeXml10(value));
 					escaped = true;
 				}
+
+				buffw.write("</" + attr_name + ">\n");
 
 				attr_sel_rdy = false;
 
 			}
+
+			buffw.write("<" + PgSchemaUtil.simple_content_name + ">");
 
 			switch (xs_type) {
 			case xs_bigserial:
@@ -4822,12 +4819,14 @@ public class PgField {
 			case xs_byte:
 			case xs_unsignedShort:
 			case xs_unsignedByte:
-				buffw.write("<" + PgSchemaUtil.simple_content_name + ">" + value + "</" + PgSchemaUtil.simple_content_name + ">\n");
+				buffw.write(value);
 				break;
 			default: // not numeric
 				if (min_word_len_filter)
-					buffw.write("<" + PgSchemaUtil.simple_content_name + ">" + (escaped ? value : StringEscapeUtils.escapeXml10(value)) + "</" + PgSchemaUtil.simple_content_name + ">\n");
+					buffw.write(escaped ? value : StringEscapeUtils.escapeXml10(value));
 			}
+
+			buffw.write("</" + PgSchemaUtil.simple_content_name + ">\n");
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -4901,14 +4900,10 @@ public class PgField {
 
 		switch (xs_type) {
 		case xs_boolean:
-			jsonb.append(value);
-			break;
 		case xs_bigserial:
 		case xs_long:
 		case xs_bigint:
 		case xs_unsignedLong:
-			jsonb.append(Long.parseLong(value));
-			break;
 		case xs_serial:
 		case xs_integer:
 		case xs_int:
@@ -4917,26 +4912,20 @@ public class PgField {
 		case xs_nonNegativeInteger:
 		case xs_positiveInteger:
 		case xs_unsignedInt:
-			jsonb.append(Integer.parseInt(value));
-			break;
 		case xs_float:
-			jsonb.append(Float.parseFloat(value));
-			break;
 		case xs_double:
-			jsonb.append(Double.parseDouble(value));
-			break;
 		case xs_decimal:
-			jsonb.append(new BigDecimal(value));
-			break;
 		case xs_short:
 		case xs_byte:
 		case xs_unsignedShort:
 		case xs_unsignedByte:
-			jsonb.append(Integer.parseInt(value));
+			jsonb.append(value);
 			break;
 		case xs_date:
 			if (schema_ver.isLatest())
 				value = value.replaceFirst("Z$", "");
+			jsonb.append("\"" + value + "\"");
+			break;
 		default: // free text
 			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
 
@@ -4944,7 +4933,6 @@ public class PgField {
 				jsonb.append(value);
 			else
 				jsonb.append("\"" + value + "\"");
-
 		}
 
 		jsonb.append("," + json_key_value_space);
@@ -5168,6 +5156,7 @@ public class PgField {
 		case xs_date:
 			if (schema_ver.isLatest())
 				value = value.replaceFirst("Z$", "");
+			return "\"" + value + "\"";
 		default: // free text
 			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
 
