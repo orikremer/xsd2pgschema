@@ -151,6 +151,11 @@ public class xml2json {
 			else if (args[i].equals("--json-compact"))
 				jsonb_option.setCompact();
 
+			else if (args[i].equals("--schema-ver") && i + 1 < args.length) {
+				if (!jsonb_option.setSchemaVer(args[++i]))
+					showUsage();
+			}
+
 			else if (args[i].equals("--json-dir") && i + 1 < args.length)
 				json_dir_name = args[++i];
 
@@ -320,6 +325,7 @@ public class xml2json {
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
 		System.err.println("        --well-formed (validate only whether document is well-formed)");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix) | zip (indicates xml.zip suffix)]");
+		System.err.println("        --schema-ver JSON_SCHEMA_VER (choose from \"draft_v7\" (default), \"draft_v6\", \"draft_v4\", or \"latest\" as \"" + JsonSchemaVersion.defaultVersion().toString() + "\")");
 		System.err.println("        --obj-json (use object-oriented JSON format)");
 		System.err.println("        --col-json (use column-oriented JSON format, default)");
 		System.err.println("        --rel-json (use relational-oriented JSON format)");

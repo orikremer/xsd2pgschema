@@ -1647,6 +1647,8 @@ public class PgField {
 		return name;
 	}
 
+	// PostgreSQL DDL
+
 	/**
 	 * Return PostgreSQL DDL type definition.
 	 *
@@ -2871,7 +2873,7 @@ public class PgField {
 		return null;
 	}
 
-	// JSON Schema generation
+	// JSON Schema
 
 	/**
 	 * Return JSON Schema default value.
@@ -3017,12 +3019,13 @@ public class PgField {
 	}
 
 	/**
-	 * Return JSON Schema maximum value.
+	 * Return JSON Schema maximum value (draft-04).
 	 *
 	 * @param json_key_value_space the JSON key value space
 	 * @return String JSON Schema maximum value
 	 */
-	public String getJsonSchemaMaximumValue(String json_key_value_space) {
+	@Deprecated
+	public String getJsonSchemaMaximumValueDraftV4(String json_key_value_space) {
 
 		switch (xs_type) {
 		case xs_bigserial:
@@ -3307,12 +3310,13 @@ public class PgField {
 	}
 
 	/**
-	 * Return JSON Schema minimum value.
+	 * Return JSON Schema minimum value (draft-04).
 	 *
 	 * @param json_key_value_space the JSON key value space
 	 * @return String JSON Schema minimum value
 	 */
-	public String getJsonSchemaMinimumValue(String json_key_value_space) {
+	@Deprecated
+	public String getJsonSchemaMinimumValueDraftV4(String json_key_value_space) {
 
 		switch (xs_type) {
 		case xs_bigserial:
@@ -3561,6 +3565,550 @@ public class PgField {
 	}
 
 	/**
+	 * Return JSON Schema maximum value.
+	 *
+	 * @param json_key_value_space the JSON key value space
+	 * @return String JSON Schema maximum value
+	 */
+	public String getJsonSchemaMaximumValue(String json_key_value_space) {
+
+		switch (xs_type) {
+		case xs_bigserial:
+		case xs_serial:
+		case xs_float:
+		case xs_double:
+		case xs_decimal:
+		case xs_long:
+		case xs_bigint:
+		case xs_integer:
+		case xs_int:
+		case xs_short:
+		case xs_byte:
+			if (max_inclusive != null)
+				return "\"maximum\":" + json_key_value_space + max_inclusive;
+			else if (max_exclusive != null)
+				return "\"exclusiveMaximum\":" + json_key_value_space + max_exclusive;
+			break;
+		case xs_nonPositiveInteger:
+			if (!restriction)
+				return "\"maximum\":" + json_key_value_space + "0";
+
+			if (max_inclusive != null) {
+
+				try {
+
+					int i = Integer.parseInt(max_inclusive);
+
+					if (i < 0)
+						return "\"maximum\":" + json_key_value_space + max_inclusive;
+					else
+						return "\"maximum\":" + json_key_value_space + "0";
+
+				} catch (NumberFormatException e) {
+					return "\"maximum\":" + json_key_value_space + "0";
+				}
+
+			}
+
+			else if (max_exclusive != null) {
+
+				try {
+
+					int i = Integer.parseInt(max_exclusive);
+
+					if (i < 1)
+						return "\"exclusiveMaximum\":" + json_key_value_space + i;
+					else
+						return "\"maximum\":" + json_key_value_space + "0";
+
+				} catch (NumberFormatException e) {
+					return "\"maximum\":" + json_key_value_space + "0";
+				}
+
+			}
+
+			else
+				return "\"maximum\":" + json_key_value_space + "0";
+		case xs_negativeInteger:
+			if (!restriction)
+				return "\"exclusiveMaximum\":" + json_key_value_space + "0";
+
+			if (max_inclusive != null) {
+
+				try {
+
+					int i = Integer.parseInt(max_inclusive);
+
+					if (i < -1)
+						return "\"maximum\":" + json_key_value_space + max_inclusive;
+					else
+						return "\"exclusiveMaximum\":" + json_key_value_space + "0";
+
+				} catch (NumberFormatException e) {
+					return "\"exclusiveMaximum\":" + json_key_value_space + "0";
+				}
+
+			}
+
+			else if (max_exclusive != null) {
+
+				try {
+
+					int i = Integer.parseInt(max_exclusive);
+
+					if (i < 0)
+						return "\"exclusiveMaximum\":" + json_key_value_space + i;
+					else
+						return "\"exclusiveMaximum\":" + json_key_value_space + "0";
+
+				} catch (NumberFormatException e) {
+					return "\"exclusiveMaximum\":" + json_key_value_space + "0";
+				}
+
+			}
+
+			else
+				return "\"exclusiveMaximum\":" + json_key_value_space + "0";
+		case xs_nonNegativeInteger:
+		case xs_unsignedInt:
+			if (!restriction)
+				return null;
+
+			if (max_inclusive != null) {
+
+				try {
+
+					Integer.parseInt(max_inclusive);
+
+					return "\"maximum\":" + json_key_value_space + max_inclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			else if (max_exclusive != null) {
+
+				try {
+
+					Integer.parseInt(max_exclusive);
+
+					return "\"exclusiveMaximum\":" + json_key_value_space + max_exclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			if (total_digits != null) {
+
+				try {
+
+					int i = Integer.parseInt(total_digits);
+
+					if (i > 0)
+						return "\"exclusiveMaximum\":" + json_key_value_space + String.valueOf((int) Math.pow(10, i));
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+			break;
+		case xs_positiveInteger:
+			if (!restriction)
+				return null;
+
+			if (max_inclusive != null) {
+
+				try {
+
+					Integer.parseInt(max_inclusive);
+
+					return "\"maxinum:\"" + json_key_value_space + max_inclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			else if (max_exclusive != null) {
+
+				try {
+
+					Integer.parseInt(max_exclusive);
+
+					return "\"exclusiveMaximum\":" + json_key_value_space + max_exclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			if (total_digits != null) {
+
+				try {
+
+					int i = Integer.parseInt(total_digits);
+
+					if (i > 0)
+						return "\"exclusiveMaximum\":" + json_key_value_space + String.valueOf((int) Math.pow(10, i));
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+			break;
+		case xs_unsignedLong:
+			if (!restriction)
+				return null;
+
+			if (max_inclusive != null) {
+
+				try {
+
+					Long.parseLong(max_inclusive);
+
+					return "\"maximum\":" + json_key_value_space + max_inclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			else if (max_exclusive != null) {
+
+				try {
+
+					Long.parseLong(max_exclusive);
+
+					return "\"exclusiveMaximum\":" + json_key_value_space + max_exclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			if (total_digits != null) {
+
+				try {
+
+					int i = Integer.parseInt(total_digits);
+
+					if (i > 0)
+						return "\"exclusiveMaximum\":" + json_key_value_space + String.valueOf((long) Math.pow(10, i));
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+			break;
+		case xs_unsignedShort:
+		case xs_unsignedByte:
+			if (!restriction)
+				return null;
+
+			if (max_inclusive != null) {
+
+				try {
+
+					Short.parseShort(max_inclusive);
+
+					return "\"maximum:\"" + json_key_value_space + max_inclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			else if (max_exclusive != null) {
+
+				try {
+
+					Short.parseShort(max_exclusive);
+
+					return "\"exclusiveMaximum\":" + json_key_value_space + max_exclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			if (total_digits != null) {
+
+				try {
+
+					int i = Integer.parseInt(total_digits);
+
+					if (i > 0)
+						return "\"exclusiveMaximum\":" + json_key_value_space + String.valueOf((short) Math.pow(10, i));
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+			break;
+		default: // not numeric
+			return	null;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Return JSON Schema minimum value.
+	 *
+	 * @param json_key_value_space the JSON key value space
+	 * @return String JSON Schema minimum value
+	 */
+	public String getJsonSchemaMinimumValue(String json_key_value_space) {
+
+		switch (xs_type) {
+		case xs_bigserial:
+		case xs_serial:
+		case xs_float:
+		case xs_double:
+		case xs_decimal:
+		case xs_long:
+		case xs_bigint:
+		case xs_integer:
+		case xs_int:
+		case xs_short:
+		case xs_byte:
+			if (min_inclusive != null)
+				return "\"minumum\":" + json_key_value_space + min_inclusive;
+			else if (min_exclusive != null)
+				return "\"exclusiveMinimum\":" + json_key_value_space + min_exclusive;
+			break;
+		case xs_nonPositiveInteger:
+			if (!restriction)
+				return null;
+
+			if (min_inclusive != null) {
+
+				try {
+
+					Integer.parseInt(min_inclusive);
+
+					return "\"minumum\":" + json_key_value_space + min_inclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			else if (min_exclusive != null) {
+
+				try {
+
+					Integer.parseInt(min_exclusive);
+
+					return "\"exclusiveMinimum\":" + json_key_value_space + min_exclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+			break;
+		case xs_negativeInteger:
+			if (!restriction)
+				return null;
+
+			if (min_inclusive != null) {
+
+				try {
+
+					Integer.parseInt(min_inclusive);
+
+					return "\"minumum\":" + json_key_value_space + min_inclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			else if (min_exclusive != null) {
+
+				try {
+
+					Integer.parseInt(min_exclusive);
+
+					return "\"exclusiveMinimum\":" + json_key_value_space + min_exclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+			break;
+		case xs_nonNegativeInteger:
+		case xs_unsignedInt:
+			if (!restriction)
+				return "\"minumum\":" + json_key_value_space + "0";
+
+			if (min_inclusive != null) {
+
+				try {
+
+					int i = Integer.parseInt(min_inclusive);
+
+					if (i > 0)
+						return "\"minumum\":" + json_key_value_space + min_inclusive;
+					else
+						return "\"minumum\":" + json_key_value_space + "0";
+
+				} catch (NumberFormatException e) {
+					return "\"minumum\":" + json_key_value_space + "0";
+				}
+
+			}
+
+			else if (min_exclusive != null) {
+
+				try {
+
+					int i = Integer.parseInt(min_exclusive);
+
+					if (i > -1)
+						return "\"exclusiveMinimum\":" + json_key_value_space + min_exclusive;
+					else
+						return "\"minumum\":" + json_key_value_space + "0";
+
+				} catch (NumberFormatException e) {
+					return "\"minumum\":" + json_key_value_space + "0";
+				}
+
+			}
+
+			else
+				return "\"minumum\":" + json_key_value_space + "0";
+		case xs_positiveInteger:
+			if (!restriction)
+				return "\"exclusiveMinimum\":" + json_key_value_space + "0";
+
+			if (min_inclusive != null) {
+
+				try {
+
+					int i = Integer.parseInt(min_inclusive);
+
+					if (i > 1)
+						return "\"minumum\":" + json_key_value_space + min_inclusive;
+					else
+						return "\"exclusiveMinimum\":" + json_key_value_space + "0";
+
+				} catch (NumberFormatException e) {
+					return "\"exclusiveMinimum\":" + json_key_value_space + "0";
+				}
+
+			}
+
+			else if (min_exclusive != null) {
+
+				try {
+
+					int i = Integer.parseInt(min_exclusive);
+
+					if (i > 0)
+						return "\"exclusiveMinimum\":" + json_key_value_space + min_exclusive;
+					else
+						return "\"exclusiveMinimum\":" + json_key_value_space + "0";
+
+				} catch (NumberFormatException e) {
+					return "\"exclusiveMinimum\":" + json_key_value_space + "0";
+				}
+
+			}
+
+			else
+				return "\"exclusiveMinimum\":" + json_key_value_space + "0";
+		case xs_unsignedLong:
+			if (!restriction)
+				return "\"minumum\":" + json_key_value_space + "0";
+
+			if (min_inclusive != null) {
+
+				try {
+
+					long l = Long.parseLong(min_inclusive);
+
+					if (l > 0)
+						return "\"minumum\":" + json_key_value_space + min_inclusive;
+					else
+						return "\"minumum\":" + json_key_value_space + "0";
+
+				} catch (NumberFormatException e) {
+					return "\"minumum\":" + json_key_value_space + "0";
+				}
+
+			}
+
+			else if (min_exclusive != null) {
+
+				try {
+
+					long l = Long.parseLong(min_exclusive);
+
+					if (l > -1)
+						return "\"exclusiveMinimum\":" + json_key_value_space + min_exclusive;
+					else
+						return "\"minumum\":" + json_key_value_space + "0";
+
+				} catch (NumberFormatException e) {
+					return "\"minumum\":" + json_key_value_space + "0";
+				}
+
+			}
+
+			else
+				return "\"minumum\":" + json_key_value_space + "0";
+		case xs_unsignedShort:
+		case xs_unsignedByte:
+			if (!restriction)
+				return "\"minumum\":" + json_key_value_space + "0";
+
+			if (min_inclusive != null) {
+
+				try {
+
+					short s = Short.parseShort(min_inclusive);
+
+					if (s > 0)
+						return "\"minumum\":" + json_key_value_space + min_inclusive;
+					else
+						return "\"minumum\":" + json_key_value_space + "0";
+
+				} catch (NumberFormatException e) {
+					return "\"minumum\":" + json_key_value_space + "0";
+				}
+
+			}
+
+			else if (min_exclusive != null) {
+
+				try {
+
+					short s = Short.parseShort(min_exclusive);
+
+					if (s > -1)
+						return "\"exclusiveMinimum\":" + json_key_value_space + min_exclusive;
+					else
+						return "\"minumum\":" + json_key_value_space + "0";
+
+				} catch (NumberFormatException e) {
+					return "\"minumum\":" + json_key_value_space + "0";
+				}
+
+			}
+
+			else
+				return "\"minumum\":" + json_key_value_space + "0";
+		default: // not numeric
+			return	null;
+		}
+
+		return null;
+	}
+
+	/**
 	 * Return JSON Schema multipleOf value.
 	 *
 	 * @return String JSON Schema multipleOf value
@@ -3626,6 +4174,36 @@ public class PgField {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Return JSON Schema format definition.
+	 *
+	 * @param schema_ver JSON Schema version assumed
+	 * @return String JSON Schema format definition
+	 */
+	public String getJsonSchemaFormat(JsonSchemaVersion schema_ver) {
+
+		boolean latest = schema_ver.is_latest();
+
+		switch (xs_type) {
+		case xs_dateTime:
+			return "date-time";
+		case xs_time:
+			return latest ? "time" : null;
+		case xs_date:
+			return latest ? "date" : null;
+		case xs_anyURI:
+			return "uri";
+		case xs_ID:
+			return latest ? "iri" : null;
+		case xs_IDREF:
+		case xs_IDREFS:
+			return latest ?"iri-reference" : null;
+		default:
+			return null;
+		}
+
 	}
 
 	// content writer functions
@@ -4257,16 +4835,17 @@ public class PgField {
 
 	}
 
-	// JSON array object
+	// JSON buffer
 
 	/**
 	 * Write value to JSON buffer.
 	 *
+	 * @param schema_ver JSON schema version
 	 * @param value content
 	 * @param json_key_value_space the JSON key value space
 	 * @return boolean whether value is successfully set
 	 */
-	protected boolean writeValue2JsonBuf(String value, String json_key_value_space) {
+	protected boolean writeValue2JsonBuf(JsonSchemaVersion schema_ver, String value, String json_key_value_space) {
 
 		if (jsonb == null)
 			return false;
@@ -4355,6 +4934,9 @@ public class PgField {
 		case xs_unsignedByte:
 			jsonb.append(Integer.parseInt(value));
 			break;
+		case xs_date:
+			if (value.endsWith("Z") && schema_ver.is_latest())
+				value = value.substring(0, value.length() - 1);
 		default: // free text
 			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
 
@@ -4370,76 +4952,7 @@ public class PgField {
 		return true;
 	}
 
-	/**
-	 * Normalize content as JSON value.
-	 *
-	 * @param value content
-	 * @return String normalized content
-	 */
-	public String normalizeAsJson(String value) {
-
-		if (value == null || value.isEmpty()) {
-
-			switch (xs_type) {
-			case xs_boolean:
-			case xs_bigserial:
-			case xs_serial:
-			case xs_float:
-			case xs_double:
-			case xs_decimal:
-			case xs_long:
-			case xs_bigint:
-			case xs_unsignedLong:
-			case xs_integer:
-			case xs_int:
-			case xs_nonPositiveInteger:
-			case xs_negativeInteger:
-			case xs_nonNegativeInteger:
-			case xs_positiveInteger:
-			case xs_unsignedInt:
-			case xs_short:
-			case xs_byte:
-			case xs_unsignedShort:
-			case xs_unsignedByte:
-				return "null";
-			default: // string
-				return "\"\"";
-			}
-
-		}
-
-		switch (xs_type) {
-		case xs_boolean:
-		case xs_bigserial:
-		case xs_serial:
-		case xs_float:
-		case xs_double:
-		case xs_decimal:
-		case xs_long:
-		case xs_bigint:
-		case xs_unsignedLong:
-		case xs_integer:
-		case xs_int:
-		case xs_nonPositiveInteger:
-		case xs_negativeInteger:
-		case xs_nonNegativeInteger:
-		case xs_positiveInteger:
-		case xs_unsignedInt:
-		case xs_short:
-		case xs_byte:
-		case xs_unsignedShort:
-		case xs_unsignedByte:
-			return value;
-		default: // free text
-			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
-
-			if (value.startsWith("\""))
-				return value;
-			else
-				return "\"" + value + "\"";
-		}
-
-	}
+	// XPath evaluation over PostgreSQL
 
 	/**
 	 * Retrieve value from ResultSet.
@@ -4589,6 +5102,81 @@ public class PgField {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Normalize content as JSON value.
+	 *
+	 * @param schema_ver JSON schema version
+	 * @param value content
+	 * @return String normalized content
+	 */
+	public String normalizeAsJson(JsonSchemaVersion schema_ver, String value) {
+
+		if (value == null || value.isEmpty()) {
+
+			switch (xs_type) {
+			case xs_boolean:
+			case xs_bigserial:
+			case xs_serial:
+			case xs_float:
+			case xs_double:
+			case xs_decimal:
+			case xs_long:
+			case xs_bigint:
+			case xs_unsignedLong:
+			case xs_integer:
+			case xs_int:
+			case xs_nonPositiveInteger:
+			case xs_negativeInteger:
+			case xs_nonNegativeInteger:
+			case xs_positiveInteger:
+			case xs_unsignedInt:
+			case xs_short:
+			case xs_byte:
+			case xs_unsignedShort:
+			case xs_unsignedByte:
+				return "null";
+			default: // string
+				return "\"\"";
+			}
+
+		}
+
+		switch (xs_type) {
+		case xs_boolean:
+		case xs_bigserial:
+		case xs_serial:
+		case xs_float:
+		case xs_double:
+		case xs_decimal:
+		case xs_long:
+		case xs_bigint:
+		case xs_unsignedLong:
+		case xs_integer:
+		case xs_int:
+		case xs_nonPositiveInteger:
+		case xs_negativeInteger:
+		case xs_nonNegativeInteger:
+		case xs_positiveInteger:
+		case xs_unsignedInt:
+		case xs_short:
+		case xs_byte:
+		case xs_unsignedShort:
+		case xs_unsignedByte:
+			return value;
+		case xs_date:
+			if (value.endsWith("Z") && schema_ver.is_latest())
+				value = value.substring(0, value.length() - 1);
+		default: // free text
+			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
+
+			if (value.startsWith("\""))
+				return value;
+			else
+				return "\"" + value + "\"";
+		}
+
 	}
 
 }

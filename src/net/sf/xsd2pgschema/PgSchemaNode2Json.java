@@ -38,6 +38,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	/** Whether any content was written. */
 	protected boolean written = false;
 
+	/** The JSON Schema version. */
+	protected JsonSchemaVersion schema_ver = null;
+
 	/** The position of header begins in JSON buffer. */
 	protected int jsonb_header_begin;
 
@@ -59,6 +62,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	public PgSchemaNode2Json(final PgSchema schema, final PgTable parent_table, final PgTable table) throws ParserConfigurationException, TransformerConfigurationException {
 
 		super(schema, parent_table, table);
+
+		schema_ver = schema.jsonb.schema_ver;
 
 		key_value_space = schema.jsonb.key_value_space;
 
@@ -197,7 +202,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			if (field.jsonb == null)
 				continue;
 
-			if (field.jsonable && field.writeValue2JsonBuf(values[f], key_value_space))
+			if (field.jsonable && field.writeValue2JsonBuf(schema_ver, values[f], key_value_space))
 				not_empty = true;
 
 		}

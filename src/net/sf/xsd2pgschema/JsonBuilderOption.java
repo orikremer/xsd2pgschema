@@ -26,6 +26,9 @@ package net.sf.xsd2pgschema;
  */
 public class JsonBuilderOption {
 
+	/** The JSON Schema version. */
+	public JsonSchemaVersion schema_ver = JsonSchemaVersion.defaultVersion();
+
 	/** The JSON type. */
 	public JsonType type = JsonType.defaultType();
 
@@ -55,6 +58,26 @@ public class JsonBuilderOption {
 
 	/** Whether insert document key. */
 	public boolean insert_doc_key = false;
+
+	/**
+	 * Set JSON Schema version.
+	 *
+	 * @param version JSON Schema version
+	 * @return boolean whether success or not
+	 */
+	public boolean setSchemaVer(String version) {
+
+		try {
+
+			schema_ver = JsonSchemaVersion.valueOf(version);
+
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+			return false;
+		}
+
+		return true;
+	}
 
 	/**
 	 * Set case insensitive mode.

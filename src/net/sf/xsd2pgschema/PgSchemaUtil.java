@@ -73,9 +73,6 @@ public class PgSchemaUtil {
 	/** The prefix of xsi_namespace_uri. */
 	public static final String xsi_prefix = "xsi";
 
-	/** The namespace URI representing JSON Schema. */
-	public static final String json_schema_def = "http://json-schema.org/schema#";
-
 	/** The default PostgreSQL schema name. */
 	public static final String pg_public_schema_name = "public";
 

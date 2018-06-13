@@ -87,6 +87,11 @@ public class xsd2jsonschema {
 			else if (args[i].equals("--json-compact"))
 				jsonb_option.setCompact();
 
+			else if (args[i].equals("--schema-ver") && i + 1 < args.length) {
+				if (!jsonb_option.setSchemaVer(args[++i]))
+					showUsage();
+			}
+
 			else if (args[i].equals("--no-wild-card"))
 				option.wild_card = false;
 
@@ -180,6 +185,7 @@ public class xsd2jsonschema {
 
 		System.err.println("xsd2jsonschema: XML Schema -> JSON Schema conversion");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --json JSON_SCHEMA_FILE (default=stdout)");
+		System.err.println("        --schema-ver JSON_SCHEMA_VER (choose from \"draft_v7\" (default), \"draft_v6\", \"draft_v4\", or \"latest\" as \"" + JsonSchemaVersion.defaultVersion().toString() + "\")");
 		System.err.println("        --obj-json (use object-oriented JSON format)");
 		System.err.println("        --col-json (use column-oriented JSON format, default)");
 		System.err.println("        --rel-json (use relational-oriented JSON format)");

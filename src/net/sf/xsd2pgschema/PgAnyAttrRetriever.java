@@ -44,6 +44,9 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 	/** The current field (column-oriented JSON). */
 	private PgField field = null;
 
+	/** The JSON Schema version (column-oriented JSON). */
+	private JsonSchemaVersion schema_ver = null;
+
 	/** The JSON key value space (column-oriented JSON). */
 	private String key_value_space = null;
 
@@ -86,12 +89,14 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 	 *
 	 * @param table current table
 	 * @param field current field
+	 * @param schema_ver JSON Schema version
 	 * @param key_value_space the JSON key value space
 	 */
-	public PgAnyAttrRetriever(PgTable table, PgField field, String key_value_space) {
+	public PgAnyAttrRetriever(PgTable table, PgField field, JsonSchemaVersion schema_ver, String key_value_space) {
 
 		this.table = table;
 		this.field = field;
+		this.schema_ver = schema_ver;
 		this.key_value_space = key_value_space;
 
 	}
@@ -155,7 +160,7 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 				// compose column-oriented JSON document
 
 				else if (field != null)
-					field.writeValue2JsonBuf(content, key_value_space);
+					field.writeValue2JsonBuf(schema_ver, content, key_value_space);
 
 				has_content = true;
 
