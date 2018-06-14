@@ -1,4 +1,8 @@
-﻿ Changes in xsd2pgschema 2.12.0 (release 2018-06-13)
+﻿ Changes in xsd2pgschema 2.12.1 (release 2018-06-14)
+
+  Fixed violation of foreign key constraint in differential update using 2.12.0.
+
+ Changes in xsd2pgschema 2.12.0 (release 2018-06-13)
 
   Added --schema-ver option in xml2json, xpath2json, xsd2jsonschema main classes ("draft_v7", "draft_v6", "draft_v4", and "latest" are acceptable values).
   Added support for JSON Schema draft v7 (latest), v6, and v4.

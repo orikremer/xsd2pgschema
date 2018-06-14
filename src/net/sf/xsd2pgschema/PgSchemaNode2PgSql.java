@@ -93,94 +93,123 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		if (this.writable = table.writable) {
 
-			if (table.ps == null || table.ps.isClosed()) {
+			for (int f = 0; f < fields.size(); f++) {
 
-				StringBuilder sql = new StringBuilder();
+				PgField field = fields.get(f);
 
-				sql.append("INSERT INTO " + schema.getPgNameOf(table) + " VALUES ( ");
+				if (field.omissible)
+					continue;
 
-				for (int f = 0; f < fields.size(); f++) {
+				param_size++;
 
-					PgField field = fields.get(f);
+			}
 
-					if (field.omissible)
-						continue;
+			if (update && rel_data_ext)
+				upsert = fields.parallelStream().filter(field -> field.primary_key).findFirst().get().unique_key;
 
-					if (field.enum_name == null)
-						sql.append("?");
-					else
-						sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+			// upsert
 
-					sql.append(", ");
+			if (upsert) {
 
-					param_size++;
+				if (table.ps2 == null || table.ps2.isClosed()) {
 
-				}
+					StringBuilder sql = new StringBuilder();
 
-				sql.setLength(sql.length() - 2);
-				sql.append(" )");
+					sql.append("INSERT INTO " + schema.getPgNameOf(table) + " VALUES ( ");
 
-				if (update && rel_data_ext) {
+					for (int f = 0; f < fields.size(); f++) {
 
-					PgField pkey = fields.parallelStream().filter(field -> field.primary_key).findFirst().get();
+						PgField field = fields.get(f);
 
-					String pkey_name = PgSchemaUtil.avoidPgReservedWords(pkey.pname);
+						if (field.omissible)
+							continue;
 
-					if (upsert = pkey.unique_key) {
+						if (field.enum_name == null)
+							sql.append("?");
+						else
+							sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
 
-						sql.append(" ON CONFLICT ( " + pkey_name + " ) DO UPDATE SET ");
-
-						for (int f = 0; f < fields.size(); f++) {
-
-							PgField field = fields.get(f);
-
-							if (field.omissible || field.primary_key)
-								continue;
-
-							sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + " = ");
-
-							if (field.enum_name == null)
-								sql.append("?");
-							else
-								sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
-
-							sql.append(", ");
-
-						}
-
-						sql.setLength(sql.length() - 2);
-
-						sql.append(" WHERE EXCLUDED." + pkey_name + " = ?");
+						sql.append(", ");
 
 					}
 
+					sql.setLength(sql.length() - 2);
+					sql.append(" )");
+
+					String pkey_name = PgSchemaUtil.avoidPgReservedWords(fields.parallelStream().filter(field -> field.primary_key).findFirst().get().pname);
+
+					sql.append(" ON CONFLICT ( " + pkey_name + " ) DO UPDATE SET ");
+
+					for (int f = 0; f < fields.size(); f++) {
+
+						PgField field = fields.get(f);
+
+						if (field.omissible || field.primary_key)
+							continue;
+
+						sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + " = ");
+
+						if (field.enum_name == null)
+							sql.append("?");
+						else
+							sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+
+						sql.append(", ");
+
+					}
+
+					sql.setLength(sql.length() - 2);
+
+					sql.append(" WHERE EXCLUDED." + pkey_name + " = ?");
+
+					table.ps2 = db_conn.prepareStatement(sql.toString());
+
+					sql.setLength(0);
+
 				}
 
-				table.ps = db_conn.prepareStatement(sql.toString());
-
-				sql.setLength(0);
+				ps = table.ps2;
 
 			}
+
+			// insert
 
 			else {
 
-				for (int f = 0; f < fields.size(); f++) {
+				if (table.ps == null || table.ps.isClosed()) {
 
-					PgField field = fields.get(f);
+					StringBuilder sql = new StringBuilder();
 
-					if (field.omissible)
-						continue;
+					sql.append("INSERT INTO " + schema.getPgNameOf(table) + " VALUES ( ");
 
-					param_size++;
+					for (int f = 0; f < fields.size(); f++) {
+
+						PgField field = fields.get(f);
+
+						if (field.omissible)
+							continue;
+
+						if (field.enum_name == null)
+							sql.append("?");
+						else
+							sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+
+						sql.append(", ");
+
+					}
+
+					sql.setLength(sql.length() - 2);
+					sql.append(" )");
+
+					table.ps = db_conn.prepareStatement(sql.toString());
+
+					sql.setLength(0);
 
 				}
 
-				if (update && rel_data_ext)
-					upsert = fields.parallelStream().filter(field -> field.primary_key).findFirst().get().unique_key;
+				ps = table.ps;
 
 			}
-
-			ps = table.ps;
 
 		}
 

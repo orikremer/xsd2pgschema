@@ -143,8 +143,11 @@ public class PgTable {
 	/** The Lucene document (internal use only). */
 	protected org.apache.lucene.document.Document lucene_doc = null;
 
-	/** The prepared statement (internal use only). */
+	/** The primary prepared statement (internal use only). */
 	protected PreparedStatement ps = null;
+
+	/** The secondary prepared statement (internal use only). */
+	protected PreparedStatement ps2 = null;
 
 	/**
 	 * Instance of PostgreSQL table.

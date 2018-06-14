@@ -4280,8 +4280,10 @@ public class PgSchema {
 
 	/**
 	 * Close prepared statement.
+	 *
+	 * @param primary whether close the primary prepared statement only
 	 */
-	private void closePreparedStatement() {
+	private void closePreparedStatement(boolean primary) {
 
 		tables.parallelStream().filter(table -> table.ps != null).forEach(table -> {
 
@@ -4295,6 +4297,24 @@ public class PgSchema {
 			}
 
 			table.ps = null;
+
+		});
+
+		if (primary)
+			return;
+
+		tables.parallelStream().filter(table -> table.ps2 != null).forEach(table -> {
+
+			try {
+
+				if (!table.ps2.isClosed())
+					table.ps2.close();
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+
+			table.ps2 = null;
 
 		});
 
@@ -4498,7 +4518,7 @@ public class PgSchema {
 	public void closeXml2PgSql() {
 
 		closeTableLock();
-		closePreparedStatement();
+		closePreparedStatement(false);
 
 	}
 
@@ -4541,6 +4561,8 @@ public class PgSchema {
 					node2pgsql.parseChildNode(node_test);
 				}
 
+				node2pgsql.executeBatch();
+
 				node2pgsql.invokeChildNestedNode(node_test);
 
 				if (node_test.isLastNode())
@@ -4555,18 +4577,13 @@ public class PgSchema {
 				node2pgsql.parseChildNode(parent_node, nested_key);
 			}
 
+			node2pgsql.executeBatch();
+
 			node2pgsql.invokeChildNestedNode();
 
 		} catch (SQLException | ParserConfigurationException | IOException | TransformerException e) {
 			throw new PgSchemaException(e);
 		} finally {
-
-			try {
-				node2pgsql.executeBatch();
-			} catch (SQLException e) {
-				throw new PgSchemaException(e);
-			}
-
 			node2pgsql.clear();
 		}
 
@@ -7090,7 +7107,7 @@ public class PgSchema {
 	 */
 	public void closePgSql2Xml() {
 
-		closePreparedStatement();
+		closePreparedStatement(true);
 
 	}
 
