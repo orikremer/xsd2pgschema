@@ -340,7 +340,7 @@ public class JsonBuilder {
 
 		buffer.append(getIndentSpaces(_indent_level) + "\"type\":" + key_value_space + "\"object\"," + line_feed_code);
 
-		buffer.append(getIndentSpaces(++_indent_level) + "\"properties\":" + key_value_space + "{" + line_feed_code); // start field
+		buffer.append(getIndentSpaces(_indent_level) + "\"properties\":" + key_value_space + "{" + line_feed_code); // start field
 
 		pending_header.push(new JsonPendingHeader(header_start, buffer.length(), indent_level));
 
