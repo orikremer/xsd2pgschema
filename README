@@ -1,6 +1,7 @@
 ﻿ Changes in xsd2pgschema 2.12.1 (release 2018-06-14)
 
-  Fixed violation of foreign key constraint in differential update using 2.12.0.
+  Fixed violation of foreign key constraint in differential update using the previous versions: 2.11.0 and 2.12.0.
+  Therefore, withdrew 2.11.0 and 2.12.0.
 
  Changes in xsd2pgschema 2.12.0 (release 2018-06-13)
 
@@ -14,6 +15,7 @@
   Added XPath evaluator main class, xpath2json, to retrieve JSON document over PostgreSQL.
   Allowed multiple XPath query evaluation, just repeat --xpath-query options.
   Rewrote code base using java.nio.Path and java.nio.Files.
+  Added example script to demonstrate XPath 1.0 query evaluation to JSON over PostgreSQL.
 
  Changes in xsd2pgschema 2.10.4 (release 2018-05-31)
 
