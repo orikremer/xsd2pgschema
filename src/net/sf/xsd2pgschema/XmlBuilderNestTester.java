@@ -24,7 +24,7 @@ package net.sf.xsd2pgschema;
  *
  * @author yokochi
  */
-public class PgNestTesterForXml extends PgNestTester {
+public class XmlBuilderNestTester extends AbstractNestTester {
 
 	/** The current indent space. */
 	protected String current_indent_space = "";
@@ -44,7 +44,7 @@ public class PgNestTesterForXml extends PgNestTester {
 	 * @param table current table
 	 * @param xmlb XML builder
 	 */
-	public PgNestTesterForXml(PgTable table, XmlBuilder xmlb) {
+	public XmlBuilderNestTester(PgTable table, XmlBuilder xmlb) {
 
 		super(table);
 
@@ -69,7 +69,7 @@ public class PgNestTesterForXml extends PgNestTester {
 	 * @param table current table
 	 * @param parent_test nest test of parent node
 	 */
-	public PgNestTesterForXml(PgTable table, PgNestTesterForXml parent_test) {
+	public XmlBuilderNestTester(PgTable table, XmlBuilderNestTester parent_test) {
 
 		super(table, parent_test);
 

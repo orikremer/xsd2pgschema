@@ -33,11 +33,11 @@ import javax.xml.stream.events.XMLEvent;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Retrieve any element stored in PostgreSQL.
+ * Retrieve any element into XML builder.
  *
  * @author yokochi
  */
-public class PgAnyRetriever extends DefaultHandler {
+public class XmlBuilderAnyRetriever extends DefaultHandler {
 
 	/** The root node name. */
 	private String root_node_name = null;
@@ -49,7 +49,7 @@ public class PgAnyRetriever extends DefaultHandler {
 	private String prefix = null;
 
 	/** The nest tester. */
-	private PgNestTesterForXml nest_test = null;
+	private XmlBuilderNestTester nest_test = null;
 
 	/** The XML builder. */
 	private XmlBuilder xmlb = null;
@@ -69,7 +69,7 @@ public class PgAnyRetriever extends DefaultHandler {
 	/**
 	 * Instance of any element retriever.
 	 */
-	public PgAnyRetriever() {
+	public XmlBuilderAnyRetriever() {
 
 		in_factory = XMLInputFactory.newInstance();
 
@@ -116,7 +116,7 @@ public class PgAnyRetriever extends DefaultHandler {
 	 * @return PgNestTetsterForXml result of nest test
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public PgNestTesterForXml exec(InputStream in, PgTable table, PgNestTesterForXml nest_test, XmlBuilder xmlb) throws XMLStreamException {
+	public XmlBuilderNestTester exec(InputStream in, PgTable table, XmlBuilderNestTester nest_test, XmlBuilder xmlb) throws XMLStreamException {
 
 		this.root_node_name = table.pname;
 		this.target_namespace = table.target_namespace;
@@ -187,7 +187,7 @@ public class PgAnyRetriever extends DefaultHandler {
 
 				if (cur_path.length() > 0) {
 
-					PgPendingElem elem = xmlb.pending_elem.peek();
+					XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
 					if (elem != null)
 						xmlb.writePendingElems(false);

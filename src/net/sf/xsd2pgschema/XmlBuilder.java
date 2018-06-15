@@ -54,7 +54,7 @@ public class XmlBuilder {
 	protected HashSet<String> appended_xmlns = new HashSet<String>();
 
 	/** The pending element. */
-	protected LinkedList<PgPendingElem> pending_elem = new LinkedList<PgPendingElem>();
+	protected LinkedList<XmlBuilderPendingElem> pending_elem = new LinkedList<XmlBuilderPendingElem>();
 
 	/** The pending simple content. */
 	protected StringBuilder pending_simple_cont = new StringBuilder();
@@ -133,7 +133,7 @@ public class XmlBuilder {
 	 */
 	public void writePendingElems(boolean attr_only) throws XMLStreamException {
 
-		PgPendingElem elem;
+		XmlBuilderPendingElem elem;
 
 		while ((elem = pending_elem.pollLast()) != null) {
 
@@ -184,7 +184,7 @@ public class XmlBuilder {
 
 		appended_xmlns.clear();
 
-		PgPendingElem elem;
+		XmlBuilderPendingElem elem;
 
 		while ((elem = pending_elem.pollLast()) != null)
 			elem.clear();

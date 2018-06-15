@@ -78,10 +78,10 @@ public class JsonBuilder {
 	protected boolean insert_doc_key = false;
 
 	/** The pending table header. */
-	protected LinkedList<JsonPendingHeader> pending_header = new LinkedList<JsonPendingHeader>();
+	protected LinkedList<JsonBuilderPendingHeader> pending_header = new LinkedList<JsonBuilderPendingHeader>();
 
 	/** The pending element. */
-	protected LinkedList<PgPendingElem> pending_elem = new LinkedList<PgPendingElem>();
+	protected LinkedList<JsonBuilderPendingElem> pending_elem = new LinkedList<JsonBuilderPendingElem>();
 
 	/** The pending simple content. */
 	protected StringBuilder pending_simple_cont = new StringBuilder();
@@ -344,7 +344,7 @@ public class JsonBuilder {
 
 		buffer.append(_indent_space + "\"properties\":" + key_value_space + "{" + line_feed_code); // start field
 
-		pending_header.push(new JsonPendingHeader(header_start, buffer.length(), indent_level));
+		pending_header.push(new JsonBuilderPendingHeader(header_start, buffer.length(), indent_level));
 
 	}
 
@@ -358,7 +358,7 @@ public class JsonBuilder {
 
 		int len = buffer.length();
 
-		JsonPendingHeader header = pending_header.poll();
+		JsonBuilderPendingHeader header = pending_header.poll();
 
 		if (len == header.end) { // no content
 
@@ -728,7 +728,7 @@ public class JsonBuilder {
 
 		buffer.append(getIndentSpaces(indent_level) + (object ? "\"" + (case_sense ? table.name : table.name.toLowerCase()) + "\":" + key_value_space : "") + "{" + line_feed_code);
 
-		pending_header.push(new JsonPendingHeader(header_start, buffer.length(), indent_level));
+		pending_header.push(new JsonBuilderPendingHeader(header_start, buffer.length(), indent_level));
 
 	}
 
@@ -739,7 +739,7 @@ public class JsonBuilder {
 
 		int len = buffer.length();
 
-		JsonPendingHeader header = pending_header.poll();
+		JsonBuilderPendingHeader header = pending_header.poll();
 
 		if (len == header.end) { // no content
 
@@ -915,17 +915,10 @@ public class JsonBuilder {
 	 */
 	public void writePendingElems(boolean attr_only) {
 
-		PgPendingElem elem;
+		JsonBuilderPendingElem elem;
 
-		while ((elem = pending_elem.pollLast()) != null) {
-
-			int size = pending_elem.size();
-
-			elem.attr_only = size > 0 ? false : attr_only;
-
+		while ((elem = pending_elem.pollLast()) != null)
 			elem.write(this);
-
-		}
 
 	}
 

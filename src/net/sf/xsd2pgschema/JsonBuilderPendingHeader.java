@@ -24,7 +24,7 @@ package net.sf.xsd2pgschema;
  *
  * @author yokochi
  */
-public class JsonPendingHeader {
+public class JsonBuilderPendingHeader {
 
 	/** The position header starts. */
 	int start;
@@ -42,7 +42,7 @@ public class JsonPendingHeader {
 	 * @param end position header ends
 	 * @param indent_level current indent level
 	 */
-	public JsonPendingHeader(int start, int end, int indent_level) {
+	public JsonBuilderPendingHeader(int start, int end, int indent_level) {
 
 		this.start = start;
 		this.end = end;

@@ -24,7 +24,7 @@ package net.sf.xsd2pgschema;
  *
  * @author yokochi
  */
-public class PgNestTesterForJson extends PgNestTester {
+public class JsonBuilderNestTester extends AbstractNestTester {
 
 	/** The current indent level. */
 	protected int current_indent_level = 1;
@@ -38,7 +38,7 @@ public class PgNestTesterForJson extends PgNestTester {
 	 * @param table current table
 	 * @param jsonb JSON builder
 	 */
-	public PgNestTesterForJson(PgTable table, JsonBuilder jsonb) {
+	public JsonBuilderNestTester(PgTable table, JsonBuilder jsonb) {
 
 		super(table);
 
@@ -52,7 +52,7 @@ public class PgNestTesterForJson extends PgNestTester {
 	 * @param table current table
 	 * @param parent_test nest test of parent node
 	 */
-	public PgNestTesterForJson(PgTable table, PgNestTesterForJson parent_test) {
+	public JsonBuilderNestTester(PgTable table, JsonBuilderNestTester parent_test) {
 
 		super(table, parent_test);
 

@@ -6327,7 +6327,7 @@ public class PgSchema {
 	private SAXParser any_attr_parser = null;
 
 	/** The instance of any retriever. */
-	private PgAnyRetriever any_retriever = null;
+	private XmlBuilderAnyRetriever any_retriever = null;
 
 	/**
 	 * Compose XML fragment (field or text node)
@@ -6374,7 +6374,7 @@ public class PgSchema {
 				}
 
 				if (any_retriever == null)
-					any_retriever = new PgAnyRetriever();
+					any_retriever = new XmlBuilderAnyRetriever();
 
 			}
 
@@ -6607,7 +6607,7 @@ public class PgSchema {
 								if (xmlb.append_xmlns)
 									xml_writer.writeNamespace(table_prefix, table_ns);
 
-								PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table, xmlb);
+								XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table, xmlb);
 
 								any_attr_parser.parse(in, any_attr);
 								break;
@@ -6617,7 +6617,7 @@ public class PgSchema {
 								if (xmlb.append_xmlns)
 									xml_writer.writeNamespace(table_prefix, table_ns);
 
-								any_retriever.exec(in, table, new PgNestTesterForXml(table, xmlb), xmlb);
+								any_retriever.exec(in, table, new XmlBuilderNestTester(table, xmlb), xmlb);
 
 								xml_writer.writeEndElement();
 							}
@@ -6719,13 +6719,13 @@ public class PgSchema {
 				}
 
 				if (any_retriever == null)
-					any_retriever = new PgAnyRetriever();
+					any_retriever = new XmlBuilderAnyRetriever();
 
 			}
 
-			PgNestTesterForXml nest_test = new PgNestTesterForXml(table, xmlb);
+			XmlBuilderNestTester nest_test = new XmlBuilderNestTester(table, xmlb);
 
-			xmlb.pending_elem.push(new PgPendingElem(table, nest_test.current_indent_space, true));
+			xmlb.pending_elem.push(new XmlBuilderPendingElem(table, nest_test.current_indent_space, true));
 
 			List<PgField> fields = table.fields;
 
@@ -6743,9 +6743,9 @@ public class PgSchema {
 
 					if ((content != null && !content.isEmpty()) || field.required) {
 
-						PgPendingAttr attr = new PgPendingAttr(field, content);
+						XmlBuilderPendingAttr attr = new XmlBuilderPendingAttr(field, content);
 
-						PgPendingElem elem = xmlb.pending_elem.peek();
+						XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
 						if (elem != null)
 							elem.appendPendingAttr(attr);
@@ -6768,7 +6768,7 @@ public class PgSchema {
 
 						if (in != null) {
 
-							PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table, xmlb);
+							XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table, xmlb);
 
 							any_attr_parser.parse(in, any_attr);
 
@@ -6813,7 +6813,7 @@ public class PgSchema {
 					if (table.equals(root_table))
 						throw new PgSchemaException("Not allowed to insert document key to root element.");
 
-					PgPendingElem elem = xmlb.pending_elem.peek();
+					XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
 					if (elem != null)
 						xmlb.writePendingElems(false);
@@ -6841,7 +6841,7 @@ public class PgSchema {
 
 					if (content != null && !content.isEmpty()) {
 
-						PgPendingElem elem = xmlb.pending_elem.peek();
+						XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
 						if (elem != null)
 							xmlb.writePendingElems(false);
@@ -6854,7 +6854,7 @@ public class PgSchema {
 
 								xml_writer.writeEndElement();
 
-								elem = new PgPendingElem(table, (xmlb.pending_elem.size() > 0 ? "" : xmlb.line_feed_code) + nest_test.current_indent_space, false);
+								elem = new XmlBuilderPendingElem(table, (xmlb.pending_elem.size() > 0 ? "" : xmlb.line_feed_code) + nest_test.current_indent_space, false);
 
 								elem.write(xmlb);
 
@@ -6876,7 +6876,7 @@ public class PgSchema {
 
 					if ((content != null && !content.isEmpty()) || field.required) {
 
-						PgPendingElem elem = xmlb.pending_elem.peek();
+						XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
 						if (elem != null)
 							xmlb.writePendingElems(false);
@@ -6981,7 +6981,7 @@ public class PgSchema {
 
 				boolean attr_only = false;
 
-				PgPendingElem elem = xmlb.pending_elem.peek();
+				XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
 				if (elem != null)
 					xmlb.writePendingElems(attr_only = true);
@@ -7032,10 +7032,10 @@ public class PgSchema {
 	 * @param parent_key parent key
 	 * @param as_attr whether parent key is simple attribute
 	 * @param parent_nest_test nest test result of parent node
-	 * @return PgNestTesterForXml nest test of this node
+	 * @return XmlBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */	
-	private PgNestTesterForXml nestChildNode2Xml(final Connection db_conn, final PgTable table, final Object parent_key, final boolean as_attr, PgNestTesterForXml parent_nest_test) throws PgSchemaException {
+	private XmlBuilderNestTester nestChildNode2Xml(final Connection db_conn, final PgTable table, final Object parent_key, final boolean as_attr, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		boolean fill_default_value = option.fill_default_value;
 
@@ -7043,7 +7043,7 @@ public class PgSchema {
 
 		try {
 
-			PgNestTesterForXml nest_test = new PgNestTesterForXml(table, parent_nest_test);
+			XmlBuilderNestTester nest_test = new XmlBuilderNestTester(table, parent_nest_test);
 
 			String table_ns = table.target_namespace;
 			String table_prefix = table.prefix;
@@ -7052,7 +7052,7 @@ public class PgSchema {
 
 			if (!table.virtual && no_list_and_bridge && !as_attr) {
 
-				xmlb.pending_elem.push(new PgPendingElem(table, (parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? xmlb.line_feed_code : "") : xmlb.line_feed_code) + nest_test.current_indent_space, true));
+				xmlb.pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? xmlb.line_feed_code : "") : xmlb.line_feed_code) + nest_test.current_indent_space, true));
 
 				if (parent_nest_test.has_insert_doc_key)
 					parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
@@ -7091,7 +7091,7 @@ public class PgSchema {
 
 				if (!table.virtual && !no_list_and_bridge && !as_attr) {
 
-					xmlb.pending_elem.push(new PgPendingElem(table, (parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 || list_id > 0 ? (parent_nest_test.has_insert_doc_key ? xmlb.line_feed_code : "") : xmlb.line_feed_code) + nest_test.current_indent_space, true));
+					xmlb.pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 || list_id > 0 ? (parent_nest_test.has_insert_doc_key ? xmlb.line_feed_code : "") : xmlb.line_feed_code) + nest_test.current_indent_space, true));
 
 					if (parent_nest_test.has_insert_doc_key)
 						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
@@ -7115,9 +7115,9 @@ public class PgSchema {
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
-							PgPendingAttr attr = new PgPendingAttr(field, content);
+							XmlBuilderPendingAttr attr = new XmlBuilderPendingAttr(field, content);
 
-							PgPendingElem elem = xmlb.pending_elem.peek();
+							XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
 							if (elem != null)
 								elem.appendPendingAttr(attr);
@@ -7136,9 +7136,9 @@ public class PgSchema {
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
-							PgPendingAttr attr = new PgPendingAttr(field, getForeignTable(field), content);
+							XmlBuilderPendingAttr attr = new XmlBuilderPendingAttr(field, getForeignTable(field), content);
 
-							PgPendingElem elem = xmlb.pending_elem.peek();
+							XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
 							if (elem != null)
 								elem.appendPendingAttr(attr);
@@ -7161,7 +7161,7 @@ public class PgSchema {
 
 							if (in != null) {
 
-								PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table, xmlb);
+								XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table, xmlb);
 
 								any_attr_parser.parse(in, any_attr);
 
@@ -7207,7 +7207,7 @@ public class PgSchema {
 
 						if (content != null && !content.isEmpty()) {
 
-							PgPendingElem elem = xmlb.pending_elem.peek();
+							XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
 							if (elem != null)
 								xmlb.writePendingElems(false);
@@ -7220,7 +7220,7 @@ public class PgSchema {
 
 									xml_writer.writeEndElement();
 
-									elem = new PgPendingElem(table, (parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 || list_id > 0 ? "" : xmlb.line_feed_code) + nest_test.current_indent_space, false);
+									elem = new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || xmlb.pending_elem.size() > 0 || list_id > 0 ? "" : xmlb.line_feed_code) + nest_test.current_indent_space, false);
 
 									elem.write(xmlb);
 
@@ -7242,7 +7242,7 @@ public class PgSchema {
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
-							PgPendingElem elem = xmlb.pending_elem.peek();
+							XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
 							if (elem != null)
 								xmlb.writePendingElems(false);
@@ -7349,7 +7349,7 @@ public class PgSchema {
 
 						boolean attr_only = false;
 
-						PgPendingElem elem = xmlb.pending_elem.peek();
+						XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
 						if (elem != null)
 							xmlb.writePendingElems(attr_only = true);
@@ -7385,7 +7385,7 @@ public class PgSchema {
 
 					boolean attr_only = false;
 
-					PgPendingElem elem = xmlb.pending_elem.peek();
+					XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
 					if (elem != null)
 						xmlb.writePendingElems(attr_only = true);
@@ -7510,7 +7510,7 @@ public class PgSchema {
 
 							if (in != null) {
 
-								PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table, jsonb, 1);
+								JsonBuilderAnyAttrRetriever any_attr = new JsonBuilderAnyAttrRetriever(table, jsonb, 1);
 								any_attr_parser.parse(in, any_attr);
 
 							}
@@ -7591,9 +7591,9 @@ public class PgSchema {
 
 		try {
 
-			PgNestTesterForJson nest_test = new PgNestTesterForJson(table, jsonb);
+			JsonBuilderNestTester nest_test = new JsonBuilderNestTester(table, jsonb);
 
-			jsonb.pending_elem.push(new PgPendingElem(table, nest_test.current_indent_level));
+			jsonb.pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
 
 			List<PgField> fields = table.fields;
 
@@ -7611,9 +7611,9 @@ public class PgSchema {
 
 					if ((content != null && !content.isEmpty()) || field.required) {
 
-						PgPendingAttr attr = new PgPendingAttr(field, content, nest_test.child_indent_level);
+						JsonBuilderPendingAttr attr = new JsonBuilderPendingAttr(field, content, nest_test.child_indent_level);
 
-						PgPendingElem elem = jsonb.pending_elem.peek();
+						JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
 
 						if (elem != null)
 							elem.appendPendingAttr(attr);
@@ -7636,7 +7636,7 @@ public class PgSchema {
 
 						if (in != null) {
 
-							PgAnyAttrRetriever any_attr = new PgAnyAttrRetriever(table, jsonb, nest_test.child_indent_level);
+							JsonBuilderAnyAttrRetriever any_attr = new JsonBuilderAnyAttrRetriever(table, jsonb, nest_test.child_indent_level);
 
 							any_attr_parser.parse(in, any_attr);
 
@@ -7681,7 +7681,7 @@ public class PgSchema {
 					if (table.equals(root_table))
 						throw new PgSchemaException("Not allowed to insert document key to root element.");
 
-					PgPendingElem elem = jsonb.pending_elem.peek();
+					JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
 
 					if (elem != null)
 						jsonb.writePendingElems(false);
@@ -7700,7 +7700,7 @@ public class PgSchema {
 
 					if (content != null && !content.isEmpty()) {
 
-						PgPendingElem elem = jsonb.pending_elem.peek();
+						JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
 
 						if (elem != null)
 							jsonb.writePendingElems(false);
@@ -7721,7 +7721,7 @@ public class PgSchema {
 
 					if ((content != null && !content.isEmpty()) || field.required) {
 
-						PgPendingElem elem = jsonb.pending_elem.peek();
+						JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
 
 						if (elem != null)
 							jsonb.writePendingElems(false);
@@ -7793,7 +7793,7 @@ public class PgSchema {
 
 				boolean attr_only = false;
 
-				PgPendingElem elem = jsonb.pending_elem.peek();
+				JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
 
 				if (elem != null)
 					jsonb.writePendingElems(attr_only = true);
@@ -7839,23 +7839,23 @@ public class PgSchema {
 	 * @param parent_key parent key
 	 * @param as_attr whether parent key is simple attribute
 	 * @param parent_nest_test nest test result of parent node
-	 * @return PgNestTesterForJson nest test of this node
+	 * @return JsonBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */	
-	private PgNestTesterForJson nestChildNode2Json(final Connection db_conn, final PgTable table, final Object parent_key, final boolean as_attr, PgNestTesterForJson parent_nest_test) throws PgSchemaException {
+	private JsonBuilderNestTester nestChildNode2Json(final Connection db_conn, final PgTable table, final Object parent_key, final boolean as_attr, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		boolean fill_default_value = option.fill_default_value;
 
 		try {
 
-			PgNestTesterForJson nest_test = new PgNestTesterForJson(table, parent_nest_test);
+			JsonBuilderNestTester nest_test = new JsonBuilderNestTester(table, parent_nest_test);
 
 			boolean no_list_and_bridge = !table.list_holder && table.bridge;
 			boolean array_field = !table.virtual && !no_list_and_bridge && table.nested_fields == 0 && !as_attr && jsonb.type.equals(JsonType.column);
 
 			if (!table.virtual && (no_list_and_bridge || array_field) && !as_attr) {
 
-				jsonb.pending_elem.push(new PgPendingElem(table, nest_test.current_indent_level));
+				jsonb.pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
 
 				if (parent_nest_test.has_insert_doc_key)
 					parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
@@ -7892,7 +7892,7 @@ public class PgSchema {
 
 				if (!table.virtual && !(no_list_and_bridge || array_field) && !as_attr) {
 
-					jsonb.pending_elem.push(new PgPendingElem(table, nest_test.current_indent_level));
+					jsonb.pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
 
 					if (parent_nest_test.has_insert_doc_key)
 						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
@@ -7921,9 +7921,9 @@ public class PgSchema {
 
 							else {
 
-								PgPendingAttr attr = new PgPendingAttr(field, content, nest_test.child_indent_level);
+								JsonBuilderPendingAttr attr = new JsonBuilderPendingAttr(field, content, nest_test.child_indent_level);
 
-								PgPendingElem elem = jsonb.pending_elem.peek();
+								JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
 
 								if (elem != null)
 									elem.appendPendingAttr(attr);
@@ -7949,9 +7949,9 @@ public class PgSchema {
 
 							else {
 
-								PgPendingAttr attr = new PgPendingAttr(field, getForeignTable(field), content, nest_test.child_indent_level);
+								JsonBuilderPendingAttr attr = new JsonBuilderPendingAttr(field, getForeignTable(field), content, nest_test.child_indent_level);
 
-								PgPendingElem elem = jsonb.pending_elem.peek();
+								JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
 
 								if (elem != null)
 									elem.appendPendingAttr(attr);
@@ -7976,13 +7976,13 @@ public class PgSchema {
 
 							if (in != null) {
 
-								PgAnyAttrRetriever any_attr;
+								JsonBuilderAnyAttrRetriever any_attr;
 
 								if (array_field)
-									any_attr = new PgAnyAttrRetriever(table, field, jsonb.schema_ver, jsonb.key_value_space);
+									any_attr = new JsonBuilderAnyAttrRetriever(table, field, jsonb.schema_ver, jsonb.key_value_space);
 
 								else
-									any_attr = new PgAnyAttrRetriever(table, jsonb, nest_test.child_indent_level);
+									any_attr = new JsonBuilderAnyAttrRetriever(table, jsonb, nest_test.child_indent_level);
 
 								any_attr_parser.parse(in, any_attr);
 
@@ -8033,7 +8033,7 @@ public class PgSchema {
 
 							else {
 
-								PgPendingElem elem = jsonb.pending_elem.peek();
+								JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
 
 								if (elem != null)
 									jsonb.writePendingElems(false);
@@ -8061,7 +8061,7 @@ public class PgSchema {
 
 							else {
 
-								PgPendingElem elem = jsonb.pending_elem.peek();
+								JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
 
 								if (elem != null)
 									jsonb.writePendingElems(false);
@@ -8144,7 +8144,7 @@ public class PgSchema {
 
 						boolean attr_only = false;
 
-						PgPendingElem elem = jsonb.pending_elem.peek();
+						JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
 
 						if (elem != null)
 							jsonb.writePendingElems(attr_only = true);
@@ -8174,7 +8174,7 @@ public class PgSchema {
 
 					boolean attr_only = false;
 
-					PgPendingElem elem = jsonb.pending_elem.peek();
+					JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
 
 					if (elem != null)
 						jsonb.writePendingElems(attr_only = true);

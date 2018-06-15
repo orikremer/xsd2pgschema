@@ -23,22 +23,19 @@ import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Retrieve any attribute stored in PostgreSQL.
+ * Retrieve any attribute into JSON builder.
  *
  * @author yokochi
  */
-public class PgAnyAttrRetriever extends DefaultHandler {
+public class JsonBuilderAnyAttrRetriever extends DefaultHandler {
 
 	/** The current table. */
 	private PgTable table;
 
-	/** The XML builder. */
-	private XmlBuilder xmlb = null;
-
 	/** The JSON builder. */
 	private JsonBuilder jsonb = null;
 
-	/** The current indent level (JSON). */
+	/** The current indent level. */
 	private int indent_level;
 
 	/** The current field (column-oriented JSON). */
@@ -60,23 +57,10 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 	 * Instance of any attribute retriever.
 	 *
 	 * @param table current table
-	 * @param xmlb XML builder
-	 */
-	public PgAnyAttrRetriever(PgTable table, XmlBuilder xmlb) {
-
-		this.table = table;
-		this.xmlb = xmlb;
-
-	}
-
-	/**
-	 * Instance of any attribute retriever (JSON).
-	 *
-	 * @param table current table
 	 * @param jsonb JSON builder
 	 * @param indent_level current indent level
 	 */
-	public PgAnyAttrRetriever(PgTable table, JsonBuilder jsonb, int indent_level) {
+	public JsonBuilderAnyAttrRetriever(PgTable table, JsonBuilder jsonb, int indent_level) {
 
 		this.table = table;
 		this.jsonb = jsonb;
@@ -92,7 +76,7 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 	 * @param schema_ver JSON Schema version
 	 * @param key_value_space the JSON key value space
 	 */
-	public PgAnyAttrRetriever(PgTable table, PgField field, JsonSchemaVersion schema_ver, String key_value_space) {
+	public JsonBuilderAnyAttrRetriever(PgTable table, PgField field, JsonSchemaVersion schema_ver, String key_value_space) {
 
 		this.table = table;
 		this.field = field;
@@ -119,36 +103,13 @@ public class PgAnyAttrRetriever extends DefaultHandler {
 
 			if (content != null && !content.isEmpty()) {
 
-				// compose XML document
-
-				if (xmlb != null) {
-
-					PgPendingAttr attr = new PgPendingAttr(atts.getLocalName(i), content);
-
-					PgPendingElem elem = xmlb.pending_elem.peek();
-
-					if (elem != null)
-						elem.appendPendingAttr(attr);
-
-					else {
-
-						try {
-							attr.write(xmlb);
-						} catch (PgSchemaException e) {
-							e.printStackTrace();
-						}
-
-					}
-
-				}
-
 				// compose JSON document
 
-				else if (jsonb != null) {
+				if (jsonb != null) {
 
-					PgPendingAttr attr = new PgPendingAttr(atts.getLocalName(i), content, indent_level);
+					JsonBuilderPendingAttr attr = new JsonBuilderPendingAttr(atts.getLocalName(i), content, indent_level);
 
-					PgPendingElem elem = jsonb.pending_elem.peek();
+					JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
 
 					if (elem != null)
 						elem.appendPendingAttr(attr);

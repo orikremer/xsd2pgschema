@@ -24,11 +24,11 @@ import java.util.HashMap;
 import javax.xml.stream.XMLStreamException;
 
 /**
- * Pending element.
+ * Pending element in XML builder.
  *
  * @author yokochi
  */
-public class PgPendingElem {
+public class XmlBuilderPendingElem {
 
 	/** The table of element. */
 	protected PgTable table;
@@ -39,11 +39,8 @@ public class PgPendingElem {
 	/** Whether element has attribute only. */
 	protected boolean attr_only = true;
 
-	/** the current indent level (JSON). */
-	protected int indent_level;
-
 	/** The pending attribute. */
-	protected HashMap<String, PgPendingAttr> pending_attrs = new HashMap<String, PgPendingAttr>();
+	protected HashMap<String, XmlBuilderPendingAttr> pending_attrs = new HashMap<String, XmlBuilderPendingAttr>();
 
 	/**
 	 * Instance of pending element.
@@ -52,7 +49,7 @@ public class PgPendingElem {
 	 * @param header header string
 	 * @param attr_only whether element has attribute only.
 	 */
-	public PgPendingElem(PgTable table, String header, boolean attr_only) {
+	public XmlBuilderPendingElem(PgTable table, String header, boolean attr_only) {
 
 		this.table = table;
 		this.header = header;
@@ -61,24 +58,11 @@ public class PgPendingElem {
 	}
 
 	/**
-	 * Instance of pending element (JSON).
-	 *
-	 * @param table current table
-	 * @param indent_level current indent level
-	 */
-	public PgPendingElem(PgTable table, int indent_level) {
-
-		this.table = table;
-		this.indent_level = indent_level;
-
-	}
-
-	/**
 	 * Append pending attribute.
 	 *
 	 * @param attr pending attribute
 	 */
-	public void appendPendingAttr(PgPendingAttr attr) {
+	public void appendPendingAttr(XmlBuilderPendingAttr attr) {
 
 		pending_attrs.put(attr.field.xname, attr);
 
@@ -124,25 +108,6 @@ public class PgPendingElem {
 				}
 
 			});
-
-			clear();
-
-		}
-
-	}
-
-	/**
-	 * Write pending element (JSON).
-	 *
-	 * @param jsonb JSON builder
-	 */
-	public void write(JsonBuilder jsonb) {
-
-		jsonb.writeStartTable(table, true, indent_level);
-
-		if (pending_attrs.size() > 0) {
-
-			pending_attrs.values().forEach(pending_attr -> pending_attr.write(jsonb));
 
 			clear();
 
