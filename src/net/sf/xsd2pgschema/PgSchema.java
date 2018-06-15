@@ -7800,7 +7800,7 @@ public class PgSchema {
 
 				jsonb.writePendingSimpleCont();
 
-				if (!nest_test.has_open_simple_content && !attr_only) {}
+				if (!nest_test.has_open_simple_content && !attr_only) { }
 				else if (nest_test.has_simple_content)
 					nest_test.has_open_simple_content = false;
 
@@ -8184,7 +8184,7 @@ public class PgSchema {
 					if (array_field)
 						jsonb.writeFields(table, false, nest_test.child_indent_level);
 
-					if (!nest_test.has_open_simple_content && !attr_only) {}
+					if (!nest_test.has_open_simple_content && !attr_only) { }
 					else if (nest_test.has_simple_content)
 						nest_test.has_open_simple_content = false;
 
