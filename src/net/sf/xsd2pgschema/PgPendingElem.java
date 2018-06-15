@@ -138,7 +138,7 @@ public class PgPendingElem {
 	 */
 	public void write(JsonBuilder jsonb) {
 
-		jsonb.writeTableHeader(table, true, indent_level);
+		jsonb.writeStartTable(table, true, indent_level);
 
 		if (pending_attrs.size() > 0) {
 

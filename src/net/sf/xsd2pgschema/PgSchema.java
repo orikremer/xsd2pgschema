@@ -5593,17 +5593,7 @@ public class PgSchema {
 	 */
 	public void writeJsonBuilder(BufferedOutputStream bout) throws PgSchemaException {
 
-		try {
-
-			jsonb.trimComma();
-
-			bout.write(jsonb.builder.toString().getBytes());
-
-			jsonb.builder.setLength(0);
-
-		} catch (IOException e) {
-			throw new PgSchemaException(e);
-		}
+		jsonb.write(bout);
 
 	}
 
@@ -5618,40 +5608,35 @@ public class PgSchema {
 
 		hasRootTable();
 
-		List<PgField> fields = root_table.fields;
-
-		jsonb.writeSchemaHeader(def_namespaces, def_anno_appinfo, def_anno_doc);
+		jsonb.writeStartDocument(true);
+		jsonb.writeStartSchema(def_namespaces, def_anno_appinfo, def_anno_doc);
 
 		int json_indent_level = 2;
 
 		if (!root_table.virtual) {
 
-			jsonb.writeSchemaTableHeader(root_table, json_indent_level);
+			jsonb.writeStartSchemaTable(root_table, json_indent_level);
 			json_indent_level += 2;
 
 		}
 
 		int _json_indent_level = json_indent_level;
 
-		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, false, true, false, _json_indent_level));
+		List<PgField> fields = root_table.fields;
 
-		boolean has_own_item = fields.stream().anyMatch(field -> field.jsonable);
-
-		if (has_own_item && root_table.virtual)
-			jsonb.appendComma();
+		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, false, true, false, _json_indent_level));
 
 		int[] list_id = { 0 };
 
 		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(root_table, getForeignTable(field), field.nested_key_as_attr, list_id[0]++, root_table.nested_fields, _json_indent_level));
 
 		if (!root_table.virtual)
-			jsonb.writeSchemaTableFooter(root_table, false, json_indent_level - 2);
+			jsonb.writeEndSchemaTable(root_table, false);
 
-		jsonb.writeSchemaFooter();
+		jsonb.writeEndSchema();
+		jsonb.writeEndDocument();
 
-		System.out.print(jsonb.builder.toString());
-
-		jsonb.builder.setLength(0);
+		jsonb.print();
 
 	}
 
@@ -5667,23 +5652,18 @@ public class PgSchema {
 	 */
 	private void realizeObjJsonSchema(final PgTable parent_table, final PgTable table, final boolean as_attr, final int list_id, final int list_size, int json_indent_level) {
 
-		List<PgField> fields = table.fields;
-
 		if (!table.virtual) {
 
-			jsonb.writeSchemaTableHeader(table, json_indent_level);
+			jsonb.writeStartSchemaTable(table, json_indent_level);
 			json_indent_level += 2;
 
 		}
 
 		int _json_indent_level = json_indent_level;
 
-		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, as_attr, true, false, _json_indent_level));
+		List<PgField> fields = table.fields;
 
-		boolean has_own_item = fields.stream().anyMatch(field -> field.jsonable);
-
-		if (has_own_item && table.virtual)
-			jsonb.appendComma();
+		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, as_attr, true, false, _json_indent_level));
 
 		if (table.nested_fields > 0) {
 
@@ -5694,7 +5674,7 @@ public class PgSchema {
 		}
 
 		if (!table.virtual)
-			jsonb.writeSchemaTableFooter(table, as_attr, json_indent_level - 2);
+			jsonb.writeEndSchemaTable(table, as_attr);
 
 	}
 
@@ -5713,7 +5693,9 @@ public class PgSchema {
 
 		clearJsonBuilder();
 
-		// parse root node and store to JSON builder
+		jsonb.writeStartDocument(true);
+
+		// parse root node and store to JSON buffer
 
 		try {
 
@@ -5723,15 +5705,14 @@ public class PgSchema {
 
 			if (node2json.filled) {
 
-				int jsonb_header_end = jsonb.writeTableHeader(root_table, true, 1);
-
-				jsonb.mergeTableBuffer(root_table, false, 2);
+				jsonb.writeStartTable(root_table, true, 1);
+				jsonb.writeFields(root_table, false, 2);
 
 				node2json.invokeRootNestedNodeObj(1);
 
 				node2json.clear();
 
-				jsonb.writeTableFooter(1, 0, jsonb_header_end);
+				jsonb.writeEndTable();
 
 			}
 
@@ -5739,11 +5720,13 @@ public class PgSchema {
 			throw new PgSchemaException(e);
 		}
 
+		jsonb.writeEndDocument();
+
 		try {
 
 			BufferedWriter buffw = Files.newBufferedWriter(json_file_path);
 
-			buffw.write("{" + jsonb.line_feed_code + jsonb.builder.toString() + "}" + jsonb.line_feed_code);
+			jsonb.write(buffw);
 
 			buffw.close();
 
@@ -5764,7 +5747,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store to JSON builder (Object-oriented JSON format).
+	 * Parse current node and store to JSON buffer (Object-oriented JSON format).
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
@@ -5782,10 +5765,8 @@ public class PgSchema {
 
 			node2json = new PgSchemaNode2Json(this, parent_table, table);
 
-			node2json.jsonb_header_begin = node2json.jsonb_header_end = jsonb.builder.length();
-
 			if (!table.virtual && table.bridge) {
-				node2json.jsonb_header_end = jsonb.writeTableHeader(table, true, ++json_indent_level);
+				jsonb.writeStartTable(table, true, ++json_indent_level);
 				++json_indent_level;
 			}
 
@@ -5810,15 +5791,14 @@ public class PgSchema {
 
 						if (!table.virtual) {
 
-							int _jsonb_header_begin = jsonb.builder.length();
-							int _jsonb_header_end = jsonb.writeTableHeader(table, true, json_indent_level);
-							jsonb.mergeTableBuffer(table, nested_key.as_attr, json_indent_level + 1);
-							jsonb.writeTableFooter(json_indent_level, _jsonb_header_begin, _jsonb_header_end);
+							jsonb.writeStartTable(table, true, json_indent_level);
+							jsonb.writeFields(table, nested_key.as_attr, json_indent_level + 1);
+							jsonb.writeEndTable();
 
 						}
 
 						else
-							jsonb.mergeTableBuffer(table, nested_key.as_attr, json_indent_level + 1);
+							jsonb.writeFields(table, nested_key.as_attr, json_indent_level + 1);
 
 					}
 
@@ -5839,9 +5819,6 @@ public class PgSchema {
 				if (node2json.visited)
 					return;
 
-				int _jsonb_header_begin = jsonb.builder.length();
-				int _jsonb_header_end = node2json.jsonb_header_end;
-
 				synchronized (table_lock[0]) {
 
 					node2json.parseChildNode(parent_node, nested_key);
@@ -5849,9 +5826,9 @@ public class PgSchema {
 					if (node2json.written) {
 
 						if (!table.virtual)
-							_jsonb_header_end = jsonb.writeTableHeader(table, !parent_table.bridge, json_indent_level);
+							jsonb.writeStartTable(table, !parent_table.bridge, json_indent_level);
 
-						jsonb.mergeTableBuffer(table, nested_key.as_attr, json_indent_level + 1);
+						jsonb.writeFields(table, nested_key.as_attr, json_indent_level + 1);
 
 					}
 
@@ -5862,14 +5839,14 @@ public class PgSchema {
 					node2json.invokeChildNestedNodeObj(json_indent_level);
 
 					if (!table.virtual)
-						jsonb.writeTableFooter(json_indent_level + 1, _jsonb_header_begin, _jsonb_header_end);
+						jsonb.writeEndTable();
 
 				}
 
 			} finally {
 
 				if (!table.virtual && table.bridge)
-					jsonb.writeTableFooter(--json_indent_level, node2json.jsonb_header_begin, node2json.jsonb_header_end);
+					jsonb.writeEndTable();
 
 			}
 
@@ -5892,40 +5869,35 @@ public class PgSchema {
 
 		hasRootTable();
 
-		List<PgField> fields = root_table.fields;
-
-		jsonb.writeSchemaHeader(def_namespaces, def_anno_appinfo, def_anno_doc);
+		jsonb.writeStartDocument(true);
+		jsonb.writeStartSchema(def_namespaces, def_anno_appinfo, def_anno_doc);
 
 		int json_indent_level = 2;
 
 		if (!root_table.virtual) {
 
-			jsonb.writeSchemaTableHeader(root_table, json_indent_level);
+			jsonb.writeStartSchemaTable(root_table, json_indent_level);
 			json_indent_level += 2;
 
 		}
 
 		int _json_indent_level = json_indent_level;
 
-		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, false, !field.list_holder, field.list_holder, _json_indent_level));
+		List<PgField> fields = root_table.fields;
 
-		boolean has_own_item = fields.stream().anyMatch(field -> field.jsonable);
-
-		if (has_own_item && root_table.virtual)
-			jsonb.appendComma();
+		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, false, !field.list_holder, field.list_holder, _json_indent_level));
 
 		int[] list_id = { 0 };
 
 		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(root_table, getForeignTable(field), field.nested_key_as_attr, list_id[0]++, root_table.nested_fields, _json_indent_level));
 
 		if (!root_table.virtual)
-			jsonb.writeSchemaTableFooter(root_table, false, json_indent_level - 2);
+			jsonb.writeEndSchemaTable(root_table, false);
 
-		jsonb.writeSchemaFooter();
+		jsonb.writeEndSchema();
+		jsonb.writeEndDocument();
 
-		System.out.print(jsonb.builder.toString());
-
-		jsonb.builder.setLength(0);
+		jsonb.print();
 
 	}
 
@@ -5941,25 +5913,20 @@ public class PgSchema {
 	 */
 	private void realizeColJsonSchema(final PgTable parent_table, final PgTable table, final boolean as_attr, final int list_id, final int list_size, int json_indent_level) {
 
-		List<PgField> fields = table.fields;
-
 		boolean obj_json = table.virtual || !jsonb.array_all;
 
 		if (!table.virtual) {
 
-			jsonb.writeSchemaTableHeader(table, json_indent_level);
+			jsonb.writeStartSchemaTable(table, json_indent_level);
 			json_indent_level += 2;
 
 		}
 
 		int _json_indent_level = json_indent_level;
 
-		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, as_attr, obj_json && !field.list_holder, !table.virtual || field.list_holder, _json_indent_level));
+		List<PgField> fields = table.fields;
 
-		boolean has_own_item = fields.stream().anyMatch(field -> field.jsonable);
-
-		if (has_own_item && table.virtual)
-			jsonb.appendComma();
+		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, as_attr, obj_json && !field.list_holder, !table.virtual || field.list_holder, _json_indent_level));
 
 		if (table.nested_fields > 0) {
 
@@ -5970,7 +5937,7 @@ public class PgSchema {
 		}
 
 		if (!table.virtual)
-			jsonb.writeSchemaTableFooter(table, as_attr, json_indent_level - 2);
+			jsonb.writeEndSchemaTable(table, as_attr);
 
 	}
 
@@ -5989,6 +5956,8 @@ public class PgSchema {
 
 		clearJsonBuilder();
 
+		jsonb.writeStartDocument(true);
+
 		// parse root node and write to JSON file
 
 		try {
@@ -5999,15 +5968,14 @@ public class PgSchema {
 
 			if (node2json.filled) {
 
-				int jsonb_header_end = jsonb.writeTableHeader(root_table, true, 1);
-
-				jsonb.mergeTableBuffer(root_table, false, 2);
+				jsonb.writeStartTable(root_table, true, 1);
+				jsonb.writeFields(root_table, false, 2);
 
 				node2json.invokeRootNestedNodeCol(1);
 
 				node2json.clear();
 
-				jsonb.writeTableFooter(1, 0, jsonb_header_end);
+				jsonb.writeEndTable();
 
 			}
 
@@ -6015,11 +5983,13 @@ public class PgSchema {
 			throw new PgSchemaException(e);
 		}
 
+		jsonb.writeEndDocument();
+
 		try {
 
 			BufferedWriter buffw = Files.newBufferedWriter(json_file_path);
 
-			buffw.write("{" + jsonb.line_feed_code + jsonb.builder.toString() + "}" + jsonb.line_feed_code);
+			jsonb.write(buffw);
 
 			buffw.close();
 
@@ -6030,7 +6000,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store to JSON builder (Column-oriented JSON format).
+	 * Parse current node and store to JSON buffer (Column-oriented JSON format).
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
@@ -6050,12 +6020,8 @@ public class PgSchema {
 
 			node2json = new PgSchemaNode2Json(this, parent_table, table);
 
-			if (!table.virtual && !list_and_bridge) {
-
-				node2json.jsonb_header_begin = jsonb.builder.length();
-				node2json.jsonb_header_end = jsonb.writeTableHeader(table, true, json_indent_level);
-
-			}
+			if (!table.virtual && !list_and_bridge)
+				jsonb.writeStartTable(table, true, json_indent_level);
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
 
@@ -6076,21 +6042,19 @@ public class PgSchema {
 
 				if (!table.virtual && list_and_bridge) {
 
-					node2json.jsonb_header_begin = jsonb.builder.length();
-					node2json.jsonb_header_end = jsonb.writeTableHeader(table, true, json_indent_level);
-
-					jsonb.mergeTableBuffer(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
+					jsonb.writeStartTable(table, true, json_indent_level);
+					jsonb.writeFields(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
 
 					node2json.invokeChildNestedNodeCol(node_test, json_indent_level);
 
-					jsonb.writeTableFooter(json_indent_level, node2json.jsonb_header_begin, node2json.jsonb_header_end);
+					jsonb.writeEndTable();
 
 				}
 
 				else if (node_test.isLastNode()) {
 
 					if (node2json.filled && table.jsonb_not_empty)
-						jsonb.mergeTableBuffer(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
+						jsonb.writeFields(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
 
 					node2json.invokeChildNestedNodeCol(node_test, json_indent_level);
 
@@ -6109,7 +6073,7 @@ public class PgSchema {
 					node2json.parseChildNode(parent_node, nested_key);
 
 					if (node2json.written)
-						jsonb.mergeTableBuffer(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
+						jsonb.writeFields(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
 
 				}
 
@@ -6118,7 +6082,7 @@ public class PgSchema {
 			} finally {
 
 				if (!table.virtual && !list_and_bridge)
-					jsonb.writeTableFooter(json_indent_level, node2json.jsonb_header_begin, node2json.jsonb_header_end);
+					jsonb.writeEndTable();
 
 			}
 
@@ -6151,15 +6115,15 @@ public class PgSchema {
 
 		hasRootTable();
 
-		jsonb.writeSchemaHeader(def_namespaces, def_anno_appinfo, def_anno_doc);
+		jsonb.writeStartDocument(true);
+		jsonb.writeStartSchema(def_namespaces, def_anno_appinfo, def_anno_doc);
 
 		tables.stream().filter(table -> table.content_holder).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> realizeJsonSchema(table, 2));
 
-		jsonb.writeSchemaFooter();
+		jsonb.writeEndSchema();
+		jsonb.writeEndDocument();
 
-		System.out.print(jsonb.builder.toString());
-
-		jsonb.builder.setLength(0);
+		jsonb.print();
 
 		// no support on conditional attribute
 
@@ -6186,16 +6150,16 @@ public class PgSchema {
 	 */
 	private void realizeJsonSchema(final PgTable table, int json_indent_level) {
 
-		List<PgField> fields = table.fields;
-
-		jsonb.writeSchemaTableHeader(table, json_indent_level);
+		jsonb.writeStartSchemaTable(table, json_indent_level);
 
 		int _json_indent_level = json_indent_level + 2;
 		boolean unique_table = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child);
 
-		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaFieldProperty(field, false, !jsonb.array_all, jsonb.array_all || !unique_table, _json_indent_level));
+		List<PgField> fields = table.fields;
 
-		jsonb.writeSchemaTableFooter(table, false, json_indent_level);
+		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, false, !jsonb.array_all, jsonb.array_all || !unique_table, _json_indent_level));
+
+		jsonb.writeEndSchemaTable(table, false);
 
 	}
 
@@ -6224,6 +6188,8 @@ public class PgSchema {
 
 		clearJsonBuilder();
 
+		jsonb.writeStartDocument(true);
+
 		// parse root node and write to JSON file
 
 		try {
@@ -6240,74 +6206,21 @@ public class PgSchema {
 			throw new PgSchemaException(e);
 		}
 
+		tables.stream().filter(_table -> _table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).forEach(_table -> {
+
+			jsonb.writeStartTable(_table, true, 1);
+			jsonb.writeFields(_table, 2);
+			jsonb.writeEndTable();
+
+		});
+
+		jsonb.writeEndDocument();
+
 		try {
 
 			BufferedWriter buffw = Files.newBufferedWriter(json_file_path);
 
-			buffw.write("{" + jsonb.line_feed_code); // JSON document start
-
-			PgTable first = tables.stream().filter(_table -> _table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).findFirst().get();
-
-			tables.stream().filter(_table -> _table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).forEach(_table -> {
-
-				try {
-
-					boolean unique_table = _table.xs_type.equals(XsTableType.xs_root) || _table.xs_type.equals(XsTableType.xs_root_child);
-
-					if (!_table.equals(first))
-						buffw.write("," + jsonb.line_feed_code);
-
-					buffw.write(jsonb.getIndentSpaces(1) + "\"" + (jsonb.case_sense ? _table.name : _table.name.toLowerCase()) + "\":" + jsonb.key_value_space + "{" + jsonb.line_feed_code); // JSON object start
-
-					boolean has_field = false;
-
-					List<PgField> _fields = _table.fields;
-
-					for (int f = 0; f < _fields.size(); f++) {
-
-						PgField _field = _fields.get(f);
-
-						if (_field.jsonb == null)
-							continue;
-
-						if ((_field.required || _field.jsonb_not_empty) && _field.jsonb_col_size > 0 && _field.jsonb.length() > 2) {
-
-							boolean array_field = jsonb.array_all || (!unique_table && _field.jsonb_col_size > 1);
-
-							if (has_field)
-								buffw.write("," + jsonb.line_feed_code);
-
-							buffw.write(jsonb.getIndentSpaces(2) + "\"" + jsonb.getItemTitle(_field, false) + "\":" + jsonb.key_value_space + (array_field ? "[" : ""));
-
-							_field.jsonb.setLength(_field.jsonb.length() - (jsonb.key_value_offset + 1));
-							buffw.write(_field.jsonb.toString());
-
-							if (array_field)
-								buffw.write("]");
-
-							has_field = true;
-
-						}
-
-						_field.jsonb.setLength(0);
-
-					}
-
-					if (has_field)
-						buffw.write(jsonb.line_feed_code);
-
-					buffw.write(jsonb.getIndentSpaces(1) + "}"); // JSON object end
-
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
-			});
-
-			if (first != null)
-				buffw.write(jsonb.line_feed_code);
-
-			buffw.write("}" + jsonb.line_feed_code); // JSON document end
+			jsonb.write(buffw);
 
 			buffw.close();
 
@@ -6333,7 +6246,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store to JSON builder (Relational-oriented JSON format).
+	 * Parse current node and store to JSON buffer (Relational-oriented JSON format).
 	 *
 	 * @param parent_node parent node
 	 * @param parent_table parent table
@@ -7521,6 +7434,8 @@ public class PgSchema {
 		if (terminus.equals(XPathCompType.table))
 			return;
 
+		jsonb.writeStartDocument(false);
+
 		PgTable table = path_expr.sql_subject.table;
 
 		PgField field = path_expr.sql_subject.field;
@@ -7625,7 +7540,7 @@ public class PgSchema {
 						if (_field != null)
 							content = field.retrieveValue(rset, 1, fill_default_value);
 
-						jsonb.builder.append(content + "," + jsonb.line_feed_code);
+						jsonb.buffer.append(content + "," + jsonb.line_feed_code);
 
 					}
 					break;
@@ -7634,7 +7549,7 @@ public class PgSchema {
 					content = rset.getString(1);
 
 					if (content != null && !content.isEmpty())
-						jsonb.builder.append(content + "," + jsonb.line_feed_code);
+						jsonb.buffer.append(content + "," + jsonb.line_feed_code);
 					break;
 				default:
 					continue;
@@ -7643,7 +7558,9 @@ public class PgSchema {
 			}
 
 			if (jsonb.array_all && terminus.isField())
-				jsonb.mergeFieldFragBuffer(field, as_attr);
+				jsonb.writeFieldFrag(field, as_attr);
+
+			jsonb.writeEndDocument();
 
 		} catch (SQLException | ParserConfigurationException | SAXException | IOException e) {
 			throw new PgSchemaException(e);
@@ -7666,6 +7583,8 @@ public class PgSchema {
 		if (!terminus.equals(XPathCompType.table))
 			return;
 
+		jsonb.writeStartDocument(false);
+
 		PgTable table = path_expr.sql_subject.table;
 
 		boolean fill_default_value = option.fill_default_value;
@@ -7673,8 +7592,6 @@ public class PgSchema {
 		try {
 
 			PgNestTesterForJson nest_test = new PgNestTesterForJson(table, jsonb);
-
-			jsonb.builder.append("{" + jsonb.line_feed_code);
 
 			jsonb.pending_elem.push(new PgPendingElem(table, nest_test.current_indent_level));
 
@@ -7887,18 +7804,18 @@ public class PgSchema {
 				else if (nest_test.has_simple_content)
 					nest_test.has_open_simple_content = false;
 
-				jsonb.writeTableFooter(nest_test.current_indent_level, 0, 0);
+				jsonb.writeEndTable();
 
 			}
 
 			else
 				jsonb.pending_elem.poll();
 
-			jsonb.builder.append("}," + jsonb.line_feed_code);
-
 		} catch (SQLException | SAXException | IOException e) {
 			throw new PgSchemaException(e);
 		}
+
+		jsonb.writeEndDocument();
 
 		jsonb.clear(false);
 
@@ -8238,7 +8155,7 @@ public class PgSchema {
 						else if (nest_test.has_simple_content)
 							nest_test.has_open_simple_content = false;
 
-						jsonb.writeTableFooter(nest_test.current_indent_level, 0, 0);
+						jsonb.writeEndTable();
 
 					}
 
@@ -8265,13 +8182,13 @@ public class PgSchema {
 					jsonb.writePendingSimpleCont();
 
 					if (array_field)
-						jsonb.mergeTableBuffer(table, false, nest_test.child_indent_level);
+						jsonb.writeFields(table, false, nest_test.child_indent_level);
 
 					if (!nest_test.has_open_simple_content && !attr_only) {}
 					else if (nest_test.has_simple_content)
 						nest_test.has_open_simple_content = false;
 
-					jsonb.writeTableFooter(nest_test.current_indent_level, 0, 0);
+					jsonb.writeEndTable();
 
 				}
 

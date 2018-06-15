@@ -41,12 +41,6 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	/** The JSON Schema version. */
 	protected JsonSchemaVersion schema_ver = null;
 
-	/** The position of header begins in JSON buffer. */
-	protected int jsonb_header_begin;
-
-	/** The position of header ends in JSON buffer. */
-	protected int jsonb_header_end;
-
 	/** The white spaces between JSON item and JSON data. */
 	private String key_value_space = " ";
 
