@@ -4890,7 +4890,7 @@ public class PgField {
 			case xs_any:
 			case xs_anyAttribute:
 				if (fragment)
-					jsonb.append(value == null ? "null" : "\"\"");
+					jsonb.append(value == null ? "null" : "\"\"" + "," + json_key_value_space);
 				else
 					jsonb.append("\t"); // TSV should be parsed in JSON builder
 
