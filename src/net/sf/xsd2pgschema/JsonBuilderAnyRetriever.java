@@ -320,7 +320,7 @@ public class JsonBuilderAnyRetriever extends DefaultHandler {
 
 			if (array_field) {
 
-				field.writeValue2JsonBuf(jsonb.schema_ver, any_content.toString(), jsonb.key_value_space);
+				field.writeValue2JsonBuf(jsonb.schema_ver, any_content.toString(), false, jsonb.key_value_space);
 
 				any_content.setLength(0);
 

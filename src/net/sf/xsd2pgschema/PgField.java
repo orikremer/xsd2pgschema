@@ -4841,10 +4841,11 @@ public class PgField {
 	 *
 	 * @param schema_ver JSON schema version
 	 * @param value content
+	 * @param fragment whether write fragment JSON at XPath query evaluation
 	 * @param json_key_value_space the JSON key value space
 	 * @return boolean whether value is successfully set
 	 */
-	protected boolean writeValue2JsonBuf(JsonSchemaVersion schema_ver, String value, String json_key_value_space) {
+	protected boolean writeValue2JsonBuf(JsonSchemaVersion schema_ver, String value, boolean fragment, String json_key_value_space) {
 
 		if (jsonb == null)
 			return false;
@@ -4888,7 +4889,11 @@ public class PgField {
 				break;
 			case xs_any:
 			case xs_anyAttribute:
-				jsonb.append("\t"); // TSV should be parsed in JSON builder
+				if (fragment)
+					jsonb.append(value == null ? "null" : "\"\"");
+				else
+					jsonb.append("\t"); // TSV should be parsed in JSON builder
+
 				return false;
 			default: // string
 				jsonb.append(value == null ? "null" : "\"\"");
@@ -4932,7 +4937,20 @@ public class PgField {
 			break;
 		case xs_any:
 		case xs_anyAttribute:
-			jsonb.append(value + "\t"); // TSV should be parsed in JSON builder
+			if (fragment) {
+
+				value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
+
+				if (!value.startsWith("\""))
+					value = "\"" + value + "\"";
+
+				jsonb.append(value + "," + json_key_value_space);	
+
+			}
+
+			else
+				jsonb.append(value + "\t"); // TSV should be parsed in JSON builder
+
 			return true;
 		default: // free text
 			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));

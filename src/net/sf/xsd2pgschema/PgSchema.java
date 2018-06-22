@@ -7484,15 +7484,6 @@ public class PgSchema {
 		if (terminus.equals(XPathCompType.table))
 			return;
 
-		if (jsonb.array_all) {
-			switch (terminus) {
-			case any_attribute:
-			case any_element:
-				throw new PgSchemaException("Not allowed to array content of either xs:any or xs:anyAttribute.");
-			default:
-			}
-		}
-
 		jsonb.writeStartDocument(false);
 
 		PgTable table = path_expr.sql_subject.table;
@@ -7563,10 +7554,10 @@ public class PgSchema {
 							String target_path = jsonb.getLastNameOfPath(path);
 
 							if (terminus.equals(XPathCompType.any_attribute) || target_path.startsWith("@"))
-								jsonb.writeAnyField(target_path.replace("@", ""), true, _content, 1);
+								jsonb.writeAnyFieldFrag(field, target_path.replace("@", ""), as_attr = true, _content, 1);
 
 							else
-								jsonb.writeAnyField(target_path, false, _content, 1);
+								jsonb.writeAnyFieldFrag(field, target_path, false, _content, 1);
 
 						}
 
@@ -7601,8 +7592,18 @@ public class PgSchema {
 
 			}
 
-			if (jsonb.array_all && terminus.isField())
-				jsonb.writeFieldFrag(field, as_attr);
+			if (jsonb.array_all && terminus.isField()) {
+
+				switch (terminus) {
+				case any_attribute:
+				case any_element:
+					jsonb.writeAnyFieldFrag(field, path_expr.getReadablePath());
+					break;
+				default:
+					jsonb.writeFieldFrag(field, as_attr);
+				}
+
+			}
 
 			jsonb.writeEndDocument();
 
@@ -7967,7 +7968,7 @@ public class PgSchema {
 						if ((content != null && !content.isEmpty()) || field.required) {
 
 							if (array_field)
-								field.writeValue2JsonBuf(jsonb.schema_ver, content, jsonb.key_value_space);
+								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.key_value_space);
 
 							else {
 
@@ -7995,7 +7996,7 @@ public class PgSchema {
 						if ((content != null && !content.isEmpty()) || field.required) {
 
 							if (array_field)
-								field.writeValue2JsonBuf(jsonb.schema_ver, content, jsonb.key_value_space);
+								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.key_value_space);
 
 							else {
 
@@ -8071,7 +8072,7 @@ public class PgSchema {
 						if (content != null && !content.isEmpty()) {
 
 							if (array_field)
-								field.writeValue2JsonBuf(jsonb.schema_ver, content, jsonb.key_value_space);
+								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.key_value_space);
 
 							else {
 
@@ -8099,7 +8100,7 @@ public class PgSchema {
 						if ((content != null && !content.isEmpty()) || field.required) {
 
 							if (array_field)
-								field.writeValue2JsonBuf(jsonb.schema_ver, content, jsonb.key_value_space);
+								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.key_value_space);
 
 							else {
 

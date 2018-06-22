@@ -201,7 +201,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			if (field.jsonb == null)
 				continue;
 
-			if (field.jsonable && field.writeValue2JsonBuf(schema_ver, values[f], key_value_space))
+			if (field.jsonable && field.writeValue2JsonBuf(schema_ver, values[f], false, key_value_space))
 				not_empty = true;
 
 		}

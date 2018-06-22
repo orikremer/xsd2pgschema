@@ -1152,7 +1152,7 @@ public class JsonBuilder {
 	public void writeFieldFrag(PgField field, boolean as_attr, String content) {
 
 		if (array_all)
-			field.writeValue2JsonBuf(schema_ver, content, key_value_space);
+			field.writeValue2JsonBuf(schema_ver, content, false, key_value_space);
 
 		else
 			buffer.append(getIndentSpaces(1) + "\"" + getItemName(field, as_attr) + "\":" + key_value_space + field.normalizeAsJson(schema_ver, content) + line_feed_code + ",");
@@ -1173,6 +1173,53 @@ public class JsonBuilder {
 		if ((field.required || field.jsonb_not_empty) && field.jsonb_col_size > 0) {
 
 			buffer.append(getIndentSpaces(1) + "\"" + getItemName(field, as_attr) + "\":" + key_value_space + "[");
+
+			field.jsonb.setLength(field.jsonb.length() - (key_value_offset + 1));
+			buffer.append(field.jsonb);
+
+			buffer.append("]," + line_feed_code);
+
+			field.jsonb.setLength(0);
+
+			field.jsonb_col_size = field.jsonb_null_size = 0;
+
+		}
+
+	}
+
+	/**
+	 * Write any field's content as JSON fragment.
+	 *
+	 * @param field current field
+	 * @param local_name local name
+	 * @param as_attr whether parent node as attribute
+	 * @param content content
+	 * @param indent_level current indent level
+	 */
+	public void writeAnyFieldFrag(PgField field, String local_name, boolean as_attr, String content, final int indent_level) {
+
+		if (array_all)
+			field.writeValue2JsonBuf(schema_ver, content, true, key_value_space);
+
+		else
+			writeAnyField(local_name, as_attr, content, indent_level);
+
+	}
+
+	/**
+	 * Write any field's JSON buffer to the mainline's JSON buffer.
+	 *
+	 * @param field current field
+	 * @param path current path
+	 */
+	public void writeAnyFieldFrag(PgField field, String path) {
+
+		if (field.jsonb == null)
+			return;
+
+		if ((field.required || field.jsonb_not_empty) && field.jsonb_col_size > 0) {
+
+			buffer.append(getIndentSpaces(1) + "\"" + getItemNameOfPath(path) + "\":" + key_value_space + "[");
 
 			field.jsonb.setLength(field.jsonb.length() - (key_value_offset + 1));
 			buffer.append(field.jsonb);
