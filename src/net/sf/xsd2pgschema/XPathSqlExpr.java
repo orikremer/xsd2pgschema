@@ -234,7 +234,7 @@ public class XPathSqlExpr {
 			break;
 		case simple_content:
 			opt = table.fields.parallelStream().filter(field -> field.simple_content && !field.simple_attribute && field.xname.equals(xname)).findFirst();
-			if (opt.isPresent()) 
+			if (opt.isPresent())
 				field = opt.get();
 			else {
 				if (current_tree != null)

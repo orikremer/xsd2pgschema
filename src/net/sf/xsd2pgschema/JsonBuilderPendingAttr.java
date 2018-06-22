@@ -29,6 +29,9 @@ public class JsonBuilderPendingAttr extends AbstractPendingAttr {
 	/** The current indent level. */
 	protected int indent_level;
 
+	/** The field contains any attribute. */
+	protected PgField any_field = null;
+
 	/**
 	 * Instance of pending attribute.
 	 *
@@ -63,14 +66,16 @@ public class JsonBuilderPendingAttr extends AbstractPendingAttr {
 	/**
 	 * Instance of pending any attribute.
 	 *
+	 * @param any_field field
 	 * @param local_name local name
 	 * @param content content
 	 * @param indent_level current indent level
 	 */
-	public JsonBuilderPendingAttr(String local_name, String content, int indent_level) {
+	public JsonBuilderPendingAttr(PgField any_field, String local_name, String content, int indent_level) {
 
 		super(local_name, content);
 
+		this.any_field = any_field;
 		this.indent_level = indent_level;
 
 	}
@@ -90,7 +95,7 @@ public class JsonBuilderPendingAttr extends AbstractPendingAttr {
 		// any attribute
 
 		else
-			jsonb.writeAnyAttr(local_name, content, indent_level);
+			jsonb.writeAnyAttr(this);
 
 	}
 

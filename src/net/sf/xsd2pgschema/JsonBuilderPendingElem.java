@@ -19,7 +19,9 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
  * Pending element in JSON builder.
@@ -35,7 +37,7 @@ public class JsonBuilderPendingElem {
 	protected int indent_level;
 
 	/** The pending attribute. */
-	protected HashMap<String, JsonBuilderPendingAttr> pending_attrs = new HashMap<String, JsonBuilderPendingAttr>();
+	protected LinkedHashMap<String, JsonBuilderPendingAttr> pending_attrs = new LinkedHashMap<String, JsonBuilderPendingAttr>();
 
 	/**
 	 * Instance of pending element.
@@ -57,7 +59,15 @@ public class JsonBuilderPendingElem {
 	 */
 	public void appendPendingAttr(JsonBuilderPendingAttr attr) {
 
-		pending_attrs.put(attr.field.xname, attr);
+		// attribute, simple attribute
+
+		if (attr.field != null)
+			pending_attrs.put(attr.field.xname, attr);
+
+		// any attribute
+
+		else
+			pending_attrs.put(attr.local_name, attr);
 
 	}
 
@@ -72,7 +82,23 @@ public class JsonBuilderPendingElem {
 
 		if (pending_attrs.size() > 0) {
 
-			pending_attrs.values().forEach(pending_attr -> pending_attr.write(jsonb));
+			// attribute
+
+			pending_attrs.values().stream().filter(pending_attr -> pending_attr.field != null).forEach(pending_attr -> pending_attr.write(jsonb));
+
+			// any attribute
+
+			if (pending_attrs.values().stream().anyMatch(pending_attr -> pending_attr.field == null)) {
+
+				List<JsonBuilderPendingAttr> any_attrs = new ArrayList<JsonBuilderPendingAttr>();
+
+				pending_attrs.values().stream().filter(pending_attr -> pending_attr.field == null).forEach(pending_attr -> any_attrs.add(pending_attr));
+
+				jsonb.writeAnyAttrs(any_attrs);
+
+				any_attrs.clear();
+
+			}
 
 			clear();
 

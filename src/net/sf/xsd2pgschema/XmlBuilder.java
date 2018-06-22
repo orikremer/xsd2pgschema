@@ -126,6 +126,49 @@ public class XmlBuilder {
 	}
 
 	/**
+	 * Return parent path.
+	 *
+	 * @param path current path
+	 * @return String parent path
+	 */
+	public String getParentPath(String path) {
+
+		StringBuilder sb = new StringBuilder();
+
+		String[] _path = path.split("/");
+
+		try {
+
+			for (int i = 1; i < _path.length - 1; i++)
+				sb.append("/" + _path[i]);
+
+			return sb.toString();
+
+		} finally {
+			sb.setLength(0);
+		}
+
+	}
+
+	/**
+	 * Return the last name of current path.
+	 *
+	 * @param path current path
+	 * @return String the last path name
+	 */
+	public String getLastNameOfPath(String path) {
+
+		String[] _path = path.split("/");
+
+		int position = _path.length - 1;
+
+		if (position < 0)
+			return null;
+
+		return _path[position];
+	}
+
+	/**
 	 * Write pending elements.
 	 *
 	 * @param attr_only whether element has attribute only

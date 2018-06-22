@@ -61,13 +61,4 @@ public class JsonBuilderNestTester extends AbstractNestTester {
 
 	}
 
-	/**
-	 * Return indent level of parent node.
-	 *
-	 * @return int indent level of parent node
-	 */
-	public int getParentIndentLevel() {
-		return current_indent_level > 0 ? current_indent_level - 1 : 0;
-	}
-
 }

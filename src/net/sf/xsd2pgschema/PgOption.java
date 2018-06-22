@@ -64,7 +64,7 @@ public class PgOption {
 	}
 
 	/**
-	 * Clear authentication information.  
+	 * Clear authentication information.
 	 */
 	public void clear() {
 

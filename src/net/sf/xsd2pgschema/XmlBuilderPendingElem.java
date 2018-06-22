@@ -19,7 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -40,7 +40,7 @@ public class XmlBuilderPendingElem {
 	protected boolean attr_only = true;
 
 	/** The pending attribute. */
-	protected HashMap<String, XmlBuilderPendingAttr> pending_attrs = new HashMap<String, XmlBuilderPendingAttr>();
+	protected LinkedHashMap<String, XmlBuilderPendingAttr> pending_attrs = new LinkedHashMap<String, XmlBuilderPendingAttr>();
 
 	/**
 	 * Instance of pending element.
@@ -64,7 +64,15 @@ public class XmlBuilderPendingElem {
 	 */
 	public void appendPendingAttr(XmlBuilderPendingAttr attr) {
 
-		pending_attrs.put(attr.field.xname, attr);
+		// attribute, simple attribute
+
+		if (attr.field != null)
+			pending_attrs.put(attr.field.xname, attr);
+
+		// any attribute
+
+		else
+			pending_attrs.put(attr.local_name, attr);
 
 	}
 

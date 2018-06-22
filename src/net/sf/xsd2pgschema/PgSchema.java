@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.JDBCType;
@@ -52,7 +53,12 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.lucene.document.Field;
@@ -147,6 +153,15 @@ public class PgSchema {
 
 	/** The instance of message digest for hash_key. */
 	private MessageDigest md_hash_key = null;
+
+	/** The instance of document builder for any content. */
+	private DocumentBuilder any_doc_builder = null;
+
+	/** The instance of transformer for any content. */
+	private Transformer any_transformer = null;
+
+	/** SAX parser for any content. */
+	private SAXParser any_sax_parser = null;
 
 	/** The root node (internal use only). */
 	private Node root_node = null;
@@ -254,7 +269,8 @@ public class PgSchema {
 		if ((def_anno_doc = option.extractDocumentation(root_node, true)) != null)
 			def_xanno_doc = option.extractDocumentation(root_node, false);
 
-		def_stat_msg = new StringBuilder();
+		if (option.ddl_output)
+			def_stat_msg = new StringBuilder();
 
 		// prepare schema location holder
 
@@ -337,6 +353,7 @@ public class PgSchema {
 
 						if ((schema2.tables == null || schema2.tables.size() == 0) && (schema2.attr_groups == null || schema2.attr_groups.size() == 0) && (schema2.model_groups == null || schema2.model_groups.size() == 0)) {
 							/*
+							if (option.ddl_output)
 							root_schema.def_stat_msg.append("--  Not found any root element (/" + option.xs_prefix_ + "schema/" + option.xs_prefix_ + "element) or administrative elements (/" + option.xs_prefix_ + "schema/[" + option.xs_prefix_ + "complexType | " + option.xs_prefix_ + "simpleType | " + option.xs_prefix_ + "attributeGroup | " + option.xs_prefix_ + "group]) in XML Schema: " + schema_location + "\n");
 							 */
 							continue;
@@ -454,7 +471,7 @@ public class PgSchema {
 			if (!option.rel_model_ext)
 				tables.parallelStream().forEach(table -> table.classify());
 
-			if (!root_schema.dup_schema_locations.containsKey(def_schema_location))
+			if (option.ddl_output && !root_schema.dup_schema_locations.containsKey(def_schema_location))
 				root_schema.def_stat_msg.append("--  " + (parent_schema == null ? "Generated" : "Found") + " " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.parallelStream().map(table -> option.rel_model_ext || !table.relational ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups " + (parent_schema == null ? "in total" : "in XML Schema: " + def_schema_location) + "\n");
 
 		}
@@ -1033,56 +1050,86 @@ public class PgSchema {
 
 		}
 
+		// instance of document builder, SAX parser for any content
+
+		if (option.wild_card && tables.parallelStream().anyMatch(table -> table.has_any || table.has_any_attribute)) {
+
+			try {
+
+				any_doc_builder = doc_builder;
+
+				TransformerFactory tf_factory = TransformerFactory.newInstance();
+				any_transformer = tf_factory.newTransformer();
+
+				any_transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+				any_transformer.setOutputProperty(OutputKeys.INDENT, "no");
+
+				SAXParserFactory spf = SAXParserFactory.newInstance();
+				spf.setValidating(false);
+				spf.setNamespaceAware(false);
+
+				any_sax_parser = spf.newSAXParser();
+
+			} catch (TransformerConfigurationException | IllegalArgumentException | TransformerFactoryConfigurationError | ParserConfigurationException | SAXException e) {
+				throw new PgSchemaException(e);
+			}
+
+		}
+
 		// statistics
 
-		StringBuilder sb = new StringBuilder();
+		if (option.ddl_output) {
 
-		HashSet<String> namespace_uri = new HashSet<String>();
+			StringBuilder sb = new StringBuilder();
 
-		def_namespaces.entrySet().stream().map(arg -> arg.getValue()).forEach(arg -> namespace_uri.add(arg));
+			HashSet<String> namespace_uri = new HashSet<String>();
 
-		namespace_uri.forEach(arg -> sb.append(arg + " (" + getPrefixOf(arg, "default") + "), "));
-		namespace_uri.clear();
+			def_namespaces.entrySet().stream().map(arg -> arg.getValue()).forEach(arg -> namespace_uri.add(arg));
 
-		root_schema.def_stat_msg.append("--   Namespaces:\n");
-		root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
+			namespace_uri.forEach(arg -> sb.append(arg + " (" + getPrefixOf(arg, "default") + "), "));
+			namespace_uri.clear();
 
-		sb.setLength(0);
+			root_schema.def_stat_msg.append("--   Namespaces:\n");
+			root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
 
-		schema_locations.stream().filter(arg -> !dup_schema_locations.containsKey(arg)).forEach(arg -> sb.append(arg + ", "));
+			sb.setLength(0);
 
-		root_schema.def_stat_msg.append("--   Schema locations:\n");
-		root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
+			schema_locations.stream().filter(arg -> !dup_schema_locations.containsKey(arg)).forEach(arg -> sb.append(arg + ", "));
 
-		sb.setLength(0);
+			root_schema.def_stat_msg.append("--   Schema locations:\n");
+			root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
 
-		root_schema.def_stat_msg.append("--   Table types:\n");
-		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root) && table.writable).count() + " root, ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) && table.writable).count() + " root children, ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root) && table.writable).count() + " admin roots, ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_child) && table.writable).count() + " admin children\n");
-		root_schema.def_stat_msg.append("--   System keys:\n");
-		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.primary_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " primary keys ("
-				+ tables.parallelStream().map(table -> table.fields.stream().filter(field -> field.unique_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " unique constraints), ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys ("
-				+ countForeignKeyReferences() + " key references), ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.nested_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " nested keys ("
-				+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.nested_key_as_attr).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute)\n");
-		root_schema.def_stat_msg.append("--   User keys:\n");
-		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.document_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " document keys, ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
-		root_schema.def_stat_msg.append("--   Contents:\n");
-		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes ("
-				+ (option.document_key || !option.inplace_document_key ? 0 : tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements ("
-				+ (option.document_key || !option.inplace_document_key ? 0 : tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_content).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents ("
-				+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute, "
-				+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_attr_cond).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as conditional attribute)\n");
-		root_schema.def_stat_msg.append("--   Wild cards:\n");
-		root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
-		root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
+			sb.setLength(0);
+
+			root_schema.def_stat_msg.append("--   Table types:\n");
+			root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root) && table.writable).count() + " root, ");
+			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) && table.writable).count() + " root children, ");
+			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root) && table.writable).count() + " admin roots, ");
+			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_child) && table.writable).count() + " admin children\n");
+			root_schema.def_stat_msg.append("--   System keys:\n");
+			root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.primary_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " primary keys ("
+					+ tables.parallelStream().map(table -> table.fields.stream().filter(field -> field.unique_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " unique constraints), ");
+			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys ("
+					+ countForeignKeyReferences() + " key references), ");
+			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.nested_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " nested keys ("
+					+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.nested_key_as_attr).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute)\n");
+			root_schema.def_stat_msg.append("--   User keys:\n");
+			root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.document_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " document keys, ");
+			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
+			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
+			root_schema.def_stat_msg.append("--   Contents:\n");
+			root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes ("
+					+ (option.document_key || !option.inplace_document_key ? 0 : tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
+			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements ("
+					+ (option.document_key || !option.inplace_document_key ? 0 : tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
+			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_content).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents ("
+					+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute, "
+					+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_attr_cond).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as conditional attribute)\n");
+			root_schema.def_stat_msg.append("--   Wild cards:\n");
+			root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
+			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
+
+		}
 
 		// update schema locations to unique ones
 
@@ -4231,6 +4278,33 @@ public class PgSchema {
 	}
 
 	/**
+	 * Return document builder for any content.
+	 *
+	 * @return DocumentBuilder document builder for any content
+	 */
+	protected DocumentBuilder getAnyDocBuilder() {
+		return any_doc_builder;
+	}
+
+	/**
+	 * Return transformer for any content.
+	 *
+	 * @return Transformer transformer for any content
+	 */
+	protected Transformer getAnyTransformer() {
+		return any_transformer;
+	}
+
+	/**
+	 * Return SAX parser for any content.
+	 *
+	 * @return SAXParser SAX parser for any content
+	 */
+	protected SAXParser getAnySaxParser() {
+		return any_sax_parser;
+	}
+
+	/**
 	 * Initialize table lock objects.
 	 *
 	 * @param single_lock whether single lock object or individual lock objects for all tables
@@ -4372,7 +4446,7 @@ public class PgSchema {
 
 			node2pgcsv.clear();
 
-		} catch (IOException | ParserConfigurationException | TransformerException e) {
+		} catch (IOException | TransformerException | SAXException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -4457,7 +4531,7 @@ public class PgSchema {
 
 			node2pgcsv.invokeChildNestedNode();
 
-		} catch (ParserConfigurationException | IOException | TransformerException e) {
+		} catch (IOException | TransformerException | SAXException e) {
 			throw new PgSchemaException(e);
 		} finally {
 			node2pgcsv.clear();
@@ -4506,7 +4580,7 @@ public class PgSchema {
 
 			db_conn.commit(); // transaction ends
 
-		} catch (SQLException | ParserConfigurationException | TransformerException | IOException e) {
+		} catch (SQLException | TransformerException | IOException | SAXException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -4581,7 +4655,7 @@ public class PgSchema {
 
 			node2pgsql.invokeChildNestedNode();
 
-		} catch (SQLException | ParserConfigurationException | IOException | TransformerException e) {
+		} catch (SQLException | IOException | TransformerException | SAXException e) {
 			throw new PgSchemaException(e);
 		} finally {
 			node2pgsql.clear();
@@ -4625,8 +4699,14 @@ public class PgSchema {
 
 		doc_id_table = root_table;
 
-		if (!option.rel_data_ext)
-			doc_id_table = tables.parallelStream().filter(table -> table.writable).min(Comparator.comparingInt(table -> table.order)).get();
+		if (!option.rel_data_ext) {
+
+			Optional<PgTable> opt = tables.parallelStream().filter(table -> table.writable).min(Comparator.comparingInt(table -> table.order));
+
+			if (opt.isPresent())
+				doc_id_table = opt.get();
+
+		}
 
 	}
 
@@ -5022,7 +5102,7 @@ public class PgSchema {
 
 			node2lucidx.clear();
 
-		} catch (ParserConfigurationException | TransformerException | IOException e) {
+		} catch (TransformerException | IOException | SAXException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -5090,7 +5170,7 @@ public class PgSchema {
 
 			node2lucidx.invokeChildNestedNode();
 
-		} catch (ParserConfigurationException | IOException | TransformerException e) {
+		} catch (IOException | TransformerException | SAXException e) {
 			throw new PgSchemaException(e);
 		} finally {
 			node2lucidx.clear();
@@ -5406,7 +5486,7 @@ public class PgSchema {
 
 			buffw.write("</sphinx:document>\n");
 
-		} catch (ParserConfigurationException | TransformerException | IOException e) {
+		} catch (TransformerException | IOException | SAXException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -5474,7 +5554,7 @@ public class PgSchema {
 
 			node2sphds.invokeChildNestedNode();
 
-		} catch (ParserConfigurationException | IOException | TransformerException e) {
+		} catch (IOException | TransformerException | SAXException e) {
 			throw new PgSchemaException(e);
 		} finally {
 			node2sphds.clear();
@@ -5716,7 +5796,7 @@ public class PgSchema {
 
 			}
 
-		} catch (ParserConfigurationException | TransformerException | IOException e) {
+		} catch (TransformerException | IOException | SAXException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -5850,7 +5930,7 @@ public class PgSchema {
 
 			}
 
-		} catch (ParserConfigurationException | IOException | TransformerException e) {
+		} catch (IOException | TransformerException | SAXException e) {
 			throw new PgSchemaException(e);
 		} finally {
 			node2json.clear();
@@ -5979,7 +6059,7 @@ public class PgSchema {
 
 			}
 
-		} catch (ParserConfigurationException | TransformerException | IOException e) {
+		} catch (TransformerException | IOException | SAXException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -6086,7 +6166,7 @@ public class PgSchema {
 
 			}
 
-		} catch (ParserConfigurationException | IOException | TransformerException e) {
+		} catch (IOException | TransformerException | SAXException e) {
 			throw new PgSchemaException(e);
 		} finally {
 			node2json.clear();
@@ -6202,7 +6282,7 @@ public class PgSchema {
 
 			node2json.clear();
 
-		} catch (ParserConfigurationException | TransformerException | IOException e) {
+		} catch (TransformerException | IOException | SAXException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -6298,13 +6378,15 @@ public class PgSchema {
 
 			node2json.invokeChildNestedNode();
 
-		} catch (ParserConfigurationException | IOException | TransformerException e) {
+		} catch (IOException | TransformerException | SAXException e) {
 			throw new PgSchemaException(e);
 		} finally {
 			node2json.clear();
 		}
 
 	}
+
+	// XPath query evaluation over PostgreSQL
 
 	// XML composer over PostgreSQL
 
@@ -6322,12 +6404,6 @@ public class PgSchema {
 		this.xmlb.clear();
 
 	}
-
-	/** SAX parser for any attribute. */
-	private SAXParser any_attr_parser = null;
-
-	/** The instance of any retriever. */
-	private XmlBuilderAnyRetriever any_retriever = null;
 
 	/**
 	 * Compose XML fragment (field or text node)
@@ -6361,22 +6437,6 @@ public class PgSchema {
 		XMLStreamWriter xml_writer = xmlb.writer;
 
 		try {
-
-			if (option.wild_card) {
-
-				if (any_attr_parser == null) {
-
-					SAXParserFactory spf = SAXParserFactory.newInstance();
-					spf.setValidating(false);
-					spf.setNamespaceAware(false);
-					any_attr_parser = spf.newSAXParser();
-
-				}
-
-				if (any_retriever == null)
-					any_retriever = new XmlBuilderAnyRetriever();
-
-			}
 
 			while (rset.next()) {
 
@@ -6592,43 +6652,45 @@ public class PgSchema {
 					break;
 				case any_attribute:
 				case any_element:
-					SQLXML xml_object = rset.getSQLXML(1);
+					Array arrayed_cont = rset.getArray(1);
 
-					if (xml_object != null) {
+					String[] contents = (String[]) arrayed_cont.getArray();
 
-						InputStream in = xml_object.getBinaryStream();
+					for (String _content : contents) {
 
-						if (in != null) {
+						if (!_content.isEmpty()) {
 
-							switch (terminus) {
-							case any_attribute:
-								xml_writer.writeEmptyElement(table_prefix, table_name, table_ns);
+							String path = path_expr.getReadablePath();
 
-								if (xmlb.append_xmlns)
-									xml_writer.writeNamespace(table_prefix, table_ns);
+							String target_path = xmlb.getLastNameOfPath(path);
 
-								XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table, xmlb);
+							if (terminus.equals(XPathCompType.any_attribute) || target_path.startsWith("@")) {
 
-								any_attr_parser.parse(in, any_attr);
-								break;
-							default:
-								xml_writer.writeStartElement(table_prefix, table_name, table_ns);
+								xml_writer.writeEmptyElement(table_prefix, xmlb.getLastNameOfPath(xmlb.getParentPath(path)), table_ns);
 
 								if (xmlb.append_xmlns)
 									xml_writer.writeNamespace(table_prefix, table_ns);
 
-								any_retriever.exec(in, table, new XmlBuilderNestTester(table, xmlb), xmlb);
+								xml_writer.writeAttribute(target_path.replace("@", ""), _content);
+
+							}
+
+							else {
+
+								xml_writer.writeStartElement(table_prefix, target_path, table_ns);
+
+								if (xmlb.append_xmlns)
+									xml_writer.writeNamespace(table_prefix, table_ns);
+
+								xml_writer.writeCharacters(_content);
 
 								xml_writer.writeEndElement();
+
 							}
 
 							xml_writer.writeCharacters(xmlb.getLineFeedCode());
 
-							in.close();
-
 						}
-
-						xml_object.free();
 
 					}
 					break;
@@ -6675,7 +6737,7 @@ public class PgSchema {
 
 			}
 
-		} catch (SQLException | XMLStreamException | ParserConfigurationException | SAXException | IOException e) {
+		} catch (SQLException | XMLStreamException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -6706,22 +6768,6 @@ public class PgSchema {
 		XMLStreamWriter xml_writer = xmlb.writer;
 
 		try {
-
-			if (option.wild_card) {
-
-				if (any_attr_parser == null) {
-
-					SAXParserFactory spf = SAXParserFactory.newInstance();
-					spf.setValidating(false);
-					spf.setNamespaceAware(false);
-					any_attr_parser = spf.newSAXParser();
-
-				}
-
-				if (any_retriever == null)
-					any_retriever = new XmlBuilderAnyRetriever();
-
-			}
 
 			XmlBuilderNestTester nest_test = new XmlBuilderNestTester(table, xmlb);
 
@@ -6768,17 +6814,15 @@ public class PgSchema {
 
 						if (in != null) {
 
-							XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table, xmlb);
+							XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table.pname, nest_test, xmlb);
 
-							any_attr_parser.parse(in, any_attr);
+							any_sax_parser.parse(in, any_attr);
 
-							nest_test.has_content |= any_attr.has_content;
+							any_sax_parser.reset();
 
 							in.close();
 
 						}
-
-						any_attr_parser.reset();
 
 						xml_object.free();
 
@@ -6930,7 +6974,11 @@ public class PgSchema {
 
 						if (in != null) {
 
-							nest_test.merge(any_retriever.exec(in, table, nest_test, xmlb));
+							XmlBuilderAnyRetriever any = new XmlBuilderAnyRetriever(table, nest_test, xmlb);
+
+							any_sax_parser.parse(in, any);
+
+							any_sax_parser.reset();
 
 							if (nest_test.has_insert_doc_key)
 								nest_test.has_insert_doc_key = false;
@@ -7007,7 +7055,7 @@ public class PgSchema {
 			if (xmlb.insert_doc_key)
 				System.err.println("Not allowed insert document key to element has any child element.");
 			throw new PgSchemaException(e);
-		} catch (SQLException | ParserConfigurationException | SAXException | IOException e) {
+		} catch (SQLException | SAXException | IOException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -7161,17 +7209,15 @@ public class PgSchema {
 
 							if (in != null) {
 
-								XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table, xmlb);
+								XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table.pname, nest_test, xmlb);
 
-								any_attr_parser.parse(in, any_attr);
+								any_sax_parser.parse(in, any_attr);
 
-								nest_test.has_content |= any_attr.has_content;
+								any_sax_parser.reset();
 
 								in.close();
 
 							}
-
-							any_attr_parser.reset();
 
 							xml_object.free();
 
@@ -7296,7 +7342,11 @@ public class PgSchema {
 
 							if (in != null) {
 
-								nest_test.merge(any_retriever.exec(in, table, nest_test, xmlb));
+								XmlBuilderAnyRetriever any = new XmlBuilderAnyRetriever(table, nest_test, xmlb);
+
+								any_sax_parser.parse(in, any);
+
+								any_sax_parser.reset();
 
 								if (nest_test.has_insert_doc_key)
 									parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
@@ -7434,6 +7484,15 @@ public class PgSchema {
 		if (terminus.equals(XPathCompType.table))
 			return;
 
+		if (jsonb.array_all) {
+			switch (terminus) {
+			case any_attribute:
+			case any_element:
+				throw new PgSchemaException("Not allowed to array content of either xs:any or xs:anyAttribute.");
+			default:
+			}
+		}
+
 		jsonb.writeStartDocument(false);
 
 		PgTable table = path_expr.sql_subject.table;
@@ -7445,15 +7504,6 @@ public class PgSchema {
 		boolean as_attr = false;
 
 		try {
-
-			if (option.wild_card && any_attr_parser == null) {
-
-				SAXParserFactory spf = SAXParserFactory.newInstance();
-				spf.setValidating(false);
-				spf.setNamespaceAware(false);
-				any_attr_parser = spf.newSAXParser();
-
-			}
 
 			while (rset.next()) {
 
@@ -7500,32 +7550,26 @@ public class PgSchema {
 					break;
 				case any_attribute:
 				case any_element:
-					SQLXML xml_object = rset.getSQLXML(1);
+					Array arrayed_cont = rset.getArray(1);
 
-					if (xml_object != null) {
+					String[] contents = (String[]) arrayed_cont.getArray();
 
-						switch (terminus) {
-						case any_attribute:
-							InputStream in = xml_object.getBinaryStream();
+					for (String _content : contents) {
 
-							if (in != null) {
+						if (!_content.isEmpty()) {
 
-								JsonBuilderAnyAttrRetriever any_attr = new JsonBuilderAnyAttrRetriever(table, jsonb, 1);
-								any_attr_parser.parse(in, any_attr);
+							String path = path_expr.getReadablePath();
 
-							}
+							String target_path = jsonb.getLastNameOfPath(path);
 
-							in.close();
-							break;
-						default:
-							String node_name = (table.prefix == null || table.prefix.isEmpty() ? "" : table.prefix + ":") + table.xname;
-							content = xml_object.toString().replace("<" + node_name + ">", "").replace("</" + node_name + ">", "").replace("<" + node_name + "/>", "");
+							if (terminus.equals(XPathCompType.any_attribute) || target_path.startsWith("@"))
+								jsonb.writeAnyField(target_path.replace("@", ""), true, _content, 1);
 
-							if (content != null && !content.isEmpty())
-								jsonb.writeFieldFrag(field, false, content);
+							else
+								jsonb.writeAnyField(target_path, false, _content, 1);
+
 						}
 
-						xml_object.free();
 					}
 					break;
 				case text:
@@ -7562,7 +7606,7 @@ public class PgSchema {
 
 			jsonb.writeEndDocument();
 
-		} catch (SQLException | ParserConfigurationException | SAXException | IOException e) {
+		} catch (SQLException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -7636,17 +7680,15 @@ public class PgSchema {
 
 						if (in != null) {
 
-							JsonBuilderAnyAttrRetriever any_attr = new JsonBuilderAnyAttrRetriever(table, jsonb, nest_test.child_indent_level);
+							JsonBuilderAnyAttrRetriever any_attr = new JsonBuilderAnyAttrRetriever(table.pname, field, nest_test, false, jsonb);
 
-							any_attr_parser.parse(in, any_attr);
+							any_sax_parser.parse(in, any_attr);
 
-							nest_test.has_content |= any_attr.has_content;
+							any_sax_parser.reset();
 
 							in.close();
 
 						}
-
-						any_attr_parser.reset();
 
 						xml_object.free();
 
@@ -7745,11 +7787,19 @@ public class PgSchema {
 
 					if (xml_object != null) {
 
-						String node_name = (table.prefix == null || table.prefix.isEmpty() ? "" : table.prefix + ":") + table.xname;
-						String content = xml_object.toString().replace("<" + node_name + ">", "").replace("</" + node_name + ">", "").replace("<" + node_name + "/>", "");
+						InputStream in = xml_object.getBinaryStream();
 
-						if (content != null && !content.isEmpty())
-							jsonb.writeFieldFrag(field, false, content);
+						if (in != null) {
+
+							JsonBuilderAnyRetriever any = new JsonBuilderAnyRetriever(table.pname, field, nest_test, false, jsonb);
+
+							any_sax_parser.parse(in, any);
+
+							any_sax_parser.reset();
+
+							in.close();
+
+						}
 
 						xml_object.free();
 
@@ -7826,13 +7876,13 @@ public class PgSchema {
 	 */
 	public void closePgSql2Json() {
 
-		closePgSql2Xml();
+		closePreparedStatement(true);
 		clearJsonBuilder();
 
 	}
 
 	/**
-	 * Nest node and compose Json document.
+	 * Nest node and compose JSON document.
 	 *
 	 * @param db_conn database connection
 	 * @param table current table
@@ -7976,23 +8026,15 @@ public class PgSchema {
 
 							if (in != null) {
 
-								JsonBuilderAnyAttrRetriever any_attr;
+								JsonBuilderAnyAttrRetriever any_attr = new JsonBuilderAnyAttrRetriever(table.pname, field, nest_test, array_field, jsonb);
 
-								if (array_field)
-									any_attr = new JsonBuilderAnyAttrRetriever(table, field, jsonb.schema_ver, jsonb.key_value_space);
+								any_sax_parser.parse(in, any_attr);
 
-								else
-									any_attr = new JsonBuilderAnyAttrRetriever(table, jsonb, nest_test.child_indent_level);
-
-								any_attr_parser.parse(in, any_attr);
-
-								nest_test.has_content |= any_attr.has_content;
+								any_sax_parser.reset();
 
 								in.close();
 
 							}
-
-							any_attr_parser.reset();
 
 							xml_object.free();
 
@@ -8087,16 +8129,17 @@ public class PgSchema {
 
 						if (xml_object != null) {
 
-							String node_name = (table.prefix == null || table.prefix.isEmpty() ? "" : table.prefix + ":") + table.xname;
-							String content = xml_object.toString().replace("<" + node_name + ">", "").replace("</" + node_name + ">", "").replace("<" + node_name + "/>", "");
+							InputStream in = xml_object.getBinaryStream();
 
-							if (content != null && !content.isEmpty()) {
+							if (in != null) {
 
-								if (array_field)
-									field.writeValue2JsonBuf(jsonb.schema_ver, content, jsonb.key_value_space);
+								JsonBuilderAnyRetriever any = new JsonBuilderAnyRetriever(table.pname, field, nest_test, array_field, jsonb);
 
-								else
-									jsonb.writeFieldFrag(field, false, content);
+								any_sax_parser.parse(in, any);
+
+								any_sax_parser.reset();
+
+								in.close();
 
 							}
 

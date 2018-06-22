@@ -22,13 +22,11 @@ package net.sf.xsd2pgschema;
 import java.io.IOException;
 import java.util.Arrays;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.apache.lucene.document.Field;
-import org.jsoup.Jsoup;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 /**
  * Node parser for Lucene document conversion.
@@ -52,12 +50,10 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 * @param schema PostgreSQL data model
 	 * @param parent_table parent table
 	 * @param table current table
-	 * @throws TransformerConfigurationException the transformer configuration exception
-	 * @throws ParserConfigurationException the parser configuration exception
 	 */
-	public PgSchemaNode2LucIdx(final PgSchema schema, final PgTable parent_table, final PgTable table) throws TransformerConfigurationException, ParserConfigurationException {
+	public PgSchemaNode2LucIdx(final PgSchema schema, final PgTable parent_table, final PgTable table) {
 
-		super(schema, parent_table, table);
+		super(schema, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
 
 		required = table.required;
 
@@ -73,9 +69,10 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 * @param proc_node processing node
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws SAXException the SAX exception
 	 */
 	@Override
-	public void parseRootNode(final Node proc_node) throws TransformerException, IOException {
+	public void parseRootNode(final Node proc_node) throws TransformerException, IOException, SAXException {
 
 		current_key = document_id + "/" + table.xname;
 
@@ -89,9 +86,10 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 * @param node_test node tester
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws TransformerException the transformer exception
+	 * @throws SAXException the SAX exception
 	 */
 	@Override
-	public void parseChildNode(final PgSchemaNodeTester node_test) throws IOException, TransformerException {
+	public void parseChildNode(final PgSchemaNodeTester node_test) throws IOException, TransformerException, SAXException {
 
 		parse(node_test.proc_node, node_test.parent_key, node_test.primary_key, node_test.current_key, node_test.as_attr, node_test.indirect);
 
@@ -104,9 +102,10 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 * @param nested_key nested key
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws SAXException the SAX exception
 	 */
 	@Override
-	public void parseChildNode(final Node proc_node, final PgSchemaNestedKey nested_key) throws TransformerException, IOException {
+	public void parseChildNode(final Node proc_node, final PgSchemaNestedKey nested_key) throws TransformerException, IOException, SAXException {
 
 		parse(proc_node, nested_key.parent_key, nested_key.current_key, nested_key.current_key, nested_key.as_attr, nested_key.indirect);
 
@@ -123,8 +122,9 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 * @param indirect whether child node is not nested node
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws SAXException the SAX exception
 	 */
-	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean as_attr, final boolean indirect) throws TransformerException, IOException {
+	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean as_attr, final boolean indirect) throws TransformerException, IOException, SAXException {
 
 		Arrays.fill(values, "");
 
@@ -201,8 +201,12 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			else if ((field.any || field.any_attribute) && required) {
 
-				if (setAnyContent(proc_node, field))
-					values[f] = Jsoup.parse(content).text();
+				if (setAnyContent(proc_node, field)) {
+
+					values[f] = any_content.toString().trim();
+					any_content.setLength(0);
+
+				}
 
 			}
 

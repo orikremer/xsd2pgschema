@@ -81,13 +81,4 @@ public class XmlBuilderNestTester extends AbstractNestTester {
 
 	}
 
-	/**
-	 * Return indent space of parent node.
-	 *
-	 * @return String indent space of parent node
-	 */
-	public String getParentIndentSpace() {
-		return current_indent_space.length() > indent_offset ? current_indent_space.substring(indent_offset) : "";
-	}
-
 }

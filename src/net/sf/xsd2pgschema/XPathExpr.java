@@ -129,9 +129,9 @@ public class XPathExpr {
 	 */
 	public String getParentPath() {
 
-		String[] _path;
-
 		StringBuilder sb = new StringBuilder();
+
+		String[] _path;
 
 		switch (terminus) {
 		case any_element:

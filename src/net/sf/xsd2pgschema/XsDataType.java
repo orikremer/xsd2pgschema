@@ -578,9 +578,10 @@ public enum XsDataType {
 		case xs_ID:
 		case xs_IDREF:
 		case xs_ENTITY:
+			return "\"string\"";
 		case xs_any:
 		case xs_anyAttribute:
-			return "\"string\"";
+			return "\"object\"";
 		}
 
 		return "\"null\"";
@@ -592,7 +593,15 @@ public enum XsDataType {
 	 * @return String JSON Schema $ref definition
 	 */
 	public String getJsonSchemaRef() {
-		return "http://www.jsonix.org/jsonschemas/w3c/2001/XMLSchema.jsonschema#/definitions/" + this.toString().substring(3);
+
+		switch (this) {
+		case xs_any:
+		case xs_anyAttribute:
+			return null;
+		default:
+			return "http://www.jsonix.org/jsonschemas/w3c/2001/XMLSchema.jsonschema#/definitions/" + this.toString().substring(3);
+		}
+
 	}
 
 }

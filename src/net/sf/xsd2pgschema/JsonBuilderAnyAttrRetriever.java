@@ -19,6 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -29,59 +30,46 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class JsonBuilderAnyAttrRetriever extends DefaultHandler {
 
-	/** The current table. */
-	private PgTable table;
+	/** The root node name. */
+	private String root_node_name;
+
+	/** The current field. */
+	private PgField field = null;
+
+	/** The nest tester. */
+	private JsonBuilderNestTester nest_test = null;
+
+	/** Whether field as JSON array. */
+	private boolean array_field = false;
 
 	/** The JSON builder. */
 	private JsonBuilder jsonb = null;
 
-	/** The current indent level. */
-	private int indent_level;
-
-	/** The current field (column-oriented JSON). */
-	private PgField field = null;
-
-	/** The JSON Schema version (column-oriented JSON). */
-	private JsonSchemaVersion schema_ver = null;
-
-	/** The JSON key value space (column-oriented JSON). */
-	private String key_value_space = null;
-
 	/** The current state for root node. */
 	private boolean root_node = false;
 
-	/** Whether root node has content. */
-	protected boolean has_content = false;
+	/** The common content holder. */
+	private StringBuilder any_content = null;
 
 	/**
 	 * Instance of any attribute retriever.
 	 *
-	 * @param table current table
-	 * @param jsonb JSON builder
-	 * @param indent_level current indent level
-	 */
-	public JsonBuilderAnyAttrRetriever(PgTable table, JsonBuilder jsonb, int indent_level) {
-
-		this.table = table;
-		this.jsonb = jsonb;
-		this.indent_level = indent_level;
-
-	}
-
-	/**
-	 * Instance of any attribute retriever (column-oriented JSON).
-	 *
-	 * @param table current table
+	 * @param root_node_name root node name
 	 * @param field current field
-	 * @param schema_ver JSON Schema version
-	 * @param key_value_space the JSON key value space
+	 * @param nest_test nest test result of this node
+	 * @param array_field whether field as JSON array
+	 * @param jsonb JSON builder
 	 */
-	public JsonBuilderAnyAttrRetriever(PgTable table, PgField field, JsonSchemaVersion schema_ver, String key_value_space) {
+	public JsonBuilderAnyAttrRetriever(String root_node_name, PgField field, JsonBuilderNestTester nest_test, boolean array_field, JsonBuilder jsonb) {
 
-		this.table = table;
+		this.root_node_name = root_node_name;
 		this.field = field;
-		this.schema_ver = schema_ver;
-		this.key_value_space = key_value_space;
+		this.nest_test = nest_test;
+		this.array_field = array_field;
+		this.jsonb = jsonb;
+
+		if (array_field)
+			any_content = new StringBuilder();
 
 	}
 
@@ -91,23 +79,48 @@ public class JsonBuilderAnyAttrRetriever extends DefaultHandler {
 	 */
 	public void startElement(String namespaceURI, String localName, String qName, Attributes atts) {
 
-		if (localName.equals(table.pname))
-			root_node = true;
+		if (qName.contains(":"))
+			qName = qName.substring(qName.indexOf(':') + 1);
 
-		else if (!root_node)
-			return;
+		if (!root_node) {
+
+			if (qName.equals(root_node_name))
+				root_node = true;
+
+			else
+				return;
+
+		}
 
 		for (int i = 0; i < atts.getLength(); i++) {
+
+			String attr_name = atts.getQName(i);
+
+			if (attr_name.startsWith("xmlns"))
+				continue;
 
 			String content = atts.getValue(i);
 
 			if (content != null && !content.isEmpty()) {
 
+				// compose column-oriented JSON document
+
+				if (array_field) {
+
+					content = StringEscapeUtils.escapeCsv(content);
+
+					if (!content.startsWith("\""))
+						content = "\"" + content + "\"";
+
+					any_content.append("/@" + attr_name + ":" + content + "\n");
+
+				}
+
 				// compose JSON document
 
-				if (jsonb != null) {
+				else {
 
-					JsonBuilderPendingAttr attr = new JsonBuilderPendingAttr(atts.getLocalName(i), content, indent_level);
+					JsonBuilderPendingAttr attr = new JsonBuilderPendingAttr(field, attr_name, content, nest_test.current_indent_level);
 
 					JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
 
@@ -118,12 +131,7 @@ public class JsonBuilderAnyAttrRetriever extends DefaultHandler {
 
 				}
 
-				// compose column-oriented JSON document
-
-				else if (field != null)
-					field.writeValue2JsonBuf(schema_ver, content, key_value_space);
-
-				has_content = true;
+				nest_test.has_content = true;
 
 			}
 
@@ -140,8 +148,24 @@ public class JsonBuilderAnyAttrRetriever extends DefaultHandler {
 		if (!root_node)
 			return;
 
-		if (localName.equals(table.pname))
+		if (qName.contains(":"))
+			qName = qName.substring(qName.indexOf(':') + 1);
+
+		if (qName.equals(root_node_name)) {
+
+			// compose column-oriented JSON document
+
+			if (array_field) {
+
+				field.writeValue2JsonBuf(jsonb.schema_ver, any_content.toString(), jsonb.key_value_space);
+
+				any_content.setLength(0);
+
+			}
+
 			root_node = false;
+
+		}
 
 	}
 

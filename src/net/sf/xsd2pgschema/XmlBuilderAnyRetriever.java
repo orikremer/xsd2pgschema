@@ -19,17 +19,11 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.io.InputStream;
 import java.util.HashMap;
-import java.util.Iterator;
 
-import javax.xml.stream.XMLEventReader;
-import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.Attribute;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
 
+import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -54,69 +48,32 @@ public class XmlBuilderAnyRetriever extends DefaultHandler {
 	/** The XML builder. */
 	private XmlBuilder xmlb = null;
 
-	/** The XML input factory. */
-	private XMLInputFactory in_factory = null;
+	/** The simple content holder of any element. */
+	private HashMap<String, StringBuilder> simple_contents = null;
 
 	/** The current state for root node. */
 	private boolean root_node = false;
 
+	/** Whether this is first node. */
+	private boolean first_node = true;
+
+	/** The current indent space. */
+	private String current_indent_space;
+
 	/** The current path. */
 	private StringBuilder cur_path = null;
 
-	/** The StAX read event handlers. */
-	private HashMap<Integer, EventHandler> read_handlers = null;
+	/** The offset value of current path. */
+	private int cur_path_offset;
 
 	/**
-	 * Instance of any element retriever.
-	 */
-	public XmlBuilderAnyRetriever() {
-
-		in_factory = XMLInputFactory.newInstance();
-
-		cur_path = new StringBuilder();
-
-		// StAX read event handlers
-
-		read_handlers = new HashMap<Integer, EventHandler>();
-
-		read_handlers.put(XMLEvent.START_DOCUMENT, new CommonReadHandler());
-		read_handlers.put(XMLEvent.END_DOCUMENT, new CommonReadHandler());
-
-		read_handlers.put(XMLEvent.START_ELEMENT, new StartElementReadHandler());
-		read_handlers.put(XMLEvent.END_ELEMENT, new EndElementReadHandler());
-
-		read_handlers.put(XMLEvent.ATTRIBUTE, new CommonReadHandler());
-
-		read_handlers.put(XMLEvent.NAMESPACE, new CommonReadHandler());
-
-		read_handlers.put(XMLEvent.CHARACTERS, new CharactersReadHandler());
-		read_handlers.put(XMLEvent.SPACE, new CommonReadHandler());
-		read_handlers.put(XMLEvent.CDATA, new CommonReadHandler());
-
-		read_handlers.put(XMLEvent.COMMENT, new CommonReadHandler());
-
-		read_handlers.put(XMLEvent.PROCESSING_INSTRUCTION, new CommonReadHandler());
-
-		read_handlers.put(XMLEvent.ENTITY_REFERENCE, new CommonReadHandler());
-		read_handlers.put(XMLEvent.ENTITY_DECLARATION, new CommonReadHandler());
-
-		read_handlers.put(XMLEvent.DTD, new CommonReadHandler());
-
-		read_handlers.put(XMLEvent.NOTATION_DECLARATION, new CommonReadHandler());
-
-	}
-
-	/**
-	 * Retrieve any content.
+	 * Instance of any retriever.
 	 *
-	 * @param in XML input stream
 	 * @param table current table
 	 * @param nest_test nest test result of this node
 	 * @param xmlb XML builder
-	 * @return PgNestTetsterForXml result of nest test
-	 * @throws XMLStreamException the XML stream exception
 	 */
-	public XmlBuilderNestTester exec(InputStream in, PgTable table, XmlBuilderNestTester nest_test, XmlBuilder xmlb) throws XMLStreamException {
+	public XmlBuilderAnyRetriever(PgTable table, XmlBuilderNestTester nest_test, XmlBuilder xmlb) {
 
 		this.root_node_name = table.pname;
 		this.target_namespace = table.target_namespace;
@@ -125,67 +82,30 @@ public class XmlBuilderAnyRetriever extends DefaultHandler {
 		this.nest_test = nest_test;
 		this.xmlb = xmlb;
 
-		root_node = false;
+		simple_contents = new HashMap<String, StringBuilder>();
 
-		XMLEventReader reader = in_factory.createXMLEventReader(in);
+		current_indent_space = nest_test.child_indent_space;
 
-		while (reader.hasNext()) {
+		cur_path = new StringBuilder();
 
-			XMLEvent event = reader.nextEvent();
+		cur_path_offset = root_node_name.length() + 1;
 
-			EventHandler handler = read_handlers.get(event.getEventType());
-
-			handler.handleEvent(event);
-
-		}
-
-		reader.close();
-
-		cur_path.setLength(0);
-
-		return nest_test;
 	}
 
-	/**
-	 * The Interface EventHandler.
+	/*
+	 * (non-Javadoc)
+	 * @see org.xml.sax.helpers.DefaultHandler#startElement(java.lang.String, java.lang.String, java.lang.String, org.xml.sax.Attributes)
 	 */
-	interface EventHandler {
+	public void startElement(String namespaceURI, String localName, String qName, Attributes atts) {
 
-		/**
-		 * Handle event.
-		 *
-		 * @param element the element
-		 */
-		public void handleEvent(XMLEvent element);
-	}
+		if (qName.contains(":"))
+			qName = qName.substring(qName.indexOf(':') + 1);
 
-	/**
-	 * The Class StartElementReadHandler.
-	 */
-	class StartElementReadHandler implements EventHandler {
+		if (!root_node) {
 
-		/* (non-Javadoc)
-		 * @see PgAnyRetriever.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
-		 */
-		@Override
-		public void handleEvent(XMLEvent element) {
+			if (qName.equals(root_node_name)) {
 
-			StartElement start_elem = element.asStartElement();
-
-			String start_elem_name = start_elem.getName().getLocalPart();
-
-			if (start_elem_name.equals(root_node_name))
-				root_node = true;
-
-			else if (!root_node)
-				return;
-
-			else
-				cur_path.append("/" + start_elem_name);
-
-			try {
-
-				if (cur_path.length() > 0) {
+				try {
 
 					XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
@@ -194,34 +114,74 @@ public class XmlBuilderAnyRetriever extends DefaultHandler {
 
 					xmlb.writePendingSimpleCont();
 
-					xmlb.writer.writeCharacters((nest_test.has_child_elem ? "" : xmlb.line_feed_code) + nest_test.child_indent_space);
+					xmlb.writer.writeCharacters((nest_test.has_child_elem ? "" : xmlb.line_feed_code) + current_indent_space);
 
-					xmlb.writer.writeStartElement(prefix, start_elem_name, target_namespace);
+				} catch (XMLStreamException e) {
+					e.printStackTrace();
+				}
 
-					nest_test.child_indent_space += nest_test.indent_space;
-					nest_test.current_indent_space = nest_test.child_indent_space;
+				root_node = true;
 
-					nest_test.has_child_elem = true;
+			}
+
+			else
+				return;
+
+		}
+
+		cur_path.append("/" + qName);
+
+		if (cur_path.length() > cur_path_offset) {
+
+			try {
+
+				boolean has_simple_content = false;
+
+				String parent_path = xmlb.getParentPath(cur_path.toString()).substring(cur_path_offset);
+
+				StringBuilder simple_content;
+
+				if ((simple_content = simple_contents.get(parent_path)) != null && simple_content.length() > 0) {
+
+					String content = simple_content.toString();
+
+					if (!PgSchemaUtil.null_simple_cont_pattern.matcher(content).matches()) {
+
+						xmlb.writer.writeCharacters(content);
+
+						nest_test.has_content = has_simple_content = true;
+
+					}
+
+					simple_content.setLength(0);
 
 				}
 
-				Iterator<?> iter_attr = start_elem.getAttributes();
+				if (!has_simple_content && !first_node)
+					xmlb.writer.writeCharacters(xmlb.line_feed_code + current_indent_space);
 
-				if (iter_attr != null) {
+				xmlb.writer.writeStartElement(prefix, qName, target_namespace);
 
-					while (iter_attr.hasNext()) {
+				first_node = false;
 
-						javax.xml.stream.events.Attribute attr = (Attribute) iter_attr.next();
+				current_indent_space += nest_test.indent_space;
 
-						String content = attr.getValue();
+				nest_test.has_child_elem = true;
 
-						if (content != null && !content.isEmpty()) {
+				for (int i = 0; i < atts.getLength(); i++) {
 
-							xmlb.writer.writeAttribute(attr.getName().getLocalPart(), content);
+					String attr_name = atts.getQName(i);
 
-							nest_test.has_content = true;
+					if (attr_name.startsWith("xmlns"))
+						continue;
 
-						}
+					String content = atts.getValue(i);
+
+					if (content != null && !content.isEmpty()) {
+
+						xmlb.writer.writeAttribute(attr_name, content);
+
+						nest_test.has_content = true;
 
 					}
 
@@ -235,90 +195,99 @@ public class XmlBuilderAnyRetriever extends DefaultHandler {
 
 	}
 
-	/**
-	 * The Class EndElementReadHandler.
+	/*
+	 * (non-Javadoc)
+	 * @see org.xml.sax.helpers.DefaultHandler#endElement(java.lang.String, java.lang.String, java.lang.String)
 	 */
-	class EndElementReadHandler implements EventHandler {
+	public void endElement(String namespaceURI, String localName, String qName) {
 
-		/* (non-Javadoc)
-		 * @see PgAnyRetriever.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
-		 */
-		@Override
-		public void handleEvent(XMLEvent element) {
+		if (!root_node)
+			return;
 
-			if (!root_node)
-				return;
+		if (qName.contains(":"))
+			qName = qName.substring(qName.indexOf(':') + 1);
 
-			int len = cur_path.length() - element.asEndElement().getName().getLocalPart().length() - 1;
+		int len = cur_path.length() - qName.length() - 1;
 
-			cur_path.setLength(len);
+		if (cur_path.length() > cur_path_offset) {
 
-			if (len == 0)
-				root_node = false;
+			current_indent_space = current_indent_space.substring(nest_test.indent_offset);
 
-			else {
-
-				try {
-
-					xmlb.writer.writeEndElement();
-					xmlb.writer.writeCharacters(xmlb.line_feed_code);
-
-					nest_test.child_indent_space = nest_test.getParentIndentSpace();
-					nest_test.current_indent_space = nest_test.child_indent_space;
-
-				} catch (XMLStreamException e) {
-					e.printStackTrace();
-				}
-
-			}
-
-		}
-
-	}
-
-	/**
-	 * The Class CommonReadHandler.
-	 */
-	class CommonReadHandler implements EventHandler {
-
-		/* (non-Javadoc)
-		 * @see PgAnyRetriever.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
-		 */
-		@Override
-		public void handleEvent(XMLEvent element) {
-		}
-
-	}
-
-	/**
-	 * The Class CharactersReadHandler.
-	 */
-	class CharactersReadHandler implements EventHandler {
-
-		/* (non-Javadoc)
-		 * @see PgAnyRetriever.EventHandler#handleEvent(javax.xml.stream.events.XMLEvent)
-		 */
-		@Override
-		public void handleEvent(XMLEvent element) {
-
-			if (!root_node)
-				return;
+			boolean has_simple_content = false;
 
 			try {
 
-				String content = element.asCharacters().getData();
+				String _cur_path = cur_path.substring(cur_path_offset);
 
-				if (content != null && !content.isEmpty()) {
+				StringBuilder simple_content;
 
-					xmlb.writer.writeCharacters(content);
+				if ((simple_content = simple_contents.get(_cur_path)) != null && simple_content.length() > 0) {
 
-					nest_test.has_content = true;
+					String content = simple_content.toString();
+
+					if (!PgSchemaUtil.null_simple_cont_pattern.matcher(content).matches()) {
+
+						xmlb.writer.writeCharacters(content);
+
+						nest_test.has_content = has_simple_content = true;
+
+					}
+
+					simple_content.setLength(0);
 
 				}
+
+				if (!has_simple_content)
+					xmlb.writer.writeCharacters(current_indent_space);
+
+				xmlb.writer.writeEndElement();
+
+				if (len > cur_path_offset)
+					xmlb.writer.writeCharacters(xmlb.line_feed_code);
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
 			}
+
+		}
+
+		cur_path.setLength(len);
+
+		if (len == 0) {
+
+			try {
+				xmlb.writer.writeCharacters(xmlb.line_feed_code);
+			} catch (XMLStreamException e) {
+				e.printStackTrace();
+			}
+
+			simple_contents.clear();
+
+			root_node = false;
+
+		}
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.xml.sax.helpers.DefaultHandler#characters(char[], int, int)
+	 */
+	public void characters(char[] chars, int offset, int length) {
+
+		if (!root_node)
+			return;
+
+		String content = new String(chars, offset, length);
+
+		if (content != null && !content.isEmpty()) {
+
+			String _cur_path = cur_path.substring(cur_path_offset);
+
+			if (!simple_contents.containsKey(_cur_path))
+				simple_contents.put(_cur_path, new StringBuilder());
+
+			simple_contents.get(_cur_path).append(content);
 
 		}
 

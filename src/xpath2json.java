@@ -141,7 +141,7 @@ public class xpath2json {
 			else if (args[i].equals("--json-compact"))
 				jsonb_option.setCompact();
 
-			else if (args[i].equals("--schema-ver") && i + 1 < args.length) 
+			else if (args[i].equals("--schema-ver") && i + 1 < args.length)
 				jsonb_option.setSchemaVer(args[++i]);
 
 			else if (args[i].equals("--out-dir") && i + 1 < args.length)

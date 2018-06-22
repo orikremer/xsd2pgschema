@@ -22,12 +22,11 @@ package net.sf.xsd2pgschema;
 import java.io.IOException;
 import java.util.Arrays;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 /**
  * Node parser for data (CSV/TSV) conversion.
@@ -60,12 +59,10 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 * @param schema PostgreSQL data model
 	 * @param parent_table parent table
 	 * @param table current table
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerConfigurationException the transformer configuration exception
 	 */
-	public PgSchemaNode2PgCsv(final PgSchema schema, final PgTable parent_table, final PgTable table) throws ParserConfigurationException, TransformerConfigurationException {
+	public PgSchemaNode2PgCsv(final PgSchema schema, final PgTable parent_table, final PgTable table) {
 
-		super(schema, parent_table, table);
+		super(schema, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
 
 		sb = new StringBuilder();
 
@@ -87,9 +84,10 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 * @param proc_node processing node
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws TransformerException the transformer exception
+	 * @throws SAXException the SAX exception
 	 */
 	@Override
-	public void parseRootNode(final Node proc_node) throws IOException, TransformerException {
+	public void parseRootNode(final Node proc_node) throws IOException, TransformerException, SAXException {
 
 		current_key = document_id + "/" + table.xname;
 
@@ -103,9 +101,10 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 * @param node_test node tester
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws TransformerException the transformer exception
+	 * @throws SAXException the SAX exception
 	 */
 	@Override
-	public void parseChildNode(final PgSchemaNodeTester node_test) throws IOException, TransformerException {
+	public void parseChildNode(final PgSchemaNodeTester node_test) throws IOException, TransformerException, SAXException {
 
 		parse(node_test.proc_node, node_test.parent_key, node_test.primary_key, node_test.current_key, node_test.as_attr, node_test.indirect, node_test.ordinal);
 
@@ -118,9 +117,10 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 * @param nested_key nested key
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws TransformerException the transformer exception
+	 * @throws SAXException the SAX exception
 	 */
 	@Override
-	public void parseChildNode(final Node proc_node, PgSchemaNestedKey nested_key) throws IOException, TransformerException {
+	public void parseChildNode(final Node proc_node, PgSchemaNestedKey nested_key) throws IOException, TransformerException, SAXException {
 
 		parse(proc_node, nested_key.parent_key, nested_key.current_key, nested_key.current_key, nested_key.as_attr, nested_key.indirect, 1);
 
@@ -138,8 +138,9 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 * @param ordinal ordinal number of current node
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws TransformerException the transformer exception
+	 * @throws SAXException the SAX exception
 	 */
-	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean as_attr, final boolean indirect, final int ordinal) throws IOException, TransformerException {
+	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean as_attr, final boolean indirect, final int ordinal) throws IOException, TransformerException, SAXException {
 
 		Arrays.fill(values, pg_null);
 

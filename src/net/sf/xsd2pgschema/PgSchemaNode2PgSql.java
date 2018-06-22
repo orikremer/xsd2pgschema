@@ -26,11 +26,10 @@ import java.sql.SQLException;
 import java.sql.SQLXML;
 import java.util.Arrays;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 /**
  * Node parser for PostgreSQL data migration.
@@ -78,12 +77,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @param update whether update or insert
 	 * @param db_conn database connection
 	 * @throws SQLException the SQL exception
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerConfigurationException the transformer configuration exception
 	 */
-	public PgSchemaNode2PgSql(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean update, final Connection db_conn) throws SQLException, ParserConfigurationException, TransformerConfigurationException {
+	public PgSchemaNode2PgSql(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean update, final Connection db_conn) throws SQLException {
 
-		super(schema, parent_table, table);
+		super(schema, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
 
 		occupied = new boolean[fields.size()];
 
@@ -226,9 +223,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @throws SQLException the SQL exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws SAXException the SAX exception
 	 */
 	@Override
-	public void parseRootNode(final Node proc_node) throws SQLException, TransformerException, IOException {
+	public void parseRootNode(final Node proc_node) throws SQLException, TransformerException, IOException, SAXException {
 
 		current_key = document_id + "/" + table.xname;
 
@@ -243,9 +241,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @throws SQLException the SQL exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws TransformerException the transformer exception
+	 * @throws SAXException the SAX exception
 	 */
 	@Override
-	public void parseChildNode(final PgSchemaNodeTester node_test) throws IOException, TransformerException, SQLException {
+	public void parseChildNode(final PgSchemaNodeTester node_test) throws IOException, TransformerException, SQLException, SAXException {
 
 		parse(node_test.proc_node, node_test.parent_key, node_test.primary_key, node_test.current_key, node_test.as_attr, node_test.indirect, node_test.ordinal);
 
@@ -259,9 +258,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @throws SQLException the SQL exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws SAXException the SAX exception
 	 */
 	@Override
-	public void parseChildNode(final Node proc_node, final PgSchemaNestedKey nested_key) throws SQLException, TransformerException, IOException {
+	public void parseChildNode(final Node proc_node, final PgSchemaNestedKey nested_key) throws SQLException, TransformerException, IOException, SAXException {
 
 		parse(proc_node, nested_key.parent_key, nested_key.current_key, nested_key.current_key, nested_key.as_attr, nested_key.indirect, 1);
 
@@ -280,8 +280,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @throws SQLException the SQL exception
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws SAXException the SAX exception
 	 */
-	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean as_attr, final boolean indirect, final int ordinal) throws SQLException, TransformerException, IOException {
+	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean as_attr, final boolean indirect, final int ordinal) throws SQLException, TransformerException, IOException, SAXException {
 
 		Arrays.fill(occupied, false);
 

@@ -20,25 +20,26 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
+import javax.xml.parsers.SAXParser;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.commons.text.StringEscapeUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * Abstract node parser.
@@ -61,6 +62,9 @@ public abstract class PgSchemaNodeParser {
 
 	/** The current table. */
 	protected PgTable table = null;
+
+	/** The node parser type. */
+	protected PgSchemaNodeParserType parser_type = null;
 
 	/** The field list. */
 	protected List<PgField> fields = null;
@@ -98,17 +102,8 @@ public abstract class PgSchemaNodeParser {
 	/** The common content holder for element, simple_content and attribute. */
 	protected String content;
 
-	/** The document builder for xs:any and xs:anyAttribute. */
-	private DocumentBuilder doc_builder = null;
-
-	/** The XML content of xs:any and xs:anyAttribute. */
-	private Document doc = null;
-
-	/** The root element of the XML content. */
-	private Element doc_root = null;
-
-	/** The transformer of the XML content. */
-	private Transformer transformer = null;
+	/** The common content holder for xs:any and xs:anyAttribute. */
+	protected StringBuilder any_content = null;
 
 	/**
 	 * Node parser.
@@ -116,10 +111,9 @@ public abstract class PgSchemaNodeParser {
 	 * @param schema PostgreSQL data model
 	 * @param parent_table parent table
 	 * @param table current table
-	 * @throws ParserConfigurationException the parser configuration exception
-	 * @throws TransformerConfigurationException the transformer configuration exception
+	 * @param parser_type node parser type
 	 */
-	public PgSchemaNodeParser(final PgSchema schema, final PgTable parent_table, final PgTable table) throws ParserConfigurationException, TransformerConfigurationException {
+	public PgSchemaNodeParser(final PgSchema schema, final PgTable parent_table, final PgTable table, final PgSchemaNodeParserType parser_type) {
 
 		this.schema = schema;
 		option = schema.option;
@@ -128,6 +122,8 @@ public abstract class PgSchemaNodeParser {
 
 		this.parent_table = parent_table;
 		this.table = table;
+
+		this.parser_type = parser_type;
 
 		document_id = schema.getDocumentId();
 		document_id_len = document_id.length();
@@ -141,14 +137,13 @@ public abstract class PgSchemaNodeParser {
 
 		if (table.has_any || table.has_any_attribute) {
 
-			DocumentBuilderFactory doc_factory = DocumentBuilderFactory.newInstance();
-			doc_builder = doc_factory.newDocumentBuilder();
-
-			TransformerFactory tf_factory = TransformerFactory.newInstance();
-			transformer = tf_factory.newTransformer();
-
-			transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-			transformer.setOutputProperty(OutputKeys.INDENT, "no");
+			switch (parser_type) {
+			case full_text_indexing:
+			case json_conversion:
+				any_content = new StringBuilder();
+				break;
+			default:
+			}
 
 		}
 
@@ -348,8 +343,9 @@ public abstract class PgSchemaNodeParser {
 	 * @return boolean whether content has value
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred
+	 * @throws SAXException the SAX exception
 	 */
-	public boolean setAnyContent(final Node node, final PgField field) throws TransformerException, IOException {
+	public boolean setAnyContent(final Node node, final PgField field) throws TransformerException, IOException, SAXException {
 
 		content = null;
 
@@ -511,10 +507,14 @@ public abstract class PgSchemaNodeParser {
 	 * @return boolean whether any element exists
 	 * @throws TransformerException the transformer exception
 	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws SAXException the SAX exception
 	 */
-	private boolean setAny(Node node) throws TransformerException, IOException {
+	private boolean setAny(Node node) throws TransformerException, IOException, SAXException {
 
 		boolean has_any = false;
+
+		Document doc = null;
+		Element doc_root = null;
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -533,14 +533,21 @@ public abstract class PgSchemaNodeParser {
 
 			if (!has_any) { // initial instance of new document
 
+				DocumentBuilder doc_builder = schema.getAnyDocBuilder();
+
 				doc = doc_builder.newDocument();
-				doc_root = doc.createElement(node.getParentNode().getNodeName());
+				doc_root = doc.createElementNS(schema.getNamespaceUriForPrefix(""), table.pname);
 
 				doc_builder.reset();
 
 			}
 
-			doc_root.appendChild(child);
+			Node _child = doc.importNode(child, true);
+
+			removeWhiteSpace(_child);
+			removePrefixOfElement(_child);
+
+			doc_root.appendChild(_child);
 
 			has_any = true;
 
@@ -554,17 +561,83 @@ public abstract class PgSchemaNodeParser {
 			StringWriter writer = new StringWriter();
 			StreamResult result = new StreamResult(writer);
 
+			Transformer transformer = schema.getAnyTransformer();
+
 			transformer.transform(source, result);
 
-			content = writer.toString();
+			content = writer.toString().replace(" xmlns=\"\"", "");
 
 			writer.close();
 
 			transformer.reset();
 
+			switch (parser_type) {
+			case full_text_indexing:
+			case json_conversion:
+				PgSchemaNodeAnyExtractor any = new PgSchemaNodeAnyExtractor(parser_type, table.pname, any_content);
+
+				SAXParser sax_parser = schema.getAnySaxParser();
+
+				sax_parser.parse(new InputSource(new StringReader(content)), any);
+
+				sax_parser.reset();
+				break;
+			default:
+			}
+
 		}
 
 		return has_any;
+	}
+
+	/**
+	 * Remove white space.
+	 *
+	 * @param node current node
+	 */
+	private void removeWhiteSpace(Node node) {
+
+		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() == Node.TEXT_NODE) {
+
+				if (PgSchemaUtil.null_simple_cont_pattern.matcher(child.getNodeValue()).matches()) {
+
+					node.removeChild(child);
+					child = node.getFirstChild();
+
+				}
+
+			}
+
+			if (child.hasChildNodes())
+				removeWhiteSpace(child);
+
+		}
+
+	}
+
+	/**
+	 * Remove prefix of element.
+	 *
+	 * @param node current node
+	 */
+	private void removePrefixOfElement(Node node) {
+
+		if (node.getNodeType() == Node.ELEMENT_NODE) {
+
+			Document owner_doc = node.getOwnerDocument();
+			owner_doc.renameNode(node, "", node.getLocalName());
+
+		}
+
+		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() == Node.ELEMENT_NODE)
+				removePrefixOfElement(child);
+
+		}
+
 	}
 
 	/**
@@ -579,9 +652,14 @@ public abstract class PgSchemaNodeParser {
 
 		boolean has_any_attr = false;
 
+		Document doc = null;
+		Element doc_root = null;
+
 		if (node.hasAttributes()) {
 
 			NamedNodeMap attrs = node.getAttributes();
+
+			HashSet<String> prefixes = new HashSet<String>();
 
 			for (int i = 0; i < attrs.getLength(); i++) {
 
@@ -589,35 +667,86 @@ public abstract class PgSchemaNodeParser {
 
 				if (attr != null) {
 
-					if (fields.parallelStream().filter(field -> field.attribute).anyMatch(field -> attr.getNodeName().equals(field.xname)))
-						continue;
+					String attr_name = attr.getNodeName();
 
-					if (!has_any_attr) { // initial instance of new document
-
-						doc = doc_builder.newDocument();
-						doc_root = doc.createElement(node.getParentNode().getNodeName());
-
-						doc_builder.reset();
-
-					}
-
-					doc_root.setAttribute(attr.getNodeName(), attr.getNodeValue());
-
-					has_any_attr = true;
+					if (attr_name.startsWith("xmlns:"))
+						prefixes.add(attr_name.substring(6));
 
 				}
 
 			}
 
+			for (int i = 0; i < attrs.getLength(); i++) {
+
+				Node attr = attrs.item(i);
+
+				if (attr != null) {
+
+					String attr_name = attr.getNodeName();
+
+					if (attr_name.startsWith("xmlns"))
+						continue;
+
+					if (prefixes.size() > 0 && attr_name.contains(":") && prefixes.contains(attr_name.substring(0, attr_name.indexOf(':'))))
+						continue;
+
+					if (fields.parallelStream().filter(field -> field.attribute).anyMatch(field -> attr_name.equals(field.xname)))
+						continue;
+
+					String attr_value = attr.getNodeValue();
+
+					if (attr_value != null && !attr_value.isEmpty()) {
+
+						switch (parser_type) {
+						case pg_data_migration:
+							if (!has_any_attr) { // initial instance of new document
+
+								DocumentBuilder doc_builder = schema.getAnyDocBuilder();
+
+								doc = doc_builder.newDocument();
+								doc_root = doc.createElementNS(schema.getNamespaceUriForPrefix(""), table.pname);
+
+								doc_builder.reset();
+
+							}
+
+							doc_root.setAttribute(attr_name, attr_value);
+							break;
+						case full_text_indexing:
+							any_content.append(attr_value + " ");
+							break;
+						case json_conversion:
+							attr_value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(attr_value));
+
+							if (!attr_value.startsWith("\""))
+								attr_value = "\"" + attr_value + "\"";
+
+							any_content.append("/@" + attr_name + ":" + attr_value + "\n");
+							break;
+						}
+
+						has_any_attr = true;
+
+					}
+
+				}
+
+			}
+
+			if (prefixes.size() > 0)
+				prefixes.clear();
+
 		}
 
-		if (has_any_attr) {
+		if (has_any_attr && parser_type.equals(PgSchemaNodeParserType.pg_data_migration)) {
 
 			doc.appendChild(doc_root);
 
 			DOMSource source = new DOMSource(doc);
 			StringWriter writer = new StringWriter();
 			StreamResult result = new StreamResult(writer);
+
+			Transformer transformer = schema.getAnyTransformer();
 
 			transformer.transform(source, result);
 

@@ -2867,7 +2867,7 @@ public class PgField {
 			}
 		case xs_any:
 		case xs_anyAttribute:
-			return "XMLPARSE (CONTENT '" + value + "')";
+			return "'{" + value + "}'";
 		}
 
 		return null;
@@ -4439,7 +4439,7 @@ public class PgField {
 			return value;
 		case xs_any:
 		case xs_anyAttribute:
-			return "XMLPARSE (CONTENT '" + value + "')";
+			return "'{" + value + "}'";
 		default: // free text
 			if (!restriction)
 				return value;
@@ -4886,6 +4886,10 @@ public class PgField {
 			case xs_unsignedByte:
 				jsonb.append("null");
 				break;
+			case xs_any:
+			case xs_anyAttribute:
+				jsonb.append("\t"); // TSV should be parsed in JSON builder
+				return false;
 			default: // string
 				jsonb.append(value == null ? "null" : "\"\"");
 			}
@@ -4926,13 +4930,18 @@ public class PgField {
 				value = value.replaceFirst("Z$", "");
 			jsonb.append("\"" + value + "\"");
 			break;
+		case xs_any:
+		case xs_anyAttribute:
+			jsonb.append(value + "\t"); // TSV should be parsed in JSON builder
+			return true;
 		default: // free text
 			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
 
-			if (value.startsWith("\""))
-				jsonb.append(value);
-			else
-				jsonb.append("\"" + value + "\"");
+			if (!value.startsWith("\""))
+				value = "\"" + value + "\"";
+
+			jsonb.append(value);
+
 		}
 
 		jsonb.append("," + json_key_value_space);
@@ -5160,10 +5169,10 @@ public class PgField {
 		default: // free text
 			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
 
-			if (value.startsWith("\""))
-				return value;
-			else
-				return "\"" + value + "\"";
+			if (!value.startsWith("\""))
+				value = "\"" + value + "\"";
+
+			return value;
 		}
 
 	}

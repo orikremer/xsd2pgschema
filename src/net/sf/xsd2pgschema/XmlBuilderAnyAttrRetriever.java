@@ -29,8 +29,11 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class XmlBuilderAnyAttrRetriever extends DefaultHandler {
 
-	/** The current table. */
-	private PgTable table;
+	/** The root node name. */
+	private String root_node_name;
+
+	/** The nest tester. */
+	private XmlBuilderNestTester nest_test = null;
 
 	/** The XML builder. */
 	private XmlBuilder xmlb = null;
@@ -38,18 +41,17 @@ public class XmlBuilderAnyAttrRetriever extends DefaultHandler {
 	/** The current state for root node. */
 	private boolean root_node = false;
 
-	/** Whether root node has content. */
-	protected boolean has_content = false;
-
 	/**
 	 * Instance of any attribute retriever.
 	 *
-	 * @param table current table
+	 * @param root_node_name root node name
+	 * @param nest_test nest test result of this node
 	 * @param xmlb XML builder
 	 */
-	public XmlBuilderAnyAttrRetriever(PgTable table, XmlBuilder xmlb) {
+	public XmlBuilderAnyAttrRetriever(String root_node_name, XmlBuilderNestTester nest_test, XmlBuilder xmlb) {
 
-		this.table = table;
+		this.root_node_name = root_node_name;
+		this.nest_test = nest_test;
 		this.xmlb = xmlb;
 
 	}
@@ -60,13 +62,25 @@ public class XmlBuilderAnyAttrRetriever extends DefaultHandler {
 	 */
 	public void startElement(String namespaceURI, String localName, String qName, Attributes atts) {
 
-		if (localName.equals(table.pname))
-			root_node = true;
+		if (qName.contains(":"))
+			qName = qName.substring(qName.indexOf(':') + 1);
 
-		else if (!root_node)
-			return;
+		if (!root_node) {
+
+			if (qName.equals(root_node_name))
+				root_node = true;
+
+			else
+				return;
+
+		}
 
 		for (int i = 0; i < atts.getLength(); i++) {
+
+			String attr_name = atts.getQName(i);
+
+			if (attr_name.startsWith("xmlns"))
+				continue;
 
 			String content = atts.getValue(i);
 
@@ -76,7 +90,7 @@ public class XmlBuilderAnyAttrRetriever extends DefaultHandler {
 
 				if (xmlb != null) {
 
-					XmlBuilderPendingAttr attr = new XmlBuilderPendingAttr(atts.getLocalName(i), content);
+					XmlBuilderPendingAttr attr = new XmlBuilderPendingAttr(attr_name, content);
 
 					XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
@@ -95,7 +109,7 @@ public class XmlBuilderAnyAttrRetriever extends DefaultHandler {
 
 				}
 
-				has_content = true;
+				nest_test.has_content = true;
 
 			}
 
@@ -112,7 +126,10 @@ public class XmlBuilderAnyAttrRetriever extends DefaultHandler {
 		if (!root_node)
 			return;
 
-		if (localName.equals(table.pname))
+		if (qName.contains(":"))
+			qName = qName.substring(qName.indexOf(':') + 1);
+
+		if (qName.equals(root_node_name))
 			root_node = false;
 
 	}

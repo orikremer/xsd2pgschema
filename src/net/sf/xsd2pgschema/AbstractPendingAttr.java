@@ -27,10 +27,10 @@ package net.sf.xsd2pgschema;
 public abstract class AbstractPendingAttr {
 
 	/** The field (attribute). */
-	protected PgField field;
+	protected PgField field = null;
 
 	/** The foreign table (simple attribute). */
-	protected PgTable foreign_table;
+	protected PgTable foreign_table = null;
 
 	/** The local name (any attribute). */
 	protected String local_name = null;
