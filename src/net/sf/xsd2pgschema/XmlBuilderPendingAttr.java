@@ -72,7 +72,7 @@ public class XmlBuilderPendingAttr extends AbstractPendingAttr {
 	 * Write pending attribute.
 	 *
 	 * @param xmlb XML builder
-	 * @param other_namespaces other namespaces 
+	 * @param other_namespaces other namespaces
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void write(XmlBuilder xmlb, HashSet<String> other_namespaces) throws PgSchemaException {

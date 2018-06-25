@@ -1036,7 +1036,7 @@ public class PgSchema {
 
 				if (field.any || field.any_attribute) {
 
-					String namespace = field.namespace.split(" ")[0]; // eval first item
+					String namespace = field.namespace.split(" ")[0]; // eval first item only
 
 					switch (namespace) {
 					case "##any":
@@ -1062,6 +1062,9 @@ public class PgSchema {
 								field.prefix = "ns" + (other_namespaces.size() + 1);
 								other_namespaces.add(namespace);
 							}
+
+							if (field.prefix.equals("ns1"))
+								field.prefix = "ns";
 
 						}
 
