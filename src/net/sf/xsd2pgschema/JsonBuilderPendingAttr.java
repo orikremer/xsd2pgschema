@@ -66,14 +66,14 @@ public class JsonBuilderPendingAttr extends AbstractPendingAttr {
 	/**
 	 * Instance of pending any attribute.
 	 *
-	 * @param any_field field
+	 * @param any_field any field
 	 * @param local_name local name
 	 * @param content content
 	 * @param indent_level current indent level
 	 */
 	public JsonBuilderPendingAttr(PgField any_field, String local_name, String content, int indent_level) {
 
-		super(local_name, content);
+		super(any_field, local_name, content);
 
 		this.any_field = any_field;
 		this.indent_level = indent_level;

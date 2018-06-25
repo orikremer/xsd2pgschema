@@ -32,6 +32,9 @@ public class XmlBuilderAnyAttrRetriever extends DefaultHandler {
 	/** The root node name. */
 	private String root_node_name;
 
+	/** The current field. */
+	private PgField field;
+
 	/** The nest tester. */
 	private XmlBuilderNestTester nest_test = null;
 
@@ -45,12 +48,14 @@ public class XmlBuilderAnyAttrRetriever extends DefaultHandler {
 	 * Instance of any attribute retriever.
 	 *
 	 * @param root_node_name root node name
+	 * @param field current field
 	 * @param nest_test nest test result of this node
 	 * @param xmlb XML builder
 	 */
-	public XmlBuilderAnyAttrRetriever(String root_node_name, XmlBuilderNestTester nest_test, XmlBuilder xmlb) {
+	public XmlBuilderAnyAttrRetriever(String root_node_name, PgField field, XmlBuilderNestTester nest_test, XmlBuilder xmlb) {
 
 		this.root_node_name = root_node_name;
+		this.field = field;
 		this.nest_test = nest_test;
 		this.xmlb = xmlb;
 
@@ -90,7 +95,7 @@ public class XmlBuilderAnyAttrRetriever extends DefaultHandler {
 
 				if (xmlb != null) {
 
-					XmlBuilderPendingAttr attr = new XmlBuilderPendingAttr(attr_name, content);
+					XmlBuilderPendingAttr attr = new XmlBuilderPendingAttr(field, attr_name, content);
 
 					XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
 
@@ -100,7 +105,7 @@ public class XmlBuilderAnyAttrRetriever extends DefaultHandler {
 					else {
 
 						try {
-							attr.write(xmlb);
+							attr.write(xmlb, null);
 						} catch (PgSchemaException e) {
 							e.printStackTrace();
 						}

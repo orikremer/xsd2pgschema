@@ -19,6 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 
 import javax.xml.stream.XMLStreamException;
@@ -84,6 +85,8 @@ public class XmlBuilderPendingElem {
 	 */
 	public void write(XmlBuilder xmlb) throws XMLStreamException {
 
+		HashSet<String> other_namespaces = new HashSet<String>();
+
 		xmlb.writer.writeCharacters(header);
 
 		if (attr_only)
@@ -110,7 +113,7 @@ public class XmlBuilderPendingElem {
 			pending_attrs.values().forEach(pending_attr -> {
 
 				try {
-					pending_attr.write(xmlb);
+					pending_attr.write(xmlb, other_namespaces);
 				} catch (PgSchemaException e) {
 					e.printStackTrace();
 				}
@@ -120,6 +123,8 @@ public class XmlBuilderPendingElem {
 			clear();
 
 		}
+
+		other_namespaces.clear();
 
 	}
 

@@ -19,6 +19,8 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.util.HashSet;
+
 import javax.xml.stream.XMLStreamException;
 
 /**
@@ -56,12 +58,13 @@ public class XmlBuilderPendingAttr extends AbstractPendingAttr {
 	/**
 	 * Instance of pending any attribute.
 	 *
+	 * @param any_field any field
 	 * @param local_name local name
 	 * @param content content
 	 */
-	public XmlBuilderPendingAttr(String local_name, String content) {
+	public XmlBuilderPendingAttr(PgField any_field, String local_name, String content) {
 
-		super(local_name, content);
+		super(any_field, local_name, content);
 
 	}
 
@@ -69,9 +72,10 @@ public class XmlBuilderPendingAttr extends AbstractPendingAttr {
 	 * Write pending attribute.
 	 *
 	 * @param xmlb XML builder
+	 * @param other_namespaces other namespaces 
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void write(XmlBuilder xmlb) throws PgSchemaException {
+	public void write(XmlBuilder xmlb, HashSet<String> other_namespaces) throws PgSchemaException {
 
 		try {
 
@@ -83,8 +87,21 @@ public class XmlBuilderPendingAttr extends AbstractPendingAttr {
 
 					if (field.is_xs_namespace)
 						xmlb.writer.writeAttribute(field.xname, content);
-					else
+
+					else {
+
+						if (xmlb.append_xmlns && other_namespaces != null) {
+
+							if (other_namespaces.contains(field.target_namespace))
+								xmlb.writer.writeNamespace(field.prefix, field.target_namespace);
+							else
+								other_namespaces.add(field.target_namespace);
+
+						}
+
 						xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.xname, content);
+
+					}
 
 				}
 
@@ -94,8 +111,21 @@ public class XmlBuilderPendingAttr extends AbstractPendingAttr {
 
 					if (field.is_xs_namespace)
 						xmlb.writer.writeAttribute(field.foreign_table_xname, content);
-					else	
+
+					else {
+
+						if (xmlb.append_xmlns && other_namespaces != null) {
+
+							if (other_namespaces.contains(field.target_namespace))
+								xmlb.writer.writeNamespace(field.prefix, field.target_namespace);
+							else
+								other_namespaces.add(field.target_namespace);
+
+						}
+
 						xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.foreign_table_xname, content);
+
+					}
 
 				}
 
@@ -103,8 +133,27 @@ public class XmlBuilderPendingAttr extends AbstractPendingAttr {
 
 			// any attribute
 
-			else
-				xmlb.writer.writeAttribute(local_name, content);
+			else {
+
+				if (any_field.prefix.isEmpty() || any_field.namespace.isEmpty() || xmlb.appended_xmlns.contains(any_field.prefix))
+					xmlb.writer.writeAttribute(local_name, content);
+
+				else {
+
+					if (xmlb.append_xmlns && other_namespaces != null) {
+
+						if (other_namespaces.contains(any_field.namespace))
+							xmlb.writer.writeNamespace(any_field.prefix, any_field.namespace);
+						else
+							other_namespaces.add(any_field.namespace);
+
+					}
+
+					xmlb.writer.writeAttribute(any_field.prefix, any_field.namespace, local_name, content);
+
+				}
+
+			}
 
 		} catch (XMLStreamException e) {
 			if (xmlb.insert_doc_key)

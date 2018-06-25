@@ -1018,6 +1018,8 @@ public class PgSchema {
 
 		// decide prefix of target namespace
 
+		List<String> other_namespaces = new ArrayList<String>();
+
 		tables.parallelStream().forEach(table -> {
 
 			if (table.target_namespace != null)
@@ -1032,11 +1034,48 @@ public class PgSchema {
 
 				}
 
+				if (field.any || field.any_attribute) {
+
+					String namespace = field.namespace.split(" ")[0]; // eval first item
+
+					switch (namespace) {
+					case "##any":
+					case "##targetNamespace":
+						field.namespace = table.target_namespace;
+						field.prefix = table.prefix;
+						break;
+					case "##other":
+					case "##local":
+						field.namespace = "";
+						field.prefix = "";
+						break;
+					default:
+						field.namespace = namespace;
+						field.prefix = getPrefixOf(namespace, "");
+
+						if (field.prefix.isEmpty()) {
+
+							if (other_namespaces.contains(namespace))
+								field.prefix = "ns" + (other_namespaces.indexOf(namespace) + 1);
+
+							else {
+								field.prefix = "ns" + (other_namespaces.size() + 1);
+								other_namespaces.add(namespace);
+							}
+
+						}
+
+					}
+
+				}
+
 			});
 
 			table.has_required_field = table.fields.stream().anyMatch(field -> field.element && field.required);
 
 		});
+
+		other_namespaces.clear();
 
 		// instance of message digest
 
@@ -1634,7 +1673,8 @@ public class PgSchema {
 		field.xs_type = XsDataType.xs_any;
 		field.type = field.xs_type.name();
 
-		field.extractNamespace(this, node); // require type definition
+		field.extractTargetNamespace(this, node); // require type definition
+		field.extractNamespace(node);
 
 		if (option.wild_card)
 			table.fields.add(field);
@@ -1663,7 +1703,8 @@ public class PgSchema {
 		field.xs_type = XsDataType.xs_anyAttribute;
 		field.type = field.xs_type.name();
 
-		field.extractNamespace(this, node); // require type definition
+		field.extractTargetNamespace(this, node); // require type definition
+		field.extractNamespace(node);
 
 		if (option.wild_card)
 			table.fields.add(field);
@@ -1737,7 +1778,7 @@ public class PgSchema {
 				field.xanno_doc = option.extractDocumentation(node, false);
 
 			field.extractType(option, node);
-			field.extractNamespace(this, node); // require type definition
+			field.extractTargetNamespace(this, node); // require type definition
 			field.extractRequired(node);
 			field.extractFixedValue(node);
 			field.extractDefaultValue(node);
@@ -1916,7 +1957,7 @@ public class PgSchema {
 							field.xanno_doc = option.extractDocumentation(child, false);
 
 						field.extractType(option, child);
-						field.extractNamespace(this, child); // require type definition
+						field.extractTargetNamespace(this, child); // require type definition
 						field.extractRequired(child);
 						field.extractFixedValue(child);
 						field.extractDefaultValue(child);
@@ -2232,7 +2273,7 @@ public class PgSchema {
 			field.xanno_doc = option.extractDocumentation(node, false);
 
 		field.extractType(option, node);
-		field.extractNamespace(this, node); // require type definition
+		field.extractTargetNamespace(this, node); // require type definition
 		field.extractRequired(node);
 		field.extractFixedValue(node);
 		field.extractDefaultValue(node);
@@ -6660,21 +6701,26 @@ public class PgSchema {
 
 							if (terminus.equals(XPathCompType.any_attribute) || target_path.startsWith("@")) {
 
-								xml_writer.writeEmptyElement(table_prefix, xmlb.getLastNameOfPath(xmlb.getParentPath(path)), table_ns);
+								xml_writer.writeEmptyElement(field.prefix, xmlb.getLastNameOfPath(xmlb.getParentPath(path)), table_ns);
 
 								if (xmlb.append_xmlns)
-									xml_writer.writeNamespace(table_prefix, table_ns);
+									xml_writer.writeNamespace(field.prefix, field.namespace);
 
-								xml_writer.writeAttribute(target_path.replace("@", ""), _content);
+								String attr_name = target_path.replace("@", "");
+
+								if (field.prefix.isEmpty() || field.namespace.isEmpty())
+									xml_writer.writeAttribute(attr_name, _content);
+								else
+									xml_writer.writeAttribute(field.prefix, field.namespace, attr_name, _content);
 
 							}
 
 							else {
 
-								xml_writer.writeStartElement(table_prefix, target_path, table_ns);
+								xml_writer.writeStartElement(field.prefix, target_path, field.namespace);
 
 								if (xmlb.append_xmlns)
-									xml_writer.writeNamespace(table_prefix, table_ns);
+									xml_writer.writeNamespace(field.prefix, field.namespace);
 
 								xml_writer.writeCharacters(_content);
 
@@ -6790,7 +6836,7 @@ public class PgSchema {
 						if (elem != null)
 							elem.appendPendingAttr(attr);
 						else
-							attr.write(xmlb);
+							attr.write(xmlb, null);
 
 						nest_test.has_content = true;
 
@@ -6808,7 +6854,7 @@ public class PgSchema {
 
 						if (in != null) {
 
-							XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table.pname, nest_test, xmlb);
+							XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table.pname, field, nest_test, xmlb);
 
 							any_sax_parser.parse(in, any_attr);
 
@@ -6968,7 +7014,7 @@ public class PgSchema {
 
 						if (in != null) {
 
-							XmlBuilderAnyRetriever any = new XmlBuilderAnyRetriever(table, nest_test, xmlb);
+							XmlBuilderAnyRetriever any = new XmlBuilderAnyRetriever(table.pname, field, nest_test, xmlb);
 
 							any_sax_parser.parse(in, any);
 
@@ -7164,7 +7210,7 @@ public class PgSchema {
 							if (elem != null)
 								elem.appendPendingAttr(attr);
 							else
-								attr.write(xmlb);
+								attr.write(xmlb, null);
 
 							nest_test.has_content = true;
 
@@ -7185,7 +7231,7 @@ public class PgSchema {
 							if (elem != null)
 								elem.appendPendingAttr(attr);
 							else
-								attr.write(xmlb);
+								attr.write(xmlb, null);
 
 							nest_test.has_content = true;
 
@@ -7203,7 +7249,7 @@ public class PgSchema {
 
 							if (in != null) {
 
-								XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table.pname, nest_test, xmlb);
+								XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table.pname, field, nest_test, xmlb);
 
 								any_sax_parser.parse(in, any_attr);
 
@@ -7336,7 +7382,7 @@ public class PgSchema {
 
 							if (in != null) {
 
-								XmlBuilderAnyRetriever any = new XmlBuilderAnyRetriever(table, nest_test, xmlb);
+								XmlBuilderAnyRetriever any = new XmlBuilderAnyRetriever(table.pname, field, nest_test, xmlb);
 
 								any_sax_parser.parse(in, any);
 

@@ -29,6 +29,9 @@ public abstract class AbstractPendingAttr {
 	/** The field (attribute). */
 	protected PgField field = null;
 
+	/** The any field (any attribute). */
+	protected PgField any_field = null;
+
 	/** The foreign table (simple attribute). */
 	protected PgTable foreign_table = null;
 
@@ -69,13 +72,15 @@ public abstract class AbstractPendingAttr {
 	/**
 	 * Instance of pending any attribute.
 	 *
+	 * @param any_field any field
 	 * @param local_name local name
 	 * @param content content
 	 */
-	public AbstractPendingAttr(String local_name, String content) {
+	public AbstractPendingAttr(PgField any_field, String local_name, String content) {
 
 		field = null;
 
+		this.any_field = any_field;
 		this.local_name = local_name;
 		this.content = content != null ? content : "";
 

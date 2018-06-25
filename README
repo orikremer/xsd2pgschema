@@ -1,7 +1,8 @@
-﻿ Changes in xsd2pgschema 2.12.2 (release 2018-06-22)
+﻿ Changes in xsd2pgschema 2.12.2 (release 2018-06-25)
 
   Revised parser for any content (xs:any, xs:anyAttribute) by means of SAX (dropped jsoup dependency).
   Fixed issues in treating any content (PostgreSQL data migration, JSON Schema mapping, JSON conversion, XPath->SQL query translation, XPath query evaluation over PostgreSQL).
+  Added support for @namespace restriction for any content.
 
  Changes in xsd2pgschema 2.12.1 (release 2018-06-14)
 

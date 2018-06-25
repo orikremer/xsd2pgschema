@@ -69,16 +69,16 @@ public class XmlBuilderAnyRetriever extends DefaultHandler {
 	/**
 	 * Instance of any retriever.
 	 *
-	 * @param table current table
+	 * @param root_node_name root node name
+	 * @param field current field
 	 * @param nest_test nest test result of this node
 	 * @param xmlb XML builder
 	 */
-	public XmlBuilderAnyRetriever(PgTable table, XmlBuilderNestTester nest_test, XmlBuilder xmlb) {
+	public XmlBuilderAnyRetriever(String root_node_name, PgField field, XmlBuilderNestTester nest_test, XmlBuilder xmlb) {
 
-		this.root_node_name = table.pname;
-		this.target_namespace = table.target_namespace;
-		this.prefix = table.prefix;
-
+		this.root_node_name = root_node_name;
+		target_namespace = field.namespace;
+		prefix = field.prefix;
 		this.nest_test = nest_test;
 		this.xmlb = xmlb;
 
@@ -129,6 +129,8 @@ public class XmlBuilderAnyRetriever extends DefaultHandler {
 
 		}
 
+		boolean root_child = cur_path.length() == cur_path_offset;
+
 		cur_path.append("/" + qName);
 
 		if (cur_path.length() > cur_path_offset) {
@@ -161,6 +163,13 @@ public class XmlBuilderAnyRetriever extends DefaultHandler {
 					xmlb.writer.writeCharacters(xmlb.line_feed_code + current_indent_space);
 
 				xmlb.writer.writeStartElement(prefix, qName, target_namespace);
+
+				if (root_child && xmlb.append_xmlns) {
+
+					if (!prefix.isEmpty() && !xmlb.appended_xmlns.contains(prefix))
+						xmlb.writer.writeNamespace(prefix, target_namespace);
+
+				}
 
 				first_node = false;
 

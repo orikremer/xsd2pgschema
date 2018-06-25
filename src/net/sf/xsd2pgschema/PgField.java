@@ -57,8 +57,11 @@ import org.w3c.dom.Node;
  */
 public class PgField {
 
-	/** The target namespace. */
+	/** The target namespace (@targetNamespace). */
 	protected String target_namespace = PgSchemaUtil.xs_namespace_uri;
+
+	/** The namespace restriction for any content (@nanespace). */
+	protected String namespace = "##any";
 
 	/** The prefix of target namespace. */
 	protected String prefix = "";
@@ -460,12 +463,12 @@ public class PgField {
 	}
 
 	/**
-	 * Extract @targetNamespace of current node.
+	 * Extract target namespace of current node (@targetNamespace).
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
 	 */
-	protected void extractNamespace(PgSchema schema, Node node) {
+	protected void extractTargetNamespace(PgSchema schema, Node node) {
 
 		target_namespace = null;
 
@@ -488,6 +491,30 @@ public class PgField {
 			return;
 
 		target_namespace = type.contains(":") ? schema.getNamespaceUriForPrefix(type.split(":")[0]) : schema.getNamespaceUriForPrefix("");
+
+	}
+
+	/**
+	 * Extract namespace restriction for any content (@namespace).
+	 *
+	 * @param node current node
+	 */
+	protected void extractNamespace(Node node) {
+
+		if (node.hasAttributes()) {
+
+			Element e = (Element) node;
+
+			String namespace = e.getAttribute("namespace");
+
+			if (namespace != null && !namespace.isEmpty()) {
+
+				this.namespace = namespace;
+
+				return;
+			}
+
+		}
 
 	}
 
