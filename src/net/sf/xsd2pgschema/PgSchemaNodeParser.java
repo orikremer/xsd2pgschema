@@ -627,7 +627,7 @@ public abstract class PgSchemaNodeParser {
 		if (node.getNodeType() == Node.ELEMENT_NODE) {
 
 			Document owner_doc = node.getOwnerDocument();
-			owner_doc.renameNode(node, "", node.getLocalName());
+			owner_doc.renameNode(node, null, node.getLocalName());
 
 		}
 

@@ -503,6 +503,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	@Override
 	public void invokeRootNestedNode() throws PgSchemaException {
 
+		try {
+			executeBatch();
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
 		if (!filled || nested_keys == null)
 			return;
 
@@ -519,6 +525,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 */
 	@Override
 	public void invokeChildNestedNode(PgSchemaNodeTester node_test) throws PgSchemaException {
+
+		try {
+			executeBatch();
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
 
 		if (!filled)
 			return;
@@ -545,6 +557,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 */
 	@Override
 	public void invokeChildNestedNode() throws PgSchemaException {
+
+		try {
+			executeBatch();
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
 
 		if (!filled || nested_keys == null)
 			return;
@@ -630,7 +648,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 *
 	 * @throws SQLException the SQL exception
 	 */
-	public void executeBatch() throws SQLException {
+	private void executeBatch() throws SQLException {
 
 		if (written && ps != null && !ps.isClosed())
 			ps.executeBatch();

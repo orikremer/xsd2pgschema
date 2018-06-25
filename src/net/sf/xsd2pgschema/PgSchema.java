@@ -4572,8 +4572,6 @@ public class PgSchema {
 
 			node2pgsql.parseRootNode(node);
 
-			node2pgsql.executeBatch();
-
 			node2pgsql.invokeRootNestedNode();
 
 			node2pgsql.clear();
@@ -4635,8 +4633,6 @@ public class PgSchema {
 					node2pgsql.parseChildNode(node_test);
 				}
 
-				node2pgsql.executeBatch();
-
 				node2pgsql.invokeChildNestedNode(node_test);
 
 				if (node_test.isLastNode())
@@ -4650,8 +4646,6 @@ public class PgSchema {
 			synchronized (table_lock[table_id]) {
 				node2pgsql.parseChildNode(parent_node, nested_key);
 			}
-
-			node2pgsql.executeBatch();
 
 			node2pgsql.invokeChildNestedNode();
 
@@ -7554,7 +7548,7 @@ public class PgSchema {
 							String target_path = jsonb.getLastNameOfPath(path);
 
 							if (terminus.equals(XPathCompType.any_attribute) || target_path.startsWith("@"))
-								jsonb.writeAnyFieldFrag(field, target_path.replace("@", ""), as_attr = true, _content, 1);
+								jsonb.writeAnyFieldFrag(field, target_path.replace("@", ""), true, _content, 1);
 
 							else
 								jsonb.writeAnyFieldFrag(field, target_path, false, _content, 1);
