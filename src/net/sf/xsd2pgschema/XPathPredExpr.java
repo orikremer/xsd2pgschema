@@ -27,7 +27,7 @@ import java.util.List;
  *
  * @author yokochi
  */
-public class XPathPredicateExpr {
+public class XPathPredExpr {
 
 	/** The XPath component of predicate. */
 	protected XPathComp src_comp = null;
@@ -39,13 +39,13 @@ public class XPathPredicateExpr {
 	protected List<XPathExpr> dst_path_exprs = null;
 
 	/**
-	 * Instance of XPathPredicateExpr.
+	 * Instance of XPathPredExpr.
 	 *
 	 * @param src_comp XPath component of predicate
 	 * @param src_path_expr source path expression of predicate
 	 * @param union_id union id
 	 */
-	public XPathPredicateExpr(XPathComp src_comp, XPathExpr src_path_expr, int union_id) {
+	public XPathPredExpr(XPathComp src_comp, XPathExpr src_path_expr, int union_id) {
 
 		this.src_comp = src_comp;
 		this.src_path_expr = new XPathExpr(src_path_expr); // new instance that prevents shallow copy
@@ -76,7 +76,7 @@ public class XPathPredicateExpr {
 	 * @param predicate compared predicate expression
 	 * @return boolean whether the predicate expression matches or not
 	 */
-	public boolean equals(XPathPredicateExpr predicate) {
+	public boolean equals(XPathPredExpr predicate) {
 
 		if (!src_path_expr.equals(predicate.src_path_expr))
 			return false;

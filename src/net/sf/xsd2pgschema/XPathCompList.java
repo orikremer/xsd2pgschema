@@ -71,7 +71,7 @@ public class XPathCompList {
 	public List<XPathExpr> path_exprs = null;
 
 	/** Instance of predicate expression. */
-	private List<XPathPredicateExpr> predicates = null;
+	private List<XPathPredExpr> pred_exprs = null;
 
 	/** XPath variable reference. */
 	private HashMap<String, String> variables = null;
@@ -190,8 +190,8 @@ public class XPathCompList {
 		if (path_exprs_union != null)
 			path_exprs_union.clear();
 
-		if (predicates != null)
-			predicates.clear();
+		if (pred_exprs != null)
+			pred_exprs.clear();
 
 	}
 
@@ -3625,10 +3625,10 @@ public class XPathCompList {
 	 */
 	private void testPredicateContext(XPathComp comp) throws PgSchemaException {
 
-		if (predicates == null)
-			predicates = new ArrayList<XPathPredicateExpr>();
+		if (pred_exprs == null)
+			pred_exprs = new ArrayList<XPathPredExpr>();
 
-		int pred_size = predicates.size();
+		int pred_size = pred_exprs.size();
 
 		XPathCompList pred_list = new XPathCompList(schema, comp.tree, variables);
 
@@ -3639,7 +3639,7 @@ public class XPathCompList {
 			// no path expression in predicate
 
 			if (path_expr_size == 0)
-				predicates.add(new XPathPredicateExpr(comp, path_expr, -1));
+				pred_exprs.add(new XPathPredExpr(comp, path_expr, -1));
 
 			// otherwise, validate path expression with schema
 
@@ -3652,7 +3652,7 @@ public class XPathCompList {
 					if (union_comps.length == 0) // no path expression
 						continue;
 
-					XPathPredicateExpr predicate = new XPathPredicateExpr(comp, path_expr, union_id);
+					XPathPredExpr predicate = new XPathPredExpr(comp, path_expr, union_id);
 
 					pred_list.replacePathExprs(predicate);
 
@@ -3712,7 +3712,7 @@ public class XPathCompList {
 					if (pred_list.path_exprs.size() > 0) {
 
 						predicate.replaceDstPathExprs(pred_list.path_exprs);
-						predicates.add(predicate);
+						pred_exprs.add(predicate);
 
 					}
 
@@ -3727,7 +3727,7 @@ public class XPathCompList {
 
 		}
 
-		if (pred_size == predicates.size()) // invalid predicate
+		if (pred_size == pred_exprs.size()) // invalid predicate
 			throw new PgSchemaException(comp.tree, def_schema_location);
 
 	}
@@ -4200,7 +4200,7 @@ public class XPathCompList {
 	 *
 	 * @param src_predicate source XPath predicate
 	 */
-	private void replacePathExprs(XPathPredicateExpr src_predicate) {
+	private void replacePathExprs(XPathPredExpr src_predicate) {
 
 		replacePathExprs(src_predicate.dst_path_exprs);
 
@@ -4293,11 +4293,11 @@ public class XPathCompList {
 
 			Set<XPathComp> src_comps = null;
 
-			if (predicates != null && predicates.size() > 0) {
+			if (pred_exprs != null && pred_exprs.size() > 0) {
 
 				String _path = path; // finalized
 
-				src_comps = predicates.stream().filter(predicate -> _path.startsWith(predicate.src_path_expr.path)).map(predicate -> predicate.src_comp).collect(Collectors.toSet());
+				src_comps = pred_exprs.stream().filter(predicate -> _path.startsWith(predicate.src_path_expr.path)).map(predicate -> predicate.src_comp).collect(Collectors.toSet());
 
 				try {
 
@@ -4691,14 +4691,14 @@ public class XPathCompList {
 	 */
 	private void testPathContext(XPathComp src_comp, XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
 
-		int pred_path_size = (int) predicates.parallelStream().filter(predicate -> predicate.src_comp.equals(src_comp)).count();
+		int pred_path_size = (int) pred_exprs.parallelStream().filter(predicate -> predicate.src_comp.equals(src_comp)).count();
 
 		if (path_expr_counter >= pred_path_size)
 			throw new PgSchemaException(tree);
 
 		// designation of predicate
 
-		XPathPredicateExpr predicate = predicates.stream().filter(_predicate -> _predicate.src_comp.equals(src_comp)).toArray(XPathPredicateExpr[]::new)[path_expr_counter];
+		XPathPredExpr predicate = pred_exprs.stream().filter(_predicate -> _predicate.src_comp.equals(src_comp)).toArray(XPathPredExpr[]::new)[path_expr_counter];
 
 		predicate.dst_path_exprs.forEach(path_expr -> {
 
