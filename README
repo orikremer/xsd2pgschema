@@ -1,4 +1,8 @@
-﻿ Changes in xsd2pgschema 2.12.2 (release 2018-06-25)
+﻿ Changes in xsd2pgschema 2.12.3 (release 2018-07-04)
+
+  Improved performance in parallel processing by deletion of lock objects.
+
+ Changes in xsd2pgschema 2.12.2 (release 2018-06-25)
 
   Revised parser for any content (xs:any, xs:anyAttribute) by means of SAX (dropped jsoup dependency).
   Fixed issues in processing any content (PostgreSQL data migration, JSON Schema mapping, JSON conversion, XPath->SQL query translation, XPath query evaluation over PostgreSQL).

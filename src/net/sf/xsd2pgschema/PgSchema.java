@@ -56,7 +56,6 @@ import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
@@ -144,9 +143,6 @@ public class PgSchema {
 
 	/** The statistics message on schema. */
 	private StringBuilder def_stat_msg = null;
-
-	/** The table lock object. */
-	private Object[] table_lock = null;
 
 	/** The current document id. */
 	private String document_id = null;
@@ -3296,7 +3292,7 @@ public class PgSchema {
 
 		fields.stream().filter(field -> field.enum_name != null && !field.enum_name.isEmpty()).forEach(field -> {
 
-			System.out.println("DROP TYPE IF EXISTS " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name + ";");
+			System.out.println("DROP TYPE IF EXISTS " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name + " CASCADE;");
 
 			System.out.print("CREATE TYPE " + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name + " AS ENUM (");
 
@@ -4349,54 +4345,6 @@ public class PgSchema {
 	}
 
 	/**
-	 * Initialize table lock objects.
-	 *
-	 * @param single_lock whether single lock object or individual lock objects for all tables
-	 */
-	private void initTableLock(boolean single_lock) {
-
-		if (single_lock) {
-
-			if (table_lock == null) {
-
-				table_lock = new Object[1];
-				table_lock[0] = new Object();
-
-			}
-
-		}
-
-		else {
-
-			if (table_lock == null || table_lock.length < tables.size()) {
-
-				table_lock = new Object[tables.size()];
-
-				for (int t = 0; t < tables.size(); t++)
-					table_lock[t] = new Object();
-
-			}
-
-		}
-
-	}
-
-	/**
-	 * Close table lock objects.
-	 */
-	private void closeTableLock() {
-
-		if (table_lock == null)
-			return;
-
-		for (int t = 0; t < tables.size() && t < table_lock.length; t++)
-			table_lock[t] = null;
-
-		table_lock = null;
-
-	}
-
-	/**
 	 * Close prepared statement.
 	 *
 	 * @param primary whether close the primary prepared statement only
@@ -4451,8 +4399,6 @@ public class PgSchema {
 
 		Node node = getRootNode(xml_parser);
 
-		initTableLock(false);
-
 		tables.parallelStream().forEach(table -> {
 
 			if (table.writable) {
@@ -4480,19 +4426,11 @@ public class PgSchema {
 
 		// parse root node and write to data (CSV/TSV) file
 
-		try {
+		PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(this, null, root_table);
 
-			PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(this, null, root_table);
+		node2pgcsv.parseRootNode(node);
 
-			node2pgcsv.parseRootNode(node);
-
-			node2pgcsv.invokeRootNestedNode();
-
-			node2pgcsv.clear();
-
-		} catch (IOException | TransformerException | SAXException e) {
-			throw new PgSchemaException(e);
-		}
+		node2pgcsv.clear();
 
 	}
 
@@ -4500,8 +4438,6 @@ public class PgSchema {
 	 * Close xml2PgCsv.
 	 */
 	public void closeXml2PgCsv() {
-
-		closeTableLock();
 
 		tables.parallelStream().forEach(table -> {
 
@@ -4532,8 +4468,6 @@ public class PgSchema {
 	 */
 	protected void parseChildNode2PgCsv(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		int table_id = nested_key.table_id;
-
 		PgTable table = nested_key.table;
 
 		PgSchemaNode2PgCsv node2pgcsv = null;
@@ -4555,11 +4489,7 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				synchronized (table_lock[table_id]) {
-					node2pgcsv.parseChildNode(node_test);
-				}
-
-				node2pgcsv.invokeChildNestedNode(node_test);
+				node2pgcsv.parseChildNode(node_test);
 
 				if (node_test.isLastNode())
 					break;
@@ -4569,14 +4499,8 @@ public class PgSchema {
 			if (node2pgcsv.visited)
 				return;
 
-			synchronized (table_lock[table_id]) {
-				node2pgcsv.parseChildNode(parent_node, nested_key);
-			}
+			node2pgcsv.parseChildNode(parent_node, nested_key);
 
-			node2pgcsv.invokeChildNestedNode();
-
-		} catch (IOException | TransformerException | SAXException e) {
-			throw new PgSchemaException(e);
 		} finally {
 			node2pgcsv.clear();
 		}
@@ -4597,32 +4521,26 @@ public class PgSchema {
 
 		Node node = getRootNode(xml_parser);
 
-		initTableLock(false);
-
 		// parse root node and send to PostgreSQL
 
+		if (update) {
+
+			deleteBeforeUpdate(db_conn, option.rel_data_ext && option.retain_key);
+
+			if (!option.rel_data_ext || !option.retain_key)
+				update = false;
+
+		}
+
+		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, null, root_table, update, db_conn);
+
+		node2pgsql.parseRootNode(node);
+
+		node2pgsql.clear();
+
 		try {
-
-			if (update) {
-
-				deleteBeforeUpdate(db_conn, option.rel_data_ext && option.retain_key);
-
-				if (!option.rel_data_ext || !option.retain_key)
-					update = false;
-
-			}
-
-			PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, null, root_table, update, db_conn);
-
-			node2pgsql.parseRootNode(node);
-
-			node2pgsql.invokeRootNestedNode();
-
-			node2pgsql.clear();
-
 			db_conn.commit(); // transaction ends
-
-		} catch (SQLException | TransformerException | IOException | SAXException e) {
+		} catch (SQLException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -4633,7 +4551,6 @@ public class PgSchema {
 	 */
 	public void closeXml2PgSql() {
 
-		closeTableLock();
 		closePreparedStatement(false);
 
 	}
@@ -4649,8 +4566,6 @@ public class PgSchema {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	protected void parseChildNode2PgSql(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key, final boolean update, final Connection db_conn) throws PgSchemaException {
-
-		int table_id = nested_key.table_id;
 
 		PgTable table = nested_key.table;
 
@@ -4673,11 +4588,7 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				synchronized (table_lock[table_id]) {
-					node2pgsql.parseChildNode(node_test);
-				}
-
-				node2pgsql.invokeChildNestedNode(node_test);
+				node2pgsql.parseChildNode(node_test);
 
 				if (node_test.isLastNode())
 					break;
@@ -4687,14 +4598,8 @@ public class PgSchema {
 			if (node2pgsql.visited)
 				return;
 
-			synchronized (table_lock[table_id]) {
-				node2pgsql.parseChildNode(parent_node, nested_key);
-			}
+			node2pgsql.parseChildNode(parent_node, nested_key);
 
-			node2pgsql.invokeChildNestedNode();
-
-		} catch (SQLException | IOException | TransformerException | SAXException e) {
-			throw new PgSchemaException(e);
 		} finally {
 			node2pgsql.clear();
 		}
@@ -5120,29 +5025,19 @@ public class PgSchema {
 
 		Node node = getRootNode(xml_parser);
 
-		initTableLock(true);
-
 		resetAttrSelRdy();
 
 		tables.parallelStream().forEach(table -> table.lucene_doc = table.required ? lucene_doc : null);
 
 		// parse root node and store into Lucene document
 
-		try {
+		lucene_doc.add(new StringField(option.document_key_name, document_id, Field.Store.YES));
 
-			lucene_doc.add(new StringField(option.document_key_name, document_id, Field.Store.YES));
+		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(this, null, root_table);
 
-			PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(this, null, root_table);
+		node2lucidx.parseRootNode(node);
 
-			node2lucidx.parseRootNode(node);
-
-			node2lucidx.invokeRootNestedNode();
-
-			node2lucidx.clear();
-
-		} catch (TransformerException | IOException | SAXException e) {
-			throw new PgSchemaException(e);
-		}
+		node2lucidx.clear();
 
 	}
 
@@ -5150,8 +5045,6 @@ public class PgSchema {
 	 * Close xml2LucIdx.
 	 */
 	public void closeXml2LucIdx() {
-
-		closeTableLock();
 
 		tables.parallelStream().filter(table -> table.lucene_doc != null).forEach(table -> table.lucene_doc = null);
 
@@ -5188,11 +5081,7 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				synchronized (table_lock[0]) {
-					node2lucidx.parseChildNode(node_test);
-				}
-
-				node2lucidx.invokeChildNestedNode(node_test);
+				node2lucidx.parseChildNode(node_test);
 
 				if (node_test.isLastNode())
 					break;
@@ -5202,14 +5091,8 @@ public class PgSchema {
 			if (node2lucidx.visited)
 				return;
 
-			synchronized (table_lock[0]) {
-				node2lucidx.parseChildNode(parent_node, nested_key);
-			}
+			node2lucidx.parseChildNode(parent_node, nested_key);
 
-			node2lucidx.invokeChildNestedNode();
-
-		} catch (IOException | TransformerException | SAXException e) {
-			throw new PgSchemaException(e);
 		} finally {
 			node2lucidx.clear();
 		}
@@ -5500,8 +5383,6 @@ public class PgSchema {
 
 		Node node = getRootNode(xml_parser);
 
-		initTableLock(true);
-
 		resetAttrSelRdy();
 
 		tables.parallelStream().forEach(table -> table.buffw = table.required ? buffw : null);
@@ -5518,13 +5399,11 @@ public class PgSchema {
 
 			node2sphds.parseRootNode(node);
 
-			node2sphds.invokeRootNestedNode();
-
 			node2sphds.clear();
 
 			buffw.write("</sphinx:document>\n");
 
-		} catch (TransformerException | IOException | SAXException e) {
+		} catch (IOException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -5534,8 +5413,6 @@ public class PgSchema {
 	 * Close xml2SphDs.
 	 */
 	public void closeXml2SphDs() {
-
-		closeTableLock();
 
 		tables.parallelStream().filter(table -> table.buffw != null).forEach(table -> table.buffw = null);
 
@@ -5572,11 +5449,7 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				synchronized (table_lock[0]) {
-					node2sphds.parseChildNode(node_test);
-				}
-
-				node2sphds.invokeChildNestedNode(node_test);
+				node2sphds.parseChildNode(node_test);
 
 				if (node_test.isLastNode())
 					break;
@@ -5586,14 +5459,8 @@ public class PgSchema {
 			if (node2sphds.visited)
 				return;
 
-			synchronized (table_lock[0]) {
-				node2sphds.parseChildNode(parent_node, nested_key);
-			}
+			node2sphds.parseChildNode(parent_node, nested_key);
 
-			node2sphds.invokeChildNestedNode();
-
-		} catch (IOException | TransformerException | SAXException e) {
-			throw new PgSchemaException(e);
 		} finally {
 			node2sphds.clear();
 		}
@@ -5807,36 +5674,17 @@ public class PgSchema {
 
 		Node node = getRootNode(xml_parser);
 
-		initTableLock(true);
-
 		clearJsonBuilder();
 
 		jsonb.writeStartDocument(true);
 
 		// parse root node and store to JSON buffer
 
-		try {
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
 
-			PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
+		node2json.parseRootNode(node, 1);
 
-			node2json.parseRootNode(node);
-
-			if (node2json.filled) {
-
-				jsonb.writeStartTable(root_table, true, 1);
-				jsonb.writeFields(root_table, false, 2);
-
-				node2json.invokeRootNestedNodeObj(1);
-
-				node2json.clear();
-
-				jsonb.writeEndTable();
-
-			}
-
-		} catch (TransformerException | IOException | SAXException e) {
-			throw new PgSchemaException(e);
-		}
+		node2json.clear();
 
 		jsonb.writeEndDocument();
 
@@ -5859,7 +5707,6 @@ public class PgSchema {
 	 */
 	public void closeXml2Json() {
 
-		closeTableLock();
 		clearJsonBuilder();
 
 	}
@@ -5901,34 +5748,10 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				synchronized (table_lock[0]) {
+				node2json.parseChildNode(node_test, nested_key.as_attr, json_indent_level);
 
-					node2json.parseChildNode(node_test);
-
-					if (node2json.written) {
-
-						if (!table.virtual) {
-
-							jsonb.writeStartTable(table, true, json_indent_level);
-							jsonb.writeFields(table, nested_key.as_attr, json_indent_level + 1);
-							jsonb.writeEndTable();
-
-						}
-
-						else
-							jsonb.writeFields(table, nested_key.as_attr, json_indent_level + 1);
-
-					}
-
-				}
-
-				if (node_test.isLastNode()) {
-
-					if (node2json.filled)
-						node2json.invokeChildNestedNodeObj(node_test, json_indent_level);
-
+				if (node_test.isLastNode())
 					break;
-				}
 
 			}
 
@@ -5937,29 +5760,7 @@ public class PgSchema {
 				if (node2json.visited)
 					return;
 
-				synchronized (table_lock[0]) {
-
-					node2json.parseChildNode(parent_node, nested_key);
-
-					if (node2json.written) {
-
-						if (!table.virtual)
-							jsonb.writeStartTable(table, !parent_table.bridge, json_indent_level);
-
-						jsonb.writeFields(table, nested_key.as_attr, json_indent_level + 1);
-
-					}
-
-				}
-
-				if (node2json.filled) {
-
-					node2json.invokeChildNestedNodeObj(json_indent_level);
-
-					if (!table.virtual)
-						jsonb.writeEndTable();
-
-				}
+				node2json.parseChildNode(parent_node, nested_key, json_indent_level);
 
 			} finally {
 
@@ -5968,8 +5769,6 @@ public class PgSchema {
 
 			}
 
-		} catch (IOException | TransformerException | SAXException e) {
-			throw new PgSchemaException(e);
 		} finally {
 			node2json.clear();
 		}
@@ -6070,36 +5869,17 @@ public class PgSchema {
 
 		Node node = getRootNode(xml_parser);
 
-		initTableLock(true);
-
 		clearJsonBuilder();
 
 		jsonb.writeStartDocument(true);
 
 		// parse root node and write to JSON file
 
-		try {
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
 
-			PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
+		node2json.parseRootNode(node, 1);
 
-			node2json.parseRootNode(node);
-
-			if (node2json.filled) {
-
-				jsonb.writeStartTable(root_table, true, 1);
-				jsonb.writeFields(root_table, false, 2);
-
-				node2json.invokeRootNestedNodeCol(1);
-
-				node2json.clear();
-
-				jsonb.writeEndTable();
-
-			}
-
-		} catch (TransformerException | IOException | SAXException e) {
-			throw new PgSchemaException(e);
-		}
+		node2json.clear();
 
 		jsonb.writeEndDocument();
 
@@ -6154,30 +5934,10 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				synchronized (table_lock[0]) {
-					node2json.parseChildNode(node_test);
-				}
+				node2json.parseChildNode(node_test, nested_key.as_attr, json_indent_level);
 
-				if (!table.virtual && list_and_bridge) {
-
-					jsonb.writeStartTable(table, true, json_indent_level);
-					jsonb.writeFields(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
-
-					node2json.invokeChildNestedNodeCol(node_test, json_indent_level);
-
-					jsonb.writeEndTable();
-
-				}
-
-				else if (node_test.isLastNode()) {
-
-					if (node2json.filled && table.jsonb_not_empty)
-						jsonb.writeFields(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
-
-					node2json.invokeChildNestedNodeCol(node_test, json_indent_level);
-
+				if (node_test.isLastNode())
 					break;
-				}
 
 			}
 
@@ -6186,16 +5946,7 @@ public class PgSchema {
 				if (node2json.visited)
 					return;
 
-				synchronized (table_lock[0]) {
-
-					node2json.parseChildNode(parent_node, nested_key);
-
-					if (node2json.written)
-						jsonb.writeFields(table, nested_key.as_attr, json_indent_level + (table.virtual ? 0 : 1));
-
-				}
-
-				node2json.invokeChildNestedNodeCol(json_indent_level);
+				node2json.parseChildNode(parent_node, nested_key, json_indent_level);
 
 			} finally {
 
@@ -6204,8 +5955,6 @@ public class PgSchema {
 
 			}
 
-		} catch (IOException | TransformerException | SAXException e) {
-			throw new PgSchemaException(e);
 		} finally {
 			node2json.clear();
 		}
@@ -6302,27 +6051,17 @@ public class PgSchema {
 
 		Node node = getRootNode(xml_parser);
 
-		initTableLock(false);
-
 		clearJsonBuilder();
 
 		jsonb.writeStartDocument(true);
 
 		// parse root node and write to JSON file
 
-		try {
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
 
-			PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
+		node2json.parseRootNode(node);
 
-			node2json.parseRootNode(node);
-
-			node2json.invokeRootNestedNode();
-
-			node2json.clear();
-
-		} catch (TransformerException | IOException | SAXException e) {
-			throw new PgSchemaException(e);
-		}
+		node2json.clear();
 
 		tables.stream().filter(_table -> _table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).forEach(_table -> {
 
@@ -6373,8 +6112,6 @@ public class PgSchema {
 	 */
 	protected void parseChildNode2Json(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		int table_id = nested_key.table_id;
-
 		PgTable table = nested_key.table;
 
 		PgSchemaNode2Json node2json = null;
@@ -6396,11 +6133,7 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				synchronized (table_lock[table_id]) {
-					node2json.parseChildNode(node_test);
-				}
-
-				node2json.invokeChildNestedNode(node_test);
+				node2json.parseChildNode(node_test);
 
 				if (node_test.isLastNode())
 					break;
@@ -6410,14 +6143,8 @@ public class PgSchema {
 			if (node2json.visited)
 				return;
 
-			synchronized (table_lock[table_id]) {
-				node2json.parseChildNode(parent_node, nested_key);
-			}
+			node2json.parseChildNode(parent_node, nested_key);
 
-			node2json.invokeChildNestedNode();
-
-		} catch (IOException | TransformerException | SAXException e) {
-			throw new PgSchemaException(e);
 		} finally {
 			node2json.clear();
 		}

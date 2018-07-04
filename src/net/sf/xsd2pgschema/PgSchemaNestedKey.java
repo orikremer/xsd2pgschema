@@ -35,16 +35,13 @@ public class PgSchemaNestedKey {
 	/** Whether nested key as attribute. */
 	protected boolean as_attr;
 
-	/** The nested table id. */
-	protected int table_id;
-
 	/** The current key. */
 	protected String current_key;
 
 	/** the parent key. */
 	protected String parent_key;
 
-	/** Whether child node is not nested node (indirect) . */
+	/** Whether child node is not nested node (indirect). */
 	protected boolean indirect;
 
 	/** The target ordinal number of current node. */
@@ -63,7 +60,6 @@ public class PgSchemaNestedKey {
 
 		list_holder = field.list_holder;
 		as_attr = field.nested_key_as_attr;
-		table_id = field.foreign_table_id;
 
 		if (!table.virtual)
 			current_key += "/" + (field.nested_key_as_attr ? "@" : "") + field.foreign_table_xname; // XPath child

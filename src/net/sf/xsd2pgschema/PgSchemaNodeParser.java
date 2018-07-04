@@ -84,7 +84,7 @@ public abstract class PgSchemaNodeParser {
 	/** Whether any nested node has been visited. */
 	protected boolean visited = false;
 
-	/** Whether child node is not nested node (indirect) . */
+	/** Whether child node is not nested node (indirect). */
 	protected boolean indirect = false;
 
 	/** The processing node. */
@@ -175,28 +175,6 @@ public abstract class PgSchemaNodeParser {
 	 * @throws Exception the exception
 	 */
 	abstract public void parseChildNode(final Node node, final PgSchemaNestedKey nested_key) throws Exception;
-
-	/**
-	 * Abstract invoker nested node (root).
-	 *
-	 * @throws Exception the exception
-	 */
-	abstract public void invokeRootNestedNode() throws Exception;
-
-	/**
-	 * Abstract invoker nested node (child).
-	 *
-	 * @param node_test node tester
-	 * @throws Exception the exception
-	 */
-	abstract public void invokeChildNestedNode(PgSchemaNodeTester node_test) throws Exception;
-
-	/**
-	 * Abstract invoker nested node (child).
-	 *
-	 * @throws Exception the exception
-	 */
-	abstract public void invokeChildNestedNode() throws Exception;
 
 	/**
 	 * Common clear function.

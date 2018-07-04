@@ -76,9 +76,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @param table current table
 	 * @param update whether update or insert
 	 * @param db_conn database connection
-	 * @throws SQLException the SQL exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2PgSql(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean update, final Connection db_conn) throws SQLException {
+	public PgSchemaNode2PgSql(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean update, final Connection db_conn) throws PgSchemaException {
 
 		super(schema, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
 
@@ -88,126 +88,132 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		this.db_conn = db_conn;
 
-		if (this.writable = table.writable) {
+		try {
 
-			for (int f = 0; f < fields.size(); f++) {
+			if (this.writable = table.writable) {
 
-				PgField field = fields.get(f);
+				for (int f = 0; f < fields.size(); f++) {
 
-				if (field.omissible)
-					continue;
+					PgField field = fields.get(f);
 
-				param_size++;
+					if (field.omissible)
+						continue;
 
-			}
-
-			if (update && rel_data_ext)
-				upsert = fields.parallelStream().filter(field -> field.primary_key).findFirst().get().unique_key;
-
-			// upsert
-
-			if (upsert) {
-
-				if (table.ps2 == null || table.ps2.isClosed()) {
-
-					StringBuilder sql = new StringBuilder();
-
-					sql.append("INSERT INTO " + schema.getPgNameOf(table) + " VALUES ( ");
-
-					for (int f = 0; f < fields.size(); f++) {
-
-						PgField field = fields.get(f);
-
-						if (field.omissible)
-							continue;
-
-						if (field.enum_name == null)
-							sql.append("?");
-						else
-							sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
-
-						sql.append(", ");
-
-					}
-
-					sql.setLength(sql.length() - 2);
-					sql.append(" )");
-
-					String pkey_name = PgSchemaUtil.avoidPgReservedWords(fields.parallelStream().filter(field -> field.primary_key).findFirst().get().pname);
-
-					sql.append(" ON CONFLICT ( " + pkey_name + " ) DO UPDATE SET ");
-
-					for (int f = 0; f < fields.size(); f++) {
-
-						PgField field = fields.get(f);
-
-						if (field.omissible || field.primary_key)
-							continue;
-
-						sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + " = ");
-
-						if (field.enum_name == null)
-							sql.append("?");
-						else
-							sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
-
-						sql.append(", ");
-
-					}
-
-					sql.setLength(sql.length() - 2);
-
-					sql.append(" WHERE EXCLUDED." + pkey_name + " = ?");
-
-					table.ps2 = db_conn.prepareStatement(sql.toString());
-
-					sql.setLength(0);
+					param_size++;
 
 				}
 
-				ps = table.ps2;
+				if (update && rel_data_ext)
+					upsert = fields.parallelStream().filter(field -> field.primary_key).findFirst().get().unique_key;
 
-			}
+				// upsert
 
-			// insert
+				if (upsert) {
 
-			else {
+					if (table.ps2 == null || table.ps2.isClosed()) {
 
-				if (table.ps == null || table.ps.isClosed()) {
+						StringBuilder sql = new StringBuilder();
 
-					StringBuilder sql = new StringBuilder();
+						sql.append("INSERT INTO " + schema.getPgNameOf(table) + " VALUES ( ");
 
-					sql.append("INSERT INTO " + schema.getPgNameOf(table) + " VALUES ( ");
+						for (int f = 0; f < fields.size(); f++) {
 
-					for (int f = 0; f < fields.size(); f++) {
+							PgField field = fields.get(f);
 
-						PgField field = fields.get(f);
+							if (field.omissible)
+								continue;
 
-						if (field.omissible)
-							continue;
+							if (field.enum_name == null)
+								sql.append("?");
+							else
+								sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
 
-						if (field.enum_name == null)
-							sql.append("?");
-						else
-							sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+							sql.append(", ");
 
-						sql.append(", ");
+						}
+
+						sql.setLength(sql.length() - 2);
+						sql.append(" )");
+
+						String pkey_name = PgSchemaUtil.avoidPgReservedWords(fields.parallelStream().filter(field -> field.primary_key).findFirst().get().pname);
+
+						sql.append(" ON CONFLICT ( " + pkey_name + " ) DO UPDATE SET ");
+
+						for (int f = 0; f < fields.size(); f++) {
+
+							PgField field = fields.get(f);
+
+							if (field.omissible || field.primary_key)
+								continue;
+
+							sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + " = ");
+
+							if (field.enum_name == null)
+								sql.append("?");
+							else
+								sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+
+							sql.append(", ");
+
+						}
+
+						sql.setLength(sql.length() - 2);
+
+						sql.append(" WHERE EXCLUDED." + pkey_name + " = ?");
+
+						table.ps2 = db_conn.prepareStatement(sql.toString());
+
+						sql.setLength(0);
 
 					}
 
-					sql.setLength(sql.length() - 2);
-					sql.append(" )");
-
-					table.ps = db_conn.prepareStatement(sql.toString());
-
-					sql.setLength(0);
+					ps = table.ps2;
 
 				}
 
-				ps = table.ps;
+				// insert
+
+				else {
+
+					if (table.ps == null || table.ps.isClosed()) {
+
+						StringBuilder sql = new StringBuilder();
+
+						sql.append("INSERT INTO " + schema.getPgNameOf(table) + " VALUES ( ");
+
+						for (int f = 0; f < fields.size(); f++) {
+
+							PgField field = fields.get(f);
+
+							if (field.omissible)
+								continue;
+
+							if (field.enum_name == null)
+								sql.append("?");
+							else
+								sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+
+							sql.append(", ");
+
+						}
+
+						sql.setLength(sql.length() - 2);
+						sql.append(" )");
+
+						table.ps = db_conn.prepareStatement(sql.toString());
+
+						sql.setLength(0);
+
+					}
+
+					ps = table.ps;
+
+				}
 
 			}
 
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
 		}
 
 		hash_size = option.hash_size;
@@ -220,17 +226,27 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * Parse processing node (root).
 	 *
 	 * @param proc_node processing node
-	 * @throws SQLException the SQL exception
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws SAXException the SAX exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void parseRootNode(final Node proc_node) throws SQLException, TransformerException, IOException, SAXException {
+	public void parseRootNode(final Node proc_node) throws PgSchemaException {
 
 		current_key = document_id + "/" + table.xname;
 
-		parse(proc_node, null, current_key, current_key, false, indirect, 1);
+		try {
+
+			parse(proc_node, null, current_key, current_key, false, indirect, 1);
+			executeBatch();
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+		if (!filled || nested_keys == null)
+			return;
+
+		for (PgSchemaNestedKey nested_key : nested_keys)
+			schema.parseChildNode2PgSql(proc_node, table, nested_key.asOfRoot(this), update, db_conn);
 
 	}
 
@@ -238,15 +254,35 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * Parse processing node (child).
 	 *
 	 * @param node_test node tester
-	 * @throws SQLException the SQL exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws TransformerException the transformer exception
-	 * @throws SAXException the SAX exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void parseChildNode(final PgSchemaNodeTester node_test) throws IOException, TransformerException, SQLException, SAXException {
+	public void parseChildNode(final PgSchemaNodeTester node_test) throws PgSchemaException {
 
-		parse(node_test.proc_node, node_test.parent_key, node_test.primary_key, node_test.current_key, node_test.as_attr, node_test.indirect, node_test.ordinal);
+		try {
+
+			parse(node_test.proc_node, node_test.parent_key, node_test.primary_key, node_test.current_key, node_test.as_attr, node_test.indirect, node_test.ordinal);
+			executeBatch();
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+		if (!filled)
+			return;
+
+		visited = true;
+
+		if (nested_keys == null)
+			return;
+
+		for (PgSchemaNestedKey nested_key : nested_keys) {
+
+			boolean exists = existsNestedNode(nested_key.table, node_test.proc_node);
+
+			schema.parseChildNode2PgSql(exists || indirect ? node_test.proc_node : proc_node, table, nested_key.asOfChild(node_test, exists), update, db_conn);
+
+		}
 
 	}
 
@@ -255,15 +291,29 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 *
 	 * @param proc_node processing node
 	 * @param nested_key nested key
-	 * @throws SQLException the SQL exception
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws SAXException the SAX exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void parseChildNode(final Node proc_node, final PgSchemaNestedKey nested_key) throws SQLException, TransformerException, IOException, SAXException {
+	public void parseChildNode(final Node proc_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		parse(proc_node, nested_key.parent_key, nested_key.current_key, nested_key.current_key, nested_key.as_attr, nested_key.indirect, 1);
+		try {
+
+			parse(proc_node, nested_key.parent_key, nested_key.current_key, nested_key.current_key, nested_key.as_attr, nested_key.indirect, 1);
+			executeBatch();
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+		if (!filled || nested_keys == null)
+			return;
+
+		for (PgSchemaNestedKey _nested_key : nested_keys) {
+
+			if (existsNestedNode(_nested_key.table, proc_node))
+				schema.parseChildNode2PgSql(proc_node, table, _nested_key.asOfChild(this), update, db_conn);
+
+		}
 
 	}
 
@@ -277,12 +327,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @param as_attr whether parent key as attribute
 	 * @param indirect whether child node is not nested node
 	 * @param ordinal ordinal number of current node
+	 * @throws PgSchemaException the pg schema exception
 	 * @throws SQLException the SQL exception
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws SAXException the SAX exception
 	 */
-	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean as_attr, final boolean indirect, final int ordinal) throws SQLException, TransformerException, IOException, SAXException {
+	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean as_attr, final boolean indirect, final int ordinal) throws PgSchemaException, SQLException {
 
 		Arrays.fill(occupied, false);
 
@@ -401,21 +449,27 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else if ((field.any || field.any_attribute) && writable) {
 
-				if (setAnyContent(proc_node, field)) {
+				try {
 
-					SQLXML xml_object = db_conn.createSQLXML();
+					if (setAnyContent(proc_node, field)) {
 
-					xml_object.setString(content);
+						SQLXML xml_object = db_conn.createSQLXML();
 
-					field.writeValue2PgSql(ps, param_id, xml_object);
+						xml_object.setString(content);
 
-					if (upsert)
-						field.writeValue2PgSql(ps, _param_id, xml_object);
+						field.writeValue2PgSql(ps, param_id, xml_object);
 
-					xml_object.free();
+						if (upsert)
+							field.writeValue2PgSql(ps, _param_id, xml_object);
 
-					occupied[f] = true;
+						xml_object.free();
 
+						occupied[f] = true;
+
+					}
+
+				} catch (TransformerException | IOException | SAXException e) {
+					throw new PgSchemaException(e);
 				}
 
 			}
@@ -451,7 +505,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 *
 	 * @throws SQLException the SQL exception
 	 */
-	private void write() throws SQLException {
+	private synchronized void write() throws SQLException {
 
 		written = true;
 
@@ -492,87 +546,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		}
 
 		ps.addBatch();
-
-	}
-
-	/**
-	 * Invoke nested node (root).
-	 *
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	@Override
-	public void invokeRootNestedNode() throws PgSchemaException {
-
-		try {
-			executeBatch();
-		} catch (SQLException e) {
-			throw new PgSchemaException(e);
-		}
-
-		if (!filled || nested_keys == null)
-			return;
-
-		for (PgSchemaNestedKey nested_key : nested_keys)
-			schema.parseChildNode2PgSql(proc_node, table, nested_key.asOfRoot(this), update, db_conn);
-
-	}
-
-	/**
-	 * Invoke nested node (child).
-	 *
-	 * @param node_test node tester
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	@Override
-	public void invokeChildNestedNode(PgSchemaNodeTester node_test) throws PgSchemaException {
-
-		try {
-			executeBatch();
-		} catch (SQLException e) {
-			throw new PgSchemaException(e);
-		}
-
-		if (!filled)
-			return;
-
-		visited = true;
-
-		if (nested_keys == null)
-			return;
-
-		for (PgSchemaNestedKey nested_key : nested_keys) {
-
-			boolean exists = existsNestedNode(nested_key.table, node_test.proc_node);
-
-			schema.parseChildNode2PgSql(exists || indirect ? node_test.proc_node : proc_node, table, nested_key.asOfChild(node_test, exists), update, db_conn);
-
-		}
-
-	}
-
-	/**
-	 * Invoke nested node (child).
-	 *
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	@Override
-	public void invokeChildNestedNode() throws PgSchemaException {
-
-		try {
-			executeBatch();
-		} catch (SQLException e) {
-			throw new PgSchemaException(e);
-		}
-
-		if (!filled || nested_keys == null)
-			return;
-
-		for (PgSchemaNestedKey nested_key : nested_keys) {
-
-			if (existsNestedNode(nested_key.table, proc_node))
-				schema.parseChildNode2PgSql(proc_node, table, nested_key.asOfChild(this), update, db_conn);
-
-		}
 
 	}
 
