@@ -4690,6 +4690,69 @@ public class PgSchema {
 	private HashMap<String, Boolean> has_db_rows = null;
 
 	/**
+	 * Initialize whether PostgreSQL table has any rows.
+	 *
+	 * @param db_conn database connection
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void initHasDbRows(Connection db_conn) throws PgSchemaException {
+
+		try {
+
+			Statement stat = db_conn.createStatement();
+
+			has_db_rows = new HashMap<String, Boolean>();
+
+			String doc_id_table_name = doc_id_table.pname;
+
+			String sql1 = "SELECT EXISTS(SELECT 1 FROM " + getPgNameOf(db_conn, doc_id_table) + " LIMIT 1)";
+
+			ResultSet rset1 = stat.executeQuery(sql1);
+
+			if (rset1.next())
+				has_db_rows.put(doc_id_table_name, rset1.getBoolean(1));
+
+			rset1.close();
+
+			boolean has_doc_id = has_db_rows.get(doc_id_table_name);
+
+			tables.stream().filter(table -> table.writable && !table.equals(doc_id_table)).forEach(table -> {
+
+				String table_name = table.pname;
+
+				if (has_doc_id) {
+
+					try {
+
+						String sql2 = "SELECT EXISTS(SELECT 1 FROM " + getPgNameOf(db_conn, table) + " LIMIT 1)";
+
+						ResultSet rset2 = stat.executeQuery(sql2);
+
+						if (rset2.next())
+							has_db_rows.put(table_name, rset2.getBoolean(1));
+
+						rset2.close();
+
+					} catch (SQLException | PgSchemaException e) {
+						e.printStackTrace();
+					}
+
+				}
+
+				else
+					has_db_rows.put(table_name, false);
+
+			});
+
+			stat.close();
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
+	/**
 	 * Execute PostgreSQL DELETE command for strict synchronization.
 	 *
 	 * @param db_conn database connection
@@ -4698,78 +4761,28 @@ public class PgSchema {
 	 */
 	public void deleteRows(Connection db_conn, HashSet<String> set) throws PgSchemaException {
 
-		if (has_db_rows == null && !option.rel_data_ext) {
+		if (!option.rel_data_ext) {
 
-			try {
+			if (has_db_rows == null)
+				initHasDbRows(db_conn);
 
-				Statement stat = db_conn.createStatement();
+			set.forEach(id -> {
 
-				has_db_rows = new HashMap<String, Boolean>();
+				document_id = id;
 
-				String doc_id_table_name = doc_id_table.pname;
+				try {
 
-				String sql1 = "SELECT EXISTS(SELECT 1 FROM " + getPgNameOf(db_conn, doc_id_table) + " LIMIT 1)";
+					deleteBeforeUpdate(db_conn, false);
 
-				ResultSet rset1 = stat.executeQuery(sql1);
+				} catch (PgSchemaException e) {
+					e.printStackTrace();
+				}
 
-				if (rset1.next())
-					has_db_rows.put(doc_id_table_name, rset1.getBoolean(1));
+			});
 
-				rset1.close();
-
-				boolean has_doc_id = has_db_rows.get(doc_id_table_name);
-
-				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table)).forEach(table -> {
-
-					String table_name = table.pname;
-
-					if (has_doc_id) {
-
-						try {
-
-							String sql2 = "SELECT EXISTS(SELECT 1 FROM " + getPgNameOf(db_conn, table) + " LIMIT 1)";
-
-							ResultSet rset2 = stat.executeQuery(sql2);
-
-							if (rset2.next())
-								has_db_rows.put(table_name, rset2.getBoolean(1));
-
-							rset2.close();
-
-						} catch (SQLException | PgSchemaException e) {
-							e.printStackTrace();
-						}
-
-					}
-
-					else
-						has_db_rows.put(table_name, false);
-
-				});
-
-				stat.close();
-
-			} catch (SQLException e) {
-				throw new PgSchemaException(e);
-			}
+			document_id = null;
 
 		}
-
-		set.forEach(id -> {
-
-			document_id = id;
-
-			try {
-
-				deleteBeforeUpdate(db_conn, false);
-
-			} catch (PgSchemaException e) {
-				e.printStackTrace();
-			}
-
-		});
-
-		document_id = null;
 
 	}
 
@@ -4824,11 +4837,14 @@ public class PgSchema {
 
 		try {
 
+			if (has_db_rows == null)
+				initHasDbRows(db_conn);
+
 			Statement stat = db_conn.createStatement();
 
 			boolean has_doc_id = false;
 
-			if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(doc_id_table.pname))) {
+			if (has_db_rows.get(doc_id_table.pname)) {
 
 				String sql = "DELETE FROM " + getPgNameOf(db_conn, doc_id_table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + "='" + document_id + "'";
 
@@ -4840,7 +4856,7 @@ public class PgSchema {
 
 				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
-					if (has_db_rows == null || (has_db_rows != null && has_db_rows.get(table.pname))) {
+					if (has_db_rows.get(table.pname)) {
 
 						try {
 

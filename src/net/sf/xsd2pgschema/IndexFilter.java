@@ -29,13 +29,13 @@ import java.util.HashSet;
 public class IndexFilter {
 
 	/** The attributes for partial index. */
-	protected HashSet<String> attrs = null;
+	protected HashSet<String> attrs = new HashSet<String>();
 
 	/** The Sphinx multi-valued attribute for partial index. */
-	protected HashSet<String> sph_mvas = null;
+	protected HashSet<String> sph_mvas = new HashSet<String>();
 
 	/** The fields to be stored. */
-	protected HashSet<String> fields = null;
+	protected HashSet<String> fields = new HashSet<String>();
 
 	/** The minimum word length for indexing. */
 	protected int min_word_len = PgSchemaUtil.min_word_len;
@@ -63,18 +63,6 @@ public class IndexFilter {
 
 	/** The Sphinx maximum field length. (related to max_xmlpipe2_field in sphinx.conf) */
 	protected int sph_max_field_len = PgSchemaUtil.sph_max_field_len;
-
-	/**
-	 * Instance of index filter.
-	 */
-	public IndexFilter() {
-
-		attrs = new HashSet<String>();
-		sph_mvas = new HashSet<String>();
-
-		fields = new HashSet<String>();
-
-	}
 
 	/**
 	 * Add an attribute.

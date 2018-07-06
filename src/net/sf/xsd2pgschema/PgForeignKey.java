@@ -30,22 +30,22 @@ import org.w3c.dom.Node;
 public class PgForeignKey {
 
 	/** The foreign key name in PostgreSQL. */
-	protected String name = "";
+	protected String name;
 
 	/** The PostgreSQL schema name. */
-	protected String pg_schema_name = null;
+	protected String pg_schema_name;
 
 	/** The child table name (canonical). */
-	protected String child_table_xname = null;
+	protected String child_table_xname;
 
 	/** The child table name (in PostgreSQL). */
-	protected String child_table_pname = null;
+	protected String child_table_pname;
 
 	/** The child field names (canonical), separated by comma character. */
-	protected String child_field_xnames = null;
+	protected String child_field_xnames;
 
 	/** The child field names (in PostgreSQL), separated by comma character. */
-	protected String child_field_pnames = null;
+	protected String child_field_pnames;
 
 	/** The parent table name (canonical). */
 	protected String parent_table_xname = null;
@@ -82,8 +82,6 @@ public class PgForeignKey {
 
 		child_field_xnames = extractFieldNames(option, node);
 		child_field_pnames = option.case_sense ? child_field_xnames : child_field_xnames.toLowerCase();
-
-		parent_table_xname = parent_table_pname = parent_field_xnames = parent_field_pnames = null;
 
 		for (Node child = parent_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 

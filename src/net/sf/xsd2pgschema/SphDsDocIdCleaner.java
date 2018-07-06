@@ -47,13 +47,13 @@ import javax.xml.stream.events.XMLEvent;
 public class SphDsDocIdCleaner {
 
 	/** The Sphinx data source input file path. */
-	private Path sph_data_in_path = null;
+	private Path sph_data_in_path;
 
 	/** The Sphinx data source output file path. */
-	private Path sph_data_out_path = null;
+	private Path sph_data_out_path;
 
 	/** The set of deleting document id while synchronization. */
-	private HashSet<String> del_doc_set = null;
+	private HashSet<String> del_doc_set;
 
 	/** The set of document id stored in data source. */
 	private HashSet<String> doc_set;
@@ -74,7 +74,7 @@ public class SphDsDocIdCleaner {
 	private boolean attr_doc_key;
 
 	/** The StAX read event handlers. */
-	private HashMap<Integer, EventHandler> read_handlers = null;
+	private HashMap<Integer, EventHandler> read_handlers = new HashMap<Integer, EventHandler>();
 
 	/** The current path. */
 	private StringBuilder cur_path = null;
@@ -110,8 +110,6 @@ public class SphDsDocIdCleaner {
 			attr_doc_key_holder = doc_key_path.substring(0, doc_key_path.lastIndexOf('/'));
 
 		// StAX read event handlers
-
-		read_handlers = new HashMap<Integer, EventHandler>();
 
 		read_handlers.put(XMLEvent.START_DOCUMENT, new StartDocumentReadHandler());
 		read_handlers.put(XMLEvent.END_DOCUMENT, new EndDocumentReadHandler());
@@ -191,6 +189,8 @@ public class SphDsDocIdCleaner {
 		in.close();
 
 		doc_set.clear();
+
+		read_handlers.clear();
 
 	}
 

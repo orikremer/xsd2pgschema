@@ -38,7 +38,7 @@ public class XmlBuilderPendingElem {
 	protected String header;
 
 	/** Whether element has attribute only. */
-	protected boolean attr_only = true;
+	protected boolean attr_only;
 
 	/** The pending attribute. */
 	protected LinkedHashMap<String, XmlBuilderPendingAttr> pending_attrs = new LinkedHashMap<String, XmlBuilderPendingAttr>();

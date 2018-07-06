@@ -41,10 +41,10 @@ import org.xml.sax.SAXParseException;
 public class XmlValidator {
 
 	/** The DOM parser. */
-	private DOMParser dom_parser = null;
+	private DOMParser dom_parser = new DOMParser();
 
 	/** The error handler. */
-	private ErrHandler err_handler = null;
+	private ErrHandler err_handler = new ErrHandler();
 
 	/**
 	 * Instance of XML validator.
@@ -53,8 +53,6 @@ public class XmlValidator {
 	 * @param full_check whether enable canonical XML Schema validation or not (validate well-formed only)
 	 */
 	public XmlValidator(Path xsd_file_path, boolean full_check) {
-
-		dom_parser = new DOMParser();
 
 		if (full_check) {
 
@@ -73,8 +71,6 @@ public class XmlValidator {
 			}
 
 		}
-
-		err_handler = new ErrHandler();
 
 		dom_parser.setErrorHandler(err_handler);
 

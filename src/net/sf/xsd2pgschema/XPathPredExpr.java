@@ -30,10 +30,10 @@ import java.util.List;
 public class XPathPredExpr {
 
 	/** The XPath component of predicate. */
-	protected XPathComp src_comp = null;
+	protected XPathComp src_comp;
 
 	/** The source path expression of predicate. */
-	protected XPathExpr src_path_expr = null;
+	protected XPathExpr src_path_expr;
 
 	/** The destination path expression of predicate. */
 	protected List<XPathExpr> dst_path_exprs = null;

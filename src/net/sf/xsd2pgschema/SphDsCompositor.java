@@ -61,7 +61,7 @@ public class SphDsCompositor extends DefaultHandler {
 	private boolean sph_mvattr = false;
 
 	/** The document key name in PostgreSQL DDL. */
-	private String document_key_name = null;
+	private String document_key_name;
 
 	/** The current Sphinx attribute name. */
 	private String sph_attr_name = null;
@@ -73,10 +73,10 @@ public class SphDsCompositor extends DefaultHandler {
 	private HashMap<String, StringBuilder> buffer = null;
 
 	/** The set of Sphinx attribute. */
-	private HashSet<String> sph_attrs = null;
+	private HashSet<String> sph_attrs;
 
 	/** The set of Sphinx multi-valued attribute. */
-	private HashSet<String> sph_mvas = null;
+	private HashSet<String> sph_mvas;
 
 	/**
 	 * Instance of Sphinx xmlpipe2 compositor.

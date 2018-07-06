@@ -33,25 +33,25 @@ import org.antlr.v4.runtime.tree.ParseTree;
 public class XPathSqlExpr {
 
 	/** The node path. */
-	protected String path = null;
+	protected String path;
 
 	/** The canonical name in XML Schema. */
-	protected String xname = null;
+	protected String xname;
 
 	/** The column name in PostgreSQL. */
-	protected String pname = null;
+	protected String pname;
 
 	/** The PostgreSQL XPath code. */
 	protected String pg_xpath_code = null;
 
 	/** The predicate of XPath. */
-	protected String predicate = null;
+	protected String predicate;
 
 	/** The predicate value of concerned SQL. */
-	protected String value = null;
+	protected String value;
 
 	/** The terminus type. */
-	protected XPathCompType terminus = null;
+	protected XPathCompType terminus;
 
 	/** The parent tree. */
 	protected ParseTree parent_tree = null;
@@ -66,7 +66,7 @@ public class XPathSqlExpr {
 	protected String binary_operator = null;
 
 	/** The PostgreSQL table. */
-	public PgTable table = null;
+	public PgTable table;
 
 	/** The PostgreSQL field. */
 	public PgField field = null;

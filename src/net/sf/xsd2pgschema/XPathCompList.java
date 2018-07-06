@@ -68,7 +68,7 @@ public class XPathCompList {
 	public List<XPathComp> comps = null;
 
 	/** Instance of path expression. */
-	public List<XPathExpr> path_exprs = null;
+	public List<XPathExpr> path_exprs = new ArrayList<XPathExpr>();
 
 	/** Instance of predicate expression. */
 	private List<XPathPredExpr> pred_exprs = null;
@@ -144,8 +144,6 @@ public class XPathCompList {
 
 		comps = new ArrayList<XPathComp>();
 
-		path_exprs = new ArrayList<XPathExpr>();
-
 		if (verbose)
 			System.out.println("Abstract syntax tree of query: '" + tree.getText() + "'");
 
@@ -171,9 +169,6 @@ public class XPathCompList {
 	 * Serialize XPath parse tree (internal use only).
 	 */
 	private XPathCompList() {
-
-		path_exprs = new ArrayList<XPathExpr>();
-
 	}
 
 	/**

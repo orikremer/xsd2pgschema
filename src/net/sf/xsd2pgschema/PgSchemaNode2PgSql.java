@@ -39,13 +39,13 @@ import org.xml.sax.SAXException;
 public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 	/** The prepared statement. */
-	private PreparedStatement ps = null;
+	private PreparedStatement ps;
 
 	/** Whether table could have writer. */
-	private boolean writable = false;
+	private boolean writable;
 
 	/** Whether field is occupied or not. */
-	private boolean[] occupied = null;
+	private boolean[] occupied;
 
 	/** Whether update or insert. */
 	private boolean update;
@@ -63,10 +63,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	private Connection db_conn;
 
 	/** The size of hash key. */
-	private PgHashSize hash_size = null;
+	private PgHashSize hash_size;
 
 	/** Whether use default serial key size (unsigned int 32 bit). */
-	private boolean def_ser_size = true;
+	private boolean def_ser_size;
 
 	/**
 	 * Node parser for PostgreSQL data migration.
@@ -90,7 +90,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		try {
 
-			if (this.writable = table.writable) {
+			if (writable = table.writable) {
 
 				for (int f = 0; f < fields.size(); f++) {
 

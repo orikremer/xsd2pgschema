@@ -36,10 +36,10 @@ public class XmlBuilderAnyAttrRetriever extends DefaultHandler {
 	private PgField field;
 
 	/** The nest tester. */
-	private XmlBuilderNestTester nest_test = null;
+	private XmlBuilderNestTester nest_test;
 
 	/** The XML builder. */
-	private XmlBuilder xmlb = null;
+	private XmlBuilder xmlb;
 
 	/** The current state for root node. */
 	private boolean root_node = false;

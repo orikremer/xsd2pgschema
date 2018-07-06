@@ -55,10 +55,10 @@ public class XmlParser {
 	protected Document document;
 
 	/** The document id. */
-	public String document_id = null;
+	public String document_id;
 
 	/** The base name of XML file. */
-	public String basename = null;
+	public String basename;
 
 	/**
 	 * Instance of XML parser.

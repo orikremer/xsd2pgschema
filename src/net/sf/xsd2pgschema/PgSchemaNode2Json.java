@@ -38,16 +38,16 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	protected boolean written = false;
 
 	/** The JSON builder. */
-	protected JsonBuilder jsonb = null;
+	protected JsonBuilder jsonb;
 
 	/** the JSON type. */
 	protected JsonType type;
 
 	/** The JSON Schema version. */
-	protected JsonSchemaVersion schema_ver = null;
+	protected JsonSchemaVersion schema_ver;
 
 	/** The white spaces between JSON item and JSON data. */
-	private String key_value_space = " ";
+	private String key_value_space;
 
 	/**
 	 * Node parser for JSON conversion.
@@ -167,7 +167,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse processing node (child)
+	 * Parse processing node (child): Column- or Object-oriented JSON format
 	 *
 	 * @param node_test node tester
 	 * @param as_attr whether parent node as attribute
@@ -258,23 +258,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			}
 			break;
-		case relational:
-			if (!filled)
-				return;
-
-			visited = true;
-
-			if (nested_keys == null)
-				return;
-
-			for (PgSchemaNestedKey nested_key : nested_keys) {
-
-				boolean exists = existsNestedNode(nested_key.table, node_test.proc_node);
-
-				schema.parseChildNode2Json(exists || indirect ? node_test.proc_node : proc_node, table, nested_key.asOfChild(node_test, exists));
-
-			}
-			break;
+		default:
 		}
 
 	}
@@ -304,7 +288,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse processing node (child)
+	 * Parse processing node (child): Column- or Object-oriented JSON format
 	 *
 	 * @param proc_node processing node
 	 * @param nested_key nested key
@@ -354,17 +338,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			if (!table.virtual)
 				jsonb.writeEndTable();
 			break;
-		case relational:
-			if (!filled || nested_keys == null)
-				return;
-
-			for (PgSchemaNestedKey _nested_key : nested_keys) {
-
-				if (existsNestedNode(_nested_key.table, proc_node))
-					schema.parseChildNode2Json(proc_node, table, _nested_key.asOfChild(this));
-
-			}
-			break;
+		default:
 		}
 
 	}

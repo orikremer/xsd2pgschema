@@ -38,16 +38,16 @@ public class XmlValidatorThrd implements Runnable {
 	private int thrd_id;
 
 	/** The PostgreSQL data model option. */
-	private PgSchemaOption option = null;
+	private PgSchemaOption option;
 
 	/** The XML validator. */
-	private XmlValidator validator = null;
+	private XmlValidator validator;
 
 	/** The XML file filter. */
-	private XmlFileFilter xml_file_filter = null;
+	private XmlFileFilter xml_file_filter;
 
 	/** The XML file queue. */
-	private LinkedBlockingQueue<Path> xml_file_queue = null;
+	private LinkedBlockingQueue<Path> xml_file_queue;
 
 	/** The instance of message digest for check sum. */
 	private MessageDigest md_chk_sum = null;

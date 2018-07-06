@@ -49,28 +49,28 @@ import org.xml.sax.SAXException;
 public abstract class PgSchemaNodeParser {
 
 	/** The PostgreSQL data model. */
-	protected PgSchema schema = null;
+	protected PgSchema schema;
 
 	/** The PostgreSQL data model option. */
-	protected PgSchemaOption option = null;
+	protected PgSchemaOption option;
 
 	/** The relational data extension. */
 	protected boolean rel_data_ext;
 
 	/** The parent table. */
-	protected PgTable parent_table = null;
+	protected PgTable parent_table;
 
 	/** The current table. */
-	protected PgTable table = null;
+	protected PgTable table;
 
 	/** The node parser type. */
-	protected PgSchemaNodeParserType parser_type = null;
+	protected PgSchemaNodeParserType parser_type;
 
 	/** The field list. */
-	protected List<PgField> fields = null;
+	protected List<PgField> fields;
 
 	/** The content of fields. */
-	protected String[] values = null;
+	protected String[] values;
 
 	/** The array of nested key. */
 	protected List<PgSchemaNestedKey> nested_keys = null;
@@ -82,7 +82,7 @@ public abstract class PgSchemaNodeParser {
 	protected boolean null_simple_primitive_list = false;
 
 	/** Whether any nested node has been visited. */
-	protected boolean visited = false;
+	protected boolean visited;
 
 	/** Whether child node is not nested node (indirect). */
 	protected boolean indirect = false;
@@ -94,7 +94,7 @@ public abstract class PgSchemaNodeParser {
 	protected String current_key;
 
 	/** The document id. */
-	protected String document_id = null;
+	protected String document_id;
 
 	/** The length of document id. */
 	protected int document_id_len;

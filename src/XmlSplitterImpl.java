@@ -74,22 +74,22 @@ public class XmlSplitterImpl {
 	private int proc_id = 0;
 
 	/** The shard size. */
-	private int shard_size = 1;
+	private int shard_size;
 
 	/** The PostgreSQL data model. */
-	private PgSchema schema = null;
+	private PgSchema schema;
 
 	/** The XML file queue. */
-	private LinkedBlockingQueue<Path> xml_file_queue = null;
+	private LinkedBlockingQueue<Path> xml_file_queue;
 
 	/** The StAX read event handlers. */
-	private HashMap<Integer, EventHandler> read_handlers = null;
+	private HashMap<Integer, EventHandler> read_handlers = new HashMap<Integer, EventHandler>(); 
 
 	/** The absolute path of document unit. */
-	private String doc_unit_path = null;
+	private String doc_unit_path;
 
 	/** The absolute path of document key. */
-	private String doc_key_path = null;
+	private String doc_key_path;
 
 	/** The element path of document key in case that document key is attribute. */
 	private String attr_doc_key_holder = null;
@@ -122,7 +122,7 @@ public class XmlSplitterImpl {
 	private XMLEventWriter xml_writer = null;
 
 	/** The XML directory paths. */
-	private Path[] xml_dir_paths = null;
+	private Path[] xml_dir_paths;
 
 	/**
 	 * Instance of XmlSplitterImpl.
@@ -265,8 +265,6 @@ public class XmlSplitterImpl {
 
 		// StAX read event handlers
 
-		read_handlers = new HashMap<Integer, EventHandler>();
-
 		read_handlers.put(XMLEvent.START_DOCUMENT, new StartDocumentReadHandler());
 		read_handlers.put(XMLEvent.END_DOCUMENT, new EndDocumentReadHandler());
 
@@ -361,6 +359,8 @@ public class XmlSplitterImpl {
 		long end_time = System.currentTimeMillis();
 
 		System.out.println("Execution time: " + (end_time - start_time) + " ms");
+
+		read_handlers.clear();
 
 	}
 

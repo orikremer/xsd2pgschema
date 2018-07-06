@@ -35,10 +35,10 @@ import org.xml.sax.SAXException;
 public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 	/** Whether table is referred from child table. */
-	private boolean required = false;
+	private boolean required;
 
 	/** The minimum word length for indexing. */
-	private int min_word_len = PgSchemaUtil.min_word_len;
+	private int min_word_len;
 
 	/**
 	 * Node parser for Sphinx xmlpipe2 conversion.

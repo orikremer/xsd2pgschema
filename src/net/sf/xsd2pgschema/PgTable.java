@@ -36,16 +36,16 @@ import org.w3c.dom.Node;
 public class PgTable {
 
 	/** The PostgreSQL schema name (default schema name is "public"). */
-	protected String pg_schema_name = PgSchemaUtil.pg_public_schema_name;
+	protected String pg_schema_name;
 
 	/** The target namespace. */
-	protected String target_namespace = null;
+	protected String target_namespace;
 
 	/** The prefix of target namespace. */
 	protected String prefix = "";
 
 	/** The schema location. */
-	protected String schema_location = null;
+	protected String schema_location;
 
 	/** The canonical name in XML Schema. */
 	protected String xname = "";

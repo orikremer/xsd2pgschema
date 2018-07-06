@@ -32,16 +32,16 @@ public class PgSchemaNodeTester {
 	protected int ordinal = 1;
 
 	/** The parent key name. */
-	protected String parent_key = null;
+	protected String parent_key;
 
 	/** The current primary key name. */
-	protected String primary_key = null;
+	protected String primary_key;
 
 	/** The current key name. */
-	protected String current_key = null;
+	protected String current_key;
 
 	/** The processing node. */
-	protected Node proc_node = null;
+	protected Node proc_node;
 
 	/** Whether this node is omissible. */
 	protected boolean omissible = false;
@@ -101,7 +101,7 @@ public class PgSchemaNodeTester {
 
 		}
 
-		this.parent_key = nested_key.parent_key;
+		parent_key = nested_key.parent_key;
 
 		// processing key name
 

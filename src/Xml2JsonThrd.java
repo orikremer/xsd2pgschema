@@ -49,19 +49,19 @@ public class Xml2JsonThrd implements Runnable {
 	private DocumentBuilder doc_builder;
 
 	/** The PostgreSQL data model. */
-	private PgSchema schema = null;
+	private PgSchema schema;
 
 	/** The XML validator. */
-	private XmlValidator validator = null;
+	private XmlValidator validator;
 
 	/** The JSON directory path. */
-	private Path json_dir_path = null;
+	private Path json_dir_path;
 
 	/** The XML file filter. */
-	private XmlFileFilter xml_file_filter = null;
+	private XmlFileFilter xml_file_filter;
 
 	/** The XML file queue. */
-	private LinkedBlockingQueue<Path> xml_file_queue = null;
+	private LinkedBlockingQueue<Path> xml_file_queue;
 
 	/**
 	 * Instance of Xml2JsonThrd.

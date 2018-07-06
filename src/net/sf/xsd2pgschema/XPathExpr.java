@@ -30,10 +30,10 @@ import java.util.List;
 public class XPathExpr {
 
 	/** The node path. */
-	protected String path = null;
+	protected String path;
 
 	/** The terminus type. */
-	public XPathCompType terminus = null;
+	public XPathCompType terminus;
 
 	/** The previous terminus type. */
 	protected XPathCompType prev_term = null;

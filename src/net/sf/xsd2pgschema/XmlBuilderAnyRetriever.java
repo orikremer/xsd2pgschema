@@ -34,22 +34,22 @@ import org.xml.sax.helpers.DefaultHandler;
 public class XmlBuilderAnyRetriever extends DefaultHandler {
 
 	/** The root node name. */
-	private String root_node_name = null;
+	private String root_node_name;
 
 	/** The target namespace. */
-	private String target_namespace = null;
+	private String target_namespace;
 
 	/** The prefix of target namespace. */
-	private String prefix = null;
+	private String prefix;
 
 	/** The nest tester. */
-	private XmlBuilderNestTester nest_test = null;
+	private XmlBuilderNestTester nest_test;
 
 	/** The XML builder. */
-	private XmlBuilder xmlb = null;
+	private XmlBuilder xmlb;
 
 	/** The simple content holder of any element. */
-	private HashMap<String, StringBuilder> simple_contents = null;
+	private HashMap<String, StringBuilder> simple_contents = new HashMap<String, StringBuilder>();
 
 	/** The current state for root node. */
 	private boolean root_node = false;
@@ -61,7 +61,7 @@ public class XmlBuilderAnyRetriever extends DefaultHandler {
 	private String current_indent_space;
 
 	/** The current path. */
-	private StringBuilder cur_path = null;
+	private StringBuilder cur_path = new StringBuilder();
 
 	/** The offset value of current path. */
 	private int cur_path_offset;
@@ -82,11 +82,7 @@ public class XmlBuilderAnyRetriever extends DefaultHandler {
 		this.nest_test = nest_test;
 		this.xmlb = xmlb;
 
-		simple_contents = new HashMap<String, StringBuilder>();
-
 		current_indent_space = nest_test.child_indent_space;
-
-		cur_path = new StringBuilder();
 
 		cur_path_offset = root_node_name.length() + 1;
 

@@ -27,16 +27,16 @@ package net.sf.xsd2pgschema;
 public class XmlBuilderNestTester extends AbstractNestTester {
 
 	/** The current indent space. */
-	protected String current_indent_space = "";
+	protected String current_indent_space;
 
 	/** The child indent space. */
-	protected String child_indent_space = "";
+	protected String child_indent_space;
 
 	/** The unit of indent space. */
-	protected String indent_space = null;
+	protected String indent_space;
 
 	/** The indent offset. */
-	protected int indent_offset = PgSchemaUtil.indent_offset;
+	protected int indent_offset;
 
 	/**
 	 * Instance of nest tester from root node.

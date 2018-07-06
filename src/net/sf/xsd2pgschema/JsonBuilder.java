@@ -37,19 +37,19 @@ import org.apache.commons.text.StringEscapeUtils;
 public class JsonBuilder {
 
 	/** The JSON Schema version. */
-	public JsonSchemaVersion schema_ver = JsonSchemaVersion.defaultVersion();
+	public JsonSchemaVersion schema_ver;
 
 	/** The JSON type. */
-	protected JsonType type = JsonType.defaultType();
+	protected JsonType type;
 
 	/** The JSON buffer. */
 	protected StringBuilder buffer = new StringBuilder();
 
 	/** The prefix of JSON item name of xs:attribute. */
-	protected String attr_prefix = "";
+	protected String attr_prefix;
 
 	/** The JSON item name of xs:simpleContent. */
-	protected String simple_content_name = PgSchemaUtil.simple_content_name;
+	protected String simple_content_name;
 
 	/** The unit of indent space. */
 	private String indent_space = "  ";
@@ -61,22 +61,22 @@ public class JsonBuilder {
 	protected int key_value_offset = key_value_space.length();
 
 	/** The line feed code in JSON document. */
-	protected String line_feed_code = "\n";
+	protected String line_feed_code;
 
 	/** Whether use line feed code or not. */
-	protected boolean line_feed = true;
+	protected boolean line_feed;
 
 	/** Whether retain case sensitive name. */
-	protected boolean case_sense = true;
+	protected boolean case_sense;
 
 	/** Use JSON array uniformly for descendants. */
-	protected boolean array_all = false;
+	protected boolean array_all;
 
 	/** Whether retain field annotation or not. */
-	private boolean no_field_anno = false;
+	private boolean no_field_anno;
 
 	/** Whether insert document key. */
-	protected boolean insert_doc_key = false;
+	protected boolean insert_doc_key;
 
 	/** The pending table header. */
 	protected LinkedList<JsonBuilderPendingHeader> pending_header = new LinkedList<JsonBuilderPendingHeader>();

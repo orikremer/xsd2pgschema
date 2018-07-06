@@ -33,22 +33,22 @@ import org.xml.sax.helpers.DefaultHandler;
 public class JsonBuilderAnyRetriever extends DefaultHandler {
 
 	/** The root node name. */
-	private String root_node_name = null;
+	private String root_node_name;
 
 	/** The current field. */
-	private PgField field = null;
+	private PgField field;
 
 	/** The nest tester. */
-	private JsonBuilderNestTester nest_test = null;
+	private JsonBuilderNestTester nest_test;
 
 	/** Whether field as JSON array. */
-	private boolean array_field = false;
+	private boolean array_field;
 
 	/** The JSON builder. */
-	private JsonBuilder jsonb = null;
+	private JsonBuilder jsonb;
 
 	/** The simple content holder of any element. */
-	private HashMap<String, StringBuilder> simple_contents = null;
+	private HashMap<String, StringBuilder> simple_contents = new HashMap<String, StringBuilder>();
 
 	/** The current state for root node. */
 	private boolean root_node = false;
@@ -57,7 +57,7 @@ public class JsonBuilderAnyRetriever extends DefaultHandler {
 	private int current_indent_level;
 
 	/** The current path. */
-	private StringBuilder cur_path = null;
+	private StringBuilder cur_path = new StringBuilder();
 
 	/** The offset value of current path. */
 	private int cur_path_offset;
@@ -85,11 +85,7 @@ public class JsonBuilderAnyRetriever extends DefaultHandler {
 		this.array_field = array_field;
 		this.jsonb = jsonb;
 
-		simple_contents = new HashMap<String, StringBuilder>();
-
 		current_indent_level = nest_test.current_indent_level;
-
-		cur_path = new StringBuilder();
 
 		cur_path_offset = root_node_name.length() + 1;
 

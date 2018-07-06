@@ -27,10 +27,10 @@ package net.sf.xsd2pgschema;
 public abstract class AbstractNestTester {
 
 	/** The ancestor node name. */
-	protected String ancestor_node = null;
+	protected String ancestor_node;
 
 	/** The parent node name. */
-	protected String parent_node = null;
+	protected String parent_node;
 
 	/** Whether this node has child element. */
 	protected boolean has_child_elem = false;

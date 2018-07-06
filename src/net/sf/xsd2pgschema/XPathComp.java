@@ -29,13 +29,13 @@ import org.antlr.v4.runtime.tree.ParseTree;
 public class XPathComp {
 
 	/** The union id. */
-	protected int union_id = -1;
+	protected int union_id;
 
 	/** The step id. */
-	protected int step_id = -1;
+	protected int step_id;
 
 	/** The XPath parse tree. */
-	protected ParseTree tree = null;
+	protected ParseTree tree;
 
 	/**
 	 * Instance of XPathComp.

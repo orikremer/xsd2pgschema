@@ -32,13 +32,13 @@ public class XmlPostEditor {
 	public boolean fill_default_value = false;
 
 	/** The list of --filt-in option. */
-	protected HashSet<String> filt_ins = null;
+	protected HashSet<String> filt_ins = new HashSet<String>();
 
 	/** The list of --filt-out option. */
-	protected HashSet<String> filt_outs = null;
+	protected HashSet<String> filt_outs = new HashSet<String>();
 
 	/** The list of --fill-this option. */
-	protected HashSet<String> fill_these = null;
+	protected HashSet<String> fill_these = new HashSet<String>();
 
 	/** Whether the --file-in options have been resolved. */
 	protected boolean filt_in_resolved = false;	
@@ -48,17 +48,6 @@ public class XmlPostEditor {
 
 	/** Whether the --fill-this options have been resolved. */
 	protected boolean fill_this_resolved = false;
-
-	/**
-	 * Instance of XmlPostEditor.
-	 */
-	public XmlPostEditor() {
-
-		filt_ins = new HashSet<String>();
-		filt_outs = new HashSet<String>();
-		fill_these = new HashSet<String>();
-
-	}
 
 	/**
 	 * Add a --filt-in option.

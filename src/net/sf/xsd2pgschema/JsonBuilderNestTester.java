@@ -27,10 +27,10 @@ package net.sf.xsd2pgschema;
 public class JsonBuilderNestTester extends AbstractNestTester {
 
 	/** The current indent level. */
-	protected int current_indent_level = 1;
+	protected int current_indent_level;
 
 	/** The child indent level. */
-	protected int child_indent_level = 2;
+	protected int child_indent_level;
 
 	/**
 	 * Instance of nest tester from root node.
@@ -42,6 +42,7 @@ public class JsonBuilderNestTester extends AbstractNestTester {
 
 		super(table);
 
+		current_indent_level = 1;
 		child_indent_level = table.virtual ? current_indent_level : current_indent_level + 1;
 
 	}

@@ -27,7 +27,7 @@ package net.sf.xsd2pgschema;
 public abstract class AbstractPendingAttr {
 
 	/** The field (attribute). */
-	protected PgField field = null;
+	protected PgField field;
 
 	/** The any field (any attribute). */
 	protected PgField any_field = null;
@@ -39,7 +39,7 @@ public abstract class AbstractPendingAttr {
 	protected String local_name = null;
 
 	/** The content. */
-	protected String content = null;
+	protected String content;
 
 	/**
 	 * Instance of pending attribute.

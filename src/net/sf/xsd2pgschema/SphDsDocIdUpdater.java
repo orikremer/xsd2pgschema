@@ -41,13 +41,13 @@ import javax.xml.stream.events.XMLEvent;
 public class SphDsDocIdUpdater {
 
 	/** The Sphinx data source input file path (base). */
-	private Path sph_data_in_base_path = null;
+	private Path sph_data_in_base_path;
 
 	/** The Sphinx data source input file path (extracted). */
-	private Path sph_data_in_ext_path = null;
+	private Path sph_data_in_ext_path;
 
 	/** The Sphinx data source output file. */
-	private Path sph_data_out_path = null;
+	private Path sph_data_out_path;
 
 	/** Whether current document is base file or extracted one. */
 	private boolean base = true;
@@ -56,7 +56,7 @@ public class SphDsDocIdUpdater {
 	private final String doc_unit_path = "/docset/document";
 
 	/** The StAX read event handlers. */
-	private HashMap<Integer, EventHandler> read_handlers = null;
+	private HashMap<Integer, EventHandler> read_handlers = new HashMap<Integer, EventHandler>();
 
 	/** The current path. */
 	private StringBuilder cur_path = null;
@@ -78,8 +78,6 @@ public class SphDsDocIdUpdater {
 		this.sph_data_out_path = sph_data_out_path;
 
 		// StAX read event handlers
-
-		read_handlers = new HashMap<Integer, EventHandler>();
 
 		read_handlers.put(XMLEvent.START_DOCUMENT, new StartDocumentReadHandler());
 		read_handlers.put(XMLEvent.END_DOCUMENT, new EndDocumentReadHandler());
@@ -173,6 +171,8 @@ public class SphDsDocIdUpdater {
 		in.close();
 
 		bout.close();
+
+		read_handlers.clear();
 
 	}
 

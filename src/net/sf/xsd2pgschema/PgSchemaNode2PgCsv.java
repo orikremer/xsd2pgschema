@@ -36,22 +36,22 @@ import org.xml.sax.SAXException;
 public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 	/** The string builder for a line of CSV/TSV format. */
-	private StringBuilder sb = null;
+	private StringBuilder sb;
 
 	/** Whether table could have writer. */
-	private boolean writable = false;
+	private boolean writable;
 
 	/** Whether use TSV format in PostgreSQL data migration. */
-	private boolean pg_tab_delimiter = true;
+	private boolean pg_tab_delimiter;
 
 	/** The current delimiter code. */
-	private char pg_delimiter = '\t';
+	private char pg_delimiter;
 
 	/** The current null code. */
-	private String pg_null = PgSchemaUtil.pg_tsv_null;
+	private String pg_null;
 
 	/** Whether use default serial key size (unsigned int 32 bit). */
-	private boolean def_ser_size = true;
+	private boolean def_ser_size;
 
 	/**
 	 * Node parser for CSV conversion.

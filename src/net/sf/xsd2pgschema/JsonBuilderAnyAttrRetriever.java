@@ -34,16 +34,16 @@ public class JsonBuilderAnyAttrRetriever extends DefaultHandler {
 	private String root_node_name;
 
 	/** The current field. */
-	private PgField field = null;
+	private PgField field;
 
 	/** The nest tester. */
-	private JsonBuilderNestTester nest_test = null;
+	private JsonBuilderNestTester nest_test;
 
 	/** Whether field as JSON array. */
-	private boolean array_field = false;
+	private boolean array_field;
 
 	/** The JSON builder. */
-	private JsonBuilder jsonb = null;
+	private JsonBuilder jsonb;
 
 	/** The current state for root node. */
 	private boolean root_node = false;

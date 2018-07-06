@@ -45,7 +45,7 @@ public class PgSchemaNestedKey {
 	protected boolean indirect;
 
 	/** The target ordinal number of current node. */
-	protected int target_ordinal;
+	protected int target_ordinal = 0;
 
 	/**
 	 * Instance of nested key.
@@ -78,7 +78,6 @@ public class PgSchemaNestedKey {
 
 		parent_key = parser.current_key;
 		indirect = parser.table.bridge;
-		target_ordinal = 0;
 
 		return this;
 	}
@@ -93,8 +92,9 @@ public class PgSchemaNestedKey {
 	public PgSchemaNestedKey asOfChild(PgSchemaNodeTester node_test, boolean exists) {
 
 		parent_key = node_test.primary_key;
-		indirect = !exists;
-		target_ordinal = exists ? 0 : node_test.ordinal;
+
+		if (indirect = !exists)
+			target_ordinal = node_test.ordinal;
 
 		return this;
 	}
@@ -109,7 +109,6 @@ public class PgSchemaNestedKey {
 
 		parent_key = parser.current_key;
 		indirect = false;
-		target_ordinal = 0;
 
 		return this;
 	}

@@ -62,10 +62,10 @@ import com.github.antlr.grammars_v4.xpath.xpathParser.MainContext;
 public class XPathEvaluatorImpl {
 
 	/** The PostgreSQL data model. */
-	private PgSchema schema = null;
+	private PgSchema schema;
 
 	/** The PostgreSQL data model option. */
-	private PgSchemaOption option = null;
+	private PgSchemaOption option;
 
 	/** The database connection. */
 	private Connection db_conn = null;

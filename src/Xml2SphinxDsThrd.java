@@ -69,25 +69,25 @@ public class Xml2SphinxDsThrd implements Runnable {
 	private DocumentBuilder doc_builder;
 
 	/** The PostgreSQL data model. */
-	private PgSchema schema = null;
+	private PgSchema schema;
 
 	/** The PostgreSQL data model option. */
-	private PgSchemaOption option = null;
+	private PgSchemaOption option;
 
 	/** The index filter. */
-	private IndexFilter index_filter = null;
+	private IndexFilter index_filter;
 
 	/** The XML validator. */
-	private XmlValidator validator = null;
+	private XmlValidator validator;
 
 	/** The data source directory path. */
-	private Path ds_dir_path = null;
+	private Path ds_dir_path;
 
 	/** The XML file filter. */
-	private XmlFileFilter xml_file_filter = null;
+	private XmlFileFilter xml_file_filter;
 
 	/** The XML file queue. */
-	private LinkedBlockingQueue<Path> xml_file_queue = null;
+	private LinkedBlockingQueue<Path> xml_file_queue;
 
 	/** The SAX parser. */
 	private SAXParser sax_parser = null;
@@ -96,7 +96,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 	private MessageDigest md_chk_sum = null;
 
 	/** The Sphinx schema file path. */
-	private Path sphinx_schema_path = null;
+	private Path sphinx_schema_path;
 
 	/**
 	 * Instance of Xml2SphinxDsThrd.

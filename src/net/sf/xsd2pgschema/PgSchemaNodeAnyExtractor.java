@@ -39,16 +39,16 @@ public class PgSchemaNodeAnyExtractor extends DefaultHandler {
 	private String root_node_name;
 
 	/** The common content holder for xs:any and xs:anyAttribute. */
-	private StringBuilder any_content = null;
+	private StringBuilder any_content;
 
 	/** The simple content holder for xs:any and xs:anyAttribute. */
-	private HashMap<String, StringBuilder> simple_content = null;
+	private HashMap<String, StringBuilder> simple_content = new HashMap<String, StringBuilder>();
 
 	/** The current state for root node. */
 	private boolean root_node = false;
 
 	/** The current path. */
-	private StringBuilder cur_path = null;
+	private StringBuilder cur_path = new StringBuilder();
 
 	/** The offset value of current path. */
 	private int cur_path_offset;
@@ -65,10 +65,6 @@ public class PgSchemaNodeAnyExtractor extends DefaultHandler {
 		this.parser_type = parser_type;
 		this.root_node_name = root_node_name;
 		this.any_content = any_content;
-
-		simple_content = new HashMap<String, StringBuilder>();
-
-		cur_path = new StringBuilder();
 
 		cur_path_offset = root_node_name.length() + 1;
 
