@@ -178,8 +178,9 @@ public abstract class PgSchemaNodeParser {
 
 	/**
 	 * Common clear function.
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void clear() {
+	public void clear() throws PgSchemaException {
 
 		if (nested_keys != null && nested_keys.size() > 0)
 			nested_keys.clear();

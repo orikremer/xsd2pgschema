@@ -1,6 +1,6 @@
 ﻿ Changes in xsd2pgschema 2.12.3 (release 2018-07-04)
 
-  Improved performance in parallel processing by deletion of lock objects.
+  Improved performance in parallel processing by removal of lock objects.
 
  Changes in xsd2pgschema 2.12.2 (release 2018-06-25)
 

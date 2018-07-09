@@ -236,7 +236,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		try {
 
 			parse(proc_node, null, current_key, current_key, false, indirect, 1);
-			executeBatch();
+
+			if (written && rel_data_ext)
+				ps.executeBatch();
 
 		} catch (SQLException e) {
 			throw new PgSchemaException(e);
@@ -262,7 +264,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		try {
 
 			parse(node_test.proc_node, node_test.parent_key, node_test.primary_key, node_test.current_key, node_test.as_attr, node_test.indirect, node_test.ordinal);
-			executeBatch();
+
+			if (written && rel_data_ext)
+				ps.executeBatch();
 
 		} catch (SQLException e) {
 			throw new PgSchemaException(e);
@@ -299,7 +303,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		try {
 
 			parse(proc_node, nested_key.parent_key, nested_key.current_key, nested_key.current_key, nested_key.as_attr, nested_key.indirect, 1);
-			executeBatch();
+
+			if (written && rel_data_ext)
+				ps.executeBatch();
 
 		} catch (SQLException e) {
 			throw new PgSchemaException(e);
@@ -314,6 +320,26 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				schema.parseChildNode2PgSql(proc_node, table, _nested_key.asOfChild(this), update, db_conn);
 
 		}
+
+	}
+
+	/**
+	 * Common clear function.
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void clear() throws PgSchemaException {
+
+		if (written && !rel_data_ext) {
+
+			try {
+				ps.executeBatch();
+			} catch (SQLException e) {
+				throw new PgSchemaException(e);
+			}
+
+		}
+
+		super.clear();
 
 	}
 
@@ -613,18 +639,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		}
 
 		occupied[field_id] = true;
-
-	}
-
-	/**
-	 * Execute batch SQL.
-	 *
-	 * @throws SQLException the SQL exception
-	 */
-	private void executeBatch() throws SQLException {
-
-		if (written && ps != null && !ps.isClosed())
-			ps.executeBatch();
 
 	}
 
