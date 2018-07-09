@@ -4309,6 +4309,27 @@ public class PgSchema {
 	}
 
 	/**
+	 * Decide primary table for questing document id.
+	 */
+	private void setDocIdTable() {
+
+		if (doc_id_table != null)
+			return;
+
+		doc_id_table = root_table;
+
+		if (!option.rel_data_ext) {
+
+			Optional<PgTable> opt = tables.parallelStream().filter(table -> table.writable).min(Comparator.comparingInt(table -> table.order));
+
+			if (opt.isPresent())
+				doc_id_table = opt.get();
+
+		}
+
+	}
+
+	/**
 	 * Return current document id.
 	 *
 	 * @return String document id
@@ -4507,6 +4528,48 @@ public class PgSchema {
 
 	}
 
+	// PostgreSQL data migration via COPY command
+
+	/**
+	 * Execute PostgreSQL COPY command for all data (CSV/TSV) files.
+	 *
+	 * @param db_conn database connection
+	 * @param work_dir working directory contains data (CSV/TSV) files
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void pgCsv2PgSql(Connection db_conn, Path work_dir) throws PgSchemaException {
+
+		try {
+
+			CopyManager copy_man = new CopyManager((BaseConnection) db_conn);
+
+			tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+
+				Path data_path = Paths.get(work_dir.toString(), getDataFileNameOf(table));
+
+				try {
+
+					if (Files.size(data_path) > 0) {
+
+						String sql = "COPY " + getPgNameOf(db_conn, table) + " FROM STDIN" + (option.pg_tab_delimiter ? "" : " CSV");
+
+						copy_man.copyIn(sql, Files.newInputStream(data_path));
+
+					}
+
+				} catch (SQLException | IOException | PgSchemaException e) {
+					System.err.println("Exception occurred while processing " + (option.pg_tab_delimiter ? "TSV" : "CSV") + " document: " + data_path.toAbsolutePath().toString());
+					e.printStackTrace();
+				}
+
+			});
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
 	// PostgreSQL data migration via prepared statement
 
 	/**
@@ -4607,53 +4670,6 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return document key name.
-	 *
-	 * @param table current table
-	 * @return String document key name
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	protected String getDocKeyName(PgTable table) throws PgSchemaException {
-
-		if (option.document_key)
-			return option.document_key_name;
-
-		if (!option.inplace_document_key)
-			throw new PgSchemaException("Not defined document key, or select either --doc-key or --doc-key-if-no-inplace option.");
-
-		if (!table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))) {
-
-			if (option.document_key_if_no_in_place)
-				return option.document_key_name;
-
-			throw new PgSchemaException("Not found in-place document key in " + table.pname + ", or select --doc-key-if-no-inplace option.");
-		}
-
-		return table.fields.stream().filter(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).findFirst().get().pname;
-	}
-
-	/**
-	 * Decide primary table for questing document id.
-	 */
-	private void setDocIdTable() {
-
-		if (doc_id_table != null)
-			return;
-
-		doc_id_table = root_table;
-
-		if (!option.rel_data_ext) {
-
-			Optional<PgTable> opt = tables.parallelStream().filter(table -> table.writable).min(Comparator.comparingInt(table -> table.order));
-
-			if (opt.isPresent())
-				doc_id_table = opt.get();
-
-		}
-
-	}
-
-	/**
 	 * Return set of document ids stored in PostgreSQL.
 	 *
 	 * @param db_conn database connection
@@ -4686,22 +4702,141 @@ public class PgSchema {
 		return set;
 	}
 
+	/**
+	 * Return document key name.
+	 *
+	 * @param table current table
+	 * @return String document key name
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	protected String getDocKeyName(PgTable table) throws PgSchemaException {
+
+		if (option.document_key)
+			return option.document_key_name;
+
+		if (!option.inplace_document_key)
+			throw new PgSchemaException("Not defined document key, or select either --doc-key or --doc-key-if-no-inplace option.");
+
+		if (!table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))) {
+
+			if (option.document_key_if_no_in_place)
+				return option.document_key_name;
+
+			throw new PgSchemaException("Not found in-place document key in " + table.pname + ", or select --doc-key-if-no-inplace option.");
+		}
+
+		return table.fields.stream().filter(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).findFirst().get().pname;
+	}
+
+	/**
+	 * Execute PostgreSQL DELETE command for strict synchronization.
+	 *
+	 * @param db_conn database connection
+	 * @param set set of target document ids
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void deleteRows(Connection db_conn, HashSet<String> set) throws PgSchemaException {
+
+		if (!option.rel_data_ext) {
+
+			set.forEach(id -> {
+
+				document_id = id;
+
+				try {
+
+					deleteBeforeUpdate(db_conn, false);
+
+				} catch (PgSchemaException e) {
+					e.printStackTrace();
+				}
+
+			});
+
+			document_id = null;
+
+		}
+
+	}
+
+	/**
+	 * Execute PostgreSQL DELETE command before INSERT for all tables of current document.
+	 *
+	 * @param db_conn database connection
+	 * @param no_pkey whether delete relations not having primary key or non selective
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void deleteBeforeUpdate(Connection db_conn, boolean no_pkey) throws PgSchemaException {
+
+		try {
+
+			if (has_db_rows == null)
+				resetHasDbRows(db_conn);
+
+			Statement stat = db_conn.createStatement();
+
+			boolean has_doc_id = false;
+
+			if (has_db_rows.get(doc_id_table.pname)) {
+
+				String sql = "DELETE FROM " + getPgNameOf(db_conn, doc_id_table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + "='" + document_id + "'";
+
+				has_doc_id = stat.executeUpdate(sql) > 0;
+
+			}
+
+			if (has_doc_id) {
+
+				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+
+					if (has_db_rows.get(table.pname)) {
+
+						try {
+
+							String sql = "DELETE FROM " + getPgNameOf(db_conn, table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
+
+							stat.executeUpdate(sql);
+
+						} catch (PgSchemaException | SQLException e) {
+							e.printStackTrace();
+						}
+
+					}
+
+				});
+
+			}
+
+			stat.close();
+
+			if (has_doc_id)
+				db_conn.commit(); // transaction ends
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
 	/** Whether PostgreSQL table (key) has any rows or not (value). */
 	private HashMap<String, Boolean> has_db_rows = null;
 
 	/**
-	 * Initialize whether PostgreSQL table has any rows.
+	 * Reset whether PostgreSQL table has any rows.
 	 *
 	 * @param db_conn database connection
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void initHasDbRows(Connection db_conn) throws PgSchemaException {
+	protected void resetHasDbRows(Connection db_conn) throws PgSchemaException {
 
 		try {
 
-			Statement stat = db_conn.createStatement();
+			if (has_db_rows == null)
+				has_db_rows = new HashMap<String, Boolean>();
+			else
+				has_db_rows.clear();
 
-			has_db_rows = new HashMap<String, Boolean>();
+			Statement stat = db_conn.createStatement();
 
 			String doc_id_table_name = doc_id_table.pname;
 
@@ -4752,40 +4887,6 @@ public class PgSchema {
 
 	}
 
-	/**
-	 * Execute PostgreSQL DELETE command for strict synchronization.
-	 *
-	 * @param db_conn database connection
-	 * @param set set of target document ids
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void deleteRows(Connection db_conn, HashSet<String> set) throws PgSchemaException {
-
-		if (!option.rel_data_ext) {
-
-			if (has_db_rows == null)
-				initHasDbRows(db_conn);
-
-			set.forEach(id -> {
-
-				document_id = id;
-
-				try {
-
-					deleteBeforeUpdate(db_conn, false);
-
-				} catch (PgSchemaException e) {
-					e.printStackTrace();
-				}
-
-			});
-
-			document_id = null;
-
-		}
-
-	}
-
 	/** The set of PostgreSQL table. */
 	private HashSet<String> db_tables = null;
 
@@ -4824,105 +4925,6 @@ public class PgSchema {
 			throw new PgSchemaException(db_conn.toString() + " : " + table_name + " not found in the database."); // not found in the database
 
 		return opt.get();
-	}
-
-	/**
-	 * Execute PostgreSQL DELETE command before INSERT for all tables of current document.
-	 *
-	 * @param db_conn database connection
-	 * @param no_pkey whether delete relations not having primary key or non selective
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	private void deleteBeforeUpdate(Connection db_conn, boolean no_pkey) throws PgSchemaException {
-
-		try {
-
-			if (has_db_rows == null)
-				initHasDbRows(db_conn);
-
-			Statement stat = db_conn.createStatement();
-
-			boolean has_doc_id = false;
-
-			if (has_db_rows.get(doc_id_table.pname)) {
-
-				String sql = "DELETE FROM " + getPgNameOf(db_conn, doc_id_table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + "='" + document_id + "'";
-
-				has_doc_id = stat.executeUpdate(sql) > 0;
-
-			}
-
-			if (has_doc_id) {
-
-				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
-
-					if (has_db_rows.get(table.pname)) {
-
-						try {
-
-							String sql = "DELETE FROM " + getPgNameOf(db_conn, table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
-
-							stat.executeUpdate(sql);
-
-						} catch (PgSchemaException | SQLException e) {
-							e.printStackTrace();
-						}
-
-					}
-
-				});
-
-			}
-
-			stat.close();
-
-			if (has_doc_id)
-				db_conn.commit(); // transaction ends
-
-		} catch (SQLException e) {
-			throw new PgSchemaException(e);
-		}
-
-	}
-
-	/**
-	 * Execute PostgreSQL COPY command for all data (CSV/TSV) files.
-	 *
-	 * @param db_conn database connection
-	 * @param work_dir working directory contains data (CSV/TSV) files
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void pgCsv2PgSql(Connection db_conn, Path work_dir) throws PgSchemaException {
-
-		try {
-
-			CopyManager copy_man = new CopyManager((BaseConnection) db_conn);
-
-			tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
-
-				Path data_path = Paths.get(work_dir.toString(), getDataFileNameOf(table));
-
-				try {
-
-					if (Files.size(data_path) > 0) {
-
-						String sql = "COPY " + getPgNameOf(db_conn, table) + " FROM STDIN" + (option.pg_tab_delimiter ? "" : " CSV");
-
-						copy_man.copyIn(sql, Files.newInputStream(data_path));
-
-					}
-
-				} catch (SQLException | IOException | PgSchemaException e) {
-					System.err.println("Exception occurred while processing " + (option.pg_tab_delimiter ? "TSV" : "CSV") + " document: " + data_path.toAbsolutePath().toString());
-					e.printStackTrace();
-				}
-
-			});
-
-		} catch (SQLException e) {
-			throw new PgSchemaException(e);
-		}
-
 	}
 
 	/**
@@ -5021,6 +5023,8 @@ public class PgSchema {
 
 	}
 
+	// Full-text indexing
+
 	/**
 	 * Reset attr_sel_rdy flag.
 	 */
@@ -5029,6 +5033,8 @@ public class PgSchema {
 		tables.parallelStream().forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> field.attr_sel_rdy = true));
 
 	}
+
+	// Lucene full-text indexing
 
 	/**
 	 * Lucene document conversion.
