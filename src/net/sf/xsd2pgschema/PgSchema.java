@@ -4528,7 +4528,7 @@ public class PgSchema {
 
 				try {
 
-					if (Files.size(data_path) > 0) {
+					if (Files.exists(data_path)) {
 
 						String sql = "COPY " + getPgNameOf(db_conn, table) + " FROM STDIN" + (option.pg_tab_delimiter ? "" : " CSV");
 
