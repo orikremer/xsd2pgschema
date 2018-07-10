@@ -1,6 +1,8 @@
-﻿ Changes in xsd2pgschema 2.12.3 (release 2018-07-04)
+﻿ Changes in xsd2pgschema 2.12.3 (release 2018-07-10)
 
   Improved performance in parallel processing by removal of lock objects.
+  Allowed in-place document key in case relational model extension was enabled.
+  Fixed too many open files error in huge relations by reducing file resource.
 
  Changes in xsd2pgschema 2.12.2 (release 2018-06-25)
 
