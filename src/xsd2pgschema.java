@@ -124,13 +124,11 @@ public class xsd2pgschema {
 
 			else if (args[i].equals("--inplace-doc-key-name") && i + 1 < args.length) {
 				option.addInPlaceDocKeyName(args[++i]);
-				option.cancelRelModelExt();
 				option.setDocKeyOption(false);
 			}
 
 			else if (args[i].equals("--doc-key-if-no-inplace")) {
 				option.document_key_if_no_in_place = true;
-				option.cancelRelModelExt();
 				option.setDocKeyOption(false);
 			}
 
@@ -220,8 +218,8 @@ public class xsd2pgschema {
 		System.err.println("        --ser-key-name SER_KEY_NAME (default=\"" + option.def_serial_key_name + "\")");
 		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.def_xpath_key_name + "\")");
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
-		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME (select --no-rel and --no-doc-key options by default)");
-		System.err.println("        --doc-key-if-no-inplace (select --no-rel and --no-doc-key options by default)");
+		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME");
+		System.err.println("        --doc-key-if-no-inplace");
 		System.exit(1);
 
 	}

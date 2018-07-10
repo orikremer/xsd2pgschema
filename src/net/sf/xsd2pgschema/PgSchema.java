@@ -983,7 +983,7 @@ public class PgSchema {
 
 		// retrieve document key if in-place document key no exists
 
-		if (!option.document_key && option.inplace_document_key && option.document_key_if_no_in_place) {
+		if (!option.document_key && option.inplace_document_key && (option.rel_model_ext || option.document_key_if_no_in_place)) {
 
 			tables.parallelStream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> field.name.equals(option.document_key_name)) && !table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))).forEach(table -> {
 
@@ -1190,7 +1190,16 @@ public class PgSchema {
 
 		// decide primary table for questing document id
 
-		setDocIdTable();
+		doc_id_table = root_table;
+
+		if (!option.rel_data_ext) {
+
+			Optional<PgTable> opt = tables.parallelStream().filter(table -> table.writable).min(Comparator.comparingInt(table -> table.order));
+
+			if (opt.isPresent())
+				doc_id_table = opt.get();
+
+		}
 
 		// check in-place document keys
 
@@ -3373,7 +3382,7 @@ public class PgSchema {
 			else if (option.discarded_document_key_names.contains(field.name) || option.discarded_document_key_names.contains(table.name + "." + field.name))
 				continue;
 
-			else if (!option.document_key && option.inplace_document_key && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))
+			else if (!field.primary_key && !option.document_key && option.inplace_document_key && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))
 				System.out.println("-- IN-PLACE DOCUMENT KEY");
 
 			if (!field.required && field.xrequired) {
@@ -4309,27 +4318,6 @@ public class PgSchema {
 	}
 
 	/**
-	 * Decide primary table for questing document id.
-	 */
-	private void setDocIdTable() {
-
-		if (doc_id_table != null)
-			return;
-
-		doc_id_table = root_table;
-
-		if (!option.rel_data_ext) {
-
-			Optional<PgTable> opt = tables.parallelStream().filter(table -> table.writable).min(Comparator.comparingInt(table -> table.order));
-
-			if (opt.isPresent())
-				doc_id_table = opt.get();
-
-		}
-
-	}
-
-	/**
 	 * Return current document id.
 	 *
 	 * @return String document id
@@ -4424,24 +4412,13 @@ public class PgSchema {
 
 			if (table.writable) {
 
-				if (table.buffw == null) {
-
-					Path data_path = Paths.get(work_dir.toString(), getDataFileNameOf(table));
-
-					try {
-
-						table.buffw = Files.newBufferedWriter(data_path);
-
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-
-				}
+				if (table.pathw == null)
+					table.pathw = Paths.get(work_dir.toString(), getDataFileNameOf(table));
 
 			}
 
 			else
-				table.buffw = null;
+				table.pathw = null;
 
 		});
 
@@ -4462,16 +4439,18 @@ public class PgSchema {
 
 		tables.parallelStream().forEach(table -> {
 
-			if (table.buffw != null ) {
+			if (table.pathw != null) {
 
 				try {
 
-					table.buffw.close();
-					table.buffw = null;
+					if (table.buffw != null)
+						table.buffw.close();
 
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+
+				table.pathw = null;
 
 			}
 
@@ -4717,6 +4696,9 @@ public class PgSchema {
 		if (!option.inplace_document_key)
 			throw new PgSchemaException("Not defined document key, or select either --doc-key or --doc-key-if-no-inplace option.");
 
+		if (table.fields.stream().anyMatch(field -> field.document_key))
+			return option.document_key_name;
+
 		if (!table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))) {
 
 			if (option.document_key_if_no_in_place)
@@ -4771,7 +4753,7 @@ public class PgSchema {
 		try {
 
 			if (has_db_rows == null)
-				resetHasDbRows(db_conn);
+				initHasDbRows(db_conn);
 
 			Statement stat = db_conn.createStatement();
 
@@ -4822,19 +4804,16 @@ public class PgSchema {
 	private HashMap<String, Boolean> has_db_rows = null;
 
 	/**
-	 * Reset whether PostgreSQL table has any rows.
+	 * Initialize whether PostgreSQL table has any rows.
 	 *
 	 * @param db_conn database connection
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void resetHasDbRows(Connection db_conn) throws PgSchemaException {
+	private void initHasDbRows(Connection db_conn) throws PgSchemaException {
 
 		try {
 
-			if (has_db_rows == null)
-				has_db_rows = new HashMap<String, Boolean>();
-			else
-				has_db_rows.clear();
+			has_db_rows = new HashMap<String, Boolean>();
 
 			Statement stat = db_conn.createStatement();
 

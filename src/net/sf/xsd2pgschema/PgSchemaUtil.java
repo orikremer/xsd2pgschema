@@ -491,7 +491,7 @@ public class PgSchemaUtil {
 
 					path = path.getParent();
 
-					if (Files.exists(path)) {
+					if (path != null && Files.exists(path)) {
 
 						if (Files.isDirectory(path)) {
 

@@ -20,6 +20,7 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 
 import javax.xml.transform.TransformerException;
@@ -317,6 +318,9 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 			sb.append(value + pg_delimiter);
 
 		}
+
+		if (table.buffw == null)
+			table.buffw = Files.newBufferedWriter(table.pathw);
 
 		table.buffw.write(sb.substring(0, sb.length() - 1) + "\n");
 

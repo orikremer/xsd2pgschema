@@ -20,6 +20,7 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 import java.io.BufferedWriter;
+import java.nio.file.Path;
 import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Optional;
@@ -133,6 +134,9 @@ public class PgTable {
 
 	/** The visited key (internal use only). */
 	protected String visited_key = "";
+
+	/** The current path of buffered writer (internal use only). */
+	protected Path pathw = null;
 
 	/** The current buffered writer (internal use only). */
 	protected BufferedWriter buffw = null;
