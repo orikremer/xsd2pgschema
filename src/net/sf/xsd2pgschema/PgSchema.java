@@ -3189,7 +3189,7 @@ public class PgSchema {
 					if (constraint_name.length() > PgSchemaUtil.max_enum_len)
 						constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 
-					System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + getPgChildNameOf(foreign_key) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " FOREIGN KEY ( " + PgSchemaUtil.avoidPgReservedWords(child_field_pnames[i]) + " ) REFERENCES " + getPgNameOf(getParentTable(foreign_key)) + " ( " + PgSchemaUtil.avoidPgReservedWords(parent_field_pnames[i]) + " ) ON DELETE CASCADE NOT VALID;\n");
+					System.out.println((option.retain_key ? "" : "--") + "ALTER TABLE " + getPgChildNameOf(foreign_key) + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " FOREIGN KEY ( " + PgSchemaUtil.avoidPgReservedWords(child_field_pnames[i]) + " ) REFERENCES " + getPgNameOf(getParentTable(foreign_key)) + " ( " + PgSchemaUtil.avoidPgReservedWords(parent_field_pnames[i]) + " ) ON DELETE CASCADE NOT VALID DEFERRABLE INITIALLY DEFERRED;\n");
 
 				}
 
@@ -4565,12 +4565,28 @@ public class PgSchema {
 
 		// parse root node and send to PostgreSQL
 
-		if (update) {
+		if (update || option.sync_rescue) {
 
 			deleteBeforeUpdate(db_conn, option.rel_data_ext && option.retain_key, document_id);
 
-			if (!option.rel_data_ext || !option.retain_key)
+			if (!option.rel_data_ext || !option.retain_key || option.sync_rescue)
 				update = false;
+
+			if (option.sync_rescue) {
+
+				try {
+
+					Statement stat = db_conn.createStatement();
+
+					stat.execute("SET CONSTRAINTS ALL DEFERRED");
+
+					stat.close();
+
+				} catch (SQLException e) {
+					throw new PgSchemaException(e);
+				}
+
+			}
 
 		}
 
@@ -4762,9 +4778,9 @@ public class PgSchema {
 
 			}
 
-			if (has_doc_id) {
+			if (has_doc_id || option.sync_rescue) {
 
-				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey || option.sync_rescue)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 					if (has_db_rows.get(table.pname)) {
 
@@ -4786,7 +4802,7 @@ public class PgSchema {
 
 			stat.close();
 
-			if (has_doc_id)
+			if (has_doc_id || option.sync_rescue)
 				db_conn.commit(); // transaction ends
 
 		} catch (SQLException e) {

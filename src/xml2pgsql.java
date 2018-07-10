@@ -239,6 +239,9 @@ public class xml2pgsql {
 				option.sync_weak = true;
 			}
 
+			else if (args[i].equals("--sync-rescue"))
+				option.sync_rescue = true;
+
 			else if (args[i].equals("--checksum-by") && i + 1 < args.length) {
 				if (!option.setCheckSumAlgorithm(args[++i]))
 					showUsage();
@@ -403,6 +406,7 @@ public class xml2pgsql {
 		System.err.println("        --update (insert if not exists, and update if required, default)");
 		System.err.println("        --sync CHECK_SUM_DIRECTORY (insert if not exists, update if required, and delete rows if XML not exists)");
 		System.err.println("        --sync-weak (insert if not exists, no update even if exists, no deletion)");
+		System.err.println("        --sync-rescue (diagnostic synchronization, set all constraints deferred)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");

@@ -136,6 +136,9 @@ public class PgSchemaOption {
 	/** Whether dry run synchronization (no update on existing check sum files). */
 	public boolean sync_dry_run = false;
 
+	/** Whether run diagnostic synchronization (set all constraints deferred). */
+	public boolean sync_rescue = false;
+
 	/** Whether in-place document key exists or not. */
 	public boolean inplace_document_key = false;
 
