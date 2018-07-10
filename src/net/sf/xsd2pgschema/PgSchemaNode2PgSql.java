@@ -451,9 +451,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else if (field.attribute || field.simple_content || field.element) {
 
-				if (setContent(proc_node, field, current_key, as_attr, true) && !content.isEmpty()) {
+				if (setContent(proc_node, field, current_key, as_attr, true)) {
 
-					if (writable) {
+					if (writable && !content.isEmpty()) {
 
 						field.writeValue2PgSql(ps, param_id, content);
 
@@ -473,11 +473,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			// any, any_attribute
 
-			else if ((field.any || field.any_attribute) && writable) {
+			else if (field.any || field.any_attribute) {
 
 				try {
 
-					if (setAnyContent(proc_node, field)) {
+					if (writable && setAnyContent(proc_node, field) && !content.isEmpty()) {
 
 						SQLXML xml_object = db_conn.createSQLXML();
 

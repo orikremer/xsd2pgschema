@@ -399,7 +399,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 					if (setAnyContent(proc_node, field)) {
 
-						values[f] = any_content.toString();
+						values[f] = any_content.toString().trim();
 						any_content.setLength(0);
 
 					}

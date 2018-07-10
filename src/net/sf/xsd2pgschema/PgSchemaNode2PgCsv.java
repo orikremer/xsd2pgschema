@@ -262,11 +262,11 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			// any, any_attribute
 
-			else if ((field.any || field.any_attribute) && writable) {
+			else if (field.any || field.any_attribute) {
 
 				try {
 
-					if (setAnyContent(proc_node, field) && !content.isEmpty())
+					if (writable && setAnyContent(proc_node, field) && !content.isEmpty())
 						values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
 
 				} catch (TransformerException | IOException | SAXException e) {

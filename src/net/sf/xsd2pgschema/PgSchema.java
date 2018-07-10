@@ -981,7 +981,7 @@ public class PgSchema {
 
 		}
 
-		// retrieve document key if in-place document key no exists
+		// retrieve document key if no in-place document key exists
 
 		if (!option.document_key && option.inplace_document_key && (option.rel_model_ext || option.document_key_if_no_in_place)) {
 
@@ -4567,7 +4567,7 @@ public class PgSchema {
 
 		if (update) {
 
-			deleteBeforeUpdate(db_conn, option.rel_data_ext && option.retain_key);
+			deleteBeforeUpdate(db_conn, option.rel_data_ext && option.retain_key, document_id);
 
 			if (!option.rel_data_ext || !option.retain_key)
 				update = false;
@@ -4723,19 +4723,13 @@ public class PgSchema {
 
 			set.forEach(id -> {
 
-				document_id = id;
-
 				try {
-
-					deleteBeforeUpdate(db_conn, false);
-
+					deleteBeforeUpdate(db_conn, false, id);
 				} catch (PgSchemaException e) {
 					e.printStackTrace();
 				}
 
 			});
-
-			document_id = null;
 
 		}
 
@@ -4746,9 +4740,10 @@ public class PgSchema {
 	 *
 	 * @param db_conn database connection
 	 * @param no_pkey whether delete relations not having primary key or non selective
+	 * @param document_id target document id
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void deleteBeforeUpdate(Connection db_conn, boolean no_pkey) throws PgSchemaException {
+	private void deleteBeforeUpdate(Connection db_conn, boolean no_pkey, String document_id) throws PgSchemaException {
 
 		try {
 

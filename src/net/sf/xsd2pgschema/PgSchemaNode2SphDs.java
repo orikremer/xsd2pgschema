@@ -181,11 +181,11 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 			// any, any_attribute
 
-			else if ((field.any || field.any_attribute) && required) {
+			else if (field.any || field.any_attribute) {
 
 				try {
 
-					if (setAnyContent(proc_node, field)) {
+					if (required && setAnyContent(proc_node, field)) {
 
 						values[f] = any_content.toString().trim();
 						any_content.setLength(0);
