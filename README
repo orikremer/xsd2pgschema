@@ -1,9 +1,10 @@
-﻿ Changes in xsd2pgschema 2.12.4 (release 2018-07-10)
+﻿ Changes in xsd2pgschema 2.12.4 (release 2018-07-11)
 
   Allowed in-place document key in case relational model extension was enabled.
   Fixed too many open files error in case of huge relations by optimizing file resource.
   Added DEFERRABLE INITIALLY DEFERRED to foreign key constraint in PostgreSQL DDL (to escape from duplicate key value violation by default).
   Added --sync-rescue option in xml2pgsql main class (to escape duplicate key value violation using previous DDL for backward compatibility).
+  Fixed too many open files error using regular expression to specify a large number of directory.
 
  Changes in xsd2pgschema 2.12.3 (release 2018-07-04)
 
