@@ -43,6 +43,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipInputStream;
 
@@ -509,13 +510,13 @@ public class PgSchemaUtil {
 
 							};
 
-							try {
+							try (Stream<Path> stream = Files.find(path, depth, matcher)) {
 
-								Files.find(path, depth, matcher).forEach(_path -> {
+								stream.forEach(_path -> {
 
 									if (Files.isDirectory(_path)) {
 
-										try {
+										try (Stream<Path> _stream = Files.list(_path)) {
 											queue.addAll(Files.list(_path).filter(__path -> Files.isReadable(__path) && filter.accept(null, __path.getFileName().toString())).collect(Collectors.toSet()));
 										} catch (IOException e) {
 											e.printStackTrace();
