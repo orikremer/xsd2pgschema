@@ -4551,6 +4551,9 @@ public class PgSchema {
 
 	// PostgreSQL data migration via prepared statement
 
+	/** Whether set all constraints deferred or not. */
+	private boolean pg_deferred = false;
+
 	/**
 	 * PostgreSQL data migration.
 	 *
@@ -4563,30 +4566,34 @@ public class PgSchema {
 
 		Node node = getRootNode(xml_parser);
 
+		boolean sync_rescue = option.sync_rescue;
+
+		if (sync_rescue && !pg_deferred) {
+
+			try {
+
+				Statement stat = db_conn.createStatement();
+
+				stat.execute("SET CONSTRAINTS ALL DEFERRED");
+
+				stat.close();
+
+			} catch (SQLException e) {
+				throw new PgSchemaException(e);
+			}
+
+			pg_deferred = true;
+
+		}
+
 		// parse root node and send to PostgreSQL
 
-		if (update || option.sync_rescue) {
+		if (update || sync_rescue) {
 
 			deleteBeforeUpdate(db_conn, option.rel_data_ext && option.retain_key, document_id);
 
-			if (!option.rel_data_ext || !option.retain_key || option.sync_rescue)
+			if (!option.rel_data_ext || !option.retain_key || sync_rescue)
 				update = false;
-
-			if (option.sync_rescue) {
-
-				try {
-
-					Statement stat = db_conn.createStatement();
-
-					stat.execute("SET CONSTRAINTS ALL DEFERRED");
-
-					stat.close();
-
-				} catch (SQLException e) {
-					throw new PgSchemaException(e);
-				}
-
-			}
 
 		}
 
@@ -4769,6 +4776,7 @@ public class PgSchema {
 			Statement stat = db_conn.createStatement();
 
 			boolean has_doc_id = false;
+			boolean sync_rescue = option.sync_rescue;
 
 			if (has_db_rows.get(doc_id_table.pname)) {
 
@@ -4778,9 +4786,9 @@ public class PgSchema {
 
 			}
 
-			if (has_doc_id || option.sync_rescue) {
+			if (has_doc_id || sync_rescue) {
 
-				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey || option.sync_rescue)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey || sync_rescue)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 					if (has_db_rows.get(table.pname)) {
 
@@ -4802,7 +4810,7 @@ public class PgSchema {
 
 			stat.close();
 
-			if (has_doc_id || option.sync_rescue)
+			if (has_doc_id || sync_rescue)
 				db_conn.commit(); // transaction ends
 
 		} catch (SQLException e) {

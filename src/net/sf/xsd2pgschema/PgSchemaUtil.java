@@ -517,7 +517,7 @@ public class PgSchemaUtil {
 									if (Files.isDirectory(_path)) {
 
 										try (Stream<Path> _stream = Files.list(_path)) {
-											queue.addAll(Files.list(_path).filter(__path -> Files.isReadable(__path) && filter.accept(null, __path.getFileName().toString())).collect(Collectors.toSet()));
+											queue.addAll(_stream.filter(__path -> Files.isReadable(__path) && filter.accept(null, __path.getFileName().toString())).collect(Collectors.toSet()));
 										} catch (IOException e) {
 											e.printStackTrace();
 										}
@@ -562,8 +562,8 @@ public class PgSchemaUtil {
 
 			else if (Files.isDirectory(file_path)) {
 
-				try {
-					queue.addAll(Files.list(file_path).filter(path -> Files.isReadable(path) && filter.accept(null, path.getFileName().toString())).collect(Collectors.toSet()));
+				try (Stream<Path> _stream = Files.list(file_path)) {
+					queue.addAll(_stream.filter(path -> Files.isReadable(path) && filter.accept(null, path.getFileName().toString())).collect(Collectors.toSet()));
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
