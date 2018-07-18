@@ -4493,33 +4493,50 @@ public class PgField {
 	 * Write value via PreparedStatement.
 	 *
 	 * @param ps prepared statement
-	 * @param par_idx parameter index id
+	 * @param par_idx parameter index
+	 * @param ins_idx parameter index for upsert
 	 * @param value content
 	 * @throws SQLException the SQL exception
 	 */
-	protected void writeValue2PgSql(PreparedStatement ps, int par_idx, String value) throws SQLException {
+	protected void writeValue2PgSql(PreparedStatement ps, int par_idx, int ins_idx, String value) throws SQLException {
+
+		boolean upsert = ins_idx != -1;
 
 		if (enum_name != null) {
 			ps.setString(par_idx, value);
+			if (upsert)
+				ps.setString(ins_idx, value);
 			return;
 		}
 
 		switch (xs_type) {
 		case xs_boolean:
-			ps.setBoolean(par_idx, Boolean.valueOf(value));
+			boolean boolean_value = Boolean.valueOf(value);
+			ps.setBoolean(par_idx, boolean_value);
+			if (upsert)
+				ps.setBoolean(ins_idx, boolean_value);
 			break;
 		case xs_hexBinary:
-			ps.setBytes(par_idx, DatatypeConverter.parseHexBinary(value));
+			byte[] hexbin_value = DatatypeConverter.parseHexBinary(value);
+			ps.setBytes(par_idx, hexbin_value);
+			if (upsert)
+				ps.setBytes(ins_idx, hexbin_value);
 			break;
 		case xs_base64Binary:
-			ps.setBytes(par_idx, DatatypeConverter.parseBase64Binary(value));
+			byte[] base64bin_value = DatatypeConverter.parseBase64Binary(value);
+			ps.setBytes(par_idx, base64bin_value);
+			if (upsert)
+				ps.setBytes(ins_idx, base64bin_value);
 			break;
 		case xs_bigserial:
 		case xs_long:
 		case xs_bigint:
 		case xs_unsignedLong:
 			try {
-				ps.setLong(par_idx, Long.valueOf(value));
+				long long_value = Long.valueOf(value);
+				ps.setLong(par_idx, long_value);
+				if (upsert)
+					ps.setLong(ins_idx, long_value);
 			} catch (NumberFormatException e) {
 				e.printStackTrace();
 			}
@@ -4532,56 +4549,94 @@ public class PgField {
 		case xs_nonNegativeInteger:
 		case xs_positiveInteger:
 		case xs_unsignedInt:
-			ps.setInt(par_idx, Integer.valueOf(value));
-			break;
-		case xs_float:
-			ps.setFloat(par_idx, Float.valueOf(value));
-			break;
-		case xs_double:
-			ps.setDouble(par_idx, Double.valueOf(value));
-			break;
-		case xs_decimal:
-			ps.setBigDecimal(par_idx, new BigDecimal(value));
-			break;
 		case xs_short:
 		case xs_byte:
 		case xs_unsignedShort:
-		case xs_unsignedByte:
-			ps.setInt(par_idx, Integer.valueOf(value));
+		case xs_unsignedByte:			
+			try {
+				int int_value = Integer.valueOf(value);
+				ps.setInt(par_idx, int_value);
+				if (upsert)
+					ps.setInt(ins_idx, int_value);
+			} catch (NumberFormatException e) {
+				e.printStackTrace();
+			}
+			break;
+		case xs_float:
+			try {
+				float float_value = Float.valueOf(value);
+				ps.setFloat(par_idx, float_value);
+				if (upsert)
+					ps.setFloat(ins_idx, float_value);
+			} catch (NumberFormatException e) {
+				e.printStackTrace();
+			}
+			break;
+		case xs_double:
+			try {
+				double double_value = Double.valueOf(value);
+				ps.setDouble(par_idx, double_value);
+				if (upsert)
+					ps.setDouble(ins_idx, double_value);
+			} catch (NumberFormatException e) {
+				e.printStackTrace();
+			}
+			break;
+		case xs_decimal:
+			try {
+				BigDecimal bigdec_value = new BigDecimal(value);
+				ps.setBigDecimal(par_idx, bigdec_value);
+				if (upsert)
+					ps.setBigDecimal(ins_idx, bigdec_value);
+			} catch (NumberFormatException e) {
+				e.printStackTrace();
+			}
 			break;
 		case xs_dateTime:
-			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required")))
-				ps.setTimestamp(par_idx, new java.sql.Timestamp(PgSchemaUtil.parseDate(value).getTime()));
-			else
-				ps.setTimestamp(par_idx, new java.sql.Timestamp(PgSchemaUtil.parseDate(value).getTime()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+			Timestamp timestamp = new java.sql.Timestamp(PgSchemaUtil.parseDate(value).getTime());
+			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) {
+				ps.setTimestamp(par_idx, timestamp);
+				if (upsert)
+					ps.setTimestamp(ins_idx, timestamp);
+			} else {
+				Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+				ps.setTimestamp(par_idx, timestamp, calendar);
+				if (upsert)
+					ps.setTimestamp(ins_idx, timestamp, calendar);
+			}
 			break;
 		case xs_time:
 			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) {
-
 				try {
-					ps.setTime(par_idx, java.sql.Time.valueOf(LocalTime.parse(value)));
+					Time time = java.sql.Time.valueOf(LocalTime.parse(value));
+					ps.setTime(par_idx, time);
+					if (upsert)
+						ps.setTime(ins_idx, time);
 				} catch (DateTimeParseException e) {
-
 					try {
-						ps.setTime(par_idx, java.sql.Time.valueOf(OffsetTime.parse(value).toLocalTime()));
+						Time time = java.sql.Time.valueOf(OffsetTime.parse(value).toLocalTime());
+						ps.setTime(par_idx, time);
+						if (upsert)
+							ps.setTime(ins_idx, time);
 					} catch (DateTimeParseException e2) {
 					}
 				}
-
-			}
-
-			else {
-
+			} else {
+				Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 				try {
-					ps.setTime(par_idx, java.sql.Time.valueOf(OffsetTime.parse(value).toLocalTime()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+					Time time = java.sql.Time.valueOf(OffsetTime.parse(value).toLocalTime());
+					ps.setTime(par_idx, time, calendar);
+					if (upsert)
+						ps.setTime(ins_idx, time, calendar);
 				} catch (DateTimeParseException e) {
-
+					Time time = java.sql.Time.valueOf(LocalTime.parse(value));
 					try {
-						ps.setTime(par_idx, java.sql.Time.valueOf(LocalTime.parse(value)), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
+						ps.setTime(par_idx, time, calendar);
+						if (upsert)
+							ps.setTime(ins_idx, time, calendar);
 					} catch (DateTimeParseException e2) {
 					}
 				}
-
 			}
 			break;
 		case xs_date:
@@ -4596,7 +4651,11 @@ public class PgField {
 			cal.set(Calendar.MILLISECOND, 0);
 			cal.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-			ps.setDate(par_idx, new java.sql.Date(cal.getTimeInMillis()));
+			Date date = new java.sql.Date(cal.getTimeInMillis());
+
+			ps.setDate(par_idx, date);
+			if (upsert)
+				ps.setDate(ins_idx, date);
 			break;
 		case xs_gMonthDay:
 		case xs_gMonth:
@@ -4620,6 +4679,8 @@ public class PgField {
 		case xs_IDREF:
 		case xs_ENTITY:
 			ps.setString(par_idx, value);
+			if (upsert)
+				ps.setString(ins_idx, value);
 			break;
 		default: // xs_any, xs_anyAttribute
 		}
@@ -4630,16 +4691,21 @@ public class PgField {
 	 * Write XML object via PreparedStatement.
 	 *
 	 * @param ps prepared statement
-	 * @param par_idx parameter index id
-	 * @param value content
+	 * @param par_idx parameter index
+	 * @param ins_idx parameter index for upsert
+	 * @param xml_object XML object
 	 * @throws SQLException the SQL exception
 	 */
-	protected void writeValue2PgSql(PreparedStatement ps, int par_idx, SQLXML value) throws SQLException {
+	protected void writeValue2PgSql(PreparedStatement ps, int par_idx, int ins_idx, SQLXML xml_object) throws SQLException {
+
+		boolean upsert = ins_idx != -1;
 
 		switch (xs_type) {
 		case xs_any:
 		case xs_anyAttribute:
-			ps.setSQLXML(par_idx, value);
+			ps.setSQLXML(par_idx, xml_object);
+			if (upsert)
+				ps.setSQLXML(ins_idx, xml_object);
 		default: // not xml
 		}
 
@@ -4682,6 +4748,10 @@ public class PgField {
 			case xs_nonNegativeInteger:
 			case xs_positiveInteger:
 			case xs_unsignedInt:
+			case xs_short:
+			case xs_byte:
+			case xs_unsignedShort:
+			case xs_unsignedByte:
 				lucene_doc.add(new IntPoint(name, Integer.valueOf(value)));
 				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
@@ -4694,14 +4764,6 @@ public class PgField {
 			case xs_double:
 			case xs_decimal:
 				lucene_doc.add(new DoublePoint(name, Double.valueOf(value)));
-				if (numeric_lucidx)
-					lucene_doc.add(new StringField(name, value, Field.Store.YES));
-				break;
-			case xs_short:
-			case xs_byte:
-			case xs_unsignedShort:
-			case xs_unsignedByte:
-				lucene_doc.add(new IntPoint(name, Integer.valueOf(value)));
 				if (numeric_lucidx)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 				break;

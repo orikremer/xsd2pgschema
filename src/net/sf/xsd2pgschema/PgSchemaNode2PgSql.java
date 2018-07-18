@@ -367,9 +367,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		if (nested_keys != null && nested_keys.size() > 0)
 			nested_keys.clear();
 
-		int param_id = 1;
+		int par_idx = 1;
 
-		int _param_id = param_size;
+		int ins_idx = upsert ? param_size : -1;
 
 		for (int f = 0; f < fields.size(); f++) {
 
@@ -381,11 +381,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				if (writable) {
 
-					field.writeValue2PgSql(ps, param_id, document_id);
-
-					if (upsert)
-						field.writeValue2PgSql(ps, _param_id, document_id);
-
+					field.writeValue2PgSql(ps, par_idx, ins_idx, document_id);
 					occupied[f] = true;
 
 				}
@@ -397,7 +393,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			else if (field.serial_key) {
 
 				if (writable)
-					writeSerKey(f, param_id, upsert ? _param_id : -1, ordinal);
+					writeSerKey(f, par_idx, ins_idx, ordinal);
 
 			}
 
@@ -406,7 +402,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			else if (field.xpath_key) {
 
 				if (writable)
-					writeHashKey(f, param_id, upsert ? _param_id : -1, current_key.substring(document_id_len));
+					writeHashKey(f, par_idx, ins_idx, current_key.substring(document_id_len));
 
 			}
 
@@ -415,7 +411,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			else if (field.primary_key) {
 
 				if (writable && rel_data_ext)
-					writeHashKey(f, param_id, upsert ? (param_size - 1) * 2 : -1, primary_key);
+					writeHashKey(f, par_idx, (param_size - 1) * 2, primary_key);
 
 			}
 
@@ -426,7 +422,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				if (parent_table.xname.equals(field.foreign_table_xname)) {
 
 					if (writable && rel_data_ext)
-						writeHashKey(f, param_id, upsert ? _param_id : -1, parent_key);
+						writeHashKey(f, par_idx, ins_idx, parent_key);
 
 				}
 
@@ -441,7 +437,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				if ((nested_key = setNestedKey(proc_node, field, current_key)) != null) {
 
 					if (writable && rel_data_ext)
-						writeHashKey(f, param_id, upsert ? _param_id : -1, nested_key);
+						writeHashKey(f, par_idx, ins_idx, nested_key);
 
 				}
 
@@ -455,11 +451,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					if (writable && !content.isEmpty()) {
 
-						field.writeValue2PgSql(ps, param_id, content);
-
-						if (upsert)
-							field.writeValue2PgSql(ps, _param_id, content);
-
+						field.writeValue2PgSql(ps, par_idx, ins_idx, content);
 						occupied[f] = true;
 
 					}
@@ -483,10 +475,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						xml_object.setString(content);
 
-						field.writeValue2PgSql(ps, param_id, xml_object);
-
-						if (upsert)
-							field.writeValue2PgSql(ps, _param_id, xml_object);
+						field.writeValue2PgSql(ps, par_idx, ins_idx, xml_object);
 
 						xml_object.free();
 
@@ -505,10 +494,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			if (!field.omissible) {
 
-				param_id++;
+				par_idx++;
 
 				if (upsert && !field.primary_key)
-					_param_id++;
+					ins_idx++;
 
 			}
 
@@ -535,7 +524,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		written = true;
 
-		int param_id = 1;
+		int par_idx = 1;
 
 		for (int f = 0; f < fields.size(); f++) {
 
@@ -545,15 +534,15 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				continue;
 
 			if (!occupied[f])
-				ps.setNull(param_id, field.getSqlDataType());
+				ps.setNull(par_idx, field.getSqlDataType());
 
-			param_id++;
+			par_idx++;
 
 		}
 
 		if (upsert) {
 
-			int _param_id = param_size;
+			int ins_idx = param_size;
 
 			for (int f = 0; f < fields.size(); f++) {
 
@@ -563,9 +552,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					continue;
 
 				if (!occupied[f])
-					ps.setNull(_param_id, field.getSqlDataType());
+					ps.setNull(ins_idx, field.getSqlDataType());
 
-				_param_id++;
+				ins_idx++;
 
 			}
 
@@ -579,36 +568,36 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * Write hash key via prepared statement.
 	 *
 	 * @param field_id field id
-	 * @param param_id parameter index
-	 * @param _param_id parameter index for upsert
+	 * @param par_idx parameter index
+	 * @param ins_idx parameter index for upsert
 	 * @param current_key current key
 	 * @throws SQLException the SQL exception
 	 */
-	private void writeHashKey(int field_id, int param_id, int _param_id, String current_key) throws SQLException {
+	private void writeHashKey(int field_id, int par_idx, int ins_idx, String current_key) throws SQLException {
 
 		switch (hash_size) {
 		case native_default:
 			byte[] bytes = schema.getHashKeyBytes(current_key);
-			ps.setBytes(param_id, bytes);
-			if (_param_id != -1)
-				ps.setBytes(_param_id, bytes);
+			ps.setBytes(par_idx, bytes);
+			if (upsert)
+				ps.setBytes(ins_idx, bytes);
 			break;
 		case unsigned_int_32:
 			int int_key = schema.getHashKeyInt(current_key);
-			ps.setInt(param_id, int_key);
-			if (_param_id != -1)
-				ps.setInt(_param_id, int_key);
+			ps.setInt(par_idx, int_key);
+			if (upsert)
+				ps.setInt(ins_idx, int_key);
 			break;
 		case unsigned_long_64:
 			long long_key = schema.getHashKeyLong(current_key);
-			ps.setLong(param_id, long_key);
-			if (_param_id != -1)
-				ps.setLong(_param_id, long_key);
+			ps.setLong(par_idx, long_key);
+			if (upsert)
+				ps.setLong(ins_idx, long_key);
 			break;
 		default:
-			ps.setString(param_id, current_key);
-			if (_param_id != -1)
-				ps.setString(_param_id, current_key);
+			ps.setString(par_idx, current_key);
+			if (upsert)
+				ps.setString(ins_idx, current_key);
 		}
 
 		occupied[field_id] = true;
@@ -619,23 +608,23 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * Write serial key via prepared statement.
 	 *
 	 * @param field_id field id
-	 * @param param_id parameter index
-	 * @param _param_id parameter index for upsert
+	 * @param par_idx parameter index
+	 * @param ins_idx parameter index for upsert
 	 * @param ordinal serial id
 	 * @throws SQLException the SQL exception
 	 */
-	private void writeSerKey(int field_id, int param_id, int _param_id, int ordinal) throws SQLException {
+	private void writeSerKey(int field_id, int par_idx, int ins_idx, int ordinal) throws SQLException {
 
 		if (def_ser_size) {
-			ps.setInt(param_id, ordinal);
-			if (_param_id != -1)
-				ps.setInt(_param_id,  ordinal);
+			ps.setInt(par_idx, ordinal);
+			if (upsert)
+				ps.setInt(ins_idx,  ordinal);
 		}
 
 		else {
-			ps.setShort(param_id, (short) ordinal);
-			if (_param_id != -1)
-				ps.setInt(_param_id,  ordinal);
+			ps.setShort(par_idx, (short) ordinal);
+			if (upsert)
+				ps.setInt(ins_idx,  ordinal);
 		}
 
 		occupied[field_id] = true;
