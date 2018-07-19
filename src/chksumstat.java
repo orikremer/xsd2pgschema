@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,13 +52,22 @@ public class chksumstat {
 	private static LinkedBlockingQueue<Path> xml_file_queue = null;
 
 	/** The set of new document id while synchronization. */
-	private static HashSet<String> sync_new_doc_rows = null;
+	protected static HashSet<String> sync_new_doc_rows = null;
 
 	/** The set of updating document id while synchronization. */
-	private static HashSet<String> sync_up_doc_rows = null;
+	protected static HashSet<String> sync_up_doc_rows = null;
 
 	/** The set of deleting document id while synchronization (key=document id, value=check sum file path). */
-	private static HashMap<String, Path> sync_del_doc_rows = null;
+	protected static HashMap<String, Path> sync_del_doc_rows = null;
+
+	/** The runtime. */
+	private static Runtime runtime = Runtime.getRuntime();
+
+	/** The available processors. */
+	private static final int cpu_num = runtime.availableProcessors();
+
+	/** The max threads. */
+	private static int max_thrds = cpu_num;
 
 	/**
 	 * The main method.
@@ -119,6 +127,15 @@ public class chksumstat {
 
 			else if (args[i].equals("--verbose"))
 				option.verbose = true;
+
+			else if (args[i].equals("--max-thrds") && i + 1 < args.length) {
+				max_thrds = Integer.valueOf(args[++i]);
+
+				if (max_thrds <= 0 || max_thrds > cpu_num * 2) {
+					System.err.println("Out of range (max-thrds).");
+					showUsage();
+				}
+			}
 
 			else if (touch_xml) {
 				String xml_file_name = args[i];
@@ -197,54 +214,60 @@ public class chksumstat {
 
 			});
 
-			MessageDigest md_chk_sum = MessageDigest.getInstance(option.check_sum_algorithm);
-
-			Path xml_file_path;
-
-			while ((xml_file_path = xml_file_queue.poll()) != null) {
-
-				XmlParser xml_parser = new XmlParser(xml_file_path, xml_file_filter);
-
-				String document_id = xml_parser.document_id;
-
-				if (sync_del_doc_rows.remove(document_id) != null) {
-
-					if (xml_parser.identify(option, md_chk_sum))
-						continue;
-
-					sync_up_doc_rows.add(document_id);
-
-				}
-
-				else {
-
-					if (!option.sync_dry_run)
-						xml_parser.identify(option, md_chk_sum);
-
-					sync_new_doc_rows.add(document_id);
-
-				}
-
-			}
-
-			if (!option.sync_dry_run && sync_del_doc_rows.size() > 0) {
-
-				sync_del_doc_rows.values().forEach(chk_sum_file_path -> {
-
-					try {
-						Files.deleteIfExists(chk_sum_file_path);
-					} catch (IOException e) {
-						e.printStackTrace();
-						System.exit(1);
-					}
-
-				});
-
-			}
-
-		} catch (NoSuchAlgorithmException | IOException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 			System.exit(1);
+		}
+
+		ChkSumStatThrd[] proc_thrd = new ChkSumStatThrd[max_thrds];
+		Thread[] thrd = new Thread[max_thrds];
+
+		for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
+
+			String thrd_name = "chksumstat-" + thrd_id;
+
+			try {
+
+				proc_thrd[thrd_id] = new ChkSumStatThrd(xml_file_filter, xml_file_queue, option);
+
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+
+			thrd[thrd_id] = new Thread(proc_thrd[thrd_id], thrd_name);
+
+			thrd[thrd_id].start();
+
+		}
+
+		for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
+
+			try {
+
+				if (thrd[thrd_id] != null)
+					thrd[thrd_id].join();
+
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+
+		}
+
+		if (!option.sync_dry_run && sync_del_doc_rows.size() > 0) {
+
+			sync_del_doc_rows.values().forEach(chk_sum_file_path -> {
+
+				try {
+					Files.deleteIfExists(chk_sum_file_path);
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+			});
+
 		}
 
 		System.out.println("# created docs: " + sync_new_doc_rows.size());
@@ -280,6 +303,7 @@ public class chksumstat {
 		System.err.println("        --xml-file-prerix-digest DIGESTIBLE_PREFIX (default=\"\")");
 		System.err.println("        --xml-file-ext-digest DIGESTIBLE_EXTENSION (default=\".\")");
 		System.err.println("        --update (update check sum files anyway)");
+		System.err.println("        --max-thrds MAX_THRDS (default is number of available processors)");
 		System.err.println("        --verbose");
 		System.exit(1);
 

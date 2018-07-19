@@ -5149,7 +5149,7 @@ public class PgField {
 				return ret.replaceFirst("Z$", "");
 			case xs_gYearMonth:
 				return ret.substring(0, ret.lastIndexOf('-'));
-			default:
+			default: // xs_gYear
 				return ret.substring(0, ret.indexOf('-'));
 			}
 		case xs_float:
@@ -5157,7 +5157,7 @@ public class PgField {
 			switch (xs_type) {
 			case xs_float:
 				return String.valueOf((float) obj); // rset.getFloat(par_idx));
-			default:
+			default: // xs_double
 				return String.valueOf((double) obj); // rset.getDouble(par_idx));
 			}
 		case xs_decimal:
