@@ -4819,6 +4819,151 @@ public class PgSchema {
 
 	}
 
+	/**
+	 * Create PostgreSQL index on document key if not exits.
+	 *
+	 * @param db_conn database connection
+	 * @param min_row_count minimum count of rows to create index
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void createDocKeyIndex(Connection db_conn, int min_row_count) throws PgSchemaException {
+
+		if (has_db_rows == null)
+			initHasDbRows(db_conn);
+
+		try {
+
+			Statement stat = db_conn.createStatement();
+
+			DatabaseMetaData meta = db_conn.getMetaData();
+
+			has_db_rows.entrySet().stream().filter(arg -> arg.getValue()).map(arg -> arg.getKey()).forEach(table_name -> {
+
+				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
+
+				try {
+
+					String doc_key_name = getDocKeyName(table);
+
+					ResultSet rset = meta.getIndexInfo(null, option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name, false, true);
+
+					boolean has_index = false;
+
+					while (rset.next()) {
+
+						String column_name = rset.getString("COLUMN_NAME");
+
+						if (column_name != null && column_name.contains(doc_key_name)) {
+
+							has_index = true;
+
+							break;
+						}
+
+					}
+
+					rset.close();
+
+					if (!has_index) {
+
+						String sql = "SELECT COUNT(id) FROM ( SELECT 1 as id FROM " + getPgNameOf(db_conn, table) + " LIMIT " + min_row_count + " ) as trunc";
+
+						rset = stat.executeQuery(sql);
+
+						while (rset.next()) {
+
+							if (rset.getInt(1) == min_row_count) {
+
+								sql = "CREATE INDEX IDX_" + table_name + "_" + doc_key_name + " ON " + getPgNameOf(db_conn, table) + " ( " + PgSchemaUtil.avoidPgReservedWords(doc_key_name) + " )";
+
+								stat.execute(sql);
+
+								System.out.println(sql);
+
+							}
+
+							break;
+						}
+
+						rset.close();
+
+					}
+
+				} catch (SQLException | PgSchemaException e) {
+					e.printStackTrace();
+				}
+
+			});
+
+			stat.close();
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
+	/**
+	 * Drop PostgreSQL index on document key if exits.
+	 *
+	 * @param db_conn database connection
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void dropDocKeyIndex(Connection db_conn) throws PgSchemaException {
+
+		if (has_db_rows == null)
+			initHasDbRows(db_conn);
+
+		try {
+
+			Statement stat = db_conn.createStatement();
+
+			DatabaseMetaData meta = db_conn.getMetaData();
+
+			has_db_rows.entrySet().stream().filter(arg -> arg.getValue()).map(arg -> arg.getKey()).forEach(table_name -> {
+
+				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
+
+				try {
+
+					String doc_key_name = getDocKeyName(table);
+
+					ResultSet rset = meta.getIndexInfo(null, option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name, false, true);
+
+					while (rset.next()) {
+
+						String index_name = rset.getString("INDEX_NAME");
+						String column_name = rset.getString("COLUMN_NAME");
+
+						if (index_name != null && index_name.equalsIgnoreCase("IDX_" + table_name + "_" + doc_key_name) && column_name != null && column_name.equals(doc_key_name)) {
+
+							String sql = "DROP INDEX " + PgSchemaUtil.avoidPgReservedWords(index_name);
+
+							stat.execute(sql);
+
+							System.out.println(sql);
+
+							break;
+						}
+
+					}
+
+					rset.close();
+
+				} catch (SQLException | PgSchemaException e) {
+					e.printStackTrace();
+				}
+
+			});
+
+			stat.close();
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
 	/** Whether PostgreSQL table (key) has any rows or not (value). */
 	private HashMap<String, Boolean> has_db_rows = null;
 

@@ -1,4 +1,12 @@
-﻿ Changes in xsd2pgschema 2.12.4 (release 2018-07-19)
+﻿ Changes in xsd2pgschema 2.12.5 (release 2018-07-20)
+
+  Added support for create/drop PostgreSQL index on document key (--create-doc-key-index, --no-create-doc-key-index (default), and --drop-doc-key-index options in xml2pgcsv, xml2pgtsv, and xml2pgsql main classes, respectively)
+  Added --min-rows-for-doc-key-index option to set minimum rows in a table for creation of PostgreSQL index on document key. (default=10000)
+  Enabled to use PostgreSQL index on document key by default in differential update (--sync and --sync-weak options).
+  Improved performance in differential update as a result.
+  To revert default setting, please use --no-create-doc-key-index option.
+
+ Changes in xsd2pgschema 2.12.4 (release 2018-07-19)
 
   Allowed in-place document key in case relational model extension was enabled.
   Fixed too many open files error in case of huge relations by optimizing file resource.

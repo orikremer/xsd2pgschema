@@ -44,6 +44,15 @@ public class PgOption {
 	/** Whether perform consistency test on PostgreSQL DDL. */
 	public boolean test = false;
 
+	/** Whether create PostgreSQL index on document key. */
+	public boolean create_doc_key_index = false;
+
+	/** Whether drop PostgreSQL index on document key. */
+	public boolean drop_doc_key_index = false;
+
+	/** The minimum rows for creation of PostgreSQL index on document key. */
+	public int min_rows_for_doc_key_index = PgSchemaUtil.pg_min_rows_for_doc_key_index;
+
 	/**
 	 * Return database URL for JDBC connection.
 	 *
@@ -69,6 +78,32 @@ public class PgOption {
 	public void clear() {
 
 		user = pass = null;
+
+	}
+
+	/**
+	 * Set minimum rows to create PostgreSQL index on document key.
+	 *
+	 * @param min_rows_for_doc_key_index argument value
+	 */
+	public void setMinRowsForDocKeyIndex(String min_rows_for_doc_key_index) {
+
+		if (min_rows_for_doc_key_index.endsWith("k"))
+			this.min_rows_for_doc_key_index = (int) (Float.valueOf(min_rows_for_doc_key_index.substring(0, min_rows_for_doc_key_index.indexOf('k'))) * 1000);
+
+		else if (min_rows_for_doc_key_index.endsWith("M"))
+			this.min_rows_for_doc_key_index = (int) (Float.valueOf(min_rows_for_doc_key_index.substring(0, min_rows_for_doc_key_index.indexOf('M'))) * 1000 * 1000);
+
+		else if (min_rows_for_doc_key_index.endsWith("G"))
+			this.min_rows_for_doc_key_index = (int) (Float.valueOf(min_rows_for_doc_key_index.substring(0, min_rows_for_doc_key_index.indexOf('G'))) * 1000 * 1000 * 1000);
+
+		else
+			this.min_rows_for_doc_key_index = Integer.valueOf(min_rows_for_doc_key_index);
+
+		if (this.min_rows_for_doc_key_index < PgSchemaUtil.pg_min_rows_for_doc_key_index) {
+			System.err.println("Minimum rows for creation of PostgreSQL index on document key is less than " + PgSchemaUtil.pg_min_rows_for_doc_key_index + ". Set to the default value.");
+			this.min_rows_for_doc_key_index = PgSchemaUtil.pg_min_rows_for_doc_key_index;
+		}
 
 	}
 

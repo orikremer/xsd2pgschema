@@ -164,6 +164,9 @@ public class PgSchemaUtil {
 	/** The PostgreSQL reserved operator codes. */
 	public static final String[] pg_reserved_ops = { "+", "-", "*", "/", "%", "^", "|/", "||/", "!", "!!", "@", "&", "|", "#", "~", "<<", ">>" };
 
+	/** The minimum rows for creation of PostgreSQL index on document key. */ 
+	public static final int pg_min_rows_for_doc_key_index = 10000;
+
 	/** The compiled pattern matches capital code. */
 	public static final Pattern cap_pattern = Pattern.compile(".*[A-Z].*", Pattern.MULTILINE);
 

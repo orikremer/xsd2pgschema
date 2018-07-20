@@ -45,7 +45,7 @@ public class ChkSumStatThrd implements Runnable {
 	private MessageDigest md_chk_sum;
 
 	/**
-	 * Instance of XmlValidatorThrd.
+	 * Instance of ChkSumStatThrd.
 	 *
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue

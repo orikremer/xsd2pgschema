@@ -60,6 +60,9 @@ public class Xml2PgCsvThrd implements Runnable {
 	/** The PostgreSQL data model option. */
 	private PgSchemaOption option;
 
+	/** The PostgreSQL option. */
+	private PgOption pg_option;
+
 	/** The database name. */
 	private String db_name = null;
 
@@ -130,6 +133,8 @@ public class Xml2PgCsvThrd implements Runnable {
 		// prepare XML validator
 
 		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFilePath(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
+
+		this.pg_option = pg_option;
 
 		if (!pg_option.name.isEmpty()) {
 
@@ -262,6 +267,23 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		else if (show_progress)
 			System.out.println("\nDone");
+
+		try {
+
+			if (show_progress) {
+
+				if (pg_option.create_doc_key_index)
+					schema.createDocKeyIndex(db_conn, pg_option.min_rows_for_doc_key_index);
+				else if (pg_option.drop_doc_key_index)
+					schema.dropDocKeyIndex(db_conn);
+
+			}
+
+			db_conn.close();
+
+		} catch (PgSchemaException | SQLException e) {
+			e.printStackTrace();
+		}
 
 	}
 

@@ -146,6 +146,22 @@ public class xml2pgcsv {
 			else if (args[i].equals("--test-ddl"))
 				pg_option.test = true;
 
+			else if (args[i].equals("--create-doc-key-index")) {
+				pg_option.create_doc_key_index = true;
+				pg_option.drop_doc_key_index = false;
+			}
+
+			else if (args[i].equals("--no-create-doc-key-index"))
+				pg_option.create_doc_key_index = false;
+
+			else if (args[i].equals("--drop-doc-key-index")) {
+				pg_option.drop_doc_key_index = true;
+				pg_option.create_doc_key_index = false;
+			}
+
+			else if (args[i].equals("--min-rows-for-doc-key-index") && i + 1 < args.length)
+				pg_option.setMinRowsForDocKeyIndex(args[++i]);
+
 			else if (args[i].equals("--fill-default-value"))
 				xml_post_editor.fill_default_value = true;
 
@@ -239,6 +255,7 @@ public class xml2pgcsv {
 			else if (args[i].equals("--sync") && i + 1 < args.length) {
 				option.sync = true;
 				check_sum_dir_name = args[++i];
+				pg_option.create_doc_key_index = true;
 			}
 
 			else if (args[i].equals("--checksum-by") && i + 1 < args.length) {
@@ -277,7 +294,7 @@ public class xml2pgcsv {
 
 		if (option.sync && !option.document_key && !option.inplace_document_key) {
 			System.out.println("Ignored --sync option because either document key or in-place document key was not defined.");
-			option.sync = false;
+			option.sync = pg_option.create_doc_key_index = false;
 		}
 
 		if (option.root_schema_location.isEmpty()) {
@@ -422,12 +439,16 @@ public class xml2pgcsv {
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
+		System.err.println("        --create-doc-key-index (create PostgreSQL index on document key if not exists)");
+		System.err.println("        --no-create-doc-key-index (do not create PostgreSQL index on document key, default)");
+		System.err.println("        --drop-doc-key-index (drop PostgreSQL index on document key if exists)");
+		System.err.println("        --min-rows-for-doc-key-index MIN_ROWS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_min_rows_for_doc_key_index + "\")");
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
 		System.err.println("        --pg-tab-delimiter (use tab separated file)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
-		System.err.println("        --sync CHECK_SUM_DIRECTORY (generate check sum files)");
+		System.err.println("        --sync CHECK_SUM_DIRECTORY (generate check sum files for differential update, select --create-doc-key-index option by default)");
 		System.err.println("        --checksum-by ALGORITHM [MD2 | MD5 (default) | SHA-1 | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");

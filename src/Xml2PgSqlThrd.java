@@ -58,6 +58,9 @@ public class Xml2PgSqlThrd implements Runnable {
 	/** The PostgreSQL data model option. */
 	private PgSchemaOption option;
 
+	/** The PostgreSQL option. */
+	private PgOption pg_option;
+
 	/** The database name. */
 	private String db_name;
 
@@ -127,6 +130,8 @@ public class Xml2PgSqlThrd implements Runnable {
 		// prepare XML validator
 
 		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFilePath(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
+
+		this.pg_option = pg_option;
 
 		db_conn = DriverManager.getConnection(pg_option.getDbUrl(PgSchemaUtil.def_encoding), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 
@@ -266,6 +271,25 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		else if (show_progress)
 			System.out.println("\nDone");
+
+		try {
+
+			if (show_progress && (pg_option.create_doc_key_index || pg_option.drop_doc_key_index)) {
+
+				db_conn.setAutoCommit(true);
+
+				if (pg_option.create_doc_key_index)
+					schema.createDocKeyIndex(db_conn, pg_option.min_rows_for_doc_key_index);
+				else
+					schema.dropDocKeyIndex(db_conn);
+
+			}
+
+			db_conn.close();
+
+		} catch (PgSchemaException | SQLException e) {
+			e.printStackTrace();
+		}
 
 	}
 

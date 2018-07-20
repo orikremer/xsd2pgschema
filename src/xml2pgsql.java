@@ -138,6 +138,22 @@ public class xml2pgsql {
 			else if (args[i].equals("--test-ddl"))
 				pg_option.test = true;
 
+			else if (args[i].equals("--create-doc-key-index")) {
+				pg_option.create_doc_key_index = true;
+				pg_option.drop_doc_key_index = false;
+			}
+
+			else if (args[i].equals("--no-create-doc-key-index"))
+				pg_option.create_doc_key_index = false;
+
+			else if (args[i].equals("--drop-doc-key-index")) {
+				pg_option.drop_doc_key_index = true;
+				pg_option.create_doc_key_index = false;
+			}
+
+			else if (args[i].equals("--min-rows-for-doc-key-index") && i + 1 < args.length)
+				pg_option.setMinRowsForDocKeyIndex(args[++i]);
+
 			else if (args[i].equals("--fill-default-value"))
 				xml_post_editor.fill_default_value = true;
 
@@ -232,11 +248,13 @@ public class xml2pgsql {
 				option.sync = true;
 				option.sync_weak = false;
 				check_sum_dir_name = args[++i];
+				pg_option.create_doc_key_index = true;
 			}
 
 			else if (args[i].equals("--sync-weak")) {
 				option.sync = false;
 				option.sync_weak = true;
+				pg_option.create_doc_key_index = true;
 			}
 
 			else if (args[i].equals("--sync-rescue"))
@@ -403,9 +421,13 @@ public class xml2pgsql {
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
+		System.err.println("        --create-doc-key-index (create PostgreSQL index on document key if not exists)");
+		System.err.println("        --no-create-doc-key-index (do not create PostgreSQL index on document key, default)");
+		System.err.println("        --drop-doc-key-index (drop PostgreSQL index on document key if exists)");
+		System.err.println("        --min-rows-for-doc-key-index MIN_ROWS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_min_rows_for_doc_key_index + "\")");
 		System.err.println("        --update (insert if not exists, and update if required, default)");
-		System.err.println("        --sync CHECK_SUM_DIRECTORY (insert if not exists, update if required, and delete rows if XML not exists)");
-		System.err.println("        --sync-weak (insert if not exists, no update even if exists, no deletion)");
+		System.err.println("        --sync CHECK_SUM_DIRECTORY (insert if not exists, update if required, and delete rows if XML not exists, select --create-doc-key-index option by default)");
+		System.err.println("        --sync-weak (insert if not exists, no update even if exists, no deletion, select --create-doc-key-index option by default)");
 		System.err.println("        --sync-rescue (diagnostic synchronization, set all constraints deferred)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
