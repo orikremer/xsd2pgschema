@@ -6,7 +6,6 @@ if [ ! `which psql` ] ; then
 
  echo "psql: command not found..."
  echo "Please install PostgreSQL (http://www.postgresql.org/)."
-
  exit 1
 
 fi
@@ -14,15 +13,7 @@ fi
 DB_NAME=uniprotkb
 DB_USER=$USER
 
-psql -U $DB_USER -l | grep $DB_NAME > /dev/null
-
-if [ $? != 0 ] ; then
-
- echo "database \"$DB_NAME\" does not exist."
-
- exit 1
-
-fi
+psql -U $DB_USER -l | grep $DB_NAME > /dev/null || ( echo "database \"$DB_NAME\" does not exist."; exit 1 )
 
 XML_DIR=uniprot_xml
 

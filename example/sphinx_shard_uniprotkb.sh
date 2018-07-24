@@ -6,7 +6,6 @@ if [ ! `which indexer` ] ; then
 
  echo "indexer: command not found..."
  echo "Please install Sphinx (http://sphinxsearch.com/)."
-
  exit 1
 
 fi

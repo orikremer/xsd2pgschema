@@ -9,14 +9,7 @@ WGET_LOG=wget.log
 
 XML_DIR=pmid
 
-wget -c -m http://$DB_FTP/$ZIP_FILE -o $WGET_LOG
-
-if [ $? != 0 ] ; then
-
- cat $WGET_LOG
- exit 1
-
-fi
+wget -c -m http://$DB_FTP/$ZIP_FILE -o $WGET_LOG || ( cat $WGET_LOG; exit 1 )
 
 grep 'not retrieving' $WGET_LOG > /dev/null
 
@@ -27,20 +20,15 @@ if [ $? = 0 ] && [ -d $XML_DIR ] ; then
 
 fi
 
-grep 'No such file' $WGET_LOG > /dev/null
-
-if [ $? = 0 ] ; then
-
-  cat $WGET_LOG
-  exit 1
-
-fi
+grep 'No such file' $WGET_LOG > /dev/null && ( cat $WGET_LOG; exit 1 )
 
 rm -rf $XML_DIR
 
 if [ ! -e $DB_FTP/$ZIP_FILE ] ; then
+
  echo Not found $DB_FTP/$ZIP_FILE
  exit 1
+
 fi
 
 unzip $DB_FTP/$ZIP_FILE -d $XML_DIR

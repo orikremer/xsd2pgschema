@@ -5,7 +5,6 @@ LUCENE_IDX_DIR=lucene_index
 if [ ! -d $LUCENE_IDX_DIR ] ; then
 
  echo $LUCENE_IDX_DIR is not directory.
-
  exit 1
 
 fi
