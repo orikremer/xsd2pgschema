@@ -289,7 +289,7 @@ public class xpath2xml {
 		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.def_xpath_key_name + "\")");
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME");
-		System.err.println("        --doc-key-if-no-inplace");
+		System.err.println("        --doc-key-if-no-inplace (append document key if no in-place docuemnt key, select --no-doc-key options by default)");
 		System.err.println("        --xml-no-declare (dismiss XML declaration)");
 		System.err.println("        --xml-no-xmlns (dismiss XML namespace declaration)");
 		System.err.println("        --xml-indent-offset INTEGER (default=" + xmlb.getIndentOffset() + ", min=0, max=4)");

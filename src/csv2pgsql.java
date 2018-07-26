@@ -242,7 +242,7 @@ public class csv2pgsql {
 		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.def_xpath_key_name + "\")");
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME");
-		System.err.println("        --doc-key-if-no-inplacend --no-doc-key options by default)");
+		System.err.println("        --doc-key-if-no-inplace (append document key if no in-place docuemnt key, select --no-doc-key options by default)");
 		System.exit(1);
 
 	}
