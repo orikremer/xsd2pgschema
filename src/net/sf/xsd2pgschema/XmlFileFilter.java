@@ -40,7 +40,7 @@ public class XmlFileFilter {
 	/** Whether case-sensitive document key. */
 	protected boolean case_sense_doc_key = true;
 
-	/** Whether lower-case document key or not. */
+	/** Whether lower-case document key. */
 	protected boolean lower_case_doc_key = true;
 
 	/** Whether ext_digest is resolved. */
@@ -50,7 +50,7 @@ public class XmlFileFilter {
 	 * Set extension of target file.
 	 *
 	 * @param ext argument value
-	 * @return boolean whether it is valid or not
+	 * @return boolean whether extension is valid
 	 */
 	public boolean setExt(String ext) {
 

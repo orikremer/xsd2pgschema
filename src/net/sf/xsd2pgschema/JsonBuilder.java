@@ -34,7 +34,7 @@ import org.apache.commons.text.StringEscapeUtils;
  *
  * @author yokochi
  */
-public class JsonBuilder {
+public class JsonBuilder extends CommonBuilder {
 
 	/** The JSON Schema version. */
 	public JsonSchemaVersion schema_ver;
@@ -60,32 +60,20 @@ public class JsonBuilder {
 	/** The indent offset between key and value. */
 	protected int key_value_offset = key_value_space.length();
 
-	/** The line feed code in JSON document. */
-	protected String line_feed_code;
-
-	/** Whether use line feed code or not. */
-	protected boolean line_feed;
-
-	/** Whether retain case sensitive name. */
+	/** Whether to retain case sensitive name. */
 	protected boolean case_sense;
 
 	/** Use JSON array uniformly for descendants. */
 	protected boolean array_all;
 
-	/** Whether retain field annotation or not. */
+	/** Whether to retain field annotation. */
 	private boolean no_field_anno;
-
-	/** Whether insert document key. */
-	protected boolean insert_doc_key;
 
 	/** The pending table header. */
 	protected LinkedList<JsonBuilderPendingHeader> pending_header = new LinkedList<JsonBuilderPendingHeader>();
 
 	/** The pending element. */
 	protected LinkedList<JsonBuilderPendingElem> pending_elem = new LinkedList<JsonBuilderPendingElem>();
-
-	/** The pending simple content. */
-	protected StringBuilder pending_simple_cont = new StringBuilder();
 
 	/**
 	 * Instance of JSON buffer.
@@ -141,9 +129,11 @@ public class JsonBuilder {
 	/**
 	 * Clear JSON buffer.
 	 *
-	 * @param clear_buffer whether clear JSON buffer
+	 * @param clear_buffer whether to clear JSON buffer
 	 */
 	public void clear(boolean clear_buffer) {
+
+		super.clear();
 
 		if (clear_buffer)
 			buffer.setLength(0);
@@ -151,7 +141,6 @@ public class JsonBuilder {
 		pending_header.clear();
 
 		pending_elem.clear();
-		pending_simple_cont.setLength(0);
 
 	}
 
@@ -202,7 +191,7 @@ public class JsonBuilder {
 	/**
 	 * Write a start object.
 	 *
-	 * @param root whether initialize JSON buffer or not
+	 * @param root whether to initialize JSON buffer
 	 */
 	public void writeStartDocument(boolean root) {
 
@@ -698,7 +687,7 @@ public class JsonBuilder {
 	 * Return escaped one-liner annotation.
 	 *
 	 * @param annotation annotation
-	 * @param is_table whether table annotation or not
+	 * @param is_table whether table annotation
 	 * @return String escaped one-liner annotation
 	 */
 	private String getOneLinerAnnotation(String annotation, boolean is_table) {
@@ -887,8 +876,8 @@ public class JsonBuilder {
 	 *
 	 * @param field current field
 	 * @param array_field whether field as JSON array
-	 * @param attr_only whether process attribute only
-	 * @param elem_only whether process element only
+	 * @param attr_only whether to process attribute only
+	 * @param elem_only whether to process element only
 	 * @param cur_path current path
 	 * @param fragments fragmented JSON content
 	 * @param item_paths list of item paths
@@ -1042,49 +1031,6 @@ public class JsonBuilder {
 			name = name.replace("@", attr_prefix);
 
 		return (case_sense ? name : name.toLowerCase());
-	}
-
-	/**
-	 * Return parent path.
-	 *
-	 * @param path current path
-	 * @return String parent path
-	 */
-	public String getParentPath(String path) {
-
-		StringBuilder sb = new StringBuilder();
-
-		String[] _path = path.split("/");
-
-		try {
-
-			for (int i = 1; i < _path.length - 1; i++)
-				sb.append("/" + _path[i]);
-
-			return sb.toString();
-
-		} finally {
-			sb.setLength(0);
-		}
-
-	}
-
-	/**
-	 * Return the last name of current path.
-	 *
-	 * @param path current path
-	 * @return String the last path name
-	 */
-	public String getLastNameOfPath(String path) {
-
-		String[] _path = path.split("/");
-
-		int position = _path.length - 1;
-
-		if (position < 0)
-			return null;
-
-		return _path[position];
 	}
 
 	/**
@@ -1260,7 +1206,7 @@ public class JsonBuilder {
 
 		buffer.append(pending_simple_cont.toString());
 
-		pending_simple_cont.setLength(0);
+		super.clear();
 
 	}
 

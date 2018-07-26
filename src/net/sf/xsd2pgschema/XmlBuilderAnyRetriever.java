@@ -19,22 +19,16 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.util.HashMap;
-
 import javax.xml.stream.XMLStreamException;
 
 import org.xml.sax.Attributes;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Retrieve any element into XML builder.
  *
  * @author yokochi
  */
-public class XmlBuilderAnyRetriever extends DefaultHandler {
-
-	/** The root node name. */
-	private String root_node_name;
+public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 
 	/** The target namespace. */
 	private String target_namespace;
@@ -48,23 +42,11 @@ public class XmlBuilderAnyRetriever extends DefaultHandler {
 	/** The XML builder. */
 	private XmlBuilder xmlb;
 
-	/** The simple content holder of any element. */
-	private HashMap<String, StringBuilder> simple_contents = new HashMap<String, StringBuilder>();
-
-	/** The current state for root node. */
-	private boolean root_node = false;
-
 	/** Whether this is first node. */
 	private boolean first_node = true;
 
 	/** The current indent space. */
 	private String current_indent_space;
-
-	/** The current path. */
-	private StringBuilder cur_path = new StringBuilder();
-
-	/** The offset value of current path. */
-	private int cur_path_offset;
 
 	/**
 	 * Instance of any retriever.
@@ -76,15 +58,14 @@ public class XmlBuilderAnyRetriever extends DefaultHandler {
 	 */
 	public XmlBuilderAnyRetriever(String root_node_name, PgField field, XmlBuilderNestTester nest_test, XmlBuilder xmlb) {
 
-		this.root_node_name = root_node_name;
+		super(root_node_name);
+
 		target_namespace = field.namespace;
 		prefix = field.prefix;
 		this.nest_test = nest_test;
 		this.xmlb = xmlb;
 
 		current_indent_space = nest_test.child_indent_space;
-
-		cur_path_offset = root_node_name.length() + 1;
 
 	}
 

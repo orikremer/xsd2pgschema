@@ -32,7 +32,7 @@ public class JsonBuilderOption {
 	/** The JSON type. */
 	public JsonType type = JsonType.defaultType();
 
-	/** Whether retain case sensitive name. */
+	/** Whether to retain case sensitive name. */
 	protected boolean case_sense = true;
 
 	/** The prefix of JSON item name of xs:attribute. */
@@ -50,13 +50,13 @@ public class JsonBuilderOption {
 	/** The current line feed code. */
 	protected String line_feed_code = "\n";
 
-	/** Whether use JSON array uniformly for descendants. */
+	/** Whether to use JSON array uniformly for descendants. */
 	public boolean array_all = false;
 
-	/** Whether retain field annotation or not. */
+	/** Whether to retain field annotation. */
 	public boolean no_field_anno = false;
 
-	/** Whether insert document key. */
+	/** Whether to insert document key. */
 	public boolean insert_doc_key = false;
 
 	/**
@@ -155,7 +155,7 @@ public class JsonBuilderOption {
 	/**
 	 * Set line feed code.
 	 *
-	 * @param line_feed whether use line feed code or not.
+	 * @param line_feed whether to use line feed code
 	 */
 	public void setLineFeed(boolean line_feed) {
 

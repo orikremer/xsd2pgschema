@@ -121,7 +121,7 @@ public class xpath2xml {
 				xmlb.setIndentOffset(args[++i]);
 
 			else if (args[i].equals("--xml-insert-doc-key"))
-				xmlb.insert_doc_key = true;
+				xmlb.setInsertDocKey(true);
 
 			else if (args[i].equals("--xml-no-linefeed"))
 				xmlb.setLineFeed(false);

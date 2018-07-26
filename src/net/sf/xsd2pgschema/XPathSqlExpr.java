@@ -304,9 +304,9 @@ public class XPathSqlExpr {
 	}
 
 	/**
-	 * Return whether relational expression is empty or not.
+	 * Return whether relational expression is empty.
 	 *
-	 * @return boolean whether the relational expression is empty or not
+	 * @return boolean whether relational expression is empty
 	 */
 	private boolean isEmptyRelation() {
 		return table == null || xname == null;
@@ -316,7 +316,7 @@ public class XPathSqlExpr {
 	 * Return equality of relational expression.
 	 *
 	 * @param sql_expr compared SQL expression
-	 * @return boolean whether the SQL expression matches or not
+	 * @return boolean whether SQL expression matches
 	 */
 	public boolean equalsRelationally(XPathSqlExpr sql_expr) {
 

@@ -58,7 +58,7 @@ public class SphDsDocIdCleaner {
 	/** The set of document id stored in data source. */
 	private HashSet<String> doc_set;
 
-	/** Whether this document unit is omitted or not. */
+	/** Whether this document unit is omitted. */
 	private boolean omit_doc_unit = false;
 
 	/** The absolute path of document unit. */
@@ -70,7 +70,7 @@ public class SphDsDocIdCleaner {
 	/** The element path of document key in case that document key is attribute. */
 	private String attr_doc_key_holder = null;
 
-	/** Whether document key is attribute or not (element). */
+	/** Whether document key is attribute or element (false). */
 	private boolean attr_doc_key;
 
 	/** The StAX read event handlers. */

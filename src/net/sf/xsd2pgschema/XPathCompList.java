@@ -76,7 +76,7 @@ public class XPathCompList {
 	/** XPath variable reference. */
 	private HashMap<String, String> variables = null;
 
-	/** Whether UnionExprNoRootContext node exists or not. */
+	/** Whether UnionExprNoRootContext node exists. */
 	private boolean union_expr = false;
 
 	/** Whether either document key or in-place document key exists in PostgreSQL DDL. */
@@ -205,7 +205,7 @@ public class XPathCompList {
 	 *
 	 * @param tree XPath parse tree
 	 * @param indent indent code for output
-	 * @return boolean whether valid or not
+	 * @return boolean whether XPath parse tree is effective
 	 */
 	private boolean testParserTree(ParseTree tree, String indent) {
 
@@ -234,7 +234,7 @@ public class XPathCompList {
 	/** The step counter. */
 	private int step_counter;
 
-	/** Whether wild card follows or not. */
+	/** Whether wild card follows. */
 	private boolean wild_card;
 
 	/**
@@ -620,7 +620,7 @@ public class XPathCompList {
 	/**
 	 * Validate XPath expression against XML Schema.
 	 *
-	 * @param ends_with_text whether append text node in the ends, if possible
+	 * @param ends_with_text whether to append text node in the ends, if possible
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void validate(boolean ends_with_text) throws PgSchemaException {
@@ -703,7 +703,7 @@ public class XPathCompList {
 	 * Test TerminalNodeImpl node.
 	 *
 	 * @param comp current XPath component
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testTerminalNodeImpl(XPathComp comp, boolean predicate) throws PgSchemaException {
@@ -787,7 +787,7 @@ public class XPathCompList {
 	 * Test AbbreviateStepContext node.
 	 *
 	 * @param comp current XPath component
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testAbbreviateStepContext(XPathComp comp, boolean predicate) throws PgSchemaException {
@@ -847,7 +847,7 @@ public class XPathCompList {
 	 *
 	 * @param comp current XPath component
 	 * @param comps array of XPath component of the same step
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNCNameContext(XPathComp comp, XPathComp[] comps, boolean predicate) throws PgSchemaException {
@@ -996,10 +996,10 @@ public class XPathCompList {
 	 *
 	 * @param comp current XPath component
 	 * @param abs_path whether absolute location path or abbreviate location path
-	 * @param inc_self whether include self node or not
-	 * @param wild_card whether wild card follows or not
+	 * @param inc_self whether to include self node
+	 * @param wild_card whether wild card follows
 	 * @param composite_text composite text including wild card
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNCNameContextWithChildAxis(XPathComp comp, boolean abs_path, boolean inc_self, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
@@ -1366,9 +1366,9 @@ public class XPathCompList {
 	 * Test NCNameContext node having attribute axis.
 	 *
 	 * @param comp current XPath component
-	 * @param wild_card whether wild card follows or not
+	 * @param wild_card whether wild card follows
 	 * @param composite_text composite text including wild card
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNCNameContextWithAttributeAxis(XPathComp comp, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
@@ -1670,9 +1670,9 @@ public class XPathCompList {
 	 * Test NCNameContext node having parent axis.
 	 *
 	 * @param comp current XPath component
-	 * @param wild_card whether wild card follows or not
+	 * @param wild_card whether wild card follows
 	 * @param composite_text composite text including wild card
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNCNameContextWithParentAxis(XPathComp comp, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
@@ -1694,10 +1694,10 @@ public class XPathCompList {
 	 * Test NCNameContext node having ancestor axis.
 	 *
 	 * @param comp current XPath component
-	 * @param inc_self whether include self node or not
-	 * @param wild_card whether wild card follows or not
+	 * @param inc_self whether to include self node
+	 * @param wild_card whether wild card follows
 	 * @param composite_text composite text including wild card
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNCNameContextWithAncestorAxis(XPathComp comp, boolean inc_self, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
@@ -1726,9 +1726,9 @@ public class XPathCompList {
 	 * Test NCNameContext node.
 	 *
 	 * @param comp current XPath component
-	 * @param wild_card whether wild card follows or not
+	 * @param wild_card whether wild card follows
 	 * @param composite_text composite text including wild card
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNCNameContext(XPathComp comp, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
@@ -1765,7 +1765,7 @@ public class XPathCompList {
 	 *
 	 * @param comp current XPath component
 	 * @param comps array of XPath component of the same step
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNodeTestContext(XPathComp comp, XPathComp[] comps, boolean predicate) throws PgSchemaException {
@@ -1860,8 +1860,8 @@ public class XPathCompList {
 	 *
 	 * @param comp current XPath component
 	 * @param abs_path whether absolute location path or abbreviate location path
-	 * @param inc_self whether include self node or not
-	 * @param predicate whether XPath component in predicate or not
+	 * @param inc_self whether to include self node
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNodeTestContextWithChildAxis(XPathComp comp, boolean abs_path, boolean inc_self, boolean predicate) throws PgSchemaException {
@@ -2223,7 +2223,7 @@ public class XPathCompList {
 	 * Test NodeTestContext node having attribute axis.
 	 *
 	 * @param comp current XPath component
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNodeTestContextWithAttributeAxis(XPathComp comp, boolean predicate) throws PgSchemaException {
@@ -2510,7 +2510,7 @@ public class XPathCompList {
 	 * Test NodeTestContext node having parent axis.
 	 *
 	 * @param comp current XPath component
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNodeTestContextWithParentAxis(XPathComp comp, boolean predicate) throws PgSchemaException {
@@ -2531,7 +2531,7 @@ public class XPathCompList {
 	 *
 	 * @param comp current XPath component
 	 * @param comps array of XPath component of the same step
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNameTestContext(XPathComp comp, XPathComp[] comps, boolean predicate) throws PgSchemaException {
@@ -2699,10 +2699,10 @@ public class XPathCompList {
 	 * @param namespace_uri namespace URI of current QName
 	 * @param local_part local part name of current QName
 	 * @param abs_path whether absolute location path or abbreviate location path
-	 * @param inc_self whether include self node or not
-	 * @param wild_card whether wild card follows or not
+	 * @param inc_self whether to include self node
+	 * @param wild_card whether wild card follows
 	 * @param composite_text composite text including wild card
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNameTestContextWithChildAxis(XPathComp comp, String namespace_uri, String local_part, boolean abs_path, boolean inc_self, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
@@ -3069,9 +3069,9 @@ public class XPathCompList {
 	 * @param comp current XPath component
 	 * @param namespace_uri namespace URI of current QName
 	 * @param local_part local part of current QName
-	 * @param wild_card whether wild card follows or not
+	 * @param wild_card whether wild card follows
 	 * @param composite_text composite text including wild card
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNameTestContextWithAttributeAxis(XPathComp comp, String namespace_uri, String local_part, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
@@ -3372,8 +3372,8 @@ public class XPathCompList {
 	 * Test NodeTestContext node having ancestor axis.
 	 *
 	 * @param comp current XPath component
-	 * @param inc_self whether include self node or not
-	 * @param predicate whether XPath component in predicate or not
+	 * @param inc_self whether to include self node
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNodeTestContextWithAncestorAxis(XPathComp comp, boolean inc_self, boolean predicate) throws PgSchemaException {
@@ -3411,9 +3411,9 @@ public class XPathCompList {
 	 * @param comp current XPath component
 	 * @param namespace_uri namespace URI of current QName
 	 * @param local_part local part of current QName
-	 * @param wild_card whether wild card follows or not
+	 * @param wild_card whether wild card follows
 	 * @param composite_text composite text including wild card
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNameTestContextWithParentAxis(XPathComp comp, String namespace_uri, String local_part, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
@@ -3437,10 +3437,10 @@ public class XPathCompList {
 	 * @param comp current XPath component
 	 * @param namespace_uri namespace URI of current QName
 	 * @param local_part local part of current QName
-	 * @param inc_self whether include self node or not
-	 * @param wild_card whether wild card follows or not
+	 * @param inc_self whether to include self node
+	 * @param wild_card whether wild card follows
 	 * @param composite_text composite text including wild card
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNameTestContextWithAncestorAxis(XPathComp comp, String namespace_uri, String local_part, boolean inc_self, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
@@ -3471,9 +3471,9 @@ public class XPathCompList {
 	 * @param comp current XPath component
 	 * @param namespace_uri namespace URI of current QName
 	 * @param local_part local part of current QName
-	 * @param wild_card whether wild card follows or not
+	 * @param wild_card whether wild card follows
 	 * @param composite_text composite text including wild card
-	 * @param predicate whether XPath component in predicate or not
+	 * @param predicate whether XPath component in predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void testNameTestContext(XPathComp comp, String namespace_uri, String local_part, boolean wild_card, String composite_text, boolean predicate) throws PgSchemaException {
@@ -4548,9 +4548,9 @@ public class XPathCompList {
 	 * @param path_expr current path
 	 * @param src_comp XPath component of source predicate
 	 * @param tree XPath parse tree
-	 * @param has_children whether parent has children or not
+	 * @param has_children whether parent has children
 	 * @param indent indent code for output
-	 * @return boolean whether valid predicate or not
+	 * @return boolean whether valid predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private boolean testPredicateTree(XPathComp src_comp, XPathExpr src_path_expr, ParseTree tree, boolean has_children, String indent) throws PgSchemaException {
@@ -5278,7 +5278,7 @@ public class XPathCompList {
 	 * @param tree current XPath parse tree
 	 * @param func_name function name
 	 * @param sql_predicates list of SQL expression of current node
-	 * @return boolean whether delegate to other function or not
+	 * @return boolean whether to delegate to other function
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private boolean testNodeSetFunctionCallContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree, String func_name, List<XPathSqlExpr> sql_predicates) throws PgSchemaException {
@@ -5538,7 +5538,7 @@ public class XPathCompList {
 	 * @param tree current XPath parse tree
 	 * @param func_name function name
 	 * @param sql_predicates list of SQL expression of current node
-	 * @return boolean whether delegate to other function or not
+	 * @return boolean whether to delegate to other function
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private boolean testStringFunctionCallContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree, String func_name, List<XPathSqlExpr> sql_predicates) throws PgSchemaException {
@@ -6110,7 +6110,7 @@ public class XPathCompList {
 	 * @param tree current XPath parse tree
 	 * @param func_name function name
 	 * @param sql_predicates list of SQL expression of current node
-	 * @return boolean whether delegate to other function or not
+	 * @return boolean whether to delegate to other function
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private boolean testBooleanFunctionCallContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree, String func_name, List<XPathSqlExpr> sql_predicates) throws PgSchemaException {
@@ -6180,7 +6180,7 @@ public class XPathCompList {
 	 * @param tree current XPath parse tree
 	 * @param func_name function name
 	 * @param sql_predicates list of SQL expression of current node
-	 * @return boolean whether delegate to other function or not
+	 * @return boolean whether to delegate to other function
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private boolean testNumberFunctionCallContext(XPathExpr src_path_expr, ParseTree parent, ParseTree tree, String func_name, List<XPathSqlExpr> sql_predicates) throws PgSchemaException {
@@ -6482,10 +6482,10 @@ public class XPathCompList {
 	 *
 	 * @param src_path_expr path expression of source predicate
 	 * @param tree current XPath parse tree
-	 * @param has_children whether parent has children or not
+	 * @param has_children whether parent has children
 	 * @param sb StringBuilder to store SQL expression
 	 * @param sb_list LinkedList<StringBuilder> for each function call context
-	 * @return boolean whether valid predicate or not
+	 * @return boolean whether valid predicate
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private boolean translatePredicateTree(XPathExpr src_path_expr, ParseTree tree, boolean has_children, StringBuilder sb, LinkedList<StringBuilder> sb_list) throws PgSchemaException {

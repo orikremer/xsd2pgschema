@@ -163,7 +163,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 	}
 
-	/** Whether if synchronizable or not. */
+	/** Whether synchronization is possible. */
 	private boolean synchronizable = false;
 
 	/* (non-Javadoc)

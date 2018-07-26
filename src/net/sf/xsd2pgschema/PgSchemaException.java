@@ -114,7 +114,7 @@ public class PgSchemaException extends Exception {
 	 * Instantiates a new pg schema exception.
 	 *
 	 * @param tree the parse tree
-	 * @param wild_card whether wild card follows or not
+	 * @param wild_card whether wild card follows
 	 * @param composite_text composite text including wild card
 	 * @param schema_location default schema location
 	 */
@@ -141,7 +141,7 @@ public class PgSchemaException extends Exception {
 	 * Instantiates a new pg schema exception.
 	 *
 	 * @param tree the parse tree
-	 * @param wild_card whether wild card follows or not
+	 * @param wild_card whether wild card follows
 	 * @param composite_text composite text including wild card
 	 * @param schema_location default schema location
 	 * @param prefix_ns_uri prefix of target namespace URI

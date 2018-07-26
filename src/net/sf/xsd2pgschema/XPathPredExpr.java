@@ -74,7 +74,7 @@ public class XPathPredExpr {
 	 * Return equality of predicate.
 	 *
 	 * @param predicate compared predicate expression
-	 * @return boolean whether the predicate expression matches or not
+	 * @return boolean whether the predicate expression matches
 	 */
 	public boolean equals(XPathPredExpr predicate) {
 

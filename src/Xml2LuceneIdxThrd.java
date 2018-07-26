@@ -242,13 +242,13 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 	}
 
-	/** Whether if synchronizable or not. */
+	/** Whether synchronization is possible. */
 	private boolean synchronizable = false;
 
-	/** Whether show progress or not. */
+	/** Whether to show progress. */
 	private boolean show_progress = false;
 
-	/** Whether need to commit or not. */
+	/** Whether to need to commit. */
 	private boolean changed = false;
 
 	/* (non-Javadoc)

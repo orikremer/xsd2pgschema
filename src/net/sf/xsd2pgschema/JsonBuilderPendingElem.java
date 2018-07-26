@@ -33,7 +33,7 @@ public class JsonBuilderPendingElem {
 	/** The table of element. */
 	protected PgTable table;
 
-	/** the current indent level. */
+	/** The current indent level. */
 	protected int indent_level;
 
 	/** The pending attribute. */

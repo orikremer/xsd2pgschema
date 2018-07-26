@@ -38,7 +38,7 @@ public class PgSchemaNestedKey {
 	/** The current key. */
 	protected String current_key;
 
-	/** the parent key. */
+	/** The parent key. */
 	protected String parent_key;
 
 	/** Whether child node is not nested node (indirect). */

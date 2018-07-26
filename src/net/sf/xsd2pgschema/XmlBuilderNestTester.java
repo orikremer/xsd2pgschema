@@ -24,7 +24,7 @@ package net.sf.xsd2pgschema;
  *
  * @author yokochi
  */
-public class XmlBuilderNestTester extends AbstractNestTester {
+public class XmlBuilderNestTester extends CommonBuilderNestTester {
 
 	/** The current indent space. */
 	protected String current_indent_space;

@@ -1223,7 +1223,7 @@ public class PgSchema {
 	 * Extract root element of XML Schema.
 	 *
 	 * @param node current node
-	 * @param root_element whether it is root element or not
+	 * @param root_element whether root element
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void extractRootElement(Node node, boolean root_element) throws PgSchemaException {
@@ -1371,8 +1371,8 @@ public class PgSchema {
 	 * Extract administrative element of XML Schema.
 	 *
 	 * @param node current node
-	 * @param complex_type whether it is complexType or not (simpleType)
-	 * @param annotation whether corrects annotation only
+	 * @param complex_type whether complexType
+	 * @param annotation whether to collect annotation only
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void extractAdminElement(Node node, boolean complex_type, boolean annotation) throws PgSchemaException {
@@ -1537,7 +1537,7 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param table current table
-	 * @param insert_complex_type whether this node has complex type parent node
+	 * @param insert_complex_type whether this node has parent node of complex type
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void extractField(Node node, PgTable table, boolean insert_complex_type) throws PgSchemaException {
@@ -1737,7 +1737,7 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param table current table
-	 * @param has_complex_type_parent whether this node has complex type parent node
+	 * @param has_complex_type_parent whether this node has parent node of complex type
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void extractElement(Node node, PgTable table, boolean has_complex_type_parent) throws PgSchemaException {
@@ -1751,8 +1751,8 @@ public class PgSchema {
 	 *
 	 * @param node current node
 	 * @param table current table
-	 * @param attribute whether it is attribute or not (element)
-	 * @param insert_complex_type whether this node has complex type parent node
+	 * @param attribute whether attribute or element (false)
+	 * @param insert_complex_type whether this node has parent node of complex type
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void extractInfoItem(Node node, PgTable table, boolean attribute, boolean insert_complex_type) throws PgSchemaException {
@@ -3203,7 +3203,7 @@ public class PgSchema {
 	 * Realize PostgreSQL DDL of administrative table.
 	 *
 	 * @param table current table
-	 * @param output whether outputs PostgreSQL DDL via standard output
+	 * @param output whether to output PostgreSQL DDL via standard output
 	 */
 	private void realizeAdmin(PgTable table, boolean output) {
 
@@ -3252,7 +3252,7 @@ public class PgSchema {
 	 * Realize PostgreSQL DDL of arbitrary table.
 	 *
 	 * @param table current table
-	 * @param output whether outputs PostgreSQL DDL via standard output
+	 * @param output whether to output PostgreSQL DDL via standard output
 	 */
 	private void realize(PgTable table, boolean output) {
 
@@ -4177,12 +4177,7 @@ public class PgSchema {
 
 		}
 
-		tables.parallelStream().forEach(_table -> {
-
-			if (!_table.fields.stream().anyMatch(_field -> !_field.system_key && !_field.user_key && (_field.attr_sel || _field.field_sel)))
-				_table.required = _table.writable = false;
-
-		});
+		tables.parallelStream().filter(_table -> !_table.fields.stream().anyMatch(_field -> !_field.system_key && !_field.user_key && (_field.attr_sel || _field.field_sel))).forEach(_table -> _table.required = _table.writable = false);
 
 	}
 
@@ -4356,7 +4351,7 @@ public class PgSchema {
 	/**
 	 * Close prepared statement.
 	 *
-	 * @param primary whether close the primary prepared statement only
+	 * @param primary whether to close the primary prepared statement only
 	 */
 	private void closePreparedStatement(boolean primary) {
 
@@ -4417,7 +4412,7 @@ public class PgSchema {
 
 			}
 
-			else
+			else if (table.pathw != null)
 				table.pathw = null;
 
 		});
@@ -4437,22 +4432,18 @@ public class PgSchema {
 	 */
 	public void closeXml2PgCsv() {
 
-		tables.parallelStream().forEach(table -> {
+		tables.parallelStream().filter(table -> table.pathw != null).forEach(table -> {
 
-			if (table.pathw != null) {
+			try {
 
-				try {
+				if (table.buffw != null)
+					table.buffw.close();
 
-					if (table.buffw != null)
-						table.buffw.close();
-
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
-				table.pathw = null;
-
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
+
+			table.pathw = null;
 
 		});
 
@@ -4551,14 +4542,14 @@ public class PgSchema {
 
 	// PostgreSQL data migration via prepared statement
 
-	/** Whether set all constraints deferred or not. */
+	/** Whether to set all constraints deferred. */
 	private boolean pg_deferred = false;
 
 	/**
 	 * PostgreSQL data migration.
 	 *
 	 * @param xml_parser XML document
-	 * @param update whether update or insert
+	 * @param update whether update or insertion
 	 * @param db_conn database connection
 	 * @throws PgSchemaException the pg schema exception
 	 */
@@ -4626,7 +4617,7 @@ public class PgSchema {
 	 * @param parent_node parent node
 	 * @param parent_table parent table
 	 * @param nested_key nested key
-	 * @param update whether update or insert
+	 * @param update whether update or insertion
 	 * @param db_conn database connection
 	 * @throws PgSchemaException the pg schema exception
 	 */
@@ -4762,7 +4753,7 @@ public class PgSchema {
 	 * Execute PostgreSQL DELETE command before INSERT for all tables of current document.
 	 *
 	 * @param db_conn database connection
-	 * @param no_pkey whether delete relations not having primary key or non selective
+	 * @param no_pkey delete whether relations not having primary key or uniformly (false)
 	 * @param document_id target document id
 	 * @throws PgSchemaException the pg schema exception
 	 */
@@ -4964,7 +4955,7 @@ public class PgSchema {
 
 	}
 
-	/** Whether PostgreSQL table (key) has any rows or not (value). */
+	/** Whether PostgreSQL table has any rows. */
 	private HashMap<String, Boolean> has_db_rows = null;
 
 	/**
@@ -5074,7 +5065,7 @@ public class PgSchema {
 	 * Perform consistency test on PostgreSQL DDL.
 	 *
 	 * @param db_conn database connection
-	 * @param strict whether perform strict consistency test
+	 * @param strict whether to perform strict consistency test
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void testPgSql(Connection db_conn, boolean strict) throws PgSchemaException {
@@ -5333,7 +5324,7 @@ public class PgSchema {
 	 * Write Sphinx schema part.
 	 *
 	 * @param sphinx_schema_path Sphinx xmlpipe2 file
-	 * @param data_source whether it is data source or schema
+	 * @param data_source whether data source or schema (false)
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void writeSphSchema(Path sphinx_schema_path, boolean data_source) throws PgSchemaException {
@@ -6038,7 +6029,7 @@ public class PgSchema {
 
 		jsonb.writeStartDocument(true);
 
-		// parse root node and write to JSON file
+		// parse root node and store to JSON buffer
 
 		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
 
@@ -6220,7 +6211,7 @@ public class PgSchema {
 
 		jsonb.writeStartDocument(true);
 
-		// parse root node and write to JSON file
+		// parse root node and store to JSON buffer
 
 		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
 

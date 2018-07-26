@@ -1620,7 +1620,7 @@ public class PgField {
 	 * @param option PostgreSQL data model option
 	 * @param node_name node name
 	 * @param as_attr whether evaluate this node as attribute
-	 * @param wild_card whether wild card follows or not
+	 * @param wild_card whether wild card follows
 	 * @return boolean whether node name matches
 	 */
 	public boolean matchesNodeName(PgSchemaOption option, String node_name, boolean as_attr, boolean wild_card) {
@@ -4930,7 +4930,7 @@ public class PgField {
 	 *
 	 * @param schema_ver JSON schema version
 	 * @param value content
-	 * @param fragment whether write fragment JSON at XPath query evaluation
+	 * @param fragment whether to write fragment JSON at XPath query evaluation
 	 * @param json_key_value_space the JSON key value space
 	 * @return boolean whether value is successfully set
 	 */
@@ -5063,7 +5063,7 @@ public class PgField {
 	 *
 	 * @param rset result set
 	 * @param par_idx parameter index id
-	 * @param fill_default_value whether fill default value in case of empty
+	 * @param fill_default_value whether to fill default value in case of empty
 	 * @return String retrieved value
 	 * @throws SQLException the SQL exception
 	 */

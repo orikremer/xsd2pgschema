@@ -20,11 +20,11 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * Abstract pending attribute.
+ * Common pending attribute.
  *
  * @author yokochi
  */
-public abstract class AbstractPendingAttr {
+public abstract class CommonPendingAttr {
 
 	/** The field (attribute). */
 	protected PgField field;
@@ -47,7 +47,7 @@ public abstract class AbstractPendingAttr {
 	 * @param field current field
 	 * @param content content
 	 */
-	public AbstractPendingAttr(PgField field, String content) {
+	public CommonPendingAttr(PgField field, String content) {
 
 		this.field = field;
 		this.content = content != null ? content : "";
@@ -61,7 +61,7 @@ public abstract class AbstractPendingAttr {
 	 * @param foreign_table foregin table
 	 * @param content content
 	 */
-	public AbstractPendingAttr(PgField field, PgTable foreign_table, String content) {
+	public CommonPendingAttr(PgField field, PgTable foreign_table, String content) {
 
 		this.field = field;
 		this.foreign_table = foreign_table;
@@ -76,7 +76,7 @@ public abstract class AbstractPendingAttr {
 	 * @param local_name local name
 	 * @param content content
 	 */
-	public AbstractPendingAttr(PgField any_field, String local_name, String content) {
+	public CommonPendingAttr(PgField any_field, String local_name, String content) {
 
 		field = null;
 

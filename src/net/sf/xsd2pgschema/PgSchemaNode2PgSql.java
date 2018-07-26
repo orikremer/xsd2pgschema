@@ -44,13 +44,13 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/** Whether table could have writer. */
 	private boolean writable;
 
-	/** Whether field is occupied or not. */
+	/** Whether field is occupied. */
 	private boolean[] occupied;
 
-	/** Whether update or insert. */
+	/** Whether to update. */
 	private boolean update;
 
-	/** Whether upsert or insert. */
+	/** Whether to upsert. */
 	private boolean upsert = false;
 
 	/** Whether any content was written. */
@@ -65,7 +65,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/** The size of hash key. */
 	private PgHashSize hash_size;
 
-	/** Whether use default serial key size (unsigned int 32 bit). */
+	/** Whether default serial key size (unsigned int 32 bit). */
 	private boolean def_ser_size;
 
 	/**
@@ -74,7 +74,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @param schema PostgreSQL data model
 	 * @param parent_table parent table
 	 * @param table current table
-	 * @param update whether update or insert
+	 * @param update whether update or insertion
 	 * @param db_conn database connection
 	 * @throws PgSchemaException the pg schema exception
 	 */

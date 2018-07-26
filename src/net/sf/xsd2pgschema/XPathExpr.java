@@ -91,7 +91,7 @@ public class XPathExpr {
 	 * Return equality of path expression.
 	 *
 	 * @param path_expr compared path expression
-	 * @return boolean whether the path expression matches or not
+	 * @return boolean whether the path expression matches
 	 */
 	public boolean equals(XPathExpr path_expr) {
 		return path.equals(path_expr.path) && terminus.equals(path_expr.terminus);

@@ -50,7 +50,7 @@ public class XmlValidator {
 	 * Instance of XML validator.
 	 *
 	 * @param xsd_file_path XML Schema file path
-	 * @param full_check whether enable canonical XML Schema validation or not (validate well-formed only)
+	 * @param full_check whether to enable canonical XML Schema validation or validate well-formed only (false)
 	 */
 	public XmlValidator(Path xsd_file_path, boolean full_check) {
 

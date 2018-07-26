@@ -23,20 +23,16 @@ import java.util.HashMap;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.xml.sax.Attributes;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Retrieve any element into JSON builder.
  *
  * @author yokochi
  */
-public class JsonBuilderAnyRetriever extends DefaultHandler {
-
-	/** The root node name. */
-	private String root_node_name;
+public class JsonBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 
 	/** The current field. */
-	private PgField field;
+	protected PgField field;
 
 	/** The nest tester. */
 	private JsonBuilderNestTester nest_test;
@@ -47,20 +43,8 @@ public class JsonBuilderAnyRetriever extends DefaultHandler {
 	/** The JSON builder. */
 	private JsonBuilder jsonb;
 
-	/** The simple content holder of any element. */
-	private HashMap<String, StringBuilder> simple_contents = new HashMap<String, StringBuilder>();
-
-	/** The current state for root node. */
-	private boolean root_node = false;
-
 	/** The current indent level. */
 	private int current_indent_level;
-
-	/** The current path. */
-	private StringBuilder cur_path = new StringBuilder();
-
-	/** The offset value of current path. */
-	private int cur_path_offset;
 
 	/** The common content holder (relational-oriented JSON). */
 	private StringBuilder any_content = null;
@@ -79,15 +63,14 @@ public class JsonBuilderAnyRetriever extends DefaultHandler {
 	 */
 	public JsonBuilderAnyRetriever(String root_node_name, PgField field, JsonBuilderNestTester nest_test, boolean array_field, JsonBuilder jsonb) {
 
-		this.root_node_name = root_node_name;
+		super(root_node_name);
+
 		this.field = field;
 		this.nest_test = nest_test;
 		this.array_field = array_field;
 		this.jsonb = jsonb;
 
 		current_indent_level = nest_test.current_indent_level;
-
-		cur_path_offset = root_node_name.length() + 1;
 
 		if (array_field)
 			any_content = new StringBuilder();

@@ -24,7 +24,7 @@ package net.sf.xsd2pgschema;
  *
  * @author yokochi
  */
-public class JsonBuilderPendingAttr extends AbstractPendingAttr {
+public class JsonBuilderPendingAttr extends CommonPendingAttr {
 
 	/** The current indent level. */
 	protected int indent_level;

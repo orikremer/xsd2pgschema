@@ -24,7 +24,7 @@ package net.sf.xsd2pgschema;
  *
  * @author yokochi
  */
-public class JsonBuilderNestTester extends AbstractNestTester {
+public class JsonBuilderNestTester extends CommonBuilderNestTester {
 
 	/** The current indent level. */
 	protected int current_indent_level;

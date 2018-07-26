@@ -41,13 +41,13 @@ public class PgOption {
 	/** The database password. */
 	public String pass = "";
 
-	/** Whether perform consistency test on PostgreSQL DDL. */
+	/** Whether to perform consistency test on PostgreSQL DDL. */
 	public boolean test = false;
 
-	/** Whether create PostgreSQL index on document key. */
+	/** Whether to create PostgreSQL index on document key. */
 	public boolean create_doc_key_index = false;
 
-	/** Whether drop PostgreSQL index on document key. */
+	/** Whether to drop PostgreSQL index on document key. */
 	public boolean drop_doc_key_index = false;
 
 	/** The minimum rows for creation of PostgreSQL index on document key. */

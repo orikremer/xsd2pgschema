@@ -189,7 +189,7 @@ public class PgForeignKey {
 	 * Return equality of foreign key.
 	 *
 	 * @param foreign_key compared foreign key
-	 * @return boolean whether the foreign key matches or not
+	 * @return boolean whether foreign key matches
 	 */
 	public boolean equals(PgForeignKey foreign_key) {
 		return pg_schema_name.equals(foreign_key.pg_schema_name) &&

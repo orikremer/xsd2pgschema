@@ -284,7 +284,7 @@ public abstract class PgSchemaNodeParser {
 	 * @param current_key current key
 	 * @param as_attr whether nested key as attribute
 	 * @param pg_enum_limit whether PostgreSQL enumeration length limit is applied
-	 * @return boolean whether content has value
+	 * @return boolean whether content is valid
 	 */
 	public boolean setContent(final Node node, final PgField field, final String current_key, final boolean as_attr, final boolean pg_enum_limit) {
 
@@ -440,7 +440,7 @@ public abstract class PgSchemaNodeParser {
 	 *
 	 * @param field current field
 	 * @param pg_enum_limit whether PostgreSQL enumeration length limit is applied
-	 * @return boolean whether content passes filter
+	 * @return boolean whether content is valid
 	 */
 	private boolean applyContentFilter(final PgField field, boolean pg_enum_limit) {
 

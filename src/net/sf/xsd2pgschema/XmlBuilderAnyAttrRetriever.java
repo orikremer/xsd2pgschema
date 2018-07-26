@@ -20,29 +20,19 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 import org.xml.sax.Attributes;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Retrieve any attribute into XML builder
  *
  * @author yokochi
  */
-public class XmlBuilderAnyAttrRetriever extends DefaultHandler {
-
-	/** The root node name. */
-	private String root_node_name;
-
-	/** The current field. */
-	private PgField field;
+public class XmlBuilderAnyAttrRetriever extends CommonBuilderAnyAttrRetriever {
 
 	/** The nest tester. */
 	private XmlBuilderNestTester nest_test;
 
 	/** The XML builder. */
 	private XmlBuilder xmlb;
-
-	/** The current state for root node. */
-	private boolean root_node = false;
 
 	/**
 	 * Instance of any attribute retriever.
@@ -54,8 +44,8 @@ public class XmlBuilderAnyAttrRetriever extends DefaultHandler {
 	 */
 	public XmlBuilderAnyAttrRetriever(String root_node_name, PgField field, XmlBuilderNestTester nest_test, XmlBuilder xmlb) {
 
-		this.root_node_name = root_node_name;
-		this.field = field;
+		super(root_node_name, field);
+
 		this.nest_test = nest_test;
 		this.xmlb = xmlb;
 

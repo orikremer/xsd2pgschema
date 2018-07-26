@@ -28,7 +28,7 @@ import javax.xml.stream.XMLStreamException;
  *
  * @author yokochi
  */
-public class XmlBuilderPendingAttr extends AbstractPendingAttr {
+public class XmlBuilderPendingAttr extends CommonPendingAttr {
 
 	/**
 	 * Instance of pending attribute.

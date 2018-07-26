@@ -48,7 +48,7 @@ public class XmlBuilderPendingElem {
 	 *
 	 * @param table current table
 	 * @param header header string
-	 * @param attr_only whether element has attribute only.
+	 * @param attr_only whether element has attribute only
 	 */
 	public XmlBuilderPendingElem(PgTable table, String header, boolean attr_only) {
 

@@ -40,7 +40,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	/** The JSON builder. */
 	protected JsonBuilder jsonb;
 
-	/** the JSON type. */
+	/** The JSON type. */
 	protected JsonType type;
 
 	/** The JSON Schema version. */

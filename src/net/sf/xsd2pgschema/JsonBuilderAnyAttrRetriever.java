@@ -21,20 +21,13 @@ package net.sf.xsd2pgschema;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.xml.sax.Attributes;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Retrieve any attribute into JSON builder.
  *
  * @author yokochi
  */
-public class JsonBuilderAnyAttrRetriever extends DefaultHandler {
-
-	/** The root node name. */
-	private String root_node_name;
-
-	/** The current field. */
-	private PgField field;
+public class JsonBuilderAnyAttrRetriever extends CommonBuilderAnyAttrRetriever {
 
 	/** The nest tester. */
 	private JsonBuilderNestTester nest_test;
@@ -44,9 +37,6 @@ public class JsonBuilderAnyAttrRetriever extends DefaultHandler {
 
 	/** The JSON builder. */
 	private JsonBuilder jsonb;
-
-	/** The current state for root node. */
-	private boolean root_node = false;
 
 	/** The common content holder. */
 	private StringBuilder any_content = null;
@@ -62,8 +52,8 @@ public class JsonBuilderAnyAttrRetriever extends DefaultHandler {
 	 */
 	public JsonBuilderAnyAttrRetriever(String root_node_name, PgField field, JsonBuilderNestTester nest_test, boolean array_field, JsonBuilder jsonb) {
 
-		this.root_node_name = root_node_name;
-		this.field = field;
+		super(root_node_name, field);
+
 		this.nest_test = nest_test;
 		this.array_field = array_field;
 		this.jsonb = jsonb;

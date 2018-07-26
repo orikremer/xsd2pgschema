@@ -42,7 +42,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	/** Whether table could have writer. */
 	private boolean writable;
 
-	/** Whether use TSV format in PostgreSQL data migration. */
+	/** Whether to use TSV format in PostgreSQL data migration. */
 	private boolean pg_tab_delimiter;
 
 	/** The current delimiter code. */
@@ -51,7 +51,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	/** The current null code. */
 	private String pg_null;
 
-	/** Whether use default serial key size (unsigned int 32 bit). */
+	/** Whether default serial key size (unsigned int 32 bit). */
 	private boolean def_ser_size;
 
 	/**

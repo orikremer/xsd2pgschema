@@ -30,22 +30,16 @@ import javax.xml.stream.XMLStreamWriter;
  *
  * @author yokochi
  */
-public class XmlBuilder {
+public class XmlBuilder extends CommonBuilder {
 
-	/** Whether append XML declaration. */
+	/** Whether to append XML declaration. */
 	public boolean append_declare = true;
 
-	/** Whether append namespace declaration. */
+	/** Whether to append namespace declaration. */
 	public boolean append_xmlns = true;
-
-	/** Whether insert document key. */
-	public boolean insert_doc_key = false;
 
 	/** The indent offset. */
 	protected int indent_offset = PgSchemaUtil.indent_offset;
-
-	/** The current line feed code. */
-	protected String line_feed_code = "\n";
 
 	/** The XML stream writer. */
 	protected XMLStreamWriter writer = null;
@@ -55,9 +49,6 @@ public class XmlBuilder {
 
 	/** The pending element. */
 	protected LinkedList<XmlBuilderPendingElem> pending_elem = new LinkedList<XmlBuilderPendingElem>();
-
-	/** The pending simple content. */
-	protected StringBuilder pending_simple_cont = new StringBuilder();
 
 	/**
 	 * Set indent offset.
@@ -88,10 +79,11 @@ public class XmlBuilder {
 	/**
 	 * Set line feed code.
 	 *
-	 * @param line_feed whether use line feed code or not.
+	 * @param line_feed whether to use line feed code
 	 */
 	public void setLineFeed(boolean line_feed) {
 
+		this.line_feed = line_feed;
 		line_feed_code = line_feed ? "\n" : "";
 
 	}
@@ -123,49 +115,6 @@ public class XmlBuilder {
 	 */
 	public String getLineFeedCode() {
 		return line_feed_code;
-	}
-
-	/**
-	 * Return parent path.
-	 *
-	 * @param path current path
-	 * @return String parent path
-	 */
-	public String getParentPath(String path) {
-
-		StringBuilder sb = new StringBuilder();
-
-		String[] _path = path.split("/");
-
-		try {
-
-			for (int i = 1; i < _path.length - 1; i++)
-				sb.append("/" + _path[i]);
-
-			return sb.toString();
-
-		} finally {
-			sb.setLength(0);
-		}
-
-	}
-
-	/**
-	 * Return the last name of current path.
-	 *
-	 * @param path current path
-	 * @return String the last path name
-	 */
-	public String getLastNameOfPath(String path) {
-
-		String[] _path = path.split("/");
-
-		int position = _path.length - 1;
-
-		if (position < 0)
-			return null;
-
-		return _path[position];
 	}
 
 	/**
@@ -216,7 +165,7 @@ public class XmlBuilder {
 
 		writer.writeCharacters(pending_simple_cont.toString());
 
-		pending_simple_cont.setLength(0);
+		super.clear();
 
 	}
 
@@ -225,14 +174,14 @@ public class XmlBuilder {
 	 */
 	public void clear() {
 
+		super.clear();
+
 		appended_xmlns.clear();
 
 		XmlBuilderPendingElem elem;
 
 		while ((elem = pending_elem.pollLast()) != null)
 			elem.clear();
-
-		pending_simple_cont.setLength(0);
 
 	}
 

@@ -72,7 +72,7 @@ public class PgTable {
 	/** The depth of table. */
 	protected int level = -1;
 
-	/** the generation order in PostgreSQL DDL. */
+	/** The generation order in PostgreSQL DDL. */
 	protected int order = 0;
 
 	/** The number of nested field. */
@@ -90,7 +90,7 @@ public class PgTable {
 	/** Whether xs_type equals xs_admin_root. */
 	protected boolean virtual = false;
 
-	/** Whether bridge table or virtual table or not content_holder. */
+	/** Whether bridge table | virtual table | !content_holder. */
 	protected boolean relational = false;
 
 	/** Whether table has foreign key. */
@@ -117,7 +117,7 @@ public class PgTable {
 	/** Whether table has simple content as attribute. */
 	protected boolean has_simple_attribute = false;
 
-	/** Whether name collision occurs or not. */
+	/** Whether name collision occurs. */
 	protected boolean name_collision = false;
 
 	/** Whether table is referred from child table. */
@@ -319,7 +319,7 @@ public class PgTable {
 	 * Add primary key.
 	 *
 	 * @param option PostgreSQL data model option
-	 * @param unique_key whether primary key should be unique
+	 * @param unique_key whether the primary key should be unique
 	 */
 	protected void addPrimaryKey(PgSchemaOption option, boolean unique_key) {
 
@@ -715,7 +715,7 @@ public class PgTable {
 	 * Return whether node name matches.
 	 *
 	 * @param node_name node name
-	 * @param wild_card whether wild card follows or not
+	 * @param wild_card whether wild card follows
 	 * @return boolean whether node name matches
 	 */
 	public boolean matchesNodeName(String node_name, boolean wild_card) {

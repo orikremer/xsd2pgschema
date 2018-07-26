@@ -49,40 +49,40 @@ public class PgSchemaOption {
 	/** The wild card extension. */
 	public boolean wild_card = true;
 
-	/** Whether add document key in PostgreSQL DDL. */
+	/** Whether to add document key in PostgreSQL DDL. */
 	public boolean document_key = true;
 
-	/** Whether add serial key in PostgreSQL DDL. */
+	/** Whether to add serial key in PostgreSQL DDL. */
 	public boolean serial_key = false;
 
-	/** Whether add XPath key in PostgreSQL DDL. */
+	/** Whether to add XPath key in PostgreSQL DDL. */
 	public boolean xpath_key = false;
 
-	/** Whether retain case sensitive name in PostgreSQL DDL. */
+	/** Whether to retain case sensitive name in PostgreSQL DDL. */
 	protected boolean case_sense = true;
 
-	/** Whether enable explicit named schema. */
+	/** Whether to enable explicit named schema. */
 	public boolean pg_named_schema = false;
 
-	/** Whether prefer local XML Schema file. */
+	/** Whether to prefer local XML Schema file. */
 	public boolean cache_xsd = true;
 
-	/** Whether output PostgreSQL DDL. */
+	/** Whether to output PostgreSQL DDL. */
 	public boolean ddl_output = false;
 
-	/** Whether retain primary key/foreign key constraint in PostgreSQL DDL. */
+	/** Whether to retain primary key/foreign key constraint in PostgreSQL DDL. */
 	public boolean retain_key = true;
 
-	/** Whether not retrieve field annotation in PostgreSQL DDL. */
+	/** Whether not to retrieve field annotation in PostgreSQL DDL. */
 	public boolean no_field_anno = true;
 
-	/** Whether execute XML Schema validation. */
+	/** Whether to execute XML Schema validation. */
 	public boolean validate = false;
 
-	/** Whether enable canonical XML Schema validation or not (validate only whether document is well-formed). */
+	/** Whether to enable canonical XML Schema validation (validate only whether document is well-formed). */
 	public boolean full_check = true;
 
-	/** Whether use TSV format in PostgreSQL data migration. */
+	/** Whether to use TSV format in PostgreSQL data migration. */
 	protected boolean pg_tab_delimiter = true;
 
 	/** The current delimiter code. */
@@ -127,25 +127,25 @@ public class PgSchemaOption {
 	/** The size of serial key. */
 	public PgSerSize ser_size = PgSerSize.defaultSize();
 
-	/** Whether adopt strict synchronization (insert if not exists, update if required, and delete if XML not exists). */
+	/** Whether to adopt strict synchronization (insert if not exists, update if required, and delete if XML not exists). */
 	public boolean sync = false;
 
-	/** Whether adopt weak synchronization (insert if not exists, no update even if exists, no deletion). */
+	/** Whether to adopt weak synchronization (insert if not exists, no update even if exists, no deletion). */
 	public boolean sync_weak = false;
 
-	/** Whether dry run synchronization (no update on existing check sum files). */
+	/** Whether to dry-run synchronization (no update on existing check sum files). */
 	public boolean sync_dry_run = false;
 
-	/** Whether run diagnostic synchronization (set all constraints deferred). */
+	/** Whether to run diagnostic synchronization (set all constraints deferred). */
 	public boolean sync_rescue = false;
 
-	/** Whether in-place document key exists or not. */
+	/** Whether in-place document key exists. */
 	public boolean inplace_document_key = false;
 
-	/** Whether append document key if in-place key not exists. */
+	/** Whether to append document key if in-place key not exists. */
 	public boolean document_key_if_no_in_place = false;
 
-	/** Whether fill @default value. */
+	/** Whether to fill @default value. */
 	public boolean fill_default_value = false;
 
 	/** The directory path contains check sum files. */
@@ -264,7 +264,7 @@ public class PgSchemaOption {
 	/**
 	 * Set internal status corresponding to --doc-key and --no-doc-key options.
 	 *
-	 * @param doc_key whether add document key or not
+	 * @param doc_key whether to add document key
 	 * @return boolean whether status changed
 	 */
 	public boolean setDocKeyOption(boolean doc_key) {
@@ -295,7 +295,7 @@ public class PgSchemaOption {
 	}
 
 	/**
-	 * Decide whether to add document key or not.
+	 * Decide whether to add document key.
 	 */
 	public void resolveDocKeyOption() {
 
@@ -570,7 +570,7 @@ public class PgSchemaOption {
 	 * Extract annotation from xs:annotation/xs:documentation.
 	 *
 	 * @param node current node
-	 * @param one_liner whether return one-liner annotation or exact one
+	 * @param one_liner return whether one-liner annotation or exact one
 	 * @return String documentation of annotation
 	 */
 	public String extractDocumentation(Node node, boolean one_liner) {
@@ -618,7 +618,7 @@ public class PgSchemaOption {
 	 * Instance message digest for check sum.
 	 *
 	 * @param check_sum_algorithm algorithm name of message digest
-	 * @return boolean whether algorithm name is valid or not
+	 * @return boolean whether algorithm name is valid
 	 */
 	public boolean setCheckSumAlgorithm(String check_sum_algorithm) {
 
@@ -637,10 +637,10 @@ public class PgSchemaOption {
 	}
 
 	/**
-	 * Return whether if synchronizable.
+	 * Return whether synchronization is possible.
 	 *
-	 * @param allow_sync_weak whether if allows weak synchronization or not
-	 * @return boolean whether if synchronizable or not
+	 * @param allow_sync_weak whether to allow weak synchronization
+	 * @return boolean whether synchronization is possible
 	 */
 	public boolean isSynchronizable(boolean allow_sync_weak) {
 		return (allow_sync_weak && sync_weak) || (sync && check_sum_dir_path != null && Files.isDirectory(check_sum_dir_path));

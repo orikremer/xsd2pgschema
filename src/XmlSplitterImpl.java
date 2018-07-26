@@ -83,7 +83,7 @@ public class XmlSplitterImpl {
 	private LinkedBlockingQueue<Path> xml_file_queue;
 
 	/** The StAX read event handlers. */
-	private HashMap<Integer, EventHandler> read_handlers = new HashMap<Integer, EventHandler>(); 
+	private HashMap<Integer, EventHandler> read_handlers = new HashMap<Integer, EventHandler>();
 
 	/** The absolute path of document unit. */
 	private String doc_unit_path;
@@ -94,7 +94,7 @@ public class XmlSplitterImpl {
 	/** The element path of document key in case that document key is attribute. */
 	private String attr_doc_key_holder = null;
 
-	/** Whether document key is attribute or not (element). */
+	/** Whether document key is attribute or element (false). */
 	private boolean attr_doc_key;
 
 	/** The current path. */
@@ -103,7 +103,7 @@ public class XmlSplitterImpl {
 	/** The XML write event factory. */
 	private XMLEventFactory xml_event_factory = null;
 
-	/** Whether XML header is empty or not. */
+	/** Whether XML header is empty. */
 	private boolean no_header;
 
 	/** Whether no document key has appeared in document unit. */

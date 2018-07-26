@@ -20,11 +20,11 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * Abstract nest tester.
+ * Common nest tester.
  *
  * @author yokochi
  */
-public abstract class AbstractNestTester {
+public abstract class CommonBuilderNestTester {
 
 	/** The ancestor node name. */
 	protected String ancestor_node;
@@ -52,7 +52,7 @@ public abstract class AbstractNestTester {
 	 *
 	 * @param table current table
 	 */
-	public AbstractNestTester(PgTable table) {
+	public CommonBuilderNestTester(PgTable table) {
 
 		ancestor_node = "";
 		parent_node = table.xname;
@@ -72,7 +72,7 @@ public abstract class AbstractNestTester {
 	 * @param table current table
 	 * @param parent_test nest test of parent node
 	 */
-	public AbstractNestTester(PgTable table, AbstractNestTester parent_test) {
+	public CommonBuilderNestTester(PgTable table, CommonBuilderNestTester parent_test) {
 
 		ancestor_node = parent_test.ancestor_node;
 		parent_node = parent_test.parent_node;
@@ -93,7 +93,7 @@ public abstract class AbstractNestTester {
 	 *
 	 * @param test nest test of child node
 	 */
-	public void merge(AbstractNestTester test) {
+	public void merge(CommonBuilderNestTester test) {
 
 		has_child_elem |= test.has_child_elem;
 		has_content |= test.has_content;

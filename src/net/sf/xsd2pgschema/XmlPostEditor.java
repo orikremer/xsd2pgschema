@@ -28,7 +28,7 @@ import java.util.HashSet;
  */
 public class XmlPostEditor {
 
-	/** Whether fill @default value. */
+	/** Whether to fill @default value. */
 	public boolean fill_default_value = false;
 
 	/** The list of --filt-in option. */
@@ -40,13 +40,13 @@ public class XmlPostEditor {
 	/** The list of --fill-this option. */
 	protected HashSet<String> fill_these = new HashSet<String>();
 
-	/** Whether the --file-in options have been resolved. */
+	/** Whether --file-in options have been resolved. */
 	protected boolean filt_in_resolved = false;	
 
-	/** Whether the --file-out options have been resolved. */
+	/** Whether --file-out options have been resolved. */
 	protected boolean filt_out_resolved = false;
 
-	/** Whether the --fill-this options have been resolved. */
+	/** Whether --fill-this options have been resolved. */
 	protected boolean fill_this_resolved = false;
 
 	/**

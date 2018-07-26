@@ -164,7 +164,7 @@ public class PgSchemaUtil {
 	/** The PostgreSQL reserved operator codes. */
 	public static final String[] pg_reserved_ops = { "+", "-", "*", "/", "%", "^", "|/", "||/", "!", "!!", "@", "&", "|", "#", "~", "<<", ">>" };
 
-	/** The minimum rows for creation of PostgreSQL index on document key. */ 
+	/** The minimum rows for creation of PostgreSQL index on document key. */
 	public static final int pg_min_rows_for_doc_key_index = 10000;
 
 	/** The compiled pattern matches capital code. */
@@ -185,7 +185,7 @@ public class PgSchemaUtil {
 	/** The compiled pattern matches line feed code. */
 	public static final Pattern lf_pattern = Pattern.compile("\\n", Pattern.MULTILINE);
 
-	/** the compiled pattern matches back slash code. */
+	/** The compiled pattern matches back slash code. */
 	public static final Pattern bs_pattern = Pattern.compile("\\\\", Pattern.MULTILINE);
 
 	/** The compiled pattern matches simple content. */
