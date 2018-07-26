@@ -268,21 +268,25 @@ public class Xml2PgCsvThrd implements Runnable {
 		else if (show_progress)
 			System.out.println("\nDone");
 
-		try {
+		if (db_conn != null) {
 
-			if (show_progress) {
+			try {
 
-				if (pg_option.create_doc_key_index)
-					schema.createDocKeyIndex(db_conn, pg_option.min_rows_for_doc_key_index);
-				else if (pg_option.drop_doc_key_index)
-					schema.dropDocKeyIndex(db_conn);
+				if (show_progress) {
 
+					if (pg_option.create_doc_key_index)
+						schema.createDocKeyIndex(db_conn, pg_option.min_rows_for_doc_key_index);
+					else if (pg_option.drop_doc_key_index)
+						schema.dropDocKeyIndex(db_conn);
+
+				}
+
+				db_conn.close();
+
+			} catch (PgSchemaException | SQLException e) {
+				e.printStackTrace();
 			}
 
-			db_conn.close();
-
-		} catch (PgSchemaException | SQLException e) {
-			e.printStackTrace();
 		}
 
 	}
