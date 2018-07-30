@@ -327,7 +327,7 @@ public class XmlParser {
 
 				String old_check_sum = br.readLine();
 
-				if (old_check_sum.equals(new_check_sum))
+				if (old_check_sum != null && old_check_sum.equals(new_check_sum))
 					identity = true;
 
 				br.close();
