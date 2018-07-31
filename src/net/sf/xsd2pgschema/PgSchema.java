@@ -4811,7 +4811,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Create PostgreSQL index on document key if not exits.
+	 * Create PostgreSQL index on document key if not exists.
 	 *
 	 * @param db_conn database connection
 	 * @param min_row_count minimum count of rows to create index
@@ -4895,7 +4895,7 @@ public class PgSchema {
 	}
 
 	/**
-	 * Drop PostgreSQL index on document key if exits.
+	 * Drop PostgreSQL index on document key if exists.
 	 *
 	 * @param db_conn database connection
 	 * @throws PgSchemaException the pg schema exception

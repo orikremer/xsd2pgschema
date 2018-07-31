@@ -40,14 +40,8 @@ import org.xml.sax.SAXException;
  */
 public class csv2pgsql {
 
-	/** The working directory name. */
-	private static String work_dir_name = xml2pgcsv.work_dir_name;
-
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(true);
-
-	/** The PostgreSQL option. */
-	private static PgOption pg_option = new PgOption();
 
 	/**
 	 * The main method.
@@ -56,9 +50,13 @@ public class csv2pgsql {
 	 */
 	public static void main(String[] args) {
 
-		option.usePgCsv();
+		/** The working directory name. */
+		String work_dir_name = xml2pgcsv.work_dir_name;
 
-		Connection db_conn = null;
+		/** The PostgreSQL option. */
+		PgOption pg_option = new PgOption();
+
+		option.usePgCsv();
 
 		for (int i = 0; i < args.length; i++) {
 
@@ -196,7 +194,7 @@ public class csv2pgsql {
 
 			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
 
-			db_conn = DriverManager.getConnection(pg_option.getDbUrl(PgSchemaUtil.def_encoding), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
+			Connection db_conn = DriverManager.getConnection(pg_option.getDbUrl(PgSchemaUtil.def_encoding), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 
 			pg_option.clear();
 
@@ -222,7 +220,7 @@ public class csv2pgsql {
 	private static void showUsage() {
 
 		System.err.println("csv2pgsql: CSV -> PostgreSQL data migration");
-		System.err.println("Usage:  --xsd SCHEMA_LOCATION --work-dir DIRECTORY (default=\"" + work_dir_name + "\") --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
+		System.err.println("Usage:  --xsd SCHEMA_LOCATION --work-dir DIRECTORY (default=\"" + xml2pgcsv.work_dir_name + "\") --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");

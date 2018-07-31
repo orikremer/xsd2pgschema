@@ -39,14 +39,8 @@ import org.apache.commons.text.StringEscapeUtils;
  */
 public class dicmerge4sphinx {
 
-	/** The data source directory name. */
-	private static String ds_dir_name = xml2sphinxds.ds_dir_name;
-
 	/** The frequency threshold. */
 	private static int freq_threshold = 10;
-
-	/** The dictionary file list. */
-	private static List<String> dic_file_list = new ArrayList<String>();
 
 	/**
 	 * The main method.
@@ -54,6 +48,12 @@ public class dicmerge4sphinx {
 	 * @param args the arguments
 	 */
 	public static void main(String[] args) {
+
+		/** The data source directory name. */
+		String ds_dir_name = xml2sphinxds.ds_dir_name;
+
+		/** The dictionary file list. */
+		List<String> dic_file_list = new ArrayList<String>();
 
 		for (int i = 0; i < args.length; i++) {
 
@@ -214,7 +214,7 @@ public class dicmerge4sphinx {
 	private static void showUsage() {
 
 		System.err.println("dicmerge4sphinx: Sphinx data source -> Sphinx dictionary index");
-		System.err.println("Usage:  --ds-dir DIRECTORY (default=\"" + ds_dir_name + "\")");
+		System.err.println("Usage:  --ds-dir DIRECTORY (default=\"" + xml2sphinxds.ds_dir_name + "\")");
 		System.err.println("        --dic DIC_FILE (repeat until you specify all dictionaries)");
 		System.err.println("Option: --freq FREQ_THRESHOLD (default=" + freq_threshold + ")");
 		System.exit(1);

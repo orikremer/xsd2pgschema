@@ -102,6 +102,7 @@ public class SphDsDocIdCleaner {
 
 		this.sph_data_in_path = sph_data_in_path;
 		this.sph_data_out_path = sph_data_out_path;
+
 		this.del_doc_set = del_doc_set;
 
 		attr_doc_key = doc_key_path.substring(doc_key_path.lastIndexOf('/') + 1, doc_key_path.length()).startsWith("@");

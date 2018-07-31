@@ -43,23 +43,8 @@ import com.github.antlr.grammars_v4.xpath.xpathListenerException;
  */
 public class xmlsplitter {
 
-	/** The XML directory name for split XML files. */
+	/** The XML directory name contains split XML files. */
 	private static String xml_dir_name = "xml_work";
-
-	/** The schema option. */
-	private static PgSchemaOption option = new PgSchemaOption(false);
-
-	/** The XML file filter. */
-	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
-
-	/** The source XML file queue. */
-	private static LinkedBlockingQueue<Path> xml_file_queue = null;
-
-	/** The XPath expression pointing document key. */
-	private static String xpath_doc_key = "";
-
-	/** The shard size. */
-	private static int shard_size = 1;
 
 	/**
 	 * The main method.
@@ -68,7 +53,23 @@ public class xmlsplitter {
 	 */
 	public static void main(String[] args) {
 
+		/** The schema option. */
+		PgSchemaOption option = new PgSchemaOption(false);
+
+		/** The XML file filter. */
+		XmlFileFilter xml_file_filter = new XmlFileFilter();
+
+		/** The source XML file queue. */
+		LinkedBlockingQueue<Path> xml_file_queue;
+
+		/** The target XML file patterns. */
 		HashSet<String> xml_file_names = new HashSet<String>();
+
+		/** The XPath expression pointing document key. */
+		String xpath_doc_key = "";
+
+		/** The shard size. */
+		int shard_size = 1;
 
 		boolean touch_xml = false;
 
@@ -172,6 +173,8 @@ public class xmlsplitter {
 		};
 
 		xml_file_queue = PgSchemaUtil.getQueueOfTargetFiles(xml_file_names, filename_filter);
+
+		xml_file_names.clear();
 
 		Path xml_dir_path = Paths.get(xml_dir_name);
 

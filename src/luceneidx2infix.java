@@ -45,14 +45,8 @@ import org.apache.lucene.store.FSDirectory;
  */
 public class luceneidx2infix {
 
-	/** The index directory name. */
-	private static String idx_dir_name = xml2luceneidx.idx_dir_name;
-
 	/** The analyzing infix suggester directory name. */
 	private static String infix_dir_name = "lucene_infix";
-
-	/** The field list. */
-	private static List<String> fields = new ArrayList<String>();
 
 	/**
 	 * The main method.
@@ -60,6 +54,12 @@ public class luceneidx2infix {
 	 * @param args the arguments
 	 */
 	public static void main(String[] args) {
+
+		/** The index directory name. */
+		String idx_dir_name = xml2luceneidx.idx_dir_name;
+
+		/** The field list. */
+		List<String> fields = new ArrayList<String>();
 
 		for (int i = 0; i < args.length; i++) {
 

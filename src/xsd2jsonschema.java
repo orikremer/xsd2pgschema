@@ -46,11 +46,14 @@ public class xsd2jsonschema {
 	 */
 	public static void main(String[] args) {
 
+		/** The JSON builder option. */
 		JsonBuilderOption jsonb_option = new JsonBuilderOption();
 
+		/** The schema option. */
 		PgSchemaOption option = new PgSchemaOption(jsonb_option.type);
 
-		String json_file_name = "";
+		/** The JSON Schema output name. */
+		String json_output = "";
 
 		for (int i = 0; i < args.length; i++) {
 
@@ -58,7 +61,7 @@ public class xsd2jsonschema {
 				option.root_schema_location = args[++i];
 
 			else if (args[i].equals("--json") && i + 1 < args.length)
-				json_file_name = args[++i];
+				json_output = args[++i];
 
 			else if (args[i].equals("--field-annotation"))
 				jsonb_option.no_field_anno = false;
@@ -130,9 +133,9 @@ public class xsd2jsonschema {
 		if (is == null)
 			showUsage();
 
-		if (!json_file_name.isEmpty() && !json_file_name.equals("stdout")) {
+		if (!json_output.isEmpty() && !json_output.equals("stdout")) {
 
-			Path json_file_path = Paths.get(json_file_name);
+			Path json_file_path = Paths.get(json_output);
 
 			try {
 				System.setOut(new PrintStream(new BufferedOutputStream(Files.newOutputStream(json_file_path)), true));

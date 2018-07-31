@@ -48,9 +48,10 @@ public class xsd2pgschema {
 	 */
 	public static void main(String[] args) {
 
-		option.ddl_output = true; // output PostgreSQL DDL
+		/** The PostgreSQL DDL output name. */
+		String ddl_output = "";
 
-		String ddl_file_name = "";
+		option.ddl_output = true; // output PostgreSQL DDL
 
 		option.hash_algorithm = ""; // assumed hash algorithm should be empty
 
@@ -60,7 +61,7 @@ public class xsd2pgschema {
 				option.root_schema_location = args[++i];
 
 			else if (args[i].equals("--ddl") && i + 1 < args.length)
-				ddl_file_name = args[++i];
+				ddl_output = args[++i];
 
 			else if (args[i].equals("--doc-key"))
 				option.setDocKeyOption(true);
@@ -151,9 +152,9 @@ public class xsd2pgschema {
 		if (is == null)
 			showUsage();
 
-		if (!ddl_file_name.isEmpty() && !ddl_file_name.equals("stdout")) {
+		if (!ddl_output.isEmpty() && !ddl_output.equals("stdout")) {
 
-			Path ddl_file_path = Paths.get(ddl_file_name);
+			Path ddl_file_path = Paths.get(ddl_output);
 
 			try {
 				System.setOut(new PrintStream(new BufferedOutputStream(Files.newOutputStream(ddl_file_path)), true));

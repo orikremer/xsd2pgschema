@@ -43,47 +43,8 @@ import org.xml.sax.SAXException;
  */
 public class xml2sphinxds {
 
-	/** The data source name. */
-	protected static String ds_name = "";
-
 	/** The data source directory name. */
 	protected static String ds_dir_name = "sphinx_xmlpipe2";
-
-	/** The check sum directory name. */
-	private static String check_sum_dir_name = "";
-
-	/** The schema option. */
-	private static PgSchemaOption option = new PgSchemaOption(false);
-
-	/** The XML file filter. */
-	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
-
-	/** The XML post editor. */
-	protected static XmlPostEditor xml_post_editor = new XmlPostEditor();
-
-	/** The index filter. */
-	private static IndexFilter index_filter = new IndexFilter();
-
-	/** The XML file queue. */
-	private static LinkedBlockingQueue<Path> xml_file_queue = null;
-
-	/** The document id stored in data source (key=document id, value=shard id). */
-	protected static HashMap<String, Integer> doc_rows = null;
-
-	/** The set of deleting document id while synchronization. */
-	protected static HashSet<String>[] sync_del_doc_rows = null;
-
-	/** The shard size. */
-	private static int shard_size = 1;
-
-	/** The runtime. */
-	private static Runtime runtime = Runtime.getRuntime();
-
-	/** The available processors. */
-	private static final int cpu_num = runtime.availableProcessors();
-
-	/** The max threads. */
-	private static int max_thrds = cpu_num;
 
 	/**
 	 * The main method.
@@ -93,9 +54,46 @@ public class xml2sphinxds {
 	@SuppressWarnings("unchecked")
 	public static void main(String[] args) {
 
-		option.cancelRelDataExt();
+		/** The check sum directory name. */
+		String check_sum_dir_name = "";
 
+		/** The schema option. */
+		PgSchemaOption option = new PgSchemaOption(false);
+
+		/** The XML file filter. */
+		XmlFileFilter xml_file_filter = new XmlFileFilter();
+
+		/** The XML post editor. */
+		XmlPostEditor xml_post_editor = new XmlPostEditor();
+
+		/** The index filter. */
+		IndexFilter index_filter = new IndexFilter();
+
+		/** The XML file queue. */
+		LinkedBlockingQueue<Path> xml_file_queue;
+
+		/** The target XML file patterns. */
 		HashSet<String> xml_file_names = new HashSet<String>();
+
+		/** The data source name. */
+		String ds_name = "";
+
+		/** The set of document id stored in data source (key=document id, value=shard id). */
+		HashMap<String, Integer> doc_rows = null;
+
+		/** The set of deleting document id while synchronization. */
+		HashSet<String>[] sync_del_doc_rows = null;
+
+		/** The shard size. */
+		int shard_size = 1;
+
+		/** The available processors. */
+		int cpu_num = Runtime.getRuntime().availableProcessors();
+
+		/** The max threads. */
+		int max_thrds = cpu_num;
+
+		option.cancelRelDataExt();
 
 		boolean touch_xml = false;
 
@@ -308,6 +306,8 @@ public class xml2sphinxds {
 
 		xml_file_queue = PgSchemaUtil.getQueueOfTargetFiles(xml_file_names, filename_filter);
 
+		xml_file_names.clear();
+
 		max_thrds = max_thrds / shard_size; // number of thread per a shard
 
 		if (max_thrds == 0)
@@ -385,7 +385,7 @@ public class xml2sphinxds {
 					if (shard_id > 0 || thrd_id > 0)
 						is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
-					proc_thrd[_thrd_id] = new Xml2SphinxDsThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, xml_post_editor, option, index_filter);
+					proc_thrd[_thrd_id] = new Xml2SphinxDsThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, xml_post_editor, option, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows);
 
 				} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 					e.printStackTrace();

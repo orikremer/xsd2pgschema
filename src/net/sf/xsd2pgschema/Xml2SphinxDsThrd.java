@@ -17,7 +17,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-import net.sf.xsd2pgschema.*;
+package net.sf.xsd2pgschema;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -33,6 +33,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -80,6 +81,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 	/** The XML validator. */
 	private XmlValidator validator;
 
+	/** The data srouce name. */
+	private String ds_name;
+
 	/** The data source directory path. */
 	private Path ds_dir_path;
 
@@ -88,6 +92,15 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 	/** The XML file queue. */
 	private LinkedBlockingQueue<Path> xml_file_queue;
+
+	/** The current data source path. */
+	private Path shard_ds_dir_path;
+
+	/** The set of document id stored in data source (key=document id, value=shard id). */
+	private HashMap<String, Integer> doc_rows;
+
+	/** The set of deleting document id while synchronization. */
+	private HashSet<String>[] sync_del_doc_rows;
 
 	/** The SAX parser. */
 	private SAXParser sax_parser = null;
@@ -110,13 +123,17 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @param xml_post_editor XML post editor
 	 * @param option PostgreSQL data model option
 	 * @param index_filter index filter
+	 * @param ds_name data source name
+	 * @param ds_dir_path data source directory path
+	 * @param doc_rows set of document id stored in data source
+	 * @param sync_del_doc_rows set of deleting docuement id while synchronization
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, IndexFilter index_filter) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, IndexFilter index_filter, final String ds_name, final Path ds_dir_path, HashMap<String, Integer> doc_rows, HashSet<String>[] sync_del_doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.shard_id = shard_id;
 		this.shard_size = shard_size;
@@ -125,6 +142,11 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		this.xml_file_filter = xml_file_filter;
 		this.xml_file_queue = xml_file_queue;
+
+		this.ds_name = ds_name;
+		this.ds_dir_path = ds_dir_path;
+		this.doc_rows = doc_rows;
+		this.sync_del_doc_rows = sync_del_doc_rows;
 
 		// parse XSD document
 
@@ -153,19 +175,21 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		validator = option.validate ? new XmlValidator(PgSchemaUtil.getSchemaFilePath(option.root_schema_location, null, option.cache_xsd), option.full_check) : null;
 
-		String ds_dir_name = xml2sphinxds.ds_dir_name;
+		shard_ds_dir_path = shard_size == 1 ? ds_dir_path : ds_dir_path.resolve(PgSchemaUtil.shard_dir_prefix + shard_id);
 
-		if (shard_size > 1)
-			ds_dir_name += "/" + PgSchemaUtil.shard_dir_prefix + shard_id;
+		if (!Files.isDirectory(shard_ds_dir_path)) {
 
-		ds_dir_path = Paths.get(ds_dir_name);
+			try {
+				Files.createDirectory(shard_ds_dir_path);
+			} catch (IOException e) {
+				throw new PgSchemaException("Couldn't create directory '" + shard_ds_dir_path.toString() + "'.");
+			}
 
-		if (!Files.isDirectory(ds_dir_path))
-			Files.createDirectory(ds_dir_path);
+		}
 
 		// parse the previous Sphinx schema file if exists
 
-		sphinx_schema_path = Paths.get(ds_dir_name, PgSchemaUtil.sph_schema_name);
+		sphinx_schema_path = shard_ds_dir_path.resolve(PgSchemaUtil.sph_schema_name);
 
 		if (Files.isRegularFile(sphinx_schema_path)) {
 
@@ -186,7 +210,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		// delete indexes if XML not exists
 
-		Path sph_data_source_path = Paths.get(ds_dir_name, PgSchemaUtil.sph_data_source_name);
+		Path sph_data_source_path = shard_ds_dir_path.resolve(PgSchemaUtil.sph_data_source_name);
 
 		if (synchronizable && Files.isRegularFile(sph_data_source_path) && thrd_id == 0) {
 
@@ -211,18 +235,18 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			if (option.sync) {
 
-				xml2sphinxds.sync_del_doc_rows[shard_id].addAll(doc_set);
+				sync_del_doc_rows[shard_id].addAll(doc_set);
 
 				xml_file_queue.forEach(xml_file_path -> {
 
 					XmlParser xml_parser = new XmlParser(xml_file_path, xml_file_filter);
 
-					xml2sphinxds.sync_del_doc_rows[shard_id].remove(xml_parser.document_id);
+					sync_del_doc_rows[shard_id].remove(xml_parser.document_id);
 
 				});
 
-				synchronized (xml2sphinxds.doc_rows) {
-					doc_set.forEach(doc_id -> xml2sphinxds.doc_rows.put(doc_id, shard_id));
+				synchronized (doc_rows) {
+					doc_set.forEach(doc_id -> doc_rows.put(doc_id, shard_id));
 				}
 
 				doc_set.clear();
@@ -284,7 +308,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 					XmlParser xml_parser = new XmlParser(xml_file_path, xml_file_filter);
 
-					Integer _shard_id = xml2sphinxds.doc_rows != null ? xml2sphinxds.doc_rows.get(xml_parser.document_id) : null;
+					Integer _shard_id = doc_rows != null ? doc_rows.get(xml_parser.document_id) : null;
 
 					if (_shard_id != null) {
 
@@ -294,8 +318,8 @@ public class Xml2SphinxDsThrd implements Runnable {
 						if (xml_parser.identify(option, md_chk_sum))
 							continue;
 
-						synchronized (xml2sphinxds.sync_del_doc_rows[_shard_id]) {
-							xml2sphinxds.sync_del_doc_rows[_shard_id].add(xml_parser.document_id);
+						synchronized (sync_del_doc_rows[_shard_id]) {
+							sync_del_doc_rows[_shard_id].add(xml_parser.document_id);
 							changed = true;
 						}
 
@@ -306,14 +330,13 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 				} catch (IOException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			}
 
 			String sph_doc_name = PgSchemaUtil.sph_document_prefix + xml_file_path.getFileName().toString().split("\\.")[0] + ".xml";
 
-			Path sph_doc_file_path = Paths.get(ds_dir_path.toString(), sph_doc_name);
+			Path sph_doc_file_path = shard_ds_dir_path.resolve(sph_doc_name);
 
 			try {
 
@@ -328,7 +351,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 			} catch (IOException | SAXException | PgSchemaException e) {
 				System.err.println("Exception occurred while processing XML document: " + xml_file_path.toAbsolutePath().toString());
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 			if (changed)
@@ -371,11 +393,11 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			if (has_idx) {
 
-				if (option.sync && xml2sphinxds.sync_del_doc_rows[shard_id].size() > 0) {
+				if (option.sync && sync_del_doc_rows[shard_id].size() > 0) {
 
 					System.out.println("Cleaning" + (shard_size == 1 ? "" : (" #" + (shard_id + 1) + " of " + shard_size + " ")) + "...");
 
-					SphDsDocIdCleaner stax_parser = new SphDsDocIdCleaner(option.document_key_name, sph_data_source_path, sph_data_extract_path, xml2sphinxds.sync_del_doc_rows[shard_id]);
+					SphDsDocIdCleaner stax_parser = new SphDsDocIdCleaner(option.document_key_name, sph_data_source_path, sph_data_extract_path, sync_del_doc_rows[shard_id]);
 
 					try {
 
@@ -383,7 +405,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 					} catch (XMLStreamException | IOException e) {
 						e.printStackTrace();
-						System.exit(1);
 					}
 
 				}
@@ -466,7 +487,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			Path sphinx_conf_path = Paths.get(ds_dir_name, PgSchemaUtil.sph_conf_name);
 
-			schema.writeSphConf(sphinx_conf_path, xml2sphinxds.ds_name, sph_data_source_path);
+			schema.writeSphConf(sphinx_conf_path, ds_name, sph_data_source_path);
 
 			if (!has_idx)
 				return;
@@ -492,7 +513,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			} catch (XMLStreamException | IOException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 			Files.move(sph_data_update_path, sph_data_source_path, StandardCopyOption.REPLACE_EXISTING);
@@ -504,7 +524,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 		} finally {
 
 			if (synchronizable && show_progress)
-				System.out.println((changed ? "" : "\n") + ds_dir_path.toAbsolutePath().toString() + " (" + xml2sphinxds.ds_name + ") is up-to-date.");
+				System.out.println((changed ? "" : "\n") + ds_dir_path.toAbsolutePath().toString() + " (" + ds_name + ") is up-to-date.");
 
 		}
 

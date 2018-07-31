@@ -42,26 +42,8 @@ import com.github.antlr.grammars_v4.xpath.xpathListenerException;
  */
 public class xpath2json {
 
-	/** The JSON directory name. */
-	private static String json_dir_name = "json_result";
-
-	/** The output file name or pattern. */
-	protected static String out_file_name = "";
-
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(true);
-
-	/** The PostgreSQL option. */
-	private static PgOption pg_option = new PgOption();
-
-	/** The JSON builder option. */
-	private static JsonBuilderOption jsonb_option = new JsonBuilderOption();
-
-	/** The XPath queries. */
-	private static ArrayList<String> xpath_queries = new ArrayList<String>();
-
-	/** The XPath variable reference. */
-	private static HashMap<String, String> variables = new HashMap<String, String>();
 
 	/**
 	 * The main method.
@@ -69,6 +51,24 @@ public class xpath2json {
 	 * @param args the arguments
 	 */
 	public static void main(String[] args) {
+
+		/** The JSON directory name. */
+		String json_dir_name = "json_result";
+
+		/** The output file name or pattern. */
+		String out_file_name = "";
+
+		/** The PostgreSQL option. */
+		PgOption pg_option = new PgOption();
+
+		/** The JSON builder option. */
+		JsonBuilderOption jsonb_option = new JsonBuilderOption();
+
+		/** The XPath queries. */
+		ArrayList<String> xpath_queries = new ArrayList<String>();
+
+		/** The XPath variable reference. */
+		HashMap<String, String> variables = new HashMap<String, String>();
 
 		for (int i = 0; i < args.length; i++) {
 

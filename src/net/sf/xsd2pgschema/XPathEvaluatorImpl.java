@@ -17,7 +17,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-import net.sf.xsd2pgschema.*;
+package net.sf.xsd2pgschema;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -307,7 +307,6 @@ public class XPathEvaluatorImpl {
 
 				} catch (SQLException | IOException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			});
@@ -320,7 +319,7 @@ public class XPathEvaluatorImpl {
 
 				bout.close();
 
-				System.out.println("Generated result document: " + out_file_path.toAbsolutePath().toString());
+				System.out.println("Generated " + (option.pg_delimiter == '\t' ? "TSV" : "CSV") + " document: " + out_file_path.toAbsolutePath().toString());
 				System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
 
 			}
@@ -426,7 +425,6 @@ public class XPathEvaluatorImpl {
 
 				} catch (SQLException | PgSchemaException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			});
@@ -442,7 +440,7 @@ public class XPathEvaluatorImpl {
 
 				bout.close();
 
-				System.out.println("Generated result document: " + out_file_path.toAbsolutePath().toString());
+				System.out.println("Generated XML document: " + out_file_path.toAbsolutePath().toString());
 				System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
 
 			}
@@ -535,7 +533,6 @@ public class XPathEvaluatorImpl {
 
 				} catch (SQLException | PgSchemaException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			});
@@ -550,7 +547,7 @@ public class XPathEvaluatorImpl {
 
 				bout.close();
 
-				System.out.println("Generated result document: " + out_file_path.toAbsolutePath().toString());
+				System.out.println("Generated JSON document: " + out_file_path.toAbsolutePath().toString());
 				System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
 
 			}

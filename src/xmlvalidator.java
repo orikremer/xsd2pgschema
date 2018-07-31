@@ -37,27 +37,6 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class xmlvalidator {
 
-	/** The check sum directory name. */
-	private static String check_sum_dir_name = "";
-
-	/** The schema option. */
-	private static PgSchemaOption option = new PgSchemaOption(true);
-
-	/** The XML file filter. */
-	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
-
-	/** The XML file queue. */
-	private static LinkedBlockingQueue<Path> xml_file_queue = null;
-
-	/** The runtime. */
-	private static Runtime runtime = Runtime.getRuntime();
-
-	/** The available processors. */
-	private static final int cpu_num = runtime.availableProcessors();
-
-	/** The max threads. */
-	private static int max_thrds = cpu_num;
-
 	/**
 	 * The main method.
 	 *
@@ -65,9 +44,31 @@ public class xmlvalidator {
 	 */
 	public static void main(String[] args) {
 
-		option.validate = true;
+		/** The check sum directory name. */
+		String check_sum_dir_name = "";
 
+		/** The schema option. */
+		PgSchemaOption option = new PgSchemaOption(true);
+
+		/** The XML file filter. */
+		XmlFileFilter xml_file_filter = new XmlFileFilter();
+
+		/** The XML file queue. */
+		LinkedBlockingQueue<Path> xml_file_queue;
+
+		/** The target XML file patterns. */
 		HashSet<String> xml_file_names = new HashSet<String>();
+
+		/** The runtime. */
+		Runtime runtime = Runtime.getRuntime();
+
+		/** The available processors. */
+		int cpu_num = runtime.availableProcessors();
+
+		/** The max threads. */
+		int max_thrds = cpu_num;
+
+		option.validate = true;
 
 		boolean touch_xml = false;
 
@@ -169,6 +170,8 @@ public class xmlvalidator {
 
 		if (xml_file_queue.size() < max_thrds)
 			max_thrds = xml_file_queue.size();
+
+		xml_file_names.clear();
 
 		if (option.sync) {
 

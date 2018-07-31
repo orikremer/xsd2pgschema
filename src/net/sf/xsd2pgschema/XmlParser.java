@@ -313,15 +313,20 @@ public class XmlParser {
 
 		if (option.isSynchronizable(false)) {
 
+			Path check_sum_path = getCheckSumFilePath(option);
+
+			boolean check_sum_exists = Files.exists(check_sum_path);
+
+			if (check_sum_exists && !option.sync_rescue && Files.getLastModifiedTime(xml_file_path).compareTo(Files.getLastModifiedTime(check_sum_path)) < 0)
+				return true;
+
 			InputStream in = Files.newInputStream(xml_file_path);
 
 			String new_check_sum = String.valueOf(Hex.encodeHex(md_chk_sum.digest(IOUtils.readFully(in, (int) Files.size(xml_file_path)))));
 
 			in.close();
 
-			Path check_sum_path = getCheckSumFilePath(option);
-
-			if (Files.exists(check_sum_path)) {
+			if (check_sum_exists) {
 
 				BufferedReader br = Files.newBufferedReader(check_sum_path);
 

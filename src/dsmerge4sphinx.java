@@ -42,24 +42,24 @@ import org.xml.sax.SAXException;
  */
 public class dsmerge4sphinx {
 
-	/** The schema location. */
-	private static String schema_location = "";
-
-	/** The data source name. */
-	private static String ds_name = "";
-
-	/** The destination directory name of data source. */
-	private static String dst_ds_dir_name = xml2sphinxds.ds_dir_name;
-
-	/** The source directory name of data source. */
-	private static List<String> src_ds_dir_list = new ArrayList<String>();
-
 	/**
 	 * The main method.
 	 *
 	 * @param args the arguments
 	 */
 	public static void main(String[] args) {
+
+		/** The schema location. */
+		String schema_location = "";
+
+		/** The data source name. */
+		String ds_name = "";
+
+		/** The destination directory name of data source. */
+		String dst_ds_dir_name = xml2sphinxds.ds_dir_name;
+
+		/** The source directory name of data source. */
+		List<String> src_ds_dir_list = new ArrayList<String>();
 
 		for (int i = 0; i < args.length; i++) {
 
@@ -301,7 +301,7 @@ public class dsmerge4sphinx {
 	private static void showUsage() {
 
 		System.err.println("dsmerge4sphinx: Merge Sphinx data source files into one");
-		System.err.println("Usage:  --xsd SCHEMA_LOCATION --dst-ds-dir DIRECTORY (default=\"" + dst_ds_dir_name + "\") --src-ds-dir DIRECTORY (repeat until you specify all directories)");
+		System.err.println("Usage:  --xsd SCHEMA_LOCATION --dst-ds-dir DIRECTORY (default=\"" + xml2sphinxds.ds_dir_name + "\") --src-ds-dir DIRECTORY (repeat until you specify all directories)");
 		System.err.println("Option: --ds-name DS_NAME (default name is determined by data_source.conf file)");
 		System.exit(1);
 

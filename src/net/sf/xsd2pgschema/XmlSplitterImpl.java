@@ -17,6 +17,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
+package net.sf.xsd2pgschema;
+
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -353,7 +355,6 @@ public class XmlSplitterImpl {
 
 		} catch (IOException | XMLStreamException e) {
 			e.printStackTrace();
-			System.exit(1);
 		}
 
 		long end_time = System.currentTimeMillis();
@@ -489,7 +490,6 @@ public class XmlSplitterImpl {
 
 								} catch (PgSchemaException | IOException | XMLStreamException e) {
 									e.printStackTrace();
-									System.exit(1);
 								}
 
 								break;
@@ -511,7 +511,6 @@ public class XmlSplitterImpl {
 
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			}
@@ -551,7 +550,6 @@ public class XmlSplitterImpl {
 
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			}
@@ -564,7 +562,6 @@ public class XmlSplitterImpl {
 
 				} catch (XMLStreamException | IOException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			}
@@ -606,7 +603,6 @@ public class XmlSplitterImpl {
 
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			}
@@ -642,7 +638,6 @@ public class XmlSplitterImpl {
 
 					} catch (PgSchemaException | IOException | XMLStreamException e) {
 						e.printStackTrace();
-						System.exit(1);
 					}
 
 				}
@@ -657,7 +652,6 @@ public class XmlSplitterImpl {
 
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			}
@@ -702,7 +696,6 @@ public class XmlSplitterImpl {
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 		});
@@ -717,7 +710,6 @@ public class XmlSplitterImpl {
 
 				} catch (XMLStreamException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			});
@@ -744,7 +736,6 @@ public class XmlSplitterImpl {
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 		});

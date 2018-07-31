@@ -17,12 +17,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-import net.sf.xsd2pgschema.*;
+
+
+//import net.sf.xsd2pgschema.*;
+
+package net.sf.xsd2pgschema;
 
 import java.io.IOException;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -41,6 +47,15 @@ public class ChkSumStatThrd implements Runnable {
 	/** The XML file queue. */
 	private LinkedBlockingQueue<Path> xml_file_queue;
 
+	/** The set of new document id while synchronization. */
+	private HashSet<String> sync_new_doc_rows;
+
+	/** The set of updating document id while synchronization. */
+	private HashSet<String> sync_up_doc_rows;
+
+	/** The set of deleting document id while synchronization (key=document id, value=check sum file path). */
+	private HashMap<String, Path> sync_del_doc_rows;
+
 	/** The instance of message digest for check sum. */
 	private MessageDigest md_chk_sum;
 
@@ -49,13 +64,20 @@ public class ChkSumStatThrd implements Runnable {
 	 *
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue
+	 * @param sync_new_doc_rows set of new document id while synchronization
+	 * @param sync_up_doc_rows set of updating document id while synchronization
+	 * @param sync_del_doc_rows set of deleting document id while synchronization
 	 * @param option PostgreSQL data model option
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 */
-	public ChkSumStatThrd(final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, PgSchemaOption option) throws NoSuchAlgorithmException {
+	public ChkSumStatThrd(final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, HashSet<String> sync_new_doc_rows, HashSet<String> sync_up_doc_rows, HashMap<String, Path> sync_del_doc_rows, PgSchemaOption option) throws NoSuchAlgorithmException {
 
 		this.xml_file_filter = xml_file_filter;
 		this.xml_file_queue = xml_file_queue;
+
+		this.sync_new_doc_rows = sync_new_doc_rows;
+		this.sync_up_doc_rows = sync_up_doc_rows;
+		this.sync_del_doc_rows = sync_del_doc_rows;
 
 		this.option = option;
 
@@ -79,8 +101,8 @@ public class ChkSumStatThrd implements Runnable {
 
 			Path has_path;
 
-			synchronized (chksumstat.sync_del_doc_rows) {
-				has_path = chksumstat.sync_del_doc_rows.remove(document_id);
+			synchronized (sync_del_doc_rows) {
+				has_path = sync_del_doc_rows.remove(document_id);
 			}
 
 			if (has_path != null) {
@@ -92,11 +114,10 @@ public class ChkSumStatThrd implements Runnable {
 
 				} catch (IOException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
-				synchronized (chksumstat.sync_up_doc_rows) {
-					chksumstat.sync_up_doc_rows.add(document_id);
+				synchronized (sync_up_doc_rows) {
+					sync_up_doc_rows.add(document_id);
 				}
 
 			}
@@ -111,13 +132,12 @@ public class ChkSumStatThrd implements Runnable {
 
 					} catch (IOException e) {
 						e.printStackTrace();
-						System.exit(1);
 					}
 
 				}
 
-				synchronized (chksumstat.sync_new_doc_rows) {
-					chksumstat.sync_new_doc_rows.add(document_id);
+				synchronized (sync_new_doc_rows) {
+					sync_new_doc_rows.add(document_id);
 				}
 
 			}

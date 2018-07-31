@@ -49,18 +49,18 @@ public class xpathparser {
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(true);
 
-	/** The XPath query. */
-	private static String xpath_query = "";
-
-	/** The XPath variable reference. */
-	private static HashMap<String, String> variables = new HashMap<String, String>();
-
 	/**
 	 * The main method.
 	 *
 	 * @param args the arguments
 	 */
 	public static void main(String[] args) {
+
+		/** The XPath query. */
+		String xpath_query = "";
+
+		/** The XPath variable reference. */
+		HashMap<String, String> variables = new HashMap<String, String>();
 
 		// turn on verbose mode
 		option.verbose = true;

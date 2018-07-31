@@ -1,10 +1,16 @@
-﻿ Changes in xsd2pgschema 2.12.5 (release 2018-07-20)
+﻿ Changes in xsd2pgschema 2.12.6 (release 2018-07-31)
+
+  Moved utility classes into the main line (src/net/sf/xsd2pgschema) except for main classes.
+  Allowed to compare time stamp between source XML and check sum for performance of differential update by default.
+  To revert the previous default setting, please use --sync-rescue option.
+
+ Changes in xsd2pgschema 2.12.5 (release 2018-07-20)
 
   Added support for create/drop PostgreSQL index on document key (--create-doc-key-index, --no-create-doc-key-index (default), and --drop-doc-key-index options in xml2pgcsv, xml2pgtsv, and xml2pgsql main classes, respectively)
   Added --min-rows-for-doc-key-index option to set minimum rows in a table for creation of PostgreSQL index on document key. (default=10000)
   Enabled to use PostgreSQL index on document key by default in differential update (--sync and --sync-weak options).
   Improved performance in differential update as a result.
-  To revert default setting, please use --no-create-doc-key-index option.
+  To revert the previous default setting, please use --no-create-doc-key-index option.
 
  Changes in xsd2pgschema 2.12.4 (release 2018-07-19)
 

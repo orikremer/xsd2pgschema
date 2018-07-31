@@ -39,36 +39,6 @@ import org.apache.commons.io.FilenameUtils;
  */
 public class chksumstat {
 
-	/** The check sum directory name. */
-	private static String check_sum_dir_name = "";
-
-	/** The schema option. */
-	private static PgSchemaOption option = new PgSchemaOption(true);
-
-	/** The XML file filter. */
-	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
-
-	/** The XML file queue. */
-	private static LinkedBlockingQueue<Path> xml_file_queue = null;
-
-	/** The set of new document id while synchronization. */
-	protected static HashSet<String> sync_new_doc_rows = null;
-
-	/** The set of updating document id while synchronization. */
-	protected static HashSet<String> sync_up_doc_rows = null;
-
-	/** The set of deleting document id while synchronization (key=document id, value=check sum file path). */
-	protected static HashMap<String, Path> sync_del_doc_rows = null;
-
-	/** The runtime. */
-	private static Runtime runtime = Runtime.getRuntime();
-
-	/** The available processors. */
-	private static final int cpu_num = runtime.availableProcessors();
-
-	/** The max threads. */
-	private static int max_thrds = cpu_num;
-
 	/**
 	 * The main method.
 	 *
@@ -76,10 +46,38 @@ public class chksumstat {
 	 */
 	public static void main(String[] args) {
 
+		/** The check sum directory name. */
+		String check_sum_dir_name = "";
+
+		/** The schema option. */
+		PgSchemaOption option = new PgSchemaOption(true);
+
+		/** The XML file filter. */
+		XmlFileFilter xml_file_filter = new XmlFileFilter();
+
+		/** The XML file queue. */
+		LinkedBlockingQueue<Path> xml_file_queue;
+
+		/** The target XML file patterns. */
+		HashSet<String> xml_file_names = new HashSet<String>();
+
+		/** The set of new document id while synchronization. */
+		HashSet<String> sync_new_doc_rows = new HashSet<String>();
+
+		/** The set of updating document id while synchronization. */
+		HashSet<String> sync_up_doc_rows = new HashSet<String>();
+
+		/** The set of deleting document id while synchronization (key=document id, value=check sum file path). */
+		HashMap<String, Path> sync_del_doc_rows = new HashMap<String, Path>();
+
+		/** The available processors. */
+		int cpu_num = Runtime.getRuntime().availableProcessors();
+
+		/** The max threads. */
+		int max_thrds = cpu_num;
+
 		option.sync = option.sync_dry_run = true;
 		option.sync_weak = false;
-
-		HashSet<String> xml_file_names = new HashSet<String>();
 
 		boolean touch_xml = false;
 
@@ -170,6 +168,8 @@ public class chksumstat {
 
 		xml_file_queue = PgSchemaUtil.getQueueOfTargetFiles(xml_file_names, filename_filter);
 
+		xml_file_names.clear();
+
 		if (check_sum_dir_name.isEmpty()) {
 			System.err.println("Check sum directory is empty.");
 			showUsage();
@@ -200,10 +200,6 @@ public class chksumstat {
 
 		};
 
-		sync_new_doc_rows = new HashSet<String>();
-		sync_up_doc_rows = new HashSet<String>();
-		sync_del_doc_rows = new HashMap<String, Path>();
-
 		try {
 
 			Files.list(check_sum_dir_path).filter(check_sum_path -> Files.isRegularFile(check_sum_path) && chk_sum_file_filter.accept(null, check_sum_path.getFileName().toString())).forEach(check_sum_path -> {
@@ -228,7 +224,7 @@ public class chksumstat {
 
 			try {
 
-				proc_thrd[thrd_id] = new ChkSumStatThrd(xml_file_filter, xml_file_queue, option);
+				proc_thrd[thrd_id] = new ChkSumStatThrd(xml_file_filter, xml_file_queue, sync_new_doc_rows, sync_up_doc_rows, sync_del_doc_rows, option);
 
 			} catch (NoSuchAlgorithmException e) {
 				e.printStackTrace();

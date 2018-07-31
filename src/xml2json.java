@@ -44,30 +44,6 @@ public class xml2json {
 	/** The JSON directory name. */
 	private static String json_dir_name = "json_work";
 
-	/** The schema option. */
-	private static PgSchemaOption option = new PgSchemaOption(false);
-
-	/** The JSON builder option. */
-	private static JsonBuilderOption jsonb_option = new JsonBuilderOption();
-
-	/** The XML file filter. */
-	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
-
-	/** The XML post editor. */
-	protected static XmlPostEditor xml_post_editor = new XmlPostEditor();
-
-	/** The XML file queue. */
-	private static LinkedBlockingQueue<Path> xml_file_queue = null;
-
-	/** The runtime. */
-	private static Runtime runtime = Runtime.getRuntime();
-
-	/** The available processors. */
-	private static final int cpu_num = runtime.availableProcessors();
-
-	/** The max threads. */
-	private static int max_thrds = cpu_num;
-
 	/**
 	 * The main method.
 	 *
@@ -75,9 +51,31 @@ public class xml2json {
 	 */
 	public static void main(String[] args) {
 
-		option.cancelRelDataExt();
+		/** The schema option. */
+		PgSchemaOption option = new PgSchemaOption(false);
 
+		/** The JSON builder option. */
+		JsonBuilderOption jsonb_option = new JsonBuilderOption();
+
+		/** The XML file filter. */
+		XmlFileFilter xml_file_filter = new XmlFileFilter();
+
+		/** The XML post editor. */
+		XmlPostEditor xml_post_editor = new XmlPostEditor();
+
+		/** The XML file queue. */
+		LinkedBlockingQueue<Path> xml_file_queue;
+
+		/** The target XML file patterns. */
 		HashSet<String> xml_file_names = new HashSet<String>();
+
+		/** The available processors. */
+		int cpu_num = Runtime.getRuntime().availableProcessors();
+
+		/** The max threads. */
+		int max_thrds = cpu_num;
+
+		option.cancelRelDataExt();
 
 		boolean touch_xml = false;
 
@@ -245,6 +243,8 @@ public class xml2json {
 		};
 
 		xml_file_queue = PgSchemaUtil.getQueueOfTargetFiles(xml_file_names, filename_filter);
+
+		xml_file_names.clear();
 
 		if (xml_file_queue.size() < max_thrds)
 			max_thrds = xml_file_queue.size();

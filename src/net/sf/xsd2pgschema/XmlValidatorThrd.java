@@ -17,7 +17,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-import net.sf.xsd2pgschema.*;
+package net.sf.xsd2pgschema;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -126,7 +126,6 @@ public class XmlValidatorThrd implements Runnable {
 
 				} catch (IOException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			}
@@ -137,7 +136,6 @@ public class XmlValidatorThrd implements Runnable {
 
 			} catch (Exception e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 		}

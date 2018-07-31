@@ -42,32 +42,8 @@ import org.xml.sax.SAXException;
  */
 public class xml2pgsql {
 
-	/** The check sum directory name. */
-	private static String check_sum_dir_name = "";
-
 	/** The schema option. */
 	private static PgSchemaOption option = new PgSchemaOption(true);
-
-	/** The PostgreSQL option. */
-	private static PgOption pg_option = new PgOption();
-
-	/** The XML file filter. */
-	private static XmlFileFilter xml_file_filter = new XmlFileFilter();
-
-	/** The XML post editor. */
-	protected static XmlPostEditor xml_post_editor = new XmlPostEditor();
-
-	/** The XML file queue. */
-	private static LinkedBlockingQueue<Path> xml_file_queue = null;
-
-	/** The runtime. */
-	private static Runtime runtime = Runtime.getRuntime();
-
-	/** The available processors. */
-	private static final int cpu_num = runtime.availableProcessors();
-
-	/** The max threads. */
-	private static int max_thrds = cpu_num;
 
 	/**
 	 * The main method.
@@ -76,7 +52,29 @@ public class xml2pgsql {
 	 */
 	public static void main(String[] args) {
 
+		/** The check sum directory name. */
+		String check_sum_dir_name = "";
+
+		/** The PostgreSQL option. */
+		PgOption pg_option = new PgOption();
+
+		/** The XML file filter. */
+		XmlFileFilter xml_file_filter = new XmlFileFilter();
+
+		/** The XML post editor. */
+		XmlPostEditor xml_post_editor = new XmlPostEditor();
+
+		/** The XML file queue. */
+		LinkedBlockingQueue<Path> xml_file_queue;
+
+		/** The target XML file patterns. */
 		HashSet<String> xml_file_names = new HashSet<String>();
+
+		/** The available processors. */
+		int cpu_num = Runtime.getRuntime().availableProcessors();
+
+		/** The max threads. */
+		int max_thrds = cpu_num;
 
 		boolean touch_xml = false;
 
@@ -323,6 +321,8 @@ public class xml2pgsql {
 		};
 
 		xml_file_queue = PgSchemaUtil.getQueueOfTargetFiles(xml_file_names, filename_filter);
+
+		xml_file_names.clear();
 
 		if (xml_file_queue.size() < max_thrds)
 			max_thrds = xml_file_queue.size();

@@ -17,7 +17,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-import net.sf.xsd2pgschema.*;
+package net.sf.xsd2pgschema;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -207,7 +207,6 @@ public class Xml2PgCsvThrd implements Runnable {
 
 				} catch (IOException e) {
 					e.printStackTrace();
-					System.exit(1);
 				}
 
 			}
@@ -221,7 +220,6 @@ public class Xml2PgCsvThrd implements Runnable {
 			} catch (Exception e) {
 				System.err.println("Exception occurred while processing XML document: " + xml_file_path.toAbsolutePath().toString());
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 			++polled;
@@ -248,12 +246,11 @@ public class Xml2PgCsvThrd implements Runnable {
 
 			} catch (PgSchemaException e) {
 				e.printStackTrace();
-				System.exit(1);
 			}
 
 			if (Files.isDirectory(work_dir)) {
 
-				System.out.println("Done xml (" + polled + " entries) -> db (" + db_name + ").");
+				System.out.println("Done XML (" + polled + " documents) -> DB (" + db_name + ").");
 
 				try {
 					FileUtils.deleteDirectory(work_dir.toFile());
