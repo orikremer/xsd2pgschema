@@ -55,7 +55,7 @@ import com.github.antlr.grammars_v4.xpath.xpathParser;
 import com.github.antlr.grammars_v4.xpath.xpathParser.MainContext;
 
 /**
- * Implementation of xpath evaluator.
+ * Implementation of XPath evaluator.
  *
  * @author yokochi
  */

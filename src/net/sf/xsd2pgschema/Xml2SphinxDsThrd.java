@@ -126,7 +126,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @param ds_name data source name
 	 * @param ds_dir_path data source directory path
 	 * @param doc_rows set of document id stored in data source
-	 * @param sync_del_doc_rows set of deleting docuement id while synchronization
+	 * @param sync_del_doc_rows set of deleting document id while synchronization
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
 	 * @throws IOException Signals that an I/O exception has occurred.
