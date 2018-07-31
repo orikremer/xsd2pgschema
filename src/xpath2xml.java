@@ -42,12 +42,6 @@ import com.github.antlr.grammars_v4.xpath.xpathListenerException;
  */
 public class xpath2xml {
 
-	/** The schema option. */
-	private static PgSchemaOption option = new PgSchemaOption(true);
-
-	/** The XML builder. */
-	private static XmlBuilder xmlb = new XmlBuilder();
-
 	/**
 	 * The main method.
 	 *
@@ -61,8 +55,14 @@ public class xpath2xml {
 		/** The output file name or pattern. */
 		String out_file_name = "";
 
+		/** The schema option. */
+		PgSchemaOption option = new PgSchemaOption(true);
+
 		/** The PostgreSQL option. */
 		PgOption pg_option = new PgOption();
+
+		/** The XML builder. */
+		XmlBuilder xmlb = new XmlBuilder();
 
 		/** The XPath queries. */
 		ArrayList<String> xpath_queries = new ArrayList<String>();
@@ -261,6 +261,10 @@ public class xpath2xml {
 	 * Show usage.
 	 */
 	private static void showUsage() {
+
+		PgSchemaOption option = new PgSchemaOption(true);
+
+		XmlBuilder xmlb = new XmlBuilder();
 
 		System.err.println("xpath2xml: XPath 1.0 qeury evaluator to compose XML over PostgreSQL");
 		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");

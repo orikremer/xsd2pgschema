@@ -45,9 +45,6 @@ public class xml2pgcsv {
 	/** The working directory name. */
 	protected static String work_dir_name = "pg_work";
 
-	/** The schema option. */
-	private static PgSchemaOption option = new PgSchemaOption(true);
-
 	/**
 	 * The main method.
 	 *
@@ -57,6 +54,9 @@ public class xml2pgcsv {
 
 		/** The check sum directory name. */
 		String check_sum_dir_name = "";
+
+		/** The schema option. */
+		PgSchemaOption option = new PgSchemaOption(true);
 
 		/** The PostgreSQL option. */
 		PgOption pg_option = new PgOption();
@@ -421,6 +421,10 @@ public class xml2pgcsv {
 	 * Show usage.
 	 */
 	private static void showUsage() {
+
+		PgSchemaOption option = new PgSchemaOption(true);
+
+		option.usePgCsv();
 
 		System.err.println("xml2pgcsv: XML -> CSV conversion and PostgreSQL data migration");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --work-dir DIRECTORY (default=\"" + work_dir_name + "\")");

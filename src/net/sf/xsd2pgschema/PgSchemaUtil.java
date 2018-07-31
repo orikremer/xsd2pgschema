@@ -110,6 +110,9 @@ public class PgSchemaUtil {
 	/** The minimum word length for index. */
 	public static final int min_word_len = 1;
 
+	/** The threshold frequency for index dictionary. */
+	public static final int freq_threshold = 10;
+
 	/** The PostgreSQL maximum length for enumeration/constraint. */
 	public static final int max_enum_len = 63;
 
@@ -150,7 +153,10 @@ public class PgSchemaUtil {
 	public static final int sph_max_field_len = 1024 * 1024 * 2;
 
 	/** The field name of Sphinx dictionary. */
-	public static final String trigram_field_name = "trigrams";
+	public static final String sph_trigram_field_name = "trigrams";
+
+	/** The Lucene dictionary file name. */
+	public static final String lucene_dic_file_name = "dictionary";
 
 	/** The text node of XPath notation. */
 	public static final String text_node_name = "text()";

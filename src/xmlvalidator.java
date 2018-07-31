@@ -59,11 +59,8 @@ public class xmlvalidator {
 		/** The target XML file patterns. */
 		HashSet<String> xml_file_names = new HashSet<String>();
 
-		/** The runtime. */
-		Runtime runtime = Runtime.getRuntime();
-
 		/** The available processors. */
-		int cpu_num = runtime.availableProcessors();
+		int cpu_num = Runtime.getRuntime().availableProcessors();
 
 		/** The max threads. */
 		int max_thrds = cpu_num;

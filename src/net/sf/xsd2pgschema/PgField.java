@@ -4720,9 +4720,9 @@ public class PgField {
 	 * @param name field name
 	 * @param value content
 	 * @param min_word_len_filter whether it exceeds minimum word length
-	 * @param numeric_lucidx whether numeric values are stored in index
+	 * @param lucene_numeric_index whether numeric values are stored in Lucene index
 	 */
-	protected void writeValue2LucIdx(org.apache.lucene.document.Document lucene_doc, String name, String value, boolean min_word_len_filter, boolean numeric_lucidx) {
+	protected void writeValue2LucIdx(org.apache.lucene.document.Document lucene_doc, String name, String value, boolean min_word_len_filter, boolean lucene_numeric_index) {
 
 		if (attr_sel_rdy) {
 
@@ -4732,7 +4732,7 @@ public class PgField {
 			case xs_bigint:
 			case xs_unsignedLong:
 				lucene_doc.add(new LongPoint(name, Long.valueOf(value)));
-				if (numeric_lucidx)
+				if (lucene_numeric_index)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 				break;
 			case xs_serial:
@@ -4748,18 +4748,18 @@ public class PgField {
 			case xs_unsignedShort:
 			case xs_unsignedByte:
 				lucene_doc.add(new IntPoint(name, Integer.valueOf(value)));
-				if (numeric_lucidx)
+				if (lucene_numeric_index)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 				break;
 			case xs_float:
 				lucene_doc.add(new FloatPoint(name, Float.valueOf(value)));
-				if (numeric_lucidx)
+				if (lucene_numeric_index)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 				break;
 			case xs_double:
 			case xs_decimal:
 				lucene_doc.add(new DoublePoint(name, Double.valueOf(value)));
-				if (numeric_lucidx)
+				if (lucene_numeric_index)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 				break;
 			case xs_dateTime:

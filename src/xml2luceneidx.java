@@ -165,7 +165,7 @@ public class xml2luceneidx {
 				index_filter.setMinWordLen(args[++i]);
 
 			else if (args[i].equals("--numeric-idx"))
-				index_filter.enableNumericLucIdx();
+				index_filter.enableLuceneNumericIndex();
 
 			else if (args[i].equals("--fill-default-value"))
 				xml_post_editor.fill_default_value = true;

@@ -42,9 +42,6 @@ import com.github.antlr.grammars_v4.xpath.xpathListenerException;
  */
 public class xpath2json {
 
-	/** The schema option. */
-	private static PgSchemaOption option = new PgSchemaOption(true);
-
 	/**
 	 * The main method.
 	 *
@@ -57,6 +54,9 @@ public class xpath2json {
 
 		/** The output file name or pattern. */
 		String out_file_name = "";
+
+		/** The schema option. */
+		PgSchemaOption option = new PgSchemaOption(true);
 
 		/** The PostgreSQL option. */
 		PgOption pg_option = new PgOption();
@@ -278,6 +278,8 @@ public class xpath2json {
 	 * Show usage.
 	 */
 	private static void showUsage() {
+
+		PgSchemaOption option = new PgSchemaOption(true);
 
 		JsonBuilderOption jsonb_option = new JsonBuilderOption();
 

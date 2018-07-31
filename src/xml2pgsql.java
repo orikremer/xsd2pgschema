@@ -42,9 +42,6 @@ import org.xml.sax.SAXException;
  */
 public class xml2pgsql {
 
-	/** The schema option. */
-	private static PgSchemaOption option = new PgSchemaOption(true);
-
 	/**
 	 * The main method.
 	 *
@@ -54,6 +51,9 @@ public class xml2pgsql {
 
 		/** The check sum directory name. */
 		String check_sum_dir_name = "";
+
+		/** The schema option. */
+		PgSchemaOption option = new PgSchemaOption(true);
 
 		/** The PostgreSQL option. */
 		PgOption pg_option = new PgOption();
@@ -415,6 +415,8 @@ public class xml2pgsql {
 	 * Show usage.
 	 */
 	private static void showUsage() {
+
+		PgSchemaOption option = new PgSchemaOption(true);
 
 		System.err.println("xml2pgsql: XML -> PostgreSQL data migration");
 		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --xml XML_FILE_OR_DIRECTORY --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");

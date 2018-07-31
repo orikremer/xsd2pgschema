@@ -59,7 +59,7 @@ public class IndexFilter {
 	public boolean attr_all = false;
 
 	/** Whether numeric values are stored in Lucene index. */
-	protected boolean numeric_lucidx = false;
+	protected boolean lucene_numeric_index = false;
 
 	/** The Sphinx maximum field length. (related to max_xmlpipe2_field in sphinx.conf) */
 	protected int sph_max_field_len = PgSchemaUtil.sph_max_field_len;
@@ -219,9 +219,9 @@ public class IndexFilter {
 	/**
 	 * Enable Lucene indexing for numerical data.
 	 */
-	public void enableNumericLucIdx() {
+	public void enableLuceneNumericIndex() {
 
-		numeric_lucidx = true;
+		lucene_numeric_index = true;
 
 	}
 

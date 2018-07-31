@@ -51,9 +51,6 @@ public class luceneidx2dic {
 	/** The dictionary directory name. */
 	private static String dic_dir_name = "lucene_dic";
 
-	/** The dictionary file name. */
-	private static String dic_file_name = "dictionary";
-
 	/**
 	 * The main method.
 	 *
@@ -66,6 +63,9 @@ public class luceneidx2dic {
 
 		/** The field list. */
 		List<String> fields = new ArrayList<String>();
+
+		/** The dictionary file name. */
+		String dic_file_name = PgSchemaUtil.lucene_dic_file_name;
 
 		for (int i = 0; i < args.length; i++) {
 
@@ -197,7 +197,7 @@ public class luceneidx2dic {
 	private static void showUsage() {
 
 		System.err.println("luceneidx2dic: Lucene index -> Lucene dictionary");
-		System.err.println("Usage:  --idx-dir DIRECTORY (default=\"" + xml2luceneidx.idx_dir_name + "\") --dic-dir DIRECTORY (default=\"" + dic_dir_name + "\") --dic DIC_FILE (default=\"" + dic_file_name + "\")");
+		System.err.println("Usage:  --idx-dir DIRECTORY (default=\"" + xml2luceneidx.idx_dir_name + "\") --dic-dir DIRECTORY (default=\"" + dic_dir_name + "\") --dic DIC_FILE (default=\"" + PgSchemaUtil.lucene_dic_file_name + "\")");
 		System.err.println("Option: --field FIELD_NAME (default=\"" + PgSchemaUtil.simple_content_name + "\")");
 		System.exit(1);
 

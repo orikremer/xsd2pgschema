@@ -39,9 +39,6 @@ import org.apache.commons.text.StringEscapeUtils;
  */
 public class dicmerge4sphinx {
 
-	/** The frequency threshold. */
-	private static int freq_threshold = 10;
-
 	/**
 	 * The main method.
 	 *
@@ -54,6 +51,9 @@ public class dicmerge4sphinx {
 
 		/** The dictionary file list. */
 		List<String> dic_file_list = new ArrayList<String>();
+
+		/** The threshold frequency for index dictionary. */
+		int freq_threshold = PgSchemaUtil.freq_threshold;
 
 		for (int i = 0; i < args.length; i++) {
 
@@ -149,7 +149,7 @@ public class dicmerge4sphinx {
 
 			buffw.write("<sphinx:attr name=\"keyword\" type=\"string\"/>\n");
 			buffw.write("<sphinx:attr name=\"freq\" type=\"int\" bits=\"32\"/>\n");
-			buffw.write("<sphinx:field name=\"" + PgSchemaUtil.trigram_field_name + "\"/>\n"); // default field
+			buffw.write("<sphinx:field name=\"" + PgSchemaUtil.sph_trigram_field_name + "\"/>\n"); // default field
 
 			buffw.write("</sphinx:schema>\n");
 
@@ -166,7 +166,7 @@ public class dicmerge4sphinx {
 				buffw.write("<sphinx:document id=\"" + (++id) + "\">\n");
 				buffw.write("<keyword>" + StringEscapeUtils.escapeXml10(keyword) + "</keyword>\n");
 				buffw.write("<freq>" + freq + "</freq>\n");
-				buffw.write("<" + PgSchemaUtil.trigram_field_name + ">" + toTrigram(keyword) + "</" + PgSchemaUtil.trigram_field_name + ">\n");
+				buffw.write("<" + PgSchemaUtil.sph_trigram_field_name + ">" + toTrigram(keyword) + "</" + PgSchemaUtil.sph_trigram_field_name + ">\n");
 				buffw.write("</sphinx:document>\n");
 
 			}
@@ -185,7 +185,7 @@ public class dicmerge4sphinx {
 	/**
 	 * Convert keyword to trigram.
 	 *
-	 * @param keyword the keyword
+	 * @param keyword keyword
 	 * @return String trigram
 	 */
 	private static String toTrigram(String keyword) {
@@ -216,7 +216,7 @@ public class dicmerge4sphinx {
 		System.err.println("dicmerge4sphinx: Sphinx data source -> Sphinx dictionary index");
 		System.err.println("Usage:  --ds-dir DIRECTORY (default=\"" + xml2sphinxds.ds_dir_name + "\")");
 		System.err.println("        --dic DIC_FILE (repeat until you specify all dictionaries)");
-		System.err.println("Option: --freq FREQ_THRESHOLD (default=" + freq_threshold + ")");
+		System.err.println("Option: --freq FREQ_THRESHOLD (default=" + PgSchemaUtil.freq_threshold + ")");
 		System.exit(1);
 
 	}

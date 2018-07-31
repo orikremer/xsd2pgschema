@@ -46,15 +46,15 @@ import com.github.antlr.grammars_v4.xpath.xpathParser.MainContext;
  */
 public class xpathparser {
 
-	/** The schema option. */
-	private static PgSchemaOption option = new PgSchemaOption(true);
-
 	/**
 	 * The main method.
 	 *
 	 * @param args the arguments
 	 */
 	public static void main(String[] args) {
+
+		/** The schema option. */
+		PgSchemaOption option = new PgSchemaOption(true);
 
 		/** The XPath query. */
 		String xpath_query = "";
@@ -229,6 +229,8 @@ public class xpathparser {
 	 * Show usage.
 	 */
 	private static void showUsage() {
+
+		PgSchemaOption option = new PgSchemaOption(true);
 
 		System.err.println("xpathparser: XPath 1.0 parser with XML Schema validation");
 		System.err.println("Usage:  --xsd SCHEMA_LOCAITON");

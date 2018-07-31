@@ -46,14 +46,14 @@ public class xsd2jsonschema {
 	 */
 	public static void main(String[] args) {
 
+		/** The JSON Schema output name. */
+		String json_output = "";
+
 		/** The JSON builder option. */
 		JsonBuilderOption jsonb_option = new JsonBuilderOption();
 
 		/** The schema option. */
 		PgSchemaOption option = new PgSchemaOption(jsonb_option.type);
-
-		/** The JSON Schema output name. */
-		String json_output = "";
 
 		for (int i = 0; i < args.length; i++) {
 

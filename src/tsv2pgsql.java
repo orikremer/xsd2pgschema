@@ -40,9 +40,6 @@ import org.xml.sax.SAXException;
  */
 public class tsv2pgsql {
 
-	/** The schema option. */
-	private static PgSchemaOption option = new PgSchemaOption(true);
-
 	/**
 	 * The main method.
 	 *
@@ -52,6 +49,9 @@ public class tsv2pgsql {
 
 		/** The working directory name. */
 		String work_dir_name = xml2pgtsv.work_dir_name;
+
+		/** The schema option. */
+		PgSchemaOption option = new PgSchemaOption(true);
 
 		/** The PostgreSQL option. */
 		PgOption pg_option = new PgOption();
@@ -216,6 +216,8 @@ public class tsv2pgsql {
 	 * Show usage.
 	 */
 	private static void showUsage() {
+
+		PgSchemaOption option = new PgSchemaOption(true);
 
 		System.err.println("tsv2pgsql: TSV -> PostgreSQL data migration");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --work-dir DIRECTORY (default=\"" + xml2pgtsv.work_dir_name + "\") --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");

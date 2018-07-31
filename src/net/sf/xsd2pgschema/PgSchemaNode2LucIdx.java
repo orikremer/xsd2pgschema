@@ -42,7 +42,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	private int min_word_len;
 
 	/** Whether numeric values are stored in Lucene index. */
-	private boolean numeric_lucidx;
+	private boolean lucene_numeric_index;
 
 	/**
 	 * Node parser for Lucene document conversion.
@@ -59,7 +59,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		min_word_len = schema.index_filter.min_word_len;
 
-		numeric_lucidx = schema.index_filter.numeric_lucidx;
+		lucene_numeric_index = schema.index_filter.lucene_numeric_index;
 
 	}
 
@@ -275,7 +275,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				table.lucene_doc.add(new NoIdxStringField(table.name + "." + field.name, value, Field.Store.YES));
 
 			else if (field.indexable)
-				field.writeValue2LucIdx(table.lucene_doc, table.name + "." + field.name, value, value.length() >= min_word_len, numeric_lucidx);
+				field.writeValue2LucIdx(table.lucene_doc, table.name + "." + field.name, value, value.length() >= min_word_len, lucene_numeric_index);
 
 		}
 

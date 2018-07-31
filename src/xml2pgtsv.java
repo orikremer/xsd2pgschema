@@ -45,9 +45,6 @@ public class xml2pgtsv {
 	/** The working directory name. */
 	protected static String work_dir_name = "pg_work";
 
-	/** The schema option. */
-	private static PgSchemaOption option = new PgSchemaOption(true);
-
 	/**
 	 * The main method.
 	 *
@@ -57,6 +54,9 @@ public class xml2pgtsv {
 
 		/** The check sum directory name. */
 		String check_sum_dir_name = "";
+
+		/** The schema option. */
+		PgSchemaOption option = new PgSchemaOption(true);
 
 		/** The PostgreSQL option. */
 		PgOption pg_option = new PgOption();
@@ -73,11 +73,8 @@ public class xml2pgtsv {
 		/** The target XML file patterns. */
 		HashSet<String> xml_file_names = new HashSet<String>();
 
-		/** The runtime. */
-		Runtime runtime = Runtime.getRuntime();
-
 		/** The available processors. */
-		int cpu_num = runtime.availableProcessors();
+		int cpu_num = Runtime.getRuntime().availableProcessors();
 
 		/** The max threads. */
 		int max_thrds = cpu_num;
@@ -422,6 +419,8 @@ public class xml2pgtsv {
 	 * Show usage.
 	 */
 	private static void showUsage() {
+
+		PgSchemaOption option = new PgSchemaOption(true);
 
 		System.err.println("xml2pgtsv: XML -> TSV conversion and PostgreSQL data migration");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --work-dir DIRECTORY (default=\"" + work_dir_name + "\")");

@@ -38,9 +38,6 @@ import org.w3c.dom.Document;
  */
 public class xsd2pgschema {
 
-	/** The schema option. */
-	private static PgSchemaOption option = new PgSchemaOption(true);
-
 	/**
 	 * The main method.
 	 *
@@ -50,6 +47,9 @@ public class xsd2pgschema {
 
 		/** The PostgreSQL DDL output name. */
 		String ddl_output = "";
+
+		/** The schema option. */
+		PgSchemaOption option = new PgSchemaOption(true);
 
 		option.ddl_output = true; // output PostgreSQL DDL
 
@@ -196,6 +196,8 @@ public class xsd2pgschema {
 	 * Show usage.
 	 */
 	private static void showUsage() {
+
+		PgSchemaOption option = new PgSchemaOption(true);
 
 		System.err.println("xsd2pgschema: XML Schema -> PostgreSQL DDL conversion");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --ddl DDL_FILE (default=stdout)");
