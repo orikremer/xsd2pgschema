@@ -109,7 +109,8 @@ public class PgSchemaNodeTester {
 
 		if (nested_key.list_holder) {
 
-			boolean node_test = false;
+			boolean unexplored = true;
+			boolean unchecked = true;
 
 			for (Node child = parent_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -120,17 +121,28 @@ public class PgSchemaNodeTester {
 
 					node_count++;
 
-					if (child.isSameNode(node))
-						node_test = true;
+					if (unexplored && child.isSameNode(node))
+						unexplored = false;
 
-					if (!node_test)
+					if (unexplored)
 						ordinal++;
+
+					else if (unchecked) {
+
+						if (ordinal < target_ordinal) {
+							omissible = true;
+							return;
+						}
+
+						unchecked = false;
+
+					}
 
 				}
 
 			}
 
-			if (ordinal < target_ordinal) {
+			if (unchecked && ordinal < target_ordinal) {
 				omissible = true;
 				return;
 			}
