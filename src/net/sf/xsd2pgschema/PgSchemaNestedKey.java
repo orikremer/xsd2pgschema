@@ -19,6 +19,8 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import org.w3c.dom.Node;
+
 /**
  * Nested key
  *
@@ -94,7 +96,7 @@ public class PgSchemaNestedKey {
 		parent_key = node_test.primary_key;
 
 		if (indirect = !exists)
-			target_ordinal = node_test.ordinal;
+			target_ordinal = node_test.node_ordinal;
 
 		return this;
 	}
@@ -111,6 +113,37 @@ public class PgSchemaNestedKey {
 		indirect = false;
 
 		return this;
+	}
+
+	/**
+	 * Return count of the target nodes with qualified name under parent node.
+	 *
+	 * @param parent_node parent node
+	 * @param qname qualified name of target node
+	 * @return int count of the target nodes
+	 */
+	public int getNodeCount(Node parent_node, final String qname) {
+
+		int node_count = 0;
+
+		if (list_holder) {
+
+			for (Node child = parent_node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+				if (child.getNodeType() != Node.ELEMENT_NODE)
+					continue;
+
+				if (qname.equals(child.getNodeName()))
+					node_count++;
+
+			}
+
+		}
+
+		if (table.has_unique_nested_key && node_count > 1)
+			node_count = 1;
+
+		return node_count;
 	}
 
 }

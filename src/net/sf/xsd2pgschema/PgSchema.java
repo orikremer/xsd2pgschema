@@ -4472,7 +4472,7 @@ public class PgSchema {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2pgcsv.node_count, node2pgcsv.node_ordinal);
 
 				if (node_test.visited)
 					return;
@@ -4480,9 +4480,7 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				node2pgcsv.parseChildNode(node_test);
-
-				if (node_test.isLastNode())
+				if (node2pgcsv.parseChildNode(node_test, nested_key))
 					break;
 
 			}
@@ -4636,7 +4634,7 @@ public class PgSchema {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2pgsql.node_count, node2pgsql.node_ordinal);
 
 				if (node_test.visited)
 					return;
@@ -4644,9 +4642,7 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				node2pgsql.parseChildNode(node_test);
-
-				if (node_test.isLastNode())
+				if (node2pgsql.parseChildNode(node_test, nested_key))
 					break;
 
 			}
@@ -5229,7 +5225,7 @@ public class PgSchema {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2lucidx.node_count, node2lucidx.node_ordinal);
 
 				if (node_test.visited)
 					return;
@@ -5237,9 +5233,7 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				node2lucidx.parseChildNode(node_test);
-
-				if (node_test.isLastNode())
+				if (node2lucidx.parseChildNode(node_test, nested_key))
 					break;
 
 			}
@@ -5597,7 +5591,7 @@ public class PgSchema {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2sphds.node_count, node2sphds.node_ordinal);
 
 				if (node_test.visited)
 					return;
@@ -5605,10 +5599,8 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				node2sphds.parseChildNode(node_test);
-
-				if (node_test.isLastNode())
-					break;
+				if (node2sphds.parseChildNode(node_test, nested_key));
+				break;
 
 			}
 
@@ -5896,7 +5888,7 @@ public class PgSchema {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2json.node_count, node2json.node_ordinal);
 
 				if (node_test.visited)
 					return;
@@ -5904,9 +5896,9 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				node2json.parseChildNode(node_test, nested_key.as_attr, json_indent_level);
+				node2json.parseChildNode(node_test, nested_key, json_indent_level);
 
-				if (node_test.isLastNode())
+				if (node2json.isLastNode(nested_key, node_test.node_count))
 					break;
 
 			}
@@ -6082,7 +6074,7 @@ public class PgSchema {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2json.node_count, node2json.node_ordinal);
 
 				if (node_test.visited)
 					return;
@@ -6090,9 +6082,9 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				node2json.parseChildNode(node_test, nested_key.as_attr, json_indent_level);
+				node2json.parseChildNode(node_test, nested_key, json_indent_level);
 
-				if (node_test.isLastNode())
+				if (node2json.isLastNode(nested_key, node_test.node_count))
 					break;
 
 			}
@@ -6281,7 +6273,7 @@ public class PgSchema {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2json.node_count, node2json.node_ordinal);
 
 				if (node_test.visited)
 					return;
@@ -6289,9 +6281,7 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				node2json.parseChildNode(node_test);
-
-				if (node_test.isLastNode())
+				if (node2json.parseChildNode(node_test, nested_key))
 					break;
 
 			}

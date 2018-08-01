@@ -1,8 +1,9 @@
-﻿ Changes in xsd2pgschema 2.12.6 (release 2018-07-31)
+﻿ Changes in xsd2pgschema 2.12.6 (release 2018-08-01)
 
   Moved utility classes into the main line (src/net/sf/xsd2pgschema) except for main classes.
   Allowed to compare time stamp between source XML and check sum for performance of differential update by default.
   To revert the previous default setting, please use --sync-rescue option.
+  Improved XML node parser performance in case relation has large rows.
 
  Changes in xsd2pgschema 2.12.5 (release 2018-07-20)
 

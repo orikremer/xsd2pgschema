@@ -75,6 +75,12 @@ public abstract class PgSchemaNodeParser {
 	/** The array of nested key. */
 	protected List<PgSchemaNestedKey> nested_keys = null;
 
+	/** The count of sibling nodes. */
+	protected int node_count = 0;
+
+	/** The ordinal number of sibling node. */
+	protected int node_ordinal = 1;
+
 	/** Whether values were adequately filled. */
 	protected boolean filled = true;
 
@@ -163,9 +169,11 @@ public abstract class PgSchemaNodeParser {
 	 * Abstract parser of processing node (child).
 	 *
 	 * @param node_test node tester
+	 * @param nested_key nested key
+	 * @return boolean whether current node is the last one
 	 * @throws Exception the exception
 	 */
-	abstract public void parseChildNode(final PgSchemaNodeTester node_test) throws Exception;
+	abstract boolean parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key) throws Exception;
 
 	/**
 	 * Abstract parser of processing node (child).
@@ -182,7 +190,7 @@ public abstract class PgSchemaNodeParser {
 	 */
 	public void clear() throws PgSchemaException {
 
-		if (nested_keys != null && nested_keys.size() > 0)
+		if (table.nested_fields > 0 && nested_keys.size() > 0)
 			nested_keys.clear();
 
 	}
@@ -195,7 +203,7 @@ public abstract class PgSchemaNodeParser {
 	 * @param current_key current key
 	 * @return String nested key name, null if invalid
 	 */
-	public String setNestedKey(final Node node, final PgField field, final String current_key) {
+	protected String setNestedKey(final Node node, final PgField field, final String current_key) {
 
 		if (!matchesParentNode(current_key, field.parent_node))
 			return null;
@@ -286,7 +294,7 @@ public abstract class PgSchemaNodeParser {
 	 * @param pg_enum_limit whether PostgreSQL enumeration length limit is applied
 	 * @return boolean whether content is valid
 	 */
-	public boolean setContent(final Node node, final PgField field, final String current_key, final boolean as_attr, final boolean pg_enum_limit) {
+	protected boolean setContent(final Node node, final PgField field, final String current_key, final boolean as_attr, final boolean pg_enum_limit) {
 
 		content = null;
 
@@ -324,7 +332,7 @@ public abstract class PgSchemaNodeParser {
 	 * @throws IOException Signals that an I/O exception has occurred
 	 * @throws SAXException the SAX exception
 	 */
-	public boolean setAnyContent(final Node node, final PgField field) throws TransformerException, IOException, SAXException {
+	protected boolean setAnyContent(final Node node, final PgField field) throws TransformerException, IOException, SAXException {
 
 		content = null;
 
@@ -747,7 +755,7 @@ public abstract class PgSchemaNodeParser {
 	 * @param node current node
 	 * @return boolean whether nested node exists
 	 */
-	public boolean existsNestedNode(final PgTable nested_table, final Node node) {
+	protected boolean existsNestedNode(final PgTable nested_table, final Node node) {
 
 		if (nested_table.virtual)
 			return nested_table.content_holder;
@@ -769,6 +777,27 @@ public abstract class PgSchemaNodeParser {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Return whether current node is the last one.
+	 *
+	 * @param nested_key nested key
+	 * @param node_count count of sibling nodes
+	 * @return boolean whether current node is the last one
+	 */
+	protected boolean isLastNode(PgSchemaNestedKey nested_key, int node_count) {
+
+		try {
+			return node_count <= 1 || (node_ordinal == node_count) || (nested_key.indirect && node_ordinal == nested_key.target_ordinal);
+		} finally {
+
+			if (this.node_count == 0)
+				this.node_count = node_count;
+
+			node_ordinal++;
+		}
+
 	}
 
 }

@@ -28,9 +28,6 @@ import org.w3c.dom.Node;
  */
 public class PgSchemaNodeTester {
 
-	/** The ordinal number in sibling node. */
-	protected int ordinal = 1;
-
 	/** The parent key name. */
 	protected String parent_key;
 
@@ -55,11 +52,11 @@ public class PgSchemaNodeTester {
 	/** Whether child node is not nested node (indirect). */
 	protected boolean indirect;
 
-	/** The target ordinal number of current node. */
-	private int target_ordinal;
+	/** The count of sibling nodes. */
+	protected int node_count;
 
-	/** The total number of sibling node. */
-	private int node_count = 0;
+	/** The ordinal number of sibling node. */
+	protected int node_ordinal;
 
 	/**
 	 * Decide whether to process this node.
@@ -70,8 +67,10 @@ public class PgSchemaNodeTester {
 	 * @param parent_table parent table
 	 * @param table current table
 	 * @param nested_key nested key
+	 * @param node_count count of sibling nodes
+	 * @param node_ordinal ordinal number of sibling node
 	 */
-	public PgSchemaNodeTester(final PgSchemaOption option, final Node parent_node, final Node node, final PgTable parent_table, final PgTable table, final PgSchemaNestedKey nested_key) {
+	public PgSchemaNodeTester(final PgSchemaOption option, final Node parent_node, final Node node, final PgTable parent_table, final PgTable table, final PgSchemaNestedKey nested_key, final int node_count, final int node_ordinal) {
 
 		boolean virtual = table.virtual;
 
@@ -83,7 +82,6 @@ public class PgSchemaNodeTester {
 
 		as_attr = nested_key.as_attr;
 		indirect = nested_key.indirect;
-		target_ordinal = nested_key.target_ordinal;
 
 		if (!virtual) {
 
@@ -101,54 +99,19 @@ public class PgSchemaNodeTester {
 
 		}
 
-		parent_key = nested_key.parent_key;
-
 		// processing key name
 
 		primary_key = current_key = nested_key.current_key;
 
 		if (nested_key.list_holder) {
 
-			boolean unexplored = true;
-			boolean unchecked = true;
-
-			for (Node child = parent_node.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-				if (child.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-
-				if (qname.equals(child.getNodeName())) {
-
-					node_count++;
-
-					if (unexplored && child.isSameNode(node))
-						unexplored = false;
-
-					if (unexplored)
-						ordinal++;
-
-					else if (unchecked) {
-
-						if (ordinal < target_ordinal) {
-							omissible = true;
-							return;
-						}
-
-						unchecked = false;
-
-					}
-
-				}
-
-			}
-
-			if (unchecked && ordinal < target_ordinal) {
+			if (indirect && node_ordinal < nested_key.target_ordinal) {
 				omissible = true;
 				return;
 			}
 
 			if (!virtual)
-				current_key += "[" + ordinal + "]"; // XPath predicate
+				current_key += "[" + node_ordinal + "]"; // XPath predicate
 
 		}
 
@@ -159,8 +122,7 @@ public class PgSchemaNodeTester {
 
 		table.visited_key = current_key;
 
-		if (table.has_unique_nested_key && node_count > 1)
-			node_count = 1;
+		parent_key = nested_key.parent_key;
 
 		// processing node
 
@@ -188,15 +150,9 @@ public class PgSchemaNodeTester {
 
 		}
 
-	}
+		this.node_count = node_count > 0 ? node_count : nested_key.getNodeCount(parent_node, qname);
+		this.node_ordinal = node_ordinal;
 
-	/**
-	 * Return whether current node is the last one.
-	 *
-	 * @return boolean whether current node is the last one
-	 */
-	public boolean isLastNode() {
-		return node_count <= 1 || (ordinal == node_count) || (indirect && ordinal == target_ordinal);
 	}
 
 }

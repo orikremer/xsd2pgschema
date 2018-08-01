@@ -80,29 +80,34 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	 * Parse processing node (child).
 	 *
 	 * @param node_test node tester
+	 * @param nested_key nested key
+	 * @return boolean whether current node is the last one
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void parseChildNode(final PgSchemaNodeTester node_test) throws PgSchemaException {
+	public boolean parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
 		parse(node_test.proc_node, node_test.current_key, node_test.as_attr, node_test.indirect);
 
-		if (!filled)
-			return;
+		if (filled) {
 
-		visited = true;
+			visited = true;
 
-		if (nested_keys == null)
-			return;
+			if (nested_keys != null) {
 
-		for (PgSchemaNestedKey nested_key : nested_keys) {
+				for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-			boolean exists = existsNestedNode(nested_key.table, node_test.proc_node);
+					boolean exists = existsNestedNode(_nested_key.table, node_test.proc_node);
 
-			schema.parseChildNode2SphDs(exists || indirect ? node_test.proc_node : proc_node, table, nested_key.asOfChild(node_test, exists));
+					schema.parseChildNode2SphDs(exists || indirect ? node_test.proc_node : proc_node, table, _nested_key.asOfChild(node_test, exists));
+
+				}
+
+			}
 
 		}
 
+		return isLastNode(nested_key, node_test.node_count);
 	}
 
 	/**
