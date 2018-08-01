@@ -171,7 +171,7 @@ public class SphDsCompositor extends DefaultHandler {
 
 				if (len > 0) {
 
-					buffw.write("<" + PgSchemaUtil.simple_content_name + ">" + StringEscapeUtils.escapeXml10(sb.substring(0, len - 1)) + "</" + PgSchemaUtil.simple_content_name + ">\n");
+					buffw.write(PgSchemaUtil.sph_start_simple_content_elem + StringEscapeUtils.escapeXml10(sb.substring(0, len - 1)) + PgSchemaUtil.sph_end_simple_content_elem);
 					sb.setLength(0);
 
 				}

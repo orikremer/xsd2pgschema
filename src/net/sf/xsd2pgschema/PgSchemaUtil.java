@@ -152,10 +152,10 @@ public class PgSchemaUtil {
 	/** The Sphinx maximum field length. (related to max_xmlpipe2_field in sphinx.conf) */
 	public static final int sph_max_field_len = 1024 * 1024 * 2;
 
-	/** The start element of content in Sphinx data source. */
+	/** The start element of simple content in Sphinx data source. */
 	public static final String sph_start_simple_content_elem = "<" + simple_content_name + ">";
 
-	/** The end element of content in Sphinx data source. */
+	/** The end element of simple content in Sphinx data source. */
 	public static final String sph_end_simple_content_elem = "</" + simple_content_name + ">\n";
 
 	/** The Lucene dictionary file name. */
