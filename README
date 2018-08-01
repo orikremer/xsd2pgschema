@@ -4,6 +4,7 @@
   Allowed to compare time stamp between source XML and check sum for performance of differential update by default.
   To revert the previous default setting, please use --sync-rescue option.
   Improved XML node parser performance in case relation has large rows.
+  Added --freq option in luceneidx2dic, luceneidx2ftxt, and luceneidx2infix main classes as well as dicmerge4sphinx main class.
 
  Changes in xsd2pgschema 2.12.5 (release 2018-07-20)
 

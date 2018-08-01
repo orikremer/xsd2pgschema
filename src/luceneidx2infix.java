@@ -61,6 +61,9 @@ public class luceneidx2infix {
 		/** The field list. */
 		List<String> fields = new ArrayList<String>();
 
+		/** The threshold frequency for index dictionary. */
+		int freq_threshold = PgSchemaUtil.freq_threshold;
+
 		for (int i = 0; i < args.length; i++) {
 
 			if (args[i].equals("--idx-dir") && i + 1 < args.length)
@@ -71,6 +74,9 @@ public class luceneidx2infix {
 
 			else if (args[i].equals("--infix-dir") && i + 1 < args.length)
 				infix_dir_name = args[++i];
+
+			else if (args[i].equals("--freq") && i + 1 < args.length)
+				freq_threshold = Integer.valueOf(args[++i]);
 
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
@@ -135,7 +141,7 @@ public class luceneidx2infix {
 
 					for (String field_in : fields) {
 
-						if (leaf.reader().getDocCount(field_in) > 0) {
+						if (leaf.reader().getDocCount(field_in) >= freq_threshold) {
 
 							System.out.println("field: " + field_in);
 
@@ -184,6 +190,7 @@ public class luceneidx2infix {
 		System.err.println("luceneidx2infix: Lucene index -> Lucene analyzed infix suggester");
 		System.err.println("Usage:  --idx-dir DIRECTORY (default=\"" + xml2luceneidx.idx_dir_name + "\") --infix-dir DIRECTORY (default=\"" + infix_dir_name + "\")");
 		System.err.println("Option: --field FIELD_NAME (default=\"" + PgSchemaUtil.simple_content_name + "\")");
+		System.err.println("        --freq FREQ_THRESHOLD (default=" + PgSchemaUtil.freq_threshold + ")");
 		System.exit(1);
 
 	}

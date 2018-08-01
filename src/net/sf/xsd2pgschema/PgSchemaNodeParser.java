@@ -208,14 +208,22 @@ public abstract class PgSchemaNodeParser {
 		if (!matchesParentNode(current_key, field.parent_node))
 			return null;
 
-		if (!field.nested_key_as_attr && !matchesAncestorNode(current_key, field.ancestor_node))
-			return null;
+		if (field.nested_key_as_attr) {
 
-		if (table.has_nested_key_as_attr && !field.nested_key_as_attr && current_key.contains("@"))
-			return null;
+			if (!node.getParentNode().hasAttributes())
+				return null;
 
-		if (field.nested_key_as_attr && !node.getParentNode().hasAttributes())
-			return null;
+		}
+
+		else {
+
+			if (!matchesAncestorNode(current_key, field.ancestor_node))
+				return null;
+
+			if (table.has_nested_key_as_attr && current_key.contains("@"))
+				return null;
+
+		}
 
 		PgTable nested_table = schema.getTable(field.foreign_table_id);
 
@@ -796,6 +804,7 @@ public abstract class PgSchemaNodeParser {
 				this.node_count = node_count;
 
 			node_ordinal++;
+
 		}
 
 	}
