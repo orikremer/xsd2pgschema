@@ -38,6 +38,9 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	/** Whether table is referred from child table. */
 	private boolean required;
 
+	/** The prefix of index field. */
+	private String field_prefix;
+
 	/** The minimum word length for indexing. */
 	private int min_word_len;
 
@@ -55,7 +58,8 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		super(schema, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
 
-		required = table.required;
+		if (required = table.required)
+			field_prefix = table.name + ".";
 
 		min_word_len = schema.index_filter.min_word_len;
 
@@ -277,10 +281,10 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			PgField field = fields.get(f);
 
 			if (field.system_key)
-				table.lucene_doc.add(new NoIdxStringField(table.name + "." + field.name, value, Field.Store.YES));
+				table.lucene_doc.add(new NoIdxStringField(field_prefix + field.name, value, Field.Store.YES));
 
 			else if (field.indexable)
-				field.writeValue2LucIdx(table.lucene_doc, table.name + "." + field.name, value, value.length() >= min_word_len, lucene_numeric_index);
+				field.writeValue2LucIdx(table.lucene_doc, field_prefix + field.name, value, value.length() >= min_word_len, lucene_numeric_index);
 
 		}
 

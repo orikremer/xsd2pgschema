@@ -4884,8 +4884,6 @@ public class PgField {
 
 			}
 
-			buffw.write("<" + PgSchemaUtil.simple_content_name + ">");
-
 			switch (xs_type) {
 			case xs_bigserial:
 			case xs_serial:
@@ -4906,14 +4904,12 @@ public class PgField {
 			case xs_byte:
 			case xs_unsignedShort:
 			case xs_unsignedByte:
-				buffw.write(value);
+				buffw.write(PgSchemaUtil.sph_start_simple_content_elem + value + PgSchemaUtil.sph_end_simple_content_elem);
 				break;
 			default: // not numeric
 				if (min_word_len_filter)
-					buffw.write(escaped ? value : StringEscapeUtils.escapeXml10(value));
+					buffw.write(PgSchemaUtil.sph_start_simple_content_elem + (escaped ? value : StringEscapeUtils.escapeXml10(value)) + PgSchemaUtil.sph_end_simple_content_elem);
 			}
-
-			buffw.write("</" + PgSchemaUtil.simple_content_name + ">\n");
 
 		} catch (IOException e) {
 			e.printStackTrace();

@@ -37,6 +37,9 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	/** Whether table is referred from child table. */
 	private boolean required;
 
+	/** The prefix of index field. */
+	private String field_prefix;
+
 	/** The minimum word length for indexing. */
 	private int min_word_len;
 
@@ -51,7 +54,8 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 		super(schema, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
 
-		required = table.required;
+		if (required = table.required)
+			field_prefix = table.name + PgSchemaUtil.sph_member_op;
 
 		min_word_len = schema.index_filter.min_word_len;
 
@@ -235,7 +239,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 			PgField field = fields.get(f);
 
 			if (field.indexable)
-				field.writeValue2SphDs(table.buffw, table.name + PgSchemaUtil.sph_member_op + field.name, value, value.length() >= min_word_len);
+				field.writeValue2SphDs(table.buffw, field_prefix + field.name, value, value.length() >= min_word_len);
 
 		}
 

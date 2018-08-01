@@ -149,7 +149,7 @@ public class dicmerge4sphinx {
 
 			buffw.write("<sphinx:attr name=\"keyword\" type=\"string\"/>\n");
 			buffw.write("<sphinx:attr name=\"freq\" type=\"int\" bits=\"32\"/>\n");
-			buffw.write("<sphinx:field name=\"" + PgSchemaUtil.sph_trigram_field_name + "\"/>\n"); // default field
+			buffw.write("<sphinx:field name=\"trigrams\"/>\n"); // default field
 
 			buffw.write("</sphinx:schema>\n");
 
@@ -166,7 +166,7 @@ public class dicmerge4sphinx {
 				buffw.write("<sphinx:document id=\"" + (++id) + "\">\n");
 				buffw.write("<keyword>" + StringEscapeUtils.escapeXml10(keyword) + "</keyword>\n");
 				buffw.write("<freq>" + freq + "</freq>\n");
-				buffw.write("<" + PgSchemaUtil.sph_trigram_field_name + ">" + toTrigram(keyword) + "</" + PgSchemaUtil.sph_trigram_field_name + ">\n");
+				buffw.write("<trigrams>" + toTrigram(keyword) + "</trigrams>\n");
 				buffw.write("</sphinx:document>\n");
 
 			}
