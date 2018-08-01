@@ -53,6 +53,15 @@ public class PgOption {
 	/** The minimum rows for creation of PostgreSQL index on document key. */
 	public int min_rows_for_doc_key_index = PgSchemaUtil.pg_min_rows_for_doc_key_index;
 
+	/** The internal status corresponding to --create-doc-key-index option. */
+	private boolean _create_doc_key_index = false;
+
+	/** The internal status corresponding to --no-create-doc-key-index option. */
+	private boolean _no_create_doc_key_index = false;
+
+	/** The internal status corresponding to --drop-doc-key-index option. */
+	private boolean _drop_doc_key_index = false;
+
 	/**
 	 * Return database URL for JDBC connection.
 	 *
@@ -105,6 +114,90 @@ public class PgOption {
 			this.min_rows_for_doc_key_index = PgSchemaUtil.pg_min_rows_for_doc_key_index;
 		}
 
+	}
+
+	/**
+	 * Set internal status corresponding to --sync option.
+	 *
+	 * @param create whether to try to create index on document key
+	 * @return boolean whether status changed
+	 */
+	public boolean tryToCreateDocKeyIndexOption(boolean create) {
+
+		if (create) {
+
+			if (_no_create_doc_key_index || _drop_doc_key_index)
+				return false;
+
+			drop_doc_key_index = false;
+
+		}
+
+		else if (_create_doc_key_index)
+			return false;
+
+		create_doc_key_index = create;
+
+		return true;
+	}
+
+	/**
+	 * Set internal status corresponding to --create-doc-key-index and --no-create-doc-key-index options.
+	 *
+	 * @param create whether to create index on document key
+	 * @return boolean whether status changed
+	 */
+	public boolean setCreateDocKeyIndexOption(boolean create) {
+
+		if (create) {
+
+			if (_no_create_doc_key_index) {
+				System.err.println("--no-create-doc-key-index is already set.");
+				return false;
+			}
+
+			if (_drop_doc_key_index) {
+				System.err.println("--drop-doc-key-index is already set.");
+				return false;
+			}
+
+			_create_doc_key_index = true;
+			drop_doc_key_index = false;
+
+		}
+
+		else {
+
+			if (_create_doc_key_index) {
+				System.err.println("--create-doc-key-index is already set.");
+				return false;
+			}
+
+			_no_create_doc_key_index = true;
+
+		}
+
+		create_doc_key_index = create;
+
+		return true;
+	}
+
+	/**
+	 * Set internal status corresponding to --drop-doc-key-index option.
+	 *
+	 * @return boolean whether status changed
+	 */
+	public boolean setDropDocKeyIndexOption() {
+
+		if (_create_doc_key_index) {
+			System.err.println("--create-doc-key-index is already set.");
+			return false;
+		}
+
+		drop_doc_key_index = _drop_doc_key_index = true;
+		create_doc_key_index = false;
+
+		return true;
 	}
 
 }

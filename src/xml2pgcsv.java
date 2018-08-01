@@ -144,18 +144,14 @@ public class xml2pgcsv {
 			else if (args[i].equals("--test-ddl"))
 				pg_option.test = true;
 
-			else if (args[i].equals("--create-doc-key-index")) {
-				pg_option.create_doc_key_index = true;
-				pg_option.drop_doc_key_index = false;
-			}
+			else if (args[i].equals("--create-doc-key-index"))
+				pg_option.setCreateDocKeyIndexOption(true);
 
 			else if (args[i].equals("--no-create-doc-key-index"))
-				pg_option.create_doc_key_index = false;
+				pg_option.setCreateDocKeyIndexOption(false);
 
-			else if (args[i].equals("--drop-doc-key-index")) {
-				pg_option.drop_doc_key_index = true;
-				pg_option.create_doc_key_index = false;
-			}
+			else if (args[i].equals("--drop-doc-key-index"))
+				pg_option.setDropDocKeyIndexOption();
 
 			else if (args[i].equals("--min-rows-for-doc-key-index") && i + 1 < args.length)
 				pg_option.setMinRowsForDocKeyIndex(args[++i]);
@@ -251,9 +247,8 @@ public class xml2pgcsv {
 			}
 
 			else if (args[i].equals("--sync") && i + 1 < args.length) {
-				option.sync = true;
+				pg_option.tryToCreateDocKeyIndexOption(option.sync = true);
 				check_sum_dir_name = args[++i];
-				pg_option.create_doc_key_index = true;
 			}
 
 			else if (args[i].equals("--checksum-by") && i + 1 < args.length) {
@@ -292,7 +287,7 @@ public class xml2pgcsv {
 
 		if (option.sync && !option.document_key && !option.inplace_document_key) {
 			System.out.println("Ignored --sync option because either document key or in-place document key was not defined.");
-			option.sync = pg_option.create_doc_key_index = false;
+			pg_option.tryToCreateDocKeyIndexOption(option.sync = false);
 		}
 
 		if (option.root_schema_location.isEmpty()) {
@@ -443,8 +438,8 @@ public class xml2pgcsv {
 		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
 		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
-		System.err.println("        --create-doc-key-index (create PostgreSQL index on document key if not exists)");
-		System.err.println("        --no-create-doc-key-index (do not create PostgreSQL index on document key, default)");
+		System.err.println("        --create-doc-key-index (create PostgreSQL index on document key if not exists, enable if --sync option is selected)");
+		System.err.println("        --no-create-doc-key-index (do not create PostgreSQL index on document key, default if no --sync option)");
 		System.err.println("        --drop-doc-key-index (drop PostgreSQL index on document key if exists)");
 		System.err.println("        --min-rows-for-doc-key-index MIN_ROWS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_min_rows_for_doc_key_index + "\")");
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");

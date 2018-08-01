@@ -5607,8 +5607,8 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				if (node2sphds.parseChildNode(node_test, nested_key));
-				break;
+				if (node2sphds.parseChildNode(node_test, nested_key))
+					break;
 
 			}
 
@@ -5906,9 +5906,7 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				node2json.parseChildNode(node_test, nested_key, json_indent_level);
-
-				if (node2json.isLastNode(nested_key, node_test.node_count))
+				if (node2json.parseChildNode(node_test, nested_key, json_indent_level))
 					break;
 
 			}
@@ -6094,9 +6092,7 @@ public class PgSchema {
 				else if (node_test.omissible)
 					continue;
 
-				node2json.parseChildNode(node_test, nested_key, json_indent_level);
-
-				if (node2json.isLastNode(nested_key, node_test.node_count))
+				if (node2json.parseChildNode(node_test, nested_key, json_indent_level))
 					break;
 
 			}

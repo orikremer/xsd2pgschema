@@ -177,18 +177,19 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 * @param node_test node tester
 	 * @param nested_key nested key
 	 * @param indent_level current indent level
+	 * @return boolean whether current node is the last one
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key, int indent_level) throws PgSchemaException {
+	public boolean parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key, int indent_level) throws PgSchemaException {
 
 		parse(node_test.proc_node, node_test.current_key, node_test.as_attr, node_test.indirect);
 
 		boolean as_attr = nested_key.as_attr;
+		boolean last_node = isLastNode(nested_key, node_test.node_count);
 
 		switch (type) {
 		case column:
 			boolean list_and_bridge = !table.virtual && table.list_holder && table.bridge;
-			boolean last_node = isLastNode(nested_key, node_test.node_count);
 
 			if (list_and_bridge) {
 
@@ -245,21 +246,23 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			}
 
-			if (isLastNode(nested_key, node_test.node_count)) {
+			if (last_node) {
 
-				if (!filled)
-					return;
+				if (filled) {
 
-				visited = true;
+					visited = true;
 
-				if (nested_keys == null)
-					return;
+					if (nested_keys != null) {
 
-				for (PgSchemaNestedKey _nested_key : nested_keys) {
+						for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-					boolean exists = existsNestedNode(_nested_key.table, node_test.proc_node);
+							boolean exists = existsNestedNode(_nested_key.table, node_test.proc_node);
 
-					schema.parseChildNode2ObjJson(exists || indirect ? node_test.proc_node : proc_node, table, _nested_key.asOfChild(node_test, exists), indent_level + (table.relational ? 0 : 1));
+							schema.parseChildNode2ObjJson(exists || indirect ? node_test.proc_node : proc_node, table, _nested_key.asOfChild(node_test, exists), indent_level + (table.relational ? 0 : 1));
+
+						}
+
+					}
 
 				}
 
@@ -268,6 +271,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		default:
 		}
 
+		return last_node;
 	}
 
 	/**
