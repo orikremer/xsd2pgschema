@@ -3056,6 +3056,8 @@ public class PgField {
 
 		final String exclusive_maximum = "," + key_value_space + "\"exclusiveMaximum\":" + key_value_space + "true";
 
+		int i;
+
 		switch (xs_type) {
 		case xs_bigserial:
 		case xs_serial:
@@ -3081,9 +3083,7 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(max_inclusive);
-
-					if (i < 0)
+					if (Integer.parseInt(max_inclusive) < 0)
 						return max_inclusive;
 					else
 						return "0";
@@ -3098,10 +3098,8 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(max_exclusive);
-
-					if (i < 1)
-						return i + exclusive_maximum;
+					if (Integer.parseInt(max_exclusive) < 1)
+						return max_exclusive + exclusive_maximum;
 					else
 						return "0";
 
@@ -3121,9 +3119,7 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(max_inclusive);
-
-					if (i < -1)
+					if (Integer.parseInt(max_inclusive) < -1)
 						return max_inclusive;
 					else
 						return "0" + exclusive_maximum;
@@ -3138,10 +3134,8 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(max_exclusive);
-
-					if (i < 0)
-						return i + exclusive_maximum;
+					if (Integer.parseInt(max_exclusive) < 0)
+						return max_exclusive + exclusive_maximum;
 					else
 						return "0" + exclusive_maximum;
 
@@ -3188,9 +3182,7 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(total_digits);
-
-					if (i > 0)
+					if ((i = Integer.parseInt(total_digits)) > 0)
 						return String.valueOf((int) Math.pow(10, i)) + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
@@ -3232,9 +3224,7 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(total_digits);
-
-					if (i > 0)
+					if ((i = Integer.parseInt(total_digits)) > 0)
 						return String.valueOf((int) Math.pow(10, i)) + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
@@ -3276,9 +3266,7 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(total_digits);
-
-					if (i > 0)
+					if ((i = Integer.parseInt(total_digits)) > 0)
 						return String.valueOf((long) Math.pow(10, i)) + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
@@ -3321,9 +3309,7 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(total_digits);
-
-					if (i > 0)
+					if ((i = Integer.parseInt(total_digits)) > 0)
 						return String.valueOf((short) Math.pow(10, i)) + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
@@ -3435,9 +3421,7 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(min_inclusive);
-
-					if (i > 0)
+					if (Integer.parseInt(min_inclusive) > 0)
 						return min_inclusive;
 					else
 						return "0";
@@ -3452,9 +3436,7 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(min_exclusive);
-
-					if (i > -1)
+					if (Integer.parseInt(min_exclusive) > -1)
 						return min_exclusive + exclusive_minimum;
 					else
 						return "0";
@@ -3475,9 +3457,7 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(min_inclusive);
-
-					if (i > 1)
+					if (Integer.parseInt(min_inclusive) > 1)
 						return min_inclusive;
 					else
 						return "0" + exclusive_minimum;
@@ -3492,9 +3472,7 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(min_exclusive);
-
-					if (i > 0)
+					if (Integer.parseInt(min_exclusive) > 0)
 						return min_exclusive + exclusive_minimum;
 					else
 						return "0" + exclusive_minimum;
@@ -3515,9 +3493,7 @@ public class PgField {
 
 				try {
 
-					long l = Long.parseLong(min_inclusive);
-
-					if (l > 0)
+					if (Long.parseLong(min_inclusive) > 0)
 						return min_inclusive;
 					else
 						return "0";
@@ -3532,9 +3508,7 @@ public class PgField {
 
 				try {
 
-					long l = Long.parseLong(min_exclusive);
-
-					if (l > -1)
+					if (Long.parseLong(min_exclusive) > -1)
 						return min_exclusive + exclusive_minimum;
 					else
 						return "0";
@@ -3556,9 +3530,7 @@ public class PgField {
 
 				try {
 
-					short s = Short.parseShort(min_inclusive);
-
-					if (s > 0)
+					if (Short.parseShort(min_inclusive) > 0)
 						return min_inclusive;
 					else
 						return "0";
@@ -3573,9 +3545,7 @@ public class PgField {
 
 				try {
 
-					short s = Short.parseShort(min_exclusive);
-
-					if (s > -1)
+					if (Short.parseShort(min_exclusive) > -1)
 						return min_exclusive + exclusive_minimum;
 					else
 						return "0";
@@ -3603,8 +3573,12 @@ public class PgField {
 	 */
 	protected String getJsonSchemaMaximumValue(final String key_value_space) {
 
-		final String maximum_zero = "\"maximum\":" + key_value_space + "0";
-		final String exclusive_maximum_zero = "\"exclusiveMaximum\":" + key_value_space + "0";
+		final String maximum_ = "\"maximum\":" + key_value_space;
+		final String exclusive_maximum_ = "\"exclusiveMaximum\":" + key_value_space;
+		final String maximum_zero = maximum_ + "0";
+		final String exclusive_maximum_zero = exclusive_maximum_ + "0";
+
+		int i;
 
 		switch (xs_type) {
 		case xs_bigserial:
@@ -3619,9 +3593,9 @@ public class PgField {
 		case xs_short:
 		case xs_byte:
 			if (max_inclusive != null)
-				return "\"maximum\":" + key_value_space + max_inclusive;
+				return maximum_ + max_inclusive;
 			else if (max_exclusive != null)
-				return "\"exclusiveMaximum\":" + key_value_space + max_exclusive;
+				return exclusive_maximum_ + max_exclusive;
 			break;
 		case xs_nonPositiveInteger:
 			if (!restriction)
@@ -3631,10 +3605,8 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(max_inclusive);
-
-					if (i < 0)
-						return "\"maximum\":" + key_value_space + max_inclusive;
+					if (Integer.parseInt(max_inclusive) < 0)
+						return maximum_ + max_inclusive;
 					else
 						return maximum_zero;
 
@@ -3648,10 +3620,8 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(max_exclusive);
-
-					if (i < 1)
-						return "\"exclusiveMaximum\":" + key_value_space + i;
+					if (Integer.parseInt(max_exclusive) < 1)
+						return exclusive_maximum_ + max_exclusive;
 					else
 						return maximum_zero;
 
@@ -3671,10 +3641,8 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(max_inclusive);
-
-					if (i < -1)
-						return "\"maximum\":" + key_value_space + max_inclusive;
+					if (Integer.parseInt(max_inclusive) < -1)
+						return maximum_ + max_inclusive;
 					else
 						return exclusive_maximum_zero;
 
@@ -3688,10 +3656,8 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(max_exclusive);
-
-					if (i < 0)
-						return "\"exclusiveMaximum\":" + key_value_space + i;
+					if (Integer.parseInt(max_exclusive) < 0)
+						return exclusive_maximum_ + max_exclusive;
 					else
 						return exclusive_maximum_zero;
 
@@ -3714,7 +3680,7 @@ public class PgField {
 
 					Integer.parseInt(max_inclusive);
 
-					return "\"maximum\":" + key_value_space + max_inclusive;
+					return maximum_ + max_inclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3727,7 +3693,7 @@ public class PgField {
 
 					Integer.parseInt(max_exclusive);
 
-					return "\"exclusiveMaximum\":" + key_value_space + max_exclusive;
+					return exclusive_maximum_ + max_exclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3738,10 +3704,8 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(total_digits);
-
-					if (i > 0)
-						return "\"exclusiveMaximum\":" + key_value_space + String.valueOf((int) Math.pow(10, i));
+					if ((i = Integer.parseInt(total_digits)) > 0)
+						return exclusive_maximum_ + String.valueOf((int) Math.pow(10, i));
 
 				} catch (NumberFormatException e) {
 				}
@@ -3758,7 +3722,7 @@ public class PgField {
 
 					Integer.parseInt(max_inclusive);
 
-					return "\"maxinum:\"" + key_value_space + max_inclusive;
+					return maximum_ + max_inclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3771,7 +3735,7 @@ public class PgField {
 
 					Integer.parseInt(max_exclusive);
 
-					return "\"exclusiveMaximum\":" + key_value_space + max_exclusive;
+					return exclusive_maximum_ + max_exclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3782,10 +3746,8 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(total_digits);
-
-					if (i > 0)
-						return "\"exclusiveMaximum\":" + key_value_space + String.valueOf((int) Math.pow(10, i));
+					if ((i = Integer.parseInt(total_digits)) > 0)
+						return exclusive_maximum_ + String.valueOf((int) Math.pow(10, i));
 
 				} catch (NumberFormatException e) {
 				}
@@ -3802,7 +3764,7 @@ public class PgField {
 
 					Long.parseLong(max_inclusive);
 
-					return "\"maximum\":" + key_value_space + max_inclusive;
+					return maximum_ + max_inclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3815,7 +3777,7 @@ public class PgField {
 
 					Long.parseLong(max_exclusive);
 
-					return "\"exclusiveMaximum\":" + key_value_space + max_exclusive;
+					return exclusive_maximum_ + max_exclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3826,10 +3788,8 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(total_digits);
-
-					if (i > 0)
-						return "\"exclusiveMaximum\":" + key_value_space + String.valueOf((long) Math.pow(10, i));
+					if ((i = Integer.parseInt(total_digits)) > 0)
+						return exclusive_maximum_ + String.valueOf((long) Math.pow(10, i));
 
 				} catch (NumberFormatException e) {
 				}
@@ -3847,7 +3807,7 @@ public class PgField {
 
 					Short.parseShort(max_inclusive);
 
-					return "\"maximum:\"" + key_value_space + max_inclusive;
+					return maximum_ + max_inclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3860,7 +3820,7 @@ public class PgField {
 
 					Short.parseShort(max_exclusive);
 
-					return "\"exclusiveMaximum\":" + key_value_space + max_exclusive;
+					return exclusive_maximum_ + max_exclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3871,10 +3831,8 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(total_digits);
-
-					if (i > 0)
-						return "\"exclusiveMaximum\":" + key_value_space + String.valueOf((short) Math.pow(10, i));
+					if ((i = Integer.parseInt(total_digits)) > 0)
+						return exclusive_maximum_ + String.valueOf((short) Math.pow(10, i));
 
 				} catch (NumberFormatException e) {
 				}
@@ -3896,8 +3854,10 @@ public class PgField {
 	 */
 	protected String getJsonSchemaMinimumValue(final String key_value_space) {
 
-		final String minimum_zero = "\"minimum\":" + key_value_space + "0";
-		final String exclusive_minimum_zero = "\"exclusiveMinimum\":" + key_value_space + "0";
+		final String minimum_ = "\"minimum\":" + key_value_space;
+		final String exclusive_minimum_ = "\"exclusiveMinimum\":" + key_value_space;
+		final String minimum_zero = minimum_ + "0";
+		final String exclusive_minimum_zero = exclusive_minimum_ + "0";
 
 		switch (xs_type) {
 		case xs_bigserial:
@@ -3912,9 +3872,9 @@ public class PgField {
 		case xs_short:
 		case xs_byte:
 			if (min_inclusive != null)
-				return "\"minimum\":" + key_value_space + min_inclusive;
+				return minimum_ + min_inclusive;
 			else if (min_exclusive != null)
-				return "\"exclusiveMinimum\":" + key_value_space + min_exclusive;
+				return exclusive_minimum_ + min_exclusive;
 			break;
 		case xs_nonPositiveInteger:
 			if (!restriction)
@@ -3926,7 +3886,7 @@ public class PgField {
 
 					Integer.parseInt(min_inclusive);
 
-					return "\"minimum\":" + key_value_space + min_inclusive;
+					return minimum_ + min_inclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3939,7 +3899,7 @@ public class PgField {
 
 					Integer.parseInt(min_exclusive);
 
-					return "\"exclusiveMinimum\":" + key_value_space + min_exclusive;
+					return exclusive_minimum_ + min_exclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3956,7 +3916,7 @@ public class PgField {
 
 					Integer.parseInt(min_inclusive);
 
-					return "\"minimum\":" + key_value_space + min_inclusive;
+					return minimum_ + min_inclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3969,7 +3929,7 @@ public class PgField {
 
 					Integer.parseInt(min_exclusive);
 
-					return "\"exclusiveMinimum\":" + key_value_space + min_exclusive;
+					return exclusive_minimum_ + min_exclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3985,10 +3945,8 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(min_inclusive);
-
-					if (i > 0)
-						return "\"minimum\":" + key_value_space + min_inclusive;
+					if (Integer.parseInt(min_inclusive) > 0)
+						return minimum_ + min_inclusive;
 					else
 						return minimum_zero;
 
@@ -4002,10 +3960,8 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(min_exclusive);
-
-					if (i > -1)
-						return "\"exclusiveMinimum\":" + key_value_space + min_exclusive;
+					if (Integer.parseInt(min_exclusive) > -1)
+						return exclusive_minimum_ + min_exclusive;
 					else
 						return minimum_zero;
 
@@ -4025,10 +3981,8 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(min_inclusive);
-
-					if (i > 1)
-						return "\"minimum\":" + key_value_space + min_inclusive;
+					if (Integer.parseInt(min_inclusive) > 1)
+						return minimum_ + min_inclusive;
 					else
 						return exclusive_minimum_zero;
 
@@ -4042,10 +3996,8 @@ public class PgField {
 
 				try {
 
-					int i = Integer.parseInt(min_exclusive);
-
-					if (i > 0)
-						return "\"exclusiveMinimum\":" + key_value_space + min_exclusive;
+					if (Integer.parseInt(min_exclusive) > 0)
+						return exclusive_minimum_ + min_exclusive;
 					else
 						return exclusive_minimum_zero;
 
@@ -4065,10 +4017,8 @@ public class PgField {
 
 				try {
 
-					long l = Long.parseLong(min_inclusive);
-
-					if (l > 0)
-						return "\"minimum\":" + key_value_space + min_inclusive;
+					if (Long.parseLong(min_inclusive) > 0)
+						return minimum_ + min_inclusive;
 					else
 						return minimum_zero;
 
@@ -4082,10 +4032,8 @@ public class PgField {
 
 				try {
 
-					long l = Long.parseLong(min_exclusive);
-
-					if (l > -1)
-						return "\"exclusiveMinimum\":" + key_value_space + min_exclusive;
+					if (Long.parseLong(min_exclusive) > -1)
+						return exclusive_minimum_ + min_exclusive;
 					else
 						return minimum_zero;
 
@@ -4106,10 +4054,8 @@ public class PgField {
 
 				try {
 
-					short s = Short.parseShort(min_inclusive);
-
-					if (s > 0)
-						return "\"minimum\":" + key_value_space + min_inclusive;
+					if (Short.parseShort(min_inclusive) > 0)
+						return minimum_ + min_inclusive;
 					else
 						return minimum_zero;
 
@@ -4123,10 +4069,8 @@ public class PgField {
 
 				try {
 
-					short s = Short.parseShort(min_exclusive);
-
-					if (s > -1)
-						return "\"exclusiveMinimum\":" + key_value_space + min_exclusive;
+					if (Short.parseShort(min_exclusive) > -1)
+						return exclusive_minimum_ + min_exclusive;
 					else
 						return minimum_zero;
 
@@ -4265,15 +4209,13 @@ public class PgField {
 			return true;
 		case xs_bigserial:
 			try {
-				Long l = Long.parseLong(value);
-				return (l > 0);
+				return Long.parseLong(value) > 0;
 			} catch (NumberFormatException e) {
 				return false;
 			}
 		case xs_serial:
 			try {
-				Integer i = Integer.parseInt(value);
-				return (i > 0);
+				return Integer.parseInt(value) > 0;
 			} catch (NumberFormatException e) {
 				return false;
 			}
@@ -4336,45 +4278,39 @@ public class PgField {
 			return true;
 		case xs_nonPositiveInteger:
 			try {
-				int i = Integer.parseInt(value);
-				return (i <= 0);
+				return Integer.parseInt(value) <= 0;
 			} catch (NumberFormatException e) {
 				return false;
 			}
 		case xs_negativeInteger:
 			try {
-				int i = Integer.parseInt(value);
-				return (i < 0);
+				return Integer.parseInt(value) < 0;
 			} catch (NumberFormatException e) {
 				return false;
 			}
 		case xs_nonNegativeInteger:
 		case xs_unsignedInt:
 			try {
-				int i = Integer.parseInt(value);
-				return (i >= 0);
+				return Integer.parseInt(value) >= 0;
 			} catch (NumberFormatException e) {
 				return false;
 			}
 		case xs_positiveInteger:
 			try {
-				int i = Integer.parseInt(value);
-				return (i > 0);
+				return Integer.parseInt(value) > 0;
 			} catch (NumberFormatException e) {
 				return false;
 			}
 		case xs_unsignedLong:
 			try {
-				long l = Long.parseLong(value);
-				return (l >= 0);
+				return Long.parseLong(value) >= 0;
 			} catch (NumberFormatException e) {
 				return false;
 			}
 		case xs_unsignedShort:
 		case xs_unsignedByte:
 			try {
-				short s = Short.parseShort(value);
-				return (s >= 0);
+				return Short.parseShort(value) >= 0;
 			} catch (NumberFormatException e) {
 				return false;
 			}
@@ -4385,7 +4321,7 @@ public class PgField {
 		case xs_gMonthDay:
 		case xs_gMonth:
 		case xs_gDay:
-			return (PgSchemaUtil.parseDate(value) != null);
+			return PgSchemaUtil.parseDate(value) != null;
 		case xs_time:
 			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) {
 
