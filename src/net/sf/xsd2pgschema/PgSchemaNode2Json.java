@@ -46,8 +46,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	/** The JSON Schema version. */
 	protected JsonSchemaVersion schema_ver;
 
-	/** The white spaces between JSON item and JSON data. */
-	private String key_value_space;
+	/** The JSON key value space with concatenation. */
+	private String concat_value_space;
 
 	/**
 	 * Node parser for JSON conversion.
@@ -66,7 +66,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		schema_ver = jsonb.schema_ver;
 
-		key_value_space = jsonb.key_value_space;
+		concat_value_space = jsonb.concat_value_space;
 
 	}
 
@@ -455,7 +455,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			if (field.jsonb == null)
 				continue;
 
-			if (field.jsonable && field.writeValue2JsonBuf(schema_ver, values[f], false, key_value_space))
+			if (field.jsonable && field.writeValue2JsonBuf(schema_ver, values[f], false, concat_value_space))
 				not_empty = true;
 
 		}

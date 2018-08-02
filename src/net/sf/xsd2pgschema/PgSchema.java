@@ -7501,7 +7501,7 @@ public class PgSchema {
 						if (_field != null)
 							content = field.retrieveValue(rset, 1, fill_default_value);
 
-						jsonb.buffer.append(content + "," + jsonb.line_feed_code);
+						jsonb.buffer.append(content + jsonb.concat_line_feed);
 
 					}
 					break;
@@ -7510,7 +7510,7 @@ public class PgSchema {
 					content = rset.getString(1);
 
 					if (content != null && !content.isEmpty())
-						jsonb.buffer.append(content + "," + jsonb.line_feed_code);
+						jsonb.buffer.append(content + jsonb.concat_line_feed);
 					break;
 				default:
 					continue;
@@ -7894,7 +7894,7 @@ public class PgSchema {
 						if ((content != null && !content.isEmpty()) || field.required) {
 
 							if (array_field)
-								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.key_value_space);
+								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.concat_value_space);
 
 							else {
 
@@ -7922,7 +7922,7 @@ public class PgSchema {
 						if ((content != null && !content.isEmpty()) || field.required) {
 
 							if (array_field)
-								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.key_value_space);
+								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.concat_value_space);
 
 							else {
 
@@ -7998,7 +7998,7 @@ public class PgSchema {
 						if (content != null && !content.isEmpty()) {
 
 							if (array_field)
-								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.key_value_space);
+								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.concat_value_space);
 
 							else {
 
@@ -8026,7 +8026,7 @@ public class PgSchema {
 						if ((content != null && !content.isEmpty()) || field.required) {
 
 							if (array_field)
-								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.key_value_space);
+								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.concat_value_space);
 
 							else {
 

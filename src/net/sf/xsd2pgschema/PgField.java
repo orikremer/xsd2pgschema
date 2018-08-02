@@ -2970,10 +2970,10 @@ public class PgField {
 	/**
 	 * Return JSON Schema enumeration array.
 	 *
-	 * @param json_key_value_space the JSON key value space
+	 * @param concat_value_space the JSON key value space with concatenation
 	 * @return String JSON Schema enumeration array
 	 */
-	protected String getJsonSchemaEnumArray(String json_key_value_space) {
+	protected String getJsonSchemaEnumArray(final String concat_value_space) {
 
 		StringBuilder sb = new StringBuilder();
 
@@ -3001,7 +3001,7 @@ public class PgField {
 			case xs_unsignedShort:
 			case xs_unsignedByte:
 				for (String enumeration : xenumeration)
-					sb.append(enumeration + "," + json_key_value_space);
+					sb.append(enumeration + concat_value_space);
 				break;
 			case xs_hexBinary:
 			case xs_base64Binary:
@@ -3032,7 +3032,7 @@ public class PgField {
 			case xs_IDREF:
 			case xs_ENTITY:
 				for (String enumeration : xenumeration)
-					sb.append("\"" + StringEscapeUtils.escapeEcmaScript(enumeration) + "\"," + json_key_value_space);
+					sb.append("\"" + StringEscapeUtils.escapeEcmaScript(enumeration) + "\"" + concat_value_space);
 				break;
 			default: // xs_any, xs_anyAttribute
 			}
@@ -3048,11 +3048,13 @@ public class PgField {
 	/**
 	 * Return JSON Schema maximum value (draft-04).
 	 *
-	 * @param json_key_value_space the JSON key value space
+	 * @param key_value_space the JSON key value space
 	 * @return String JSON Schema maximum value
 	 */
 	@Deprecated
-	protected String getJsonSchemaMaximumValueDraftV4(String json_key_value_space) {
+	protected String getJsonSchemaMaximumValueDraftV4(final String key_value_space) {
+
+		final String exclusive_maximum = "," + key_value_space + "\"exclusiveMaximum\":" + key_value_space + "true";
 
 		switch (xs_type) {
 		case xs_bigserial:
@@ -3069,7 +3071,7 @@ public class PgField {
 			if (max_inclusive != null)
 				return max_inclusive;
 			else if (max_exclusive != null)
-				return max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+				return max_exclusive + exclusive_maximum;
 			break;
 		case xs_nonPositiveInteger:
 			if (!restriction)
@@ -3099,7 +3101,7 @@ public class PgField {
 					int i = Integer.parseInt(max_exclusive);
 
 					if (i < 1)
-						return i + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+						return i + exclusive_maximum;
 					else
 						return "0";
 
@@ -3113,7 +3115,7 @@ public class PgField {
 				return "0";
 		case xs_negativeInteger:
 			if (!restriction)
-				return "0," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+				return "0" + exclusive_maximum;
 
 			if (max_inclusive != null) {
 
@@ -3124,10 +3126,10 @@ public class PgField {
 					if (i < -1)
 						return max_inclusive;
 					else
-						return "0," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+						return "0" + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
-					return "0," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+					return "0" + exclusive_maximum;
 				}
 
 			}
@@ -3139,18 +3141,18 @@ public class PgField {
 					int i = Integer.parseInt(max_exclusive);
 
 					if (i < 0)
-						return i + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+						return i + exclusive_maximum;
 					else
-						return "0," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+						return "0" + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
-					return "0," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+					return "0" + exclusive_maximum;
 				}
 
 			}
 
 			else
-				return "0," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+				return "0" + exclusive_maximum;
 		case xs_nonNegativeInteger:
 		case xs_unsignedInt:
 			if (!restriction)
@@ -3175,7 +3177,7 @@ public class PgField {
 
 					Integer.parseInt(max_exclusive);
 
-					return max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+					return max_exclusive + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3189,7 +3191,7 @@ public class PgField {
 					int i = Integer.parseInt(total_digits);
 
 					if (i > 0)
-						return String.valueOf((int) Math.pow(10, i)) + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+						return String.valueOf((int) Math.pow(10, i)) + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3219,7 +3221,7 @@ public class PgField {
 
 					Integer.parseInt(max_exclusive);
 
-					return max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+					return max_exclusive + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3233,7 +3235,7 @@ public class PgField {
 					int i = Integer.parseInt(total_digits);
 
 					if (i > 0)
-						return String.valueOf((int) Math.pow(10, i)) + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+						return String.valueOf((int) Math.pow(10, i)) + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3263,7 +3265,7 @@ public class PgField {
 
 					Long.parseLong(max_exclusive);
 
-					return max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+					return max_exclusive + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3277,7 +3279,7 @@ public class PgField {
 					int i = Integer.parseInt(total_digits);
 
 					if (i > 0)
-						return String.valueOf((long) Math.pow(10, i)) + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+						return String.valueOf((long) Math.pow(10, i)) + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3308,7 +3310,7 @@ public class PgField {
 
 					Short.parseShort(max_exclusive);
 
-					return max_exclusive + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+					return max_exclusive + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3322,7 +3324,7 @@ public class PgField {
 					int i = Integer.parseInt(total_digits);
 
 					if (i > 0)
-						return String.valueOf((short) Math.pow(10, i)) + "," + json_key_value_space + "\"exclusiveMaximum\":" + json_key_value_space + "true";
+						return String.valueOf((short) Math.pow(10, i)) + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3339,11 +3341,13 @@ public class PgField {
 	/**
 	 * Return JSON Schema minimum value (draft-04).
 	 *
-	 * @param json_key_value_space the JSON key value space
+	 * @param key_value_space the JSON key value space
 	 * @return String JSON Schema minimum value
 	 */
 	@Deprecated
-	protected String getJsonSchemaMinimumValueDraftV4(String json_key_value_space) {
+	protected String getJsonSchemaMinimumValueDraftV4(final String key_value_space) {
+
+		final String exclusive_minimum = "," + key_value_space + "\"exclusiveMinimum\":" + key_value_space + "true";
 
 		switch (xs_type) {
 		case xs_bigserial:
@@ -3360,7 +3364,7 @@ public class PgField {
 			if (min_inclusive != null)
 				return min_inclusive;
 			else if (min_exclusive != null)
-				return min_exclusive + "," + json_key_value_space + "\"exclusiveMinimum\":" + json_key_value_space + "true";
+				return min_exclusive + exclusive_minimum;
 			break;
 		case xs_nonPositiveInteger:
 			if (!restriction)
@@ -3385,7 +3389,7 @@ public class PgField {
 
 					Integer.parseInt(min_exclusive);
 
-					return min_exclusive + "," + json_key_value_space + "\"exclusiveMinimum\":" + json_key_value_space + "true";
+					return min_exclusive + exclusive_minimum;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3415,7 +3419,7 @@ public class PgField {
 
 					Integer.parseInt(min_exclusive);
 
-					return min_exclusive + "," + json_key_value_space + "\"exclusiveMinimum\":" + json_key_value_space + "true";
+					return min_exclusive + exclusive_minimum;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3451,7 +3455,7 @@ public class PgField {
 					int i = Integer.parseInt(min_exclusive);
 
 					if (i > -1)
-						return min_exclusive + "," + json_key_value_space + "\"exclusiveMinimum\":" + json_key_value_space + "true";
+						return min_exclusive + exclusive_minimum;
 					else
 						return "0";
 
@@ -3465,7 +3469,7 @@ public class PgField {
 				return "0";
 		case xs_positiveInteger:
 			if (!restriction)
-				return "0," + json_key_value_space + "\"exclusiveMinimum\":" + json_key_value_space + "true";
+				return "0" + exclusive_minimum;
 
 			if (min_inclusive != null) {
 
@@ -3476,10 +3480,10 @@ public class PgField {
 					if (i > 1)
 						return min_inclusive;
 					else
-						return "0," + json_key_value_space + "\"exclusiveMinimum\":" + json_key_value_space + "true";
+						return "0" + exclusive_minimum;
 
 				} catch (NumberFormatException e) {
-					return "0," + json_key_value_space + "\"exclusiveMinimum\":" + json_key_value_space + "true";
+					return "0" + exclusive_minimum;
 				}
 
 			}
@@ -3491,18 +3495,18 @@ public class PgField {
 					int i = Integer.parseInt(min_exclusive);
 
 					if (i > 0)
-						return min_exclusive + "," + json_key_value_space + "\"exclusiveMinimum\":" + json_key_value_space + "true";
+						return min_exclusive + exclusive_minimum;
 					else
-						return "0," + json_key_value_space + "\"exclusiveMinimum\":" + json_key_value_space + "true";
+						return "0" + exclusive_minimum;
 
 				} catch (NumberFormatException e) {
-					return "0," + json_key_value_space + "\"exclusiveMinimum\":" + json_key_value_space + "true";
+					return "0" + exclusive_minimum;
 				}
 
 			}
 
 			else
-				return "0," + json_key_value_space + "\"exclusiveMinimum\":" + json_key_value_space + "true";
+				return "0" + exclusive_minimum;
 		case xs_unsignedLong:
 			if (!restriction)
 				return "0";
@@ -3531,7 +3535,7 @@ public class PgField {
 					long l = Long.parseLong(min_exclusive);
 
 					if (l > -1)
-						return min_exclusive + "," + json_key_value_space + "\"exclusiveMinimum\":" + json_key_value_space + "true";
+						return min_exclusive + exclusive_minimum;
 					else
 						return "0";
 
@@ -3572,7 +3576,7 @@ public class PgField {
 					short s = Short.parseShort(min_exclusive);
 
 					if (s > -1)
-						return min_exclusive + "," + json_key_value_space + "\"exclusiveMinimum\":" + json_key_value_space + "true";
+						return min_exclusive + exclusive_minimum;
 					else
 						return "0";
 
@@ -3594,10 +3598,13 @@ public class PgField {
 	/**
 	 * Return JSON Schema maximum value.
 	 *
-	 * @param json_key_value_space the JSON key value space
+	 * @param key_value_space the JSON key value space
 	 * @return String JSON Schema maximum value
 	 */
-	protected String getJsonSchemaMaximumValue(String json_key_value_space) {
+	protected String getJsonSchemaMaximumValue(final String key_value_space) {
+
+		final String maximum_zero = "\"maximum\":" + key_value_space + "0";
+		final String exclusive_maximum_zero = "\"exclusiveMaximum\":" + key_value_space + "0";
 
 		switch (xs_type) {
 		case xs_bigserial:
@@ -3612,13 +3619,13 @@ public class PgField {
 		case xs_short:
 		case xs_byte:
 			if (max_inclusive != null)
-				return "\"maximum\":" + json_key_value_space + max_inclusive;
+				return "\"maximum\":" + key_value_space + max_inclusive;
 			else if (max_exclusive != null)
-				return "\"exclusiveMaximum\":" + json_key_value_space + max_exclusive;
+				return "\"exclusiveMaximum\":" + key_value_space + max_exclusive;
 			break;
 		case xs_nonPositiveInteger:
 			if (!restriction)
-				return "\"maximum\":" + json_key_value_space + "0";
+				return maximum_zero;
 
 			if (max_inclusive != null) {
 
@@ -3627,12 +3634,12 @@ public class PgField {
 					int i = Integer.parseInt(max_inclusive);
 
 					if (i < 0)
-						return "\"maximum\":" + json_key_value_space + max_inclusive;
+						return "\"maximum\":" + key_value_space + max_inclusive;
 					else
-						return "\"maximum\":" + json_key_value_space + "0";
+						return maximum_zero;
 
 				} catch (NumberFormatException e) {
-					return "\"maximum\":" + json_key_value_space + "0";
+					return maximum_zero;
 				}
 
 			}
@@ -3644,21 +3651,21 @@ public class PgField {
 					int i = Integer.parseInt(max_exclusive);
 
 					if (i < 1)
-						return "\"exclusiveMaximum\":" + json_key_value_space + i;
+						return "\"exclusiveMaximum\":" + key_value_space + i;
 					else
-						return "\"maximum\":" + json_key_value_space + "0";
+						return maximum_zero;
 
 				} catch (NumberFormatException e) {
-					return "\"maximum\":" + json_key_value_space + "0";
+					return maximum_zero;
 				}
 
 			}
 
 			else
-				return "\"maximum\":" + json_key_value_space + "0";
+				return maximum_zero;
 		case xs_negativeInteger:
 			if (!restriction)
-				return "\"exclusiveMaximum\":" + json_key_value_space + "0";
+				return exclusive_maximum_zero;
 
 			if (max_inclusive != null) {
 
@@ -3667,12 +3674,12 @@ public class PgField {
 					int i = Integer.parseInt(max_inclusive);
 
 					if (i < -1)
-						return "\"maximum\":" + json_key_value_space + max_inclusive;
+						return "\"maximum\":" + key_value_space + max_inclusive;
 					else
-						return "\"exclusiveMaximum\":" + json_key_value_space + "0";
+						return exclusive_maximum_zero;
 
 				} catch (NumberFormatException e) {
-					return "\"exclusiveMaximum\":" + json_key_value_space + "0";
+					return exclusive_maximum_zero;
 				}
 
 			}
@@ -3684,18 +3691,18 @@ public class PgField {
 					int i = Integer.parseInt(max_exclusive);
 
 					if (i < 0)
-						return "\"exclusiveMaximum\":" + json_key_value_space + i;
+						return "\"exclusiveMaximum\":" + key_value_space + i;
 					else
-						return "\"exclusiveMaximum\":" + json_key_value_space + "0";
+						return exclusive_maximum_zero;
 
 				} catch (NumberFormatException e) {
-					return "\"exclusiveMaximum\":" + json_key_value_space + "0";
+					return exclusive_maximum_zero;
 				}
 
 			}
 
 			else
-				return "\"exclusiveMaximum\":" + json_key_value_space + "0";
+				return exclusive_maximum_zero;
 		case xs_nonNegativeInteger:
 		case xs_unsignedInt:
 			if (!restriction)
@@ -3707,7 +3714,7 @@ public class PgField {
 
 					Integer.parseInt(max_inclusive);
 
-					return "\"maximum\":" + json_key_value_space + max_inclusive;
+					return "\"maximum\":" + key_value_space + max_inclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3720,7 +3727,7 @@ public class PgField {
 
 					Integer.parseInt(max_exclusive);
 
-					return "\"exclusiveMaximum\":" + json_key_value_space + max_exclusive;
+					return "\"exclusiveMaximum\":" + key_value_space + max_exclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3734,7 +3741,7 @@ public class PgField {
 					int i = Integer.parseInt(total_digits);
 
 					if (i > 0)
-						return "\"exclusiveMaximum\":" + json_key_value_space + String.valueOf((int) Math.pow(10, i));
+						return "\"exclusiveMaximum\":" + key_value_space + String.valueOf((int) Math.pow(10, i));
 
 				} catch (NumberFormatException e) {
 				}
@@ -3751,7 +3758,7 @@ public class PgField {
 
 					Integer.parseInt(max_inclusive);
 
-					return "\"maxinum:\"" + json_key_value_space + max_inclusive;
+					return "\"maxinum:\"" + key_value_space + max_inclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3764,7 +3771,7 @@ public class PgField {
 
 					Integer.parseInt(max_exclusive);
 
-					return "\"exclusiveMaximum\":" + json_key_value_space + max_exclusive;
+					return "\"exclusiveMaximum\":" + key_value_space + max_exclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3778,7 +3785,7 @@ public class PgField {
 					int i = Integer.parseInt(total_digits);
 
 					if (i > 0)
-						return "\"exclusiveMaximum\":" + json_key_value_space + String.valueOf((int) Math.pow(10, i));
+						return "\"exclusiveMaximum\":" + key_value_space + String.valueOf((int) Math.pow(10, i));
 
 				} catch (NumberFormatException e) {
 				}
@@ -3795,7 +3802,7 @@ public class PgField {
 
 					Long.parseLong(max_inclusive);
 
-					return "\"maximum\":" + json_key_value_space + max_inclusive;
+					return "\"maximum\":" + key_value_space + max_inclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3808,7 +3815,7 @@ public class PgField {
 
 					Long.parseLong(max_exclusive);
 
-					return "\"exclusiveMaximum\":" + json_key_value_space + max_exclusive;
+					return "\"exclusiveMaximum\":" + key_value_space + max_exclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3822,7 +3829,7 @@ public class PgField {
 					int i = Integer.parseInt(total_digits);
 
 					if (i > 0)
-						return "\"exclusiveMaximum\":" + json_key_value_space + String.valueOf((long) Math.pow(10, i));
+						return "\"exclusiveMaximum\":" + key_value_space + String.valueOf((long) Math.pow(10, i));
 
 				} catch (NumberFormatException e) {
 				}
@@ -3840,7 +3847,7 @@ public class PgField {
 
 					Short.parseShort(max_inclusive);
 
-					return "\"maximum:\"" + json_key_value_space + max_inclusive;
+					return "\"maximum:\"" + key_value_space + max_inclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3853,7 +3860,7 @@ public class PgField {
 
 					Short.parseShort(max_exclusive);
 
-					return "\"exclusiveMaximum\":" + json_key_value_space + max_exclusive;
+					return "\"exclusiveMaximum\":" + key_value_space + max_exclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3867,7 +3874,7 @@ public class PgField {
 					int i = Integer.parseInt(total_digits);
 
 					if (i > 0)
-						return "\"exclusiveMaximum\":" + json_key_value_space + String.valueOf((short) Math.pow(10, i));
+						return "\"exclusiveMaximum\":" + key_value_space + String.valueOf((short) Math.pow(10, i));
 
 				} catch (NumberFormatException e) {
 				}
@@ -3884,10 +3891,13 @@ public class PgField {
 	/**
 	 * Return JSON Schema minimum value.
 	 *
-	 * @param json_key_value_space the JSON key value space
+	 * @param key_value_space the JSON key value space
 	 * @return String JSON Schema minimum value
 	 */
-	protected String getJsonSchemaMinimumValue(String json_key_value_space) {
+	protected String getJsonSchemaMinimumValue(final String key_value_space) {
+
+		final String minimum_zero = "\"minimum\":" + key_value_space + "0";
+		final String exclusive_minimum_zero = "\"exclusiveMinimum\":" + key_value_space + "0";
 
 		switch (xs_type) {
 		case xs_bigserial:
@@ -3902,9 +3912,9 @@ public class PgField {
 		case xs_short:
 		case xs_byte:
 			if (min_inclusive != null)
-				return "\"minumum\":" + json_key_value_space + min_inclusive;
+				return "\"minimum\":" + key_value_space + min_inclusive;
 			else if (min_exclusive != null)
-				return "\"exclusiveMinimum\":" + json_key_value_space + min_exclusive;
+				return "\"exclusiveMinimum\":" + key_value_space + min_exclusive;
 			break;
 		case xs_nonPositiveInteger:
 			if (!restriction)
@@ -3916,7 +3926,7 @@ public class PgField {
 
 					Integer.parseInt(min_inclusive);
 
-					return "\"minumum\":" + json_key_value_space + min_inclusive;
+					return "\"minimum\":" + key_value_space + min_inclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3929,7 +3939,7 @@ public class PgField {
 
 					Integer.parseInt(min_exclusive);
 
-					return "\"exclusiveMinimum\":" + json_key_value_space + min_exclusive;
+					return "\"exclusiveMinimum\":" + key_value_space + min_exclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3946,7 +3956,7 @@ public class PgField {
 
 					Integer.parseInt(min_inclusive);
 
-					return "\"minumum\":" + json_key_value_space + min_inclusive;
+					return "\"minimum\":" + key_value_space + min_inclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3959,7 +3969,7 @@ public class PgField {
 
 					Integer.parseInt(min_exclusive);
 
-					return "\"exclusiveMinimum\":" + json_key_value_space + min_exclusive;
+					return "\"exclusiveMinimum\":" + key_value_space + min_exclusive;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3969,7 +3979,7 @@ public class PgField {
 		case xs_nonNegativeInteger:
 		case xs_unsignedInt:
 			if (!restriction)
-				return "\"minumum\":" + json_key_value_space + "0";
+				return minimum_zero;
 
 			if (min_inclusive != null) {
 
@@ -3978,12 +3988,12 @@ public class PgField {
 					int i = Integer.parseInt(min_inclusive);
 
 					if (i > 0)
-						return "\"minumum\":" + json_key_value_space + min_inclusive;
+						return "\"minimum\":" + key_value_space + min_inclusive;
 					else
-						return "\"minumum\":" + json_key_value_space + "0";
+						return minimum_zero;
 
 				} catch (NumberFormatException e) {
-					return "\"minumum\":" + json_key_value_space + "0";
+					return minimum_zero;
 				}
 
 			}
@@ -3995,21 +4005,21 @@ public class PgField {
 					int i = Integer.parseInt(min_exclusive);
 
 					if (i > -1)
-						return "\"exclusiveMinimum\":" + json_key_value_space + min_exclusive;
+						return "\"exclusiveMinimum\":" + key_value_space + min_exclusive;
 					else
-						return "\"minumum\":" + json_key_value_space + "0";
+						return minimum_zero;
 
 				} catch (NumberFormatException e) {
-					return "\"minumum\":" + json_key_value_space + "0";
+					return minimum_zero;
 				}
 
 			}
 
 			else
-				return "\"minumum\":" + json_key_value_space + "0";
+				return minimum_zero;
 		case xs_positiveInteger:
 			if (!restriction)
-				return "\"exclusiveMinimum\":" + json_key_value_space + "0";
+				return exclusive_minimum_zero;
 
 			if (min_inclusive != null) {
 
@@ -4018,12 +4028,12 @@ public class PgField {
 					int i = Integer.parseInt(min_inclusive);
 
 					if (i > 1)
-						return "\"minumum\":" + json_key_value_space + min_inclusive;
+						return "\"minimum\":" + key_value_space + min_inclusive;
 					else
-						return "\"exclusiveMinimum\":" + json_key_value_space + "0";
+						return exclusive_minimum_zero;
 
 				} catch (NumberFormatException e) {
-					return "\"exclusiveMinimum\":" + json_key_value_space + "0";
+					return exclusive_minimum_zero;
 				}
 
 			}
@@ -4035,21 +4045,21 @@ public class PgField {
 					int i = Integer.parseInt(min_exclusive);
 
 					if (i > 0)
-						return "\"exclusiveMinimum\":" + json_key_value_space + min_exclusive;
+						return "\"exclusiveMinimum\":" + key_value_space + min_exclusive;
 					else
-						return "\"exclusiveMinimum\":" + json_key_value_space + "0";
+						return exclusive_minimum_zero;
 
 				} catch (NumberFormatException e) {
-					return "\"exclusiveMinimum\":" + json_key_value_space + "0";
+					return exclusive_minimum_zero;
 				}
 
 			}
 
 			else
-				return "\"exclusiveMinimum\":" + json_key_value_space + "0";
+				return exclusive_minimum_zero;
 		case xs_unsignedLong:
 			if (!restriction)
-				return "\"minumum\":" + json_key_value_space + "0";
+				return minimum_zero;
 
 			if (min_inclusive != null) {
 
@@ -4058,12 +4068,12 @@ public class PgField {
 					long l = Long.parseLong(min_inclusive);
 
 					if (l > 0)
-						return "\"minumum\":" + json_key_value_space + min_inclusive;
+						return "\"minimum\":" + key_value_space + min_inclusive;
 					else
-						return "\"minumum\":" + json_key_value_space + "0";
+						return minimum_zero;
 
 				} catch (NumberFormatException e) {
-					return "\"minumum\":" + json_key_value_space + "0";
+					return minimum_zero;
 				}
 
 			}
@@ -4075,22 +4085,22 @@ public class PgField {
 					long l = Long.parseLong(min_exclusive);
 
 					if (l > -1)
-						return "\"exclusiveMinimum\":" + json_key_value_space + min_exclusive;
+						return "\"exclusiveMinimum\":" + key_value_space + min_exclusive;
 					else
-						return "\"minumum\":" + json_key_value_space + "0";
+						return minimum_zero;
 
 				} catch (NumberFormatException e) {
-					return "\"minumum\":" + json_key_value_space + "0";
+					return minimum_zero;
 				}
 
 			}
 
 			else
-				return "\"minumum\":" + json_key_value_space + "0";
+				return minimum_zero;
 		case xs_unsignedShort:
 		case xs_unsignedByte:
 			if (!restriction)
-				return "\"minumum\":" + json_key_value_space + "0";
+				return minimum_zero;
 
 			if (min_inclusive != null) {
 
@@ -4099,12 +4109,12 @@ public class PgField {
 					short s = Short.parseShort(min_inclusive);
 
 					if (s > 0)
-						return "\"minumum\":" + json_key_value_space + min_inclusive;
+						return "\"minimum\":" + key_value_space + min_inclusive;
 					else
-						return "\"minumum\":" + json_key_value_space + "0";
+						return minimum_zero;
 
 				} catch (NumberFormatException e) {
-					return "\"minumum\":" + json_key_value_space + "0";
+					return minimum_zero;
 				}
 
 			}
@@ -4116,18 +4126,18 @@ public class PgField {
 					short s = Short.parseShort(min_exclusive);
 
 					if (s > -1)
-						return "\"exclusiveMinimum\":" + json_key_value_space + min_exclusive;
+						return "\"exclusiveMinimum\":" + key_value_space + min_exclusive;
 					else
-						return "\"minumum\":" + json_key_value_space + "0";
+						return minimum_zero;
 
 				} catch (NumberFormatException e) {
-					return "\"minumum\":" + json_key_value_space + "0";
+					return minimum_zero;
 				}
 
 			}
 
 			else
-				return "\"minumum\":" + json_key_value_space + "0";
+				return minimum_zero;
 		default: // not numeric
 			return	null;
 		}
@@ -4925,10 +4935,10 @@ public class PgField {
 	 * @param schema_ver JSON schema version
 	 * @param value content
 	 * @param fragment whether to write fragment JSON at XPath query evaluation
-	 * @param json_key_value_space the JSON key value space
+	 * @param concat_value_space the JSON key value space with concatenation
 	 * @return boolean whether value is successfully set
 	 */
-	protected boolean writeValue2JsonBuf(JsonSchemaVersion schema_ver, String value, boolean fragment, String json_key_value_space) {
+	protected boolean writeValue2JsonBuf(JsonSchemaVersion schema_ver, String value, boolean fragment, final String concat_value_space) {
 
 		if (jsonb == null)
 			return false;
@@ -4973,7 +4983,7 @@ public class PgField {
 			case xs_any:
 			case xs_anyAttribute:
 				if (fragment)
-					jsonb.append(value == null ? "null" : "\"\"" + "," + json_key_value_space);
+					jsonb.append((value == null ? "null" : "\"\"") + concat_value_space);
 				else
 					jsonb.append("\t"); // TSV should be parsed in JSON builder
 
@@ -4982,7 +4992,7 @@ public class PgField {
 				jsonb.append(value == null ? "null" : "\"\"");
 			}
 
-			jsonb.append("," + json_key_value_space);
+			jsonb.append(concat_value_space);
 
 			return false;
 		}
@@ -5027,7 +5037,7 @@ public class PgField {
 				if (!value.startsWith("\""))
 					value = "\"" + value + "\"";
 
-				jsonb.append(value + "," + json_key_value_space);	
+				jsonb.append(value + concat_value_space);	
 
 			}
 
@@ -5045,7 +5055,7 @@ public class PgField {
 
 		}
 
-		jsonb.append("," + json_key_value_space);
+		jsonb.append(concat_value_space);
 
 		return true;
 	}
