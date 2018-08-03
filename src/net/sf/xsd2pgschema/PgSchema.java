@@ -105,10 +105,10 @@ public class PgSchema {
 	private List<PgForeignKey> foreign_keys = null;
 
 	/** The pending list of attribute groups. */
-	private List<PgSchemaPendingGroup> pending_attr_groups = null;
+	private List<PgPendingGroup> pending_attr_groups = null;
 
 	/** The pending list of model groups. */
-	private List<PgSchemaPendingGroup> pending_model_groups = null;
+	private List<PgPendingGroup> pending_model_groups = null;
 
 	/** The PostgreSQL data model option. */
 	protected PgSchemaOption option = null;
@@ -288,8 +288,8 @@ public class PgSchema {
 
 			foreign_keys = new ArrayList<PgForeignKey>();
 
-			pending_attr_groups = new ArrayList<PgSchemaPendingGroup>();
-			pending_model_groups = new ArrayList<PgSchemaPendingGroup>();
+			pending_attr_groups = new ArrayList<PgPendingGroup>();
+			pending_model_groups = new ArrayList<PgPendingGroup>();
 
 		}
 
@@ -2216,7 +2216,7 @@ public class PgSchema {
 
 		if (attr_group == null) {
 
-			root_schema.pending_attr_groups.add(new PgSchemaPendingGroup(ref, table.pg_schema_name, table.xname, table.fields.size()));
+			root_schema.pending_attr_groups.add(new PgPendingGroup(ref, table.pg_schema_name, table.xname, table.fields.size()));
 			table.has_pending_group = true;
 
 			return;
@@ -2248,7 +2248,7 @@ public class PgSchema {
 
 		if (model_group == null) {
 
-			root_schema.pending_model_groups.add(new PgSchemaPendingGroup(ref, table.pg_schema_name, table.xname, table.fields.size()));
+			root_schema.pending_model_groups.add(new PgPendingGroup(ref, table.pg_schema_name, table.xname, table.fields.size()));
 			table.has_pending_group = true;
 
 			return;
@@ -2886,7 +2886,7 @@ public class PgSchema {
 	 * @param pending_group pending group
 	 * @return PgTable pending table
 	 */
-	private PgTable getPendingTable(PgSchemaPendingGroup pending_group) {
+	private PgTable getPendingTable(PgPendingGroup pending_group) {
 		return getCanTable(pending_group.pg_schema_name, pending_group.xname);
 	}
 

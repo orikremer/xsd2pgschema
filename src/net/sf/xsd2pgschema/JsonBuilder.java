@@ -45,17 +45,14 @@ public class JsonBuilder extends CommonBuilder {
 	/** The JSON buffer. */
 	protected StringBuilder buffer = new StringBuilder();
 
-	/** The prefix of JSON item name of xs:attribute. */
+	/** The prefix of JSON key of xs:attribute. */
 	protected String attr_prefix;
 
-	/** The JSON item name of xs:simpleContent. */
+	/** The JSON key of xs:simpleContent. */
 	protected String simple_content_name;
 
 	/** The unit of indent space. */
 	private String indent_space = "  ";
-
-	/** The white spaces between JSON item and JSON data. */
-	protected String key_value_space = " ";
 
 	/** The JSON key value space with concatenation. */
 	protected String concat_value_space;
@@ -64,7 +61,7 @@ public class JsonBuilder extends CommonBuilder {
 	protected String concat_line_feed;
 
 	/** The indent offset between key and value. */
-	protected int key_value_offset = key_value_space.length();
+	protected int key_value_offset = 1;
 
 	/** Whether to retain case sensitive name. */
 	protected boolean case_sense;
@@ -80,6 +77,24 @@ public class JsonBuilder extends CommonBuilder {
 
 	/** The pending element. */
 	protected LinkedList<JsonBuilderPendingElem> pending_elem = new LinkedList<JsonBuilderPendingElem>();
+
+	/** The suffix for JSON key declaration (internal use only). */
+	private String key_decl_suffix_code;
+
+	/** The code to start JSON object (internal use only). */
+	private String start_object_code;
+
+	/** The code to end JSON object (internal use only). */
+	private String end_object_code;
+
+	/** The code to end JSON object with concatenation (internal use only). */
+	private String end_object_concat_code;
+
+	/** The code to end JSON array (internal use only). */
+	private String end_array_code;
+
+	/** The code to end JSON array with concatenation (internal use only). */
+	private String end_array_concat_code;
 
 	/**
 	 * Instance of JSON buffer.
@@ -108,25 +123,27 @@ public class JsonBuilder extends CommonBuilder {
 
 		}
 
-		if (key_value_space.length() != option.key_value_offset) {
+		StringBuilder sb = new StringBuilder();
 
-			StringBuilder sb = new StringBuilder();
+		for (int l = 0; l < (key_value_offset = option.key_value_offset); l++)
+			sb.append(" ");
 
-			for (int l = 0; l < option.key_value_offset; l++)
-				sb.append(" ");
+		String key_value_space = sb.toString();
 
-			key_value_space = sb.toString();
-			key_value_offset = sb.length();
-
-		}
+		sb.setLength(0);
 
 		line_feed_code = option.line_feed_code;
 
 		line_feed = line_feed_code.equals("\n");
 
 		concat_value_space = "," + key_value_space;
-
 		concat_line_feed = "," + line_feed_code;
+		key_decl_suffix_code = "\":" + key_value_space;
+		start_object_code = "{" + line_feed_code;
+		end_object_code = "}" + line_feed_code;
+		end_object_concat_code = "}" + concat_line_feed;
+		end_array_code = "]" + line_feed_code;
+		end_array_concat_code = "]" + concat_line_feed;
 
 		if ((attr_prefix = option.attr_prefix) == null)
 			attr_prefix = "";
@@ -225,7 +242,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		}
 
-		buffer.append("{" + line_feed_code);
+		buffer.append(start_object_code);
 
 	}
 
@@ -236,20 +253,95 @@ public class JsonBuilder extends CommonBuilder {
 
 		trimComma();
 
-		buffer.append("}" + line_feed_code);
+		buffer.append(end_object_code);
 
 	}
 
 	/**
-	 * Return JSON item name of field.
+	 * Return JSON key of field.
 	 *
 	 * @param field current field
 	 * @param as_attr whether parent node as attribute
-	 * @return String JSON item name of field
+	 * @return String JSON key of field
 	 */
-	private String getItemName(PgField field, boolean as_attr) {
+	private String getKey(PgField field, boolean as_attr) {
 		return (field.attribute || field.simple_attribute || (field.simple_attr_cond && as_attr) ? attr_prefix : "")
 				+ (field.simple_content ? (field.simple_attribute || (field.simple_attr_cond && as_attr) ? (case_sense ? field.foreign_table_xname : field.foreign_table_xname.toLowerCase()) : simple_content_name) : (case_sense ? field.xname : field.xname.toLowerCase()));
+	}
+
+	/**
+	 * Return JSON key declaration of field.
+	 *
+	 * @param field current field
+	 * @param as_attr whether parent node as attribute
+	 * @return String JSON key declaration of field
+	 */
+	private String getKeyDecl(PgField field, boolean as_attr) {
+		return "\"" + getKey(field, as_attr) + key_decl_suffix_code;
+	}
+
+	/**
+	 * Return JSON key declaration.
+	 *
+	 * @param local_name local name as JSON key
+	 * @param as_attr whether parent node as attribute
+	 * @return String JSON key declaration
+	 */
+	private String getKeyDecl(String local_name, boolean as_attr) {
+		return "\"" + (as_attr ? attr_prefix : "") + (case_sense ? local_name : local_name.toLowerCase()) + key_decl_suffix_code;
+	}
+
+	/**
+	 * Return canonical JSON key declaration.
+	 *
+	 * @param canonical_key canonical JSON key
+	 * @return String JSON key declaration
+	 */
+	protected String getCanKeyDecl(String canonical_key) {
+		return "\"" + canonical_key + key_decl_suffix_code;
+	}
+
+	/**
+	 * Return canonical JSON key-value pair declaration with quotation of value.
+	 *
+	 * @param canonical_key canonical JSON key
+	 * @param value JSON value
+	 * @return String JSON key-value pair declaration
+	 */
+	private String getCanKeyValuePairDecl(String canonical_key, String value) {
+		return getCanKeyDecl(canonical_key) + "\"" + value + "\"" + concat_line_feed;
+	}
+
+	/**
+	 * Return canonical JSON key-value pair declaration without quotation of value.
+	 *
+	 * @param canonical_key canonical JSON key
+	 * @param value JSON value
+	 * @return String JSON key-value pair declaration
+	 */
+	private String getCanKeyValuePairDeclNoQuote(String canonical_key, String value) {
+		return getCanKeyDecl(canonical_key) + value + concat_line_feed;
+	}
+
+	/**
+	 * Return canonical JSON key declaration with starting object.
+	 *
+	 * @param canonical_key canonical JSON key
+	 * @return String JSON key declaration with starting object.
+	 */
+	private String getCanKeyDeclStartObj(String canonical_key) {
+		return getCanKeyDecl(canonical_key) + start_object_code;
+	}
+
+	/**
+	 * Return canonical JSON key declaration with starting array.
+	 *
+	 * @param canonical_key canonical JSON key
+	 * @param inline whether in-line declaration of array
+	 * @return String JSON key declaration with starting array.
+	 */
+	private String getCanKeyDeclStartArray(String canonical_key, boolean inline) {
+		return getCanKeyDecl(canonical_key) + "[" + (inline ? "" : line_feed_code);
 	}
 
 	// JSON Schema
@@ -265,14 +357,14 @@ public class JsonBuilder extends CommonBuilder {
 
 		String indent_spaces = getIndentSpaces(1);
 
-		buffer.append(indent_spaces + "\"$schema\":" + key_value_space + "\"" + schema_ver.getNamespaceURI() + "\"" + concat_line_feed); // declare JSON Schema
+		buffer.append(indent_spaces + getCanKeyValuePairDecl("$schema", schema_ver.getNamespaceURI())); // declare JSON Schema
 
 		if (def_namespaces != null) {
 
 			String def_namespace = def_namespaces.get("");
 
 			if (def_namespace != null)
-				buffer.append(indent_spaces + "\"" + (schema_ver.equals(JsonSchemaVersion.draft_v4) ? "" : "$") + "id\":" + key_value_space + "\"" + def_namespace + "\"" + concat_line_feed); // declare unique identifier
+				buffer.append(indent_spaces + getCanKeyValuePairDecl((schema_ver.equals(JsonSchemaVersion.draft_v4) ? "" : "$") + "id", def_namespace)); // declare unique identifier
 
 		}
 
@@ -283,7 +375,7 @@ public class JsonBuilder extends CommonBuilder {
 			if (!_def_anno_appinfo.startsWith("\""))
 				_def_anno_appinfo = "\"" + _def_anno_appinfo + "\"";
 
-			buffer.append(indent_spaces + "\"title\":" + key_value_space + _def_anno_appinfo + concat_line_feed);
+			buffer.append(indent_spaces + getCanKeyValuePairDeclNoQuote("title", _def_anno_appinfo));
 
 		}
 
@@ -294,13 +386,13 @@ public class JsonBuilder extends CommonBuilder {
 			if (!_def_anno_doc.startsWith("\""))
 				_def_anno_doc = "\"" + _def_anno_doc + "\"";
 
-			buffer.append(indent_spaces + "\"description\":" + key_value_space + _def_anno_doc + concat_line_feed);
+			buffer.append(indent_spaces + getCanKeyValuePairDeclNoQuote("description", _def_anno_doc));
 
 		}
 
-		buffer.append(indent_spaces + "\"type\":" + key_value_space + "\"object\"" + concat_line_feed);
+		buffer.append(indent_spaces + getCanKeyValuePairDecl("type", "object"));
 
-		buffer.append(indent_spaces + "\"properties\":" + key_value_space + "{" + line_feed_code); // start root properties
+		buffer.append(indent_spaces + getCanKeyDeclStartObj("properties")); // start root properties
 
 	}
 
@@ -311,7 +403,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		trimComma();
 
-		buffer.append(getIndentSpaces(1) + "}" + line_feed_code); // end root properties
+		buffer.append(getIndentSpaces(1) + end_object_code); // end root properties
 
 	}
 
@@ -325,7 +417,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		int header_start = buffer.length();
 
-		buffer.append(getIndentSpaces(indent_level) + "\"" + (case_sense ? table.name : table.name.toLowerCase()) + "\":" + key_value_space + "{" + line_feed_code);  // start table
+		buffer.append(getIndentSpaces(indent_level) + getKeyDecl(table.name, false) + start_object_code);  // start table
 
 		String _indent_spaces = getIndentSpaces(indent_level + 1);
 
@@ -336,13 +428,13 @@ public class JsonBuilder extends CommonBuilder {
 			if (!table_anno.startsWith("\""))
 				table_anno = "\"" + table_anno + "\"";
 
-			buffer.append(_indent_spaces + "\"description\":" + key_value_space + table_anno + concat_line_feed);
+			buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("description", table_anno));
 
 		}
 
-		buffer.append(_indent_spaces + "\"type\":" + key_value_space + "\"object\"" + concat_line_feed);
+		buffer.append(_indent_spaces + getCanKeyValuePairDecl("type", "object"));
 
-		buffer.append(_indent_spaces + "\"properties\":" + key_value_space + "{" + line_feed_code); // start field
+		buffer.append(_indent_spaces + getCanKeyDeclStartObj("properties")); // start field
 
 		pending_header.push(new JsonBuilderPendingHeader(header_start, buffer.length(), indent_level));
 
@@ -373,21 +465,21 @@ public class JsonBuilder extends CommonBuilder {
 
 		String _indent_spaces = getIndentSpaces(header.indent_level + 1);
 
-		buffer.append(_indent_spaces + "}" + (has_required ? "," : "") + line_feed_code); // end field
+		buffer.append(_indent_spaces + (has_required ? end_object_concat_code : end_object_code)); // end field
 
 		if (has_required) {
 
-			buffer.append(_indent_spaces + "\"required\":" + key_value_space + "[");
+			buffer.append(_indent_spaces + getCanKeyDeclStartArray("required", true));
 
-			table.fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> buffer.append("\"" + getItemName(field, as_attr) + "\"" + concat_value_space));
+			table.fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> buffer.append("\"" + getKey(field, as_attr) + "\"" + concat_value_space));
 
 			buffer.setLength(buffer.length() - (key_value_offset + 1));
 
-			buffer.append("]" + line_feed_code);
+			buffer.append(end_array_code);
 
 		}
 
-		buffer.append(getIndentSpaces(header.indent_level) + "}" + concat_line_feed); // end table
+		buffer.append(getIndentSpaces(header.indent_level) + end_object_concat_code); // end table
 
 	}
 
@@ -417,7 +509,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		String schema_type = field.xs_type.getJsonSchemaType();
 
-		buffer.append(getIndentSpaces(indent_level++) + "\"" + getItemName(field, as_attr) + "\":" + key_value_space + "{" + line_feed_code); // start field
+		buffer.append(getIndentSpaces(indent_level++) + getKeyDecl(field, as_attr) + start_object_code); // start field
 
 		String format = field.getJsonSchemaFormat(schema_ver);
 		String _format = field.getJsonSchemaFormat(JsonSchemaVersion.latest);
@@ -434,13 +526,13 @@ public class JsonBuilder extends CommonBuilder {
 
 			_indent_spaces = getIndentSpaces(indent_level++);
 
-			buffer.append(_indent_spaces + "\"type\":" + key_value_space + "\"array\"" + concat_line_feed);
-			buffer.append(_indent_spaces + "\"items\":" + key_value_space + "{" + line_feed_code); // start items
+			buffer.append(_indent_spaces + getCanKeyValuePairDecl("type", "array"));
+			buffer.append(_indent_spaces + getCanKeyDeclStartObj("items")); // start items
 
 			if (!field.required && format != null) {
 
-				buffer.append(getIndentSpaces(indent_level++) + "\"oneOf\":" + key_value_space + "[" + line_feed_code); // start oneOf to allow empty string
-				buffer.append(getIndentSpaces(indent_level++) + "{" + line_feed_code); // start original array part
+				buffer.append(getIndentSpaces(indent_level++) + getCanKeyDeclStartArray("oneOf", false)); // start oneOf to allow empty string
+				buffer.append(getIndentSpaces(indent_level++) + start_object_code); // start original array part
 
 			}
 
@@ -450,24 +542,24 @@ public class JsonBuilder extends CommonBuilder {
 
 		else {
 
-			buffer.append(getIndentSpaces(indent_level++) + "\"oneOf\":" + key_value_space + "[" + line_feed_code); // start oneOf
-			buffer.append(getIndentSpaces(indent_level++) + "{" + line_feed_code); // start object part
+			buffer.append(getIndentSpaces(indent_level++) + getCanKeyDeclStartArray("oneOf", false)); // start oneOf
+			buffer.append(getIndentSpaces(indent_level++) + start_object_code); // start object part
 
 		}
 
 		_indent_spaces = getIndentSpaces(indent_level);
 
-		buffer.append(_indent_spaces + "\"type\":" + key_value_space + schema_type + concat_line_feed);
+		buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("type", schema_type));
 
 		if (format != null)
-			buffer.append(_indent_spaces + "\"format\":" + key_value_space + "\"" + format + "\"" + concat_line_feed);
+			buffer.append(_indent_spaces + getCanKeyValuePairDecl("format", format));
 
 		else if (_format == null) {
 
 			ref = field.xs_type.getJsonSchemaRef();
 
 			if (ref != null)
-				buffer.append(_indent_spaces + "\"$ref\":" + key_value_space + "\"" + field.xs_type.getJsonSchemaRef() + "\"" + concat_line_feed);
+				buffer.append(_indent_spaces + getCanKeyValuePairDecl("$ref", field.xs_type.getJsonSchemaRef()));
 
 		}
 
@@ -478,12 +570,12 @@ public class JsonBuilder extends CommonBuilder {
 			if (!anno.startsWith("\""))
 				anno = "\"" + anno + "\"";
 
-			buffer.append(_indent_spaces + "\"description\":" + key_value_space + anno + concat_line_feed);
+			buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("description", anno));
 
 		}
 
 		if (field.default_value != null)
-			buffer.append(_indent_spaces + "\"default\":" + key_value_space + field.getJsonSchemaDefaultValue() + concat_line_feed);
+			buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("default", field.getJsonSchemaDefaultValue()));
 
 		String enum_array = null;
 
@@ -491,54 +583,54 @@ public class JsonBuilder extends CommonBuilder {
 
 			enum_array = field.getJsonSchemaEnumArray(concat_value_space);
 
-			buffer.append(_indent_spaces + "\"enum\":" + key_value_space + "[" + enum_array.substring(0, enum_array.length() - (key_value_offset + 1)) + "]" + concat_line_feed);
+			buffer.append(_indent_spaces + getCanKeyDeclStartArray("enum", true) + enum_array.substring(0, enum_array.length() - (key_value_offset + 1)) + end_array_concat_code);
 
 		}
 
 		if (field.length != null) {
 
-			buffer.append(_indent_spaces + "\"maxLength\":" + key_value_space + field.length + concat_line_feed);
-			buffer.append(_indent_spaces + "\"minLength\":" + key_value_space + field.length + concat_line_feed);
+			buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("maxLength", field.length));
+			buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("minLength", field.length));
 
 		}
 
 		else {
 
 			if (field.max_length != null)
-				buffer.append(_indent_spaces + "\"maxLength\":" + key_value_space + field.max_length + concat_line_feed);
+				buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("maxLength", field.max_length));
 
 			if (field.min_length != null)
-				buffer.append(_indent_spaces + "\"minLength\":" + key_value_space + field.min_length + concat_line_feed);
+				buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("minLength", field.min_length));
 
 		}
 
 		if (field.pattern != null)
-			buffer.append(_indent_spaces + "\"pattern\":" + key_value_space + "\"" + StringEscapeUtils.escapeEcmaScript(field.pattern) + "\"" + concat_line_feed);
+			buffer.append(_indent_spaces + getCanKeyValuePairDecl("pattern", StringEscapeUtils.escapeEcmaScript(field.pattern)));
 
 		String schema_maximum = null;
 		String schema_minimum = null;
 
 		switch (schema_ver) {
 		case draft_v4:
-			schema_maximum = field.getJsonSchemaMaximumValueDraftV4(key_value_space);
+			schema_maximum = field.getJsonSchemaMaximumValueDraftV4(this);
 
 			if (schema_maximum != null)
-				buffer.append(_indent_spaces + "\"maximum\":" + key_value_space + schema_maximum + concat_line_feed);
+				buffer.append(_indent_spaces + getCanKeyDecl("maximum") + schema_maximum + concat_line_feed);
 
-			schema_minimum = field.getJsonSchemaMinimumValueDraftV4(key_value_space);
+			schema_minimum = field.getJsonSchemaMinimumValueDraftV4(this);
 
 			if (schema_minimum != null)
-				buffer.append(_indent_spaces + "\"minimum\":" + key_value_space + schema_minimum + concat_line_feed);
+				buffer.append(_indent_spaces + getCanKeyDecl("minimum") + schema_minimum + concat_line_feed);
 			break;
 		case draft_v6:
 		case draft_v7:
 		case latest:
-			schema_maximum = field.getJsonSchemaMaximumValue(key_value_space);
+			schema_maximum = field.getJsonSchemaMaximumValue(this);
 
 			if (schema_maximum != null)
 				buffer.append(_indent_spaces + schema_maximum + concat_line_feed);
 
-			schema_minimum = field.getJsonSchemaMinimumValue(key_value_space);
+			schema_minimum = field.getJsonSchemaMinimumValue(this);
 
 			if (schema_minimum != null)
 				buffer.append(_indent_spaces + schema_minimum + concat_line_feed);
@@ -547,7 +639,7 @@ public class JsonBuilder extends CommonBuilder {
 		String multiple_of = field.getJsonSchemaMultipleOfValue();
 
 		if (multiple_of != null)
-			buffer.append(_indent_spaces + "\"multipleOf\":" + key_value_space + multiple_of + concat_line_feed);
+			buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("multipleOf", multiple_of));
 
 		trimComma();
 
@@ -563,21 +655,23 @@ public class JsonBuilder extends CommonBuilder {
 
 				_indent_spaces = getIndentSpaces(--indent_level);
 
-				buffer.append(_indent_spaces + "}" + concat_line_feed); // end original array part
-				buffer.append(_indent_spaces + "{" + line_feed_code); // start empty string part
+				buffer.append(_indent_spaces + end_object_concat_code); // end original array part
+				buffer.append(_indent_spaces + start_object_code); // start empty string part
 
 				_indent_spaces = getIndentSpaces(++indent_level);
 
-				buffer.append(_indent_spaces + "\"type\":" + key_value_space + "\"string\"" + concat_line_feed);
-				buffer.append(_indent_spaces + "\"maxLength\":" + key_value_space + "0" + line_feed_code);
+				buffer.append(_indent_spaces + getCanKeyValuePairDecl("type", "string"));
+				buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("maxLength", "0"));
 
-				buffer.append(getIndentSpaces(--indent_level) + "}" + line_feed_code); // end empty string part
+				trimComma();
 
-				buffer.append(getIndentSpaces(--indent_level) + "]" + line_feed_code); // end oneOf to allow empty string
+				buffer.append(getIndentSpaces(--indent_level) + end_object_code); // end empty string part
+
+				buffer.append(getIndentSpaces(--indent_level) + end_array_code); // end oneOf to allow empty string
 
 			}
 
-			buffer.append(getIndentSpaces(--indent_level) + "}" + line_feed_code); // end items
+			buffer.append(getIndentSpaces(--indent_level) + end_object_code); // end items
 
 		}
 
@@ -587,67 +681,67 @@ public class JsonBuilder extends CommonBuilder {
 
 			_indent_spaces = getIndentSpaces(--indent_level);
 
-			buffer.append(_indent_spaces + "}" + concat_line_feed); // end object part
-			buffer.append(_indent_spaces + "{" + line_feed_code); // start array part
+			buffer.append(_indent_spaces + end_object_concat_code); // end object part
+			buffer.append(_indent_spaces + start_object_code); // start array part
 
 			_indent_spaces = getIndentSpaces(++indent_level);
 
-			buffer.append(_indent_spaces + "\"type\":" + key_value_space + "\"array\"" + concat_line_feed);
-			buffer.append(_indent_spaces + "\"items\":" + key_value_space + "{" + line_feed_code); // start items
+			buffer.append(_indent_spaces + getCanKeyValuePairDecl("type", "array"));
+			buffer.append(_indent_spaces + getCanKeyDeclStartObj("items")); // start items
 
 			if (!field.required && format != null) {
 
-				buffer.append(getIndentSpaces(++indent_level) + "\"oneOf\":" + key_value_space + "[" + line_feed_code); // start oneOf to allow empty string
-				buffer.append(getIndentSpaces(++indent_level) + "{" + line_feed_code); // start original array part
+				buffer.append(getIndentSpaces(++indent_level) + getCanKeyDeclStartArray("oneOf", false)); // start oneOf to allow empty string
+				buffer.append(getIndentSpaces(++indent_level) + start_object_code); // start original array part
 
 			}
 
 			_indent_spaces = getIndentSpaces(++indent_level);
 
-			buffer.append(_indent_spaces + "\"type\":" + key_value_space + schema_type + concat_line_feed);
+			buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("type", schema_type));
 
 			if (format != null)
-				buffer.append(_indent_spaces + "\"format\":" + key_value_space + "\"" + format + "\"" + concat_line_feed);
+				buffer.append(_indent_spaces + getCanKeyValuePairDecl("format", format));
 
 			else if (_format == null && ref != null)
-				buffer.append(_indent_spaces + "\"$ref\":" + key_value_space + "\"" + ref + "\"" + concat_line_feed);
+				buffer.append(_indent_spaces + getCanKeyValuePairDecl("$ref", ref));
 
 			if (!no_field_anno)
-				buffer.append(_indent_spaces + "\"description\":" + key_value_space + "\"array of previous object: " + getItemName(field, as_attr) + "\"" + concat_line_feed);
+				buffer.append(_indent_spaces + getCanKeyValuePairDecl("description", "array of previous object: " + getKey(field, as_attr)));
 
 			if (field.default_value != null)
-				buffer.append(_indent_spaces + "\"default\":" + key_value_space + field.getJsonSchemaDefaultValue() + concat_line_feed);
+				buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("default", field.getJsonSchemaDefaultValue()));
 
 			if (field.enum_name != null)
-				buffer.append(_indent_spaces + "\"enum\":" + key_value_space + "[" + enum_array.substring(0, enum_array.length() - (key_value_offset + 1)) + "]" + concat_line_feed);
+				buffer.append(_indent_spaces + getCanKeyDeclStartArray("enum", true) + enum_array.substring(0, enum_array.length() - (key_value_offset + 1)) + end_array_concat_code);
 
 			if (field.length != null) {
 
-				buffer.append(_indent_spaces + "\"maxLength\":" + key_value_space + field.length + concat_line_feed);
-				buffer.append(_indent_spaces + "\"minLength\":" + key_value_space + field.length + concat_line_feed);
+				buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("maxLength", field.length));
+				buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("minLength", field.length));
 
 			}
 
 			else {
 
 				if (field.max_length != null)
-					buffer.append(_indent_spaces + "\"maxLength\":" + key_value_space + field.max_length + concat_line_feed);
+					buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("maxLength", field.max_length));
 
 				if (field.min_length != null)
-					buffer.append(_indent_spaces + "\"minLength\":" + key_value_space + field.min_length + concat_line_feed);
+					buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("minLength", field.min_length));
 
 			}
 
 			if (field.pattern != null)
-				buffer.append(_indent_spaces + "\"pattern\":" + key_value_space + "\"" + StringEscapeUtils.escapeEcmaScript(field.pattern) + "\"" + concat_line_feed);
+				buffer.append(_indent_spaces + getCanKeyValuePairDecl("pattern", StringEscapeUtils.escapeEcmaScript(field.pattern)));
 
 			switch (schema_ver) {
 			case draft_v4:
 				if (schema_maximum != null)
-					buffer.append(_indent_spaces + "\"maximum\":" + key_value_space + schema_maximum + concat_line_feed);
+					buffer.append(_indent_spaces + getCanKeyDecl("maximum") + schema_maximum + concat_line_feed);
 
 				if (schema_minimum != null)
-					buffer.append(_indent_spaces + "\"minimum\":" + key_value_space + schema_minimum + concat_line_feed);
+					buffer.append(_indent_spaces + getCanKeyDecl("minimum") + schema_minimum + concat_line_feed);
 				break;
 			case draft_v6:
 			case draft_v7:
@@ -660,7 +754,7 @@ public class JsonBuilder extends CommonBuilder {
 			}
 
 			if (multiple_of != null)
-				buffer.append(_indent_spaces + "\"multipleOf\":" + key_value_space + multiple_of + concat_line_feed);
+				buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("multipleOf", multiple_of));
 
 			trimComma();
 
@@ -668,28 +762,30 @@ public class JsonBuilder extends CommonBuilder {
 
 				_indent_spaces = getIndentSpaces(--indent_level);
 
-				buffer.append(_indent_spaces + "}" + concat_line_feed); // end original array part
-				buffer.append(_indent_spaces + "{" + line_feed_code); // start empty string part
+				buffer.append(_indent_spaces + end_object_concat_code); // end original array part
+				buffer.append(_indent_spaces + start_object_code); // start empty string part
 
 				_indent_spaces = getIndentSpaces(++indent_level);
 
-				buffer.append(_indent_spaces + "\"type\":" + key_value_space + "\"string\"" + concat_line_feed);
-				buffer.append(_indent_spaces + "\"maxLength\":" + key_value_space + "0" + line_feed_code);
+				buffer.append(_indent_spaces + getCanKeyValuePairDecl("type", "string"));
+				buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("maxLength", "0"));
 
-				buffer.append(getIndentSpaces(--indent_level) + "}" + line_feed_code); // end empty string part
+				trimComma();
 
-				buffer.append(getIndentSpaces(--indent_level) + "]" + line_feed_code); // end oneOf to allow empty string
+				buffer.append(getIndentSpaces(--indent_level) + end_object_code); // end empty string part
+
+				buffer.append(getIndentSpaces(--indent_level) + end_array_code); // end oneOf to allow empty string
 
 			}
 
-			buffer.append(getIndentSpaces(--indent_level) + "}" + line_feed_code); // end items
+			buffer.append(getIndentSpaces(--indent_level) + end_object_code); // end items
 
-			buffer.append(getIndentSpaces(--indent_level) + "}" + line_feed_code); // end array part
-			buffer.append(getIndentSpaces(--indent_level) + "]" + line_feed_code); // end oneOf
+			buffer.append(getIndentSpaces(--indent_level) + end_object_code); // end array part
+			buffer.append(getIndentSpaces(--indent_level) + end_array_code); // end oneOf
 
 		}
 
-		buffer.append(getIndentSpaces(--indent_level) + "}" + concat_line_feed); // end field
+		buffer.append(getIndentSpaces(--indent_level) + end_object_concat_code); // end field
 
 	}
 
@@ -743,7 +839,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		int header_start = buffer.length();
 
-		buffer.append(getIndentSpaces(indent_level) + (object ? "\"" + (case_sense ? table.name : table.name.toLowerCase()) + "\":" + key_value_space : "") + "{" + line_feed_code);
+		buffer.append(getIndentSpaces(indent_level) + (object ? getKeyDecl(table.name, false) : "") + start_object_code);
 
 		pending_header.push(new JsonBuilderPendingHeader(header_start, buffer.length(), indent_level));
 
@@ -759,7 +855,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		int header_start = buffer.length();
 
-		buffer.append(getIndentSpaces(indent_level) + "\"" + (case_sense ? local_name : local_name.toLowerCase()) + "\":" + key_value_space + "{" + line_feed_code);
+		buffer.append(getIndentSpaces(indent_level) + getKeyDecl(local_name, false) + start_object_code);
 
 		pending_header.push(new JsonBuilderPendingHeader(header_start, buffer.length(), indent_level));
 
@@ -783,7 +879,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		trimComma();
 
-		buffer.append(getIndentSpaces(header.indent_level) + "}" + concat_line_feed);
+		buffer.append(getIndentSpaces(header.indent_level) + end_object_concat_code);
 
 	}
 
@@ -871,12 +967,12 @@ public class JsonBuilder extends CommonBuilder {
 			item_paths.clear();
 			break;
 		default:
-			buffer.append(indent_spaces + "\"" + getItemName(field, as_attr) + "\":" + key_value_space + (array_field ? "[" : ""));
+			buffer.append(indent_spaces + getKeyDecl(field, as_attr) + (array_field ? "[" : ""));
 
 			field.jsonb.setLength(field.jsonb.length() - (key_value_offset + 1));
 
 			buffer.append(field.jsonb);
-			buffer.append((array_field ? "]" : "") + concat_line_feed);
+			buffer.append(array_field ? end_array_concat_code : concat_line_feed);
 		}
 
 	}
@@ -928,12 +1024,12 @@ public class JsonBuilder extends CommonBuilder {
 
 				}
 
-				buffer.append(indent_spaces + "\"" + getItemNameOfPath(item_path) + "\":" + key_value_space + (array_field ? "[" : ""));
+				buffer.append(indent_spaces + getKeyDeclOfPath(item_path) + (array_field ? "[" : ""));
 
 				sb.setLength(sb.length() - (key_value_offset + 1));
 
 				buffer.append(sb);
-				buffer.append((array_field ? "]" : "") + concat_line_feed);	
+				buffer.append(array_field ? end_array_concat_code : concat_line_feed);	
 
 				sb.setLength(0);
 
@@ -974,34 +1070,34 @@ public class JsonBuilder extends CommonBuilder {
 
 				if (has_child) {
 
-					buffer.append(indent_spaces + "\"" + getItemNameOfPath(item_path) + "\":" + key_value_space + "{" + line_feed_code);
+					buffer.append(indent_spaces + getKeyDeclOfPath(item_path) + start_object_code);
 
 					if (has_attr)
 						writeAnyField(field, array_field, true, false, item_path, fragments, item_paths, indent_level + 1);
 
-					buffer.append(getIndentSpaces(indent_level + 1) + "\"" + getItemNameOfPath(simple_content_name) + "\":" + key_value_space + (array_field ? "[" : ""));
+					buffer.append(getIndentSpaces(indent_level + 1) + getKeyDeclOfPath(simple_content_name) + (array_field ? "[" : ""));
 
 					sb.setLength(sb.length() - (key_value_offset + 1));
 
 					buffer.append(sb);
-					buffer.append((array_field ? "]" : "") + concat_line_feed);
+					buffer.append(array_field ? end_array_concat_code : concat_line_feed);
 
 					writeAnyField(field, array_field, false, true, item_path, fragments, item_paths, indent_level + 1);
 
 					trimComma();
 
-					buffer.append(indent_spaces + "}" + concat_line_feed);
+					buffer.append(indent_spaces + end_object_concat_code);
 
 				}
 
 				else {
 
-					buffer.append(indent_spaces + "\"" + getItemNameOfPath(item_path) + "\":" + key_value_space + (array_field ? "[" : ""));
+					buffer.append(indent_spaces + getKeyDeclOfPath(item_path) + (array_field ? "[" : ""));
 
 					sb.setLength(sb.length() - (key_value_offset + 1));
 
 					buffer.append(sb);
-					buffer.append((array_field ? "]" : "") + concat_line_feed);	
+					buffer.append(array_field ? end_array_concat_code : concat_line_feed);	
 
 				}
 
@@ -1013,13 +1109,13 @@ public class JsonBuilder extends CommonBuilder {
 
 			else {
 
-				buffer.append(indent_spaces + "\"" + getItemNameOfPath(item_path) + "\":" + key_value_space + "{" + line_feed_code);
+				buffer.append(indent_spaces + getKeyDeclOfPath(item_path) + start_object_code);
 
 				writeAnyField(field, array_field, false, false, item_path, fragments, item_paths, indent_level + 1);
 
 				trimComma();
 
-				buffer.append(indent_spaces + "}" + concat_line_feed);
+				buffer.append(indent_spaces + end_object_concat_code);
 
 			}
 
@@ -1028,12 +1124,12 @@ public class JsonBuilder extends CommonBuilder {
 	}
 
 	/**
-	 * Return JSON item name of current path.
+	 * Return JSON key of current path.
 	 *
 	 * @param path current path
-	 * @return String JSON item name
+	 * @return String JSON key of current path
 	 */
-	private String getItemNameOfPath(String path) {
+	private String getKeyOfPath(String path) {
 
 		String name = getLastNameOfPath(path);
 
@@ -1041,6 +1137,16 @@ public class JsonBuilder extends CommonBuilder {
 			name = name.replace("@", attr_prefix);
 
 		return (case_sense ? name : name.toLowerCase());
+	}
+
+	/**
+	 * Return JSON key declaration of current path.
+	 *
+	 * @param path current path
+	 * @return String JSON key declaration of current path
+	 */
+	private String getKeyDeclOfPath(String path) {
+		return "\"" + getKeyOfPath(path) + key_decl_suffix_code;
 	}
 
 	/**
@@ -1109,9 +1215,8 @@ public class JsonBuilder extends CommonBuilder {
 
 		if (array_all)
 			field.writeValue2JsonBuf(schema_ver, content, false, concat_value_space);
-
 		else
-			buffer.append(getIndentSpaces(1) + "\"" + getItemName(field, as_attr) + "\":" + key_value_space + field.normalizeAsJson(schema_ver, content) + line_feed_code + ",");
+			buffer.append(getIndentSpaces(1) + getKeyDecl(field, as_attr) + field.normalizeAsJson(schema_ver, content) + line_feed_code + ",");
 
 	}
 
@@ -1128,12 +1233,12 @@ public class JsonBuilder extends CommonBuilder {
 
 		if ((field.required || field.jsonb_not_empty) && field.jsonb_col_size > 0) {
 
-			buffer.append(getIndentSpaces(1) + "\"" + getItemName(field, as_attr) + "\":" + key_value_space + "[");
+			buffer.append(getIndentSpaces(1) + getKeyDecl(field, as_attr) + "[");
 
 			field.jsonb.setLength(field.jsonb.length() - (key_value_offset + 1));
 			buffer.append(field.jsonb);
 
-			buffer.append("]" + concat_line_feed);
+			buffer.append(end_array_concat_code);
 
 			field.jsonb.setLength(0);
 
@@ -1175,12 +1280,12 @@ public class JsonBuilder extends CommonBuilder {
 
 		if ((field.required || field.jsonb_not_empty) && field.jsonb_col_size > 0) {
 
-			buffer.append(getIndentSpaces(1) + "\"" + getItemNameOfPath(path) + "\":" + key_value_space + "[");
+			buffer.append(getIndentSpaces(1) + getKeyDeclOfPath(path) + "[");
 
 			field.jsonb.setLength(field.jsonb.length() - (key_value_offset + 1));
 			buffer.append(field.jsonb);
 
-			buffer.append("]" + concat_line_feed);
+			buffer.append(end_array_concat_code);
 
 			field.jsonb.setLength(0);
 
@@ -1233,7 +1338,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		boolean array_field = table != null && !table.virtual && !table.list_holder && !table.bridge && array_all;
 
-		buffer.append(getIndentSpaces(indent_level) + "\"" + getItemName(field, as_attr) + "\":" + key_value_space + (array_field ? "[" : "") + field.normalizeAsJson(schema_ver, content) + (array_field ? "]" : "") + concat_line_feed);
+		buffer.append(getIndentSpaces(indent_level) + getKeyDecl(field, as_attr) + (array_field ? "[" : "") + field.normalizeAsJson(schema_ver, content) + (array_field ? end_array_concat_code : concat_line_feed));
 
 	}
 
@@ -1247,7 +1352,7 @@ public class JsonBuilder extends CommonBuilder {
 	 */
 	public void writeAnyField(String local_name, boolean as_attr, String content, final int indent_level) {
 
-		buffer.append(getIndentSpaces(indent_level) + "\"" + (as_attr ? attr_prefix : "") + (case_sense ? local_name : local_name.toLowerCase()) + "\":" + key_value_space + "\"" + StringEscapeUtils.escapeEcmaScript(content) + "\"" + concat_line_feed);
+		buffer.append(getIndentSpaces(indent_level) + getKeyDecl(local_name, as_attr) + "\"" + StringEscapeUtils.escapeEcmaScript(content) + "\"" + concat_line_feed);
 
 	}
 
@@ -1258,7 +1363,7 @@ public class JsonBuilder extends CommonBuilder {
 	 */
 	public void writeAnyAttr(JsonBuilderPendingAttr any_attr) {
 
-		buffer.append(getIndentSpaces(any_attr.indent_level) + "\"" + attr_prefix + (case_sense ? any_attr.local_name : any_attr.local_name.toLowerCase()) + "\":" + key_value_space + "\"" + StringEscapeUtils.escapeEcmaScript(any_attr.content) + "\"" + line_feed_code);
+		buffer.append(getIndentSpaces(any_attr.indent_level) + getKeyDecl(any_attr.local_name, true) + "\"" + StringEscapeUtils.escapeEcmaScript(any_attr.content) + "\"" + line_feed_code);
 
 	}
 
@@ -1275,7 +1380,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		String indent_spaces = getIndentSpaces(indent_level);
 
-		any_attrs.forEach(any_attr -> buffer.append(indent_spaces + "\"" + attr_prefix + (case_sense ? any_attr.local_name : any_attr.local_name.toLowerCase()) + "\":" + key_value_space + "\"" + StringEscapeUtils.escapeEcmaScript(any_attr.content) + "\"" + concat_line_feed));
+		any_attrs.forEach(any_attr -> buffer.append(indent_spaces + getKeyDecl(any_attr.local_name, true) + "\"" + StringEscapeUtils.escapeEcmaScript(any_attr.content) + "\"" + concat_line_feed));
 
 	}
 

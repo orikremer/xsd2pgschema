@@ -584,7 +584,7 @@ public enum XsDataType {
 			return "\"object\"";
 		}
 
-		return "\"null\"";
+		return "null";
 	}
 
 	/**

@@ -60,8 +60,14 @@ public class SphDsCompositor extends DefaultHandler {
 	/** Whether Sphinx multi-valued attribute. */
 	private boolean sph_mvattr = false;
 
-	/** The document key name in PostgreSQL DDL. */
+	/** The document key name. */
 	private String document_key_name;
+
+	/** The start element of document key in Sphinx data source. */
+	private String sph_start_document_key_elem;
+
+	/** The end element of document_key in Sphinx data source. */
+	private String sph_end_document_key_elem;
 
 	/** The current Sphinx attribute name. */
 	private String sph_attr_name = null;
@@ -70,7 +76,7 @@ public class SphDsCompositor extends DefaultHandler {
 	private StringBuilder sb = null;
 
 	/** The holder of string builder for each Sphinx attribute. */
-	private HashMap<String, StringBuilder> buffer = null;
+	private HashMap<String, StringBuilder> sph_attr_builders = null;
 
 	/** The set of Sphinx attribute. */
 	private HashSet<String> sph_attrs;
@@ -90,6 +96,8 @@ public class SphDsCompositor extends DefaultHandler {
 	public SphDsCompositor(String document_key_name, HashSet<String> sph_attrs, HashSet<String> sph_mvas, BufferedWriter buffw, IndexFilter index_filter) {
 
 		this.document_key_name = document_key_name;
+		sph_start_document_key_elem = "<" + document_key_name + ">";
+		sph_end_document_key_elem = "</" + document_key_name + ">\n";
 
 		this.sph_attrs = sph_attrs;
 		this.sph_mvas = sph_mvas;
@@ -119,7 +127,7 @@ public class SphDsCompositor extends DefaultHandler {
 
 			sb = new StringBuilder();
 
-			buffer = new HashMap<String, StringBuilder>();
+			sph_attr_builders = new HashMap<String, StringBuilder>();
 
 		}
 
@@ -146,7 +154,7 @@ public class SphDsCompositor extends DefaultHandler {
 
 			sph_attr_name = qName;
 
-			buffer.putIfAbsent(qName, new StringBuilder());
+			sph_attr_builders.putIfAbsent(qName, new StringBuilder());
 
 		}
 
@@ -184,7 +192,7 @@ public class SphDsCompositor extends DefaultHandler {
 				e.printStackTrace();
 			}
 
-			buffer.clear();
+			sph_attr_builders.clear();
 
 		}
 
@@ -221,7 +229,7 @@ public class SphDsCompositor extends DefaultHandler {
 		else if (document_key) {
 
 			try {
-				buffw.write("<" + document_key_name + ">" + StringEscapeUtils.escapeXml10(value) + "</" + document_key_name + ">\n");
+				buffw.write(sph_start_document_key_elem + StringEscapeUtils.escapeXml10(value) + sph_end_document_key_elem);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -245,7 +253,7 @@ public class SphDsCompositor extends DefaultHandler {
 
 			value = StringEscapeUtils.escapeXml10(value);
 
-			StringBuilder _sb = buffer.get(sph_attr_name);
+			StringBuilder _sb = sph_attr_builders.get(sph_attr_name);
 
 			if (sph_mvattr)
 				_sb.append(StringEscapeUtils.escapeCsv(value) + ",");
@@ -263,7 +271,7 @@ public class SphDsCompositor extends DefaultHandler {
 	 */
 	private void write() throws IOException {
 
-		for (Entry<String, StringBuilder> e : buffer.entrySet()) {
+		for (Entry<String, StringBuilder> e : sph_attr_builders.entrySet()) {
 
 			StringBuilder _sb = e.getValue();
 

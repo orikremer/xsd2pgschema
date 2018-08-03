@@ -3048,13 +3048,13 @@ public class PgField {
 	/**
 	 * Return JSON Schema maximum value (draft-04).
 	 *
-	 * @param key_value_space the JSON key value space
+	 * @param jsonb JSON builder
 	 * @return String JSON Schema maximum value
 	 */
 	@Deprecated
-	protected String getJsonSchemaMaximumValueDraftV4(final String key_value_space) {
+	protected String getJsonSchemaMaximumValueDraftV4(JsonBuilder jsonb) {
 
-		final String exclusive_maximum = "," + key_value_space + "\"exclusiveMaximum\":" + key_value_space + "true";
+		final String exclusive_maximum = jsonb.concat_value_space + jsonb.getCanKeyDecl("exclusiveMaximum") + "true";
 
 		int i;
 
@@ -3327,13 +3327,13 @@ public class PgField {
 	/**
 	 * Return JSON Schema minimum value (draft-04).
 	 *
-	 * @param key_value_space the JSON key value space
+	 * @param jsonb JSON builder
 	 * @return String JSON Schema minimum value
 	 */
 	@Deprecated
-	protected String getJsonSchemaMinimumValueDraftV4(final String key_value_space) {
+	protected String getJsonSchemaMinimumValueDraftV4(JsonBuilder jsonb) {
 
-		final String exclusive_minimum = "," + key_value_space + "\"exclusiveMinimum\":" + key_value_space + "true";
+		final String exclusive_minimum = jsonb.concat_value_space + jsonb.getCanKeyDecl("exclusiveMinimum") + "true";
 
 		switch (xs_type) {
 		case xs_bigserial:
@@ -3568,13 +3568,13 @@ public class PgField {
 	/**
 	 * Return JSON Schema maximum value.
 	 *
-	 * @param key_value_space the JSON key value space
+	 * @param jsonb JSON builder
 	 * @return String JSON Schema maximum value
 	 */
-	protected String getJsonSchemaMaximumValue(final String key_value_space) {
+	protected String getJsonSchemaMaximumValue(JsonBuilder jsonb) {
 
-		final String maximum_ = "\"maximum\":" + key_value_space;
-		final String exclusive_maximum_ = "\"exclusiveMaximum\":" + key_value_space;
+		final String maximum_ = jsonb.getCanKeyDecl("maximum");
+		final String exclusive_maximum_ = jsonb.getCanKeyDecl("exclusiveMaximum");
 		final String maximum_zero = maximum_ + "0";
 		final String exclusive_maximum_zero = exclusive_maximum_ + "0";
 
@@ -3849,13 +3849,13 @@ public class PgField {
 	/**
 	 * Return JSON Schema minimum value.
 	 *
-	 * @param key_value_space the JSON key value space
+	 * @param jsonb JSON builder
 	 * @return String JSON Schema minimum value
 	 */
-	protected String getJsonSchemaMinimumValue(final String key_value_space) {
+	protected String getJsonSchemaMinimumValue(JsonBuilder jsonb) {
 
-		final String minimum_ = "\"minimum\":" + key_value_space;
-		final String exclusive_minimum_ = "\"exclusiveMinimum\":" + key_value_space;
+		final String minimum_ = jsonb.getCanKeyDecl("minimum");
+		final String exclusive_minimum_ = jsonb.getCanKeyDecl("exclusiveMinimum");
 		final String minimum_zero = minimum_ + "0";
 		final String exclusive_minimum_zero = exclusive_minimum_ + "0";
 
@@ -4180,7 +4180,7 @@ public class PgField {
 			return latest ? "iri" : null;
 		case xs_IDREF:
 		case xs_IDREFS:
-			return latest ?"iri-reference" : null;
+			return latest ? "iri-reference" : null;
 		default:
 			return null;
 		}
