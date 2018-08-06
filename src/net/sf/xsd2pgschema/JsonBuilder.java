@@ -30,7 +30,7 @@ import java.util.List;
 import org.apache.commons.text.StringEscapeUtils;
 
 /**
- * JSON buffer.
+ * JSON builder.
  *
  * @author yokochi
  */
@@ -97,7 +97,7 @@ public class JsonBuilder extends CommonBuilder {
 	private String end_array_concat_code;
 
 	/**
-	 * Instance of JSON buffer.
+	 * Instance of JSON builder.
 	 *
 	 * @param option JSON builder option
 	 */
@@ -154,7 +154,7 @@ public class JsonBuilder extends CommonBuilder {
 	}
 
 	/**
-	 * Clear JSON buffer.
+	 * Clear JSON builder.
 	 *
 	 * @param clear_buffer whether to clear JSON buffer
 	 */
@@ -218,16 +218,12 @@ public class JsonBuilder extends CommonBuilder {
 	/**
 	 * Write a start object.
 	 *
-	 * @param root whether to initialize JSON buffer
+	 * @param clear_buffer whether to clear JSON buffer
 	 */
-	public void writeStartDocument(boolean root) {
+	public void writeStartDocument(boolean clear_buffer) {
 
-		if (root) {
-
-			if (buffer.length() > 0)
-				buffer.setLength(0);
-
-		}
+		if (clear_buffer)
+			buffer.setLength(0);
 
 		else {
 

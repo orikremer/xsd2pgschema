@@ -248,7 +248,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			return;
 
 		for (PgSchemaNestedKey nested_key : nested_keys)
-			schema.parseChildNode2PgSql(proc_node, table, nested_key.asOfRoot(this), update, db_conn);
+			traverse(proc_node, nested_key.asOfRoot(this));
 
 	}
 
@@ -261,7 +261,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public boolean parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key) throws PgSchemaException {
+	protected boolean parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
 		try {
 
@@ -284,7 +284,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					boolean exists = existsNestedNode(_nested_key.table, node_test.proc_node);
 
-					schema.parseChildNode2PgSql(exists || indirect ? node_test.proc_node : proc_node, table, _nested_key.asOfChild(node_test, exists), update, db_conn);
+					traverse(exists || indirect ? node_test.proc_node : proc_node, _nested_key.asOfChild(node_test, exists));
 
 				}
 
@@ -303,7 +303,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void parseChildNode(final Node proc_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
+	protected void parseChildNode(final Node proc_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
 		try {
 
@@ -322,8 +322,56 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		for (PgSchemaNestedKey _nested_key : nested_keys) {
 
 			if (existsNestedNode(_nested_key.table, proc_node))
-				schema.parseChildNode2PgSql(proc_node, table, _nested_key.asOfChild(this), update, db_conn);
+				traverse(proc_node, _nested_key.asOfChild(this));
 
+		}
+
+	}
+
+	/**
+	 * Parse current node and send to PostgreSQL.
+	 *
+	 * @param parent_node parent node
+	 * @param nested_key nested key
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	@Override
+	protected void traverse(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
+
+		PgTable parent_table = this.table;
+		PgTable table = nested_key.table;
+
+		PgSchemaNode2PgSql node2pgsql = null;
+
+		try {
+
+			node2pgsql = new PgSchemaNode2PgSql(schema, parent_table, table, update, db_conn);
+
+			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
+
+				if (node.getNodeType() != Node.ELEMENT_NODE)
+					continue;
+
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2pgsql.node_count, node2pgsql.node_ordinal);
+
+				if (node_test.visited)
+					return;
+
+				else if (node_test.omissible)
+					continue;
+
+				if (node2pgsql.parseChildNode(node_test, nested_key))
+					break;
+
+			}
+
+			if (node2pgsql.visited)
+				return;
+
+			node2pgsql.parseChildNode(parent_node, nested_key);
+
+		} finally {
+			node2pgsql.clear();
 		}
 
 	}

@@ -173,7 +173,7 @@ public abstract class PgSchemaNodeParser {
 	 * @return boolean whether current node is the last one
 	 * @throws Exception the exception
 	 */
-	abstract boolean parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key) throws Exception;
+	abstract protected boolean parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key) throws Exception;
 
 	/**
 	 * Abstract parser of processing node (child).
@@ -182,7 +182,16 @@ public abstract class PgSchemaNodeParser {
 	 * @param nested_key nested key
 	 * @throws Exception the exception
 	 */
-	abstract public void parseChildNode(final Node node, final PgSchemaNestedKey nested_key) throws Exception;
+	abstract protected void parseChildNode(final Node node, final PgSchemaNestedKey nested_key) throws Exception;
+
+	/**
+	 * Abstract traverser of current node.
+	 *
+	 * @param parent_node parent node
+	 * @param nested_key nested key
+	 * @throws Exception the exception
+	 */
+	abstract protected void traverse(final Node parent_node, final PgSchemaNestedKey nested_key) throws Exception;
 
 	/**
 	 * Common clear function.

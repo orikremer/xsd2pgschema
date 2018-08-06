@@ -84,7 +84,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			return;
 
 		for (PgSchemaNestedKey nested_key : nested_keys)
-			schema.parseChildNode2LucIdx(proc_node, table, nested_key.asOfRoot(this));
+			traverse(proc_node, nested_key.asOfRoot(this));
 
 	}
 
@@ -97,7 +97,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public boolean parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key) throws PgSchemaException {
+	protected boolean parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
 		parse(node_test.proc_node, node_test.parent_key, node_test.primary_key, node_test.current_key, node_test.as_attr, node_test.indirect);
 
@@ -111,7 +111,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 					boolean exists = existsNestedNode(_nested_key.table, node_test.proc_node);
 
-					schema.parseChildNode2LucIdx(exists || indirect ? node_test.proc_node : proc_node, table, _nested_key.asOfChild(node_test, exists));
+					traverse(exists || indirect ? node_test.proc_node : proc_node, _nested_key.asOfChild(node_test, exists));
 
 				}
 
@@ -130,7 +130,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void parseChildNode(final Node proc_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
+	protected void parseChildNode(final Node proc_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
 		parse(proc_node, nested_key.parent_key, nested_key.current_key, nested_key.current_key, nested_key.as_attr, nested_key.indirect);
 
@@ -140,8 +140,56 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 		for (PgSchemaNestedKey _nested_key : nested_keys) {
 
 			if (existsNestedNode(_nested_key.table, proc_node))
-				schema.parseChildNode2LucIdx(proc_node, table, _nested_key.asOfChild(this));
+				traverse(proc_node, _nested_key.asOfChild(this));
 
+		}
+
+	}
+
+	/**
+	 * Parse current node and store into Lucene document.
+	 *
+	 * @param parent_node parent node
+	 * @param nested_key nested key
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	@Override
+	protected void traverse(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
+
+		PgTable parent_table = this.table;
+		PgTable table = nested_key.table;
+
+		PgSchemaNode2LucIdx node2lucidx = null;
+
+		try {
+
+			node2lucidx = new PgSchemaNode2LucIdx(schema, parent_table, table);
+
+			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
+
+				if (node.getNodeType() != Node.ELEMENT_NODE)
+					continue;
+
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2lucidx.node_count, node2lucidx.node_ordinal);
+
+				if (node_test.visited)
+					return;
+
+				else if (node_test.omissible)
+					continue;
+
+				if (node2lucidx.parseChildNode(node_test, nested_key))
+					break;
+
+			}
+
+			if (node2lucidx.visited)
+				return;
+
+			node2lucidx.parseChildNode(parent_node, nested_key);
+
+		} finally {
+			node2lucidx.clear();
 		}
 
 	}

@@ -2782,7 +2782,7 @@ public class PgSchema {
 	 * @param table table
 	 * @return String PostgreSQL name of table
 	 */
-	protected String getDataFileNameOf(PgTable table) {
+	private String getDataFileNameOf(PgTable table) {
 		return (option.pg_named_schema ? table.pg_schema_name + "." : "") + table.pname + (option.pg_tab_delimiter ? ".tsv" : ".csv");
 	}
 
@@ -4451,53 +4451,6 @@ public class PgSchema {
 
 	}
 
-	/**
-	 * Parse current node and write to data (CSV/TSV) file.
-	 *
-	 * @param parent_node parent node
-	 * @param parent_table parent table
-	 * @param nested_key nested key
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	protected void parseChildNode2PgCsv(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key) throws PgSchemaException {
-
-		PgTable table = nested_key.table;
-
-		PgSchemaNode2PgCsv node2pgcsv = null;
-
-		try {
-
-			node2pgcsv = new PgSchemaNode2PgCsv(this, parent_table, table);
-
-			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
-
-				if (node.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2pgcsv.node_count, node2pgcsv.node_ordinal);
-
-				if (node_test.visited)
-					return;
-
-				else if (node_test.omissible)
-					continue;
-
-				if (node2pgcsv.parseChildNode(node_test, nested_key))
-					break;
-
-			}
-
-			if (node2pgcsv.visited)
-				return;
-
-			node2pgcsv.parseChildNode(parent_node, nested_key);
-
-		} finally {
-			node2pgcsv.clear();
-		}
-
-	}
-
 	// PostgreSQL data migration via COPY command
 
 	/**
@@ -4610,55 +4563,6 @@ public class PgSchema {
 	public void closeXml2PgSql() {
 
 		closePreparedStatement(false);
-
-	}
-
-	/**
-	 * Parse current node and send to PostgreSQL.
-	 *
-	 * @param parent_node parent node
-	 * @param parent_table parent table
-	 * @param nested_key nested key
-	 * @param update whether update or insertion
-	 * @param db_conn database connection
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	protected void parseChildNode2PgSql(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key, final boolean update, final Connection db_conn) throws PgSchemaException {
-
-		PgTable table = nested_key.table;
-
-		PgSchemaNode2PgSql node2pgsql = null;
-
-		try {
-
-			node2pgsql = new PgSchemaNode2PgSql(this, parent_table, table, update, db_conn);
-
-			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
-
-				if (node.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2pgsql.node_count, node2pgsql.node_ordinal);
-
-				if (node_test.visited)
-					return;
-
-				else if (node_test.omissible)
-					continue;
-
-				if (node2pgsql.parseChildNode(node_test, nested_key))
-					break;
-
-			}
-
-			if (node2pgsql.visited)
-				return;
-
-			node2pgsql.parseChildNode(parent_node, nested_key);
-
-		} finally {
-			node2pgsql.clear();
-		}
 
 	}
 
@@ -5208,53 +5112,6 @@ public class PgSchema {
 
 	}
 
-	/**
-	 * Parse current node and store into Lucene document.
-	 *
-	 * @param parent_node parent node
-	 * @param parent_table parent table
-	 * @param nested_key nested key
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	protected void parseChildNode2LucIdx(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key) throws PgSchemaException {
-
-		PgTable table = nested_key.table;
-
-		PgSchemaNode2LucIdx node2lucidx = null;
-
-		try {
-
-			node2lucidx = new PgSchemaNode2LucIdx(this, parent_table, table);
-
-			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
-
-				if (node.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2lucidx.node_count, node2lucidx.node_ordinal);
-
-				if (node_test.visited)
-					return;
-
-				else if (node_test.omissible)
-					continue;
-
-				if (node2lucidx.parseChildNode(node_test, nested_key))
-					break;
-
-			}
-
-			if (node2lucidx.visited)
-				return;
-
-			node2lucidx.parseChildNode(parent_node, nested_key);
-
-		} finally {
-			node2lucidx.clear();
-		}
-
-	}
-
 	// Sphinx full-text indexing
 
 	/**
@@ -5577,53 +5434,6 @@ public class PgSchema {
 	}
 
 	/**
-	 * Parse current node and store to Sphinx xmlpipe2 file.
-	 *
-	 * @param parent_node parent node
-	 * @param parent_table parent table
-	 * @param nested_key nested_key
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	protected void parseChildNode2SphDs(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key) throws PgSchemaException {
-
-		PgTable table = nested_key.table;
-
-		PgSchemaNode2SphDs node2sphds = null;
-
-		try {
-
-			node2sphds = new PgSchemaNode2SphDs(this, parent_table, table);
-
-			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
-
-				if (node.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2sphds.node_count, node2sphds.node_ordinal);
-
-				if (node_test.visited)
-					return;
-
-				else if (node_test.omissible)
-					continue;
-
-				if (node2sphds.parseChildNode(node_test, nested_key))
-					break;
-
-			}
-
-			if (node2sphds.visited)
-				return;
-
-			node2sphds.parseChildNode(parent_node, nested_key);
-
-		} finally {
-			node2sphds.clear();
-		}
-
-	}
-
-	/**
 	 * Return set of Sphinx attributes.
 	 *
 	 * @return HashSet set of Sphinx attributes
@@ -5869,68 +5679,6 @@ public class PgSchema {
 
 	}
 
-	/**
-	 * Parse current node and store to JSON buffer (Object-oriented JSON format).
-	 *
-	 * @param parent_node parent node
-	 * @param parent_table parent table
-	 * @param nested_key nested key
-	 * @param json_indent_level current indent level
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	protected void parseChildNode2ObjJson(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key, int json_indent_level) throws PgSchemaException {
-
-		PgTable table = nested_key.table;
-
-		PgSchemaNode2Json node2json = null;
-
-		try {
-
-			node2json = new PgSchemaNode2Json(this, parent_table, table);
-
-			if (!table.virtual && table.bridge) {
-				jsonb.writeStartTable(table, true, ++json_indent_level);
-				++json_indent_level;
-			}
-
-			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
-
-				if (node.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2json.node_count, node2json.node_ordinal);
-
-				if (node_test.visited)
-					return;
-
-				else if (node_test.omissible)
-					continue;
-
-				if (node2json.parseChildNode(node_test, nested_key, json_indent_level))
-					break;
-
-			}
-
-			try {
-
-				if (node2json.visited)
-					return;
-
-				node2json.parseChildNode(parent_node, nested_key, json_indent_level);
-
-			} finally {
-
-				if (!table.virtual && table.bridge)
-					jsonb.writeEndTable();
-
-			}
-
-		} finally {
-			node2json.clear();
-		}
-
-	}
-
 	// Column-oriented JSON conversion
 
 	/**
@@ -6051,68 +5799,6 @@ public class PgSchema {
 
 		} catch (IOException e) {
 			throw new PgSchemaException(e);
-		}
-
-	}
-
-	/**
-	 * Parse current node and store to JSON buffer (Column-oriented JSON format).
-	 *
-	 * @param parent_node parent node
-	 * @param parent_table parent table
-	 * @param nested_key nested key
-	 * @param json_indent_level current indent level
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	protected void parseChildNode2ColJson(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key, int json_indent_level) throws PgSchemaException {
-
-		PgTable table = nested_key.table;
-
-		PgSchemaNode2Json node2json = null;
-
-		try {
-
-			boolean list_and_bridge = table.list_holder && table.bridge;
-
-			node2json = new PgSchemaNode2Json(this, parent_table, table);
-
-			if (!table.virtual && !list_and_bridge)
-				jsonb.writeStartTable(table, true, json_indent_level);
-
-			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
-
-				if (node.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2json.node_count, node2json.node_ordinal);
-
-				if (node_test.visited)
-					return;
-
-				else if (node_test.omissible)
-					continue;
-
-				if (node2json.parseChildNode(node_test, nested_key, json_indent_level))
-					break;
-
-			}
-
-			try {
-
-				if (node2json.visited)
-					return;
-
-				node2json.parseChildNode(parent_node, nested_key, json_indent_level);
-
-			} finally {
-
-				if (!table.virtual && !list_and_bridge)
-					jsonb.writeEndTable();
-
-			}
-
-		} finally {
-			node2json.clear();
 		}
 
 	}
@@ -6257,53 +5943,6 @@ public class PgSchema {
 			});
 
 		});
-
-	}
-
-	/**
-	 * Parse current node and store to JSON buffer (Relational-oriented JSON format).
-	 *
-	 * @param parent_node parent node
-	 * @param parent_table parent table
-	 * @param nested_key nested key
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	protected void parseChildNode2Json(final Node parent_node, final PgTable parent_table, final PgSchemaNestedKey nested_key) throws PgSchemaException {
-
-		PgTable table = nested_key.table;
-
-		PgSchemaNode2Json node2json = null;
-
-		try {
-
-			node2json = new PgSchemaNode2Json(this, parent_table, table);
-
-			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
-
-				if (node.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2json.node_count, node2json.node_ordinal);
-
-				if (node_test.visited)
-					return;
-
-				else if (node_test.omissible)
-					continue;
-
-				if (node2json.parseChildNode(node_test, nested_key))
-					break;
-
-			}
-
-			if (node2json.visited)
-				return;
-
-			node2json.parseChildNode(parent_node, nested_key);
-
-		} finally {
-			node2json.clear();
-		}
 
 	}
 
