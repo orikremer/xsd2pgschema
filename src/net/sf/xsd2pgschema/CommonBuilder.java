@@ -38,6 +38,12 @@ public class CommonBuilder {
 	/** The pending simple content. */
 	protected StringBuilder pending_simple_cont = new StringBuilder();
 
+	/** The count of root nodes. */
+	public int root_count = 0;
+
+	/** The count of fragments. */
+	public int fragment = 0;
+
 	/**
 	 * Set whether to insert document key.
 	 *
@@ -90,6 +96,33 @@ public class CommonBuilder {
 			return null;
 
 		return _path[position];
+	}
+
+	/**
+	 * Reset status.
+	 */
+	public void resetStatus() {
+
+		root_count = fragment = 0;
+
+	}
+
+	/**
+	 * Increment count of root nodes.
+	 */
+	protected void incRootCount() {
+
+		root_count++;
+
+	}
+
+	/**
+	 * Increment count of fragments.
+	 */
+	protected void incFragment() {
+
+		fragment++;
+
 	}
 
 	/**

@@ -4763,7 +4763,7 @@ public class PgSchema {
 
 					if (!has_index) {
 
-						String sql = "SELECT COUNT(id) FROM ( SELECT 1 as id FROM " + getPgNameOf(db_conn, table) + " LIMIT " + min_row_count + " ) as trunc";
+						String sql = "SELECT COUNT(id) FROM ( SELECT 1 AS id FROM " + getPgNameOf(db_conn, table) + " LIMIT " + min_row_count + " ) AS trunc";
 
 						rset = stat.executeQuery(sql);
 
@@ -4874,7 +4874,8 @@ public class PgSchema {
 
 		try {
 
-			has_db_rows = new HashMap<String, Boolean>();
+			if (has_db_rows == null)
+				has_db_rows = new HashMap<String, Boolean>();
 
 			Statement stat = db_conn.createStatement();
 
@@ -6308,6 +6309,8 @@ public class PgSchema {
 			throw new PgSchemaException(e);
 		}
 
+		xmlb.incFragment();
+
 	}
 
 	/**
@@ -6634,6 +6637,8 @@ public class PgSchema {
 		}
 
 		xmlb.clear();
+
+		xmlb.incRootCount();
 
 	}
 
@@ -7194,6 +7199,8 @@ public class PgSchema {
 			throw new PgSchemaException(e);
 		}
 
+		jsonb.incFragment();
+
 	}
 
 	/**
@@ -7459,6 +7466,8 @@ public class PgSchema {
 		jsonb.writeEndDocument();
 
 		jsonb.clear(false);
+
+		jsonb.incRootCount();
 
 	}
 

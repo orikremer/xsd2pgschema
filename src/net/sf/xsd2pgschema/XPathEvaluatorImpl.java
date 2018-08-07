@@ -395,6 +395,8 @@ public class XPathEvaluatorImpl {
 
 			schema.initXmlBuilder(xmlb);
 
+			xmlb.resetStatus();
+
 			Statement stat = db_conn.createStatement();
 
 			long start_time = System.currentTimeMillis();
@@ -441,16 +443,18 @@ public class XPathEvaluatorImpl {
 				bout.close();
 
 				System.out.println("Generated XML document: " + out_file_path.toAbsolutePath().toString());
-				System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
 
 			}
 
-			else {
-
+			else
 				xml_writer.close();
-				System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
 
-			}
+			System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
+
+			if (xmlb.root_count > 1)
+				throw new PgSchemaException("[WARNING] The XML document has multiple root nodes.");
+			if (xmlb.fragment > 1)
+				throw new PgSchemaException("[WARNING] The XML document has multiple fragments.");
 
 		} catch (IOException | XMLStreamException | SQLException e) {
 			throw new PgSchemaException(e);
@@ -502,6 +506,8 @@ public class XPathEvaluatorImpl {
 
 			else
 				bout = new BufferedOutputStream(System.out);
+
+			schema.jsonb.resetStatus();
 
 			Statement stat = db_conn.createStatement();
 
@@ -558,6 +564,11 @@ public class XPathEvaluatorImpl {
 				bout.flush();
 
 			}
+
+			if (schema.jsonb.root_count > 1)
+				throw new PgSchemaException("[WARNING] The JSON document has multiple root nodes.");
+			if (schema.jsonb.fragment > 1)
+				throw new PgSchemaException("[WARNING] The JSON document has multiple fragments.");
 
 		} catch (IOException | SQLException e) {
 			throw new PgSchemaException(e);
