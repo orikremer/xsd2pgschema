@@ -6679,9 +6679,15 @@ public class PgSchema {
 
 			}
 
+			List<PgField> fields = table.fields;
+
+			PgField primary_key = fields.parallelStream().filter(field -> field.primary_key).findFirst().get();
+
+			boolean use_doc_key_index = document_id != null && !primary_key.unique_key;
+
 			if (table.ps == null || table.ps.isClosed()) {
 
-				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + (document_id != null ? PgSchemaUtil.avoidPgReservedOps(getDocKeyName(table)) + " = ? AND " : "") + PgSchemaUtil.avoidPgReservedWords(table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname) + " = ?";
+				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + (use_doc_key_index ? PgSchemaUtil.avoidPgReservedOps(getDocKeyName(table)) + " = ? AND " : "") + PgSchemaUtil.avoidPgReservedWords(primary_key.pname) + " = ?";
 
 				table.ps = db_conn.prepareStatement(sql);
 
@@ -6689,7 +6695,7 @@ public class PgSchema {
 
 			int param_id = 1;
 
-			if (document_id != null)
+			if (use_doc_key_index)
 				table.ps.setString(param_id++, document_id);
 
 			switch (option.hash_size) {
@@ -6707,8 +6713,6 @@ public class PgSchema {
 			}
 
 			ResultSet rset = table.ps.executeQuery();
-
-			List<PgField> fields = table.fields;
 
 			int list_id = 0;
 
@@ -7497,9 +7501,15 @@ public class PgSchema {
 
 			}
 
+			List<PgField> fields = table.fields;
+
+			PgField primary_key = fields.parallelStream().filter(field -> field.primary_key).findFirst().get();
+
+			boolean use_doc_key_index = document_id != null && !primary_key.unique_key;
+
 			if (table.ps == null || table.ps.isClosed()) {
 
-				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + (document_id != null ? PgSchemaUtil.avoidPgReservedOps(getDocKeyName(table)) + " = ? AND " : "") + PgSchemaUtil.avoidPgReservedWords(table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname) + " = ?";
+				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + (use_doc_key_index ? PgSchemaUtil.avoidPgReservedOps(getDocKeyName(table)) + " = ? AND " : "") + PgSchemaUtil.avoidPgReservedWords(primary_key.pname) + " = ?";
 
 				table.ps = db_conn.prepareStatement(sql);
 
@@ -7507,7 +7517,7 @@ public class PgSchema {
 
 			int param_id = 1;
 
-			if (document_id != null)
+			if (use_doc_key_index)
 				table.ps.setString(param_id++, document_id);
 
 			switch (option.hash_size) {
@@ -7525,8 +7535,6 @@ public class PgSchema {
 			}
 
 			ResultSet rset = table.ps.executeQuery();
-
-			List<PgField> fields = table.fields;
 
 			while (rset.next()) {
 
