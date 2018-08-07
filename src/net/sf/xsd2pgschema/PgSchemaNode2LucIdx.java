@@ -133,7 +133,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 		filled = true;
 		null_simple_primitive_list = false;
 
-		if (nested_keys != null && nested_keys.size() > 0)
+		if (nested_keys != null)
 			nested_keys.clear();
 
 		for (int f = 0; f < fields.size(); f++) {

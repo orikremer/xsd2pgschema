@@ -476,7 +476,7 @@ public abstract class PgSchemaNodeParser {
 
 			if (field.simple_primitive_list) {
 
-				if (content != null && fields.stream().anyMatch(_field -> _field.nested_key && matchesParentNode(current_key, _field.parent_node)))
+				if (content != null && fields.parallelStream().anyMatch(_field -> _field.nested_key && matchesParentNode(current_key, _field.parent_node)))
 					content = null;
 
 				null_simple_primitive_list = content == null;

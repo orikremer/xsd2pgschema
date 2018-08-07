@@ -457,7 +457,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		trimComma();
 
-		boolean has_required = table.fields.stream().anyMatch(field -> field.required && field.jsonable);
+		boolean has_required = table.fields.parallelStream().anyMatch(field -> field.required && field.jsonable);
 
 		String _indent_spaces = getIndentSpaces(header.indent_level + 1);
 
@@ -1040,8 +1040,8 @@ public class JsonBuilder extends CommonBuilder {
 
 		item_paths.stream().filter(item_path -> getParentPath(item_path).equals(cur_path) && !getLastNameOfPath(item_path).startsWith("@")).forEach(item_path -> {
 
-			boolean has_attr = item_paths.stream().anyMatch(_item_path -> getParentPath(_item_path).equals(item_path) && getLastNameOfPath(_item_path).startsWith("@"));
-			boolean has_child = item_paths.stream().anyMatch(_item_path -> getParentPath(_item_path).equals(item_path));
+			boolean has_attr = item_paths.parallelStream().anyMatch(_item_path -> getParentPath(_item_path).equals(item_path) && getLastNameOfPath(_item_path).startsWith("@"));
+			boolean has_child = item_paths.parallelStream().anyMatch(_item_path -> getParentPath(_item_path).equals(item_path));
 			boolean has_content = false;
 
 			for (String fragment : fragments) {

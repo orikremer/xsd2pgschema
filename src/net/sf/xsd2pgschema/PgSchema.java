@@ -2588,7 +2588,7 @@ public class PgSchema {
 
 		if (fields.size() > 0) {
 
-			if (fields.stream().anyMatch(field -> !field.primary_key && field.required)) {
+			if (fields.parallelStream().anyMatch(field -> !field.primary_key && field.required)) {
 
 				for (PgField known_field : known_fields) {
 
@@ -3795,7 +3795,7 @@ public class PgSchema {
 
 			else {
 
-				table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
+				table.fields.parallelStream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
 
 					field.filt_out = true;
 					field.filter_pattern = rex_pattern;
@@ -4007,7 +4007,7 @@ public class PgSchema {
 			}
 
 			else
-				table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true);
+				table.fields.parallelStream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true);
 
 		}
 
@@ -4173,7 +4173,7 @@ public class PgSchema {
 			}
 
 			else
-				_table.fields.stream().filter(_field -> !_field.system_key && !_field.user_key).forEach(_field -> _field.field_sel = true);
+				_table.fields.parallelStream().filter(_field -> !_field.system_key && !_field.user_key).forEach(_field -> _field.field_sel = true);
 
 		}
 
@@ -4614,10 +4614,12 @@ public class PgSchema {
 		if (!option.inplace_document_key)
 			throw new PgSchemaException("Not defined document key, or select either --doc-key or --doc-key-if-no-inplace option.");
 
-		if (table.fields.stream().anyMatch(field -> field.document_key))
+		List<PgField> fields = table.fields;
+
+		if (fields.parallelStream().anyMatch(field -> field.document_key))
 			return option.document_key_name;
 
-		if (!table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))) {
+		if (!fields.parallelStream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))) {
 
 			if (option.document_key_if_no_in_place)
 				return option.document_key_name;
@@ -4625,7 +4627,7 @@ public class PgSchema {
 			throw new PgSchemaException("Not found in-place document key in " + table.pname + ", or select --doc-key-if-no-inplace option.");
 		}
 
-		return table.fields.stream().filter(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).findFirst().get().pname;
+		return fields.parallelStream().filter(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).findFirst().get().pname;
 	}
 
 	/**
@@ -4683,7 +4685,7 @@ public class PgSchema {
 
 			if (has_doc_id || sync_rescue) {
 
-				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table) && ((no_pkey && !table.fields.stream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey || sync_rescue)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table) && ((no_pkey && !table.fields.parallelStream().anyMatch(field -> field.primary_key && field.unique_key)) || !no_pkey || sync_rescue)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
 
 					if (has_db_rows.get(table.pname)) {
 
@@ -4994,7 +4996,7 @@ public class PgSchema {
 
 						String db_column_name = rset_col.getString("COLUMN_NAME");
 
-						if (!table.fields.stream().filter(field -> !field.omissible).anyMatch(field -> field.pname.equals(db_column_name)))
+						if (!table.fields.parallelStream().filter(field -> !field.omissible).anyMatch(field -> field.pname.equals(db_column_name)))
 							throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + db_column_name + " found without declaration in the data model."); // found without declaration in the data model
 
 					}
