@@ -59,6 +59,22 @@ public class PgSchemaNodeTester {
 	protected int node_ordinal;
 
 	/**
+	 * Set up root node as processing node.
+	 *
+	 * @param root_node root node
+	 * @param root_key root key
+	 */
+	public PgSchemaNodeTester(Node root_node, String root_key) {
+
+		proc_node = root_node;
+		parent_key = null;
+		primary_key = current_key = root_key;
+		as_attr = indirect = false;
+		node_count = node_ordinal = 1;
+
+	}
+
+	/**
 	 * Decide whether to process this node.
 	 *
 	 * @param option PostgreSQL data model option
@@ -152,6 +168,23 @@ public class PgSchemaNodeTester {
 
 		this.node_count = node_count > 0 ? node_count : nested_key.getNodeCount(parent_node, qname);
 		this.node_ordinal = node_ordinal;
+
+	}
+
+	/**
+	 * Set up current node as processing node.
+	 *
+	 * @param node current node
+	 * @param nested_key nested key
+	 */
+	public PgSchemaNodeTester(Node node, PgSchemaNestedKey nested_key) {
+
+		proc_node = node;
+		parent_key = nested_key.parent_key;
+		primary_key = current_key = nested_key.current_key;
+		as_attr = nested_key.as_attr;
+		indirect = nested_key.indirect;
+		node_count = node_ordinal = 1;
 
 	}
 

@@ -158,43 +158,99 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Abstract parser of processing node (root).
+	 * Parse root node.
 	 *
-	 * @param node processing node
-	 * @throws Exception the exception
+	 * @param proc_node processing node
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	abstract public void parseRootNode(final Node node) throws Exception;
+	public void parseRootNode(final Node proc_node) throws PgSchemaException {
+
+		parse(new PgSchemaNodeTester(proc_node, current_key = document_id + "/" + table.xname));
+
+		if (!filled || nested_keys == null)
+			return;
+
+		for (PgSchemaNestedKey nested_key : nested_keys)
+			traverseNestedNode(proc_node, nested_key.asOfRoot(this));
+
+	}
 
 	/**
-	 * Abstract parser of processing node (child).
+	 * Parse child node.
 	 *
 	 * @param node_test node tester
 	 * @param nested_key nested key
 	 * @return boolean whether current node is the last one
-	 * @throws Exception the exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	abstract protected boolean parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key) throws Exception;
+	protected boolean parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key) throws PgSchemaException {
+
+		parse(node_test);
+
+		if (filled) {
+
+			visited = true;
+
+			if (nested_keys != null) {
+
+				for (PgSchemaNestedKey _nested_key : nested_keys) {
+
+					boolean exists = existsNestedNode(_nested_key.table, node_test.proc_node);
+
+					traverseNestedNode(exists || indirect ? node_test.proc_node : proc_node, _nested_key.asOfChild(node_test, exists));
+
+				}
+
+			}
+
+		}
+
+		return isLastNode(nested_key, node_test.node_count);
+	}
 
 	/**
-	 * Abstract parser of processing node (child).
+	 * Parser child node.
 	 *
-	 * @param node processing node
+	 * @param proc_node processing node
 	 * @param nested_key nested key
-	 * @throws Exception the exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	abstract protected void parseChildNode(final Node node, final PgSchemaNestedKey nested_key) throws Exception;
+	protected void parseChildNode(final Node proc_node, PgSchemaNestedKey nested_key) throws PgSchemaException {
+
+		parse(new PgSchemaNodeTester(proc_node, nested_key));
+
+		if (!filled || nested_keys == null)
+			return;
+
+		for (PgSchemaNestedKey _nested_key : nested_keys) {
+
+			if (existsNestedNode(_nested_key.table, proc_node))
+				traverseNestedNode(proc_node, _nested_key.asOfChild(this));
+
+		}
+
+	}
 
 	/**
-	 * Abstract traverser of current node.
+	 * Abstract traverser of nested node.
 	 *
 	 * @param parent_node parent node
 	 * @param nested_key nested key
-	 * @throws Exception the exception
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	abstract protected void traverse(final Node parent_node, final PgSchemaNestedKey nested_key) throws Exception;
+	abstract protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException;
 
 	/**
-	 * Common clear function.
+	 * Abstract parser of processing node.
+	 *
+	 * @param node_test node tester
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	abstract protected void parse(final PgSchemaNodeTester node_test) throws PgSchemaException;
+
+	/**
+	 * Clear node parser.
+	 *
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void clear() throws PgSchemaException {

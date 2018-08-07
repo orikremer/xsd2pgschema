@@ -6340,6 +6340,10 @@ public class PgSchema {
 
 			List<PgField> fields = table.fields;
 
+			String doc_key_name = (option.document_key || option.inplace_document_key) ? getDocKeyName(table) : null;
+
+			document_id = null;
+
 			// attribute, any_attribute
 
 			int param_id = 1;
@@ -6347,6 +6351,9 @@ public class PgSchema {
 			for (int f = 0; f < fields.size(); f++) {
 
 				PgField field = fields.get(f);
+
+				if (doc_key_name != null && field.pname.equals(doc_key_name))
+					document_id = rset.getString(param_id);
 
 				if (field.attribute) {
 
@@ -6674,24 +6681,29 @@ public class PgSchema {
 
 			if (table.ps == null || table.ps.isClosed()) {
 
-				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname) + " = ?";
+				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + (document_id != null ? PgSchemaUtil.avoidPgReservedOps(getDocKeyName(table)) + " = ? AND " : "") + PgSchemaUtil.avoidPgReservedWords(table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname) + " = ?";
 
 				table.ps = db_conn.prepareStatement(sql);
 
 			}
 
+			int param_id = 1;
+
+			if (document_id != null)
+				table.ps.setString(param_id++, document_id);
+
 			switch (option.hash_size) {
 			case native_default:
-				table.ps.setBytes(1, (byte[]) parent_key);
+				table.ps.setBytes(param_id, (byte[]) parent_key);
 				break;
 			case unsigned_int_32:
-				table.ps.setInt(1, (int) (parent_key));
+				table.ps.setInt(param_id, (int) (parent_key));
 				break;
 			case unsigned_long_64:
-				table.ps.setLong(1, (long) parent_key);
+				table.ps.setLong(param_id, (long) parent_key);
 				break;
 			default:
-				table.ps.setString(1, (String) parent_key);
+				table.ps.setString(param_id, (String) parent_key);
 			}
 
 			ResultSet rset = table.ps.executeQuery();
@@ -6716,7 +6728,7 @@ public class PgSchema {
 
 				// attribute, simple attribute, any_attribute
 
-				int param_id = 1;
+				param_id = 1;
 
 				for (int f = 0; f < fields.size(); f++) {
 
@@ -7207,6 +7219,10 @@ public class PgSchema {
 
 			List<PgField> fields = table.fields;
 
+			String doc_key_name = (option.document_key || option.inplace_document_key) ? getDocKeyName(table) : null;
+
+			document_id = null;
+
 			// attribute, any_attribute
 
 			int param_id = 1;
@@ -7214,6 +7230,9 @@ public class PgSchema {
 			for (int f = 0; f < fields.size(); f++) {
 
 				PgField field = fields.get(f);
+
+				if (doc_key_name != null && field.pname.equals(doc_key_name))
+					document_id = rset.getString(param_id);
 
 				if (field.attribute) {
 
@@ -7480,24 +7499,29 @@ public class PgSchema {
 
 			if (table.ps == null || table.ps.isClosed()) {
 
-				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname) + " = ?";
+				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + (document_id != null ? PgSchemaUtil.avoidPgReservedOps(getDocKeyName(table)) + " = ? AND " : "") + PgSchemaUtil.avoidPgReservedWords(table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname) + " = ?";
 
 				table.ps = db_conn.prepareStatement(sql);
 
 			}
 
+			int param_id = 1;
+
+			if (document_id != null)
+				table.ps.setString(param_id++, document_id);
+
 			switch (option.hash_size) {
 			case native_default:
-				table.ps.setBytes(1, (byte[]) parent_key);
+				table.ps.setBytes(param_id, (byte[]) parent_key);
 				break;
 			case unsigned_int_32:
-				table.ps.setInt(1, (int) (parent_key));
+				table.ps.setInt(param_id, (int) (parent_key));
 				break;
 			case unsigned_long_64:
-				table.ps.setLong(1, (long) parent_key);
+				table.ps.setLong(param_id, (long) parent_key);
 				break;
 			default:
-				table.ps.setString(1, (String) parent_key);
+				table.ps.setString(param_id, (String) parent_key);
 			}
 
 			ResultSet rset = table.ps.executeQuery();
@@ -7520,7 +7544,7 @@ public class PgSchema {
 
 				// attribute, simple attribute, any_attribute
 
-				int param_id = 1;
+				param_id = 1;
 
 				for (int f = 0; f < fields.size(); f++) {
 

@@ -68,93 +68,14 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse processing node (root).
-	 *
-	 * @param proc_node processing node
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	@Override
-	public void parseRootNode(final Node proc_node) throws PgSchemaException {
-
-		current_key = document_id + "/" + table.xname;
-
-		parse(proc_node, null, current_key, current_key, false, indirect);
-
-		if (!filled || nested_keys == null)
-			return;
-
-		for (PgSchemaNestedKey nested_key : nested_keys)
-			traverse(proc_node, nested_key.asOfRoot(this));
-
-	}
-
-	/**
-	 * Parse processing node (child).
-	 *
-	 * @param node_test node tester
-	 * @param nested_key nested key
-	 * @return boolean whether current node is the last one
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	@Override
-	protected boolean parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key) throws PgSchemaException {
-
-		parse(node_test.proc_node, node_test.parent_key, node_test.primary_key, node_test.current_key, node_test.as_attr, node_test.indirect);
-
-		if (filled) {
-
-			visited = true;
-
-			if (nested_keys != null) {
-
-				for (PgSchemaNestedKey _nested_key : nested_keys) {
-
-					boolean exists = existsNestedNode(_nested_key.table, node_test.proc_node);
-
-					traverse(exists || indirect ? node_test.proc_node : proc_node, _nested_key.asOfChild(node_test, exists));
-
-				}
-
-			}
-
-		}
-
-		return isLastNode(nested_key, node_test.node_count);
-	}
-
-	/**
-	 * Parse processing node (child).
-	 *
-	 * @param proc_node processing node
-	 * @param nested_key nested key
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	@Override
-	protected void parseChildNode(final Node proc_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
-
-		parse(proc_node, nested_key.parent_key, nested_key.current_key, nested_key.current_key, nested_key.as_attr, nested_key.indirect);
-
-		if (!filled || nested_keys == null)
-			return;
-
-		for (PgSchemaNestedKey _nested_key : nested_keys) {
-
-			if (existsNestedNode(_nested_key.table, proc_node))
-				traverse(proc_node, _nested_key.asOfChild(this));
-
-		}
-
-	}
-
-	/**
-	 * Parse current node and store into Lucene document.
+	 * Traverser nested node.
 	 *
 	 * @param parent_node parent node
 	 * @param nested_key nested key
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	protected void traverse(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
+	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
 		PgTable parent_table = this.table;
 		PgTable table = nested_key.table;
@@ -197,20 +118,19 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	/**
 	 * Parse processing node.
 	 *
-	 * @param proc_node processing node
-	 * @param parent_key parent key
-	 * @param primary_key primary key
-	 * @param current_key current key
-	 * @param as_attr whether parent key as attribute
-	 * @param indirect whether child node is not nested node
+	 * @param node_test node tester
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void parse(final Node proc_node, final String parent_key, final String primary_key, final String current_key, final boolean as_attr, final boolean indirect) throws PgSchemaException {
+	@Override
+	protected void parse(final PgSchemaNodeTester node_test) throws PgSchemaException {
+
+		proc_node = node_test.proc_node;
+		current_key = node_test.current_key;
+		indirect = node_test.indirect;
 
 		Arrays.fill(values, "");
 
 		filled = true;
-
 		null_simple_primitive_list = false;
 
 		if (nested_keys != null && nested_keys.size() > 0)
@@ -230,7 +150,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			else if (field.primary_key) {
 
 				if (required && rel_data_ext)
-					values[f] = schema.getHashKeyString(primary_key);
+					values[f] = schema.getHashKeyString(node_test.primary_key);
 
 			}
 
@@ -241,7 +161,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				if (parent_table.xname.equals(field.foreign_table_xname)) {
 
 					if (required && rel_data_ext)
-						values[f] = schema.getHashKeyString(parent_key);
+						values[f] = schema.getHashKeyString(node_test.parent_key);
 
 				}
 
@@ -266,7 +186,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			else if (field.attribute || field.simple_content || field.element) {
 
-				if (setContent(proc_node, field, current_key, as_attr, false)) {
+				if (setContent(proc_node, field, current_key, node_test.as_attr, false)) {
 
 					if (required)
 						values[f] = content;
@@ -302,22 +222,8 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		}
 
-		if (!filled || (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0)))
+		if (!required || !filled || (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0)))
 			return;
-
-		if (required)
-			write();
-
-		this.proc_node = proc_node;
-		this.current_key = current_key;
-		this.indirect = indirect;
-
-	}
-
-	/**
-	 * Writer of processing node.
-	 */
-	private synchronized void write() {
 
 		for (int f = 0; f < fields.size(); f++) {
 
