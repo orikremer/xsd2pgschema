@@ -1,8 +1,9 @@
-﻿ Changes in xsd2pgschema 2.12.6 (release 2018-08-07)
+﻿ Changes in xsd2pgschema 2.12.7 (release 2018-08-07)
 
   Added --freq option in luceneidx2dic, luceneidx2ftxt, and luceneidx2infix main classes as well as dicmerge4sphinx main class.
   Fixed typo in JSON Schema.
-  Improved XPath evaluation performance by using PostgreSQL index on document key.
+  Improved XPath query evaluation performance by using PostgreSQL index on document key.
+  Added exception to report multiple root nodes and fragments in XPath query evaluation.
 
  Changes in xsd2pgschema 2.12.6 (release 2018-08-02)
 
