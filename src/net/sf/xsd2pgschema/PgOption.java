@@ -26,11 +26,11 @@ package net.sf.xsd2pgschema;
  */
 public class PgOption {
 
-	/** The default host name. */
-	public String host = PgSchemaUtil.host;
+	/** The default host name of PostgreSQL server. */
+	public String pg_host = PgSchemaUtil.pg_host;
 
-	/** The default port number. */
-	public int port = PgSchemaUtil.port;
+	/** The default port number of PostgreSQL server. */
+	public int pg_port = PgSchemaUtil.pg_port;
 
 	/** The database name. */
 	public String name = "";
@@ -68,7 +68,7 @@ public class PgOption {
 	 * @return String database URL
 	 */
 	public String getDbUrl() {
-		return "jdbc:postgresql://" + host + ":" + port + "/" + name;
+		return "jdbc:postgresql://" + pg_host + ":" + pg_port + "/" + name;
 	}
 
 	/**
@@ -78,7 +78,7 @@ public class PgOption {
 	 * @return String database URL
 	 */
 	public String getDbUrl(String encoding) {
-		return "jdbc:postgresql://" + host + ":" + port + "/" + name + "?charSet=" + encoding;
+		return "jdbc:postgresql://" + pg_host + ":" + pg_port + "/" + name + "?charSet=" + encoding;
 	}
 
 	/**

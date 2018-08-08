@@ -65,10 +65,10 @@ public class tsv2pgsql {
 				work_dir_name = args[++i];
 
 			else if (args[i].equals("--db-host") && i + 1 < args.length)
-				pg_option.host = args[++i];
+				pg_option.pg_host = args[++i];
 
 			else if (args[i].equals("--db-port") && i + 1 < args.length)
-				pg_option.port = Integer.valueOf(args[++i]);
+				pg_option.pg_port = Integer.valueOf(args[++i]);
 
 			else if (args[i].equals("--db-name") && i + 1 < args.length)
 				pg_option.name = args[++i];
@@ -221,8 +221,8 @@ public class tsv2pgsql {
 
 		System.err.println("tsv2pgsql: TSV -> PostgreSQL data migration");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --work-dir DIRECTORY (default=\"" + xml2pgtsv.work_dir_name + "\") --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
-		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
-		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
+		System.err.println("        --db-host PG_HOST_NAME (default=\"" + PgSchemaUtil.pg_host + "\")");
+		System.err.println("        --db-port PG_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_port + "\")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");

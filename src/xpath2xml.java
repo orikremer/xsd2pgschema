@@ -91,10 +91,10 @@ public class xpath2xml {
 			}
 
 			else if (args[i].equals("--db-host") && i + 1 < args.length)
-				pg_option.host = args[++i];
+				pg_option.pg_host = args[++i];
 
 			else if (args[i].equals("--db-port") && i + 1 < args.length)
-				pg_option.port = Integer.valueOf(args[++i]);
+				pg_option.pg_port = Integer.valueOf(args[++i]);
 
 			else if (args[i].equals("--db-name") && i + 1 < args.length)
 				pg_option.name = args[++i];
@@ -268,8 +268,8 @@ public class xpath2xml {
 
 		System.err.println("xpath2xml: XPath 1.0 qeury evaluator to compose XML over PostgreSQL");
 		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
-		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
-		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
+		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.pg_host + "\")");
+		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.pg_port + "\")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
 		System.err.println("        --xpath-query XPATH_QUERY (repeatable)");
 		System.err.println("        --xpath-var KEY=VALUE");

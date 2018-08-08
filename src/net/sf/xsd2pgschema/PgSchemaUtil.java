@@ -101,11 +101,20 @@ public class PgSchemaUtil {
 	/** The default check sum algorithm. */
 	public static final String def_check_sum_algorithm = "MD5";
 
-	/** The default host name. */
-	public static final String host = "localhost";
+	/** The default host name of PostgreSQL server. */
+	public static final String pg_host = "localhost";
 
-	/** The default port number. */
-	public static final int port = 5432;
+	/** The default port number of PostgreSQL server. */
+	public static final int pg_port = 5432;
+
+	/** The default host name of PgSchema server. */
+	public static final String pgschema_host = "localhost";
+
+	/** The default post number of PgSchema server. */
+	public static final int pgschema_port = 5430;
+
+	/** The default life time of unused data model in PgSchema server in seconds. */
+	public static final int pgschema_lifetime = 86400;
 
 	/** The minimum word length for index. */
 	public static final int min_word_len = 1;

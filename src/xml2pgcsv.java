@@ -127,10 +127,10 @@ public class xml2pgcsv {
 				work_dir_name = args[++i];
 
 			else if (args[i].equals("--db-host") && i + 1 < args.length)
-				pg_option.host = args[++i];
+				pg_option.pg_host = args[++i];
 
 			else if (args[i].equals("--db-port") && i + 1 < args.length)
-				pg_option.port = Integer.valueOf(args[++i]);
+				pg_option.pg_port = Integer.valueOf(args[++i]);
 
 			else if (args[i].equals("--db-name") && i + 1 < args.length)
 				pg_option.name = args[++i];
@@ -435,8 +435,8 @@ public class xml2pgcsv {
 		System.err.println("        --well-formed (validate only whether document is well-formed)");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix) | zip (indicates xml.zip suffix)]");
 		System.err.println("Option: --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
-		System.err.println("        --db-host HOST (default=\"" + PgSchemaUtil.host + "\")");
-		System.err.println("        --db-port PORT (default=\"" + PgSchemaUtil.port + "\")");
+		System.err.println("        --db-host PG_HOST_NAME (default=\"" + PgSchemaUtil.pg_host + "\")");
+		System.err.println("        --db-port PG_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_port + "\")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
 		System.err.println("        --create-doc-key-index (create PostgreSQL index on document key if not exists, enable if --sync option is selected)");
 		System.err.println("        --no-create-doc-key-index (do not create PostgreSQL index on document key, default if no --sync option)");
