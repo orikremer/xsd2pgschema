@@ -4763,7 +4763,7 @@ public class PgSchema {
 
 					if (!has_index) {
 
-						String sql = "SELECT COUNT(id) FROM ( SELECT 1 AS id FROM " + getPgNameOf(db_conn, table) + " LIMIT " + min_row_count + " ) AS trunc";
+						String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + getPgNameOf(db_conn, table) + " LIMIT " + min_row_count + " ) AS trunc";
 
 						rset = stat.executeQuery(sql);
 
@@ -4881,7 +4881,7 @@ public class PgSchema {
 
 			String doc_id_table_name = doc_id_table.pname;
 
-			String sql1 = "SELECT EXISTS(SELECT 1 FROM " + getPgNameOf(db_conn, doc_id_table) + " LIMIT 1)";
+			String sql1 = "SELECT EXISTS( SELECT 1 FROM " + getPgNameOf(db_conn, doc_id_table) + " LIMIT 1 )";
 
 			ResultSet rset1 = stat.executeQuery(sql1);
 
@@ -4900,7 +4900,7 @@ public class PgSchema {
 
 					try {
 
-						String sql2 = "SELECT EXISTS(SELECT 1 FROM " + getPgNameOf(db_conn, table) + " LIMIT 1)";
+						String sql2 = "SELECT EXISTS( SELECT 1 FROM " + getPgNameOf(db_conn, table) + " LIMIT 1 )";
 
 						ResultSet rset2 = stat.executeQuery(sql2);
 
