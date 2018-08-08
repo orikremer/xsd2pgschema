@@ -175,12 +175,12 @@ public class PgSchemaNodeTester {
 	/**
 	 * Set up current node as processing node.
 	 *
-	 * @param node current node
+	 * @param current_node current node
 	 * @param nested_key nested key
 	 */
-	public PgSchemaNodeTester(Node node, PgSchemaNestedKey nested_key) {
+	public PgSchemaNodeTester(Node current_node, PgSchemaNestedKey nested_key) {
 
-		proc_node = node;
+		proc_node = current_node;
 		parent_key = nested_key.parent_key;
 		primary_key = current_key = nested_key.current_key;
 		as_attr = nested_key.as_attr;

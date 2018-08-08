@@ -209,7 +209,7 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parser child node.
+	 * Parse child node.
 	 *
 	 * @param proc_node processing node
 	 * @param nested_key nested key
@@ -300,7 +300,7 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Return whether parent node's name matches.
+	 * Return whether parent node name matches.
 	 *
 	 * @param current_key current key
 	 * @param parent_node the parent node
@@ -329,7 +329,7 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Return whether ancestor node's name matches.
+	 * Return whether ancestor node name matches.
 	 *
 	 * @param current_key current key
 	 * @param ancestor_node the ancestor node
