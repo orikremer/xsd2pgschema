@@ -451,9 +451,9 @@ public class XPathEvaluatorImpl {
 
 			System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
 
-			if (xmlb.root_count > 1)
+			if (xmlb.getRootCount() > 1)
 				throw new PgSchemaException("[WARNING] The XML document has multiple root nodes.");
-			if (xmlb.fragment > 1)
+			if (xmlb.getFragment() > 1)
 				throw new PgSchemaException("[WARNING] The XML document has multiple fragments.");
 
 		} catch (IOException | XMLStreamException | SQLException e) {
@@ -565,9 +565,9 @@ public class XPathEvaluatorImpl {
 
 			}
 
-			if (schema.jsonb.root_count > 1)
+			if (schema.jsonb.getRootCount() > 1)
 				throw new PgSchemaException("[WARNING] The JSON document has multiple root nodes.");
-			if (schema.jsonb.fragment > 1)
+			if (schema.jsonb.getFragment() > 1)
 				throw new PgSchemaException("[WARNING] The JSON document has multiple fragments.");
 
 		} catch (IOException | SQLException e) {

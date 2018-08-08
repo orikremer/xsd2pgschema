@@ -232,21 +232,16 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgTable parent_table = this.table;
-		PgTable table = nested_key.table;
-
-		PgSchemaNode2PgSql node2pgsql = null;
+		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(schema, table, nested_key.table, update, db_conn);
 
 		try {
-
-			node2pgsql = new PgSchemaNode2PgSql(schema, parent_table, table, update, db_conn);
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
 
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2pgsql.node_count, node2pgsql.node_ordinal);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, table, nested_key, node2pgsql.node_count, node2pgsql.node_ordinal);
 
 				if (node_test.visited)
 					return;
@@ -556,13 +551,13 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		if (def_ser_size) {
 			ps.setInt(par_idx, ordinal);
 			if (upsert)
-				ps.setInt(ins_idx,  ordinal);
+				ps.setInt(ins_idx, ordinal);
 		}
 
 		else {
 			ps.setShort(par_idx, (short) ordinal);
 			if (upsert)
-				ps.setInt(ins_idx,  ordinal);
+				ps.setInt(ins_idx, ordinal);
 		}
 
 		occupied[field_id] = true;

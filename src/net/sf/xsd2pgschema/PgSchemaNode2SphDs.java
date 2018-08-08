@@ -71,21 +71,16 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgTable parent_table = this.table;
-		PgTable table = nested_key.table;
-
-		PgSchemaNode2SphDs node2sphds = null;
+		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(schema, table, nested_key.table);
 
 		try {
-
-			node2sphds = new PgSchemaNode2SphDs(schema, parent_table, table);
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
 
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, parent_table, table, nested_key, node2sphds.node_count, node2sphds.node_ordinal);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, table, nested_key, node2sphds.node_count, node2sphds.node_ordinal);
 
 				if (node_test.visited)
 					return;

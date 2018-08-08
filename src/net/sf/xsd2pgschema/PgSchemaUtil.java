@@ -203,7 +203,7 @@ public class PgSchemaUtil {
 	/**
 	 * Return input stream of XSD file path with decompression.
 	 *
-	 * @param  file_path XSD file path
+	 * @param file_path XSD file path
 	 * @return InputStream input stream of file
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */

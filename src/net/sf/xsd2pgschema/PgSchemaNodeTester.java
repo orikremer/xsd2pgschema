@@ -81,12 +81,13 @@ public class PgSchemaNodeTester {
 	 * @param parent_node parent node
 	 * @param node current node
 	 * @param parent_table parent table
-	 * @param table current table
 	 * @param nested_key nested key
 	 * @param node_count count of sibling nodes
 	 * @param node_ordinal ordinal number of sibling node
 	 */
-	public PgSchemaNodeTester(final PgSchemaOption option, final Node parent_node, final Node node, final PgTable parent_table, final PgTable table, final PgSchemaNestedKey nested_key, final int node_count, final int node_ordinal) {
+	public PgSchemaNodeTester(final PgSchemaOption option, final Node parent_node, final Node node, final PgTable parent_table, final PgSchemaNestedKey nested_key, final int node_count, final int node_ordinal) {
+
+		PgTable table = nested_key.table;
 
 		boolean virtual = table.virtual;
 

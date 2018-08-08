@@ -52,7 +52,7 @@ public class JsonBuilder extends CommonBuilder {
 	protected String simple_content_name;
 
 	/** The unit of indent space. */
-	private String indent_space = "  ";
+	private String indent_space = " ";
 
 	/** The JSON key value space with concatenation. */
 	protected String concat_value_space;
@@ -413,7 +413,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		int header_start = buffer.length();
 
-		buffer.append(getIndentSpaces(indent_level) + getKeyDecl(table.name, false) + start_object_code);  // start table
+		buffer.append(getIndentSpaces(indent_level) + getKeyDecl(table.name, false) + start_object_code); // start table
 
 		String _indent_spaces = getIndentSpaces(indent_level + 1);
 

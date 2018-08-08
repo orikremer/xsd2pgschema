@@ -39,10 +39,10 @@ public class CommonBuilder {
 	protected StringBuilder pending_simple_cont = new StringBuilder();
 
 	/** The count of root nodes. */
-	public int root_count = 0;
+	private int root_count = 0;
 
 	/** The count of fragments. */
-	public int fragment = 0;
+	private int fragment = 0;
 
 	/**
 	 * Set whether to insert document key.
@@ -126,11 +126,30 @@ public class CommonBuilder {
 	}
 
 	/**
+	 * Return count of root nodes.
+	 *
+	 * @return int count of root nodes
+	 */
+	public int getRootCount() {
+		return root_count;
+	}
+
+	/**
+	 * Return count of fragments.
+	 *
+	 * @return int count of fragments
+	 */
+	public int getFragment() {
+		return fragment;
+	}
+
+	/**
 	 * Clear pending simple content.
 	 */
 	public void clear() {
 
 		pending_simple_cont.setLength(0);
+		resetStatus();
 
 	}
 

@@ -4422,7 +4422,7 @@ public class XPathCompList {
 
 				}
 
-				else  {
+				else {
 
 					target_tables.forEach((_table_, _path_) -> appendSqlTable(_table_, sb));
 
@@ -7370,7 +7370,7 @@ public class XPathCompList {
 
 		LinkedList<PgTable> linking_order = linking_orders.poll();
 
-		if (linking_order != null && linking_order.size() > 0)  {
+		if (linking_order != null && linking_order.size() > 0) {
 
 			src_table = linking_order.poll();
 

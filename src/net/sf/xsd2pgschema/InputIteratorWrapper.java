@@ -34,7 +34,7 @@ public class InputIteratorWrapper implements InputIterator {
 
 	/** The iters. */
 	private List<InputIterator> iters = null;
-	
+
 	/** The cur. */
 	private int cur = -1;
 
@@ -48,7 +48,7 @@ public class InputIteratorWrapper implements InputIterator {
 	}
 
 	/**
-	 * Adds the.
+	 * Adds the iter.
 	 *
 	 * @param iter the iter
 	 */

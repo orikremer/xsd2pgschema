@@ -255,7 +255,7 @@ public abstract class PgSchemaNodeParser {
 	 */
 	public void clear() throws PgSchemaException {
 
-		if (table.nested_fields > 0 && nested_keys.size() > 0)
+		if (nested_keys != null)
 			nested_keys.clear();
 
 	}
@@ -793,8 +793,7 @@ public abstract class PgSchemaNodeParser {
 
 			}
 
-			if (prefixes.size() > 0)
-				prefixes.clear();
+			prefixes.clear();
 
 		}
 
