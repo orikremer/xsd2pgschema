@@ -1,9 +1,9 @@
 ﻿ Changes in xsd2pgschema 3.0.0 (release 2018-08-24)
 
-  Added PgSchema server (pgschemaserv main class), which serves serialized PostgreSQL data model to client.
+  [Self Ticket #7] Added PgSchema server (pgschemaserv main class), which serves serialized PostgreSQL data model to client.
   Many main classes support PgSchema server by default (host: localhost, port: 5430).
   Added PgSchema server relating options (--no-pgschema-serv, --pgschema-serv-host HOST_NAME, --pgschema-serv-port PORT_NUMBER).
-  Added example scripts to start server, stop server, and report server status.
+  Added example scripts to start server (start_pgschema_serv.sh), stop server (stop_pgschema_serv.sh), and report server status (status_pgschema_srv.sh).
   Improved performance utilizing PgSchema server.
 
  Changes in xsd2pgschema 2.12.7 (release 2018-08-07)
