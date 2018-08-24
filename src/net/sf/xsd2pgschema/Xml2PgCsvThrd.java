@@ -33,12 +33,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.io.FileUtils;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 /**
@@ -51,14 +48,11 @@ public class Xml2PgCsvThrd implements Runnable {
 	/** The thread id. */
 	private int thrd_id;
 
-	/** The document builder for reusing. */
-	private DocumentBuilder doc_builder;
-
-	/** The PostgreSQL data model. */
-	private PgSchema schema;
-
 	/** The PostgreSQL data model option. */
 	private PgSchemaOption option;
+
+	/** The PgSchema client. */
+	private PgSchemaClientImpl client;
 
 	/** The PostgreSQL option. */
 	private PgOption pg_option;
@@ -78,6 +72,9 @@ public class Xml2PgCsvThrd implements Runnable {
 	/** The XML file queue. */
 	private LinkedBlockingQueue<Path> xml_file_queue;
 
+	/** the instance of message digest for hash key. */
+	private MessageDigest md_hash_key = null;
+
 	/** The instance of message digest for check sum. */
 	private MessageDigest md_chk_sum = null;
 
@@ -85,7 +82,37 @@ public class Xml2PgCsvThrd implements Runnable {
 	private Connection db_conn = null;
 
 	/**
-	 * Instance of Xml2PgCsvThrd.
+	 * Instance of Xml2PgCsvThrd (PgShema server client).
+	 *
+	 * @param thrd_id thread id
+	 * @param get_thrd thread to get a PgSchema server client
+	 * @param clients array of PgSchema server clients
+	 * @param work_dir working directory contains CSV/TSV files
+	 * @param xml_file_filter XML file filter
+	 * @param xml_file_queue XML file queue
+	 * @param xml_post_editor XML post editor
+	 * @param pg_option PostgreSQL option
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws SAXException the SAX exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws NoSuchAlgorithmException the no such algorithm exception
+	 * @throws SQLException the SQL exception
+	 * @throws PgSchemaException the pg schema exception
+	 * @throws InterruptedException the interrupted exception
+	 */
+	public Xml2PgCsvThrd(final int thrd_id, final Thread get_thrd, final PgSchemaClientImpl[] clients, final Path work_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException, InterruptedException {
+
+		if (get_thrd != null)
+			get_thrd.join();
+
+		this.client = clients[thrd_id];
+
+		init(thrd_id, work_dir, xml_file_filter, xml_file_queue, xml_post_editor, pg_option);
+
+	}
+
+	/**
+	 * Instance of Xml2PgCsvThrd (stand alone).
 	 *
 	 * @param thrd_id thread id
 	 * @param is InputStream of XML Schema
@@ -104,31 +131,38 @@ public class Xml2PgCsvThrd implements Runnable {
 	 */
 	public Xml2PgCsvThrd(final int thrd_id, final InputStream is, final Path work_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
+		client = new PgSchemaClientImpl(is, option, null, Thread.currentThread().getStackTrace()[2].getClassName());
+
+		init(thrd_id, work_dir, xml_file_filter, xml_file_queue, xml_post_editor, pg_option);
+
+	}
+
+	/**
+	 * Setup Xml2PgCsvThrd except for PgSchema server client.
+	 *
+	 * @param thrd_id thread id
+	 * @param work_dir working directory contains CSV/TSV files
+	 * @param xml_file_filter XML file filter
+	 * @param xml_file_queue XML file queue
+	 * @param xml_post_editor XML post editor
+	 * @param pg_option PostgreSQL option
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws SAXException the SAX exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws NoSuchAlgorithmException the no such algorithm exception
+	 * @throws SQLException the SQL exception
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void init(final int thrd_id, final Path work_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
+
 		this.thrd_id = thrd_id;
 
 		this.xml_file_filter = xml_file_filter;
 		this.xml_file_queue = xml_file_queue;
 
-		// parse XSD document
+		option = client.option;
 
-		DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
-		doc_builder_fac.setValidating(false);
-		doc_builder_fac.setNamespaceAware(true);
-		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-		doc_builder = doc_builder_fac.newDocumentBuilder();
-
-		Document xsd_doc = doc_builder.parse(is);
-
-		is.close();
-
-		doc_builder.reset();
-
-		// XSD analysis
-
-		schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, this.option = option);
-
-		schema.applyXmlPostEditor(xml_post_editor);
+		client.schema.applyXmlPostEditor(xml_post_editor);
 
 		// prepare XML validator
 
@@ -143,7 +177,7 @@ public class Xml2PgCsvThrd implements Runnable {
 			// test PostgreSQL DDL with schema
 
 			if (pg_option.test)
-				schema.testPgSql(db_conn, true);
+				client.schema.testPgSql(db_conn, true);
 
 			db_name = pg_option.name;
 
@@ -155,6 +189,11 @@ public class Xml2PgCsvThrd implements Runnable {
 			Files.createDirectory(this.work_dir);
 
 		synchronizable = option.isSynchronizable(false);
+
+		// prepare message digest for hash key
+
+		if (!option.hash_algorithm.isEmpty() && !option.hash_size.equals(PgHashSize.debug_string))
+			md_hash_key = MessageDigest.getInstance(option.hash_algorithm);
 
 		// prepare message digest for check sum
 
@@ -213,9 +252,9 @@ public class Xml2PgCsvThrd implements Runnable {
 
 			try {
 
-				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file_path, xml_file_filter);
+				XmlParser xml_parser = new XmlParser(client.doc_builder, validator, xml_file_path, xml_file_filter);
 
-				schema.xml2PgCsv(xml_parser, work_dir);
+				client.schema.xml2PgCsv(xml_parser, md_hash_key, work_dir);
 
 			} catch (Exception e) {
 				System.err.println("Exception occurred while processing XML document: " + xml_file_path.toAbsolutePath().toString());
@@ -226,7 +265,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 		}
 
-		schema.closeXml2PgCsv();
+		client.schema.closeXml2PgCsv();
 
 		if (db_conn == null) {
 
@@ -242,7 +281,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 			try {
 
-				schema.pgCsv2PgSql(db_conn, work_dir);
+				client.schema.pgCsv2PgSql(db_conn, work_dir);
 
 			} catch (PgSchemaException e) {
 				e.printStackTrace();
@@ -273,9 +312,9 @@ public class Xml2PgCsvThrd implements Runnable {
 			if (show_progress) {
 
 				if (pg_option.create_doc_key_index)
-					schema.createDocKeyIndex(db_conn, pg_option.min_rows_for_doc_key_index);
+					client.schema.createDocKeyIndex(db_conn, pg_option.min_rows_for_doc_key_index);
 				else if (pg_option.drop_doc_key_index)
-					schema.dropDocKeyIndex(db_conn);
+					client.schema.dropDocKeyIndex(db_conn);
 
 			}
 

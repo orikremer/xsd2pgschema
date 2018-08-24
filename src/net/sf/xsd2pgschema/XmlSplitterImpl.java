@@ -34,8 +34,6 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.namespace.QName;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLEventFactory;
 import javax.xml.stream.XMLEventReader;
@@ -50,7 +48,7 @@ import javax.xml.stream.events.XMLEvent;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.w3c.dom.Document;
+import org.nustaq.serialization.FSTConfiguration;
 import org.xml.sax.SAXException;
 
 import com.github.antlr.grammars_v4.xpath.xpathBaseListener;
@@ -59,7 +57,6 @@ import com.github.antlr.grammars_v4.xpath.xpathListenerException;
 import com.github.antlr.grammars_v4.xpath.xpathParser;
 import com.github.antlr.grammars_v4.xpath.xpathParser.MainContext;
 
-import net.sf.xsd2pgschema.PgSchema;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaOption;
 import net.sf.xsd2pgschema.PgSchemaUtil;
@@ -78,8 +75,8 @@ public class XmlSplitterImpl {
 	/** The shard size. */
 	private int shard_size;
 
-	/** The PostgreSQL data model. */
-	private PgSchema schema;
+	/** The PgSchema client. */
+	private PgSchemaClientImpl client;
 
 	/** The XML file queue. */
 	private LinkedBlockingQueue<Path> xml_file_queue;
@@ -134,6 +131,7 @@ public class XmlSplitterImpl {
 	 * @param xml_dir_path XML directory path
 	 * @param xml_file_queue XML file queue
 	 * @param option PostgreSQL data model option
+	 * @param fst_conf FST configuration
 	 * @param xpath_doc_key XPath expression pointing document key
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
@@ -142,30 +140,13 @@ public class XmlSplitterImpl {
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws xpathListenerException the xpath listener exception
 	 */
-	public XmlSplitterImpl(final int shard_size, final InputStream is, final Path xml_dir_path, final LinkedBlockingQueue<Path> xml_file_queue, final PgSchemaOption option, final String xpath_doc_key) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, xpathListenerException {
+	public XmlSplitterImpl(final int shard_size, final InputStream is, final Path xml_dir_path, final LinkedBlockingQueue<Path> xml_file_queue, final PgSchemaOption option, final FSTConfiguration fst_conf, final String xpath_doc_key) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, xpathListenerException {
 
 		this.shard_size = shard_size <= 0 ? 1 : shard_size;
 
 		this.xml_file_queue = xml_file_queue;
 
-		// parse XSD document
-
-		DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
-		doc_builder_fac.setValidating(false);
-		doc_builder_fac.setNamespaceAware(true);
-		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-		DocumentBuilder doc_builder = doc_builder_fac.newDocumentBuilder();
-
-		Document xsd_doc = doc_builder.parse(is);
-
-		is.close();
-
-		doc_builder.reset();
-
-		// XSD analysis
-
-		schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
+		client = new PgSchemaClientImpl(is, option, fst_conf, Thread.currentThread().getStackTrace()[2].getClassName());
 
 		// prepare shard directories
 
@@ -204,7 +185,7 @@ public class XmlSplitterImpl {
 		if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		XPathCompList doc_key = new XPathCompList(schema, tree, null);
+		XPathCompList doc_key = new XPathCompList(client.schema, tree, null);
 
 		if (doc_key.comps.size() == 0)
 			throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
@@ -216,7 +197,7 @@ public class XmlSplitterImpl {
 
 		option.verbose = false;
 
-		XPathCompList doc_unit = new XPathCompList(schema, tree, null);
+		XPathCompList doc_unit = new XPathCompList(client.schema, tree, null);
 
 		doc_unit.validate(true);
 

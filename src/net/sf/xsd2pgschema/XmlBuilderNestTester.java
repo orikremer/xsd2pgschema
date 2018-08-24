@@ -43,8 +43,9 @@ public class XmlBuilderNestTester extends CommonBuilderNestTester {
 	 *
 	 * @param table current table
 	 * @param xmlb XML builder
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public XmlBuilderNestTester(PgTable table, XmlBuilder xmlb) {
+	public XmlBuilderNestTester(PgTable table, XmlBuilder xmlb) throws PgSchemaException {
 
 		super(table);
 
@@ -68,8 +69,9 @@ public class XmlBuilderNestTester extends CommonBuilderNestTester {
 	 *
 	 * @param table current table
 	 * @param parent_test nest test of parent node
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public XmlBuilderNestTester(PgTable table, XmlBuilderNestTester parent_test) {
+	public XmlBuilderNestTester(PgTable table, XmlBuilderNestTester parent_test) throws PgSchemaException {
 
 		super(table, parent_test);
 

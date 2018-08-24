@@ -21,16 +21,15 @@ import net.sf.xsd2pgschema.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.w3c.dom.Document;
+import org.nustaq.serialization.FSTConfiguration;
 import org.xml.sax.SAXException;
 
 import com.github.antlr.grammars_v4.xpath.xpathBaseListener;
@@ -53,8 +52,14 @@ public class xpathparser {
 	 */
 	public static void main(String[] args) {
 
-		/** The schema option. */
+		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(true);
+
+		/** The FST configuration. */
+		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
+
+		/** The FST optimization. */
+		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class);
 
 		/** The XPath query. */
 		String xpath_query = "";
@@ -143,6 +148,15 @@ public class xpathparser {
 				option.setDocKeyOption(false);
 			}
 
+			else if (args[i].equals("--no-pgschema-serv"))
+				option.pg_schema_server = false;
+
+			else if (args[i].equals("--pgschema-serv-host") && i + 1 < args.length)
+				option.pg_schema_server_host = args[++i];
+
+			else if (args[i].equals("--pgschema-serv-port") && i + 1 < args.length)
+				option.pg_schema_server_port = Integer.valueOf(args[++i]);
+
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
 				showUsage();
@@ -164,24 +178,7 @@ public class xpathparser {
 
 		try {
 
-			// parse XSD document
-
-			DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
-			doc_builder_fac.setValidating(false);
-			doc_builder_fac.setNamespaceAware(true);
-			doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-			doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-			DocumentBuilder doc_builder = doc_builder_fac.newDocumentBuilder();
-
-			Document xsd_doc = doc_builder.parse(is);
-
-			is.close();
-
-			doc_builder.reset();
-
-			// XSD analysis
-
-			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
+			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, MethodHandles.lookup().lookupClass().getName());
 
 			xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_query));
 
@@ -200,7 +197,7 @@ public class xpathparser {
 			if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
 				throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-			XPathCompList xpath_comp_list = new XPathCompList(schema, tree, variables);
+			XPathCompList xpath_comp_list = new XPathCompList(client.schema, tree, variables);
 
 			if (xpath_comp_list.comps.size() == 0)
 				throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
@@ -255,6 +252,9 @@ public class xpathparser {
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME");
 		System.err.println("        --doc-key-if-no-inplace (append document key if no in-place docuemnt key, select --no-doc-key options by default)");
+		System.err.println("        --no-pgschema-serv (not utilize PgSchema server)");
+		System.err.println("        --pgschema-serv-host PG_SCHEMA_SERV_HOST_NAME (default=\"" + PgSchemaUtil.pg_schema_server_host + "\")");
+		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
 		System.exit(1);
 
 	}

@@ -73,7 +73,7 @@ public class XPathExpr {
 	}
 
 	/**
-	 * Instance of XPathExpr prepared for appending text node.
+	 * Instance of XPathExpr for appending text node.
 	 *
 	 * @param path current path
 	 * @param terminus current terminus

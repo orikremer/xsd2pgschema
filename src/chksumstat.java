@@ -188,7 +188,7 @@ public class chksumstat {
 
 		}
 
-		option.check_sum_dir_path = check_sum_dir_path;
+		option.check_sum_dir_name = check_sum_dir_name;
 
 		String chk_sum_file_ext = option.check_sum_algorithm.toLowerCase();
 

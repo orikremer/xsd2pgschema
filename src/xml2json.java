@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,6 +33,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.parsers.*;
 
+import org.nustaq.serialization.FSTConfiguration;
 import org.xml.sax.SAXException;
 
 /**
@@ -53,6 +55,12 @@ public class xml2json {
 
 		/** The schema option. */
 		PgSchemaOption option = new PgSchemaOption(false);
+
+		/** The FST configuration. */
+		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
+
+		/** The FST optimization. */
+		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class);
 
 		/** The JSON builder option. */
 		JsonBuilderOption jsonb_option = new JsonBuilderOption();
@@ -190,7 +198,16 @@ public class xml2json {
 			}
 
 			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
-				option.addDiscardedDocKeyName(args[++i]);	
+				option.addDiscardedDocKeyName(args[++i]);
+
+			else if (args[i].equals("--no-pgschema-serv"))
+				option.pg_schema_server = false;
+
+			else if (args[i].equals("--pgschema-serv-host") && i + 1 < args.length)
+				option.pg_schema_server_host = args[++i];
+
+			else if (args[i].equals("--pgschema-serv-port") && i + 1 < args.length)
+				option.pg_schema_server_port = Integer.valueOf(args[++i]);
 
 			else if (args[i].equals("--max-thrds") && i + 1 < args.length) {
 				max_thrds = Integer.valueOf(args[++i]);
@@ -262,30 +279,94 @@ public class xml2json {
 
 		}
 
+		final String class_name = MethodHandles.lookup().lookupClass().getName();
+
 		Xml2JsonThrd[] proc_thrd = new Xml2JsonThrd[max_thrds];
 		Thread[] thrd = new Thread[max_thrds];
 
 		long start_time = System.currentTimeMillis();
 
-		for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
+		// PgSchema server is alive
 
-			String thrd_name = "xml2json-" + thrd_id;
+		if (option.pingPgSchemaServer(fst_conf)) {
+
+			final boolean no_data_model = !option.matchPgSchemaServer(fst_conf);
+
+			Thread[] get_thrd = new Thread[max_thrds];
+			PgSchemaClientImpl[] clients = new PgSchemaClientImpl[max_thrds];
 
 			try {
 
-				if (thrd_id > 0)
-					is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
+				// send ADD query to PgSchema server
 
-				proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, is, json_dir_path, xml_file_filter, xml_file_queue, xml_post_editor, option, jsonb_option);
+				if (no_data_model)
+					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, class_name);
 
-			} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
+				// send GET query to PgSchema server
+
+				for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
+
+					if (thrd_id == 0 && no_data_model)
+						continue;
+
+					get_thrd[thrd_id] = new Thread(new PgSchemaGetClientThrd(thrd_id, option, fst_conf, class_name, clients));
+
+					get_thrd[thrd_id].setPriority(Thread.MAX_PRIORITY);
+					get_thrd[thrd_id].start();
+
+				}
+
+				for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
+
+					String thrd_name = class_name + "-" + thrd_id;
+
+					try {
+
+						proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, thrd_id == 0 && no_data_model ? null : get_thrd[thrd_id], clients, json_dir_path, xml_file_filter, xml_file_queue, xml_post_editor, jsonb_option);
+
+					} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+
+					thrd[thrd_id] = new Thread(proc_thrd[thrd_id], thrd_name);
+
+					thrd[thrd_id].start();
+
+				}
+
+			} catch (IOException | ParserConfigurationException | SAXException | PgSchemaException | InterruptedException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
 
-			thrd[thrd_id] = new Thread(proc_thrd[thrd_id], thrd_name);
+		}
 
-			thrd[thrd_id].start();
+		// stand alone
+
+		else {
+
+			for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
+
+				String thrd_name = class_name + "-" + thrd_id;
+
+				try {
+
+					if (thrd_id > 0)
+						is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
+
+					proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, is, json_dir_path, xml_file_filter, xml_file_queue, xml_post_editor, option, jsonb_option);
+
+				} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+				thrd[thrd_id] = new Thread(proc_thrd[thrd_id], thrd_name);
+
+				thrd[thrd_id].start();
+
+			}
 
 		}
 
@@ -345,6 +426,9 @@ public class xml2json {
 		System.err.println("        --filt-out  table_name.column_name:regex_pattern(|regex_pattern...)");
 		System.err.println("        --fill-this table_name.column_name:filling_text");
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
+		System.err.println("        --no-pgschema-serv (not utilize PgSchema server)");
+		System.err.println("        --pgschema-serv-host PG_SCHEMA_SERV_HOST_NAME (default=\"" + PgSchemaUtil.pg_schema_server_host + "\")");
+		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
 		System.err.println("        --max-thrds MAX_THRDS (default is number of available processors)");
 		System.exit(1);
 

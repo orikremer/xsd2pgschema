@@ -26,11 +26,10 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.index.IndexOptions;
 
-// this code was taken from:
-// http://stackoverflow.com/questions/11945728/how-to-use-termvector-lucene-4-0
-
 /**
  * The Class VecTextField.
+ *
+ * @see <a href="https://stackoverflow.com/questions/11945728/how-to-use-termvector-lucene-4-0">https://stackoverflow.com/questions/11945728/how-to-use-termvector-lucene-4-0</a>
  */
 public class VecTextField extends Field {
 

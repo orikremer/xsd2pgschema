@@ -40,7 +40,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -66,14 +65,11 @@ public class Xml2SphinxDsThrd implements Runnable {
 	/** The thread id. */
 	private int thrd_id;
 
-	/** The document builder for reusing. */
-	private DocumentBuilder doc_builder;
-
-	/** The PostgreSQL data model. */
-	private PgSchema schema;
-
 	/** The PostgreSQL data model option. */
 	private PgSchemaOption option;
+
+	/** The PgSchema client. */
+	private PgSchemaClientImpl client;
 
 	/** The index filter. */
 	private IndexFilter index_filter;
@@ -105,6 +101,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 	/** The SAX parser. */
 	private SAXParser sax_parser = null;
 
+	/** the instance of message digest for hash key. */
+	private MessageDigest md_hash_key = null;
+
 	/** The instance of message digest for check sum. */
 	private MessageDigest md_chk_sum = null;
 
@@ -112,7 +111,42 @@ public class Xml2SphinxDsThrd implements Runnable {
 	private Path sphinx_schema_path;
 
 	/**
-	 * Instance of Xml2SphinxDsThrd.
+	 * Instance of Xml2SphinxDsThrd (PgSchema server client).
+	 *
+	 * @param shard_id shard id
+	 * @param shard_size shard size
+	 * @param thrd_id thread id
+	 * @param get_thrd thread to get a PgSchema server client
+	 * @param client_id client id
+	 * @param clients array of PgSchema server clients
+	 * @param xml_file_filter XML file filter
+	 * @param xml_file_queue XML file queue
+	 * @param xml_post_editor XML post editor
+	 * @param index_filter index filter
+	 * @param ds_name data source name
+	 * @param ds_dir_path data source directory path
+	 * @param doc_rows set of document id stored in data source
+	 * @param sync_del_doc_rows set of deleting document id while synchronization
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws SAXException the SAX exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws NoSuchAlgorithmException the no such algorithm exception
+	 * @throws PgSchemaException the pg schema exception
+	 * @throws InterruptedException the interrupted exception
+	 */
+	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final Thread get_thrd, final int client_id, final PgSchemaClientImpl[] clients, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, IndexFilter index_filter, final String ds_name, final Path ds_dir_path, HashMap<String, Integer> doc_rows, HashSet<String>[] sync_del_doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, InterruptedException {
+
+		if (get_thrd != null)
+			get_thrd.join();
+
+		this.client = clients[client_id];
+
+		init(shard_id, shard_size, thrd_id, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows);
+
+	}
+
+	/**
+	 * Instance of Xml2SphinxDsThrd (stand alone).
 	 *
 	 * @param shard_id shard id
 	 * @param shard_size shard size
@@ -135,6 +169,34 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 */
 	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, IndexFilter index_filter, final String ds_name, final Path ds_dir_path, HashMap<String, Integer> doc_rows, HashSet<String>[] sync_del_doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
+		client = new PgSchemaClientImpl(is, option, null, Thread.currentThread().getStackTrace()[2].getClassName());
+
+		init(shard_id, shard_size, thrd_id, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows);
+
+	}
+
+	/**
+	 * Setup Xml2SphinxDsThrd except for PgSchema server client.
+	 *
+	 * @param shard_id shard id
+	 * @param shard_size shard size
+	 * @param thrd_id thread id
+	 * @param xml_file_filter XML file filter
+	 * @param xml_file_queue XML file queue
+	 * @param xml_post_editor XML post editor
+	 * @param index_filter index filter
+	 * @param ds_name data source name
+	 * @param ds_dir_path data source directory path
+	 * @param doc_rows set of document id stored in data source
+	 * @param sync_del_doc_rows set of deleting document id while synchronization
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws SAXException the SAX exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws NoSuchAlgorithmException the no such algorithm exception
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void init(final int shard_id, final int shard_size, final int thrd_id, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, IndexFilter index_filter, final String ds_name, final Path ds_dir_path, HashMap<String, Integer> doc_rows, HashSet<String>[] sync_del_doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+
 		this.shard_id = shard_id;
 		this.shard_size = shard_size;
 
@@ -148,28 +210,10 @@ public class Xml2SphinxDsThrd implements Runnable {
 		this.doc_rows = doc_rows;
 		this.sync_del_doc_rows = sync_del_doc_rows;
 
-		// parse XSD document
+		option = client.option;
 
-		DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
-		doc_builder_fac.setValidating(false);
-		doc_builder_fac.setNamespaceAware(true);
-		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-		doc_builder = doc_builder_fac.newDocumentBuilder();
-
-		Document xsd_doc = doc_builder.parse(is);
-
-		is.close();
-
-		doc_builder.reset();
-
-		// XSD analysis
-
-		schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, this.option = option);
-
-		schema.applyXmlPostEditor(xml_post_editor);
-
-		schema.applyIndexFilter(this.index_filter = index_filter);
+		client.schema.applyXmlPostEditor(xml_post_editor);
+		client.schema.applyIndexFilter(this.index_filter = index_filter);
 
 		// prepare XML validator
 
@@ -193,14 +237,14 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		if (Files.isRegularFile(sphinx_schema_path)) {
 
-			doc_builder_fac.setNamespaceAware(false);
-			doc_builder = doc_builder_fac.newDocumentBuilder();
+			client.doc_builder_fac.setNamespaceAware(false);
+			DocumentBuilder doc_builder = client.doc_builder_fac.newDocumentBuilder();
 
 			Document sphinx_doc = doc_builder.parse(Files.newInputStream(sphinx_schema_path));
 
 			doc_builder.reset();
 
-			schema.syncSphSchema(sphinx_doc);
+			client.schema.syncSphSchema(sphinx_doc);
 
 			sphinx_doc = null;
 
@@ -254,6 +298,11 @@ public class Xml2SphinxDsThrd implements Runnable {
 			}
 
 		}
+
+		// prepare message digest for hash key
+
+		if (!option.hash_algorithm.isEmpty() && !option.hash_size.equals(PgHashSize.debug_string))
+			md_hash_key = MessageDigest.getInstance(option.hash_algorithm);
 
 		// prepare message digest for check sum
 
@@ -342,9 +391,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 				BufferedWriter buffw = Files.newBufferedWriter(sph_doc_file_path);
 
-				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file_path, xml_file_filter);
+				XmlParser xml_parser = new XmlParser(client.doc_builder, validator, xml_file_path, xml_file_filter);
 
-				schema.xml2SphDs(xml_parser, buffw);
+				client.schema.xml2SphDs(xml_parser, md_hash_key, buffw);
 
 				buffw.close();
 
@@ -360,12 +409,12 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		}
 
-		schema.closeXml2SphDs();
+		client.schema.closeXml2SphDs();
 
 	}
 
 	/**
-	 * Composite Sphinx data source file (xmlpipe2)
+	 * Composite Sphinx data source file (xmlpipe2).
 	 *
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws IOException Signals that an I/O exception has occurred.
@@ -429,7 +478,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			// composite a xmlpipe2 from partial documents
 
-			schema.writeSphSchema(sph_data_source_path, true);
+			client.schema.writeSphSchema(sph_data_source_path, true);
 
 			BufferedWriter buffw = Files.newBufferedWriter(sph_data_source_path, StandardOpenOption.APPEND);
 
@@ -453,7 +502,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			for (Path sph_doc_file_path : sph_doc_file_paths) {
 
-				SphDsCompositor handler = new SphDsCompositor(option.document_key_name, schema.getSphAttrs(), schema.getSphMVAs(), buffw, index_filter);
+				SphDsCompositor handler = new SphDsCompositor(option.document_key_name, client.schema.getSphAttrs(), client.schema.getSphMVAs(), buffw, index_filter);
 
 				try {
 
@@ -481,13 +530,13 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			// write Sphinx schema file for next update or merge
 
-			schema.writeSphSchema(sphinx_schema_path, false);
+			client.schema.writeSphSchema(sphinx_schema_path, false);
 
 			// write Sphinx configuration file
 
 			Path sphinx_conf_path = Paths.get(ds_dir_name, PgSchemaUtil.sph_conf_name);
 
-			schema.writeSphConf(sphinx_conf_path, ds_name, sph_data_source_path);
+			client.schema.writeSphConf(sphinx_conf_path, ds_name, sph_data_source_path);
 
 			if (!has_idx)
 				return;

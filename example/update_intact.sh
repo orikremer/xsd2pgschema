@@ -35,5 +35,7 @@ unzip $DB_FTP/$ZIP_FILE -d $XML_DIR
 
 date
 
+./start_pgschema_serv.sh
+
 ./clone_intact.sh
 

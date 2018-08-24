@@ -34,8 +34,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -45,7 +43,7 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.text.StringEscapeUtils;
-import org.w3c.dom.Document;
+import org.nustaq.serialization.FSTConfiguration;
 import org.xml.sax.SAXException;
 
 import com.github.antlr.grammars_v4.xpath.xpathBaseListener;
@@ -61,11 +59,11 @@ import com.github.antlr.grammars_v4.xpath.xpathParser.MainContext;
  */
 public class XPathEvaluatorImpl {
 
-	/** The PostgreSQL data model. */
-	private PgSchema schema;
-
 	/** The PostgreSQL data model option. */
 	private PgSchemaOption option;
+
+	/** The PgSchema client. */
+	private PgSchemaClientImpl client;
 
 	/** The database connection. */
 	private Connection db_conn = null;
@@ -81,6 +79,7 @@ public class XPathEvaluatorImpl {
 	 *
 	 * @param is InputStream of XML Schema
 	 * @param option PostgreSQL data model option
+	 * @param fst_conf FST configuration
 	 * @param pg_option PostgreSQL option
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
@@ -89,30 +88,9 @@ public class XPathEvaluatorImpl {
 	 * @throws SQLException the SQL exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public XPathEvaluatorImpl(final InputStream is, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
+	public XPathEvaluatorImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
-		long start_time = System.currentTimeMillis();
-
-		// parse XSD document
-
-		DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
-		doc_builder_fac.setValidating(false);
-		doc_builder_fac.setNamespaceAware(true);
-		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-		DocumentBuilder doc_builder = doc_builder_fac.newDocumentBuilder();
-
-		Document xsd_doc = doc_builder.parse(is);
-
-		is.close();
-
-		doc_builder.reset();
-
-		// XSD analysis
-
-		schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, this.option = option);
-
-		long end_time = System.currentTimeMillis();
+		client = new PgSchemaClientImpl(is, this.option = option, fst_conf, Thread.currentThread().getStackTrace()[2].getClassName());
 
 		if (!pg_option.name.isEmpty()) {
 
@@ -121,11 +99,9 @@ public class XPathEvaluatorImpl {
 			// test PostgreSQL DDL with schema
 
 			if (pg_option.test)
-				schema.testPgSql(db_conn, false);
+				client.schema.testPgSql(db_conn, false);
 
 		}
-
-		System.out.println("XML Schema parse time: " + (end_time - start_time) + " ms\n");
 
 	}
 
@@ -159,7 +135,7 @@ public class XPathEvaluatorImpl {
 		if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		xpath_comp_list = new XPathCompList(schema, tree, variables);
+		xpath_comp_list = new XPathCompList(client.schema, tree, variables);
 
 		if (xpath_comp_list.comps.size() == 0)
 			throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
@@ -393,7 +369,7 @@ public class XPathEvaluatorImpl {
 
 			xmlb.setXmlWriter(xml_writer);
 
-			schema.initXmlBuilder(xmlb);
+			client.schema.initXmlBuilder(xmlb);
 
 			xmlb.resetStatus();
 
@@ -414,14 +390,14 @@ public class XPathEvaluatorImpl {
 					if (terminus.equals(XPathCompType.table)) {
 
 						while (rset.next())
-							schema.pgSql2Xml(db_conn, path_expr, rset);
+							client.schema.pgSql2Xml(db_conn, path_expr, rset);
 
 					}
 
 					// field or text node
 
 					else
-						schema.pgSql2XmlFrag(xpath_comp_list, path_expr, rset);
+						client.schema.pgSql2XmlFrag(xpath_comp_list, path_expr, rset);
 
 					rset.close();
 
@@ -477,7 +453,7 @@ public class XPathEvaluatorImpl {
 		if (xpath_comp_list == null)
 			throw new PgSchemaException("Not parsed XPath expression ever.");
 
-		schema.initJsonBuilder(jsonb_option);
+		client.schema.initJsonBuilder(jsonb_option);
 
 		try {
 
@@ -507,7 +483,7 @@ public class XPathEvaluatorImpl {
 			else
 				bout = new BufferedOutputStream(System.out);
 
-			schema.jsonb.resetStatus();
+			client.schema.jsonb.resetStatus();
 
 			Statement stat = db_conn.createStatement();
 
@@ -526,14 +502,14 @@ public class XPathEvaluatorImpl {
 					if (terminus.equals(XPathCompType.table)) {
 
 						while (rset.next())
-							schema.pgSql2Json(db_conn, path_expr, rset);
+							client.schema.pgSql2Json(db_conn, path_expr, rset);
 
 					}
 
 					// field or text node
 
 					else
-						schema.pgSql2JsonFrag(xpath_comp_list, path_expr, rset);
+						client.schema.pgSql2JsonFrag(xpath_comp_list, path_expr, rset);
 
 					rset.close();
 
@@ -543,7 +519,7 @@ public class XPathEvaluatorImpl {
 
 			});
 
-			schema.writeJsonBuilder(bout);
+			client.schema.writeJsonBuilder(bout);
 
 			long end_time = System.currentTimeMillis();
 
@@ -565,9 +541,9 @@ public class XPathEvaluatorImpl {
 
 			}
 
-			if (schema.jsonb.getRootCount() > 1)
+			if (client.schema.jsonb.getRootCount() > 1)
 				throw new PgSchemaException("[WARNING] The JSON document has multiple root nodes.");
-			if (schema.jsonb.getFragment() > 1)
+			if (client.schema.jsonb.getFragment() > 1)
 				throw new PgSchemaException("[WARNING] The JSON document has multiple fragments.");
 
 		} catch (IOException | SQLException e) {

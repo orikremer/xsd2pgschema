@@ -20,6 +20,8 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 import java.io.IOException;
+import java.math.BigInteger;
+import java.security.MessageDigest;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -72,15 +74,16 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * Node parser for PostgreSQL data migration.
 	 *
 	 * @param schema PostgreSQL data model
+	 * @param md_hash_key instance of message digest
 	 * @param parent_table parent table
 	 * @param table current table
 	 * @param update whether update or insertion
 	 * @param db_conn database connection
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2PgSql(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean update, final Connection db_conn) throws PgSchemaException {
+	public PgSchemaNode2PgSql(final PgSchema schema, final MessageDigest md_hash_key, final PgTable parent_table, final PgTable table, final boolean update, final Connection db_conn) throws PgSchemaException {
 
-		super(schema, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
+		super(schema, md_hash_key, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
 
 		occupied = new boolean[fields.size()];
 
@@ -232,7 +235,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(schema, table, nested_key.table, update, db_conn);
+		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(schema, md_hash_key, table, nested_key.table, update, db_conn);
 
 		try {
 
@@ -498,6 +501,68 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	}
 
 	/**
+	 * Determine hash key of source string.
+	 *
+	 * @param key_name source string
+	 * @return bytes[] hash key
+	 */
+	private byte[] getHashKeyBytes(String key_name) {
+
+		try {
+
+			return md_hash_key.digest(key_name.getBytes());
+
+		} finally {
+			md_hash_key.reset();
+		}
+
+	}
+
+	/**
+	 * Determine hash key of source string.
+	 *
+	 * @param key_name source string
+	 * @return int the hash key
+	 */
+	private int getHashKeyInt(String key_name) {
+
+		try {
+
+			byte[] hash = md_hash_key.digest(key_name.getBytes());
+
+			BigInteger bint = new BigInteger(hash);
+
+			return Math.abs(bint.intValue()); // use lower order 32bit
+
+		} finally {
+			md_hash_key.reset();
+		}
+
+	}
+
+	/**
+	 * Determine hash key of source string.
+	 *
+	 * @param key_name source string
+	 * @return long hash key
+	 */
+	private long getHashKeyLong(String key_name) {
+
+		try {
+
+			byte[] hash = md_hash_key.digest(key_name.getBytes());
+
+			BigInteger bint = new BigInteger(hash);
+
+			return Math.abs(bint.longValue()); // use lower order 64bit
+
+		} finally {
+			md_hash_key.reset();
+		}
+
+	}
+
+	/**
 	 * Write hash key via prepared statement.
 	 *
 	 * @param field_id field id
@@ -510,19 +575,19 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		switch (hash_size) {
 		case native_default:
-			byte[] bytes = schema.getHashKeyBytes(current_key);
+			byte[] bytes = getHashKeyBytes(current_key);
 			ps.setBytes(par_idx, bytes);
 			if (upsert)
 				ps.setBytes(ins_idx, bytes);
 			break;
 		case unsigned_int_32:
-			int int_key = schema.getHashKeyInt(current_key);
+			int int_key = getHashKeyInt(current_key);
 			ps.setInt(par_idx, int_key);
 			if (upsert)
 				ps.setInt(ins_idx, int_key);
 			break;
 		case unsigned_long_64:
-			long long_key = schema.getHashKeyLong(current_key);
+			long long_key = getHashKeyLong(current_key);
 			ps.setLong(par_idx, long_key);
 			if (upsert)
 				ps.setLong(ins_idx, long_key);

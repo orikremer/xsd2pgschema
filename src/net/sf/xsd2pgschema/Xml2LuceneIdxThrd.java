@@ -33,8 +33,6 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -46,7 +44,6 @@ import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.MMapDirectory;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 /**
@@ -65,14 +62,11 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/** The thread id. */
 	private int thrd_id;
 
-	/** The doc builder for reusing. */
-	private DocumentBuilder doc_builder;
-
-	/** The PostgreSQL data model. */
-	private PgSchema schema;
-
 	/** The PostgreSQL data model option. */
 	private PgSchemaOption option;
+
+	/** The PgSchema client. */
+	private PgSchemaClientImpl client;
 
 	/** The XML validator. */
 	private XmlValidator validator;
@@ -92,11 +86,48 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/** The set of document id stored in index (key=document id, value=shard id). */
 	private HashMap<String, Integer> doc_rows;
 
+	/** the instance of message digest for hash key. */
+	private MessageDigest md_hash_key = null;
+
 	/** The instance of message digest for check sum. */
 	private MessageDigest md_chk_sum = null;
 
 	/**
-	 * Instance of Xml2LuceneIdxThrd.
+	 * Instance of Xml2LuceneIdxThrd (PgSchema server client).
+	 *
+	 * @param shard_id shard id
+	 * @param shard_size shard size
+	 * @param thrd_id thread id
+	 * @param get_thrd thread to get a PgSchema server client
+	 * @param client_id client id
+	 * @param clients array of PgSchema server clients
+	 * @param xml_file_filter XML file filter
+	 * @param xml_file_queue XML file queue
+	 * @param xml_post_editor XML post editor
+	 * @param index_filter index filter
+	 * @param idx_dir_path index directory path
+	 * @param writers array of Lucene index writers
+	 * @param doc_rows set of document id stored in index
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws SAXException the SAX exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws NoSuchAlgorithmException the no such algorithm exception
+	 * @throws PgSchemaException the pg schema exception
+	 * @throws InterruptedException the interrupted exception
+	 */
+	public Xml2LuceneIdxThrd(final int shard_id, final int shard_size, final int thrd_id, final Thread get_thrd, final int client_id, final PgSchemaClientImpl[] clients, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final IndexFilter index_filter, final Path idx_dir_path, IndexWriter[] writers, HashMap<String, Integer> doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, InterruptedException {
+
+		if (get_thrd != null)
+			get_thrd.join();
+
+		this.client = clients[client_id];
+
+		init(shard_id, shard_size, thrd_id, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, idx_dir_path, writers, doc_rows);
+
+	}
+
+	/**
+	 * Instance of Xml2LuceneIdxThrd (stand alone).
 	 *
 	 * @param shard_id shard id
 	 * @param shard_size shard size
@@ -118,6 +149,33 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	 */
 	public Xml2LuceneIdxThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final IndexFilter index_filter, final Path idx_dir_path, IndexWriter[] writers, HashMap<String, Integer> doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
+		client = new PgSchemaClientImpl(is, option, null, Thread.currentThread().getStackTrace()[2].getClassName());
+
+		init(shard_id, shard_size, thrd_id, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, idx_dir_path, writers, doc_rows);
+
+	}
+
+	/**
+	 * Setup Xml2LuceneIdxThrd except for PgSchema server client.
+	 *
+	 * @param shard_id shard id
+	 * @param shard_size shard size
+	 * @param thrd_id thread id
+	 * @param xml_file_filter XML file filter
+	 * @param xml_file_queue XML file queue
+	 * @param xml_post_editor XML post editor
+	 * @param index_filter index filter
+	 * @param idx_dir_path index directory path
+	 * @param writers array of Lucene index writers
+	 * @param doc_rows set of document id stored in index
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws SAXException the SAX exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws NoSuchAlgorithmException the no such algorithm exception
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void init(final int shard_id, final int shard_size, final int thrd_id, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final IndexFilter index_filter, final Path idx_dir_path, IndexWriter[] writers, HashMap<String, Integer> doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+
 		this.shard_id = shard_id;
 		this.shard_size = shard_size;
 
@@ -130,28 +188,10 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		this.writers = writers;
 		this.doc_rows = doc_rows;
 
-		// parse XSD document
+		option = client.option;
 
-		DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
-		doc_builder_fac.setValidating(false);
-		doc_builder_fac.setNamespaceAware(true);
-		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-		doc_builder = doc_builder_fac.newDocumentBuilder();
-
-		Document xsd_doc = doc_builder.parse(is);
-
-		is.close();
-
-		doc_builder.reset();
-
-		// XSD analysis
-
-		schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, this.option = option);
-
-		schema.applyXmlPostEditor(xml_post_editor);
-
-		schema.applyIndexFilter(index_filter);
+		client.schema.applyXmlPostEditor(xml_post_editor);
+		client.schema.applyIndexFilter(index_filter);
 
 		// prepare XML validator
 
@@ -242,6 +282,11 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		}
 
+		// prepare message digest for hash key
+
+		if (!option.hash_algorithm.isEmpty() && !option.hash_size.equals(PgHashSize.debug_string))
+			md_hash_key = MessageDigest.getInstance(option.hash_algorithm);
+
 		// prepare message digest for check sum
 
 		if (!option.check_sum_algorithm.isEmpty() && synchronizable)
@@ -321,11 +366,11 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 			try {
 
-				XmlParser xml_parser = new XmlParser(doc_builder, validator, xml_file_path, xml_file_filter);
+				XmlParser xml_parser = new XmlParser(client.doc_builder, validator, xml_file_path, xml_file_filter);
 
 				org.apache.lucene.document.Document lucene_doc = new org.apache.lucene.document.Document();
 
-				schema.xml2LucIdx(xml_parser, lucene_doc);
+				client.schema.xml2LucIdx(xml_parser, md_hash_key, lucene_doc);
 
 				if (_shard_id == null)
 					writer.addDocument(lucene_doc);
@@ -355,7 +400,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		}
 
-		schema.closeXml2LucIdx();
+		client.schema.closeXml2LucIdx();
 
 	}
 

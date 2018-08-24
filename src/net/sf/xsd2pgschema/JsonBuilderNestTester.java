@@ -37,8 +37,9 @@ public class JsonBuilderNestTester extends CommonBuilderNestTester {
 	 *
 	 * @param table current table
 	 * @param jsonb JSON builder
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public JsonBuilderNestTester(PgTable table, JsonBuilder jsonb) {
+	public JsonBuilderNestTester(PgTable table, JsonBuilder jsonb) throws PgSchemaException {
 
 		super(table);
 
@@ -52,8 +53,9 @@ public class JsonBuilderNestTester extends CommonBuilderNestTester {
 	 *
 	 * @param table current table
 	 * @param parent_test nest test of parent node
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public JsonBuilderNestTester(PgTable table, JsonBuilderNestTester parent_test) {
+	public JsonBuilderNestTester(PgTable table, JsonBuilderNestTester parent_test) throws PgSchemaException {
 
 		super(table, parent_test);
 

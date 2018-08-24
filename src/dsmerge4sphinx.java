@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,6 +33,7 @@ import java.util.List;
 import javax.xml.parsers.*;
 
 import org.apache.commons.io.FilenameUtils;
+import org.nustaq.serialization.FSTConfiguration;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -49,8 +51,14 @@ public class dsmerge4sphinx {
 	 */
 	public static void main(String[] args) {
 
-		/** The schema location. */
-		String schema_location = "";
+		/** The PostgreSQL data model option. */
+		PgSchemaOption option = new PgSchemaOption(false);
+
+		/** The FST configuration. */
+		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
+
+		/** The FST optimization. */
+		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class);
 
 		/** The data source name. */
 		String ds_name = "";
@@ -64,7 +72,7 @@ public class dsmerge4sphinx {
 		for (int i = 0; i < args.length; i++) {
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
-				schema_location = args[++i];
+				option.root_schema_location = args[++i];
 
 			else if (args[i].equals("--src-ds-dir") && i + 1 < args.length)
 				src_ds_dir_list.add(args[++i]);
@@ -75,6 +83,15 @@ public class dsmerge4sphinx {
 			else if (args[i].equals("--ds-name") && i + 1 < args.length)
 				ds_name = args[++i];
 
+			else if (args[i].equals("--no-pgschema-serv"))
+				option.pg_schema_server = false;
+
+			else if (args[i].equals("--pgschema-serv-host") && i + 1 < args.length)
+				option.pg_schema_server_host = args[++i];
+
+			else if (args[i].equals("--pgschema-serv-port") && i + 1 < args.length)
+				option.pg_schema_server_port = Integer.valueOf(args[++i]);
+
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
 				showUsage();
@@ -82,12 +99,12 @@ public class dsmerge4sphinx {
 
 		}
 
-		if (schema_location.isEmpty()) {
+		if (option.root_schema_location.isEmpty()) {
 			System.err.println("XSD schema location is empty.");
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(schema_location, null, false);
+		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
 		if (is == null)
 			showUsage();
@@ -163,7 +180,7 @@ public class dsmerge4sphinx {
 
 		if (ds_name.isEmpty()) {
 
-			ds_name = PgSchemaUtil.getSchemaFileName(schema_location);
+			ds_name = PgSchemaUtil.getSchemaFileName(option.root_schema_location);
 
 			String xsd_file_ext = FilenameUtils.getExtension(ds_name);
 
@@ -179,39 +196,27 @@ public class dsmerge4sphinx {
 			if (!Files.isDirectory(dst_ds_dir_path))
 				Files.createDirectory(dst_ds_dir_path);
 
-			// parse XSD document
-
-			DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
-			doc_builder_fac.setValidating(false);
-			doc_builder_fac.setNamespaceAware(true);
-			doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-			doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-			DocumentBuilder	doc_builder = doc_builder_fac.newDocumentBuilder();
-
-			Document xsd_doc = doc_builder.parse(is);
-
-			is.close();
-
-			doc_builder.reset();
-
-			// XSD analysis
-
-			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, schema_location, new PgSchemaOption(false));
+			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, MethodHandles.lookup().lookupClass().getName());
 
 			for (String src_ds_dir_name : src_ds_dir_list) {
 
 				Path src_sphinx_schema_path = Paths.get(src_ds_dir_name, PgSchemaUtil.sph_schema_name);
 
-				doc_builder_fac.setNamespaceAware(false);
-				doc_builder = doc_builder_fac.newDocumentBuilder();
+				try {
 
-				Document src_sphinx_doc = doc_builder.parse(Files.newInputStream(src_sphinx_schema_path));
+					client.doc_builder_fac.setNamespaceAware(false);
+					DocumentBuilder doc_builder = client.doc_builder_fac.newDocumentBuilder();
 
-				doc_builder.reset();
+					Document src_sphinx_doc = doc_builder.parse(Files.newInputStream(src_sphinx_schema_path));
 
-				schema.syncSphSchema(src_sphinx_doc);
+					doc_builder.reset();
 
-				src_sphinx_doc = null;
+					client.schema.syncSphSchema(src_sphinx_doc);
+
+					src_sphinx_doc = null;
+
+				} catch (SAXException e) {
+				}
 
 			}
 
@@ -219,7 +224,7 @@ public class dsmerge4sphinx {
 
 			Path dst_sphinx_data_source_path = Paths.get(dst_ds_dir_name, PgSchemaUtil.sph_data_source_name);
 
-			schema.writeSphSchema(dst_sphinx_data_source_path, true);
+			client.schema.writeSphSchema(dst_sphinx_data_source_path, true);
 
 			BufferedWriter buffw = Files.newBufferedWriter(dst_sphinx_data_source_path);
 
@@ -227,7 +232,7 @@ public class dsmerge4sphinx {
 
 				Path src_sphinx_data_source_path = Paths.get(src_ds_dir_name, PgSchemaUtil.sph_data_source_name);
 
-				mergeDataSource(schema, buffw, src_sphinx_data_source_path);
+				mergeDataSource(client.schema, buffw, src_sphinx_data_source_path);
 
 			}
 
@@ -239,13 +244,13 @@ public class dsmerge4sphinx {
 
 			Path dst_sphinx_schema_path = Paths.get(dst_ds_dir_name, PgSchemaUtil.sph_schema_name);
 
-			schema.writeSphSchema(dst_sphinx_schema_path, false);
+			client.schema.writeSphSchema(dst_sphinx_schema_path, false);
 
 			// Sphinx configuration writer
 
 			Path sphinx_conf_path = Paths.get(dst_ds_dir_name, PgSchemaUtil.sph_conf_name);
 
-			schema.writeSphConf(sphinx_conf_path, ds_name, dst_sphinx_data_source_path);
+			client.schema.writeSphConf(sphinx_conf_path, ds_name, dst_sphinx_data_source_path);
 
 		} catch (ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 			e.printStackTrace();
@@ -303,6 +308,9 @@ public class dsmerge4sphinx {
 		System.err.println("dsmerge4sphinx: Merge Sphinx data source files into one");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --dst-ds-dir DIRECTORY (default=\"" + xml2sphinxds.ds_dir_name + "\") --src-ds-dir DIRECTORY (repeat until you specify all directories)");
 		System.err.println("Option: --ds-name DS_NAME (default name is determined by data_source.conf file)");
+		System.err.println("        --no-pgschema-serv (not utilize PgSchema server)");
+		System.err.println("        --pgschema-serv-host PG_SCHEMA_SERV_HOST_NAME (default=\"" + PgSchemaUtil.pg_schema_server_host + "\")");
+		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
 		System.exit(1);
 
 	}

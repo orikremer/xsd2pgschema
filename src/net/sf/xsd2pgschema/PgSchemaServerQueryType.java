@@ -1,6 +1,6 @@
-
-xsd2pgschema v3.0.0 - Database replication tool based on XML Schema
-Copyright (c) 2014-2018 Masashi Yokochi
+/*
+    xsd2pgschema - Database replication tool based on XML Schema
+    Copyright 2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -15,4 +15,28 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+ */
 
+package net.sf.xsd2pgschema;
+
+/**
+ * Enumerator of PgSchema server query type.
+ *
+ * @author yokochi
+ */
+public enum PgSchemaServerQueryType {
+
+	/** The MATCH query. */
+	MATCH,
+	/** The GET query. */
+	GET,
+	/** The ADD query. */
+	ADD,
+	/** The PING query. */
+	PING,
+	/** The STATUS query. */
+	STATUS,
+	/** The STOP query. */
+	STOP
+
+}

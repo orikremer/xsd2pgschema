@@ -21,6 +21,8 @@ fi
 
 date
 
+./start_pgschema_serv.sh
+
 ./split_uniprotkb.sh
 
 ./clone_uniprotkb.sh

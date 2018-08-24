@@ -134,7 +134,7 @@ public class XPathCompList {
 
 		root_table = schema.getRootTable();
 
-		document_key = option.document_key || option.inplace_document_key;
+		document_key = option.document_key || option.in_place_document_key;
 
 		serial_key = option.serial_key;
 

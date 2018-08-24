@@ -32,6 +32,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.nustaq.serialization.FSTConfiguration;
 import org.xml.sax.SAXException;
 
 import com.github.antlr.grammars_v4.xpath.xpathListenerException;
@@ -55,6 +56,12 @@ public class xmlsplitter {
 
 		/** The schema option. */
 		PgSchemaOption option = new PgSchemaOption(false);
+
+		/** The FST configuration. */
+		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
+
+		/** The FST optimization. */
+		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class);
 
 		/** The XML file filter. */
 		XmlFileFilter xml_file_filter = new XmlFileFilter();
@@ -115,6 +122,15 @@ public class xmlsplitter {
 
 			else if (args[i].equals("--pg-named-schema"))
 				option.pg_named_schema = true;
+
+			else if (args[i].equals("--no-pgschema-serv"))
+				option.pg_schema_server = false;
+
+			else if (args[i].equals("--pgschema-serv-host") && i + 1 < args.length)
+				option.pg_schema_server_host = args[++i];
+
+			else if (args[i].equals("--pgschema-serv-port") && i + 1 < args.length)
+				option.pg_schema_server_port = Integer.valueOf(args[++i]);
 
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
@@ -191,7 +207,7 @@ public class xmlsplitter {
 
 		try {
 
-			XmlSplitterImpl splitter = new XmlSplitterImpl(shard_size, is, xml_dir_path, xml_file_queue, option, xpath_doc_key);
+			XmlSplitterImpl splitter = new XmlSplitterImpl(shard_size, is, xml_dir_path, xml_file_queue, option, fst_conf, xpath_doc_key);
 
 			splitter.exec();
 
@@ -216,6 +232,9 @@ public class xmlsplitter {
 		System.err.println("Option: --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
+		System.err.println("        --no-pgschema-serv (not utilize PgSchema server)");
+		System.err.println("        --pgschema-serv-host PG_SCHEMA_SERV_HOST_NAME (default=\"" + PgSchemaUtil.pg_schema_server_host + "\")");
+		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
 		System.err.println("        --verbose");
 		System.exit(1);
 

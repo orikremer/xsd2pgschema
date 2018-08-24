@@ -20,6 +20,7 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.util.Arrays;
 
 import javax.xml.transform.TransformerException;
@@ -47,12 +48,14 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	 * Node parser for Sphinx xmlpipe2 conversion.
 	 *
 	 * @param schema PostgreSQL data model
+	 * @param md_hash_key instance of message digest
 	 * @param parent_table parent table
 	 * @param table current table
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2SphDs(final PgSchema schema, final PgTable parent_table, final PgTable table) {
+	public PgSchemaNode2SphDs(final PgSchema schema, final MessageDigest md_hash_key, final PgTable parent_table, final PgTable table) throws PgSchemaException {
 
-		super(schema, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
+		super(schema, md_hash_key, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
 
 		if (required = table.required)
 			field_prefix = table.name + PgSchemaUtil.sph_member_op;
@@ -71,7 +74,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(schema, table, nested_key.table);
+		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(schema, md_hash_key, table, nested_key.table);
 
 		try {
 

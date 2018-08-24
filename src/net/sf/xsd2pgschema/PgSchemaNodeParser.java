@@ -22,14 +22,23 @@ package net.sf.xsd2pgschema;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.math.BigInteger;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
@@ -111,18 +120,34 @@ public abstract class PgSchemaNodeParser {
 	/** The common content holder for xs:any and xs:anyAttribute. */
 	protected StringBuilder any_content = null;
 
+	/** The instance of message digest. */
+	protected MessageDigest md_hash_key = null;
+
+	/** The document builder for any content. */
+	private DocumentBuilder any_doc_builder = null;
+
+	/** The instance of transformer for any content. */
+	private Transformer any_transformer = null;
+
+	/** SAX parser for any content. */
+	private SAXParser any_sax_parser = null;
+
 	/**
 	 * Node parser.
 	 *
 	 * @param schema PostgreSQL data model
+	 * @param md_hash_key instance of message digest
 	 * @param parent_table parent table
 	 * @param table current table
 	 * @param parser_type node parser type
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNodeParser(final PgSchema schema, final PgTable parent_table, final PgTable table, final PgSchemaNodeParserType parser_type) {
+	public PgSchemaNodeParser(final PgSchema schema, final MessageDigest md_hash_key, final PgTable parent_table, final PgTable table, final PgSchemaNodeParserType parser_type) throws PgSchemaException {
 
 		this.schema = schema;
 		option = schema.option;
+
+		this.md_hash_key = md_hash_key;
 
 		rel_data_ext = option.rel_data_ext;
 
@@ -142,6 +167,34 @@ public abstract class PgSchemaNodeParser {
 			nested_keys = new ArrayList<PgSchemaNestedKey>();
 
 		if (table.has_any || table.has_any_attribute) {
+
+			try {
+
+				DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
+				doc_builder_fac.setValidating(false);
+				doc_builder_fac.setNamespaceAware(true);
+				doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+				doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+				any_doc_builder = doc_builder_fac.newDocumentBuilder();
+
+				TransformerFactory tf_factory = TransformerFactory.newInstance();
+				any_transformer = tf_factory.newTransformer();
+				any_transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+				any_transformer.setOutputProperty(OutputKeys.INDENT, "no");
+
+				if (table.has_any) {
+
+					SAXParserFactory spf = SAXParserFactory.newInstance();
+					spf.setValidating(false);
+					spf.setNamespaceAware(false);
+
+					any_sax_parser = spf.newSAXParser();
+
+				}
+
+			} catch (ParserConfigurationException | TransformerConfigurationException | SAXException e) {
+				throw new PgSchemaException(e);
+			}
 
 			switch (parser_type) {
 			case full_text_indexing:
@@ -593,12 +646,10 @@ public abstract class PgSchemaNodeParser {
 
 			if (!has_any) { // initial instance of new document
 
-				DocumentBuilder doc_builder = schema.getAnyDocBuilder();
-
-				doc = doc_builder.newDocument();
+				doc = any_doc_builder.newDocument();
 				doc_root = doc.createElementNS(schema.getNamespaceUriForPrefix(""), table.pname);
 
-				doc_builder.reset();
+				any_doc_builder.reset();
 
 			}
 
@@ -621,26 +672,22 @@ public abstract class PgSchemaNodeParser {
 			StringWriter writer = new StringWriter();
 			StreamResult result = new StreamResult(writer);
 
-			Transformer transformer = schema.getAnyTransformer();
-
-			transformer.transform(source, result);
+			any_transformer.transform(source, result);
 
 			content = writer.toString().replace(" xmlns=\"\"", "");
 
 			writer.close();
 
-			transformer.reset();
+			any_transformer.reset();
 
 			switch (parser_type) {
 			case full_text_indexing:
 			case json_conversion:
 				PgSchemaNodeAnyExtractor any = new PgSchemaNodeAnyExtractor(parser_type, table.pname, any_content);
 
-				SAXParser sax_parser = schema.getAnySaxParser();
+				any_sax_parser.parse(new InputSource(new StringReader(content)), any);
 
-				sax_parser.parse(new InputSource(new StringReader(content)), any);
-
-				sax_parser.reset();
+				any_sax_parser.reset();
 				break;
 			default:
 			}
@@ -761,12 +808,10 @@ public abstract class PgSchemaNodeParser {
 						case pg_data_migration:
 							if (!has_any_attr) { // initial instance of new document
 
-								DocumentBuilder doc_builder = schema.getAnyDocBuilder();
-
-								doc = doc_builder.newDocument();
+								doc = any_doc_builder.newDocument();
 								doc_root = doc.createElementNS(schema.getNamespaceUriForPrefix(""), table.pname);
 
-								doc_builder.reset();
+								any_doc_builder.reset();
 
 							}
 
@@ -805,15 +850,13 @@ public abstract class PgSchemaNodeParser {
 			StringWriter writer = new StringWriter();
 			StreamResult result = new StreamResult(writer);
 
-			Transformer transformer = schema.getAnyTransformer();
-
-			transformer.transform(source, result);
+			any_transformer.transform(source, result);
 
 			content = writer.toString();
 
 			writer.close();
 
-			transformer.reset();
+			any_transformer.reset();
 
 		}
 
@@ -869,6 +912,40 @@ public abstract class PgSchemaNodeParser {
 
 			node_ordinal++;
 
+		}
+
+	}
+
+	/**
+	 * Determine hash key of source string.
+	 *
+	 * @param key_name source string
+	 * @return String hash key
+	 */
+	protected String getHashKeyString(String key_name) {
+
+		if (md_hash_key == null) // debug mode
+			return key_name;
+
+		try {
+
+			byte[] bytes = md_hash_key.digest(key_name.getBytes());
+
+			switch (option.hash_size) {
+			case native_default:
+				return "E'\\\\x" + DatatypeConverter.printHexBinary(bytes) + "'"; // PostgreSQL hex format
+			case unsigned_long_64:
+				BigInteger blong = new BigInteger(bytes);
+				return Long.toString(Math.abs(blong.longValue())); // use lower order 64bit
+			case unsigned_int_32:
+				BigInteger bint = new BigInteger(bytes);
+				return Integer.toString(Math.abs(bint.intValue())); // use lower order 32bit
+			default:
+				return key_name;
+			}
+
+		} finally {
+			md_hash_key.reset();
 		}
 
 	}

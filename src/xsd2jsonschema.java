@@ -55,6 +55,8 @@ public class xsd2jsonschema {
 		/** The schema option. */
 		PgSchemaOption option = new PgSchemaOption(jsonb_option.type);
 
+		option.pg_schema_server = false; // stand alone
+
 		for (int i = 0; i < args.length; i++) {
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)

@@ -54,7 +54,7 @@ public class PgSchemaNodeAnyExtractor extends DefaultHandler {
 	private int cur_path_offset;
 
 	/**
-	 * Instance of any attribute retriever.
+	 * Instance of any attribute extractor.
 	 *
 	 * @param parser_type node parser type
 	 * @param root_node_name root node name

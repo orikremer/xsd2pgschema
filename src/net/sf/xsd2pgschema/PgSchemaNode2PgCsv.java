@@ -21,6 +21,7 @@ package net.sf.xsd2pgschema;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.security.MessageDigest;
 import java.util.Arrays;
 
 import javax.xml.transform.TransformerException;
@@ -58,12 +59,14 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 * Node parser for CSV conversion.
 	 *
 	 * @param schema PostgreSQL data model
+	 * @param md_hash_key instance of message digest
 	 * @param parent_table parent table
 	 * @param table current table
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2PgCsv(final PgSchema schema, final PgTable parent_table, final PgTable table) {
+	public PgSchemaNode2PgCsv(final PgSchema schema, final MessageDigest md_hash_key, final PgTable parent_table, final PgTable table) throws PgSchemaException {
 
-		super(schema, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
+		super(schema, md_hash_key, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
 
 		sb = new StringBuilder();
 
@@ -89,7 +92,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(schema, table, nested_key.table);
+		PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(schema, md_hash_key, table, nested_key.table);
 
 		try {
 
@@ -170,7 +173,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 			else if (field.xpath_key) {
 
 				if (writable)
-					values[f] = schema.getHashKeyString(current_key.substring(document_id_len));
+					values[f] = getHashKeyString(current_key.substring(document_id_len));
 
 			}
 
@@ -179,7 +182,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 			else if (field.primary_key) {
 
 				if (writable && rel_data_ext)
-					values[f] = schema.getHashKeyString(node_test.primary_key);
+					values[f] = getHashKeyString(node_test.primary_key);
 
 			}
 
@@ -190,7 +193,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				if (parent_table.xname.equals(field.foreign_table_xname)) {
 
 					if (writable && rel_data_ext)
-						values[f] = schema.getHashKeyString(node_test.parent_key);
+						values[f] = getHashKeyString(node_test.parent_key);
 
 				}
 
@@ -205,7 +208,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				if ((nested_key = setNestedKey(proc_node, field, current_key)) != null) {
 
 					if (writable && rel_data_ext)
-						values[f] = schema.getHashKeyString(nested_key);
+						values[f] = getHashKeyString(nested_key);
 
 				}
 

@@ -21,6 +21,7 @@ import net.sf.xsd2pgschema.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,7 +31,7 @@ import java.sql.SQLException;
 
 import javax.xml.parsers.*;
 
-import org.w3c.dom.Document;
+import org.nustaq.serialization.FSTConfiguration;
 import org.xml.sax.SAXException;
 
 /**
@@ -50,8 +51,14 @@ public class csv2pgsql {
 		/** The working directory name. */
 		String work_dir_name = xml2pgcsv.work_dir_name;
 
-		/** The schema option. */
+		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(true);
+
+		/** The FST configuration. */
+		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
+
+		/** The FST optimization. */
+		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class);
 
 		/** The PostgreSQL option. */
 		PgOption pg_option = new PgOption();
@@ -139,6 +146,15 @@ public class csv2pgsql {
 				option.setDocKeyOption(false);
 			}
 
+			else if (args[i].equals("--no-pgschema-serv"))
+				option.pg_schema_server = false;
+
+			else if (args[i].equals("--pgschema-serv-host") && i + 1 < args.length)
+				option.pg_schema_server_host = args[++i];
+
+			else if (args[i].equals("--pgschema-serv-port") && i + 1 < args.length)
+				option.pg_schema_server_port = Integer.valueOf(args[++i]);
+
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
 				showUsage();
@@ -178,21 +194,7 @@ public class csv2pgsql {
 
 		try {
 
-			// parse XSD document
-
-			DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
-			doc_builder_fac.setNamespaceAware(true);
-			DocumentBuilder	doc_builder = doc_builder_fac.newDocumentBuilder();
-
-			Document xsd_doc = doc_builder.parse(is);
-
-			is.close();
-
-			doc_builder.reset();
-
-			// XSD analysis
-
-			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
+			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, MethodHandles.lookup().lookupClass().getName());
 
 			Connection db_conn = DriverManager.getConnection(pg_option.getDbUrl(PgSchemaUtil.def_encoding), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 
@@ -201,9 +203,9 @@ public class csv2pgsql {
 			// test PostgreSQL DDL with schema
 
 			if (pg_option.test)
-				schema.testPgSql(db_conn, true);
+				client.schema.testPgSql(db_conn, true);
 
-			schema.pgCsv2PgSql(db_conn, work_dir);
+			client.schema.pgCsv2PgSql(db_conn, work_dir);
 
 			System.out.println("Done " + (option.pg_delimiter == '\t' ? "tsv" : "csv") + " -> db (" + pg_option.name + ").");
 
@@ -245,6 +247,9 @@ public class csv2pgsql {
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME");
 		System.err.println("        --doc-key-if-no-inplace (append document key if no in-place docuemnt key, select --no-doc-key options by default)");
+		System.err.println("        --no-pgschema-serv (not utilize PgSchema server)");
+		System.err.println("        --pgschema-serv-host PG_SCHEMA_SERV_HOST_NAME (default=\"" + PgSchemaUtil.pg_schema_server_host + "\")");
+		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
 		System.exit(1);
 
 	}

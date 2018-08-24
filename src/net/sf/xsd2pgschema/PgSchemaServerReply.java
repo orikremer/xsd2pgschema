@@ -1,6 +1,6 @@
-
-xsd2pgschema v3.0.0 - Database replication tool based on XML Schema
-Copyright (c) 2014-2018 Masashi Yokochi
+/*
+    xsd2pgschema - Database replication tool based on XML Schema
+    Copyright 2018 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -15,4 +15,26 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+ */
 
+package net.sf.xsd2pgschema;
+
+import java.io.Serializable;
+
+/**
+ * Reply object of PgSchema server.
+ *
+ * @author yokochi
+ */
+public class PgSchemaServerReply implements Serializable {
+
+	/** The default serial version ID. */
+	private static final long serialVersionUID = 1L;
+
+	/** The server message. */
+	public String message = null;
+
+	/** The serialized PostgreSQL data model. */
+	public byte[] schema_bytes = null;
+
+}

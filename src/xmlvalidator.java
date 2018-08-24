@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -190,9 +191,11 @@ public class xmlvalidator {
 
 			}
 
-			option.check_sum_dir_path = check_sum_dir_path;
+			option.check_sum_dir_name = check_sum_dir_name;
 
 		}
+
+		final String class_name = MethodHandles.lookup().lookupClass().getName();
 
 		XmlValidatorThrd[] proc_thrd = new XmlValidatorThrd[max_thrds];
 		Thread[] thrd = new Thread[max_thrds];
@@ -201,7 +204,7 @@ public class xmlvalidator {
 
 		for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
 
-			String thrd_name = "xmlvalidator-" + thrd_id;
+			String thrd_name = class_name + "-" + thrd_id;
 
 			try {
 

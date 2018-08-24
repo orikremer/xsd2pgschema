@@ -1,4 +1,12 @@
-﻿ Changes in xsd2pgschema 2.12.7 (release 2018-08-07)
+﻿ Changes in xsd2pgschema 3.0.0 (release 2018-08-24)
+
+  Added PgSchema server (pgschemaserv main class), which serves serialized PostgreSQL data model to client.
+  Many main classes support PgSchema server by default (host: localhost, port: 5430).
+  Added PgSchema server relating options (--no-pgschema-serv, --pgschema-serv-host HOST_NAME, --pgschema-serv-port PORT_NUMBER).
+  Added example scripts to start server, stop server and, report server status.
+  Improved performance utilizing PgSchema server.
+
+ Changes in xsd2pgschema 2.12.7 (release 2018-08-07)
 
   Added --freq option in luceneidx2dic, luceneidx2ftxt, and luceneidx2infix main classes as well as dicmerge4sphinx main class.
   Fixed typo in JSON Schema.

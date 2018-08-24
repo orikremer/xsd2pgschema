@@ -23,12 +23,12 @@ import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -48,20 +48,13 @@ import java.util.stream.Collectors;
 
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
+import org.nustaq.serialization.annotations.Flat;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
 import org.w3c.dom.*;
@@ -72,10 +65,10 @@ import org.xml.sax.SAXException;
  *
  * @author yokochi
  */
-public class PgSchema {
+public class PgSchema implements Serializable {
 
-	/** The parent of default schema location. */
-	private String def_schema_parent = null;
+	/** The default serial version ID. */
+	private static final long serialVersionUID = 1L;
 
 	/** The default schema location. */
 	private String def_schema_location = null;
@@ -92,23 +85,11 @@ public class PgSchema {
 	/** The duplicated schema locations (key=duplicated schema location, value=unique schema location). */
 	private HashMap<String, String> dup_schema_locations = null;
 
-	/** The attribute group definitions. */
-	private List<PgTable> attr_groups = null;
-
-	/** The model group definitions. */
-	private List<PgTable> model_groups = null;
-
 	/** The list of PostgreSQL table. */
 	private List<PgTable> tables = null;
 
 	/** The list of PostgreSQL foreign key. */
 	private List<PgForeignKey> foreign_keys = null;
-
-	/** The pending list of attribute groups. */
-	private List<PgPendingGroup> pending_attr_groups = null;
-
-	/** The pending list of model groups. */
-	private List<PgPendingGroup> pending_model_groups = null;
 
 	/** The PostgreSQL data model option. */
 	protected PgSchemaOption option = null;
@@ -125,50 +106,59 @@ public class PgSchema {
 	/** The default namespaces (key=prefix, value=namespace_uri). */
 	private HashMap<String, String> def_namespaces = null;
 
+	/** Whether hash algorithm has been defined (internal use only). */
+	private boolean has_hash_algorithm = false;
+
+	/** The attribute group definitions. */
+	@Flat
+	private List<PgTable> attr_groups = null;
+
+	/** The model group definitions. */
+	@Flat
+	private List<PgTable> model_groups = null;
+
+	/** The parent of default schema location. */
+	@Flat
+	private String def_schema_parent = null;
+
+	/** The pending list of attribute groups. */
+	@Flat
+	private List<PgPendingGroup> pending_attr_groups = null;
+
+	/** The pending list of model groups. */
+	@Flat
+	private List<PgPendingGroup> pending_model_groups = null;
+
 	/** The top level xs:annotation. */
+	@Flat
 	private String def_anno = null;
 
 	/** The top level xs:annotation/xs:appinfo. */
+	@Flat
 	private String def_anno_appinfo = null;
 
 	/** The top level xs:annotation/xs:documentation. */
+	@Flat
 	private String def_anno_doc = null;
 
-	/** The top level xs:annotation/xs:documentation (as is).*/
-	@SuppressWarnings("unused")
-	private String def_xanno_doc = null;
+	/** The top level xs:annotation/xs:documentation (as is).
+	@Flat
+	private String def_xanno_doc = null; */
 
 	/** The default attributes. */
+	@Flat
 	private String def_attrs = null;
 
 	/** The statistics message on schema. */
+	@Flat
 	private StringBuilder def_stat_msg = null;
 
 	/** The current document id. */
+	@Flat
 	private String document_id = null;
 
-	/** The instance of message digest for hash_key. */
-	private MessageDigest md_hash_key = null;
-
-	/** The instance of document builder for any content. */
-	private DocumentBuilder any_doc_builder = null;
-
-	/** The instance of transformer for any content. */
-	private Transformer any_transformer = null;
-
-	/** SAX parser for any content. */
-	private SAXParser any_sax_parser = null;
-
-	/** The root node (internal use only). */
-	private Node root_node = null;
-
-	/** The root schema object (internal use only). */
-	private PgSchema root_schema = null;
-
-	/** Whether name collision occurs in schema (internal use only). */
-	private boolean name_collision = false;
-
 	/** The current depth of table (internal use only). */
+	@Flat
 	private int level;
 
 	/**
@@ -188,7 +178,7 @@ public class PgSchema {
 
 		// check existence of root element
 
-		root_node = doc.getDocumentElement();
+		Node root_node = doc.getDocumentElement();
 
 		if (root_node == null)
 			throw new PgSchemaException("Not found root element in XML Schema: " + def_schema_location);
@@ -200,15 +190,16 @@ public class PgSchema {
 		if (!root_node.getNodeName().equals(option.xs_prefix_ + "schema"))
 			throw new PgSchemaException("Not found " + option.xs_prefix_ + "schema root element in XML Schema: " + def_schema_location);
 
+		boolean root = parent_schema == null;
+		PgSchema root_schema = root ? this : parent_schema;
+
 		// detect entry point of XML schemata
 
-		root_schema = parent_schema == null ? this : parent_schema;
-
-		def_schema_parent = parent_schema == null ? PgSchemaUtil.getSchemaParent(def_schema_location) : parent_schema.def_schema_parent;
+		def_schema_parent = root ? PgSchemaUtil.getSchemaParent(def_schema_location) : root_schema.def_schema_parent;
 
 		// prepare dictionary of unique schema locations and duplicated schema locations
 
-		if (parent_schema == null) {
+		if (root) {
 
 			unq_schema_locations = new HashMap<String, String>();
 			dup_schema_locations = new HashMap<String, String>();
@@ -261,10 +252,10 @@ public class PgSchema {
 
 		def_anno = option.extractAnnotation(root_node, true);
 		def_anno_appinfo = option.extractAppinfo(root_node);
-
+		/*
 		if ((def_anno_doc = option.extractDocumentation(root_node, true)) != null)
 			def_xanno_doc = option.extractDocumentation(root_node, false);
-
+		 */
 		if (option.ddl_output)
 			def_stat_msg = new StringBuilder();
 
@@ -284,7 +275,7 @@ public class PgSchema {
 
 		// prepare foreign key holder, and pending group holder for attribute group and model group
 
-		if (parent_schema == null) {
+		if (root) {
 
 			foreign_keys = new ArrayList<PgForeignKey>();
 
@@ -368,7 +359,7 @@ public class PgSchema {
 
 						schema2.tables.stream().filter(arg -> arg.xs_type.equals(XsTableType.xs_admin_root) || arg.xs_type.equals(XsTableType.xs_admin_child)).forEach(arg -> {
 
-							if (root_schema.avoidTableDuplication(tables, arg))
+							if (root_schema.avoidTableDuplication(root_schema, tables, arg))
 								root_schema.tables.add(arg);
 
 						});
@@ -395,7 +386,7 @@ public class PgSchema {
 				continue;
 
 			if (child.getNodeName().equals(option.xs_prefix_ + "attributeGroup"))
-				extractAdminAttributeGroup(child);
+				extractAdminAttributeGroup(root_schema, root_node, child);
 
 		}
 
@@ -407,13 +398,13 @@ public class PgSchema {
 				continue;
 
 			if (child.getNodeName().equals(option.xs_prefix_ + "group"))
-				extractAdminModelGroup(child);
+				extractAdminModelGroup(root_schema, root_node, child);
 
 		}
 
 		// create table for root element
 
-		boolean root_element = parent_schema == null;
+		boolean root_element = root;
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -429,9 +420,9 @@ public class PgSchema {
 				if (_abstract != null && _abstract.equals("true"))
 					continue;
 
-				extractRootElement(child, root_element);
+				extractRootElement(root_schema, root_node, child, root_element);
 
-				if (parent_schema == null)
+				if (root)
 					break;
 
 				root_element = false;
@@ -448,16 +439,16 @@ public class PgSchema {
 				continue;
 
 			if (child.getNodeName().equals(option.xs_prefix_ + "complexType"))
-				extractAdminElement(child, true, false);
+				extractAdminElement(root_schema, root_node, child, true, false);
 
 			else if (child.getNodeName().equals(option.xs_prefix_ + "simpleType"))
-				extractAdminElement(child, false, false);
+				extractAdminElement(root_schema, root_node, child, false, false);
 
 		}
 
 		if (tables.size() == 0) {
 
-			if (parent_schema == null)
+			if (root)
 				throw new PgSchemaException("Not found any root element (/" + option.xs_prefix_ + "schema/" + option.xs_prefix_ + "element) or administrative elements (/" + option.xs_prefix_ + "schema/[" + option.xs_prefix_ + "complexType | " + option.xs_prefix_ + "simpleType]) in XML Schema: " + def_schema_location);
 
 		}
@@ -468,7 +459,7 @@ public class PgSchema {
 				tables.parallelStream().forEach(table -> table.classify());
 
 			if (option.ddl_output && !root_schema.dup_schema_locations.containsKey(def_schema_location))
-				root_schema.def_stat_msg.append("--  " + (parent_schema == null ? "Generated" : "Found") + " " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.parallelStream().map(table -> option.rel_model_ext || !table.relational ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups " + (parent_schema == null ? "in total" : "in XML Schema: " + def_schema_location) + "\n");
+				root_schema.def_stat_msg.append("--  " + (root ? "Generated" : "Found") + " " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.parallelStream().map(table -> option.rel_model_ext || !table.relational ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups " + (root ? "in total" : "in XML Schema: " + def_schema_location) + "\n");
 
 		}
 
@@ -488,9 +479,9 @@ public class PgSchema {
 				if (_abstract != null && _abstract.equals("true"))
 					continue;
 
-				extractAdminElement(child, false, true);
+				extractAdminElement(root_schema, root_node, child, false, true);
 
-				if (parent_schema == null)
+				if (root)
 					break;
 
 			}
@@ -505,14 +496,14 @@ public class PgSchema {
 				continue;
 
 			else if (child.getNodeName().equals(option.xs_prefix_ + "complexType"))
-				extractAdminElement(child, true, true);
+				extractAdminElement(root_schema, root_node, child, true, true);
 
 			else if (child.getNodeName().equals(option.xs_prefix_ + "simpleType"))
-				extractAdminElement(child, false, true);
+				extractAdminElement(root_schema, root_node, child, false, true);
 
 		}
 
-		if (parent_schema != null)
+		if (!root)
 			return;
 
 		// collect PostgreSQL named schemata
@@ -537,7 +528,7 @@ public class PgSchema {
 
 				try {
 
-					PgTable attr_group  = getAttributeGroup(arg.ref_group, true);
+					PgTable attr_group  = getAttributeGroup(root_schema, arg.ref_group, true);
 
 					PgTable table = getPendingTable(arg);
 
@@ -559,6 +550,8 @@ public class PgSchema {
 
 			pending_attr_groups.clear();
 
+			pending_attr_groups = null; // never chance to access, set null for serialization
+
 		}
 
 		// apply pending model groups (lazy evaluation)
@@ -569,7 +562,7 @@ public class PgSchema {
 
 				try {
 
-					PgTable model_group = getModelGroup(arg.ref_group, true);
+					PgTable model_group = getModelGroup(root_schema, arg.ref_group, true);
 
 					PgTable table = getPendingTable(arg);
 
@@ -590,6 +583,8 @@ public class PgSchema {
 			});
 
 			pending_model_groups.clear();
+
+			pending_model_groups = null; // never chance to access, set null for serialization
 
 		}
 
@@ -983,9 +978,9 @@ public class PgSchema {
 
 		// retrieve document key if no in-place document key exists
 
-		if (!option.document_key && option.inplace_document_key && (option.rel_model_ext || option.document_key_if_no_in_place)) {
+		if (!option.document_key && option.in_place_document_key && (option.rel_model_ext || option.document_key_if_no_in_place)) {
 
-			tables.parallelStream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> field.name.equals(option.document_key_name)) && !table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))).forEach(table -> {
+			tables.parallelStream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> field.name.equals(option.document_key_name)) && !table.fields.stream().anyMatch(field -> (field.attribute || field.element) && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))).forEach(table -> {
 
 				PgField field = new PgField();
 
@@ -1076,41 +1071,17 @@ public class PgSchema {
 
 		other_namespaces.clear();
 
-		// instance of message digest
+		// message digest algorithm
 
 		if (!option.hash_algorithm.isEmpty() && !option.hash_size.equals(PgHashSize.debug_string)) {
-
+			/*
 			try {
-				md_hash_key = MessageDigest.getInstance(option.hash_algorithm);
+				MessageDigest.getInstance(option.hash_algorithm);
 			} catch (NoSuchAlgorithmException e) {
 				throw new PgSchemaException(e);
 			}
-
-		}
-
-		// instance of document builder, SAX parser for any content
-
-		if (option.wild_card && tables.parallelStream().anyMatch(table -> table.has_any || table.has_any_attribute)) {
-
-			try {
-
-				any_doc_builder = doc_builder;
-
-				TransformerFactory tf_factory = TransformerFactory.newInstance();
-				any_transformer = tf_factory.newTransformer();
-
-				any_transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-				any_transformer.setOutputProperty(OutputKeys.INDENT, "no");
-
-				SAXParserFactory spf = SAXParserFactory.newInstance();
-				spf.setValidating(false);
-				spf.setNamespaceAware(false);
-
-				any_sax_parser = spf.newSAXParser();
-
-			} catch (TransformerConfigurationException | IllegalArgumentException | TransformerFactoryConfigurationError | ParserConfigurationException | SAXException e) {
-				throw new PgSchemaException(e);
-			}
+			 */
+			has_hash_algorithm = true;
 
 		}
 
@@ -1127,45 +1098,45 @@ public class PgSchema {
 			namespace_uri.forEach(arg -> sb.append(arg + " (" + getPrefixOf(arg, "default") + "), "));
 			namespace_uri.clear();
 
-			root_schema.def_stat_msg.append("--   Namespaces:\n");
-			root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
+			def_stat_msg.append("--   Namespaces:\n");
+			def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
 
 			sb.setLength(0);
 
 			schema_locations.stream().filter(arg -> !dup_schema_locations.containsKey(arg)).forEach(arg -> sb.append(arg + ", "));
 
-			root_schema.def_stat_msg.append("--   Schema locations:\n");
-			root_schema.def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
+			def_stat_msg.append("--   Schema locations:\n");
+			def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
 
 			sb.setLength(0);
 
-			root_schema.def_stat_msg.append("--   Table types:\n");
-			root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root) && table.writable).count() + " root, ");
-			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) && table.writable).count() + " root children, ");
-			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root) && table.writable).count() + " admin roots, ");
-			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_child) && table.writable).count() + " admin children\n");
-			root_schema.def_stat_msg.append("--   System keys:\n");
-			root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.primary_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " primary keys ("
+			def_stat_msg.append("--   Table types:\n");
+			def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root) && table.writable).count() + " root, ");
+			def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root_child) && table.writable).count() + " root children, ");
+			def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_root) && table.writable).count() + " admin roots, ");
+			def_stat_msg.append(tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_admin_child) && table.writable).count() + " admin children\n");
+			def_stat_msg.append("--   System keys:\n");
+			def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.primary_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " primary keys ("
 					+ tables.parallelStream().map(table -> table.fields.stream().filter(field -> field.unique_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " unique constraints), ");
-			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys ("
+			def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys ("
 					+ countForeignKeyReferences() + " key references), ");
-			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.nested_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " nested keys ("
+			def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.nested_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " nested keys ("
 					+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.nested_key_as_attr).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute)\n");
-			root_schema.def_stat_msg.append("--   User keys:\n");
-			root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.document_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " document keys, ");
-			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
-			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
-			root_schema.def_stat_msg.append("--   Contents:\n");
-			root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes ("
-					+ (option.document_key || !option.inplace_document_key ? 0 : tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
-			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements ("
-					+ (option.document_key || !option.inplace_document_key ? 0 : tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
-			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_content).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents ("
+			def_stat_msg.append("--   User keys:\n");
+			def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.document_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " document keys, ");
+			def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
+			def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.xpath_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " xpath keys\n");
+			def_stat_msg.append("--   Contents:\n");
+			def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " attributes ("
+					+ (option.document_key || !option.in_place_document_key ? 0 : tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
+			def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements ("
+					+ (option.document_key || !option.in_place_document_key ? 0 : tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
+			def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_content).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents ("
 					+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute, "
 					+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_attr_cond).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as conditional attribute)\n");
-			root_schema.def_stat_msg.append("--   Wild cards:\n");
-			root_schema.def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
-			root_schema.def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
+			def_stat_msg.append("--   Wild cards:\n");
+			def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
+			def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
 
 		}
 
@@ -1203,7 +1174,7 @@ public class PgSchema {
 
 		// check in-place document keys
 
-		if (!option.document_key && option.inplace_document_key) {
+		if (!option.document_key && option.in_place_document_key) {
 
 			tables.parallelStream().filter(table -> table.writable).forEach(table -> {
 
@@ -1222,11 +1193,13 @@ public class PgSchema {
 	/**
 	 * Extract root element of XML Schema.
 	 *
+	 * @param root_schema root schema object
+	 * @param root_node root node
 	 * @param node current node
 	 * @param root_element whether root element
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractRootElement(Node node, boolean root_element) throws PgSchemaException {
+	private void extractRootElement(final PgSchema root_schema, final Node root_node, Node node, boolean root_element) throws PgSchemaException {
 
 		PgTable table = new PgTable(getPgSchemaOf(def_namespaces.get("")), def_namespaces.get(""), def_schema_location);
 
@@ -1261,10 +1234,10 @@ public class PgSchema {
 			String child_name = child.getNodeName();
 
 			if (child_name.equals(option.xs_prefix_ + "complexType") || child_name.equals(option.xs_prefix_ + "simpleType"))
-				extractField(child, table, false);
+				extractField(root_schema, root_node, child, table, false);
 
 			else if (child_name.equals(option.xs_prefix_ + "keyref"))
-				extractForeignKeyRef(child, node);
+				extractForeignKeyRef(root_schema, child, node);
 
 		}
 
@@ -1279,7 +1252,7 @@ public class PgSchema {
 
 		if (root_element) {
 
-			addRootOrphanItem(node, table);
+			addRootOrphanItem(root_schema, root_node, node, table);
 
 			if (tables.parallelStream().anyMatch(_table -> _table.xs_type.equals(XsTableType.xs_root)))
 				root_table = tables.parallelStream().filter(_table -> _table.xs_type.equals(XsTableType.xs_root)).findFirst().get();
@@ -1291,11 +1264,13 @@ public class PgSchema {
 	/**
 	 * Add orphan item of root element.
 	 *
+	 * @param root_schema root schema object
+	 * @param root_node root node
 	 * @param node current node
 	 * @param table root table
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void addRootOrphanItem(Node node, PgTable table) throws PgSchemaException {
+	private void addRootOrphanItem(final PgSchema root_schema, final Node root_node, Node node, PgTable table) throws PgSchemaException {
 
 		PgField dummy = new PgField();
 
@@ -1352,10 +1327,10 @@ public class PgSchema {
 					child_table.removeBlockedSubstitutionGroups();
 					child_table.countNestedFields();
 
-					if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
+					if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(root_schema, tables, child_table))
 						tables.add(child_table);
 
-					addChildItem(node, child_table);
+					addChildItem(root_schema, root_node, node, child_table);
 
 					level--;
 
@@ -1370,12 +1345,14 @@ public class PgSchema {
 	/**
 	 * Extract administrative element of XML Schema.
 	 *
+	 * @param root_schema root schema object
+	 * @param root_node root node
 	 * @param node current node
 	 * @param complex_type whether complexType
 	 * @param annotation whether to collect annotation only
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractAdminElement(Node node, boolean complex_type, boolean annotation) throws PgSchemaException {
+	private void extractAdminElement(final PgSchema root_schema, final Node root_node, Node node, boolean complex_type, boolean annotation) throws PgSchemaException {
 
 		PgTable table = new PgTable(getPgSchemaOf(def_namespaces.get("")), def_namespaces.get(""), def_schema_location);
 
@@ -1424,15 +1401,15 @@ public class PgSchema {
 
 		if (complex_type) {
 
-			extractAttributeGroup(node, table); // default attribute group
+			extractAttributeGroup(root_schema, node, table); // default attribute group
 
 			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling())
-				extractField(child, table, false);
+				extractField(root_schema, root_node, child, table, false);
 
 		}
 
 		else
-			extractSimpleContent(node, table, false);
+			extractSimpleContent(root_schema, root_node, node, table, false);
 
 		table.removeProhibitedAttrs();
 		table.removeBlockedSubstitutionGroups();
@@ -1441,7 +1418,7 @@ public class PgSchema {
 		if (!table.has_pending_group && table.fields.size() < option.getMinimumSizeOfField())
 			return;
 
-		if (avoidTableDuplication(tables, table))
+		if (avoidTableDuplication(root_schema, tables, table))
 			tables.add(table);
 
 	}
@@ -1449,10 +1426,12 @@ public class PgSchema {
 	/**
 	 * Extract administrative attribute group of XML Schema.
 	 *
+	 * @param root_schema root schema object
+	 * @param root_node root node
 	 * @param node current node
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractAdminAttributeGroup(Node node) throws PgSchemaException {
+	private void extractAdminAttributeGroup(final PgSchema root_schema, final Node root_node, Node node) throws PgSchemaException {
 
 		PgTable table = new PgTable(getPgSchemaOf(def_namespaces.get("")), def_namespaces.get(""), def_schema_location);
 
@@ -1476,9 +1455,9 @@ public class PgSchema {
 		table.level = 0;
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling())
-			extractField(child, table, false);
+			extractField(root_schema, root_node, child, table, false);
 
-		if (avoidTableDuplication(root_schema.attr_groups, table)) {
+		if (avoidTableDuplication(root_schema, root_schema.attr_groups, table)) {
 
 			attr_groups.add(table);
 
@@ -1492,10 +1471,12 @@ public class PgSchema {
 	/**
 	 * Extract administrative model group of XML Schema.
 	 *
+	 * @param root_schema root schema object
+	 * @param root_node root node
 	 * @param node current node
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractAdminModelGroup(Node node) throws PgSchemaException {
+	private void extractAdminModelGroup(final PgSchema root_schema, final Node root_node, Node node) throws PgSchemaException {
 
 		PgTable table = new PgTable(getPgSchemaOf(def_namespaces.get("")), def_namespaces.get(""), def_schema_location);
 
@@ -1519,9 +1500,9 @@ public class PgSchema {
 		table.level = 0;
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling())
-			extractField(child, table, false);
+			extractField(root_schema, root_node, child, table, false);
 
-		if (avoidTableDuplication(root_schema.model_groups, table)) {
+		if (avoidTableDuplication(root_schema, root_schema.model_groups, table)) {
 
 			model_groups.add(table);
 
@@ -1535,12 +1516,14 @@ public class PgSchema {
 	/**
 	 * Extract field of table.
 	 *
+	 * @param root_schema root schema object
+	 * @param root_node root node
 	 * @param node current node
 	 * @param table current table
 	 * @param insert_complex_type whether this node has parent node of complex type
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractField(Node node, PgTable table, boolean insert_complex_type) throws PgSchemaException {
+	private void extractField(final PgSchema root_schema, final Node root_node, Node node, PgTable table, boolean insert_complex_type) throws PgSchemaException {
 
 		String node_name = node.getNodeName();
 
@@ -1555,32 +1538,32 @@ public class PgSchema {
 		}
 
 		else if (node_name.equals(option.xs_prefix_ + "attribute")) {
-			extractAttribute(node, table);
+			extractAttribute(root_schema, root_node, node, table);
 			return;
 		}
 
 		else if (node_name.equals(option.xs_prefix_ + "attributeGroup")) {
-			extractAttributeGroup(node, table);
+			extractAttributeGroup(root_schema, node, table);
 			return;
 		}
 
 		else if (node_name.equals(option.xs_prefix_ + "element")) {
-			extractElement(node, table, insert_complex_type);
+			extractElement(root_schema, root_node, node, table, insert_complex_type);
 			return;
 		}
 
 		else if (node_name.equals(option.xs_prefix_ + "group")) {
-			extractModelGroup(node, table);
+			extractModelGroup(root_schema, node, table);
 			return;
 		}
 
 		else if (node_name.equals(option.xs_prefix_ + "simpleContent")) {
-			extractSimpleContent(node, table, false);
+			extractSimpleContent(root_schema, root_node, node, table, false);
 			return;
 		}
 
 		else if (node_name.equals(option.xs_prefix_ + "complexContent")) {
-			extractComplexContent(node, table);
+			extractComplexContent(root_schema, root_node, node, table);
 			return;
 		}
 
@@ -1604,25 +1587,25 @@ public class PgSchema {
 				extractAnyAttribute(child, table);
 
 			else if (child_name.equals(option.xs_prefix_ + "attribute"))
-				extractAttribute(child, table);
+				extractAttribute(root_schema, root_node, child, table);
 
 			else if (child_name.equals(option.xs_prefix_ + "attributeGroup"))
-				extractAttributeGroup(child, table);
+				extractAttributeGroup(root_schema, child, table);
 
 			else if (child_name.equals(option.xs_prefix_ + "element"))
-				extractElement(child, table, insert_complex_type);
+				extractElement(root_schema, root_node, child, table, insert_complex_type);
 
 			else if (child_name.equals(option.xs_prefix_ + "group"))
-				extractModelGroup(child, table);
+				extractModelGroup(root_schema, child, table);
 
 			else if (child_name.equals(option.xs_prefix_ + "simpleContent"))
-				extractSimpleContent(child, table, false);
+				extractSimpleContent(root_schema, root_node, child, table, false);
 
 			else if (child_name.equals(option.xs_prefix_ + "complexContent"))
-				extractComplexContent(child, table);
+				extractComplexContent(root_schema, root_node, child, table);
 
 			else
-				extractField(child, table, insert_complex_type);
+				extractField(root_schema, root_node, child, table, insert_complex_type);
 
 		}
 
@@ -1631,10 +1614,11 @@ public class PgSchema {
 	/**
 	 * Extract foreign key under xs:keyref.
 	 *
+	 * @param root_schema root schema object
 	 * @param node current node
 	 * @param parent_node parent node
 	 */
-	private void extractForeignKeyRef(Node node, Node parent_node) {
+	private void extractForeignKeyRef(final PgSchema root_schema, Node node, Node parent_node) {
 
 		Element e = (Element) node;
 
@@ -1722,40 +1706,46 @@ public class PgSchema {
 	/**
 	 * Extract attribute.
 	 *
+	 * @param root_schema root schema object
+	 * @param root_node root node
 	 * @param node current node
 	 * @param table current table
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractAttribute(Node node, PgTable table) throws PgSchemaException {
+	private void extractAttribute(final PgSchema root_schema, final Node root_node, Node node, PgTable table) throws PgSchemaException {
 
-		extractInfoItem(node, table, true, false);
+		extractInfoItem(root_schema, root_node, node, table, true, false);
 
 	}
 
 	/**
 	 * Extract element.
 	 *
+	 * @param root_schema root schema object
+	 * @param root_node root node
 	 * @param node current node
 	 * @param table current table
 	 * @param has_complex_type_parent whether this node has parent node of complex type
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractElement(Node node, PgTable table, boolean has_complex_type_parent) throws PgSchemaException {
+	private void extractElement(final PgSchema root_schema, final Node root_node, Node node, PgTable table, boolean has_complex_type_parent) throws PgSchemaException {
 
-		extractInfoItem(node, table, false, has_complex_type_parent);
+		extractInfoItem(root_schema, root_node, node, table, false, has_complex_type_parent);
 
 	}
 
 	/**
 	 * Concrete extractor for both attribute and element.
 	 *
+	 * @param root_schema root schema object
+	 * @param root_node root node
 	 * @param node current node
 	 * @param table current table
 	 * @param attribute whether attribute or element (false)
 	 * @param insert_complex_type whether this node has parent node of complex type
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractInfoItem(Node node, PgTable table, boolean attribute, boolean insert_complex_type) throws PgSchemaException {
+	private void extractInfoItem(final PgSchema root_schema, final Node root_node, Node node, PgTable table, boolean attribute, boolean insert_complex_type) throws PgSchemaException {
 
 		PgField field = new PgField();
 
@@ -1815,7 +1805,7 @@ public class PgSchema {
 
 				table.required = true;
 
-				addChildItem(node, table);
+				addChildItem(root_schema, root_node, node, table);
 
 				level--;
 
@@ -1862,13 +1852,13 @@ public class PgSchema {
 
 						child_table.addPrimaryKey(option, unique_key);
 
-						extractSimpleContent(node, child_table, true);
+						extractSimpleContent(root_schema, root_node, node, child_table, true);
 
 						child_table.removeProhibitedAttrs();
 						child_table.removeBlockedSubstitutionGroups();
 						child_table.countNestedFields();
 
-						if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
+						if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(root_schema, tables, child_table))
 							tables.add(child_table);
 
 						level--;
@@ -1925,10 +1915,10 @@ public class PgSchema {
 					child_table.removeBlockedSubstitutionGroups();
 					child_table.countNestedFields();
 
-					if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
+					if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(root_schema, tables, child_table))
 						tables.add(child_table);
 
-					addChildItem(node, child_table);
+					addChildItem(root_schema, root_node, node, child_table);
 
 					level--;
 
@@ -1994,7 +1984,7 @@ public class PgSchema {
 
 							table.required = true;
 
-							addChildItem(child, table);
+							addChildItem(root_schema, root_node, child, table);
 
 							level--;
 
@@ -2037,13 +2027,13 @@ public class PgSchema {
 
 									child_table.addPrimaryKey(option, unique_key);
 
-									extractSimpleContent(node, child_table, true);
+									extractSimpleContent(root_schema, root_node, node, child_table, true);
 
 									child_table.removeProhibitedAttrs();
 									child_table.removeBlockedSubstitutionGroups();
 									child_table.countNestedFields();
 
-									if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
+									if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(root_schema, tables, child_table))
 										tables.add(child_table);
 
 									level--;
@@ -2096,10 +2086,10 @@ public class PgSchema {
 								child_table.removeBlockedSubstitutionGroups();
 								child_table.countNestedFields();
 
-								if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
+								if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(root_schema, tables, child_table))
 									tables.add(child_table);
 
-								addChildItem(child, child_table);
+								addChildItem(root_schema, root_node, child, child_table);
 
 								level--;
 
@@ -2121,11 +2111,13 @@ public class PgSchema {
 	/**
 	 * Add arbitrary child item.
 	 *
+	 * @param root_schema root schema object
+	 * @param root_node root node
 	 * @param node current node
 	 * @param foreign_table foreign table
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void addChildItem(Node node, PgTable foreign_table) throws PgSchemaException {
+	private void addChildItem(final PgSchema root_schema, final Node root_node, Node node, PgTable foreign_table) throws PgSchemaException {
 
 		PgTable table = new PgTable(getPgSchemaOf(foreign_table), foreign_table.target_namespace, def_schema_location);
 
@@ -2168,7 +2160,7 @@ public class PgSchema {
 		table.addForeignKey(option, foreign_table);
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling())
-			extractField(child, table, false);
+			extractField(root_schema, root_node, child, table, false);
 
 		table.removeProhibitedAttrs();
 		table.removeBlockedSubstitutionGroups();
@@ -2177,7 +2169,7 @@ public class PgSchema {
 		if (!table.has_pending_group && table.fields.size() < option.getMinimumSizeOfField())
 			return;
 
-		if (avoidTableDuplication(tables, table))
+		if (avoidTableDuplication(root_schema, tables, table))
 			tables.add(table);
 
 	}
@@ -2185,11 +2177,12 @@ public class PgSchema {
 	/**
 	 * Extract attribute group.
 	 *
+	 * @param root_schema root schema object
 	 * @param node current node
 	 * @param table current table
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractAttributeGroup(Node node, PgTable table) throws PgSchemaException {
+	private void extractAttributeGroup(final PgSchema root_schema, Node node, PgTable table) throws PgSchemaException {
 
 		Element e = (Element) node;
 
@@ -2212,7 +2205,7 @@ public class PgSchema {
 
 		ref = option.getUnqualifiedName(ref);
 
-		PgTable attr_group = getAttributeGroup(ref, false);
+		PgTable attr_group = getAttributeGroup(root_schema, ref, false);
 
 		if (attr_group == null) {
 
@@ -2229,11 +2222,12 @@ public class PgSchema {
 	/**
 	 * Extract model group.
 	 *
+	 * @param root_schema root schema object
 	 * @param node current node
 	 * @param table current table
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractModelGroup(Node node, PgTable table) throws PgSchemaException {
+	private void extractModelGroup(final PgSchema root_schema, Node node, PgTable table) throws PgSchemaException {
 
 		Element e = (Element) node;
 
@@ -2244,7 +2238,7 @@ public class PgSchema {
 
 		ref = option.getUnqualifiedName(ref);
 
-		PgTable model_group = getModelGroup(ref, false);
+		PgTable model_group = getModelGroup(root_schema, ref, false);
 
 		if (model_group == null) {
 
@@ -2261,12 +2255,14 @@ public class PgSchema {
 	/**
 	 * Extract simple content.
 	 *
+	 * @param root_schema root schema object
+	 * @param root_node root node
 	 * @param node current node
 	 * @param table current table
 	 * @param primitive_list whether primitive list
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractSimpleContent(Node node, PgTable table, boolean primitive_list) throws PgSchemaException {
+	private void extractSimpleContent(final PgSchema root_schema, final Node root_node, Node node, PgTable table, boolean primitive_list) throws PgSchemaException {
 
 		PgField field = new PgField();
 
@@ -2324,10 +2320,10 @@ public class PgSchema {
 					String subchild_name = subchild.getNodeName();
 
 					if (subchild_name.equals(option.xs_prefix_ + "attribute"))
-						extractAttribute(subchild, table);
+						extractAttribute(root_schema, root_node, subchild, table);
 
 					else if (subchild_name.equals(option.xs_prefix_ + "attributeGroup"))
-						extractAttributeGroup(subchild, table);
+						extractAttributeGroup(root_schema, subchild, table);
 
 				}
 
@@ -2339,18 +2335,20 @@ public class PgSchema {
 		// non-primitive data type
 
 		else
-			extractComplexContent(node, table);
+			extractComplexContent(root_schema, root_node, node, table);
 
 	}
 
 	/**
 	 * Extract complex content.
 	 *
+	 * @param root_schema root schema object
+	 * @param root_node root node
 	 * @param node current node
 	 * @param table current table
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractComplexContent(Node node, PgTable table) throws PgSchemaException {
+	private void extractComplexContent(final PgSchema root_schema, final Node root_node, Node node, PgTable table) throws PgSchemaException {
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -2363,7 +2361,7 @@ public class PgSchema {
 
 				table.addNestedKey(option, table.pg_schema_name, option.getUnqualifiedName(child_e.getAttribute("base")));
 
-				extractComplexContentExt(child, table);
+				extractComplexContentExt(root_schema, root_node, child, table);
 
 			}
 
@@ -2374,11 +2372,13 @@ public class PgSchema {
 	/**
 	 * Extract complex content under xs:extension.
 	 *
+	 * @param root_schema root schema object
+	 * @param root_node root node
 	 * @param node current node
 	 * @param table current table
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractComplexContentExt(Node node, PgTable table) throws PgSchemaException {
+	private void extractComplexContentExt(final PgSchema root_schema, final Node root_node, Node node, PgTable table) throws PgSchemaException {
 
 		String node_name = node.getNodeName();
 
@@ -2393,22 +2393,22 @@ public class PgSchema {
 		}
 
 		else if (node_name.equals(option.xs_prefix_ + "attribute")) {
-			extractAttribute(node, table);
+			extractAttribute(root_schema, root_node, node, table);
 			return;
 		}
 
 		else if (node_name.equals(option.xs_prefix_ + "attributeGroup")) {
-			extractAttributeGroup(node, table);
+			extractAttributeGroup(root_schema, node, table);
 			return;
 		}
 
 		else if (node_name.equals(option.xs_prefix_ + "element")) {
-			extractElement(node, table, false);
+			extractElement(root_schema, root_node, node, table, false);
 			return;
 		}
 
 		else if (node_name.equals(option.xs_prefix_ + "group")) {
-			extractModelGroup(node, table);
+			extractModelGroup(root_schema, node, table);
 			return;
 		}
 
@@ -2429,19 +2429,19 @@ public class PgSchema {
 				extractAnyAttribute(child, table);
 
 			else if (child_name.equals(option.xs_prefix_ + "attribute"))
-				extractAttribute(child, table);
+				extractAttribute(root_schema, root_node, child, table);
 
 			else if (child_name.equals(option.xs_prefix_ + "attributeGroup"))
-				extractAttributeGroup(child, table);
+				extractAttributeGroup(root_schema, child, table);
 
 			else if (child_name.equals(option.xs_prefix_ + "element"))
-				extractElement(child, table, false);
+				extractElement(root_schema, root_node, child, table, false);
 
 			else if (child_name.equals(option.xs_prefix_ + "group"))
-				extractModelGroup(child, table);
+				extractModelGroup(root_schema, child, table);
 
 			else
-				extractComplexContentExt(child, table);
+				extractComplexContentExt(root_schema, root_node, child, table);
 
 		}
 
@@ -2450,11 +2450,12 @@ public class PgSchema {
 	/**
 	 * Avoid table duplication while merging equivalent tables.
 	 *
+	 * @param root_schema root schema object
 	 * @param tables target table list
 	 * @param table current table having table name at least
 	 * @return boolean whether no name collision occurs
 	 */
-	private boolean avoidTableDuplication(List<PgTable> tables, PgTable table) {
+	private boolean avoidTableDuplication(final PgSchema root_schema, List<PgTable> tables, PgTable table) {
 
 		if (tables == null)
 			return true;
@@ -2464,7 +2465,7 @@ public class PgSchema {
 		PgTable known_table = null;
 
 		try {
-			known_table = tables.equals(this.tables) ? getPgTable(table.pg_schema_name, table.pname) : tables.equals(root_schema.attr_groups) ? getAttributeGroup(table.xname, false) : tables.equals(root_schema.model_groups) ? getModelGroup(table.xname, false) : null;
+			known_table = tables.equals(this.tables) ? getPgTable(table.pg_schema_name, table.pname) : tables.equals(root_schema.attr_groups) ? getAttributeGroup(root_schema, table.xname, false) : tables.equals(root_schema.model_groups) ? getModelGroup(root_schema, table.xname, false) : null;
 		} catch (PgSchemaException e) {
 			e.printStackTrace();
 		}
@@ -2479,7 +2480,7 @@ public class PgSchema {
 			table.pname = "_" + table.pname;
 
 			try {
-				known_table = tables.equals(this.tables) ? getCanTable(table.pg_schema_name, table.xname) : tables.equals(root_schema.attr_groups) ? getAttributeGroup(table.xname, false) : tables.equals(root_schema.model_groups) ? getModelGroup(table.xname, false) : null;
+				known_table = tables.equals(this.tables) ? getCanTable(table.pg_schema_name, table.xname) : tables.equals(root_schema.attr_groups) ? getAttributeGroup(root_schema, table.xname, false) : tables.equals(root_schema.model_groups) ? getModelGroup(root_schema, table.xname, false) : null;
 			} catch (PgSchemaException e) {
 				e.printStackTrace();
 			}
@@ -2637,7 +2638,7 @@ public class PgSchema {
 	 *
 	 * @return String default schema location
 	 */
-	protected String getDefaultSchemaLocation() {
+	public String getDefaultSchemaLocation() {
 		return def_schema_location;
 	}
 
@@ -2655,8 +2656,8 @@ public class PgSchema {
 
 			for (String schema_location : schema_locations.split(" ")) {
 
-				if (root_schema.dup_schema_locations.containsKey(schema_location))
-					sb.append(root_schema.dup_schema_locations.get(schema_location) + " ");
+				if (dup_schema_locations.containsKey(schema_location))
+					sb.append(dup_schema_locations.get(schema_location) + " ");
 				else
 					sb.append(schema_location + " ");
 
@@ -2923,12 +2924,13 @@ public class PgSchema {
 	/**
 	 * Return attribute group.
 	 *
+	 * @param root_schema root schema object
 	 * @param attr_group_name attribute group name
 	 * @param throwable throws exception if declaration does not exist
 	 * @return PgTable attribute group
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private PgTable getAttributeGroup(String attr_group_name, boolean throwable) throws PgSchemaException {
+	private PgTable getAttributeGroup(final PgSchema root_schema, String attr_group_name, boolean throwable) throws PgSchemaException {
 
 		Optional<PgTable> opt = root_schema.attr_groups.parallelStream().filter(attr_group -> attr_group.xname.equals(attr_group_name)).findFirst();
 
@@ -2944,12 +2946,13 @@ public class PgSchema {
 	/**
 	 * Return model group.
 	 *
+	 * @param root_schema root schema object
 	 * @param model_group_name model group name
 	 * @param throwable throws exception if declaration does not exist
 	 * @return PgTable model group
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private PgTable getModelGroup(String model_group_name, boolean throwable) throws PgSchemaException {
+	private PgTable getModelGroup(final PgSchema root_schema, String model_group_name, boolean throwable) throws PgSchemaException {
 
 		Optional<PgTable> opt = root_schema.model_groups.parallelStream().filter(model_group -> model_group.xname.equals(model_group_name)).findFirst();
 
@@ -3003,10 +3006,10 @@ public class PgSchema {
 
 		});
 
-		name_collision = tables.parallelStream().anyMatch(table -> table.name_collision);
-
 		if (!option.ddl_output)
 			return;
+
+		boolean name_collision = tables.parallelStream().anyMatch(table -> table.name_collision);
 
 		System.out.println("--");
 		System.out.println("-- PostgreSQL DDL generated from " + def_schema_location + " using xsd2pgschema");
@@ -3025,7 +3028,7 @@ public class PgSchema {
 		System.out.println("--  retain constraint of primary/foreign key: " + option.retain_key);
 		System.out.println("--  retrieve field annotation: " + !option.no_field_anno);
 		if (option.rel_model_ext || option.serial_key)
-			System.out.println("--  " + (md_hash_key == null ? "assumed " : "") + "hash algorithm: " + (md_hash_key == null ? PgSchemaUtil.def_hash_algorithm : md_hash_key.getAlgorithm()));
+			System.out.println("--  " + (has_hash_algorithm ? "" : "assumed ") + "hash algorithm: " + (has_hash_algorithm ? option.hash_algorithm : PgSchemaUtil.def_hash_algorithm));
 		if (option.rel_model_ext)
 			System.out.println("--  hash key type: " + option.hash_size.name().replace("_", " ") + " bits");
 		if (option.serial_key)
@@ -3292,7 +3295,7 @@ public class PgSchema {
 			sb.append("no namespace, ");
 
 		System.out.println("-- xmlns: " + sb.toString() + "schema location: " + table.schema_location);
-		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replace("_",  " ") + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (name_collision ? ", name collision: " + table.name_collision : ""));
+		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replace("_",  " ") + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (table.name_collision ? ", name collision: " + table.name_collision : ""));
 		System.out.println("--");
 
 		sb.setLength(0);
@@ -3353,7 +3356,7 @@ public class PgSchema {
 				if (option.discarded_document_key_names.contains(field.name) || option.discarded_document_key_names.contains(table.name + "." + field.name))
 					continue;
 
-				if (!option.document_key && option.inplace_document_key && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))
+				if (!option.document_key && option.in_place_document_key && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))
 					System.out.println("-- ATTRIBUTE, IN-PLACE DOCUMENT KEY");
 				else
 					System.out.println("-- ATTRIBUTE");
@@ -3382,7 +3385,7 @@ public class PgSchema {
 			else if (option.discarded_document_key_names.contains(field.name) || option.discarded_document_key_names.contains(table.name + "." + field.name))
 				continue;
 
-			else if (!field.primary_key && !option.document_key && option.inplace_document_key && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))
+			else if (!field.primary_key && !option.document_key && option.in_place_document_key && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))
 				System.out.println("-- IN-PLACE DOCUMENT KEY");
 
 			if (!field.required && field.xrequired) {
@@ -3545,29 +3548,14 @@ public class PgSchema {
 
 		option.fill_default_value = xml_post_editor.fill_default_value;
 
-		if (xml_post_editor.filt_ins != null) {
-
-			xml_post_editor.filt_in_resolved = false;
-
+		if (xml_post_editor.filt_ins != null)
 			applyFiltIn(xml_post_editor);
 
-		}
-
-		if (xml_post_editor.filt_outs != null) {
-
-			xml_post_editor.filt_out_resolved = false;
-
+		if (xml_post_editor.filt_outs != null)
 			applyFiltOut(xml_post_editor);
 
-		}
-
-		if (xml_post_editor.fill_these != null) {
-
-			xml_post_editor.fill_this_resolved = false;
-
+		if (xml_post_editor.fill_these != null)
 			applyFillThis(xml_post_editor);
-
-		}
 
 	}
 
@@ -3586,6 +3574,8 @@ public class PgSchema {
 
 		if (xml_post_editor.filt_ins.size() == 0)
 			return;
+
+		option.post_editor_resolved = true;
 
 		for (String filt_in : xml_post_editor.filt_ins) {
 
@@ -3719,6 +3709,8 @@ public class PgSchema {
 		if (xml_post_editor.filt_outs.size() == 0)
 			return;
 
+		option.post_editor_resolved = true;
+
 		for (String filt_out : xml_post_editor.filt_outs) {
 
 			String[] key_val = filt_out.split(":");
@@ -3824,6 +3816,8 @@ public class PgSchema {
 		if (xml_post_editor.fill_these.size() == 0)
 			return;
 
+		option.post_editor_resolved = true;
+
 		for (String fill_this : xml_post_editor.fill_these) {
 
 			String[] key_val = fill_this.split(":");
@@ -3908,17 +3902,10 @@ public class PgSchema {
 
 		this.index_filter = index_filter;
 
-		option.attr_resolved = false;
-
 		applyAttr(index_filter);
 
-		if (index_filter.fields != null) {
-
-			option.field_resolved = false;
-
+		if (index_filter.fields != null)
 			applyField(index_filter);
-
-		}
 
 		// update indexable flag
 
@@ -4184,12 +4171,13 @@ public class PgSchema {
 	/**
 	 * Determine hash key of source string.
 	 *
+	 * @param md_hash_key instance of message digest
 	 * @param key_name source string
 	 * @return String hash key
 	 */
-	protected synchronized String getHashKeyString(String key_name) {
+	protected String getHashKeyString(MessageDigest md_hash_key, String key_name) {
 
-		if (md_hash_key == null) // debug mode
+		if (!has_hash_algorithm) // debug mode
 			return key_name;
 
 		try {
@@ -4208,68 +4196,6 @@ public class PgSchema {
 			default:
 				return key_name;
 			}
-
-		} finally {
-			md_hash_key.reset();
-		}
-
-	}
-
-	/**
-	 * Determine hash key of source string.
-	 *
-	 * @param key_name source string
-	 * @return bytes[] hash key
-	 */
-	protected synchronized byte[] getHashKeyBytes(String key_name) {
-
-		try {
-
-			return md_hash_key.digest(key_name.getBytes());
-
-		} finally {
-			md_hash_key.reset();
-		}
-
-	}
-
-	/**
-	 * Determine hash key of source string.
-	 *
-	 * @param key_name source string
-	 * @return int the hash key
-	 */
-	protected synchronized int getHashKeyInt(String key_name) {
-
-		try {
-
-			byte[] hash = md_hash_key.digest(key_name.getBytes());
-
-			BigInteger bint = new BigInteger(hash);
-
-			return Math.abs(bint.intValue()); // use lower order 32bit
-
-		} finally {
-			md_hash_key.reset();
-		}
-
-	}
-
-	/**
-	 * Determine hash key of source string.
-	 *
-	 * @param key_name source string
-	 * @return long hash key
-	 */
-	protected synchronized long getHashKeyLong(String key_name) {
-
-		try {
-
-			byte[] hash = md_hash_key.digest(key_name.getBytes());
-
-			BigInteger bint = new BigInteger(hash);
-
-			return Math.abs(bint.longValue()); // use lower order 64bit
 
 		} finally {
 			md_hash_key.reset();
@@ -4322,33 +4248,6 @@ public class PgSchema {
 	}
 
 	/**
-	 * Return document builder for any content.
-	 *
-	 * @return DocumentBuilder document builder for any content
-	 */
-	protected DocumentBuilder getAnyDocBuilder() {
-		return any_doc_builder;
-	}
-
-	/**
-	 * Return transformer for any content.
-	 *
-	 * @return Transformer transformer for any content
-	 */
-	protected Transformer getAnyTransformer() {
-		return any_transformer;
-	}
-
-	/**
-	 * Return SAX parser for any content.
-	 *
-	 * @return SAXParser SAX parser for any content
-	 */
-	protected SAXParser getAnySaxParser() {
-		return any_sax_parser;
-	}
-
-	/**
 	 * Close prepared statement.
 	 *
 	 * @param primary whether to close the primary prepared statement only
@@ -4396,10 +4295,11 @@ public class PgSchema {
 	 * Data (CSV/TSV) conversion.
 	 *
 	 * @param xml_parser XML document
+	 * @param md_hash_key instance of message digest
 	 * @param work_dir working directory contains data (CSV/TSV) files
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2PgCsv(XmlParser xml_parser, Path work_dir) throws PgSchemaException {
+	public void xml2PgCsv(XmlParser xml_parser, MessageDigest md_hash_key, Path work_dir) throws PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -4419,7 +4319,7 @@ public class PgSchema {
 
 		// parse root node and write to data (CSV/TSV) file
 
-		PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(this, null, root_table);
+		PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(this, md_hash_key, null, root_table);
 
 		node2pgcsv.parseRootNode(node);
 
@@ -4496,17 +4396,19 @@ public class PgSchema {
 	// PostgreSQL data migration via prepared statement
 
 	/** Whether to set all constraints deferred. */
+	@Flat
 	private boolean pg_deferred = false;
 
 	/**
 	 * PostgreSQL data migration.
 	 *
 	 * @param xml_parser XML document
+	 * @param md_hash_key instance of message digest
 	 * @param update whether update or insertion
 	 * @param db_conn database connection
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2PgSql(XmlParser xml_parser, boolean update, Connection db_conn) throws PgSchemaException {
+	public void xml2PgSql(XmlParser xml_parser, MessageDigest md_hash_key, boolean update, Connection db_conn) throws PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -4541,7 +4443,7 @@ public class PgSchema {
 
 		}
 
-		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, null, root_table, update, db_conn);
+		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, md_hash_key, null, root_table, update, db_conn);
 
 		node2pgsql.parseRootNode(node);
 
@@ -4611,7 +4513,7 @@ public class PgSchema {
 		if (option.document_key)
 			return option.document_key_name;
 
-		if (!option.inplace_document_key)
+		if (!option.in_place_document_key)
 			throw new PgSchemaException("Not defined document key, or select either --doc-key or --doc-key-if-no-inplace option.");
 
 		List<PgField> fields = table.fields;
@@ -4619,7 +4521,7 @@ public class PgSchema {
 		if (fields.parallelStream().anyMatch(field -> field.document_key))
 			return option.document_key_name;
 
-		if (!fields.parallelStream().anyMatch(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name)))) {
+		if (!fields.parallelStream().anyMatch(field -> (field.attribute || field.element) && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))) {
 
 			if (option.document_key_if_no_in_place)
 				return option.document_key_name;
@@ -4627,7 +4529,7 @@ public class PgSchema {
 			throw new PgSchemaException("Not found in-place document key in " + table.pname + ", or select --doc-key-if-no-inplace option.");
 		}
 
-		return fields.parallelStream().filter(field -> (field.attribute || field.element) && (option.inplace_document_key_names.contains(field.name) || option.inplace_document_key_names.contains(table.name + "." + field.name))).findFirst().get().pname;
+		return fields.parallelStream().filter(field -> (field.attribute || field.element) && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name))).findFirst().get().pname;
 	}
 
 	/**
@@ -5081,10 +4983,11 @@ public class PgSchema {
 	 * Lucene document conversion.
 	 *
 	 * @param xml_parser XML document
+	 * @param md_hash_key instance of message digest
 	 * @param lucene_doc Lucene document
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2LucIdx(XmlParser xml_parser, org.apache.lucene.document.Document lucene_doc) throws PgSchemaException {
+	public void xml2LucIdx(XmlParser xml_parser, MessageDigest md_hash_key, org.apache.lucene.document.Document lucene_doc) throws PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -5096,7 +4999,7 @@ public class PgSchema {
 
 		lucene_doc.add(new StringField(option.document_key_name, document_id, Field.Store.YES));
 
-		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(this, null, root_table);
+		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(this, md_hash_key, null, root_table);
 
 		node2lucidx.parseRootNode(node);
 
@@ -5195,10 +5098,15 @@ public class PgSchema {
 
 			buffw.write("<?xml version=\"" + PgSchemaUtil.def_xml_version + "\" encoding=\"" + PgSchemaUtil.def_encoding + "\"?>\n");
 
-			if (data_source)
-				buffw.write("<sphinx:docset xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
+			if (data_source) {
 
-			buffw.write("<sphinx:schema>\n");
+				buffw.write("<sphinx:docset xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
+				buffw.write("<sphinx:schema>\n");
+
+			}
+
+			else
+				buffw.write("<sphinx:schema xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
 
 			if (data_source) {
 
@@ -5392,10 +5300,11 @@ public class PgSchema {
 	 * Sphinx xmlpipe2 conversion.
 	 *
 	 * @param xml_parser XML document
+	 * @param md_hash_key instance of message digest
 	 * @param buffw buffered writer of Sphinx xmlpipe2 file
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2SphDs(XmlParser xml_parser, BufferedWriter buffw) throws PgSchemaException {
+	public void xml2SphDs(XmlParser xml_parser, MessageDigest md_hash_key, BufferedWriter buffw) throws PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -5408,10 +5317,10 @@ public class PgSchema {
 		try {
 
 			buffw.write("<?xml version=\"" + PgSchemaUtil.def_xml_version + "\" encoding=\"" + PgSchemaUtil.def_encoding + "\"?>\n");
-			buffw.write("<sphinx:document id=\"" + getHashKeyString(document_id) + "\" xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
+			buffw.write("<sphinx:document id=\"" + getHashKeyString(md_hash_key, document_id) + "\" xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
 			buffw.write("<" + option.document_key_name + ">" + StringEscapeUtils.escapeXml10(document_id) + "</" + option.document_key_name + ">\n");
 
-			PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(this, null, root_table);
+			PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(this, md_hash_key, null, root_table);
 
 			node2sphds.parseRootNode(node);
 
@@ -5467,6 +5376,7 @@ public class PgSchema {
 	// JSON conversion
 
 	/** The JSON builder. */
+	@Flat
 	protected JsonBuilder jsonb = null;
 
 	/**
@@ -5636,10 +5546,11 @@ public class PgSchema {
 	 * Object-oriented JSON conversion.
 	 *
 	 * @param xml_parser XML document
+	 * @param md_hash_key instance of message digest
 	 * @param json_file_path JSON file path
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2ObjJson(XmlParser xml_parser, Path json_file_path) throws PgSchemaException {
+	public void xml2ObjJson(XmlParser xml_parser, MessageDigest md_hash_key, Path json_file_path) throws PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -5649,7 +5560,7 @@ public class PgSchema {
 
 		// parse root node and store to JSON buffer
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, md_hash_key, null, root_table);
 
 		node2json.parseRootNode(node, 1);
 
@@ -5769,10 +5680,11 @@ public class PgSchema {
 	 * Column-oriented JSON conversion.
 	 *
 	 * @param xml_parser XML document
+	 * @param md_hash_key instance of message digest
 	 * @param json_file_path JSON file path
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2ColJson(XmlParser xml_parser, Path json_file_path) throws PgSchemaException {
+	public void xml2ColJson(XmlParser xml_parser, MessageDigest md_hash_key, Path json_file_path) throws PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -5782,7 +5694,7 @@ public class PgSchema {
 
 		// parse root node and store to JSON buffer
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, md_hash_key, null, root_table);
 
 		node2json.parseRootNode(node, 1);
 
@@ -5879,17 +5791,18 @@ public class PgSchema {
 	 * Relational-oriented JSON conversion.
 	 *
 	 * @param xml_parser XML document
+	 * @param md_hash_key instance of message digest
 	 * @param json_file_path JSON file path
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2Json(XmlParser xml_parser, Path json_file_path) throws PgSchemaException {
+	public void xml2Json(XmlParser xml_parser, MessageDigest md_hash_key, Path json_file_path) throws PgSchemaException {
 
 		switch (jsonb.type) {
 		case object:
-			xml2ObjJson(xml_parser, json_file_path);
+			xml2ObjJson(xml_parser, md_hash_key, json_file_path);
 			return;
 		case column:
-			xml2ColJson(xml_parser, json_file_path);
+			xml2ColJson(xml_parser, md_hash_key, json_file_path);
 			return;
 		default:
 		}
@@ -5902,7 +5815,7 @@ public class PgSchema {
 
 		// parse root node and store to JSON buffer
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, md_hash_key, null, root_table);
 
 		node2json.parseRootNode(node);
 
@@ -5954,6 +5867,7 @@ public class PgSchema {
 	// XML composer over PostgreSQL
 
 	/** The XML builder. */
+	@Flat
 	protected XmlBuilder xmlb = null;
 
 	/**
@@ -6345,7 +6259,7 @@ public class PgSchema {
 
 			List<PgField> fields = table.fields;
 
-			String doc_key_name = (option.document_key || option.inplace_document_key) ? getDocKeyName(table) : null;
+			String doc_key_name = (option.document_key || option.in_place_document_key) ? getDocKeyName(table) : null;
 
 			document_id = null;
 
@@ -6393,9 +6307,9 @@ public class PgSchema {
 
 							XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table.pname, field, nest_test, xmlb);
 
-							any_sax_parser.parse(in, any_attr);
+							nest_test.any_sax_parser.parse(in, any_attr);
 
-							any_sax_parser.reset();
+							nest_test.any_sax_parser.reset();
 
 							in.close();
 
@@ -6553,9 +6467,9 @@ public class PgSchema {
 
 							XmlBuilderAnyRetriever any = new XmlBuilderAnyRetriever(table.pname, field, nest_test, xmlb);
 
-							any_sax_parser.parse(in, any);
+							nest_test.any_sax_parser.parse(in, any);
 
-							any_sax_parser.reset();
+							nest_test.any_sax_parser.reset();
 
 							if (nest_test.has_insert_doc_key)
 								nest_test.has_insert_doc_key = false;
@@ -6799,9 +6713,9 @@ public class PgSchema {
 
 								XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table.pname, field, nest_test, xmlb);
 
-								any_sax_parser.parse(in, any_attr);
+								nest_test.any_sax_parser.parse(in, any_attr);
 
-								any_sax_parser.reset();
+								nest_test.any_sax_parser.reset();
 
 								in.close();
 
@@ -6932,9 +6846,9 @@ public class PgSchema {
 
 								XmlBuilderAnyRetriever any = new XmlBuilderAnyRetriever(table.pname, field, nest_test, xmlb);
 
-								any_sax_parser.parse(in, any);
+								nest_test.any_sax_parser.parse(in, any);
 
-								any_sax_parser.reset();
+								nest_test.any_sax_parser.reset();
 
 								if (nest_test.has_insert_doc_key)
 									parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
@@ -7232,7 +7146,7 @@ public class PgSchema {
 
 			List<PgField> fields = table.fields;
 
-			String doc_key_name = (option.document_key || option.inplace_document_key) ? getDocKeyName(table) : null;
+			String doc_key_name = (option.document_key || option.in_place_document_key) ? getDocKeyName(table) : null;
 
 			document_id = null;
 
@@ -7280,9 +7194,9 @@ public class PgSchema {
 
 							JsonBuilderAnyAttrRetriever any_attr = new JsonBuilderAnyAttrRetriever(table.pname, field, nest_test, false, jsonb);
 
-							any_sax_parser.parse(in, any_attr);
+							nest_test.any_sax_parser.parse(in, any_attr);
 
-							any_sax_parser.reset();
+							nest_test.any_sax_parser.reset();
 
 							in.close();
 
@@ -7391,9 +7305,9 @@ public class PgSchema {
 
 							JsonBuilderAnyRetriever any = new JsonBuilderAnyRetriever(table.pname, field, nest_test, false, jsonb);
 
-							any_sax_parser.parse(in, any);
+							nest_test.any_sax_parser.parse(in, any);
 
-							any_sax_parser.reset();
+							nest_test.any_sax_parser.reset();
 
 							in.close();
 
@@ -7637,9 +7551,9 @@ public class PgSchema {
 
 								JsonBuilderAnyAttrRetriever any_attr = new JsonBuilderAnyAttrRetriever(table.pname, field, nest_test, array_field, jsonb);
 
-								any_sax_parser.parse(in, any_attr);
+								nest_test.any_sax_parser.parse(in, any_attr);
 
-								any_sax_parser.reset();
+								nest_test.any_sax_parser.reset();
 
 								in.close();
 
@@ -7744,9 +7658,9 @@ public class PgSchema {
 
 								JsonBuilderAnyRetriever any = new JsonBuilderAnyRetriever(table.pname, field, nest_test, array_field, jsonb);
 
-								any_sax_parser.parse(in, any);
+								nest_test.any_sax_parser.parse(in, any);
 
-								any_sax_parser.reset();
+								nest_test.any_sax_parser.reset();
 
 								in.close();
 

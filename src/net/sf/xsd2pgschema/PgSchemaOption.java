@@ -19,12 +19,21 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 
+import org.nustaq.serialization.FSTConfiguration;
+import org.nustaq.serialization.FSTObjectOutput;
+import org.nustaq.serialization.annotations.Flat;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -35,7 +44,10 @@ import org.w3c.dom.NodeList;
  *
  * @author yokochi
  */
-public class PgSchemaOption {
+public class PgSchemaOption implements Serializable {
+
+	/** The default version ID. */
+	private static final long serialVersionUID = 1L;
 
 	/** The root schema location. */
 	public String root_schema_location = "";
@@ -64,23 +76,8 @@ public class PgSchemaOption {
 	/** Whether to enable explicit named schema. */
 	public boolean pg_named_schema = false;
 
-	/** Whether to prefer local XML Schema file. */
-	public boolean cache_xsd = true;
-
-	/** Whether to output PostgreSQL DDL. */
-	public boolean ddl_output = false;
-
 	/** Whether to retain primary key/foreign key constraint in PostgreSQL DDL. */
 	public boolean retain_key = true;
-
-	/** Whether not to retrieve field annotation in PostgreSQL DDL. */
-	public boolean no_field_anno = true;
-
-	/** Whether to execute XML Schema validation. */
-	public boolean validate = false;
-
-	/** Whether to enable canonical XML Schema validation (validate only whether document is well-formed). */
-	public boolean full_check = true;
 
 	/** Whether to use TSV format in PostgreSQL data migration. */
 	protected boolean pg_tab_delimiter = true;
@@ -94,13 +91,36 @@ public class PgSchemaOption {
 	/** The verbose mode. */
 	public boolean verbose = false;
 
+	/** Whether to prefer local XML Schema file. */
+	@Flat
+	public boolean cache_xsd = true;
+
+	/** Whether to output PostgreSQL DDL. */
+	@Flat
+	public boolean ddl_output = false;
+
+	/** Whether not to retrieve field annotation in PostgreSQL DDL. */
+	@Flat
+	public boolean no_field_anno = true;
+
+	/** Whether to execute XML Schema validation. */
+	@Flat
+	public boolean validate = false;
+
+	/** Whether to enable canonical XML Schema validation (validate only whether document is well-formed). */
+	@Flat
+	public boolean full_check = true;
+
 	/** The default document key name in PostgreSQL DDL. */
+	@Flat
 	public final String def_document_key_name = "document_id";
 
 	/** The default serial key name in PostgreSQL DDL. */
+	@Flat
 	public final String def_serial_key_name = "serial_id";
 
 	/** The default XPath key name in PostgreSQL DDL. */
+	@Flat
 	public final String def_xpath_key_name = "xpath_id";
 
 	/** The document key name in PostgreSQL DDL. */
@@ -116,7 +136,7 @@ public class PgSchemaOption {
 	protected HashSet<String> discarded_document_key_names = null;
 
 	/** The list of in-place document key name. */
-	protected HashSet<String> inplace_document_key_names = null;
+	protected HashSet<String> in_place_document_key_names = null;
 
 	/** The name of hash algorithm. */
 	public String hash_algorithm = PgSchemaUtil.def_hash_algorithm;
@@ -140,7 +160,7 @@ public class PgSchemaOption {
 	public boolean sync_rescue = false;
 
 	/** Whether in-place document key exists. */
-	public boolean inplace_document_key = false;
+	public boolean in_place_document_key = false;
 
 	/** Whether to append document key if in-place key not exists. */
 	public boolean document_key_if_no_in_place = false;
@@ -148,32 +168,58 @@ public class PgSchemaOption {
 	/** Whether to fill @default value. */
 	public boolean fill_default_value = false;
 
-	/** The directory path contains check sum files. */
-	public Path check_sum_dir_path = null;
+	/** The directory name contains check sum files. */
+	public String check_sum_dir_name = null;
 
 	/** The default algorithm for check sum. */
 	public String check_sum_algorithm = PgSchemaUtil.def_check_sum_algorithm;
 
+	/** Whether to use data model of PgSchema server. */
+	@Flat
+	public boolean pg_schema_server = true;
+
+	/** The default host name of PgSchema server. */
+	@Flat
+	public String pg_schema_server_host = PgSchemaUtil.pg_schema_server_host;
+
+	/** The default port number of PgSchema server. */
+	@Flat
+	public int pg_schema_server_port = PgSchemaUtil.pg_schema_server_port;	
+
+	/** The default lifetime of unused PostgreSQL data model on PgSchema server in milliseconds. */
+	@Flat
+	public long pg_schema_server_lifetime = PgSchemaUtil.pg_schema_server_lifetime;
+
 	/** The prefix of xs_namespace_uri. */
+	@Flat
 	protected String xs_prefix = null;
 
 	/** The xs_prefix.isEmpty() ? "" : xs_prefix + ":". */
+	@Flat
 	protected String xs_prefix_ = null;
 
+	/** Whether XML post editor has been applied. */
+	@Flat
+	protected boolean post_editor_resolved = false;
+
 	/** Whether attribute selection has been resolved. */
+	@Flat
 	protected boolean attr_resolved = false;
 
 	/** Whether field selection has been resolved. */
+	@Flat
 	protected boolean field_resolved = false;
 
 	/** The internal status corresponding to --doc-key option. */
+	@Flat
 	private boolean _doc_key = false;
 
 	/** The internal status corresponding to --no-doc-key option. */
+	@Flat
 	private boolean _no_doc_key = false;
 
 	/**
-	 * Instance of PostgreSQL data modeling option.
+	 * Instance of PostgreSQL data model option.
 	 *
 	 * @param document_key the document key
 	 */
@@ -182,12 +228,12 @@ public class PgSchemaOption {
 		this.document_key = document_key;
 
 		discarded_document_key_names = new HashSet<String>();
-		inplace_document_key_names = new HashSet<String>();
+		in_place_document_key_names = new HashSet<String>();
 
 	}
 
 	/**
-	 * Instance of PgSchemaOption for JSON Schema conversion.
+	 * Instance of PostgreSQL data model option for JSON Schema conversion.
 	 *
 	 * @param json_type JSON type
 	 */
@@ -196,7 +242,7 @@ public class PgSchemaOption {
 		setDefaultForJsonSchema(json_type);
 
 		discarded_document_key_names = new HashSet<String>();
-		inplace_document_key_names = new HashSet<String>();
+		in_place_document_key_names = new HashSet<String>();
 
 	}
 
@@ -302,15 +348,15 @@ public class PgSchemaOption {
 		if (_doc_key || _no_doc_key)
 			document_key = _doc_key;
 
-		inplace_document_key = inplace_document_key_names.size() > 0;
+		in_place_document_key = in_place_document_key_names.size() > 0;
 
-		if (document_key && inplace_document_key) {
-			inplace_document_key = false;
-			inplace_document_key_names.clear();
+		if (document_key && in_place_document_key) {
+			in_place_document_key = false;
+			in_place_document_key_names.clear();
 			System.out.println("Ignored --inplace-doc-key-name option because default document key was enabled.");
 		}
 
-		if (document_key_if_no_in_place && !inplace_document_key) {
+		if (document_key_if_no_in_place && !in_place_document_key) {
 			document_key_if_no_in_place = false;
 			document_key = true;
 		}
@@ -386,14 +432,14 @@ public class PgSchemaOption {
 
 		}
 
-		if (!inplace_document_key_names.isEmpty()) {
+		if (!in_place_document_key_names.isEmpty()) {
 
-			String[] names = inplace_document_key_names.toArray(new String[0]);
+			String[] names = in_place_document_key_names.toArray(new String[0]);
 
-			inplace_document_key_names.clear();
+			in_place_document_key_names.clear();
 
 			for (String name : names)
-				inplace_document_key_names.add(name.toLowerCase());
+				in_place_document_key_names.add(name.toLowerCase());
 
 		}
 
@@ -458,15 +504,15 @@ public class PgSchemaOption {
 	/**
 	 * Add in-place document key name.
 	 *
-	 * @param inplace_document_key_name in-place document key name
+	 * @param in_place_document_key_name in-place document key name
 	 * @return result of addition
 	 */
-	public boolean addInPlaceDocKeyName(String inplace_document_key_name) {
+	public boolean addInPlaceDocKeyName(String in_place_document_key_name) {
 
-		if (inplace_document_key_name == null || inplace_document_key_name.isEmpty())
+		if (in_place_document_key_name == null || in_place_document_key_name.isEmpty())
 			return false;
 
-		return inplace_document_key_names.add(case_sense ? inplace_document_key_name : inplace_document_key_name.toLowerCase());
+		return in_place_document_key_names.add(case_sense ? in_place_document_key_name : in_place_document_key_name.toLowerCase());
 	}
 
 	/**
@@ -643,7 +689,253 @@ public class PgSchemaOption {
 	 * @return boolean whether synchronization is possible
 	 */
 	public boolean isSynchronizable(boolean allow_sync_weak) {
-		return (allow_sync_weak && sync_weak) || (sync && check_sum_dir_path != null && Files.isDirectory(check_sum_dir_path));
+		return (allow_sync_weak && sync_weak) || (sync && check_sum_dir_name != null && Files.isDirectory(Paths.get(check_sum_dir_name)));
+	}
+
+	/**
+	 * Read object from blocking I/O.
+	 *
+	 * @param fst_conf FST configuration
+	 * @param in data input stream
+	 * @return Object object
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws ClassNotFoundException the class not found exception
+	 * @see <a href="https://github.com/RuedigerMoeller/fast-serialization/blob/1.x/src/test_nojunit/java/gitissue10/GitIssue10.java">https://github.com/RuedigerMoeller/fast-serialization/blob/1.x/src/test_nojunit/java/gitissue10/GitIssue10.java</a>
+	 */
+	public Object readObjectFromStream(FSTConfiguration fst_conf, DataInputStream in) throws IOException, ClassNotFoundException {
+
+		int len = in.readInt();
+		byte buffer[] = new byte[len]; // this could be reused !
+
+		while (len > 0)
+			len -= in.read(buffer, buffer.length - len, len);
+
+		return fst_conf.getObjectInput(buffer).readObject();
+	}
+
+	/**
+	 * Write object to blocking I/O.
+	 *
+	 * @param fst_conf FST configuration
+	 * @param out data output stream
+	 * @param object object
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @see <a href="https://github.com/RuedigerMoeller/fast-serialization/blob/1.x/src/test_nojunit/java/gitissue10/GitIssue10.java">https://github.com/RuedigerMoeller/fast-serialization/blob/1.x/src/test_nojunit/java/gitissue10/GitIssue10.java</a>
+	 */
+	public void writeObjectToStream(FSTConfiguration fst_conf, DataOutputStream out, Object object) throws IOException {
+
+		// write object
+		FSTObjectOutput fst_out = fst_conf.getObjectOutput(); // could also do new with minor perf impact
+
+		// write object to internal buffer
+		fst_out.writeObject(object);
+
+		// write length
+		out.writeInt(fst_out.getWritten());
+
+		// write bytes
+		out.write(fst_out.getBuffer(), 0, fst_out.getWritten());
+
+		fst_out.flush(); // return for reuse to fst_conf
+
+	}
+
+	/**
+	 * Send PING query to PgSchema server.
+	 *
+	 * @param fst_conf FST configuration
+	 * @return boolean whether PgSchema server is alive
+	 */
+	public boolean pingPgSchemaServer(FSTConfiguration fst_conf) {
+
+		if (!pg_schema_server)
+			return false;
+
+		try (Socket socket = new Socket(InetAddress.getByName(pg_schema_server_host), pg_schema_server_port)) {
+
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			DataInputStream in = new DataInputStream(socket.getInputStream());
+
+			writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.PING));
+
+			readObjectFromStream(fst_conf, in);
+			/*
+			in.close();
+			out.close();
+			 */
+			return true;
+
+		} catch (IOException | ClassNotFoundException e) {
+			return false;
+		}
+
+	}
+
+	/**
+	 * Send MATCH query to PgSchema server.
+	 *
+	 * @param fst_conf FST configuration
+	 * @return boolean whether PgSchema server does not have data model (true)
+	 */
+	public boolean matchPgSchemaServer(FSTConfiguration fst_conf) {
+
+		if (!pg_schema_server)
+			return false;
+
+		try (Socket socket = new Socket(InetAddress.getByName(pg_schema_server_host), pg_schema_server_port)) {
+
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			DataInputStream in = new DataInputStream(socket.getInputStream());
+
+			writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.MATCH, this));
+
+			PgSchemaServerReply reply = (PgSchemaServerReply) readObjectFromStream(fst_conf, in);
+			/*
+			in.close();
+			out.close();
+			 */
+			return !reply.message.contains("NOT");
+
+		} catch (IOException | ClassNotFoundException e) {
+			return false;
+		}
+
+	}
+
+	/**
+	 * Return equality of PostgreSQL data model option.
+	 *
+	 * @param option compared PostgreSQL data model option
+	 * @return boolean whether the PostgreSQL data model option matches
+	 */
+	public boolean equals(PgSchemaOption option) {
+
+		if (!root_schema_location.equals(option.root_schema_location))
+			return false;
+
+		if (rel_model_ext != option.rel_model_ext)
+			return false;
+
+		if (rel_data_ext != option.rel_data_ext)
+			return false;
+
+		if (wild_card != option.wild_card)
+			return false;
+
+		if (document_key != option.document_key)
+			return false;
+
+		if (serial_key != option.serial_key)
+			return false;
+
+		if (xpath_key != option.xpath_key)
+			return false;
+
+		if (case_sense != option.case_sense)
+			return false;
+
+		if (pg_named_schema != option.pg_named_schema)
+			return false;
+
+		if (retain_key != option.retain_key)
+			return false;
+
+		if (pg_tab_delimiter != option.pg_tab_delimiter)
+			return false;
+
+		if (pg_delimiter != option.pg_delimiter)
+			return false;
+
+		if (!pg_null.equals(option.pg_null))
+			return false;
+
+		if (verbose != option.verbose)
+			return false;
+
+		if (!document_key_name.equals(option.document_key_name))
+			return false;
+
+		if (!serial_key_name.equals(option.serial_key_name))
+			return false;
+
+		if (!xpath_key_name.equals(option.xpath_key_name))
+			return false;
+
+		if (!hash_algorithm.equals(option.hash_algorithm))
+			return false;
+
+		if (!hash_size.equals(option.hash_size))
+			return false;
+
+		if (!ser_size.equals(option.ser_size))
+			return false;
+
+		if (sync != option.sync)
+			return false;
+
+		if (sync_weak != option.sync_weak)
+			return false;
+
+		if (sync_dry_run != option.sync_dry_run)
+			return false;
+
+		if (sync_rescue != option.sync_rescue)
+			return false;
+
+		if (in_place_document_key != option.in_place_document_key)
+			return false;
+
+		if (document_key_if_no_in_place != option.document_key_if_no_in_place)
+			return false;
+
+		if (fill_default_value != option.fill_default_value)
+			return false;
+
+		if (!check_sum_algorithm.equals(option.check_sum_algorithm))
+			return false;
+
+		if (discarded_document_key_names != null && option.discarded_document_key_names != null) {
+
+			if (discarded_document_key_names.size() > 0 || option.discarded_document_key_names.size() > 0) {
+
+				if (!discarded_document_key_names.containsAll(option.discarded_document_key_names))
+					return false;
+
+				if (!option.discarded_document_key_names.containsAll(discarded_document_key_names))
+					return false;
+
+			}
+
+		}
+
+		if (in_place_document_key_names != null && option.in_place_document_key_names != null) {
+
+			if (in_place_document_key_names.size() > 0 || option.in_place_document_key_names.size() > 0) {
+
+				if (!in_place_document_key_names.containsAll(option.in_place_document_key_names))
+					return false;
+
+				if (!option.in_place_document_key_names.containsAll(in_place_document_key_names))
+					return false;
+
+			}
+
+		}
+
+		else if (in_place_document_key_names != null || option.in_place_document_key_names != null)
+			return false;
+
+		if (check_sum_dir_name != null && option.check_sum_dir_name != null) {
+
+			if (!check_sum_dir_name.equals(option.check_sum_dir_name))
+				return false;
+
+		}
+
+		else if (check_sum_dir_name != null || option.check_sum_dir_name != null)
+			return false;
+
+		return true;
 	}
 
 }

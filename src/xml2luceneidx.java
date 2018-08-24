@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,6 +35,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import javax.xml.parsers.*;
 
 import org.apache.lucene.index.IndexWriter;
+import org.nustaq.serialization.FSTConfiguration;
 import org.xml.sax.SAXException;
 
 /**
@@ -58,6 +60,12 @@ public class xml2luceneidx {
 
 		/** The schema option. */
 		PgSchemaOption option = new PgSchemaOption(false);
+
+		/** The FST configuration. */
+		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
+
+		/** The FST optimization. */
+		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class);
 
 		/** The XML file filter. */
 		XmlFileFilter xml_file_filter = new XmlFileFilter();
@@ -208,6 +216,15 @@ public class xml2luceneidx {
 			else if (args[i].equals("--discarded-doc-key-name") && i + 1 < args.length)
 				option.addDiscardedDocKeyName(args[++i]);
 
+			else if (args[i].equals("--no-pgschema-serv"))
+				option.pg_schema_server = false;
+
+			else if (args[i].equals("--pgschema-serv-host") && i + 1 < args.length)
+				option.pg_schema_server_host = args[++i];
+
+			else if (args[i].equals("--pgschema-serv-port") && i + 1 < args.length)
+				option.pg_schema_server_port = Integer.valueOf(args[++i]);
+
 			else if (args[i].equals("--update"))
 				option.sync = option.sync_weak = false;
 
@@ -330,39 +347,114 @@ public class xml2luceneidx {
 
 			}
 
-			option.check_sum_dir_path = check_sum_dir_path;
+			option.check_sum_dir_name = check_sum_dir_name;
 
 			doc_rows = new HashMap<String, Integer>();
 
 		}
+
+		final String class_name = MethodHandles.lookup().lookupClass().getName();
 
 		Xml2LuceneIdxThrd[] proc_thrd = new Xml2LuceneIdxThrd[shard_size * max_thrds];
 		Thread[] thrd = new Thread[shard_size * max_thrds];
 
 		long start_time = System.currentTimeMillis();
 
-		for (int shard_id = 0; shard_id < shard_size; shard_id++) {
+		// PgSchema server is alive
 
-			for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
+		if (option.pingPgSchemaServer(fst_conf)) {
 
-				String thrd_name = "xml2luceneidx-" + shard_id + "-" + thrd_id;
-				int _thrd_id = shard_id * max_thrds + thrd_id;
+			final boolean no_data_model = !option.matchPgSchemaServer(fst_conf);
 
-				try {
+			Thread[] get_thrd = new Thread[shard_size * max_thrds];
+			PgSchemaClientImpl[] clients = new PgSchemaClientImpl[shard_size * max_thrds];
 
-					if (shard_id > 0 || thrd_id > 0)
-						is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
+			try {
 
-					proc_thrd[_thrd_id] = new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, xml_post_editor, option, index_filter, idx_dir_path, writers, doc_rows);
+				// send ADD query to PgSchema server
 
-				} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
-					e.printStackTrace();
-					System.exit(1);
+				if (no_data_model)
+					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, class_name);
+
+				// send GET query to PgSchema server
+
+				for (int shard_id = 0; shard_id < shard_size; shard_id++) {
+
+					for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
+
+						int _thrd_id = shard_id * max_thrds + thrd_id;
+
+						if (_thrd_id == 0 && no_data_model)
+							continue;
+
+						get_thrd[_thrd_id] = new Thread(new PgSchemaGetClientThrd(_thrd_id, option, fst_conf, class_name, clients));
+
+						get_thrd[_thrd_id].setPriority(Thread.MAX_PRIORITY);
+						get_thrd[_thrd_id].start();
+
+					}
+
 				}
 
-				thrd[_thrd_id] = new Thread(proc_thrd[_thrd_id], thrd_name);
+				for (int shard_id = 0; shard_id < shard_size; shard_id++) {
 
-				thrd[_thrd_id].start();
+					for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
+
+						String thrd_name = class_name + "-" + shard_id + "-" + thrd_id;
+						int _thrd_id = shard_id * max_thrds + thrd_id;
+
+						try {
+
+							proc_thrd[_thrd_id] = new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, _thrd_id == 0 && no_data_model ? null : get_thrd[_thrd_id], _thrd_id, clients, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, idx_dir_path, writers, doc_rows);
+
+						} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
+							e.printStackTrace();
+							System.exit(1);
+						}
+
+						thrd[_thrd_id] = new Thread(proc_thrd[_thrd_id], thrd_name);
+
+						thrd[_thrd_id].start();
+
+					}
+
+				}
+
+			} catch (IOException | ParserConfigurationException | SAXException | PgSchemaException | InterruptedException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+
+		}
+
+		// stand alone
+
+		else {
+
+			for (int shard_id = 0; shard_id < shard_size; shard_id++) {
+
+				for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
+
+					String thrd_name = class_name + "-" + shard_id + "-" + thrd_id;
+					int _thrd_id = shard_id * max_thrds + thrd_id;
+
+					try {
+
+						if (shard_id > 0 || thrd_id > 0)
+							is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
+
+						proc_thrd[_thrd_id] = new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, xml_post_editor, option, index_filter, idx_dir_path, writers, doc_rows);
+
+					} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+
+					thrd[_thrd_id] = new Thread(proc_thrd[_thrd_id], thrd_name);
+
+					thrd[_thrd_id].start();
+
+				}
 
 			}
 
@@ -443,6 +535,9 @@ public class xml2luceneidx {
 		System.err.println("        --filt-out  table_name.column_name:regex_pattern(|regex_pattern...)");
 		System.err.println("        --fill-this table_name.column_name:filling_text");
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
+		System.err.println("        --no-pgschema-serv (not utilize PgSchema server)");
+		System.err.println("        --pgschema-serv-host PG_SCHEMA_SERV_HOST_NAME (default=\"" + PgSchemaUtil.pg_schema_server_host + "\")");
+		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
 		System.err.println("        --max-thrds MAX_THRDS (default is number of available processors)");
 		System.exit(1);
 

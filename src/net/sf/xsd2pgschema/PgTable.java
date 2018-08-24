@@ -20,12 +20,14 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 import java.io.BufferedWriter;
+import java.io.Serializable;
 import java.nio.file.Path;
 import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.nustaq.serialization.annotations.Flat;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
@@ -34,7 +36,10 @@ import org.w3c.dom.Node;
  *
  * @author yokochi
  */
-public class PgTable {
+public class PgTable implements Serializable {
+
+	/** The default serial version ID. */
+	private static final long serialVersionUID = 1L;
 
 	/** The PostgreSQL schema name (default schema name is "public"). */
 	protected String pg_schema_name;
@@ -56,12 +61,6 @@ public class PgTable {
 
 	/** The table name. */
 	protected String name = "";
-
-	/** The xs:annotation/xs:documentation (as is). */
-	protected String xanno_doc = null;
-
-	/** The xs:annotation. */
-	protected String anno = null;
 
 	/** The table type classified by xs_root (root node), xs_root_child (children node of root node), xs_admin_root (administrative root node), xs_admin_child (children node of administrative node). */
 	protected XsTableType xs_type;
@@ -123,34 +122,51 @@ public class PgTable {
 	/** Whether table is referred from child table. */
 	protected boolean required = false;
 
-	/** Whether table is realized in PostgreSQL DDL (internal use only). */
-	protected boolean realized = false;
-
-	/** Whether table is subset of database (internal use only). */
-	protected boolean filt_out = false;
-
 	/** Whether table could have writer. */
 	protected boolean writable = false;
 
+	/** The xs:annotation/xs:documentation (as is). */
+	@Flat
+	protected String xanno_doc = null;
+
+	/** The xs:annotation. */
+	@Flat
+	protected String anno = null;
+
+	/** Whether table is realized in PostgreSQL DDL (internal use only). */
+	@Flat
+	protected boolean realized = false;
+
+	/** Whether table is subset of database (internal use only). */
+	@Flat
+	protected boolean filt_out = false;
+
 	/** The visited key (internal use only). */
+	@Flat
 	protected String visited_key = "";
 
 	/** The current path of buffered writer (internal use only). */
+	@Flat
 	protected Path pathw = null;
 
 	/** The current buffered writer (internal use only). */
+	@Flat
 	protected BufferedWriter buffw = null;
 
 	/** Whether JSON buffer of arbitrary field is not empty (internal use only). */
+	@Flat
 	protected boolean jsonb_not_empty = false;
 
 	/** The Lucene document (internal use only). */
+	@Flat
 	protected org.apache.lucene.document.Document lucene_doc = null;
 
 	/** The primary prepared statement (internal use only). */
+	@Flat
 	protected PreparedStatement ps = null;
 
 	/** The secondary prepared statement (internal use only). */
+	@Flat
 	protected PreparedStatement ps2 = null;
 
 	/**

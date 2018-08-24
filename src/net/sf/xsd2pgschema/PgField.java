@@ -21,6 +21,7 @@ package net.sf.xsd2pgschema;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.PreparedStatement;
@@ -47,6 +48,7 @@ import org.apache.lucene.document.IntPoint;
 import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.nustaq.serialization.annotations.Flat;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -55,7 +57,10 @@ import org.w3c.dom.Node;
  *
  * @author yokochi
  */
-public class PgField {
+public class PgField implements Serializable {
+
+	/** The default serial version ID. */
+	private static final long serialVersionUID = 1L;
 
 	/** The target namespace (@targetNamespace). */
 	protected String target_namespace = PgSchemaUtil.xs_namespace_uri;
@@ -89,12 +94,6 @@ public class PgField {
 
 	/** The @minOccurs. */
 	protected String minoccurs = "1";
-
-	/** The content of xs:annotation/xs:documentation (as is). */
-	protected String xanno_doc = null;
-
-	/** The content of xs:annotation. */
-	protected String anno = null;
 
 	/** The XML Schema data type. */
 	protected XsDataType xs_type;
@@ -267,18 +266,6 @@ public class PgField {
 	/** Whether xs:union. */
 	protected boolean _union = false;
 
-	/** The --fill-this option. */
-	protected boolean fill_this = false;
-
-	/** The filled text used in post XML edition. */
-	protected String filled_text = null;
-
-	/** The --filt-out option. */
-	protected boolean filt_out = false;
-
-	/** The filter patterns in post XML edition. */
-	protected String[] filter_pattern = null;
-
 	/** Whether it has any system's administrative key (primary_key || foreign_key || nested_key). */
 	protected boolean system_key = false;
 
@@ -294,16 +281,44 @@ public class PgField {
 	/** Whether field is JSON convertible. */
 	protected boolean jsonable = true;
 
+	/** The content of xs:annotation/xs:documentation (as is). */
+	@Flat
+	protected String xanno_doc = null;
+
+	/** The content of xs:annotation. */
+	@Flat
+	protected String anno = null;
+
+	/** The --fill-this option. */
+	@Flat
+	protected boolean fill_this = false;
+
+	/** The filled text used in post XML edition. */
+	@Flat
+	protected String filled_text = null;
+
+	/** The --filt-out option. */
+	@Flat
+	protected boolean filt_out = false;
+
+	/** The filter patterns in post XML edition. */
+	@Flat
+	protected String[] filter_pattern = null;
+
 	/** Whether JSON buffer is not empty (internal use only). */
+	@Flat
 	protected boolean jsonb_not_empty = false;
 
 	/** The size of data in JSON buffer (internal use only). */
+	@Flat
 	protected int jsonb_col_size = 0;
 
 	/** The size of null data in JSON buffer (internal use only). */
+	@Flat
 	protected int jsonb_null_size = 0;
 
 	/** The JSON buffer (internal use only). */
+	@Flat
 	protected StringBuilder jsonb = null;
 
 	/**
@@ -1510,7 +1525,7 @@ public class PgField {
 			return;
 		}
 
-		omissible = (!option.document_key && !option.inplace_document_key && document_key) || (!option.serial_key && serial_key) || (!option.xpath_key && xpath_key) || (!option.rel_data_ext && system_key);
+		omissible = (!option.document_key && !option.in_place_document_key && document_key) || (!option.serial_key && serial_key) || (!option.xpath_key && xpath_key) || (!option.rel_data_ext && system_key);
 
 	}
 

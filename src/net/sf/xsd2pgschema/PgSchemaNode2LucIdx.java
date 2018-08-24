@@ -20,6 +20,7 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.util.Arrays;
 
 import javax.xml.transform.TransformerException;
@@ -51,12 +52,14 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 * Node parser for Lucene document conversion.
 	 *
 	 * @param schema PostgreSQL data model
+	 * @param md_hash_key instance of message digest
 	 * @param parent_table parent table
 	 * @param table current table
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2LucIdx(final PgSchema schema, final PgTable parent_table, final PgTable table) {
+	public PgSchemaNode2LucIdx(final PgSchema schema, final MessageDigest md_hash_key, final PgTable parent_table, final PgTable table) throws PgSchemaException {
 
-		super(schema, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
+		super(schema, md_hash_key, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
 
 		if (required = table.required)
 			field_prefix = table.name + ".";
@@ -77,7 +80,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(schema, table, nested_key.table);
+		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(schema, md_hash_key, table, nested_key.table);
 
 		try {
 
@@ -145,7 +148,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			else if (field.primary_key) {
 
 				if (required && rel_data_ext)
-					values[f] = schema.getHashKeyString(node_test.primary_key);
+					values[f] = getHashKeyString(node_test.primary_key);
 
 			}
 
@@ -156,7 +159,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				if (parent_table.xname.equals(field.foreign_table_xname)) {
 
 					if (required && rel_data_ext)
-						values[f] = schema.getHashKeyString(node_test.parent_key);
+						values[f] = getHashKeyString(node_test.parent_key);
 
 				}
 
@@ -171,7 +174,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				if ((nested_key = setNestedKey(proc_node, field, current_key)) != null) {
 
 					if (required && rel_data_ext)
-						values[f] = schema.getHashKeyString(nested_key);
+						values[f] = getHashKeyString(nested_key);
 
 				}
 

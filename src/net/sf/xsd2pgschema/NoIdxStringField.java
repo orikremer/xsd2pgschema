@@ -23,11 +23,10 @@ import org.apache.lucene.document.Field;
 import org.apache.lucene.document.FieldType;
 import org.apache.lucene.index.IndexOptions;
 
-// this code was derived from:
-// http://stackoverflow.com/questions/11945728/how-to-use-termvector-lucene-4-0
-
 /**
  * The Class NoIdxStringField.
+ *
+ * @see <a href="https://stackoverflow.com/questions/11945728/how-to-use-termvector-lucene-4-0">https://stackoverflow.com/questions/11945728/how-to-use-termvector-lucene-4-0</a>
  */
 public class NoIdxStringField extends Field {
 

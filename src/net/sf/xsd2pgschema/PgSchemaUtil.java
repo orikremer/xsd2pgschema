@@ -108,13 +108,13 @@ public class PgSchemaUtil {
 	public static final int pg_port = 5432;
 
 	/** The default host name of PgSchema server. */
-	public static final String pgschema_host = "localhost";
+	public static final String pg_schema_server_host = "localhost";
 
 	/** The default post number of PgSchema server. */
-	public static final int pgschema_port = 5430;
+	public static final int pg_schema_server_port = 5430;
 
-	/** The default life time of unused data model in PgSchema server in seconds. */
-	public static final int pgschema_lifetime = 86400;
+	/** The default lifetime of unused PostgreSQL data model on PgSchema server in milliseconds. */
+	public static final long pg_schema_server_lifetime = 86400 * 14 * 1000L;
 
 	/** The minimum word length for index. */
 	public static final int min_word_len = 1;

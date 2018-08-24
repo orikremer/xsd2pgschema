@@ -45,10 +45,10 @@ import org.xml.sax.SAXException;
  */
 public class XmlParser {
 
-	/** The XML file path.*/
+	/** The XML file path. */
 	private Path xml_file_path;
 
-	/** The XML file name.*/
+	/** The XML file name. */
 	private String xml_file_name;
 
 	/** The XML document. */
@@ -296,7 +296,7 @@ public class XmlParser {
 	 * @return Path check sum file path
 	 */
 	private Path getCheckSumFilePath(PgSchemaOption option) {
-		return Paths.get(option.check_sum_dir_path.toString(), xml_file_name + "." + option.check_sum_algorithm.toLowerCase());
+		return Paths.get(option.check_sum_dir_name, xml_file_name + "." + option.check_sum_algorithm.toLowerCase());
 	}
 
 	/**

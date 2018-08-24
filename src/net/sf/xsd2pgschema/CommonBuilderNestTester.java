@@ -19,6 +19,12 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.xml.sax.SAXException;
+
 /**
  * Common nest tester.
  *
@@ -47,12 +53,16 @@ public abstract class CommonBuilderNestTester {
 	/** Whether this node has inserted document key. */
 	protected boolean has_insert_doc_key = false;
 
+	/** SAX parser for any content. */
+	protected SAXParser any_sax_parser = null;
+
 	/**
 	 * Instance of nest tester from root node.
 	 *
 	 * @param table current table
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public CommonBuilderNestTester(PgTable table) {
+	public CommonBuilderNestTester(PgTable table) throws PgSchemaException {
 
 		ancestor_node = "";
 		parent_node = table.xname;
@@ -64,6 +74,22 @@ public abstract class CommonBuilderNestTester {
 
 		}
 
+		if (table.has_any || table.has_any_attribute) {
+
+			try {
+
+				SAXParserFactory spf = SAXParserFactory.newInstance();
+				spf.setValidating(false);
+				spf.setNamespaceAware(false);
+
+				any_sax_parser = spf.newSAXParser();
+
+			} catch (ParserConfigurationException | SAXException e) {
+				throw new PgSchemaException(e);
+			}
+
+		}
+
 	}
 
 	/**
@@ -71,8 +97,9 @@ public abstract class CommonBuilderNestTester {
 	 *
 	 * @param table current table
 	 * @param parent_test nest test of parent node
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public CommonBuilderNestTester(PgTable table, CommonBuilderNestTester parent_test) {
+	public CommonBuilderNestTester(PgTable table, CommonBuilderNestTester parent_test) throws PgSchemaException {
 
 		ancestor_node = parent_test.ancestor_node;
 		parent_node = parent_test.parent_node;
@@ -85,6 +112,22 @@ public abstract class CommonBuilderNestTester {
 		}
 
 		has_insert_doc_key = parent_test.has_insert_doc_key;
+
+		if (table.has_any || table.has_any_attribute) {
+
+			try {
+
+				SAXParserFactory spf = SAXParserFactory.newInstance();
+				spf.setValidating(false);
+				spf.setNamespaceAware(false);
+
+				any_sax_parser = spf.newSAXParser();
+
+			} catch (ParserConfigurationException | SAXException e) {
+				throw new PgSchemaException(e);
+			}
+
+		}
 
 	}
 
