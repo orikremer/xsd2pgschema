@@ -141,9 +141,9 @@ public class PgSchema implements Serializable {
 	@Flat
 	private String def_anno_doc = null;
 
-	/** The top level xs:annotation/xs:documentation (as is).
+	/** The top level xs:annotation/xs:documentation (as is). */
 	@Flat
-	private String def_xanno_doc = null; */
+	private String def_xanno_doc = null;
 
 	/** The default attributes. */
 	@Flat
@@ -252,10 +252,10 @@ public class PgSchema implements Serializable {
 
 		def_anno = option.extractAnnotation(root_node, true);
 		def_anno_appinfo = option.extractAppinfo(root_node);
-		/*
+
 		if ((def_anno_doc = option.extractDocumentation(root_node, true)) != null)
 			def_xanno_doc = option.extractDocumentation(root_node, false);
-		 */
+
 		if (option.ddl_output)
 			def_stat_msg = new StringBuilder();
 
