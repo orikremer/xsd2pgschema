@@ -61,6 +61,33 @@ public class PgSchemaServerThrd implements Runnable {
 	/** The reply object of PgSchema server. */
 	private PgSchemaServerReply reply = new PgSchemaServerReply();
 
+	/** Whether receive STOP query. */
+	private boolean stop = false;
+
+	/** The PgSchema server name. */
+	final String server_name = "PgSchema Server";
+
+	/** The red color code. */
+	final String red_color = (char)27 + "[31m";
+
+	/** The green color code. */
+	final String green_color = (char)27 + "[32m";
+
+	/** The blue color code. */
+	final String blue_color = (char)27 + "[34m";
+
+	/** The default color code. */
+	final String default_color = (char)27 + "[39m";
+
+	/** The header of PgSchema server information. */
+	final String server_info_header = "[" + blue_color + server_name + default_color + "] ";
+
+	/** The header of PgSchema server status information. */
+	final String server_status_info_header = server_info_header + blue_color + "STATUS" + default_color + " ---";
+
+	/** The footer of PgSchema server information. */
+	final String server_info_footer = default_color + "\n";
+
 	/**
 	 * Instance of PgSchemaServerThrd.
 	 *
@@ -88,32 +115,6 @@ public class PgSchemaServerThrd implements Runnable {
 	 */
 	@Override
 	public void run() {
-
-		/** The PgSchema server name. */
-		final String server_name = "PgSchema Server";
-
-		/** The red color code. */
-		final String red_color = (char)27 + "[31m";
-
-		/** The green color code. */
-		final String green_color = (char)27 + "[32m";
-
-		/** The blue color code. */
-		final String blue_color = (char)27 + "[34m";
-
-		/** The default color code. */
-		final String default_color = (char)27 + "[39m";
-
-		/** The header of PgSchema server information. */
-		final String server_info_header = "[" + blue_color + server_name + default_color + "] ";
-
-		/** The header of PgSchema server status information. */
-		final String server_status_info_header = server_info_header + blue_color + "STATUS" + default_color + " ---";
-
-		/** The footer of PgSchema server information. */
-		final String server_info_footer = default_color + "\n";
-
-		boolean stop = false;
 
 		try {
 
@@ -150,10 +151,10 @@ public class PgSchemaServerThrd implements Runnable {
 					reply.schema_bytes = get_item.schema_bytes;
 
 				} else
-					reply.message = server_info_header + red_color + "MATCH NOTHING" + server_info_footer;
+					reply.message = server_info_header + red_color + "GET NOTHING" + server_info_footer;
 				break;
 			case PING:
-				reply.message = server_info_header + blue_color + "PING" + server_info_footer;
+				reply.message = server_info_header + blue_color + "PING OK" + server_info_footer;
 				break;
 			case STATUS:
 				StringBuilder sb = new StringBuilder();
@@ -166,7 +167,6 @@ public class PgSchemaServerThrd implements Runnable {
 					sb.append(server_status_info_header + " default schema location: " + arg.def_schema_location + "\n");
 					sb.append(server_status_info_header + " original caller class  : " + arg.original_caller + "\n");
 					sb.append(server_status_info_header + " length of data model   : " + arg.schema_bytes.length + "\n");
-					sb.append(server_status_info_header + " hash code of data model: " + arg.getHashCode() + "\n");
 
 					Calendar dt_cal = Calendar.getInstance();
 					dt_cal.setTimeInMillis(arg.getLastAccessTimeMillis());

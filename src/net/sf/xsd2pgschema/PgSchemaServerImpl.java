@@ -38,9 +38,6 @@ public class PgSchemaServerImpl {
 	/** The original caller class name (optional). */
 	public String original_caller;
 
-	/** The hash code of the PostgreSQL data model option (internal use only). */
-	private int hash_code_option;
-
 	/** The last access time in milliseconds (internal use only). */
 	private long last_access_time_millis;
 
@@ -55,19 +52,9 @@ public class PgSchemaServerImpl {
 		option = query.option;
 		schema_bytes = query.schema_bytes;
 		original_caller = query.original_caller;
-		hash_code_option = option.hashCode();
 
 		touch();
 
-	}
-
-	/**
-	 * Return hash code of PostgreSQL data model option.
-	 *
-	 * @return int hash code of PostgreSQL data model option
-	 */
-	public int getHashCode() {
-		return hash_code_option;
 	}
 
 	/**

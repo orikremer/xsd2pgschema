@@ -758,12 +758,12 @@ public class PgSchemaOption implements Serializable {
 
 			writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.PING));
 
-			readObjectFromStream(fst_conf, in);
+			PgSchemaServerReply reply = (PgSchemaServerReply) readObjectFromStream(fst_conf, in);
 			/*
 			in.close();
 			out.close();
 			 */
-			return true;
+			return reply.message.contains("OK");
 
 		} catch (IOException | ClassNotFoundException e) {
 			return false;
