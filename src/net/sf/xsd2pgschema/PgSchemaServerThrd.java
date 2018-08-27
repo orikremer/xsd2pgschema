@@ -52,9 +52,6 @@ public class PgSchemaServerThrd implements Runnable {
 	/** The PgSchema socket. */
 	private Socket socket;
 
-	/** The current time. */
-	private long current_time;
-
 	/** The list of serialized PostgreSQL data models. */
 	private List<PgSchemaServerImpl> list;
 
@@ -104,7 +101,7 @@ public class PgSchemaServerThrd implements Runnable {
 		this.server_socket = server_socket;
 		this.socket = socket;
 
-		list.removeIf(arg -> arg.isObsolete(current_time = System.currentTimeMillis(), option.pg_schema_server_lifetime));
+		list.removeIf(arg -> arg.isObsolete(System.currentTimeMillis(), option.pg_schema_server_lifetime));
 
 		this.list = list;
 
@@ -131,7 +128,7 @@ public class PgSchemaServerThrd implements Runnable {
 				reply.message = server_info_header + blue_color + "ADD" + server_info_footer;
 				break;
 			case MATCH:
-				Optional<PgSchemaServerImpl> match_opt = list.stream().filter(arg -> arg.matchesReusable(query.def_schema_location, query.option, current_time, option.pg_schema_server_lifetime)).findFirst();
+				Optional<PgSchemaServerImpl> match_opt = list.stream().filter(arg -> arg.option.equals(query.option)).findFirst();
 
 				if (match_opt.isPresent())
 					reply.message = server_info_header + green_color + "MATCH" + server_info_footer;
@@ -139,7 +136,7 @@ public class PgSchemaServerThrd implements Runnable {
 					reply.message = server_info_header + red_color + "MATCH NOTHING" + server_info_footer;
 				break;
 			case GET:
-				Optional<PgSchemaServerImpl> get_opt = list.stream().filter(arg -> arg.matchesReusable(query.def_schema_location, query.option, current_time, option.pg_schema_server_lifetime)).findFirst();
+				Optional<PgSchemaServerImpl> get_opt = list.stream().filter(arg -> arg.option.equals(query.option)).findFirst();
 
 				if (get_opt.isPresent()) {
 
@@ -164,7 +161,7 @@ public class PgSchemaServerThrd implements Runnable {
 				list.forEach(arg -> {
 
 					sb.append(server_status_info_header + "-----------------------------------------------------------\n");
-					sb.append(server_status_info_header + " default schema location: " + arg.def_schema_location + "\n");
+					sb.append(server_status_info_header + " default schema location: " + arg.option.root_schema_location + "\n");
 					sb.append(server_status_info_header + " original caller class  : " + arg.original_caller + "\n");
 					sb.append(server_status_info_header + " length of data model   : " + arg.schema_bytes.length + "\n");
 

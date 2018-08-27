@@ -26,9 +26,6 @@ package net.sf.xsd2pgschema;
  */
 public class PgSchemaServerImpl {
 
-	/** The default schema location. */
-	public String def_schema_location;
-
 	/** The PostgreSQL data model option. */
 	public PgSchemaOption option;
 
@@ -48,7 +45,6 @@ public class PgSchemaServerImpl {
 	 */
 	public PgSchemaServerImpl(PgSchemaServerQuery query) {
 
-		def_schema_location = query.def_schema_location;
 		option = query.option;
 		schema_bytes = query.schema_bytes;
 		original_caller = query.original_caller;
@@ -58,7 +54,7 @@ public class PgSchemaServerImpl {
 	}
 
 	/**
-	 * Return whether PostgreSQL data mode is obsolete.
+	 * Return whether PostgreSQL data model is obsolete.
 	 *
 	 * @param current_time_millis current time in milliseconds
 	 * @param lifetime_millis lifetime of PostgreSQL data model in milliseconds
@@ -66,19 +62,6 @@ public class PgSchemaServerImpl {
 	 */
 	public boolean isObsolete(long current_time_millis, long lifetime_millis) {
 		return current_time_millis - last_access_time_millis > lifetime_millis;
-	}
-
-	/**
-	 * Return whether to match hash code of reusable PostgreSQL data model.
-	 *
-	 * @param def_schema_location default schema location
-	 * @param option PostgreSQL data model option
-	 * @param current_time_millis current time in milliseconds
-	 * @param lifetime_millis lifetime of PostgreSQL data model in milliseconds
-	 * @return boolean whether to match hash code of PostgreSQL data model
-	 */
-	public boolean matchesReusable(String def_schema_location, PgSchemaOption option, long current_time_millis, long lifetime_millis) {
-		return def_schema_location.equals(this.def_schema_location) && option.equals(this.option);
 	}
 
 	/**
