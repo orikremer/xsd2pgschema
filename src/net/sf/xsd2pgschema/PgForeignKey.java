@@ -129,7 +129,7 @@ public class PgForeignKey implements Serializable {
 
 			String[] xpath = e.getAttribute("xpath").split("/");
 
-			return option.getUnqualifiedName(xpath[xpath.length - 1]).replace("@", "");
+			return PgSchemaUtil.getUnqualifiedName(xpath[xpath.length - 1]).replace("@", "");
 		}
 
 		return null;

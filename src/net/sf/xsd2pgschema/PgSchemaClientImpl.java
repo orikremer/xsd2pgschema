@@ -90,9 +90,9 @@ public class PgSchemaClientImpl {
 					DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 					DataInputStream in = new DataInputStream(socket.getInputStream());
 
-					option.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.GET, option));
+					PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.GET, option));
 
-					PgSchemaServerReply reply = (PgSchemaServerReply) option.readObjectFromStream(fst_conf, in);
+					PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 
 					if (reply.schema_bytes != null) {
 
@@ -136,9 +136,9 @@ public class PgSchemaClientImpl {
 						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 						DataInputStream in = new DataInputStream(socket.getInputStream());
 
-						option.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(fst_conf, schema, original_caller));
+						PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(fst_conf, schema, original_caller));
 
-						PgSchemaServerReply reply = (PgSchemaServerReply) option.readObjectFromStream(fst_conf, in);
+						PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 
 						System.out.print(reply.message);
 						/*

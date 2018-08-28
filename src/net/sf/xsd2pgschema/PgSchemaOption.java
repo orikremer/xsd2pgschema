@@ -32,7 +32,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 
 import org.nustaq.serialization.FSTConfiguration;
-import org.nustaq.serialization.FSTObjectOutput;
 import org.nustaq.serialization.annotations.Flat;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -286,25 +285,6 @@ public class PgSchemaOption implements Serializable {
 	 */
 	public int getMinimumSizeOfField() {
 		return (rel_model_ext ? 1 : 0) + (document_key ? 1 : 0);
-	}
-
-	/**
-	 * Return unqualified name.
-	 *
-	 * @param qname qualified name
-	 * @return String unqualified name
-	 */
-	public String getUnqualifiedName(String qname) {
-
-		if (qname == null)
-			return null;
-
-		if (qname.contains(" "))
-			qname = qname.trim();
-
-		int last_pos = qname.indexOf(':');
-
-		return last_pos == -1 ? qname : qname.substring(last_pos + 1);
 	}
 
 	/**
@@ -693,54 +673,6 @@ public class PgSchemaOption implements Serializable {
 	}
 
 	/**
-	 * Read object from blocking I/O.
-	 *
-	 * @param fst_conf FST configuration
-	 * @param in data input stream
-	 * @return Object object
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws ClassNotFoundException the class not found exception
-	 * @see <a href="https://github.com/RuedigerMoeller/fast-serialization/blob/1.x/src/test_nojunit/java/gitissue10/GitIssue10.java">https://github.com/RuedigerMoeller/fast-serialization/blob/1.x/src/test_nojunit/java/gitissue10/GitIssue10.java</a>
-	 */
-	public Object readObjectFromStream(FSTConfiguration fst_conf, DataInputStream in) throws IOException, ClassNotFoundException {
-
-		int len = in.readInt();
-		byte buffer[] = new byte[len]; // this could be reused !
-
-		while (len > 0)
-			len -= in.read(buffer, buffer.length - len, len);
-
-		return fst_conf.getObjectInput(buffer).readObject();
-	}
-
-	/**
-	 * Write object to blocking I/O.
-	 *
-	 * @param fst_conf FST configuration
-	 * @param out data output stream
-	 * @param object object
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @see <a href="https://github.com/RuedigerMoeller/fast-serialization/blob/1.x/src/test_nojunit/java/gitissue10/GitIssue10.java">https://github.com/RuedigerMoeller/fast-serialization/blob/1.x/src/test_nojunit/java/gitissue10/GitIssue10.java</a>
-	 */
-	public void writeObjectToStream(FSTConfiguration fst_conf, DataOutputStream out, Object object) throws IOException {
-
-		// write object
-		FSTObjectOutput fst_out = fst_conf.getObjectOutput(); // could also do new with minor perf impact
-
-		// write object to internal buffer
-		fst_out.writeObject(object);
-
-		// write length
-		out.writeInt(fst_out.getWritten());
-
-		// write bytes
-		out.write(fst_out.getBuffer(), 0, fst_out.getWritten());
-
-		fst_out.flush(); // return for reuse to fst_conf
-
-	}
-
-	/**
 	 * Send PING query to PgSchema server.
 	 *
 	 * @param fst_conf FST configuration
@@ -756,9 +688,9 @@ public class PgSchemaOption implements Serializable {
 			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 			DataInputStream in = new DataInputStream(socket.getInputStream());
 
-			writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.PING));
+			PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.PING));
 
-			PgSchemaServerReply reply = (PgSchemaServerReply) readObjectFromStream(fst_conf, in);
+			PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 			/*
 			in.close();
 			out.close();
@@ -787,9 +719,9 @@ public class PgSchemaOption implements Serializable {
 			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 			DataInputStream in = new DataInputStream(socket.getInputStream());
 
-			writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.MATCH, this));
+			PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.MATCH, this));
 
-			PgSchemaServerReply reply = (PgSchemaServerReply) readObjectFromStream(fst_conf, in);
+			PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 			/*
 			in.close();
 			out.close();

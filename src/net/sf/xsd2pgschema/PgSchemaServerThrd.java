@@ -40,9 +40,6 @@ import org.nustaq.serialization.FSTConfiguration;
  */
 public class PgSchemaServerThrd implements Runnable {
 
-	/** The PostgreSQL data model option. */
-	private PgSchemaOption option;
-
 	/** The FST configuration. */
 	private FSTConfiguration fst_conf;
 
@@ -54,6 +51,9 @@ public class PgSchemaServerThrd implements Runnable {
 
 	/** The list of serialized PostgreSQL data models. */
 	private List<PgSchemaServerImpl> list;
+
+	/** The default lifetime of unused PostgreSQL data model on PgSchema server in milliseconds. */
+	private long pg_schema_server_lifetime;
 
 	/** The reply object of PgSchema server. */
 	private PgSchemaServerReply reply = new PgSchemaServerReply();
@@ -96,12 +96,11 @@ public class PgSchemaServerThrd implements Runnable {
 	 */
 	public PgSchemaServerThrd(final PgSchemaOption option, final FSTConfiguration fst_conf, final ServerSocket server_socket, final Socket socket, final List<PgSchemaServerImpl> list) {
 
-		this.option = option;
 		this.fst_conf = fst_conf;
 		this.server_socket = server_socket;
 		this.socket = socket;
 
-		list.removeIf(arg -> arg.isObsolete(System.currentTimeMillis(), option.pg_schema_server_lifetime));
+		list.removeIf(arg -> arg.isObsolete(System.currentTimeMillis(), pg_schema_server_lifetime = option.pg_schema_server_lifetime));
 
 		this.list = list;
 
@@ -118,7 +117,7 @@ public class PgSchemaServerThrd implements Runnable {
 			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 			DataInputStream in = new DataInputStream(socket.getInputStream());
 
-			PgSchemaServerQuery query = (PgSchemaServerQuery) option.readObjectFromStream(fst_conf, in);
+			PgSchemaServerQuery query = (PgSchemaServerQuery) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 
 			switch (query.type) {
 			case ADD:
@@ -166,11 +165,11 @@ public class PgSchemaServerThrd implements Runnable {
 					sb.append(server_status_info_header + " length of data model   : " + arg.schema_bytes.length + "\n");
 
 					Calendar dt_cal = Calendar.getInstance();
-					dt_cal.setTimeInMillis(arg.getLastAccessTimeMillis());
+					dt_cal.setTimeInMillis(arg.last_access_time_millis);
 
 					sb.append(server_status_info_header + " last accessed time     : " + DatatypeConverter.printDateTime(dt_cal) + "\n");
 
-					dt_cal.setTimeInMillis(arg.getLastAccessTimeMillis() + option.pg_schema_server_lifetime);
+					dt_cal.setTimeInMillis(arg.last_access_time_millis + pg_schema_server_lifetime);
 
 					sb.append(server_status_info_header + " expired time           : " + DatatypeConverter.printDateTime(dt_cal) + "\n");
 
@@ -189,7 +188,7 @@ public class PgSchemaServerThrd implements Runnable {
 			}
 
 			if (!query.type.equals(PgSchemaServerQueryType.STOP))
-				option.writeObjectToStream(fst_conf, out, reply);
+				PgSchemaUtil.writeObjectToStream(fst_conf, out, reply);
 			/*
 			in.close();
 			out.close();

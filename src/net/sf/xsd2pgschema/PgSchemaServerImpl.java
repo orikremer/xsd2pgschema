@@ -36,7 +36,7 @@ public class PgSchemaServerImpl {
 	public String original_caller;
 
 	/** The last access time in milliseconds (internal use only). */
-	private long last_access_time_millis;
+	public long last_access_time_millis;
 
 	/**
 	 * Instance of PgSchemaServerImpl.
@@ -62,15 +62,6 @@ public class PgSchemaServerImpl {
 	 */
 	public boolean isObsolete(long current_time_millis, long lifetime_millis) {
 		return current_time_millis - last_access_time_millis > lifetime_millis;
-	}
-
-	/**
-	 * Return last access time in milliseconds.
-	 *
-	 * @return long last access time in milliseconds
-	 */
-	public long getLastAccessTimeMillis() {
-		return last_access_time_millis;
 	}
 
 	/**

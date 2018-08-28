@@ -19,6 +19,8 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,6 +59,8 @@ import javax.net.ssl.X509TrustManager;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.nustaq.serialization.FSTConfiguration;
+import org.nustaq.serialization.FSTObjectOutput;
 
 /**
  * Utility functions and default values.
@@ -618,6 +622,25 @@ public class PgSchemaUtil {
 	}
 
 	/**
+	 * Return unqualified name.
+	 *
+	 * @param qname qualified name
+	 * @return String unqualified name
+	 */
+	public static String getUnqualifiedName(String qname) {
+
+		if (qname == null)
+			return null;
+
+		if (qname.contains(" "))
+			qname = qname.trim();
+
+		int last_pos = qname.indexOf(':');
+
+		return last_pos == -1 ? qname : qname.substring(last_pos + 1);
+	}
+
+	/**
 	 * Suggest new name in PostgreSQL for a given name.
 	 *
 	 * @param name name
@@ -750,6 +773,54 @@ public class PgSchemaUtil {
 	 */
 	public static String escapeTsv(String text) {
 		return PgSchemaUtil.tab_pattern.matcher(PgSchemaUtil.lf_pattern.matcher(PgSchemaUtil.bs_pattern.matcher(text).replaceAll("\\\\\\\\")).replaceAll("\\\\n")).replaceAll("\\\\t");
+	}
+
+	/**
+	 * Read object from blocking I/O.
+	 *
+	 * @param fst_conf FST configuration
+	 * @param in data input stream
+	 * @return Object object
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws ClassNotFoundException the class not found exception
+	 * @see <a href="https://github.com/RuedigerMoeller/fast-serialization/blob/1.x/src/test_nojunit/java/gitissue10/GitIssue10.java">https://github.com/RuedigerMoeller/fast-serialization/blob/1.x/src/test_nojunit/java/gitissue10/GitIssue10.java</a>
+	 */
+	public static Object readObjectFromStream(FSTConfiguration fst_conf, DataInputStream in) throws IOException, ClassNotFoundException {
+
+		int len = in.readInt();
+		byte buffer[] = new byte[len]; // this could be reused !
+
+		while (len > 0)
+			len -= in.read(buffer, buffer.length - len, len);
+
+		return fst_conf.getObjectInput(buffer).readObject();
+	}
+
+	/**
+	 * Write object to blocking I/O.
+	 *
+	 * @param fst_conf FST configuration
+	 * @param out data output stream
+	 * @param object object
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @see <a href="https://github.com/RuedigerMoeller/fast-serialization/blob/1.x/src/test_nojunit/java/gitissue10/GitIssue10.java">https://github.com/RuedigerMoeller/fast-serialization/blob/1.x/src/test_nojunit/java/gitissue10/GitIssue10.java</a>
+	 */
+	public static void writeObjectToStream(FSTConfiguration fst_conf, DataOutputStream out, Object object) throws IOException {
+
+		// write object
+		FSTObjectOutput fst_out = fst_conf.getObjectOutput(); // could also do new with minor perf impact
+
+		// write object to internal buffer
+		fst_out.writeObject(object);
+
+		// write length
+		out.writeInt(fst_out.getWritten());
+
+		// write bytes
+		out.write(fst_out.getBuffer(), 0, fst_out.getWritten());
+
+		fst_out.flush(); // return for reuse to fst_conf
+
 	}
 
 }

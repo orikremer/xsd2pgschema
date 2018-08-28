@@ -95,6 +95,8 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			if (writable = table.writable) {
 
+				boolean pg_named_schema = schema.option.pg_named_schema;
+
 				for (int f = 0; f < fields.size(); f++) {
 
 					PgField field = fields.get(f);
@@ -129,7 +131,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 							if (field.enum_name == null)
 								sql.append("?");
 							else
-								sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+								sql.append("?::" + (pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
 
 							sql.append(", ");
 
@@ -154,7 +156,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 							if (field.enum_name == null)
 								sql.append("?");
 							else
-								sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+								sql.append("?::" + (pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
 
 							sql.append(", ");
 
@@ -194,7 +196,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 							if (field.enum_name == null)
 								sql.append("?");
 							else
-								sql.append("?::" + (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+								sql.append("?::" + (pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
 
 							sql.append(", ");
 
@@ -219,9 +221,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			throw new PgSchemaException(e);
 		}
 
-		hash_size = option.hash_size;
+		hash_size = schema.option.hash_size;
 
-		def_ser_size = option.ser_size.equals(PgSerSize.defaultSize());
+		def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
 
 	}
 
@@ -244,7 +246,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, table, nested_key, node2pgsql.node_count, node2pgsql.node_ordinal);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2pgsql.node_count, node2pgsql.node_ordinal);
 
 				if (node_test.visited)
 					return;

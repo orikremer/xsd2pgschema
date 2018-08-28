@@ -83,7 +83,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, table, nested_key, node2sphds.node_count, node2sphds.node_ordinal);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2sphds.node_count, node2sphds.node_ordinal);
 
 				if (node_test.visited)
 					return;

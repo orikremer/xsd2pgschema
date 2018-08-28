@@ -59,7 +59,7 @@ public class PgSchemaNodeTester {
 	protected int node_ordinal;
 
 	/**
-	 * Set up root node as processing node.
+	 * Setup root node as processing node.
 	 *
 	 * @param root_node root node
 	 * @param root_key root key
@@ -77,7 +77,6 @@ public class PgSchemaNodeTester {
 	/**
 	 * Decide whether to process this node.
 	 *
-	 * @param option PostgreSQL data model option
 	 * @param parent_node parent node
 	 * @param node current node
 	 * @param parent_table parent table
@@ -85,16 +84,14 @@ public class PgSchemaNodeTester {
 	 * @param node_count count of sibling nodes
 	 * @param node_ordinal ordinal number of sibling node
 	 */
-	public PgSchemaNodeTester(final PgSchemaOption option, final Node parent_node, final Node node, final PgTable parent_table, final PgSchemaNestedKey nested_key, final int node_count, final int node_ordinal) {
+	public PgSchemaNodeTester(final Node parent_node, final Node node, final PgTable parent_table, final PgSchemaNestedKey nested_key, final int node_count, final int node_ordinal) {
 
 		PgTable table = nested_key.table;
 
 		boolean virtual = table.virtual;
 
 		String qname = node.getNodeName();
-
-		String xname = option.getUnqualifiedName(qname);
-
+		String xname = PgSchemaUtil.getUnqualifiedName(qname);
 		String table_xname = table.xname;
 
 		as_attr = nested_key.as_attr;
@@ -155,7 +152,7 @@ public class PgSchemaNodeTester {
 				String child_name;
 
 				if ((child_name = child.getLocalName()) == null)
-					child_name = option.getUnqualifiedName(child.getNodeName());
+					child_name = PgSchemaUtil.getUnqualifiedName(child.getNodeName());
 
 				if (!child_name.equals(table_xname))
 					continue;
@@ -173,7 +170,7 @@ public class PgSchemaNodeTester {
 	}
 
 	/**
-	 * Set up current node as processing node.
+	 * Setup current node as processing node.
 	 *
 	 * @param current_node current node
 	 * @param nested_key nested key

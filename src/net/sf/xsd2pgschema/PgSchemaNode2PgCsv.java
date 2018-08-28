@@ -72,13 +72,13 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		writable = table.writable;
 
-		pg_tab_delimiter = option.pg_tab_delimiter;
+		pg_tab_delimiter = schema.option.pg_tab_delimiter;
 
-		pg_delimiter = option.pg_delimiter;
+		pg_delimiter = schema.option.pg_delimiter;
 
-		pg_null = option.pg_null;
+		pg_null = schema.option.pg_null;
 
-		def_ser_size = option.ser_size.equals(PgSerSize.defaultSize());
+		def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
 
 	}
 
@@ -101,7 +101,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(option, parent_node, node, table, nested_key, node2pgcsv.node_count, node2pgcsv.node_ordinal);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2pgcsv.node_count, node2pgcsv.node_ordinal);
 
 				if (node_test.visited)
 					return;

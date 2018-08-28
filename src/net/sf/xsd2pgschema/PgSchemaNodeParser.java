@@ -60,11 +60,14 @@ public abstract class PgSchemaNodeParser {
 	/** The PostgreSQL data model. */
 	protected PgSchema schema;
 
-	/** The PostgreSQL data model option. */
-	protected PgSchemaOption option;
-
 	/** The relational data extension. */
 	protected boolean rel_data_ext;
+
+	/** Whether to fill @default value. */
+	protected boolean fill_default_value;
+
+	/** The size of hash key. */
+	protected PgHashSize hash_size;
 
 	/** The parent table. */
 	protected PgTable parent_table;
@@ -145,16 +148,14 @@ public abstract class PgSchemaNodeParser {
 	public PgSchemaNodeParser(final PgSchema schema, final MessageDigest md_hash_key, final PgTable parent_table, final PgTable table, final PgSchemaNodeParserType parser_type) throws PgSchemaException {
 
 		this.schema = schema;
-		option = schema.option;
-
 		this.md_hash_key = md_hash_key;
-
-		rel_data_ext = option.rel_data_ext;
-
 		this.parent_table = parent_table;
 		this.table = table;
-
 		this.parser_type = parser_type;
+
+		rel_data_ext = schema.option.rel_data_ext;
+		fill_default_value = schema.option.fill_default_value;
+		hash_size = schema.option.hash_size;
 
 		document_id = schema.getDocumentId();
 		document_id_len = document_id.length();
@@ -557,7 +558,7 @@ public abstract class PgSchemaNodeParser {
 			String child_name;
 
 			if ((child_name = child.getLocalName()) == null)
-				child_name = option.getUnqualifiedName(child.getNodeName());
+				child_name = PgSchemaUtil.getUnqualifiedName(child.getNodeName());
 
 			if (!child_name.equals(field.xname))
 				continue;
@@ -578,7 +579,7 @@ public abstract class PgSchemaNodeParser {
 	 */
 	private boolean applyContentFilter(final PgField field, boolean pg_enum_limit) {
 
-		if (field.default_value != null && option.fill_default_value && (content == null || content.isEmpty()))
+		if (field.default_value != null && fill_default_value && (content == null || content.isEmpty()))
 			content = field.default_value;
 
 		if (field.fill_this)
@@ -637,7 +638,7 @@ public abstract class PgSchemaNodeParser {
 			String child_name;
 
 			if ((child_name = child.getLocalName()) == null)
-				child_name = option.getUnqualifiedName(child.getNodeName());
+				child_name = PgSchemaUtil.getUnqualifiedName(child.getNodeName());
 
 			String _child_name = child_name;
 
@@ -883,7 +884,7 @@ public abstract class PgSchemaNodeParser {
 			String child_name;
 
 			if ((child_name = child.getLocalName()) == null)
-				child_name = option.getUnqualifiedName(child.getNodeName());
+				child_name = PgSchemaUtil.getUnqualifiedName(child.getNodeName());
 
 			if (!child_name.equals(nested_table.xname))
 				continue;
@@ -931,7 +932,7 @@ public abstract class PgSchemaNodeParser {
 
 			byte[] bytes = md_hash_key.digest(key_name.getBytes());
 
-			switch (option.hash_size) {
+			switch (hash_size) {
 			case native_default:
 				return "E'\\\\x" + DatatypeConverter.printHexBinary(bytes) + "'"; // PostgreSQL hex format
 			case unsigned_long_64:
