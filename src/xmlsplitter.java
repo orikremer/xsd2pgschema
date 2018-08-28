@@ -170,10 +170,19 @@ public class xmlsplitter {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
+		InputStream is = null;
 
-		if (is == null)
-			showUsage();
+		boolean server_alive = option.pingPgSchemaServer(fst_conf);
+		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf) : true;
+
+		if (no_data_model) {
+
+			is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
+
+			if (is == null)
+				showUsage();
+
+		}
 
 		if (xml_file_names.size() == 0) {
 			System.err.println("XML file name is empty.");

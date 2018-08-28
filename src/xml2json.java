@@ -241,10 +241,19 @@ public class xml2json {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
+		InputStream is = null;
 
-		if (is == null)
-			showUsage();
+		boolean server_alive = option.pingPgSchemaServer(fst_conf);
+		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf) : true;
+
+		if (no_data_model) {
+
+			is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
+
+			if (is == null)
+				showUsage();
+
+		}
 
 		if (xml_file_names.size() == 0) {
 			System.err.println("XML file name is empty.");
@@ -281,26 +290,27 @@ public class xml2json {
 
 		final String class_name = MethodHandles.lookup().lookupClass().getName();
 
-		Xml2JsonThrd[] proc_thrd = new Xml2JsonThrd[max_thrds];
 		Thread[] thrd = new Thread[max_thrds];
 
 		long start_time = System.currentTimeMillis();
 
 		// PgSchema server is alive
 
-		if (option.pingPgSchemaServer(fst_conf)) {
+		if (server_alive) {
 
-			final boolean no_data_model = !option.matchPgSchemaServer(fst_conf);
-
-			Thread[] get_thrd = new Thread[max_thrds];
 			PgSchemaClientImpl[] clients = new PgSchemaClientImpl[max_thrds];
+			Thread[] get_thrd = new Thread[max_thrds];
 
 			try {
 
 				// send ADD query to PgSchema server
 
-				if (no_data_model)
+				if (no_data_model) {
+
 					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, class_name);
+					get_thrd[0] = null;
+
+				}
 
 				// send GET query to PgSchema server
 
@@ -309,10 +319,10 @@ public class xml2json {
 					if (thrd_id == 0 && no_data_model)
 						continue;
 
-					get_thrd[thrd_id] = new Thread(new PgSchemaGetClientThrd(thrd_id, option, fst_conf, class_name, clients));
+					Thread _get_thrd = get_thrd[thrd_id] = new Thread(new PgSchemaGetClientThrd(thrd_id, option, fst_conf, class_name, clients));
 
-					get_thrd[thrd_id].setPriority(Thread.MAX_PRIORITY);
-					get_thrd[thrd_id].start();
+					_get_thrd.setPriority(Thread.MAX_PRIORITY);
+					_get_thrd.start();
 
 				}
 
@@ -322,16 +332,15 @@ public class xml2json {
 
 					try {
 
-						proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, thrd_id == 0 && no_data_model ? null : get_thrd[thrd_id], clients, json_dir_path, xml_file_filter, xml_file_queue, xml_post_editor, jsonb_option);
+						Thread _thrd = thrd[thrd_id] = new Thread(new Xml2JsonThrd(thrd_id, get_thrd[thrd_id], clients, json_dir_path, xml_file_filter, xml_file_queue, xml_post_editor, jsonb_option), thrd_name);
+
+						_thrd.setPriority(Thread.MAX_PRIORITY);
+						_thrd.start();
 
 					} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 						e.printStackTrace();
 						System.exit(1);
 					}
-
-					thrd[thrd_id] = new Thread(proc_thrd[thrd_id], thrd_name);
-
-					thrd[thrd_id].start();
 
 				}
 
@@ -355,16 +364,15 @@ public class xml2json {
 					if (thrd_id > 0)
 						is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
-					proc_thrd[thrd_id] = new Xml2JsonThrd(thrd_id, is, json_dir_path, xml_file_filter, xml_file_queue, xml_post_editor, option, jsonb_option);
+					Thread _thrd = thrd[thrd_id] = new Thread(new Xml2JsonThrd(thrd_id, is, json_dir_path, xml_file_filter, xml_file_queue, xml_post_editor, option, jsonb_option), thrd_name);
+
+					_thrd.setPriority(Thread.MAX_PRIORITY);
+					_thrd.start();
 
 				} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 					e.printStackTrace();
 					System.exit(1);
 				}
-
-				thrd[thrd_id] = new Thread(proc_thrd[thrd_id], thrd_name);
-
-				thrd[thrd_id].start();
 
 			}
 
@@ -374,8 +382,7 @@ public class xml2json {
 
 			try {
 
-				if (thrd[thrd_id] != null)
-					thrd[thrd_id].join();
+				thrd[thrd_id].join();
 
 			} catch (InterruptedException e) {
 				e.printStackTrace();

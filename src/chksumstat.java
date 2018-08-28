@@ -22,6 +22,7 @@ import net.sf.xsd2pgschema.*;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -215,25 +216,25 @@ public class chksumstat {
 			System.exit(1);
 		}
 
-		ChkSumStatThrd[] proc_thrd = new ChkSumStatThrd[max_thrds];
+		final String class_name = MethodHandles.lookup().lookupClass().getName();
+
 		Thread[] thrd = new Thread[max_thrds];
 
 		for (int thrd_id = 0; thrd_id < max_thrds; thrd_id++) {
 
-			String thrd_name = "chksumstat-" + thrd_id;
+			String thrd_name = class_name + "-" + thrd_id;
 
 			try {
 
-				proc_thrd[thrd_id] = new ChkSumStatThrd(xml_file_filter, xml_file_queue, sync_new_doc_rows, sync_up_doc_rows, sync_del_doc_rows, option);
+				Thread _thrd = thrd[thrd_id] = new Thread(new ChkSumStatThrd(xml_file_filter, xml_file_queue, sync_new_doc_rows, sync_up_doc_rows, sync_del_doc_rows, option), thrd_name);
+
+				_thrd.setPriority(Thread.MAX_PRIORITY);
+				_thrd.start();
 
 			} catch (NoSuchAlgorithmException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
-
-			thrd[thrd_id] = new Thread(proc_thrd[thrd_id], thrd_name);
-
-			thrd[thrd_id].start();
 
 		}
 

@@ -243,10 +243,19 @@ public class xpath2xml {
 
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
+		InputStream is = null;
 
-		if (is == null)
-			showUsage();
+		boolean server_alive = option.pingPgSchemaServer(fst_conf);
+		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf) : true;
+
+		if (no_data_model) {
+
+			is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
+
+			if (is == null)
+				showUsage();
+
+		}
 
 		try {
 

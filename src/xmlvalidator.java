@@ -22,7 +22,6 @@ import net.sf.xsd2pgschema.*;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -146,11 +145,6 @@ public class xmlvalidator {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
-
-		if (is == null)
-			showUsage();
-
 		if (xml_file_names.size() == 0) {
 			System.err.println("XML file name is empty.");
 			showUsage();
@@ -197,7 +191,6 @@ public class xmlvalidator {
 
 		final String class_name = MethodHandles.lookup().lookupClass().getName();
 
-		XmlValidatorThrd[] proc_thrd = new XmlValidatorThrd[max_thrds];
 		Thread[] thrd = new Thread[max_thrds];
 
 		long start_time = System.currentTimeMillis();
@@ -208,19 +201,16 @@ public class xmlvalidator {
 
 			try {
 
-				if (thrd_id > 0)
-					is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
+				Thread _thrd = thrd[thrd_id] = new Thread(new XmlValidatorThrd(thrd_id, xml_file_filter, xml_file_queue, option), thrd_name);
 
-				proc_thrd[thrd_id] = new XmlValidatorThrd(thrd_id, xml_file_filter, xml_file_queue, option);
+				_thrd.setPriority(Thread.MAX_PRIORITY);
+				_thrd.start();
+
 
 			} catch (NoSuchAlgorithmException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
-
-			thrd[thrd_id] = new Thread(proc_thrd[thrd_id], thrd_name);
-
-			thrd[thrd_id].start();
 
 		}
 
@@ -228,8 +218,7 @@ public class xmlvalidator {
 
 			try {
 
-				if (thrd[thrd_id] != null)
-					thrd[thrd_id].join();
+				thrd[thrd_id].join();
 
 			} catch (InterruptedException e) {
 				e.printStackTrace();

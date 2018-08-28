@@ -285,10 +285,19 @@ public class xml2luceneidx {
 			showUsage();
 		}
 
-		InputStream is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
+		InputStream is = null;
 
-		if (is == null)
-			showUsage();
+		boolean server_alive = option.pingPgSchemaServer(fst_conf);
+		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf) : true;
+
+		if (no_data_model) {
+
+			is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
+
+			if (is == null)
+				showUsage();
+
+		}
 
 		if (xml_file_names.size() == 0) {
 			System.err.println("XML file name is empty.");
@@ -355,26 +364,28 @@ public class xml2luceneidx {
 
 		final String class_name = MethodHandles.lookup().lookupClass().getName();
 
-		Xml2LuceneIdxThrd[] proc_thrd = new Xml2LuceneIdxThrd[shard_size * max_thrds];
+		Xml2LuceneIdxThrd[] shard_thrd = new Xml2LuceneIdxThrd[shard_size];
 		Thread[] thrd = new Thread[shard_size * max_thrds];
 
 		long start_time = System.currentTimeMillis();
 
 		// PgSchema server is alive
 
-		if (option.pingPgSchemaServer(fst_conf)) {
+		if (server_alive) {
 
-			final boolean no_data_model = !option.matchPgSchemaServer(fst_conf);
-
-			Thread[] get_thrd = new Thread[shard_size * max_thrds];
 			PgSchemaClientImpl[] clients = new PgSchemaClientImpl[shard_size * max_thrds];
+			Thread[] get_thrd = new Thread[shard_size * max_thrds];
 
 			try {
 
 				// send ADD query to PgSchema server
 
-				if (no_data_model)
+				if (no_data_model) {
+
 					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, class_name);
+					get_thrd[0] = null;
+
+				}
 
 				// send GET query to PgSchema server
 
@@ -387,10 +398,10 @@ public class xml2luceneidx {
 						if (_thrd_id == 0 && no_data_model)
 							continue;
 
-						get_thrd[_thrd_id] = new Thread(new PgSchemaGetClientThrd(_thrd_id, option, fst_conf, class_name, clients));
+						Thread _get_thrd = get_thrd[_thrd_id] = new Thread(new PgSchemaGetClientThrd(_thrd_id, option, fst_conf, class_name, clients));
 
-						get_thrd[_thrd_id].setPriority(Thread.MAX_PRIORITY);
-						get_thrd[_thrd_id].start();
+						_get_thrd.setPriority(Thread.MAX_PRIORITY);
+						_get_thrd.start();
 
 					}
 
@@ -405,16 +416,20 @@ public class xml2luceneidx {
 
 						try {
 
-							proc_thrd[_thrd_id] = new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, _thrd_id == 0 && no_data_model ? null : get_thrd[_thrd_id], _thrd_id, clients, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, idx_dir_path, writers, doc_rows);
+							Thread _thrd;
+
+							if (thrd_id == 0)
+								_thrd = thrd[_thrd_id] = new Thread(shard_thrd[shard_id] = new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, get_thrd[_thrd_id], _thrd_id, clients, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, idx_dir_path, writers, doc_rows), thrd_name);
+							else
+								_thrd = thrd[_thrd_id] = new Thread(new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, get_thrd[_thrd_id], _thrd_id, clients, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, idx_dir_path, writers, doc_rows), thrd_name);
+
+							_thrd.setPriority(Thread.MAX_PRIORITY);
+							_thrd.start();
 
 						} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 							e.printStackTrace();
 							System.exit(1);
 						}
-
-						thrd[_thrd_id] = new Thread(proc_thrd[_thrd_id], thrd_name);
-
-						thrd[_thrd_id].start();
 
 					}
 
@@ -443,16 +458,20 @@ public class xml2luceneidx {
 						if (shard_id > 0 || thrd_id > 0)
 							is = PgSchemaUtil.getSchemaInputStream(option.root_schema_location, null, false);
 
-						proc_thrd[_thrd_id] = new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, xml_post_editor, option, index_filter, idx_dir_path, writers, doc_rows);
+						Thread _thrd;
+
+						if (thrd_id == 0)
+							_thrd = thrd[_thrd_id] = new Thread(shard_thrd[shard_id] = new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, xml_post_editor, option, index_filter, idx_dir_path, writers, doc_rows), thrd_name);
+						else
+							_thrd = thrd[_thrd_id] = new Thread(new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, xml_post_editor, option, index_filter, idx_dir_path, writers, doc_rows), thrd_name);
+
+						_thrd.setPriority(Thread.MAX_PRIORITY);
+						_thrd.start();
 
 					} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 						e.printStackTrace();
 						System.exit(1);
 					}
-
-					thrd[_thrd_id] = new Thread(proc_thrd[_thrd_id], thrd_name);
-
-					thrd[_thrd_id].start();
 
 				}
 
@@ -468,8 +487,7 @@ public class xml2luceneidx {
 
 				try {
 
-					if (thrd[_thrd_id] != null)
-						thrd[_thrd_id].join();
+					thrd[_thrd_id].join();
 
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -480,7 +498,7 @@ public class xml2luceneidx {
 
 			try {
 
-				proc_thrd[shard_id * max_thrds].close();
+				shard_thrd[shard_id].close();
 
 			} catch (IOException e) {
 				e.printStackTrace();
