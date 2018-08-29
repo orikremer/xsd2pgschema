@@ -46,9 +46,6 @@ public class PgSchemaNodeTester {
 	/** Whether this node is omissible. */
 	protected boolean omissible = false;
 
-	/** Whether this node has been already visited. */
-	protected boolean visited = false;
-
 	/** Whether parent node as attribute. */
 	protected boolean as_attr;
 
@@ -96,18 +93,13 @@ public class PgSchemaNodeTester {
 		as_attr = nested_key.as_attr;
 		indirect = nested_key.indirect;
 
-		if (!virtual) {
+		if (!virtual && (!xname.equals(table_xname) && (!indirect || (indirect && (parent_table.virtual || !xname.equals(parent_table.xname)))))) {
 
-			boolean parent_virtual = parent_table.virtual;
+			if (!as_attr || (as_attr && !parent_node.hasAttributes())) {
 
-			if ((!indirect && !xname.equals(table_xname)) ||
-					(indirect && (parent_virtual || (!parent_virtual && !xname.equals(parent_table.xname))) && !xname.equals(table_xname))) {
+				omissible = true;
 
-				if (!as_attr || (as_attr && !parent_node.hasAttributes())) {
-					omissible = true;
-					return;
-				}
-
+				return;
 			}
 
 		}
@@ -121,23 +113,32 @@ public class PgSchemaNodeTester {
 		if (nested_key.list_holder) {
 
 			if (indirect && node_ordinal < nested_key.target_ordinal) {
+
 				omissible = true;
+
 				return;
 			}
 
 			if (!virtual)
 				current_key += "[" + node_ordinal + "]"; // XPath predicate
 
-		}
+			if ((last_node = node_parser.last_node) == null) {
 
-		else {
+				for (Node child = parent_node.getLastChild(); child != null; child = child.getPreviousSibling()) {
 
-			if (table.visited_key.equals(current_key)) {
-				visited = true;
-				return;	
+					if (child.getNodeType() != Node.ELEMENT_NODE)
+						continue;
+
+					if (qname.equals(child.getNodeName())) {
+
+						last_node = child;
+
+						break;
+					}
+
+				}
+
 			}
-
-			table.visited_key = current_key;
 
 		}
 
@@ -159,18 +160,16 @@ public class PgSchemaNodeTester {
 				if ((child_name = child.getLocalName()) == null)
 					child_name = PgSchemaUtil.getUnqualifiedName(child.getNodeName());
 
-				if (!child_name.equals(table_xname))
-					continue;
+				if (child_name.equals(table_xname)) {
 
-				proc_node = child;
+					proc_node = child;
 
-				break;
+					break;
+				}
+
 			}
 
 		}
-
-		if (last_node == null && (last_node = node_parser.last_node) == null)
-			last_node = nested_key.getLastNode(parent_node, qname);
 
 	}
 

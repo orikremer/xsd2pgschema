@@ -19,8 +19,6 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import org.w3c.dom.Node;
-
 /**
  * Nested key
  *
@@ -113,32 +111,6 @@ public class PgSchemaNestedKey {
 		indirect = false;
 
 		return this;
-	}
-
-	/**
-	 * Return the last node with qualified name under parent node.
-	 *
-	 * @param parent_node parent node
-	 * @param qname qualified name of target node
-	 * @return Node the last node
-	 */
-	public Node getLastNode(Node parent_node, final String qname) {
-
-		if (list_holder) {
-
-			for (Node child = parent_node.getLastChild(); child != null; child = child.getPreviousSibling()) {
-
-				if (child.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-
-				if (qname.equals(child.getNodeName()))
-					return child;
-
-			}
-
-		}
-
-		return null;
 	}
 
 }

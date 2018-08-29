@@ -91,10 +91,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2lucidx);
 
-				if (node_test.visited)
-					return;
-
-				else if (node_test.omissible)
+				if (node_test.omissible)
 					continue;
 
 				if (node2lucidx.parseChildNode(node_test, nested_key))
@@ -122,8 +119,10 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	@Override
 	protected void parse(final PgSchemaNodeTester node_test) throws PgSchemaException {
 
+		if (table.visited_key.equals(current_key = node_test.current_key))
+			return;
+
 		proc_node = node_test.proc_node;
-		current_key = node_test.current_key;
 		indirect = node_test.indirect;
 
 		Arrays.fill(values, "");
@@ -239,6 +238,8 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				field.writeValue2LucIdx(table.lucene_doc, field_prefix + field.name, value, value.length() >= min_word_len, lucene_numeric_index);
 
 		}
+
+		table.visited_key = current_key;
 
 	}
 

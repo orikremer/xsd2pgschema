@@ -296,10 +296,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2json);
 
-				if (node_test.visited)
-					return;
-
-				else if (node_test.omissible)
+				if (node_test.omissible)
 					continue;
 
 				if (node2json.parseChildNode(node_test, nested_key))
@@ -328,14 +325,16 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 */
 	protected void traverseNestedNodeCol(final Node parent_node, final PgSchemaNestedKey nested_key, int json_indent_level) throws PgSchemaException {
 
+		PgTable current_table = nested_key.table;
+
 		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, md_hash_key, table, nested_key.table);
 
 		try {
 
-			boolean list_and_bridge = table.list_holder && table.bridge;
+			boolean list_and_bridge = current_table.list_holder && current_table.bridge;
 
-			if (!table.virtual && !list_and_bridge)
-				jsonb.writeStartTable(table, true, json_indent_level);
+			if (!current_table.virtual && !list_and_bridge)
+				jsonb.writeStartTable(current_table, true, json_indent_level);
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
 
@@ -344,10 +343,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2json);
 
-				if (node_test.visited)
-					return;
-
-				else if (node_test.omissible)
+				if (node_test.omissible)
 					continue;
 
 				if (node2json.parseChildNode(node_test, nested_key, json_indent_level))
@@ -364,7 +360,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			} finally {
 
-				if (!table.virtual && !list_and_bridge)
+				if (!current_table.virtual && !list_and_bridge)
 					jsonb.writeEndTable();
 
 			}
@@ -385,12 +381,14 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 */
 	protected void traverseNestedNodeObj(final Node parent_node, final PgSchemaNestedKey nested_key, int json_indent_level) throws PgSchemaException {
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, md_hash_key, table, nested_key.table);
+		PgTable current_table = nested_key.table;
+
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, md_hash_key, table, current_table);
 
 		try {
 
-			if (!table.virtual && table.bridge) {
-				jsonb.writeStartTable(table, true, ++json_indent_level);
+			if (!current_table.virtual && current_table.bridge) {
+				jsonb.writeStartTable(current_table, true, ++json_indent_level);
 				++json_indent_level;
 			}
 
@@ -401,10 +399,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2json);
 
-				if (node_test.visited)
-					return;
-
-				else if (node_test.omissible)
+				if (node_test.omissible)
 					continue;
 
 				if (node2json.parseChildNode(node_test, nested_key, json_indent_level))
@@ -421,7 +416,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			} finally {
 
-				if (!table.virtual && table.bridge)
+				if (!current_table.virtual && current_table.bridge)
 					jsonb.writeEndTable();
 
 			}
@@ -441,8 +436,10 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	@Override
 	protected void parse(final PgSchemaNodeTester node_test) throws PgSchemaException {
 
+		if (table.visited_key.equals(current_key = node_test.current_key))
+			return;
+
 		proc_node = node_test.proc_node;
-		current_key = node_test.current_key;
 		indirect = node_test.indirect;
 
 		Arrays.fill(values, "");
@@ -526,6 +523,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		if (not_empty && !table.jsonb_not_empty)
 			table.jsonb_not_empty = true;
+
+		table.visited_key = current_key;
 
 	}
 

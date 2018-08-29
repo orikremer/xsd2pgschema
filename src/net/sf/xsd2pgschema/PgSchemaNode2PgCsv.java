@@ -103,10 +103,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2pgcsv);
 
-				if (node_test.visited)
-					return;
-
-				else if (node_test.omissible)
+				if (node_test.omissible)
 					continue;
 
 				if (node2pgcsv.parseChildNode(node_test, nested_key))
@@ -134,8 +131,10 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	@Override
 	protected void parse(final PgSchemaNodeTester node_test) throws PgSchemaException {
 
+		if (table.visited_key.equals(current_key = node_test.current_key))
+			return;
+
 		proc_node = node_test.proc_node;
-		current_key = node_test.current_key;
 		indirect = node_test.indirect;
 
 		Arrays.fill(values, pg_null);
@@ -253,6 +252,9 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 		if (!writable || !filled || (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0)))
 			return;
 
+		if (table.visited_key.equals(current_key))
+			return;
+
 		try {
 
 			for (int f = 0; f < fields.size(); f++) {
@@ -278,6 +280,8 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 		} catch (IOException e) {
 			throw new PgSchemaException(e);
 		}
+
+		table.visited_key = current_key;
 
 	}
 

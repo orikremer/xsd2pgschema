@@ -248,10 +248,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2pgsql);
 
-				if (node_test.visited)
-					return;
-
-				else if (node_test.omissible)
+				if (node_test.omissible)
 					continue;
 
 				if (node2pgsql.parseChildNode(node_test, nested_key))
@@ -279,8 +276,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	@Override
 	protected void parse(final PgSchemaNodeTester node_test) throws PgSchemaException {
 
+		if (table.visited_key.equals(current_key = node_test.current_key))
+			return;
+
 		proc_node = node_test.proc_node;
-		current_key = node_test.current_key;
 		indirect = node_test.indirect;
 
 		Arrays.fill(occupied, false);
@@ -473,6 +472,8 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			if (rel_data_ext)
 				ps.executeBatch();
+
+			table.visited_key = current_key;
 
 		} catch (SQLException e) {
 			throw new PgSchemaException(e);
