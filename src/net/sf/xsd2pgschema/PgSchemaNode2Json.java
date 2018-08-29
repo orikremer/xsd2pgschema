@@ -128,7 +128,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		parse(node_test);
 
 		boolean as_attr = nested_key.as_attr;
-		boolean last_node = isLastNode(nested_key, node_test.node_count);
+		boolean last_node = isLastNode(node_test, nested_key);
 
 		switch (type) {
 		case column:
@@ -294,7 +294,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2json.node_count, node2json.node_ordinal);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2json);
 
 				if (node_test.visited)
 					return;
@@ -342,7 +342,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2json.node_count, node2json.node_ordinal);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2json);
 
 				if (node_test.visited)
 					return;
@@ -399,7 +399,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2json.node_count, node2json.node_ordinal);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2json);
 
 				if (node_test.visited)
 					return;

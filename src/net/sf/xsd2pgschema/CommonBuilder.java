@@ -149,7 +149,6 @@ public class CommonBuilder {
 	public void clear() {
 
 		pending_simple_cont.setLength(0);
-		resetStatus();
 
 	}
 

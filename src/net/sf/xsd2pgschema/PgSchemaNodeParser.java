@@ -87,9 +87,6 @@ public abstract class PgSchemaNodeParser {
 	/** The array of nested key. */
 	protected List<PgSchemaNestedKey> nested_keys = null;
 
-	/** The count of sibling nodes. */
-	protected int node_count = 0;
-
 	/** The ordinal number of sibling node. */
 	protected int node_ordinal = 1;
 
@@ -107,6 +104,9 @@ public abstract class PgSchemaNodeParser {
 
 	/** The processing node. */
 	protected Node proc_node;
+
+	/** The last node. */
+	protected Node last_node = null;
 
 	/** The current key name. */
 	protected String current_key;
@@ -259,7 +259,7 @@ public abstract class PgSchemaNodeParser {
 
 		}
 
-		return isLastNode(nested_key, node_test.node_count);
+		return isLastNode(node_test, nested_key);
 	}
 
 	/**
@@ -898,18 +898,18 @@ public abstract class PgSchemaNodeParser {
 	/**
 	 * Return whether current node is the last one.
 	 *
+	 * @param node_test node_test
 	 * @param nested_key nested key
-	 * @param node_count count of sibling nodes
 	 * @return boolean whether current node is the last one
 	 */
-	protected boolean isLastNode(PgSchemaNestedKey nested_key, int node_count) {
+	protected boolean isLastNode(PgSchemaNodeTester node_test, PgSchemaNestedKey nested_key) {
+
+		if (last_node == null && node_test.last_node != null)
+			last_node = node_test.last_node;
 
 		try {
-			return node_count <= 1 || (node_ordinal == node_count) || (nested_key.indirect && node_ordinal == nested_key.target_ordinal);
+			return last_node == null || node_test.proc_node.equals(last_node) || (nested_key.indirect && node_ordinal == nested_key.target_ordinal);
 		} finally {
-
-			if (this.node_count == 0)
-				this.node_count = node_count;
 
 			node_ordinal++;
 

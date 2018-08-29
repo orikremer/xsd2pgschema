@@ -246,7 +246,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2pgsql.node_count, node2pgsql.node_ordinal);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2pgsql);
 
 				if (node_test.visited)
 					return;

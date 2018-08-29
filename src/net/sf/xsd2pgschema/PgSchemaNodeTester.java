@@ -40,6 +40,9 @@ public class PgSchemaNodeTester {
 	/** The processing node. */
 	protected Node proc_node;
 
+	/** The last node. */
+	protected Node last_node = null;
+
 	/** Whether this node is omissible. */
 	protected boolean omissible = false;
 
@@ -51,9 +54,6 @@ public class PgSchemaNodeTester {
 
 	/** Whether child node is not nested node (indirect). */
 	protected boolean indirect;
-
-	/** The count of sibling nodes. */
-	protected int node_count;
 
 	/** The ordinal number of sibling node. */
 	protected int node_ordinal;
@@ -70,7 +70,7 @@ public class PgSchemaNodeTester {
 		parent_key = null;
 		primary_key = current_key = root_key;
 		as_attr = indirect = false;
-		node_count = node_ordinal = 1;
+		node_ordinal = 1;
 
 	}
 
@@ -81,10 +81,9 @@ public class PgSchemaNodeTester {
 	 * @param node current node
 	 * @param parent_table parent table
 	 * @param nested_key nested key
-	 * @param node_count count of sibling nodes
-	 * @param node_ordinal ordinal number of sibling node
+	 * @param node_parser node parser
 	 */
-	public PgSchemaNodeTester(final Node parent_node, final Node node, final PgTable parent_table, final PgSchemaNestedKey nested_key, final int node_count, final int node_ordinal) {
+	public PgSchemaNodeTester(final Node parent_node, final Node node, final PgTable parent_table, final PgSchemaNestedKey nested_key, final PgSchemaNodeParser node_parser) {
 
 		PgTable table = nested_key.table;
 
@@ -117,6 +116,8 @@ public class PgSchemaNodeTester {
 
 		primary_key = current_key = nested_key.current_key;
 
+		node_ordinal = node_parser.node_ordinal;
+
 		if (nested_key.list_holder) {
 
 			if (indirect && node_ordinal < nested_key.target_ordinal) {
@@ -129,12 +130,16 @@ public class PgSchemaNodeTester {
 
 		}
 
-		if (table.visited_key.equals(current_key)) {
-			visited = true;
-			return;	
-		}
+		else {
 
-		table.visited_key = current_key;
+			if (table.visited_key.equals(current_key)) {
+				visited = true;
+				return;	
+			}
+
+			table.visited_key = current_key;
+
+		}
 
 		parent_key = nested_key.parent_key;
 
@@ -164,8 +169,8 @@ public class PgSchemaNodeTester {
 
 		}
 
-		this.node_count = node_count > 0 ? node_count : nested_key.getNodeCount(parent_node, qname);
-		this.node_ordinal = node_ordinal;
+		if (last_node == null && (last_node = node_parser.last_node) == null)
+			last_node = nested_key.getLastNode(parent_node, qname);
 
 	}
 
@@ -182,7 +187,7 @@ public class PgSchemaNodeTester {
 		primary_key = current_key = nested_key.current_key;
 		as_attr = nested_key.as_attr;
 		indirect = nested_key.indirect;
-		node_count = node_ordinal = 1;
+		node_ordinal = 1;
 
 	}
 

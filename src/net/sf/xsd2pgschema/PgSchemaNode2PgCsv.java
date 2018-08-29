@@ -101,7 +101,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2pgcsv.node_count, node2pgcsv.node_ordinal);
+				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2pgcsv);
 
 				if (node_test.visited)
 					return;

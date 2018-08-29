@@ -5425,7 +5425,7 @@ public class PgSchema implements Serializable {
 	 */
 	private void clearJsonBuilder() {
 
-		jsonb.clear(true);
+		jsonb.clear();
 
 		tables.parallelStream().filter(table -> table.required && table.content_holder).forEach(table -> {
 
@@ -7379,7 +7379,7 @@ public class PgSchema implements Serializable {
 
 		jsonb.writeEndDocument();
 
-		jsonb.clear(false);
+		jsonb.clear();
 
 		jsonb.incRootCount();
 

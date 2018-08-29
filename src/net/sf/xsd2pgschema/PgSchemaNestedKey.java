@@ -116,34 +116,29 @@ public class PgSchemaNestedKey {
 	}
 
 	/**
-	 * Return count of the target nodes with qualified name under parent node.
+	 * Return the last node with qualified name under parent node.
 	 *
 	 * @param parent_node parent node
 	 * @param qname qualified name of target node
-	 * @return int count of the target nodes
+	 * @return Node the last node
 	 */
-	public int getNodeCount(Node parent_node, final String qname) {
-
-		int node_count = 0;
+	public Node getLastNode(Node parent_node, final String qname) {
 
 		if (list_holder) {
 
-			for (Node child = parent_node.getFirstChild(); child != null; child = child.getNextSibling()) {
+			for (Node child = parent_node.getLastChild(); child != null; child = child.getPreviousSibling()) {
 
 				if (child.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
 				if (qname.equals(child.getNodeName()))
-					node_count++;
+					return child;
 
 			}
 
 		}
 
-		if (table.has_unique_nested_key && node_count > 1)
-			node_count = 1;
-
-		return node_count;
+		return null;
 	}
 
 }
