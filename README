@@ -1,4 +1,10 @@
-﻿ Changes in xsd2pgschema 3.0.0 (release 2018-08-29)
+﻿ Changes in xsd2pgschema 3.0.1 (release 2018-08-30)
+
+  Added support for complex type extension of primitive data type of element.
+  Fixed JSON conversion issues occurred in 2.12.7 and 3.0.0 (withdrawn).
+  Fixed exception to report multiple root nodes and fragments in XPath query evaluation in 3.0.0.
+
+ Changes in xsd2pgschema 3.0.0 (release 2018-08-24)
 
   [Self Ticket #7] Added PgSchema server (pgschemaserv main class), which serves serialized PostgreSQL data model to client.
   Many main classes support PgSchema server by default (host: localhost, port: 5430).

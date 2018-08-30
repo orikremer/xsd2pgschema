@@ -142,6 +142,13 @@ public class PgSchemaNodeTester {
 
 		}
 
+		if (table.visited_key.equals(current_key)) {
+
+			omissible = true;
+
+			return;
+		}
+
 		parent_key = nested_key.parent_key;
 
 		// processing node

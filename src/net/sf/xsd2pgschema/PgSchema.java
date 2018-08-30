@@ -1520,10 +1520,10 @@ public class PgSchema implements Serializable {
 	 * @param root_node root node
 	 * @param node current node
 	 * @param table current table
-	 * @param insert_complex_type whether this node has parent node of complex type
+	 * @param has_complex_parent whether this node has parent node of complex type
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractField(final PgSchema root_schema, final Node root_node, Node node, PgTable table, boolean insert_complex_type) throws PgSchemaException {
+	private void extractField(final PgSchema root_schema, final Node root_node, Node node, PgTable table, boolean has_complex_parent) throws PgSchemaException {
 
 		String node_name = node.getNodeName();
 
@@ -1548,7 +1548,7 @@ public class PgSchema implements Serializable {
 		}
 
 		else if (node_name.equals(option.xs_prefix_ + "element")) {
-			extractElement(root_schema, root_node, node, table, insert_complex_type);
+			extractElement(root_schema, root_node, node, table, has_complex_parent);
 			return;
 		}
 
@@ -1568,7 +1568,7 @@ public class PgSchema implements Serializable {
 		}
 
 		else if (node_name.equals(option.xs_prefix_ + "complexType"))
-			insert_complex_type = true;
+			has_complex_parent = true;
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -1593,7 +1593,7 @@ public class PgSchema implements Serializable {
 				extractAttributeGroup(root_schema, child, table);
 
 			else if (child_name.equals(option.xs_prefix_ + "element"))
-				extractElement(root_schema, root_node, child, table, insert_complex_type);
+				extractElement(root_schema, root_node, child, table, has_complex_parent);
 
 			else if (child_name.equals(option.xs_prefix_ + "group"))
 				extractModelGroup(root_schema, child, table);
@@ -1605,7 +1605,7 @@ public class PgSchema implements Serializable {
 				extractComplexContent(root_schema, root_node, child, table);
 
 			else
-				extractField(root_schema, root_node, child, table, insert_complex_type);
+				extractField(root_schema, root_node, child, table, has_complex_parent);
 
 		}
 
@@ -1725,12 +1725,12 @@ public class PgSchema implements Serializable {
 	 * @param root_node root node
 	 * @param node current node
 	 * @param table current table
-	 * @param has_complex_type_parent whether this node has parent node of complex type
+	 * @param has_complex_parent whether this node has parent node of complex type
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractElement(final PgSchema root_schema, final Node root_node, Node node, PgTable table, boolean has_complex_type_parent) throws PgSchemaException {
+	private void extractElement(final PgSchema root_schema, final Node root_node, Node node, PgTable table, boolean has_complex_parent) throws PgSchemaException {
 
-		extractInfoItem(root_schema, root_node, node, table, false, has_complex_type_parent);
+		extractInfoItem(root_schema, root_node, node, table, false, has_complex_parent);
 
 	}
 
@@ -1742,10 +1742,10 @@ public class PgSchema implements Serializable {
 	 * @param node current node
 	 * @param table current table
 	 * @param attribute whether attribute or element (false)
-	 * @param insert_complex_type whether this node has parent node of complex type
+	 * @param has_complex_parent whether this node has parent node of complex type
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractInfoItem(final PgSchema root_schema, final Node root_node, Node node, PgTable table, boolean attribute, boolean insert_complex_type) throws PgSchemaException {
+	private void extractInfoItem(final PgSchema root_schema, final Node root_node, Node node, PgTable table, boolean attribute, boolean has_complex_parent) throws PgSchemaException {
 
 		PgField field = new PgField();
 
@@ -1819,9 +1819,73 @@ public class PgSchema implements Serializable {
 
 				if (type.length != 0 && type[0].equals(option.xs_prefix)) {
 
-					// list of primitive data type
+					boolean has_complex_child = false;
 
-					if (insert_complex_type && field.list_holder) {
+					for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+						if (child.getNodeType() != Node.ELEMENT_NODE)
+							continue;
+
+						String child_name = child.getNodeName();
+
+						if (child_name.equals(option.xs_prefix_ + "complexType")) {
+
+							has_complex_child = true;
+
+							// in-line complex type extension of primitive data type
+
+							level++;
+
+							PgTable child_table = new PgTable(table.pg_schema_name, table.target_namespace, def_schema_location);
+
+							boolean unique_key = table.addNestedKey(option, child_table.pg_schema_name, PgSchemaUtil.getUnqualifiedName(name), field, node);
+
+							if (!unique_key)
+								table.cancelUniqueKey();
+
+							Element child_e = (Element) node;
+
+							child_name = child_e.getAttribute("name");
+
+							child_table.xname = PgSchemaUtil.getUnqualifiedName(child_name);
+							child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
+
+							table.required = child_table.required = true;
+
+							if ((child_table.anno = option.extractAnnotation(node, true)) != null)
+								child_table.xanno_doc = option.extractDocumentation(node, false);
+
+							child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
+
+							child_table.fields = new ArrayList<PgField>();
+
+							child_table.level = level;
+
+							child_table.addPrimaryKey(option, unique_key);
+
+							child_table.addForeignKey(option, table);
+
+							for (Node grandchild = child.getFirstChild(); grandchild != null; grandchild = grandchild.getNextSibling())
+								extractField(root_schema, root_node, grandchild, child_table, true);
+
+							child_table.removeProhibitedAttrs();
+							child_table.removeBlockedSubstitutionGroups();
+							child_table.countNestedFields();
+
+							if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(root_schema, tables, child_table))
+								tables.add(child_table);
+
+							addChildItem(root_schema, root_node, child, child_table);
+
+							level--;
+
+						}
+
+					}
+
+					// list of primitive data type or complex type extension
+
+					if (has_complex_parent && field.list_holder) {
 
 						level++;
 
@@ -1865,7 +1929,7 @@ public class PgSchema implements Serializable {
 
 					}
 
-					else {
+					else if (!has_complex_child) {
 
 						field.xs_type = XsDataType.valueOf("xs_" + type[1]);
 
@@ -1998,55 +2062,9 @@ public class PgSchema implements Serializable {
 
 							if (type.length != 0 && type[0].equals(option.xs_prefix)) {
 
-								// list of primitive data type
+								field.xs_type = XsDataType.valueOf("xs_" + type[1]);
 
-								if (insert_complex_type && field.list_holder) {
-
-									level++;
-
-									PgTable child_table = new PgTable(table.pg_schema_name, table.target_namespace, def_schema_location);
-
-									boolean unique_key = table.addNestedKey(option, child_table.pg_schema_name, child_name, field, child);
-
-									if (!unique_key)
-										table.cancelUniqueKey();
-
-									child_table.xname = child_name;
-									child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
-
-									table.required = child_table.required = true;
-
-									if ((child_table.anno = option.extractAnnotation(child, true)) != null)
-										child_table.xanno_doc = option.extractDocumentation(child, false);
-
-									child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
-
-									child_table.fields = new ArrayList<PgField>();
-
-									child_table.level = level;
-
-									child_table.addPrimaryKey(option, unique_key);
-
-									extractSimpleContent(root_schema, root_node, node, child_table, true);
-
-									child_table.removeProhibitedAttrs();
-									child_table.removeBlockedSubstitutionGroups();
-									child_table.countNestedFields();
-
-									if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(root_schema, tables, child_table))
-										tables.add(child_table);
-
-									level--;
-
-								}
-
-								else {
-
-									field.xs_type = XsDataType.valueOf("xs_" + type[1]);
-
-									table.fields.add(field);
-
-								}
+								table.fields.add(field);
 
 							}
 
@@ -2315,15 +2333,15 @@ public class PgSchema implements Serializable {
 				if (!child.getNodeName().equals(option.xs_prefix_ + "extension"))
 					continue;
 
-				for (Node subchild = child.getFirstChild(); subchild != null; subchild = subchild.getNextSibling()) {
+				for (Node grandchild = child.getFirstChild(); grandchild != null; grandchild = grandchild.getNextSibling()) {
 
-					String subchild_name = subchild.getNodeName();
+					String grandchild_name = grandchild.getNodeName();
 
-					if (subchild_name.equals(option.xs_prefix_ + "attribute"))
-						extractAttribute(root_schema, root_node, subchild, table);
+					if (grandchild_name.equals(option.xs_prefix_ + "attribute"))
+						extractAttribute(root_schema, root_node, grandchild, table);
 
-					else if (subchild_name.equals(option.xs_prefix_ + "attributeGroup"))
-						extractAttributeGroup(root_schema, subchild, table);
+					else if (grandchild_name.equals(option.xs_prefix_ + "attributeGroup"))
+						extractAttributeGroup(root_schema, grandchild, table);
 
 				}
 
@@ -7522,7 +7540,7 @@ public class PgSchema implements Serializable {
 
 							else {
 
-								JsonBuilderPendingAttr attr = new JsonBuilderPendingAttr(field, getForeignTable(field), content, nest_test.child_indent_level);
+								JsonBuilderPendingAttr attr = new JsonBuilderPendingAttr(field, getForeignTable(field), content, nest_test.child_indent_level - 1); // decreasing indent level means simple attribute or conditional attribute derives from parent table
 
 								JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
 

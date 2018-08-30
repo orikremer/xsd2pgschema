@@ -252,9 +252,6 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 		if (!writable || !filled || (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0)))
 			return;
 
-		if (table.visited_key.equals(current_key))
-			return;
-
 		try {
 
 			for (int f = 0; f < fields.size(); f++) {
