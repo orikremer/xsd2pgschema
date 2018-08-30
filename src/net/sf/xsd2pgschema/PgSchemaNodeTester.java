@@ -93,7 +93,7 @@ public class PgSchemaNodeTester {
 		as_attr = nested_key.as_attr;
 		indirect = nested_key.indirect;
 
-		if (!virtual && (!xname.equals(table_xname) && (!indirect || (indirect && (parent_table.virtual || !xname.equals(parent_table.xname)))))) {
+		if (!virtual && !xname.equals(table_xname) && (!indirect || (indirect && (parent_table.virtual || !xname.equals(parent_table.xname))))) {
 
 			if (!as_attr || (as_attr && !parent_node.hasAttributes())) {
 

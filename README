@@ -2,7 +2,8 @@
 
   Added support for complex type extension of primitive data type of element.
   Fixed JSON conversion issues occurred in 2.12.7 and 3.0.0 (withdrawn).
-  Fixed exception to report multiple root nodes and fragments in XPath query evaluation in 3.0.0.
+  Fixed indent level of simple type attribute and conditional simple type attribute in XPath query evaluation.
+  Fixed exception to report multiple root nodes and fragments in XPath query evaluation (introduced in 2.12.7, but unexpectedly unused in 3.0.0).
 
  Changes in xsd2pgschema 3.0.0 (release 2018-08-24)
 
