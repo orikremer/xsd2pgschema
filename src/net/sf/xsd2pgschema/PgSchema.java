@@ -4343,8 +4343,6 @@ public class PgSchema implements Serializable {
 
 		node2pgcsv.clear();
 
-		xml_parser.document = null;
-
 	}
 
 	/**
@@ -4466,8 +4464,6 @@ public class PgSchema implements Serializable {
 		node2pgsql.parseRootNode(node);
 
 		node2pgsql.clear();
-
-		xml_parser.document = null;
 
 		try {
 			db_conn.commit(); // transaction ends
@@ -5023,8 +5019,6 @@ public class PgSchema implements Serializable {
 
 		node2lucidx.clear();
 
-		xml_parser.document = null;
-
 	}
 
 	/**
@@ -5344,8 +5338,6 @@ public class PgSchema implements Serializable {
 
 			node2sphds.clear();
 
-			xml_parser.document = null;
-
 			buffw.write("</sphinx:document>\n");
 
 		} catch (IOException e) {
@@ -5584,8 +5576,6 @@ public class PgSchema implements Serializable {
 
 		node2json.clear();
 
-		xml_parser.document = null;
-
 		jsonb.writeEndDocument();
 
 		try {
@@ -5718,8 +5708,6 @@ public class PgSchema implements Serializable {
 
 		node2json.clear();
 
-		xml_parser.document = null;
-
 		jsonb.writeEndDocument();
 
 		try {
@@ -5838,8 +5826,6 @@ public class PgSchema implements Serializable {
 		node2json.parseRootNode(node);
 
 		node2json.clear();
-
-		xml_parser.document = null;
 
 		tables.stream().filter(_table -> _table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).forEach(_table -> {
 

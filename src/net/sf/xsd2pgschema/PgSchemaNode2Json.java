@@ -76,13 +76,13 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	/**
 	 * Parse root node: Column- or Object-oriented JSON format
 	 *
-	 * @param proc_node processing node
+	 * @param root_node root node
 	 * @param indent_level current indent level
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void parseRootNode(final Node proc_node, int indent_level) throws PgSchemaException {
+	public void parseRootNode(final Node root_node, int indent_level) throws PgSchemaException {
 
-		parse(new PgSchemaNodeTester(proc_node, current_key = document_id + "/" + table.xname));
+		parse(new PgSchemaNodeTester(root_node, current_key = document_id + "/" + table.xname));
 
 		if (!filled)
 			return;
@@ -98,11 +98,11 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				switch (type) {
 				case column:
 					for (PgSchemaNestedKey nested_key : nested_keys)
-						traverseNestedNodeCol(proc_node, nested_key.asOfRoot(this), indent_level + (table.virtual ? 0 : 1));
+						traverseNestedNodeCol(root_node, nested_key.asOfRoot(this), indent_level + (table.virtual ? 0 : 1));
 					break;
 				default: // object
 					for (PgSchemaNestedKey nested_key : nested_keys)
-						traverseNestedNodeObj(proc_node, nested_key.asOfRoot(this), indent_level + (table.relational ? 0 : 1));
+						traverseNestedNodeObj(root_node, nested_key.asOfRoot(this), indent_level + (table.relational ? 0 : 1));
 				}
 
 			}
@@ -220,16 +220,16 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	/**
 	 * Parse child node: Column- or Object-oriented JSON format
 	 *
-	 * @param proc_node processing node
+	 * @param node current node
 	 * @param nested_key nested key
 	 * @param indent_level current indent level
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void parseChildNode(final Node proc_node, final PgSchemaNestedKey nested_key, int indent_level) throws PgSchemaException {
+	protected void parseChildNode(final Node node, final PgSchemaNestedKey nested_key, int indent_level) throws PgSchemaException {
 
 		boolean as_attr = nested_key.as_attr;
 
-		parse(new PgSchemaNodeTester(proc_node, nested_key));
+		parse(new PgSchemaNodeTester(node, nested_key));
 
 		switch (type) {
 		case column:
@@ -241,8 +241,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-				if (existsNestedNode(_nested_key.table, proc_node))
-					traverseNestedNodeCol(proc_node, _nested_key.asOfChild(this), indent_level + (table.virtual ? 0 : 1));
+				if (existsNestedNode(_nested_key.table, node))
+					traverseNestedNodeCol(node, _nested_key.asOfChild(this), indent_level + (table.virtual ? 0 : 1));
 
 			}
 			break;
@@ -260,8 +260,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-					if (existsNestedNode(_nested_key.table, proc_node))
-						traverseNestedNodeObj(proc_node, _nested_key.asOfChild(this), indent_level + (table.relational ? 0 : 1));
+					if (existsNestedNode(_nested_key.table, node))
+						traverseNestedNodeObj(node, _nested_key.asOfChild(this), indent_level + (table.relational ? 0 : 1));
 
 				}
 

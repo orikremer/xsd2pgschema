@@ -163,6 +163,7 @@ public class PgSchemaServerThrd implements Runnable {
 					sb.append(server_status_info_header + " default schema location: " + arg.option.root_schema_location + "\n");
 					sb.append(server_status_info_header + " original caller class  : " + arg.original_caller + "\n");
 					sb.append(server_status_info_header + " length of data model   : " + arg.schema_bytes.length + "\n");
+					sb.append(server_status_info_header + " hash code of data model: " + arg.option.hashCode() + "\n");
 
 					Calendar dt_cal = Calendar.getInstance();
 					dt_cal.setTimeInMillis(arg.last_access_time_millis);

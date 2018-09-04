@@ -357,7 +357,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		if (def_namespaces != null) {
 
-			String def_namespace = def_namespaces.get("");
+			String def_namespace = getSchemaAnnotation(def_namespaces.get(""));
 
 			if (def_namespace != null)
 				buffer.append(indent_spaces + getCanKeyValuePairDecl((schema_ver.equals(JsonSchemaVersion.draft_v4) ? "" : "$") + "id", def_namespace)); // declare unique identifier
@@ -366,7 +366,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		if (def_anno_appinfo != null) {
 
-			String _def_anno_appinfo = getOneLinerAnnotation(def_anno_appinfo, false);
+			String _def_anno_appinfo = getSchemaAnnotation(def_anno_appinfo);
 
 			if (!_def_anno_appinfo.startsWith("\""))
 				_def_anno_appinfo = "\"" + _def_anno_appinfo + "\"";
@@ -377,7 +377,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		if (def_anno_doc != null) {
 
-			String _def_anno_doc = getOneLinerAnnotation(def_anno_doc, false);
+			String _def_anno_doc = getSchemaAnnotation(def_anno_doc);
 
 			if (!_def_anno_doc.startsWith("\""))
 				_def_anno_doc = "\"" + _def_anno_doc + "\"";
@@ -419,7 +419,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		if (table.anno != null && !table.anno.isEmpty()) {
 
-			String table_anno = getOneLinerAnnotation(table.anno, true);
+			String table_anno = getOneLinerAnnotation(table.anno);
 
 			if (!table_anno.startsWith("\""))
 				table_anno = "\"" + table_anno + "\"";
@@ -561,7 +561,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		if (!no_field_anno && field.anno != null && !field.anno.isEmpty()) {
 
-			String anno = getOneLinerAnnotation(field.anno, true);
+			String anno = getOneLinerAnnotation(field.anno);
 
 			if (!anno.startsWith("\""))
 				anno = "\"" + anno + "\"";
@@ -786,14 +786,23 @@ public class JsonBuilder extends CommonBuilder {
 	}
 
 	/**
-	 * Return escaped one-liner annotation.
+	 * Return schema annotation by replacement of XML Schema relating words.
+	 * 
+	 * @param annotation annotation
+	 * @return String escaped schema annotation
+	 */
+	private String getSchemaAnnotation(String annotation) {
+		return StringEscapeUtils.escapeEcmaScript(annotation).replace("\\/", "/").replace("\\'", "'").replace(".xsd", ".json").replaceAll(".xml", ".json").replace("XSD", "JSON Schema").replace("Xsd", "Json schema").replace("xsd", "json schema").replace("XML", "JSON").replace("Xml", "Json").replace("xml", "json");
+	}
+
+	/**
+	 * Return one-liner annotation.
 	 *
 	 * @param annotation annotation
-	 * @param is_table whether table annotation
 	 * @return String escaped one-liner annotation
 	 */
-	private String getOneLinerAnnotation(String annotation, boolean is_table) {
-		return is_table ? StringEscapeUtils.escapeCsv(annotation.replace("\n--", "")) : StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(annotation).replace("\\/", "/").replace("\\'", "'"));
+	private String getOneLinerAnnotation(String annotation) {
+		return StringEscapeUtils.escapeCsv(annotation.replace("\n--", ""));
 	}
 
 	/**

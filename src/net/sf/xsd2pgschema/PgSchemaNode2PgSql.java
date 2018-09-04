@@ -41,7 +41,7 @@ import org.xml.sax.SAXException;
 public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 	/** The prepared statement. */
-	private PreparedStatement ps;
+	private PreparedStatement ps = null;
 
 	/** Whether table could have writer. */
 	private boolean writable;

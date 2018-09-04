@@ -19,6 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.security.MessageDigest;
@@ -38,7 +39,10 @@ import org.xml.sax.SAXException;
 public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 	/** The string builder for a line of CSV/TSV format. */
-	private StringBuilder sb;
+	private StringBuilder sb = null;
+
+	/** The buffered writer for data (CSV/TSV) conversion. */
+	private BufferedWriter buffw = null;
 
 	/** Whether table could have writer. */
 	private boolean writable;
@@ -68,9 +72,12 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		super(schema, md_hash_key, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
 
-		sb = new StringBuilder();
+		if (writable = table.writable) {
 
-		writable = table.writable;
+			sb = new StringBuilder();
+			buffw = table.buffw;
+
+		}
 
 		pg_tab_delimiter = schema.option.pg_tab_delimiter;
 
@@ -267,10 +274,10 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			}
 
-			if (table.buffw == null)
-				table.buffw = Files.newBufferedWriter(table.pathw);
+			if (buffw == null)
+				buffw = table.buffw = Files.newBufferedWriter(table.pathw);
 
-			table.buffw.write(sb.substring(0, sb.length() - 1) + "\n");
+			buffw.write(sb.substring(0, sb.length() - 1) + "\n");
 
 			sb.setLength(0);
 

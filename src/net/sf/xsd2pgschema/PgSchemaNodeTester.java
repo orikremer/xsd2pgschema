@@ -53,7 +53,7 @@ public class PgSchemaNodeTester {
 	protected boolean indirect;
 
 	/** The ordinal number of sibling node. */
-	protected int node_ordinal;
+	protected int node_ordinal = 1;
 
 	/**
 	 * Setup root node as processing node.
@@ -67,7 +67,6 @@ public class PgSchemaNodeTester {
 		parent_key = null;
 		primary_key = current_key = root_key;
 		as_attr = indirect = false;
-		node_ordinal = 1;
 
 	}
 
@@ -84,14 +83,13 @@ public class PgSchemaNodeTester {
 
 		PgTable table = nested_key.table;
 
-		boolean virtual = table.virtual;
-
 		String qname = node.getNodeName();
 		String xname = PgSchemaUtil.getUnqualifiedName(qname);
 		String table_xname = table.xname;
 
-		as_attr = nested_key.as_attr;
+		boolean virtual = table.virtual;
 		indirect = nested_key.indirect;
+		as_attr = nested_key.as_attr;
 
 		if (!virtual && !xname.equals(table_xname) && (!indirect || (indirect && (parent_table.virtual || !xname.equals(parent_table.xname))))) {
 
@@ -183,17 +181,16 @@ public class PgSchemaNodeTester {
 	/**
 	 * Setup current node as processing node.
 	 *
-	 * @param current_node current node
+	 * @param node current node
 	 * @param nested_key nested key
 	 */
-	public PgSchemaNodeTester(Node current_node, PgSchemaNestedKey nested_key) {
+	public PgSchemaNodeTester(Node node, PgSchemaNestedKey nested_key) {
 
-		proc_node = current_node;
+		proc_node = node;
 		parent_key = nested_key.parent_key;
 		primary_key = current_key = nested_key.current_key;
 		as_attr = nested_key.as_attr;
 		indirect = nested_key.indirect;
-		node_ordinal = 1;
 
 	}
 

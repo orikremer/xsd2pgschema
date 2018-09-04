@@ -91,16 +91,16 @@ public abstract class PgSchemaNodeParser {
 	protected int node_ordinal = 1;
 
 	/** Whether values were adequately filled. */
-	protected boolean filled = true;
+	protected boolean filled;
 
 	/** Whether simple content as primitive list was null. */
-	protected boolean null_simple_primitive_list = false;
+	protected boolean null_simple_primitive_list;
 
 	/** Whether any nested node has been visited. */
 	protected boolean visited;
 
 	/** Whether child node is not nested node (indirect). */
-	protected boolean indirect = false;
+	protected boolean indirect;
 
 	/** The processing node. */
 	protected Node proc_node;
@@ -167,6 +167,8 @@ public abstract class PgSchemaNodeParser {
 		if (table.nested_fields > 0)
 			nested_keys = new ArrayList<PgSchemaNestedKey>();
 
+		visited = !table.virtual;
+
 		if (table.has_any || table.has_any_attribute) {
 
 			try {
@@ -207,25 +209,23 @@ public abstract class PgSchemaNodeParser {
 
 		}
 
-		visited = !table.virtual;
-
 	}
 
 	/**
 	 * Parse root node.
 	 *
-	 * @param proc_node processing node
+	 * @param root_node root node
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void parseRootNode(final Node proc_node) throws PgSchemaException {
+	public void parseRootNode(final Node root_node) throws PgSchemaException {
 
-		parse(new PgSchemaNodeTester(proc_node, current_key = document_id + "/" + table.xname));
+		parse(new PgSchemaNodeTester(root_node, current_key = document_id + "/" + table.xname));
 
 		if (!filled || nested_keys == null)
 			return;
 
 		for (PgSchemaNestedKey nested_key : nested_keys)
-			traverseNestedNode(proc_node, nested_key.asOfRoot(this));
+			traverseNestedNode(root_node, nested_key.asOfRoot(this));
 
 	}
 
@@ -265,21 +265,21 @@ public abstract class PgSchemaNodeParser {
 	/**
 	 * Parse child node.
 	 *
-	 * @param proc_node processing node
+	 * @param node current node
 	 * @param nested_key nested key
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void parseChildNode(final Node proc_node, PgSchemaNestedKey nested_key) throws PgSchemaException {
+	protected void parseChildNode(final Node node, PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		parse(new PgSchemaNodeTester(proc_node, nested_key));
+		parse(new PgSchemaNodeTester(node, nested_key));
 
 		if (!filled || nested_keys == null)
 			return;
 
 		for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-			if (existsNestedNode(_nested_key.table, proc_node))
-				traverseNestedNode(proc_node, _nested_key.asOfChild(this));
+			if (existsNestedNode(_nested_key.table, node))
+				traverseNestedNode(node, _nested_key.asOfChild(this));
 
 		}
 
@@ -560,12 +560,13 @@ public abstract class PgSchemaNodeParser {
 			if ((child_name = child.getLocalName()) == null)
 				child_name = PgSchemaUtil.getUnqualifiedName(child.getNodeName());
 
-			if (!child_name.equals(field.xname))
-				continue;
+			if (child_name.equals(field.xname)) {
 
-			content = child.getTextContent();
+				content = child.getTextContent();
 
-			return;
+				return;
+			}
+
 		}
 
 	}
@@ -886,10 +887,8 @@ public abstract class PgSchemaNodeParser {
 			if ((child_name = child.getLocalName()) == null)
 				child_name = PgSchemaUtil.getUnqualifiedName(child.getNodeName());
 
-			if (!child_name.equals(nested_table.xname))
-				continue;
-
-			return true;
+			if (child_name.equals(nested_table.xname))
+				return true;
 		}
 
 		return false;

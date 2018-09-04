@@ -244,7 +244,6 @@ public class XPathEvaluatorImpl {
 
 						}
 
-
 					}
 
 					// table node
