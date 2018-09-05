@@ -216,8 +216,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				occupied = new boolean[fields.size()];
 
-				Arrays.fill(occupied, false);
-
 			}
 
 		} catch (SQLException e) {

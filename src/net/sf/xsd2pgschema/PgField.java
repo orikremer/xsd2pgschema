@@ -4934,13 +4934,13 @@ public class PgField implements Serializable {
 			case xs_any:
 			case xs_anyAttribute:
 				if (fragment)
-					jsonb.append((value == null ? "null" : "\"\"") + concat_value_space);
+					jsonb.append("null" + concat_value_space);
 				else
 					jsonb.append("\t"); // TSV should be parsed in JSON builder
 
 				return false;
 			default: // string
-				jsonb.append(value == null ? "null" : "\"\"");
+				jsonb.append("\"\"");
 			}
 
 			jsonb.append(concat_value_space);

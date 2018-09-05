@@ -78,8 +78,6 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			values = new String[fields.size()];
 
-			Arrays.fill(values, "");
-
 		}
 
 	}
@@ -464,7 +462,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			not_complete = null_simple_list = false;
 
-			Arrays.fill(values, "");
+			Arrays.fill(values, null);
 
 			if (nested_keys != null)
 				nested_keys.clear();

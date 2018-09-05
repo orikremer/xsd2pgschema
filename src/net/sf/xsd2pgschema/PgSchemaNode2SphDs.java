@@ -71,8 +71,6 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 			values = new String[fields.size()];
 
-			Arrays.fill(values, "");
-
 		}
 
 	}
@@ -143,7 +141,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 			not_complete = null_simple_list = false;
 
-			Arrays.fill(values, "");
+			Arrays.fill(values, null);
 
 			if (nested_keys != null)
 				nested_keys.clear();
@@ -212,7 +210,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 				String value = values[f];
 
-				int value_len = value.length();
+				int value_len = value == null ? 0 : value.length();
 
 				if (value_len == 0)
 					continue;
