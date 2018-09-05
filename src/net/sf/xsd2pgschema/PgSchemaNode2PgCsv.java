@@ -39,13 +39,10 @@ import org.xml.sax.SAXException;
 public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 	/** The string builder for a line of CSV/TSV format. */
-	private StringBuilder sb = null;
+	private StringBuilder sb;
 
-	/** The buffered writer for data (CSV/TSV) conversion. */
-	private BufferedWriter buffw = null;
-
-	/** Whether table could have writer. */
-	private boolean writable;
+	/** The buffered writer for data conversion. */
+	private BufferedWriter buffw;
 
 	/** Whether to use TSV format in PostgreSQL data migration. */
 	private boolean pg_tab_delimiter;
@@ -58,6 +55,9 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 	/** Whether default serial key size (unsigned int 32 bit). */
 	private boolean def_ser_size;
+
+	/** The content of fields. */
+	private String[] values;
 
 	/**
 	 * Node parser for CSV conversion.
@@ -72,20 +72,25 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		super(schema, md_hash_key, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
 
-		if (writable = table.writable) {
+		if (table.writable) {
 
 			sb = new StringBuilder();
+
 			buffw = table.buffw;
 
+			pg_tab_delimiter = schema.option.pg_tab_delimiter;
+
+			pg_delimiter = schema.option.pg_delimiter;
+
+			pg_null = schema.option.pg_null;
+
+			def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
+
+			values = new String[fields.size()];
+
+			Arrays.fill(values, pg_null);
+
 		}
-
-		pg_tab_delimiter = schema.option.pg_tab_delimiter;
-
-		pg_delimiter = schema.option.pg_delimiter;
-
-		pg_null = schema.option.pg_null;
-
-		def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
 
 	}
 
@@ -144,119 +149,178 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 		proc_node = node_test.proc_node;
 		indirect = node_test.indirect;
 
-		Arrays.fill(values, pg_null);
+		if (!table.writable) {
 
-		filled = true;
-		null_simple_primitive_list = false;
+			fields.stream().filter(field -> field.nested_key).forEach(field -> setNestedKey(proc_node, field, current_key));
 
-		if (nested_keys != null)
-			nested_keys.clear();
+			return;
+		}
 
-		for (int f = 0; f < fields.size(); f++) {
+		if (node_test.node_ordinal > 1) {
 
-			PgField field = fields.get(f);
+			not_complete = null_simple_list = false;
 
-			// document_key
+			Arrays.fill(values, pg_null);
 
-			if (field.document_key) {
+			if (nested_keys != null)
+				nested_keys.clear();
 
-				if (writable)
+		}
+
+		if (rel_data_ext) {
+
+			for (int f = 0; f < fields.size(); f++) {
+
+				PgField field = fields.get(f);
+
+				// document_key
+
+				if (field.document_key)
 					values[f] = document_id;
 
-			}
+				// serial_key
 
-			// serial_key
-
-			else if (field.serial_key) {
-
-				if (writable)
+				else if (field.serial_key) {
 					values[f] = def_ser_size ? Integer.toString(node_test.node_ordinal) : Short.toString((short) node_test.node_ordinal);
+				}
 
-			}
+				// xpath_key
 
-			// xpath_key
-
-			else if (field.xpath_key) {
-
-				if (writable)
+				else if (field.xpath_key)
 					values[f] = getHashKeyString(current_key.substring(document_id_len));
 
-			}
+				// primary_key
 
-			// primary_key
-
-			else if (field.primary_key) {
-
-				if (writable && rel_data_ext)
+				else if (field.primary_key)
 					values[f] = getHashKeyString(node_test.primary_key);
 
-			}
+				// foreign_key
 
-			// foreign_key
+				else if (field.foreign_key) {
 
-			else if (field.foreign_key) {
-
-				if (parent_table.xname.equals(field.foreign_table_xname)) {
-
-					if (writable && rel_data_ext)
+					if (parent_table.xname.equals(field.foreign_table_xname))
 						values[f] = getHashKeyString(node_test.parent_key);
 
 				}
 
-			}
+				// nested_key
 
-			// nested_key
+				else if (field.nested_key) {
 
-			else if (field.nested_key) {
+					String nested_key;
 
-				String nested_key;
-
-				if ((nested_key = setNestedKey(proc_node, field, current_key)) != null) {
-
-					if (writable && rel_data_ext)
+					if ((nested_key = setNestedKey(proc_node, field, current_key)) != null)
 						values[f] = getHashKeyString(nested_key);
 
 				}
 
-			}
+				// attribute, simple_content, element
 
-			// attribute, simple_content, element
+				else if (field.attribute || field.simple_content || field.element) {
 
-			else if (field.attribute || field.simple_content || field.element) {
+					if (setContent(proc_node, field, current_key, node_test.as_attr, true)) {
 
-				if (setContent(proc_node, field, current_key, node_test.as_attr, true)) {
+						if (!content.isEmpty())
+							values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
 
-					if (writable && !content.isEmpty())
-						values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
+					} else if (field.required) {
 
-				} else if (field.required) {
-					filled = false;
-					break;
+						not_complete = true;
+
+						return;
+					}
+
+				}
+
+				// any, any_attribute
+
+				else if (field.any || field.any_attribute) {
+
+					try {
+
+						if (setAnyContent(proc_node, field) && !content.isEmpty())
+							values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
+
+					} catch (TransformerException | IOException | SAXException e) {
+						throw new PgSchemaException(e);
+					}
+
 				}
 
 			}
-
-			// any, any_attribute
-
-			else if (field.any || field.any_attribute) {
-
-				try {
-
-					if (writable && setAnyContent(proc_node, field) && !content.isEmpty())
-						values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
-
-				} catch (TransformerException | IOException | SAXException e) {
-					throw new PgSchemaException(e);
-				}
-
-			}
-
-			if (!filled)
-				break;
 
 		}
 
-		if (!writable || !filled || (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0)))
+		else {
+
+			for (int f = 0; f < fields.size(); f++) {
+
+				PgField field = fields.get(f);
+
+				// pimary_key, foreign_key
+
+				if (field.primary_key || field.foreign_key)
+					continue;
+
+				// document_key
+
+				else if (field.document_key)
+					values[f] = document_id;
+
+				// serial_key
+
+				else if (field.serial_key) {
+					values[f] = def_ser_size ? Integer.toString(node_test.node_ordinal) : Short.toString((short) node_test.node_ordinal);
+				}
+
+				// xpath_key
+
+				else if (field.xpath_key)
+					values[f] = getHashKeyString(current_key.substring(document_id_len));
+
+				// nested_key
+
+				else if (field.nested_key)
+					setNestedKey(proc_node, field, current_key);
+
+				// attribute, simple_content, element
+
+				else if (field.attribute || field.simple_content || field.element) {
+
+					if (setContent(proc_node, field, current_key, node_test.as_attr, true)) {
+
+						if (!content.isEmpty())
+							values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
+
+					} else if (field.required) {
+
+						not_complete = true;
+
+						return;
+					}
+
+				}
+
+				// any, any_attribute
+
+				else if (field.any || field.any_attribute) {
+
+					try {
+
+						if (setAnyContent(proc_node, field) && !content.isEmpty())
+							values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
+
+					} catch (TransformerException | IOException | SAXException e) {
+						throw new PgSchemaException(e);
+					}
+
+				}
+
+			}
+
+		}
+
+		if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
 			return;
 
 		try {

@@ -191,7 +191,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		option = client.option;
 
 		client.schema.applyXmlPostEditor(xml_post_editor);
-		client.schema.applyIndexFilter(index_filter);
+		client.schema.applyIndexFilter(index_filter, option.rel_data_ext);
 
 		// prepare XML validator
 

@@ -81,20 +81,17 @@ public abstract class PgSchemaNodeParser {
 	/** The field list. */
 	protected List<PgField> fields;
 
-	/** The content of fields. */
-	protected String[] values;
-
 	/** The array of nested key. */
 	protected List<PgSchemaNestedKey> nested_keys = null;
 
 	/** The ordinal number of sibling node. */
 	protected int node_ordinal = 1;
 
-	/** Whether values were adequately filled. */
-	protected boolean filled;
+	/** Whether values are not complete. */
+	protected boolean not_complete = false;
 
-	/** Whether simple content as primitive list was null. */
-	protected boolean null_simple_primitive_list;
+	/** Whether simple content as primitive list is null. */
+	protected boolean null_simple_list = false;
 
 	/** Whether any nested node has been visited. */
 	protected boolean visited;
@@ -162,8 +159,6 @@ public abstract class PgSchemaNodeParser {
 
 		fields = table.fields;
 
-		values = new String[fields.size()];
-
 		if (table.nested_fields > 0)
 			nested_keys = new ArrayList<PgSchemaNestedKey>();
 
@@ -221,7 +216,7 @@ public abstract class PgSchemaNodeParser {
 
 		parse(new PgSchemaNodeTester(root_node, current_key = document_id + "/" + table.xname));
 
-		if (!filled || nested_keys == null)
+		if (not_complete || nested_keys == null)
 			return;
 
 		for (PgSchemaNestedKey nested_key : nested_keys)
@@ -241,7 +236,7 @@ public abstract class PgSchemaNodeParser {
 
 		parse(node_test);
 
-		if (filled) {
+		if (!not_complete) {
 
 			visited = true;
 
@@ -273,7 +268,7 @@ public abstract class PgSchemaNodeParser {
 
 		parse(new PgSchemaNodeTester(node, nested_key));
 
-		if (!filled || nested_keys == null)
+		if (not_complete || nested_keys == null)
 			return;
 
 		for (PgSchemaNestedKey _nested_key : nested_keys) {
@@ -533,7 +528,7 @@ public abstract class PgSchemaNodeParser {
 				if (content != null && fields.parallelStream().anyMatch(_field -> _field.nested_key && matchesParentNode(current_key, _field.parent_node)))
 					content = null;
 
-				null_simple_primitive_list = content == null;
+				null_simple_list = content == null;
 
 			}
 

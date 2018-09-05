@@ -213,7 +213,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 		option = client.option;
 
 		client.schema.applyXmlPostEditor(xml_post_editor);
-		client.schema.applyIndexFilter(this.index_filter = index_filter);
+		client.schema.applyIndexFilter(this.index_filter = index_filter, false);
 
 		// prepare XML validator
 

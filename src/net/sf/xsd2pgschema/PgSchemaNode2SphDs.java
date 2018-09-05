@@ -19,6 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -35,14 +36,17 @@ import org.xml.sax.SAXException;
  */
 public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
-	/** Whether table is referred from child table. */
-	private boolean required;
+	/** The buffered writer for data conversion. */
+	private BufferedWriter buffw;
 
 	/** The prefix of index field. */
 	private String field_prefix;
 
 	/** The minimum word length for indexing. */
 	private int min_word_len;
+
+	/** The content of fields. */
+	private String[] values;
 
 	/**
 	 * Node parser for Sphinx xmlpipe2 conversion.
@@ -57,10 +61,19 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 		super(schema, md_hash_key, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
 
-		if (required = table.required)
+		if (table.indexable) {
+
+			buffw = table.buffw;
+
 			field_prefix = table.name + PgSchemaUtil.sph_member_op;
 
-		min_word_len = schema.index_filter.min_word_len;
+			min_word_len = schema.index_filter.min_word_len;
+
+			values = new String[fields.size()];
+
+			Arrays.fill(values, "");
+
+		}
 
 	}
 
@@ -119,13 +132,23 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 		proc_node = node_test.proc_node;
 		indirect = node_test.indirect;
 
-		Arrays.fill(values, "");
+		if (!table.indexable) {
 
-		filled = true;
-		null_simple_primitive_list = false;
+			fields.stream().filter(field -> field.nested_key).forEach(field -> setNestedKey(proc_node, field, current_key));
 
-		if (nested_keys != null)
-			nested_keys.clear();
+			return;
+		}
+
+		if (node_test.node_ordinal > 1) {
+
+			not_complete = null_simple_list = false;
+
+			Arrays.fill(values, "");
+
+			if (nested_keys != null)
+				nested_keys.clear();
+
+		}
 
 		for (int f = 0; f < fields.size(); f++) {
 
@@ -145,14 +168,14 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 			else if (field.attribute || field.simple_content || field.element) {
 
-				if (setContent(proc_node, field, current_key, node_test.as_attr, false)) {
+				if (setContent(proc_node, field, current_key, node_test.as_attr, false))
+					values[f] = content;
 
-					if (required)
-						values[f] = content;
+				else if (field.required) {
 
-				} else if (field.required) {
-					filled = false;
-					break;
+					not_complete = true;
+
+					return;
 				}
 
 			}
@@ -163,7 +186,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 				try {
 
-					if (required && setAnyContent(proc_node, field)) {
+					if (setAnyContent(proc_node, field)) {
 
 						values[f] = any_content.toString().trim();
 						any_content.setLength(0);
@@ -176,25 +199,27 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 			}
 
-			if (!filled)
-				break;
-
 		}
 
-		if (!required || !filled || (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0)))
+		if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
 			return;
 
 		for (int f = 0; f < fields.size(); f++) {
 
-			String value = values[f];
-
-			if (value.isEmpty())
-				continue;
-
 			PgField field = fields.get(f);
 
-			if (field.indexable)
-				field.writeValue2SphDs(table.buffw, field_prefix + field.name, value, value.length() >= min_word_len);
+			if (field.indexable) {
+
+				String value = values[f];
+
+				int value_len = value.length();
+
+				if (value_len == 0)
+					continue;
+
+				field.writeValue2SphDs(buffw, field_prefix + field.name, value, value_len >= min_word_len);
+
+			}
 
 		}
 

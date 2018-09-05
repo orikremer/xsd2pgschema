@@ -125,6 +125,14 @@ public class PgTable implements Serializable {
 	/** Whether table could have writer. */
 	protected boolean writable = false;
 
+	/** Whether table is indexable. */
+	@Flat
+	protected boolean indexable = false;
+
+	/** Whether table is JSON convertible. */
+	@Flat
+	protected boolean jsonable = false;
+
 	/** The xs:annotation/xs:documentation (as is). */
 	@Flat
 	protected String xanno_doc = null;

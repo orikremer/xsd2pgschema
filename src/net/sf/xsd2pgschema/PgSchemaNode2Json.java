@@ -36,19 +36,22 @@ import org.xml.sax.SAXException;
 public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 	/** Whether any content was written. */
-	protected boolean written = false;
+	private boolean written = false;
 
 	/** The JSON builder. */
-	protected JsonBuilder jsonb;
+	private JsonBuilder jsonb;
 
 	/** The JSON type. */
-	protected JsonType type;
+	private JsonType type;
 
 	/** The JSON Schema version. */
-	protected JsonSchemaVersion schema_ver;
+	private JsonSchemaVersion schema_ver;
 
 	/** The JSON key value space with concatenation. */
 	private String concat_value_space;
+
+	/** The content of fields. */
+	private String[] values;
 
 	/**
 	 * Node parser for JSON conversion.
@@ -67,9 +70,17 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		type = jsonb.type;
 
-		schema_ver = jsonb.schema_ver;
+		if (table.jsonable) {
 
-		concat_value_space = jsonb.concat_value_space;
+			schema_ver = jsonb.schema_ver;
+
+			concat_value_space = jsonb.concat_value_space;
+
+			values = new String[fields.size()];
+
+			Arrays.fill(values, "");
+
+		}
 
 	}
 
@@ -84,7 +95,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		parse(new PgSchemaNodeTester(root_node, current_key = document_id + "/" + table.xname));
 
-		if (!filled)
+		if (not_complete)
 			return;
 
 		switch (type) {
@@ -143,14 +154,14 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			else if (last_node) {
 
-				if (filled && table.jsonb_not_empty)
+				if (!not_complete && table.jsonb_not_empty)
 					jsonb.writeFields(table, as_attr, indent_level + (table.virtual ? 0 : 1));
 
 			}
 
 			if (list_and_bridge || last_node) {
 
-				if (filled) {
+				if (!not_complete) {
 
 					visited = true;
 
@@ -191,7 +202,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			if (last_node) {
 
-				if (filled) {
+				if (!not_complete) {
 
 					visited = true;
 
@@ -236,7 +247,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			if (written)
 				jsonb.writeFields(table, as_attr, indent_level + (table.virtual ? 0 : 1));
 
-			if (!filled || nested_keys == null)
+			if (not_complete || nested_keys == null)
 				return;
 
 			for (PgSchemaNestedKey _nested_key : nested_keys) {
@@ -256,7 +267,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			}
 
-			if (filled && nested_keys != null) {
+			if (!not_complete && nested_keys != null) {
 
 				for (PgSchemaNestedKey _nested_key : nested_keys) {
 
@@ -442,13 +453,23 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		proc_node = node_test.proc_node;
 		indirect = node_test.indirect;
 
-		Arrays.fill(values, "");
+		if (!table.jsonable) {
 
-		filled = true;
-		null_simple_primitive_list = false;
+			fields.stream().filter(field -> field.nested_key).forEach(field -> setNestedKey(proc_node, field, current_key));
 
-		if (nested_keys != null)
-			nested_keys.clear();
+			return;
+		}
+
+		if (node_test.node_ordinal > 1) {
+
+			not_complete = null_simple_list = false;
+
+			Arrays.fill(values, "");
+
+			if (nested_keys != null)
+				nested_keys.clear();
+
+		}
 
 		for (int f = 0; f < fields.size(); f++) {
 
@@ -472,8 +493,10 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 					values[f] = content;
 
 				else if (field.required) {
-					filled = false;
-					break;
+
+					not_complete = true;
+
+					return;
 				}
 
 			}
@@ -497,12 +520,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			}
 
-			if (!filled)
-				break;
-
 		}
 
-		if (!filled || (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0)))
+		if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
 			return;
 
 		written = true;
@@ -512,9 +532,6 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		for (int f = 0; f < fields.size(); f++) {
 
 			PgField field = fields.get(f);
-
-			if (field.jsonb == null)
-				continue;
 
 			if (field.jsonable && field.writeValue2JsonBuf(schema_ver, values[f], false, concat_value_space))
 				not_empty = true;

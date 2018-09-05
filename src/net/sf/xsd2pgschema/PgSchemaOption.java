@@ -279,6 +279,15 @@ public class PgSchemaOption implements Serializable {
 	}
 
 	/**
+	 * Enable relational data extension.
+	 */
+	public void enableRelDataExt() {
+
+		rel_model_ext = rel_data_ext = document_key = retain_key = true;
+
+	}
+
+	/**
 	 * Return minimum size of field.
 	 *
 	 * @return int the minimum size of field

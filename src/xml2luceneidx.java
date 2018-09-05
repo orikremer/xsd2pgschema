@@ -61,6 +61,9 @@ public class xml2luceneidx {
 		/** The schema option. */
 		PgSchemaOption option = new PgSchemaOption(false);
 
+		/** Cancel relational model extension by default. */
+		option.cancelRelDataExt();
+
 		/** The FST configuration. */
 		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
 
@@ -186,6 +189,9 @@ public class xml2luceneidx {
 
 			else if (args[i].equals("--fill-this") && i + 1 < args.length)
 				xml_post_editor.addFillThis(args[++i]);
+
+			else if (args[i].equals("--rel"))
+				option.enableRelDataExt();
 
 			else if (args[i].equals("--no-rel"))
 				option.cancelRelDataExt();
@@ -523,7 +529,8 @@ public class xml2luceneidx {
 		System.err.println("        --update (insert if not exists, and update if required, default)");
 		System.err.println("        --sync CHECK_SUM_DIRECTORY (insert if not exists, update if required, and delete rows if XML not exists)");
 		System.err.println("        --sync-weak (insert if not exists, no update even if exists, no deletion)");
-		System.err.println("        --no-rel (turn off relational model extension)");
+		System.err.println("        --rel (turn on relational model extension)");
+		System.err.println("        --no-rel (turn off relational model extension, default)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --validate (turn on XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");

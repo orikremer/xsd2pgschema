@@ -3914,9 +3914,10 @@ public class PgSchema implements Serializable {
 	 * Apply filter for full-text indexing.
 	 *
 	 * @param index_filter index filter
+	 * @param include_system_keys whether to include system keys in full-text indexing (Lucene specific)
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void applyIndexFilter(IndexFilter index_filter) throws PgSchemaException {
+	public void applyIndexFilter(IndexFilter index_filter, boolean include_system_keys) throws PgSchemaException {
 
 		this.index_filter = index_filter;
 
@@ -3927,7 +3928,9 @@ public class PgSchema implements Serializable {
 
 		// update indexable flag
 
-		tables.parallelStream().forEach(table -> table.fields.forEach(field -> field.setIndexable(table, option)));
+		tables.parallelStream().filter(table -> table.required).forEach(table -> table.fields.forEach(field -> field.setIndexable(table, option)));
+
+		tables.parallelStream().filter(table -> table.required).forEach(table -> table.indexable = table.fields.stream().anyMatch(field -> (include_system_keys && field.system_key) || field.indexable));
 
 	}
 
@@ -4321,17 +4324,10 @@ public class PgSchema implements Serializable {
 
 		Node node = getRootNode(xml_parser);
 
-		tables.parallelStream().forEach(table -> {
+		tables.parallelStream().filter(table -> table.writable).forEach(table -> {
 
-			if (table.writable) {
-
-				if (table.pathw == null)
-					table.pathw = Paths.get(work_dir.toString(), getDataFileNameOf(table));
-
-			}
-
-			else if (table.pathw != null)
-				table.pathw = null;
+			if (table.pathw == null)
+				table.pathw = Paths.get(work_dir.toString(), getDataFileNameOf(table));
 
 		});
 
@@ -4350,7 +4346,7 @@ public class PgSchema implements Serializable {
 	 */
 	public void closeXml2PgCsv() {
 
-		tables.parallelStream().filter(table -> table.pathw != null).forEach(table -> {
+		tables.parallelStream().filter(table -> table.writable).forEach(table -> {
 
 			try {
 
@@ -4987,7 +4983,7 @@ public class PgSchema implements Serializable {
 	 */
 	private void resetAttrSelRdy() {
 
-		tables.parallelStream().forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> field.attr_sel_rdy = true));
+		tables.parallelStream().filter(table -> table.indexable).forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> field.attr_sel_rdy = true));
 
 	}
 
@@ -5007,7 +5003,7 @@ public class PgSchema implements Serializable {
 
 		resetAttrSelRdy();
 
-		tables.parallelStream().forEach(table -> table.lucene_doc = table.required ? lucene_doc : null);
+		tables.parallelStream().filter(table -> table.indexable).forEach(table -> table.lucene_doc = lucene_doc);
 
 		// parse root node and store into Lucene document
 
@@ -5026,7 +5022,7 @@ public class PgSchema implements Serializable {
 	 */
 	public void closeXml2LucIdx() {
 
-		tables.parallelStream().filter(table -> table.lucene_doc != null).forEach(table -> table.lucene_doc = null);
+		tables.parallelStream().filter(table -> table.indexable).forEach(table -> table.lucene_doc = null);
 
 	}
 
@@ -5127,7 +5123,7 @@ public class PgSchema implements Serializable {
 
 			}
 
-			tables.forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> {
+			tables.stream().filter(table -> table.indexable).forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> {
 
 				try {
 
@@ -5239,7 +5235,7 @@ public class PgSchema implements Serializable {
 			buffw.write("\txmlpipe_attr_string     = " + option.document_key_name + "\n");
 			buffw.write("\txmlpipe_field           = " + PgSchemaUtil.simple_content_name + "\n");
 
-			tables.forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> {
+			tables.stream().filter(table -> table.indexable).forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> {
 
 				try {
 
@@ -5322,7 +5318,7 @@ public class PgSchema implements Serializable {
 
 		resetAttrSelRdy();
 
-		tables.parallelStream().forEach(table -> table.buffw = table.required ? buffw : null);
+		tables.parallelStream().filter(table -> table.indexable).forEach(table -> table.buffw = buffw);
 
 		// parse root node and write to Sphinx xmlpipe2 file
 
@@ -5351,7 +5347,7 @@ public class PgSchema implements Serializable {
 	 */
 	public void closeXml2SphDs() {
 
-		tables.parallelStream().filter(table -> table.buffw != null).forEach(table -> table.buffw = null);
+		tables.parallelStream().filter(table -> table.indexable).forEach(table -> table.buffw = null);
 
 	}
 
@@ -5364,7 +5360,7 @@ public class PgSchema implements Serializable {
 
 		HashSet<String> sph_attrs = new HashSet<String>();
 
-		tables.stream().forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> sph_attrs.add(table.name + PgSchemaUtil.sph_member_op + field.name)));
+		tables.stream().filter(table -> table.indexable).forEach(table -> table.fields.stream().filter(field -> field.attr_sel).forEach(field -> sph_attrs.add(table.name + PgSchemaUtil.sph_member_op + field.name)));
 
 		return sph_attrs;
 	}
@@ -5378,7 +5374,7 @@ public class PgSchema implements Serializable {
 
 		HashSet<String> sph_mvas = new HashSet<String>();
 
-		tables.stream().forEach(table -> table.fields.stream().filter(field -> field.sph_mva).forEach(field -> sph_mvas.add(table.name + PgSchemaUtil.sph_member_op + field.name)));
+		tables.stream().filter(table -> table.indexable).forEach(table -> table.fields.stream().filter(field -> field.sph_mva).forEach(field -> sph_mvas.add(table.name + PgSchemaUtil.sph_member_op + field.name)));
 
 		return sph_mvas;
 	}
@@ -5412,19 +5408,25 @@ public class PgSchema implements Serializable {
 
 			table.jsonb_not_empty = false;
 
-			table.fields.forEach(field -> {
+			table.jsonable = table.fields.stream().anyMatch(field -> field.jsonable);
 
-				field.jsonb_not_empty = false;
+			if (table.jsonable) {
 
-				if (field.jsonb == null)
-					field.jsonb = new StringBuilder();
+				table.fields.stream().filter(field -> field.jsonable).forEach(field -> {
 
-				else
-					field.jsonb.setLength(0);
+					field.jsonb_not_empty = false;
 
-				field.jsonb_col_size = field.jsonb_null_size = 0;
+					if (field.jsonb == null)
+						field.jsonb = new StringBuilder();
 
-			});
+					else
+						field.jsonb.setLength(0);
+
+					field.jsonb_col_size = field.jsonb_null_size = 0;
+
+				});
+
+			}
 
 		});
 
@@ -5437,11 +5439,11 @@ public class PgSchema implements Serializable {
 
 		jsonb.clear(true);
 
-		tables.parallelStream().filter(table -> table.required && table.content_holder).forEach(table -> {
+		tables.parallelStream().filter(table -> table.jsonable).forEach(table -> {
 
 			table.jsonb_not_empty = false;
 
-			table.fields.forEach(field -> {
+			table.fields.stream().filter(field -> field.jsonable).forEach(field -> {
 
 				field.jsonb_not_empty = false;
 
@@ -5748,7 +5750,7 @@ public class PgSchema implements Serializable {
 		jsonb.writeStartDocument(true);
 		jsonb.writeStartSchema(def_namespaces, def_anno_appinfo, def_anno_doc);
 
-		tables.stream().filter(table -> table.content_holder).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> realizeJsonSchema(table, 2));
+		tables.stream().filter(table -> table.jsonable).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> realizeJsonSchema(table, 2));
 
 		jsonb.writeEndSchema();
 		jsonb.writeEndDocument();
@@ -5757,7 +5759,7 @@ public class PgSchema implements Serializable {
 
 		// no support on conditional attribute
 
-		tables.stream().filter(table -> table.content_holder).forEach(table -> {
+		tables.stream().filter(table -> table.jsonable).forEach(table -> {
 
 			table.fields.stream().filter(field -> field.simple_attr_cond).forEach(field -> {
 
@@ -5827,7 +5829,7 @@ public class PgSchema implements Serializable {
 
 		node2json.clear();
 
-		tables.stream().filter(_table -> _table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).forEach(_table -> {
+		tables.stream().filter(_table -> _table.jsonable && _table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).forEach(_table -> {
 
 			jsonb.writeStartTable(_table, true, 1);
 			jsonb.writeFields(_table, 2);
@@ -5851,7 +5853,7 @@ public class PgSchema implements Serializable {
 
 		// no support on conditional attribute
 
-		tables.stream().filter(table -> table.content_holder).forEach(table -> {
+		tables.stream().filter(table -> table.jsonable).forEach(table -> {
 
 			table.fields.stream().filter(field -> field.simple_attr_cond).forEach(field -> {
 

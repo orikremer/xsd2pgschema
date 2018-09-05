@@ -43,12 +43,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/** The prepared statement. */
 	private PreparedStatement ps = null;
 
-	/** Whether table could have writer. */
-	private boolean writable;
-
-	/** Whether field is occupied. */
-	private boolean[] occupied;
-
 	/** Whether to update. */
 	private boolean update;
 
@@ -56,7 +50,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	private boolean upsert = false;
 
 	/** Whether any content was written. */
-	protected boolean written = false;
+	private boolean written = false;
 
 	/** The size of parameters. */
 	private int param_size = 1;
@@ -69,6 +63,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 	/** Whether default serial key size (unsigned int 32 bit). */
 	private boolean def_ser_size;
+
+	/** Whether field is occupied. */
+	private boolean[] occupied;
 
 	/**
 	 * Node parser for PostgreSQL data migration.
@@ -85,15 +82,13 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		super(schema, md_hash_key, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
 
-		occupied = new boolean[fields.size()];
-
 		this.update = update;
 
 		this.db_conn = db_conn;
 
 		try {
 
-			if (writable = table.writable) {
+			if (table.writable) {
 
 				boolean pg_named_schema = schema.option.pg_named_schema;
 
@@ -215,15 +210,19 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				}
 
+				hash_size = schema.option.hash_size;
+
+				def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
+
+				occupied = new boolean[fields.size()];
+
+				Arrays.fill(occupied, false);
+
 			}
 
 		} catch (SQLException e) {
 			throw new PgSchemaException(e);
 		}
-
-		hash_size = schema.option.hash_size;
-
-		def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
 
 	}
 
@@ -282,152 +281,232 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		proc_node = node_test.proc_node;
 		indirect = node_test.indirect;
 
-		Arrays.fill(occupied, false);
+		if (!table.writable) {
 
-		filled = true;
-		null_simple_primitive_list = false;
+			fields.stream().filter(field -> field.nested_key).forEach(field -> setNestedKey(proc_node, field, current_key));
 
-		if (nested_keys != null)
-			nested_keys.clear();
+			return;
+		}
+
+		if (node_test.node_ordinal > 1) {
+
+			not_complete = null_simple_list = false;
+
+			Arrays.fill(occupied, false);
+
+			if (nested_keys != null)
+				nested_keys.clear();
+
+		}
 
 		int par_idx = 1;
 		int ins_idx = upsert ? param_size : -1;
 
 		try {
 
-			for (int f = 0; f < fields.size(); f++) {
+			if (rel_data_ext) {
 
-				PgField field = fields.get(f);
+				for (int f = 0; f < fields.size(); f++) {
 
-				// document_key
+					PgField field = fields.get(f);
 
-				if (field.document_key) {
+					// document_key
 
-					if (writable) {
+					if (field.document_key) {
 
 						field.writeValue2PgSql(ps, par_idx, ins_idx, document_id);
 						occupied[f] = true;
 
 					}
 
-				}
+					// serial_key
 
-				// serial_key
-
-				else if (field.serial_key) {
-
-					if (writable)
+					else if (field.serial_key)
 						writeSerKey(f, par_idx, ins_idx, node_test.node_ordinal);
 
-				}
+					// xpath_key
 
-				// xpath_key
-
-				else if (field.xpath_key) {
-
-					if (writable)
+					else if (field.xpath_key)
 						writeHashKey(f, par_idx, ins_idx, current_key.substring(document_id_len));
 
-				}
+					// primary_key
 
-				// primary_key
-
-				else if (field.primary_key) {
-
-					if (writable && rel_data_ext)
+					else if (field.primary_key)
 						writeHashKey(f, par_idx, (param_size - 1) * 2, node_test.primary_key);
 
-				}
+					// foreign_key
 
-				// foreign_key
+					else if (field.foreign_key) {
 
-				else if (field.foreign_key) {
-
-					if (parent_table.xname.equals(field.foreign_table_xname)) {
-
-						if (writable && rel_data_ext)
+						if (parent_table.xname.equals(field.foreign_table_xname))
 							writeHashKey(f, par_idx, ins_idx, node_test.parent_key);
 
 					}
 
-				}
+					// nested_key
 
-				// nested_key
+					else if (field.nested_key) {
 
-				else if (field.nested_key) {
+						String nested_key;
 
-					String nested_key;
-
-					if ((nested_key = setNestedKey(proc_node, field, current_key)) != null) {
-
-						if (writable && rel_data_ext)
+						if ((nested_key = setNestedKey(proc_node, field, current_key)) != null)
 							writeHashKey(f, par_idx, ins_idx, nested_key);
 
 					}
 
-				}
+					// attribute, simple_content, element
 
-				// attribute, simple_content, element
+					else if (field.attribute || field.simple_content || field.element) {
 
-				else if (field.attribute || field.simple_content || field.element) {
+						if (setContent(proc_node, field, current_key, node_test.as_attr, true)) {
 
-					if (setContent(proc_node, field, current_key, node_test.as_attr, true)) {
+							if (!content.isEmpty()) {
 
-						if (writable && !content.isEmpty()) {
+								field.writeValue2PgSql(ps, par_idx, ins_idx, content);
+								occupied[f] = true;
 
-							field.writeValue2PgSql(ps, par_idx, ins_idx, content);
-							occupied[f] = true;
+							}
 
+						} else if (field.required) {
+
+							not_complete = true;
+
+							return;
 						}
 
-					} else if (field.required) {
-						filled = false;
-						break;
 					}
 
-				}
+					// any, any_attribute
 
-				// any, any_attribute
+					else if (field.any || field.any_attribute) {
 
-				else if (field.any || field.any_attribute) {
+						try {
 
-					try {
+							if (setAnyContent(proc_node, field) && !content.isEmpty()) {
 
-						if (writable && setAnyContent(proc_node, field) && !content.isEmpty()) {
+								SQLXML xml_object = db_conn.createSQLXML();
 
-							SQLXML xml_object = db_conn.createSQLXML();
+								xml_object.setString(content);
 
-							xml_object.setString(content);
+								field.writeValue2PgSql(ps, par_idx, ins_idx, xml_object);
 
-							field.writeValue2PgSql(ps, par_idx, ins_idx, xml_object);
+								xml_object.free();
 
-							xml_object.free();
+								occupied[f] = true;
 
-							occupied[f] = true;
+							}
 
+						} catch (TransformerException | IOException | SAXException e) {
+							throw new PgSchemaException(e);
 						}
 
-					} catch (TransformerException | IOException | SAXException e) {
-						throw new PgSchemaException(e);
 					}
 
-				}
+					if (!field.omissible) {
 
-				if (!filled)
-					break;
+						par_idx++;
 
-				if (!field.omissible) {
+						if (upsert && !field.primary_key)
+							ins_idx++;
 
-					par_idx++;
-
-					if (upsert && !field.primary_key)
-						ins_idx++;
+					}
 
 				}
 
 			}
 
-			if (!writable || !filled || (null_simple_primitive_list && (nested_keys == null || nested_keys.size() == 0)))
+			else {
+
+				for (int f = 0; f < fields.size(); f++) {
+
+					PgField field = fields.get(f);
+
+					// document_key
+
+					if (field.document_key) {
+
+						field.writeValue2PgSql(ps, par_idx, ins_idx, document_id);
+						occupied[f] = true;
+
+					}
+
+					// serial_key
+
+					else if (field.serial_key)
+						writeSerKey(f, par_idx, ins_idx, node_test.node_ordinal);
+
+					// xpath_key
+
+					else if (field.xpath_key)
+						writeHashKey(f, par_idx, ins_idx, current_key.substring(document_id_len));
+
+					// nested_key
+
+					else if (field.nested_key)
+						setNestedKey(proc_node, field, current_key);
+
+					// attribute, simple_content, element
+
+					else if (field.attribute || field.simple_content || field.element) {
+
+						if (setContent(proc_node, field, current_key, node_test.as_attr, true)) {
+
+							if (!content.isEmpty()) {
+
+								field.writeValue2PgSql(ps, par_idx, ins_idx, content);
+								occupied[f] = true;
+
+							}
+
+						} else if (field.required) {
+
+							not_complete = true;
+
+							return;
+						}
+
+					}
+
+					// any, any_attribute
+
+					else if (field.any || field.any_attribute) {
+
+						try {
+
+							if (setAnyContent(proc_node, field) && !content.isEmpty()) {
+
+								SQLXML xml_object = db_conn.createSQLXML();
+
+								xml_object.setString(content);
+
+								field.writeValue2PgSql(ps, par_idx, ins_idx, xml_object);
+
+								xml_object.free();
+
+								occupied[f] = true;
+
+							}
+
+						} catch (TransformerException | IOException | SAXException e) {
+							throw new PgSchemaException(e);
+						}
+
+					}
+
+					if (!field.omissible) {
+
+						par_idx++;
+
+						if (upsert && !field.primary_key)
+							ins_idx++;
+
+					}
+
+				}
+
+			}
+
+			if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
 				return;
 
 			written = true;
