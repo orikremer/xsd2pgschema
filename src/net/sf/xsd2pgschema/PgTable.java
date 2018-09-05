@@ -165,10 +165,6 @@ public class PgTable implements Serializable {
 	@Flat
 	protected boolean jsonb_not_empty = false;
 
-	/** The Lucene document (internal use only). */
-	@Flat
-	protected org.apache.lucene.document.Document lucene_doc = null;
-
 	/** The primary prepared statement (internal use only). */
 	@Flat
 	protected PreparedStatement ps = null;

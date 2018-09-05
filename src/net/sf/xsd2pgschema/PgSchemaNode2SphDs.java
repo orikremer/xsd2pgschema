@@ -55,15 +55,16 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	 * @param md_hash_key instance of message digest
 	 * @param parent_table parent table
 	 * @param table current table
+	 * @param buffw buffered writer
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2SphDs(final PgSchema schema, final MessageDigest md_hash_key, final PgTable parent_table, final PgTable table) throws PgSchemaException {
+	public PgSchemaNode2SphDs(final PgSchema schema, final MessageDigest md_hash_key, final PgTable parent_table, final PgTable table, final BufferedWriter buffw) throws PgSchemaException {
 
 		super(schema, md_hash_key, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
 
-		if (table.indexable) {
+		this.buffw = buffw;
 
-			buffw = table.buffw;
+		if (table.indexable) {
 
 			field_prefix = table.name + PgSchemaUtil.sph_member_op;
 
@@ -85,7 +86,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(schema, md_hash_key, table, nested_key.table);
+		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(schema, md_hash_key, table, nested_key.table, buffw);
 
 		try {
 

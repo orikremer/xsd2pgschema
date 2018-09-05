@@ -64,10 +64,10 @@ public abstract class PgSchemaNodeParser {
 	protected boolean rel_data_ext;
 
 	/** Whether to fill @default value. */
-	protected boolean fill_default_value;
+	private boolean fill_default_value;
 
 	/** The size of hash key. */
-	protected PgHashSize hash_size;
+	private PgHashSize hash_size;
 
 	/** The parent table. */
 	protected PgTable parent_table;
@@ -76,7 +76,7 @@ public abstract class PgSchemaNodeParser {
 	protected PgTable table;
 
 	/** The node parser type. */
-	protected PgSchemaNodeParserType parser_type;
+	private PgSchemaNodeParserType parser_type;
 
 	/** The field list. */
 	protected List<PgField> fields;

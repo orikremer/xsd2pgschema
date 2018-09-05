@@ -37,7 +37,7 @@ import org.xml.sax.SAXException;
 public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 	/** The Lucene document. */
-	private org.apache.lucene.document.Document lucene_doc = null;
+	private org.apache.lucene.document.Document lucene_doc;
 
 	/** The prefix of index field. */
 	private String field_prefix;
@@ -58,15 +58,16 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 * @param md_hash_key instance of message digest
 	 * @param parent_table parent table
 	 * @param table current table
+	 * @param lucene_doc Lucene document
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2LucIdx(final PgSchema schema, final MessageDigest md_hash_key, final PgTable parent_table, final PgTable table) throws PgSchemaException {
+	public PgSchemaNode2LucIdx(final PgSchema schema, final MessageDigest md_hash_key, final PgTable parent_table, final PgTable table, final org.apache.lucene.document.Document lucene_doc) throws PgSchemaException {
 
 		super(schema, md_hash_key, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
 
-		if (table.indexable) {
+		this.lucene_doc = lucene_doc;
 
-			lucene_doc = table.lucene_doc;
+		if (table.indexable) {
 
 			field_prefix = table.name + ".";
 
@@ -90,7 +91,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(schema, md_hash_key, table, nested_key.table);
+		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(schema, md_hash_key, table, nested_key.table, lucene_doc);
 
 		try {
 

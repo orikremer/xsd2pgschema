@@ -40,6 +40,9 @@ import org.xml.sax.SAXException;
  */
 public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
+	/** The database connection. */
+	private Connection db_conn;
+
 	/** The prepared statement. */
 	private PreparedStatement ps = null;
 
@@ -54,9 +57,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 	/** The size of parameters. */
 	private int param_size = 1;
-
-	/** The database connection. */
-	private Connection db_conn;
 
 	/** The size of hash key. */
 	private PgHashSize hash_size;

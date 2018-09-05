@@ -409,8 +409,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 		}
 
-		client.schema.closeXml2SphDs();
-
 	}
 
 	/**

@@ -400,8 +400,6 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		}
 
-		client.schema.closeXml2LucIdx();
-
 	}
 
 	/**
