@@ -4,6 +4,7 @@
   Fixed JSON conversion issues occurred in 2.12.7 and 3.0.0 (withdrawn).
   Fixed indent level of simple type attribute and conditional simple type attribute in XPath query evaluation.
   Fixed exception to report multiple root nodes and fragments in XPath query evaluation (introduced in 2.12.7, but unexpectedly unused in 3.0.0).
+  Changed --no-rel option in xml2luceneidx was set by default since performance and frequency, added --rel option for backward compatibility.
 
  Changes in xsd2pgschema 3.0.0 (release 2018-08-24)
 

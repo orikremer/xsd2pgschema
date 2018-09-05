@@ -787,7 +787,7 @@ public class JsonBuilder extends CommonBuilder {
 
 	/**
 	 * Return schema annotation by replacement of XML Schema relating words.
-	 * 
+	 *
 	 * @param annotation annotation
 	 * @return String escaped schema annotation
 	 */
