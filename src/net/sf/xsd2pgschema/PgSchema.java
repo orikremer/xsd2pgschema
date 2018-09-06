@@ -4260,15 +4260,6 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
-	 * Return current document id.
-	 *
-	 * @return String document id
-	 */
-	protected String getDocumentId() {
-		return document_id;
-	}
-
-	/**
 	 * Close prepared statement.
 	 *
 	 * @param primary whether to close the primary prepared statement only
@@ -4333,7 +4324,7 @@ public class PgSchema implements Serializable {
 
 		// parse root node and write to data (CSV/TSV) file
 
-		PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(this, md_hash_key, null, root_table);
+		PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(this, md_hash_key, document_id, null, root_table);
 
 		node2pgcsv.parseRootNode(node);
 
@@ -4455,7 +4446,7 @@ public class PgSchema implements Serializable {
 
 		}
 
-		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, md_hash_key, null, root_table, update, db_conn);
+		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, md_hash_key, document_id, null, root_table, update, db_conn);
 
 		node2pgsql.parseRootNode(node);
 
@@ -5007,7 +4998,7 @@ public class PgSchema implements Serializable {
 
 		lucene_doc.add(new StringField(option.document_key_name, document_id, Field.Store.YES));
 
-		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(this, md_hash_key, null, root_table, lucene_doc);
+		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(this, md_hash_key, document_id, null, root_table, lucene_doc);
 
 		node2lucidx.parseRootNode(node);
 
@@ -5315,7 +5306,7 @@ public class PgSchema implements Serializable {
 			buffw.write("<sphinx:document id=\"" + getHashKeyString(md_hash_key, document_id) + "\" xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
 			buffw.write("<" + option.document_key_name + ">" + StringEscapeUtils.escapeXml10(document_id) + "</" + option.document_key_name + ">\n");
 
-			PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(this, md_hash_key, null, root_table, buffw);
+			PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(this, md_hash_key, document_id, null, root_table, buffw);
 
 			node2sphds.parseRootNode(node);
 
@@ -5550,7 +5541,7 @@ public class PgSchema implements Serializable {
 
 		// parse root node and store to JSON buffer
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, md_hash_key, null, root_table, jsonb);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, md_hash_key, document_id, null, root_table, jsonb);
 
 		node2json.parseRootNode(node, 1);
 
@@ -5682,7 +5673,7 @@ public class PgSchema implements Serializable {
 
 		// parse root node and store to JSON buffer
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, md_hash_key, null, root_table, jsonb);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, md_hash_key, document_id, null, root_table, jsonb);
 
 		node2json.parseRootNode(node, 1);
 
@@ -5801,7 +5792,7 @@ public class PgSchema implements Serializable {
 
 		// parse root node and store to JSON buffer
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, md_hash_key, null, root_table, jsonb);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, md_hash_key, document_id, null, root_table, jsonb);
 
 		node2json.parseRootNode(node);
 

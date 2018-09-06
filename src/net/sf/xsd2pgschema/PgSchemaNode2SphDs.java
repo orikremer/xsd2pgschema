@@ -53,14 +53,15 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param md_hash_key instance of message digest
+	 * @param document_id document id
 	 * @param parent_table parent table
 	 * @param table current table
 	 * @param buffw buffered writer
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2SphDs(final PgSchema schema, final MessageDigest md_hash_key, final PgTable parent_table, final PgTable table, final BufferedWriter buffw) throws PgSchemaException {
+	public PgSchemaNode2SphDs(final PgSchema schema, final MessageDigest md_hash_key, final String document_id, final PgTable parent_table, final PgTable table, final BufferedWriter buffw) throws PgSchemaException {
 
-		super(schema, md_hash_key, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
+		super(schema, md_hash_key, document_id, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
 
 		this.buffw = buffw;
 
@@ -86,7 +87,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(schema, md_hash_key, table, nested_key.table, buffw);
+		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(schema, md_hash_key, document_id, table, nested_key.table, buffw);
 
 		try {
 
@@ -115,6 +116,12 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 		}
 
 	}
+
+	/** The parsed value. */
+	private String value;
+
+	/** The length of parsed value. */
+	private int value_len;
 
 	/**
 	 * Parse processing node.
@@ -153,47 +160,46 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 			PgField field = fields.get(f);
 
-			// document_key, serial_key, xpath_key, primary_key, foreign_key
-
-			if (field.user_key || field.primary_key || field.foreign_key)
-				continue;
-
 			// nested_key
 
-			else if (field.nested_key)
+			if (field.nested_key)
 				setNestedKey(proc_node, field, current_key);
 
-			// attribute, simple_content, element
+			else if (field.indexable) {
 
-			else if (field.attribute || field.simple_content || field.element) {
+				// attribute, simple_content, element
 
-				if (setContent(proc_node, field, current_key, node_test.as_attr, false))
-					values[f] = content;
+				if (field.attribute || field.simple_content || field.element) {
 
-				else if (field.required) {
+					if (setContent(proc_node, field, current_key, node_test.as_attr, false))
+						values[f] = content;
 
-					not_complete = true;
+					else if (field.required) {
 
-					return;
-				}
+						not_complete = true;
 
-			}
-
-			// any, any_attribute
-
-			else if (field.any || field.any_attribute) {
-
-				try {
-
-					if (setAnyContent(proc_node, field)) {
-
-						values[f] = any_content.toString().trim();
-						any_content.setLength(0);
-
+						return;
 					}
 
-				} catch (TransformerException | IOException | SAXException e) {
-					throw new PgSchemaException(e);
+				}
+
+				// any, any_attribute
+
+				else if (field.any || field.any_attribute) {
+
+					try {
+
+						if (setAnyContent(proc_node, field)) {
+
+							values[f] = any_content.toString().trim();
+							any_content.setLength(0);
+
+						}
+
+					} catch (TransformerException | IOException | SAXException e) {
+						throw new PgSchemaException(e);
+					}
+
 				}
 
 			}
@@ -209,11 +215,9 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 			if (field.indexable) {
 
-				String value = values[f];
+				value = values[f];
 
-				int value_len = value == null ? 0 : value.length();
-
-				if (value_len == 0)
+				if ((value == null ? 0 : value.length()) == 0)
 					continue;
 
 				field.writeValue2SphDs(buffw, field_prefix + field.name, value, value_len >= min_word_len);

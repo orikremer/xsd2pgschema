@@ -58,14 +58,15 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param md_hash_key instance of message digest
+	 * @param document_id document id
 	 * @param parent_table parent table
 	 * @param table current table
 	 * @param jsonb JSON builder
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2Json(final PgSchema schema, final MessageDigest md_hash_key, final PgTable parent_table, final PgTable table, final JsonBuilder jsonb) throws PgSchemaException {
+	public PgSchemaNode2Json(final PgSchema schema, final MessageDigest md_hash_key, final String document_id, final PgTable parent_table, final PgTable table, final JsonBuilder jsonb) throws PgSchemaException {
 
-		super(schema, md_hash_key, parent_table, table, PgSchemaNodeParserType.json_conversion);
+		super(schema, md_hash_key, document_id, parent_table, table, PgSchemaNodeParserType.json_conversion);
 
 		this.jsonb = jsonb;
 
@@ -137,42 +138,39 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		parse(node_test);
 
+		boolean virtual = table.virtual;
 		boolean as_attr = nested_key.as_attr;
 		boolean last_node = isLastNode(node_test, nested_key);
 
 		switch (type) {
 		case column:
-			boolean list_and_bridge = !table.virtual && table.list_holder && table.bridge;
+			boolean start_table = !virtual && table.list_holder && table.bridge;
 
-			if (list_and_bridge) {
+			if (start_table) {
 
 				jsonb.writeStartTable(table, true, indent_level);
-				jsonb.writeFields(table, as_attr, indent_level + (table.virtual ? 0 : 1));
+				jsonb.writeFields(table, as_attr, indent_level + (virtual ? 0 : 1));
 
 			}
 
 			else if (last_node) {
 
 				if (!not_complete && table.jsonb_not_empty)
-					jsonb.writeFields(table, as_attr, indent_level + (table.virtual ? 0 : 1));
+					jsonb.writeFields(table, as_attr, indent_level + (virtual ? 0 : 1));
 
 			}
 
-			if (list_and_bridge || last_node) {
+			if ((start_table || last_node) && !not_complete) {
 
-				if (!not_complete) {
+				visited = true;
 
-					visited = true;
+				if (nested_keys != null) {
 
-					if (nested_keys != null) {
+					for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-						for (PgSchemaNestedKey _nested_key : nested_keys) {
+						boolean exists = existsNestedNode(_nested_key.table, node_test.proc_node);
 
-							boolean exists = existsNestedNode(_nested_key.table, node_test.proc_node);
-
-							traverseNestedNodeCol(exists || indirect ? node_test.proc_node : proc_node, _nested_key.asOfChild(node_test, exists), indent_level + (table.virtual ? 0 : 1));
-
-						}
+						traverseNestedNodeCol(exists || indirect ? node_test.proc_node : proc_node, _nested_key.asOfChild(node_test, exists), indent_level + (virtual ? 0 : 1));
 
 					}
 
@@ -180,13 +178,13 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			}
 
-			if (list_and_bridge)
+			if (start_table)
 				jsonb.writeEndTable();
 			break;
 		case object:
 			if (written) {
 
-				if (!table.virtual) {
+				if (!virtual) {
 
 					jsonb.writeStartTable(table, true, indent_level);
 					jsonb.writeFields(table, as_attr, indent_level + 1);
@@ -199,21 +197,17 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			}
 
-			if (last_node) {
+			if (last_node && !not_complete) {
 
-				if (!not_complete) {
+				visited = true;
 
-					visited = true;
+				if (nested_keys != null) {
 
-					if (nested_keys != null) {
+					for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-						for (PgSchemaNestedKey _nested_key : nested_keys) {
+						boolean exists = existsNestedNode(_nested_key.table, node_test.proc_node);
 
-							boolean exists = existsNestedNode(_nested_key.table, node_test.proc_node);
-
-							traverseNestedNodeObj(exists || indirect ? node_test.proc_node : proc_node, _nested_key.asOfChild(node_test, exists), indent_level + (table.relational ? 0 : 1));
-
-						}
+						traverseNestedNodeObj(exists || indirect ? node_test.proc_node : proc_node, _nested_key.asOfChild(node_test, exists), indent_level + (table.relational ? 0 : 1));
 
 					}
 
@@ -237,14 +231,15 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 */
 	protected void parseChildNode(final Node node, final PgSchemaNestedKey nested_key, int indent_level) throws PgSchemaException {
 
-		boolean as_attr = nested_key.as_attr;
-
 		parse(new PgSchemaNodeTester(node, nested_key));
+
+		boolean virtual = table.virtual;
+		boolean as_attr = nested_key.as_attr;
 
 		switch (type) {
 		case column:
 			if (written)
-				jsonb.writeFields(table, as_attr, indent_level + (table.virtual ? 0 : 1));
+				jsonb.writeFields(table, as_attr, indent_level + (virtual ? 0 : 1));
 
 			if (not_complete || nested_keys == null)
 				return;
@@ -252,14 +247,14 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			for (PgSchemaNestedKey _nested_key : nested_keys) {
 
 				if (existsNestedNode(_nested_key.table, node))
-					traverseNestedNodeCol(node, _nested_key.asOfChild(this), indent_level + (table.virtual ? 0 : 1));
+					traverseNestedNodeCol(node, _nested_key.asOfChild(this), indent_level + (virtual ? 0 : 1));
 
 			}
 			break;
 		case object:
 			if (written) {
 
-				if (!table.virtual)
+				if (!virtual)
 					jsonb.writeStartTable(table, !parent_table.bridge, indent_level);
 
 				jsonb.writeFields(table, as_attr, indent_level + 1);
@@ -277,7 +272,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			}
 
-			if (!table.virtual)
+			if (!virtual)
 				jsonb.writeEndTable();
 			break;
 		default:
@@ -295,7 +290,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, md_hash_key, table, nested_key.table, jsonb);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, md_hash_key, document_id, table, nested_key.table, jsonb);
 
 		try {
 
@@ -337,13 +332,13 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		PgTable current_table = nested_key.table;
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, md_hash_key, table, nested_key.table, jsonb);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, md_hash_key, document_id, table, current_table, jsonb);
 
 		try {
 
-			boolean list_and_bridge = current_table.list_holder && current_table.bridge;
+			boolean start_table = !current_table.virtual && !(current_table.list_holder && current_table.bridge);
 
-			if (!current_table.virtual && !list_and_bridge)
+			if (start_table)
 				jsonb.writeStartTable(current_table, true, json_indent_level);
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
@@ -370,7 +365,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			} finally {
 
-				if (!current_table.virtual && !list_and_bridge)
+				if (start_table)
 					jsonb.writeEndTable();
 
 			}
@@ -393,13 +388,17 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		PgTable current_table = nested_key.table;
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, md_hash_key, table, current_table, jsonb);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, md_hash_key, document_id, table, current_table, jsonb);
 
 		try {
 
-			if (!current_table.virtual && current_table.bridge) {
+			boolean start_table = !current_table.virtual && current_table.bridge;
+
+			if (start_table) {
+
 				jsonb.writeStartTable(current_table, true, ++json_indent_level);
 				++json_indent_level;
+
 			}
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
@@ -426,7 +425,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			} finally {
 
-				if (!current_table.virtual && current_table.bridge)
+				if (start_table)
 					jsonb.writeEndTable();
 
 			}
@@ -474,47 +473,46 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			PgField field = fields.get(f);
 
-			// document_key, serial_key, xpath_key, primary_key, foreign_key
-
-			if (field.user_key || field.primary_key || field.foreign_key)
-				continue;
-
 			// nested_key
 
-			else if (field.nested_key)
+			if (field.nested_key)
 				setNestedKey(proc_node, field, current_key);
 
-			// attribute, simple_content, element
+			else if (field.jsonable) {
 
-			else if (field.attribute || field.simple_content || field.element) {
+				// attribute, simple_content, element
 
-				if (setContent(proc_node, field, current_key, node_test.as_attr, false))
-					values[f] = content;
+				if (field.attribute || field.simple_content || field.element) {
 
-				else if (field.required) {
+					if (setContent(proc_node, field, current_key, node_test.as_attr, false))
+						values[f] = content;
 
-					not_complete = true;
+					else if (field.required) {
 
-					return;
-				}
+						not_complete = true;
 
-			}
-
-			// any, any_attribute
-
-			else if (field.any || field.any_attribute) {
-
-				try {
-
-					if (setAnyContent(proc_node, field)) {
-
-						values[f] = any_content.toString().trim();
-						any_content.setLength(0);
-
+						return;
 					}
 
-				} catch (TransformerException | IOException | SAXException e) {
-					throw new PgSchemaException(e);
+				}
+
+				// any, any_attribute
+
+				else if (field.any || field.any_attribute) {
+
+					try {
+
+						if (setAnyContent(proc_node, field)) {
+
+							values[f] = any_content.toString().trim();
+							any_content.setLength(0);
+
+						}
+
+					} catch (TransformerException | IOException | SAXException e) {
+						throw new PgSchemaException(e);
+					}
+
 				}
 
 			}
