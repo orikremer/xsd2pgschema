@@ -20,7 +20,7 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * Nest tester to compose JSON document.
+ * Nest tester for JSON builder.
  *
  * @author yokochi
  */

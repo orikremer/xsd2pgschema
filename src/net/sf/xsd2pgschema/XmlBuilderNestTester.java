@@ -20,7 +20,7 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * Nest tester to compose XML document.
+ * Nest tester for XML builder.
  *
  * @author yokochi
  */

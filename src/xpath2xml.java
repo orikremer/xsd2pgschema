@@ -37,7 +37,7 @@ import org.xml.sax.SAXException;
 import com.github.antlr.grammars_v4.xpath.xpathListenerException;
 
 /**
- * XPath 1.0 query evaluator to compose XML over PostgreSQL.
+ * XPath 1.0 query evaluator to XML over PostgreSQL.
  *
  * @author yokochi
  */
@@ -291,7 +291,7 @@ public class xpath2xml {
 
 		XmlBuilder xmlb = new XmlBuilder();
 
-		System.err.println("xpath2xml: XPath 1.0 qeury evaluator to compose XML over PostgreSQL");
+		System.err.println("xpath2xml: XPath 1.0 qeury evaluator to XML over PostgreSQL");
 		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host PG_HOST_NAME (default=\"" + PgSchemaUtil.pg_host + "\")");
 		System.err.println("        --db-port PG_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_port + "\")");

@@ -61,7 +61,7 @@ import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 /**
- * PostgreSQL schema constructor.
+ * PostgreSQL data model.
  *
  * @author yokochi
  */
@@ -162,7 +162,7 @@ public class PgSchema implements Serializable {
 	private int level;
 
 	/**
-	 * PostgreSQL schema constructor.
+	 * PostgreSQL data model constructor.
 	 *
 	 * @param doc_builder Document builder used for xs:include or xs:import
 	 * @param doc XML Schema document
@@ -4239,7 +4239,7 @@ public class PgSchema implements Serializable {
 	/**
 	 * Return root node of document.
 	 *
-	 * @param xml_parser XML document
+	 * @param xml_parser XML parser
 	 * @return Node root node of document
 	 * @throws PgSchemaException the pg schema exception
 	 */
@@ -4306,7 +4306,7 @@ public class PgSchema implements Serializable {
 	/**
 	 * Data (CSV/TSV) conversion.
 	 *
-	 * @param xml_parser XML document
+	 * @param xml_parser XML parser
 	 * @param md_hash_key instance of message digest
 	 * @param work_dir working directory contains data (CSV/TSV) files
 	 * @throws PgSchemaException the pg schema exception
@@ -4405,7 +4405,7 @@ public class PgSchema implements Serializable {
 	/**
 	 * PostgreSQL data migration.
 	 *
-	 * @param xml_parser XML document
+	 * @param xml_parser XML parser
 	 * @param md_hash_key instance of message digest
 	 * @param update whether update or insertion
 	 * @param db_conn database connection
@@ -4983,7 +4983,7 @@ public class PgSchema implements Serializable {
 	/**
 	 * Lucene document conversion.
 	 *
-	 * @param xml_parser XML document
+	 * @param xml_parser XML parser
 	 * @param md_hash_key instance of message digest
 	 * @param lucene_doc Lucene document
 	 * @throws PgSchemaException the pg schema exception
@@ -5287,7 +5287,7 @@ public class PgSchema implements Serializable {
 	/**
 	 * Sphinx xmlpipe2 conversion.
 	 *
-	 * @param xml_parser XML document
+	 * @param xml_parser XML parser
 	 * @param md_hash_key instance of message digest
 	 * @param buffw buffered writer of Sphinx xmlpipe2 file
 	 * @throws PgSchemaException the pg schema exception
@@ -5526,7 +5526,7 @@ public class PgSchema implements Serializable {
 	/**
 	 * Object-oriented JSON conversion.
 	 *
-	 * @param xml_parser XML document
+	 * @param xml_parser XML parser
 	 * @param md_hash_key instance of message digest
 	 * @param json_file_path JSON file path
 	 * @throws PgSchemaException the pg schema exception
@@ -5658,7 +5658,7 @@ public class PgSchema implements Serializable {
 	/**
 	 * Column-oriented JSON conversion.
 	 *
-	 * @param xml_parser XML document
+	 * @param xml_parser XML parser
 	 * @param md_hash_key instance of message digest
 	 * @param json_file_path JSON file path
 	 * @throws PgSchemaException the pg schema exception
@@ -5767,7 +5767,7 @@ public class PgSchema implements Serializable {
 	/**
 	 * Relational-oriented JSON conversion.
 	 *
-	 * @param xml_parser XML document
+	 * @param xml_parser XML parser
 	 * @param md_hash_key instance of message digest
 	 * @param json_file_path JSON file path
 	 * @throws PgSchemaException the pg schema exception

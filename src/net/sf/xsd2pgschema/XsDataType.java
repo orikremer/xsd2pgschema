@@ -20,7 +20,7 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * Enumerator of XSD data types and conversion functions.
+ * Enumerator of XSD data type.
  *
  * @author yokochi
  */

@@ -22,7 +22,7 @@ package net.sf.xsd2pgschema;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
- * PostgreSQL schema contractor exception.
+ * PostgreSQL data model exception.
  *
  * @author yokochi
  */

@@ -65,7 +65,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 * @param schema PostgreSQL data model
 	 * @param md_hash_key instance of message digest
 	 * @param document_id document id
-	 * @param parent_table parent table
+	 * @param parent_table parent table (set null if current table is root table)
 	 * @param table current table
 	 * @throws PgSchemaException the pg schema exception
 	 */

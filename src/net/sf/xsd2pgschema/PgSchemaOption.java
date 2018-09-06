@@ -39,7 +39,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
- * PostgreSQL schema construction option.
+ * PostgreSQL data model option.
  *
  * @author yokochi
  */

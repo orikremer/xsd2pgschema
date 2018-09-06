@@ -37,7 +37,7 @@ import org.xml.sax.SAXException;
 import com.github.antlr.grammars_v4.xpath.xpathListenerException;
 
 /**
- * Query translator from XPath to SQL.
+ * Query translator from XPath 1.0 to SQL.
  *
  * @author yokochi
  */
@@ -271,7 +271,7 @@ public class xpath2pgsql {
 
 		PgSchemaOption option = new PgSchemaOption(true);
 
-		System.err.println("xpath2pgsql: Qeury translator from XPath to SQL");
+		System.err.println("xpath2pgsql: Qeury translator from XPath 1.0 to SQL");
 		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host PG_HOST_NAME (default=\"" + PgSchemaUtil.pg_host + "\")");
 		System.err.println("        --db-port PG_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_port + "\")");

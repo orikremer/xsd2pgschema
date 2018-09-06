@@ -20,7 +20,7 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * Common builder.
+ * Common document builder.
  *
  * @author yokochi
  */

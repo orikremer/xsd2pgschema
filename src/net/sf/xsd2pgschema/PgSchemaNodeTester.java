@@ -71,7 +71,7 @@ public class PgSchemaNodeTester {
 	}
 
 	/**
-	 * Decide whether to process this node.
+	 * Setup current node as processing node.
 	 *
 	 * @param parent_node parent node
 	 * @param node current node
