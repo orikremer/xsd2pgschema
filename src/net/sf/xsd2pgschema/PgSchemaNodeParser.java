@@ -243,9 +243,11 @@ public abstract class PgSchemaNodeParser {
 
 			if (nested_keys != null) {
 
+				boolean exists;
+
 				for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-					boolean exists = existsNestedNode(_nested_key.table, node_test.proc_node);
+					exists = existsNestedNode(_nested_key.table, node_test.proc_node);
 
 					traverseNestedNode(exists || indirect ? node_test.proc_node : proc_node, _nested_key.asOfChild(node_test, exists));
 
@@ -539,12 +541,12 @@ public abstract class PgSchemaNodeParser {
 	 */
 	private void setElement(final Node node, final PgField field) {
 
+		String child_name;
+
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
-
-			String child_name;
 
 			if ((child_name = child.getLocalName()) == null)
 				child_name = PgSchemaUtil.getUnqualifiedName(child.getNodeName());
@@ -620,12 +622,12 @@ public abstract class PgSchemaNodeParser {
 		Document doc = null;
 		Element doc_root = null;
 
+		String child_name;
+
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
-
-			String child_name;
 
 			if ((child_name = child.getLocalName()) == null)
 				child_name = PgSchemaUtil.getUnqualifiedName(child.getNodeName());
@@ -866,12 +868,12 @@ public abstract class PgSchemaNodeParser {
 		if (nested_table.virtual)
 			return nested_table.content_holder;
 
+		String child_name;
+
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
-
-			String child_name;
 
 			if ((child_name = child.getLocalName()) == null)
 				child_name = PgSchemaUtil.getUnqualifiedName(child.getNodeName());

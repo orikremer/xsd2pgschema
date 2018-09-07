@@ -20,7 +20,7 @@ limitations under the License.
 package net.sf.xsd2pgschema;
 
 /**
- * Enumerator of XPath component.
+ * Enumerator of XPath component type.
  *
  * @author yokochi
  */

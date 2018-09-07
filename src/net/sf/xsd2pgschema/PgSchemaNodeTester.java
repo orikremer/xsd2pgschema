@@ -155,12 +155,12 @@ public class PgSchemaNodeTester {
 
 		if (!virtual && indirect) {
 
+			String child_name;
+
 			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 				if (child.getNodeType() != Node.ELEMENT_NODE)
 					continue;
-
-				String child_name;
 
 				if ((child_name = child.getLocalName()) == null)
 					child_name = PgSchemaUtil.getUnqualifiedName(child.getNodeName());

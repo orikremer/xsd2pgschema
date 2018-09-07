@@ -288,12 +288,14 @@ public class PgSchema implements Serializable {
 
 		// include or import namespace
 
+		String child_name;
+
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			String child_name = child.getNodeName();
+			child_name = child.getNodeName();
 
 			if (!child_name.contains("include") && !child_name.contains("import"))
 				continue;
@@ -438,10 +440,12 @@ public class PgSchema implements Serializable {
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			if (child.getNodeName().equals(option.xs_prefix_ + "complexType"))
+			child_name = child.getNodeName();
+
+			if (child_name.equals(option.xs_prefix_ + "complexType"))
 				extractAdminElement(root_schema, root_node, child, true, false);
 
-			else if (child.getNodeName().equals(option.xs_prefix_ + "simpleType"))
+			else if (child_name.equals(option.xs_prefix_ + "simpleType"))
 				extractAdminElement(root_schema, root_node, child, false, false);
 
 		}
@@ -495,10 +499,12 @@ public class PgSchema implements Serializable {
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			else if (child.getNodeName().equals(option.xs_prefix_ + "complexType"))
+			child_name = child.getNodeName();
+
+			if (child_name.equals(option.xs_prefix_ + "complexType"))
 				extractAdminElement(root_schema, root_node, child, true, true);
 
-			else if (child.getNodeName().equals(option.xs_prefix_ + "simpleType"))
+			else if (child_name.equals(option.xs_prefix_ + "simpleType"))
 				extractAdminElement(root_schema, root_node, child, false, true);
 
 		}
@@ -1211,12 +1217,14 @@ public class PgSchema implements Serializable {
 
 		table.addPrimaryKey(option, true);
 
+		String child_name;
+
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			String child_name = child.getNodeName();
+			child_name = child.getNodeName();
 
 			if (child_name.equals(option.xs_prefix_ + "complexType") || child_name.equals(option.xs_prefix_ + "simpleType"))
 				extractField(root_schema, root_node, child, table, false);
@@ -1555,12 +1563,14 @@ public class PgSchema implements Serializable {
 		else if (node_name.equals(option.xs_prefix_ + "complexType"))
 			has_complex_parent = true;
 
+		String child_name;
+
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			String child_name = child.getNodeName();
+			child_name = child.getNodeName();
 
 			if (child_name.equals(option.xs_prefix_ + "annotation"))
 				continue;
@@ -1806,12 +1816,14 @@ public class PgSchema implements Serializable {
 
 					boolean has_complex_child = false;
 
+					String child_name;
+
 					for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 						if (child.getNodeType() != Node.ELEMENT_NODE)
 							continue;
 
-						String child_name = child.getNodeName();
+						child_name = child.getNodeName();
 
 						if (child_name.equals(option.xs_prefix_ + "complexType")) {
 
@@ -1883,7 +1895,7 @@ public class PgSchema implements Serializable {
 
 						Element child_e = (Element) node;
 
-						String child_name = child_e.getAttribute("name");
+						child_name = child_e.getAttribute("name");
 
 						child_table.xname = PgSchemaUtil.getUnqualifiedName(child_name);
 						child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
@@ -1979,18 +1991,22 @@ public class PgSchema implements Serializable {
 
 		else if (ref != null && !ref.isEmpty()) {
 
+			String child_name;
+
 			for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 				if (child.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (child.getNodeName().equals(attribute ? option.xs_prefix_ + "attribute" : option.xs_prefix_ + "element")) {
+				child_name = child.getNodeName();
+
+				if (child_name.equals(attribute ? option.xs_prefix_ + "attribute" : option.xs_prefix_ + "element")) {
 
 					String ref_xname = PgSchemaUtil.getUnqualifiedName(ref);
 
 					Element child_e = (Element) child;
 
-					String child_name = PgSchemaUtil.getUnqualifiedName(child_e.getAttribute("name"));
+					child_name = PgSchemaUtil.getUnqualifiedName(child_e.getAttribute("name"));
 
 					if (child_name.equals(ref_xname) && (
 							(table.target_namespace != null && table.target_namespace.equals(getNamespaceUriOfQName(ref))) ||
@@ -2315,22 +2331,28 @@ public class PgSchema implements Serializable {
 				if (child.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (!child.getNodeName().equals(option.xs_prefix_ + "extension"))
-					continue;
+				if (child.getNodeName().equals(option.xs_prefix_ + "extension")) {
 
-				for (Node grandchild = child.getFirstChild(); grandchild != null; grandchild = grandchild.getNextSibling()) {
+					String grandchild_name;
 
-					String grandchild_name = grandchild.getNodeName();
+					for (Node grandchild = child.getFirstChild(); grandchild != null; grandchild = grandchild.getNextSibling()) {
 
-					if (grandchild_name.equals(option.xs_prefix_ + "attribute"))
-						extractAttribute(root_schema, root_node, grandchild, table);
+						if (grandchild.getNodeType() != Node.ELEMENT_NODE)
+							continue;
 
-					else if (grandchild_name.equals(option.xs_prefix_ + "attributeGroup"))
-						extractAttributeGroup(root_schema, grandchild, table);
+						grandchild_name = grandchild.getNodeName();
 
+						if (grandchild_name.equals(option.xs_prefix_ + "attribute"))
+							extractAttribute(root_schema, root_node, grandchild, table);
+
+						else if (grandchild_name.equals(option.xs_prefix_ + "attributeGroup"))
+							extractAttributeGroup(root_schema, grandchild, table);
+
+					}
+
+					break;
 				}
 
-				break;
 			}
 
 		}
@@ -2415,12 +2437,14 @@ public class PgSchema implements Serializable {
 			return;
 		}
 
+		String child_name;
+
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			String child_name = child.getNodeName();
+			child_name = child.getNodeName();
 
 			if (child_name.equals(option.xs_prefix_ + "annotation"))
 				continue;
@@ -5008,14 +5032,17 @@ public class PgSchema implements Serializable {
 		if (!node.getNodeName().equals("sphinx:schema"))
 			throw new PgSchemaException("Not found sphinx:schema root element in Sphinx data source: " + PgSchemaUtil.sph_schema_name);
 
+		String child_name;
+
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			String node_name = child.getNodeName();
-			boolean sph_field = node_name.equals("sphinx:field");
-			boolean sph_attr = node_name.equals("sphinx:attr");
+			child_name = child.getNodeName();
+
+			boolean sph_field = child_name.equals("sphinx:field");
+			boolean sph_attr = child_name.equals("sphinx:attr");
 
 			if (sph_field || sph_attr) {
 

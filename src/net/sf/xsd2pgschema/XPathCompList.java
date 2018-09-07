@@ -166,13 +166,13 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Instance of XPath AST serializer (internal use only).
+	 * Instance of XPathCompList (internal use only).
 	 */
 	private XPathCompList() {
 	}
 
 	/**
-	 * Clear XPath serializer.
+	 * Clear XPath AST serializer.
 	 */
 	public void clear() {
 
@@ -191,7 +191,7 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Clear path expressions (internal use only).
+	 * Clear XPathCompList (internal use only).
 	 */
 	private void clearPathExprs() {
 
