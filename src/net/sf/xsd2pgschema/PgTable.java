@@ -101,14 +101,8 @@ public class PgTable implements Serializable {
 	/** Whether table has any attribute. */
 	protected boolean has_any_attribute = false;
 
-	/** Whether table has pending group. */
-	protected boolean has_pending_group = false;
-
 	/** Whether table has required field. */
 	protected boolean has_required_field = false;
-
-	/** Whether table has unique nested key. */
-	protected boolean has_unique_nested_key = false;
 
 	/** Whether table has nested key as attribute. */
 	protected boolean has_nested_key_as_attr = false;
@@ -124,6 +118,10 @@ public class PgTable implements Serializable {
 
 	/** Whether table could have writer. */
 	protected boolean writable = false;
+
+	/** Whether table has pending group. */
+	@Flat
+	protected boolean has_pending_group = false;
 
 	/** Whether table is indexable. */
 	@Flat

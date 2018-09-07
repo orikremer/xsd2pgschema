@@ -58,7 +58,7 @@ import com.github.antlr.grammars_v4.xpath.xpathParser.UnaryExprNoRootContext;
 import com.github.antlr.grammars_v4.xpath.xpathParser.VariableReferenceContext;
 
 /**
- * XPath component list.
+ * XPath AST serializer.
  *
  * @author yokochi
  */
@@ -116,7 +116,7 @@ public class XPathCompList {
 	private final String pg_xpath_prefix_ = pg_xpath_prefix + ":";
 
 	/**
-	 * Serialize XPath parse tree.
+	 * Instance of XPath AST serializer.
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param tree XPath parse tree
@@ -166,13 +166,13 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Serialize XPath parse tree (internal use only).
+	 * Instance of XPath AST serializer (internal use only).
 	 */
 	private XPathCompList() {
 	}
 
 	/**
-	 * Clear XPathCompList.
+	 * Clear XPath serializer.
 	 */
 	public void clear() {
 

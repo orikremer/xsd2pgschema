@@ -330,15 +330,8 @@ public abstract class PgSchemaNodeParser {
 
 		}
 
-		else {
-
-			if (!matchesAncestorNode(current_key, field.ancestor_node))
-				return null;
-
-			if (table.has_nested_key_as_attr && current_key.contains("@"))
-				return null;
-
-		}
+		else if (!matchesAncestorNode(current_key, field.ancestor_node) || table.has_nested_key_as_attr && current_key.contains("@"))
+			return null;
 
 		PgTable nested_table = schema.getTable(field.foreign_table_id);
 

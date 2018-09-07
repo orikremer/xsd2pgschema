@@ -86,9 +86,6 @@ public class PgField implements Serializable {
 	/** The data type. */
 	protected String type = null;
 
-	/** The @substitutionGroup. */
-	protected String substitution_group = null;
-
 	/** The @maxOccurs. */
 	protected String maxoccurs = "1";
 
@@ -155,26 +152,8 @@ public class PgField implements Serializable {
 	/** Whether @use="required" | @nillalbe="false", but be false in PostgreSQL when name collision occurs. */
 	protected boolean required = false;
 
-	/** Whether @use is "prohibited". */
-	protected boolean prohibited = false;
-
 	/** Whether @maxOccurs is greater than 1 || @minOccurs is greater than 1. */
 	protected boolean list_holder = false;
-
-	/** Whether representative field of substitution group. */
-	protected boolean rep_substitution_group = false;
-
-	/** Whether Sphinx multi-valued attribute. */
-	protected boolean sph_mva = false;
-
-	/** Whether it is selected as field for partial indexing. */
-	protected boolean field_sel = false;
-
-	/** Whether it is selected as attribute for partial indexing. */
-	protected boolean attr_sel = false;
-
-	/** Whether it is selected as attribute and ready for partial indexing. */
-	protected boolean attr_sel_rdy = true;
 
 	/** The constraint name in PostgreSQL. */
 	protected String constraint_name = null;
@@ -205,9 +184,6 @@ public class PgField implements Serializable {
 
 	/** The @default. */
 	protected String default_value = null;
-
-	/** The @block. */
-	protected String block_value = null;
 
 	/** Whether field has any restriction. */
 	protected boolean restriction = false;
@@ -257,14 +233,8 @@ public class PgField implements Serializable {
 	/** The xs:explicitTimezone restriction. */
 	protected String explicit_timezone = null;
 
-	/** The xs:assertions restriction. */
-	protected String assertions = null;
-
 	/** Whether xs:list. */
 	protected boolean _list = false;
-
-	/** Whether xs:union. */
-	protected boolean _union = false;
 
 	/** Whether it has any system's administrative key (primary_key || foreign_key || nested_key). */
 	protected boolean system_key = false;
@@ -274,9 +244,6 @@ public class PgField implements Serializable {
 
 	/** Whether field is omissible. */
 	protected boolean omissible = false;
-
-	/** Whether field is indexable. */
-	protected boolean indexable = true;
 
 	/** Whether field is JSON convertible. */
 	protected boolean jsonable = true;
@@ -289,21 +256,65 @@ public class PgField implements Serializable {
 	@Flat
 	protected String anno = null;
 
-	/** The --fill-this option. */
+	/** The @substitutionGroup. */
 	@Flat
-	protected boolean fill_this = false;
+	protected String substitution_group = null;
+
+	/** The @block. */
+	@Flat
+	protected String block_value = null;
+
+	/** The xs:assertions restriction. */
+	@Flat
+	protected String assertions = null;
 
 	/** The filled text used in post XML edition. */
 	@Flat
 	protected String filled_text = null;
 
-	/** The --filt-out option. */
-	@Flat
-	protected boolean filt_out = false;
-
 	/** The filter patterns in post XML edition. */
 	@Flat
 	protected String[] filter_pattern = null;
+
+	/** Whether @use is "prohibited". */
+	@Flat
+	protected boolean prohibited = false;
+
+	/** Whether representative field of substitution group. */
+	@Flat
+	protected boolean rep_substitution_group = false;
+
+	/** Whether xs:union. */
+	@Flat
+	protected boolean _union = false;
+
+	/** Whether field is indexable. */
+	@Flat
+	protected boolean indexable = true;
+
+	/** Whether Sphinx multi-valued attribute. */
+	@Flat
+	protected boolean sph_mva = false;
+
+	/** Whether it is selected as field for partial indexing. */
+	@Flat
+	protected boolean field_sel = false;
+
+	/** Whether it is selected as attribute for partial indexing. */
+	@Flat
+	protected boolean attr_sel = false;
+
+	/** Whether it is selected as attribute and ready for partial indexing. */
+	@Flat
+	protected boolean attr_sel_rdy;
+
+	/** The --fill-this option. */
+	@Flat
+	protected boolean fill_this = false;
+
+	/** The --filt-out option. */
+	@Flat
+	protected boolean filt_out = false;
 
 	/** Whether JSON buffer is not empty (internal use only). */
 	@Flat

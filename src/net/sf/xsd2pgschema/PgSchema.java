@@ -162,7 +162,7 @@ public class PgSchema implements Serializable {
 	private int level;
 
 	/**
-	 * PostgreSQL data model constructor.
+	 * Instance of PostgreSQL data model.
 	 *
 	 * @param doc_builder Document builder used for xs:include or xs:import
 	 * @param doc XML Schema document
@@ -748,21 +748,6 @@ public class PgSchema implements Serializable {
 		// cancel unique key constraint if parent table is list holder
 
 		tables.parallelStream().filter(table -> table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> getForeignTable(field).cancelUniqueKey()));
-
-		// decide whether table has any unique child table
-
-		tables.parallelStream().filter(table -> table.nested_fields > 0).forEach(table -> {
-
-			table.fields.stream().filter(field -> field.nested_key).forEach(field -> {
-
-				PgTable nested_table = getForeignTable(field);
-
-				if (nested_table.fields.stream().anyMatch(nested_field -> nested_field.unique_key))
-					table.has_unique_nested_key = true;
-
-			});
-
-		});
 
 		// decide parent node name constraint
 
