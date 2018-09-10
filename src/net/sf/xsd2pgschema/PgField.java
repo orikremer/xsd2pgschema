@@ -349,16 +349,16 @@ public class PgField implements Serializable {
 
 			if (node.hasAttributes()) {
 
-				Element e = (Element) node;
+				Element elem = (Element) node;
 
-				String _type = e.getAttribute("type");
+				String _type = elem.getAttribute("type");
 
 				if (_type != null && !_type.isEmpty()) {
 					type = _type;
 					return;
 				}
 
-				String item_type = e.getAttribute("itemType"); // xs:list
+				String item_type = elem.getAttribute("itemType"); // xs:list
 
 				if (item_type != null && !item_type.isEmpty()) {
 					_list = true;
@@ -366,7 +366,7 @@ public class PgField implements Serializable {
 					return;
 				}
 
-				String mem_types = e.getAttribute("memberTypes"); // xs:union
+				String mem_types = elem.getAttribute("memberTypes"); // xs:union
 
 				if (mem_types != null && !mem_types.isEmpty()) {
 					_union = true;
@@ -374,7 +374,7 @@ public class PgField implements Serializable {
 					return;
 				}
 
-				String _substitution_group = e.getAttribute("substitutionGroup");
+				String _substitution_group = elem.getAttribute("substitutionGroup");
 
 				if (_substitution_group != null && !_substitution_group.isEmpty()) {
 					substitution_group = _substitution_group;
@@ -383,9 +383,14 @@ public class PgField implements Serializable {
 
 			}
 
+			String child_name;
+
 			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-				String child_name = child.getNodeName();
+				if (child.getNodeType() != Node.ELEMENT_NODE)
+					continue;
+
+				child_name = child.getNodeName();
 
 				if (child_name.equals(xs_prefix_ + "annotation"))
 					continue;
@@ -400,16 +405,16 @@ public class PgField implements Serializable {
 
 				else if (child.hasAttributes()) {
 
-					Element e = (Element) child;
+					Element elem = (Element) child;
 
-					String _type = e.getAttribute("type");
+					String _type = elem.getAttribute("type");
 
 					if (_type != null && !_type.isEmpty()) {
 						type = _type;
 						return;
 					}
 
-					String item_type = e.getAttribute("itemType"); // xs:list
+					String item_type = elem.getAttribute("itemType"); // xs:list
 
 					if (item_type != null && !item_type.isEmpty()) {
 						_list = true;
@@ -417,7 +422,7 @@ public class PgField implements Serializable {
 						return;
 					}
 
-					String mem_types = e.getAttribute("memberTypes"); // xs:union
+					String mem_types = elem.getAttribute("memberTypes"); // xs:union
 
 					if (mem_types != null && !mem_types.isEmpty()) {
 						_union = true;
@@ -425,14 +430,14 @@ public class PgField implements Serializable {
 						return;
 					}
 
-					String _substitution_group = e.getAttribute("substitutionGroup");
+					String _substitution_group = elem.getAttribute("substitutionGroup");
 
 					if (_substitution_group != null && !_substitution_group.isEmpty()) {
 						substitution_group = _substitution_group;
 						return;
 					}
 
-					String base = e.getAttribute("base");
+					String base = elem.getAttribute("base");
 
 					if (base != null && !base.isEmpty()) {
 						type = base;
@@ -500,9 +505,7 @@ public class PgField implements Serializable {
 
 		if (node.hasAttributes()) {
 
-			Element e = (Element) node;
-
-			String namespace = e.getAttribute("targetNamespace");
+			String namespace = ((Element) node).getAttribute("targetNamespace");
 
 			if (namespace != null && !namespace.isEmpty()) {
 
@@ -529,9 +532,7 @@ public class PgField implements Serializable {
 
 		if (node.hasAttributes()) {
 
-			Element e = (Element) node;
-
-			String namespace = e.getAttribute("namespace");
+			String namespace = ((Element) node).getAttribute("namespace");
 
 			if (namespace != null && !namespace.isEmpty()) {
 
@@ -556,9 +557,7 @@ public class PgField implements Serializable {
 
 		if (node.hasAttributes()) {
 
-			Element e = (Element) node;
-
-			String _maxoccurs = e.getAttribute("maxOccurs");
+			String _maxoccurs = ((Element) node).getAttribute("maxOccurs");
 
 			if (_maxoccurs != null && !_maxoccurs.isEmpty()) {
 
@@ -583,9 +582,7 @@ public class PgField implements Serializable {
 					parent_name.equals(xs_prefix_ + "choice") ||
 					parent_name.equals(xs_prefix_ + "sequence")) {
 
-				Element e = (Element) parent_node;
-
-				String _maxoccurs = e.getAttribute("maxOccurs");
+				String _maxoccurs = ((Element) parent_node).getAttribute("maxOccurs");
 
 				if (_maxoccurs != null && !_maxoccurs.isEmpty()) {
 
@@ -602,9 +599,14 @@ public class PgField implements Serializable {
 
 		// test child nodes
 
+		String child_name;
+
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			String child_name = child.getNodeName();
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
+			child_name = child.getNodeName();
 
 			if (child_name.equals(xs_prefix_ + "annotation"))
 				continue;
@@ -619,9 +621,7 @@ public class PgField implements Serializable {
 
 			else if (child.hasAttributes()) {
 
-				Element e = (Element) child;
-
-				String _maxoccurs = e.getAttribute("maxOccurs");
+				String _maxoccurs = ((Element) child).getAttribute("maxOccurs");
 
 				if (_maxoccurs != null && !_maxoccurs.isEmpty()) {
 
@@ -653,9 +653,7 @@ public class PgField implements Serializable {
 
 		if (node.hasAttributes()) {
 
-			Element e = (Element) node;
-
-			String _minoccurs = e.getAttribute("minOccurs");
+			String _minoccurs = ((Element) node).getAttribute("minOccurs");
 
 			if (_minoccurs != null && !_minoccurs.isEmpty()) {
 
@@ -680,9 +678,7 @@ public class PgField implements Serializable {
 					parent_name.equals(xs_prefix_ + "choice") ||
 					parent_name.equals(xs_prefix_ + "sequence")) {
 
-				Element e = (Element) parent_node;
-
-				String _minoccurs = e.getAttribute("minOccurs");
+				String _minoccurs = ((Element) parent_node).getAttribute("minOccurs");
 
 				if (_minoccurs != null && !_minoccurs.isEmpty()) {
 
@@ -699,9 +695,14 @@ public class PgField implements Serializable {
 
 		// test child nodes
 
+		String child_name;
+
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			String child_name = child.getNodeName();
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
+			child_name = child.getNodeName();
 
 			if (child_name.equals(xs_prefix_ + "annotation"))
 				continue;
@@ -716,9 +717,7 @@ public class PgField implements Serializable {
 
 			else if (child.hasAttributes()) {
 
-				Element e = (Element) child;
-
-				String _minoccurs = e.getAttribute("minOccurs");
+				String _minoccurs = ((Element) child).getAttribute("minOccurs");
 
 				if (_minoccurs != null && !_minoccurs.isEmpty()) {
 
@@ -749,9 +748,9 @@ public class PgField implements Serializable {
 
 		if (node.hasAttributes()) {
 
-			Element e = (Element) node;
+			Element elem = (Element) node;
 
-			String use = e.getAttribute("use");
+			String use = elem.getAttribute("use");
 
 			if (use != null && !use.isEmpty()) {
 
@@ -760,7 +759,7 @@ public class PgField implements Serializable {
 
 			}
 
-			String nillable = e.getAttribute("nillable");
+			String nillable = elem.getAttribute("nillable");
 
 			if (nillable != null && !nillable.isEmpty())
 				required = nillable.equals("false");
@@ -782,9 +781,7 @@ public class PgField implements Serializable {
 
 		if (node.hasAttributes()) {
 
-			Element e = (Element) node;
-
-			String fixed = e.getAttribute("fixed");
+			String fixed = ((Element) node).getAttribute("fixed");
 
 			if (fixed != null && !fixed.isEmpty()) {
 
@@ -808,9 +805,7 @@ public class PgField implements Serializable {
 
 		if (node.hasAttributes()) {
 
-			Element e = (Element) node;
-
-			String _default = e.getAttribute("default");
+			String _default = ((Element) node).getAttribute("default");
 
 			if (_default != null && !_default.isEmpty())
 				default_value = _default;
@@ -830,9 +825,7 @@ public class PgField implements Serializable {
 
 		if (node.hasAttributes()) {
 
-			Element e = (Element) node;
-
-			String _block = e.getAttribute("block");
+			String _block = ((Element) node).getAttribute("block");
 
 			if (_block != null && !_block.isEmpty())
 				block_value = _block;
@@ -853,9 +846,14 @@ public class PgField implements Serializable {
 
 		enumeration = xenumeration = null;
 
+		String child_name;
+
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			String child_name = child.getNodeName();
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
+			child_name = child.getNodeName();
 
 			if (child_name.equals(xs_prefix_ + "annotation"))
 				continue;
@@ -870,15 +868,18 @@ public class PgField implements Serializable {
 
 			else if (child_name.equals(xs_prefix_ + "restriction")) {
 
+				String value;
+
 				int length = 0;
 
 				for (Node enum_node = child.getFirstChild(); enum_node != null; enum_node = enum_node.getNextSibling()) {
 
+					if (enum_node.getNodeType() != Node.ELEMENT_NODE)
+						continue;
+
 					if (enum_node.getNodeName().equals(xs_prefix_ + "enumeration")) {
 
-						Element e = (Element) enum_node;
-
-						String value = e.getAttribute("value");
+						value = ((Element) enum_node).getAttribute("value");
 
 						if (value != null && !value.isEmpty())
 							length++;
@@ -899,11 +900,12 @@ public class PgField implements Serializable {
 
 				for (Node enum_node = child.getFirstChild(); enum_node != null; enum_node = enum_node.getNextSibling()) {
 
+					if (enum_node.getNodeType() != Node.ELEMENT_NODE)
+						continue;
+
 					if (enum_node.getNodeName().equals(xs_prefix_ + "enumeration")) {
 
-						Element e = (Element) enum_node;
-
-						String value = e.getAttribute("value");
+						value = ((Element) enum_node).getAttribute("value");
 
 						if (value != null && !value.isEmpty()) {
 
@@ -1032,9 +1034,14 @@ public class PgField implements Serializable {
 
 		assertions = null;
 
+		String child_name;
+
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			String child_name = child.getNodeName();
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
+			child_name = child.getNodeName();
 
 			if (child_name.equals(xs_prefix_ + "annotation"))
 				continue;
@@ -1049,396 +1056,302 @@ public class PgField implements Serializable {
 
 			else if (child_name.equals(xs_prefix_ + "restriction")) {
 
-				for (Node enum_node = child.getFirstChild(); enum_node != null; enum_node = enum_node.getNextSibling()) {
+				String value;
 
-					if (enum_node.getNodeName().equals(xs_prefix_ + "length")) {
+				for (Node rest_node = child.getFirstChild(); rest_node != null; rest_node = rest_node.getNextSibling()) {
 
-						Element e = (Element) enum_node;
+					if (rest_node.getNodeType() != Node.ELEMENT_NODE)
+						continue;
 
-						String value = e.getAttribute("value");
+					value = ((Element) rest_node).getAttribute("value");
 
-						if (value != null && !value.isEmpty()) {
+					if (value == null || value.isEmpty())
+						continue;
 
-							try {
+					if (rest_node.getNodeName().equals(xs_prefix_ + "length")) {
 
-								int i = Integer.parseInt(value);
+						try {
 
-								if (i > 0) {
+							int i = Integer.parseInt(value);
 
-									restriction = true;
-
-									if (length == null)
-										length = value;
-
-									else if (i > Integer.valueOf(length))
-										length = value;
-
-								}
-
-							} catch (NumberFormatException ex) {
-							}
-
-						}
-
-					}
-
-					else if (enum_node.getNodeName().equals(xs_prefix_ + "minLength")) {
-
-						Element e = (Element) enum_node;
-
-						String value = e.getAttribute("value");
-
-						if (value != null && !value.isEmpty()) {
-
-							try {
-
-								int i = Integer.parseInt(value);
-
-								if (i > 0) {
-
-									restriction = true;
-
-									if (min_length == null)
-										min_length = value;
-
-									else if (i < Integer.valueOf(min_length))
-										min_length = value;
-
-								}
-
-							} catch (NumberFormatException ex) {
-							}
-
-						}
-
-					}
-
-					else if (enum_node.getNodeName().equals(xs_prefix_ + "maxLength")) {
-
-						Element e = (Element) enum_node;
-
-						String value = e.getAttribute("value");
-
-						if (value != null && !value.isEmpty()) {
-
-							try {
-
-								int i = Integer.parseInt(value);
-
-								if (i > 0) {
-
-									restriction = true;
-
-									if (max_length == null)
-										max_length = value;
-
-									else if (i > Integer.valueOf(max_length))
-										max_length = value;
-
-								}
-
-							} catch (NumberFormatException ex) {
-							}
-
-						}
-
-					}
-
-					else if (enum_node.getNodeName().equals(xs_prefix_ + "pattern")) {
-
-						Element e = (Element) enum_node;
-
-						String value = e.getAttribute("value");
-
-						if (value != null && !value.isEmpty()) {
-
-							restriction = true;
-							pattern = value;
-
-						}
-
-					}
-
-					else if (enum_node.getNodeName().equals(xs_prefix_ + "maxInclusive")) {
-
-						Element e = (Element) enum_node;
-
-						String value = e.getAttribute("value");
-
-						if (value != null && !value.isEmpty()) {
-
-							try {
-
-								BigDecimal new_value = new BigDecimal(value);
+							if (i > 0) {
 
 								restriction = true;
 
-								if (max_inclusive == null)
+								if (length == null)
+									length = value;
+
+								else if (i > Integer.valueOf(length))
+									length = value;
+
+							}
+
+						} catch (NumberFormatException ex) {
+						}
+
+					}
+
+					else if (rest_node.getNodeName().equals(xs_prefix_ + "minLength")) {
+
+						try {
+
+							int i = Integer.parseInt(value);
+
+							if (i > 0) {
+
+								restriction = true;
+
+								if (min_length == null)
+									min_length = value;
+
+								else if (i < Integer.valueOf(min_length))
+									min_length = value;
+
+							}
+
+						} catch (NumberFormatException ex) {
+						}
+
+					}
+
+					else if (rest_node.getNodeName().equals(xs_prefix_ + "maxLength")) {
+
+						try {
+
+							int i = Integer.parseInt(value);
+
+							if (i > 0) {
+
+								restriction = true;
+
+								if (max_length == null)
+									max_length = value;
+
+								else if (i > Integer.valueOf(max_length))
+									max_length = value;
+
+							}
+
+						} catch (NumberFormatException ex) {
+						}
+
+					}
+
+					else if (rest_node.getNodeName().equals(xs_prefix_ + "pattern")) {
+
+						restriction = true;
+						pattern = value;
+
+					}
+
+					else if (rest_node.getNodeName().equals(xs_prefix_ + "maxInclusive")) {
+
+						try {
+
+							BigDecimal new_value = new BigDecimal(value);
+
+							restriction = true;
+
+							if (max_inclusive == null)
+								max_inclusive = value;
+
+							else {
+
+								BigDecimal old_value = new BigDecimal(max_inclusive);
+
+								if (new_value.compareTo(old_value) > 0)
 									max_inclusive = value;
 
-								else {
-
-									BigDecimal old_value = new BigDecimal(max_inclusive);
-
-									if (new_value.compareTo(old_value) > 0)
-										max_inclusive = value;
-
-								}
-
-								if (max_exclusive != null) {
-
-									BigDecimal inc_value = new BigDecimal(max_inclusive);
-									BigDecimal exc_value = new BigDecimal(max_exclusive);
-
-									if (inc_value.compareTo(exc_value) < 0)
-										max_inclusive = null;
-
-								}
-
-							} catch (NumberFormatException ex) {
 							}
 
+							if (max_exclusive != null) {
+
+								BigDecimal inc_value = new BigDecimal(max_inclusive);
+								BigDecimal exc_value = new BigDecimal(max_exclusive);
+
+								if (inc_value.compareTo(exc_value) < 0)
+									max_inclusive = null;
+
+							}
+
+						} catch (NumberFormatException ex) {
 						}
 
 					}
 
-					else if (enum_node.getNodeName().equals(xs_prefix_ + "maxExclusive")) {
+					else if (rest_node.getNodeName().equals(xs_prefix_ + "maxExclusive")) {
 
-						Element e = (Element) enum_node;
+						try {
 
-						String value = e.getAttribute("value");
+							BigDecimal new_value = new BigDecimal(value);
 
-						if (value != null && !value.isEmpty()) {
+							restriction = true;
 
-							try {
+							if (max_exclusive == null)
+								max_exclusive = value;
 
-								BigDecimal new_value = new BigDecimal(value);
+							else {
 
-								restriction = true;
+								BigDecimal old_value = new BigDecimal(max_inclusive);
 
-								if (max_exclusive == null)
+								if (new_value.compareTo(old_value) > 0)
 									max_exclusive = value;
 
-								else {
-
-									BigDecimal old_value = new BigDecimal(max_inclusive);
-
-									if (new_value.compareTo(old_value) > 0)
-										max_exclusive = value;
-
-								}
-
-								if (max_inclusive != null) {
-
-									BigDecimal inc_value = new BigDecimal(max_inclusive);
-									BigDecimal exc_value = new BigDecimal(max_exclusive);
-
-									if (exc_value.compareTo(inc_value) < 0)
-										max_exclusive = null;
-
-								}
-
-							} catch (NumberFormatException ex) {
 							}
 
+							if (max_inclusive != null) {
+
+								BigDecimal inc_value = new BigDecimal(max_inclusive);
+								BigDecimal exc_value = new BigDecimal(max_exclusive);
+
+								if (exc_value.compareTo(inc_value) < 0)
+									max_exclusive = null;
+
+							}
+
+						} catch (NumberFormatException ex) {
 						}
 
 					}
 
-					else if (enum_node.getNodeName().equals(xs_prefix_ + "minExclusive")) {
+					else if (rest_node.getNodeName().equals(xs_prefix_ + "minExclusive")) {
 
-						Element e = (Element) enum_node;
+						try {
 
-						String value = e.getAttribute("value");
+							BigDecimal new_value = new BigDecimal(value);
 
-						if (value != null && !value.isEmpty()) {
+							restriction = true;
 
-							try {
+							if (min_exclusive == null)
+								min_exclusive = value;
 
-								BigDecimal new_value = new BigDecimal(value);
+							else {
 
-								restriction = true;
+								BigDecimal old_value = new BigDecimal(max_inclusive);
 
-								if (min_exclusive == null)
+								if (new_value.compareTo(old_value) < 0)
 									min_exclusive = value;
 
-								else {
-
-									BigDecimal old_value = new BigDecimal(max_inclusive);
-
-									if (new_value.compareTo(old_value) < 0)
-										min_exclusive = value;
-
-								}
-
-								if (min_inclusive != null) {
-
-									BigDecimal inc_value = new BigDecimal(min_inclusive);
-									BigDecimal exc_value = new BigDecimal(min_exclusive);
-
-									if (exc_value.compareTo(inc_value) > 0)
-										min_exclusive = null;
-
-								}
-
-							} catch (NumberFormatException ex) {
 							}
 
+							if (min_inclusive != null) {
+
+								BigDecimal inc_value = new BigDecimal(min_inclusive);
+								BigDecimal exc_value = new BigDecimal(min_exclusive);
+
+								if (exc_value.compareTo(inc_value) > 0)
+									min_exclusive = null;
+
+							}
+
+						} catch (NumberFormatException ex) {
 						}
 
 					}
 
-					else if (enum_node.getNodeName().equals(xs_prefix_ + "minInclusive")) {
+					else if (rest_node.getNodeName().equals(xs_prefix_ + "minInclusive")) {
 
-						Element e = (Element) enum_node;
+						try {
 
-						String value = e.getAttribute("value");
+							BigDecimal new_value = new BigDecimal(value);
 
-						if (value != null && !value.isEmpty()) {
+							restriction = true;
 
-							try {
+							if (min_inclusive == null)
+								min_inclusive = value;
 
-								BigDecimal new_value = new BigDecimal(value);
+							else {
 
-								restriction = true;
+								BigDecimal old_value = new BigDecimal(max_inclusive);
 
-								if (min_inclusive == null)
+								if (new_value.compareTo(old_value) < 0)
 									min_inclusive = value;
 
-								else {
-
-									BigDecimal old_value = new BigDecimal(max_inclusive);
-
-									if (new_value.compareTo(old_value) < 0)
-										min_inclusive = value;
-
-								}
-
-								if (min_exclusive != null) {
-
-									BigDecimal inc_value = new BigDecimal(min_inclusive);
-									BigDecimal exc_value = new BigDecimal(min_exclusive);
-
-									if (inc_value.compareTo(exc_value) > 0)
-										min_inclusive = null;
-
-								}
-
-							} catch (NumberFormatException ex) {
 							}
 
+							if (min_exclusive != null) {
+
+								BigDecimal inc_value = new BigDecimal(min_inclusive);
+								BigDecimal exc_value = new BigDecimal(min_exclusive);
+
+								if (inc_value.compareTo(exc_value) > 0)
+									min_inclusive = null;
+
+							}
+
+						} catch (NumberFormatException ex) {
 						}
 
 					}
 
-					else if (enum_node.getNodeName().equals(xs_prefix_ + "totalDigits")) {
+					else if (rest_node.getNodeName().equals(xs_prefix_ + "totalDigits")) {
 
-						Element e = (Element) enum_node;
+						try {
 
-						String value = e.getAttribute("value");
+							int i = Integer.parseInt(value);
 
-						if (value != null && !value.isEmpty()) {
-
-							try {
-
-								int i = Integer.parseInt(value);
-
-								if (i > 0) {
-
-									restriction = true;
-
-									if (total_digits == null)
-										total_digits = value;
-
-									else if (i > Integer.valueOf(total_digits))
-										total_digits = value;
-
-								}
-
-							} catch (NumberFormatException ex) {
-							}
-
-						}
-
-					}
-
-					else if (enum_node.getNodeName().equals(xs_prefix_ + "fractionDigits")) {
-
-						Element e = (Element) enum_node;
-
-						String value = e.getAttribute("value");
-
-						if (value != null && !value.isEmpty()) {
-
-							try {
-
-								int i = Integer.parseInt(value);
-
-								if (i >= 0) {
-
-									restriction = true;
-
-									if (fraction_digits == null)
-										fraction_digits = value;
-
-									else if (i > Integer.valueOf(fraction_digits))
-										fraction_digits = value;
-
-								}
-
-							} catch (NumberFormatException ex) {
-							}
-
-						}
-
-					}
-
-					else if (enum_node.getNodeName().equals(xs_prefix_ + "whiteSpace")) {
-
-						Element e = (Element) enum_node;
-
-						String value = e.getAttribute("value");
-
-						if (value != null && !value.isEmpty()) {
-
-							if (value.equals("replace") || value.equals("collapse")) {
+							if (i > 0) {
 
 								restriction = true;
-								white_space = value;
+
+								if (total_digits == null)
+									total_digits = value;
+
+								else if (i > Integer.valueOf(total_digits))
+									total_digits = value;
 
 							}
 
+						} catch (NumberFormatException ex) {
 						}
 
 					}
 
-					else if (enum_node.getNodeName().equals(xs_prefix_ + "explicitTimezone")) {
+					else if (rest_node.getNodeName().equals(xs_prefix_ + "fractionDigits")) {
 
-						Element e = (Element) enum_node;
+						try {
 
-						String value = e.getAttribute("value");
+							int i = Integer.parseInt(value);
 
-						if (value != null && !value.isEmpty()) {
+							if (i >= 0) {
+
+								restriction = true;
+
+								if (fraction_digits == null)
+									fraction_digits = value;
+
+								else if (i > Integer.valueOf(fraction_digits))
+									fraction_digits = value;
+
+							}
+
+						} catch (NumberFormatException ex) {
+						}
+
+					}
+
+					else if (rest_node.getNodeName().equals(xs_prefix_ + "whiteSpace")) {
+
+						if (value.equals("replace") || value.equals("collapse")) {
 
 							restriction = true;
-							explicit_timezone = value;
+							white_space = value;
 
 						}
 
 					}
 
-					else if (enum_node.getNodeName().equals(xs_prefix_ + "assertions")) {
+					else if (rest_node.getNodeName().equals(xs_prefix_ + "explicitTimezone")) {
 
-						Element e = (Element) enum_node;
+						restriction = true;
+						explicit_timezone = value;
 
-						String value = e.getAttribute("value");
+					}
 
-						if (value != null && !value.isEmpty()) {
+					else if (rest_node.getNodeName().equals(xs_prefix_ + "assertions")) {
 
-							restriction = true;
-							assertions = value;
-
-						}
+						restriction = true;
+						assertions = value;
 
 					}
 

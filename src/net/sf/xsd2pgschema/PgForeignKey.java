@@ -90,12 +90,13 @@ public class PgForeignKey implements Serializable {
 
 		for (Node child = parent_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
 			if (!child.getNodeName().equals(xs_prefix_ + "key"))
 				continue;
 
-			Element e = (Element) child;
-
-			if (!key_name.equals(e.getAttribute("name")))
+			if (!key_name.equals(((Element) child).getAttribute("name")))
 				continue;
 
 			parent_table_xname = extractTableName(option, child);
@@ -122,12 +123,13 @@ public class PgForeignKey implements Serializable {
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
 			if (!child.getNodeName().equals(xs_prefix_ + "selector"))
 				continue;
 
-			Element e = (Element) child;
-
-			String[] xpath = e.getAttribute("xpath").split("/");
+			String[] xpath = ((Element) child).getAttribute("xpath").split("/");
 
 			return PgSchemaUtil.getUnqualifiedName(xpath[xpath.length - 1]).replace("@", "");
 		}
@@ -150,16 +152,16 @@ public class PgForeignKey implements Serializable {
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
 			if (!child.getNodeName().equals(xs_prefix_ + "field"))
 				continue;
 
-			Element e = (Element) child;
-
-			String[] xpath = e.getAttribute("xpath").split(":");
+			String[] xpath = ((Element) child).getAttribute("xpath").split(":");
 
 			if (fields.isEmpty())
 				fields = xpath[xpath.length - 1].replace("@", "");
-
 			else
 				fields = fields.concat(", " + xpath[xpath.length - 1]).replace("@", "");
 

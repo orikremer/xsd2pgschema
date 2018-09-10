@@ -515,14 +515,21 @@ public class PgSchemaOption implements Serializable {
 
 		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
 
+			if (anno.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
 			if (!anno.getNodeName().equals(xs_prefix_ + "annotation"))
 				continue;
 
+			String child_name, src;
 			String annotation = "";
 
 			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-				String child_name = child.getNodeName();
+				if (child.getNodeType() != Node.ELEMENT_NODE)
+					continue;
+
+				child_name = child.getNodeName();
 
 				if (child_name.equals(xs_prefix_ + "appinfo")) {
 
@@ -531,9 +538,7 @@ public class PgSchemaOption implements Serializable {
 					if (!annotation.isEmpty())
 						annotation += "\n-- ";
 
-					Element e = (Element) child;
-
-					String src = e.getAttribute("source");
+					src = ((Element) child).getAttribute("source");
 
 					if (src != null && !src.isEmpty())
 						annotation += (is_table ? "\n-- " : ", ") + "URI-reference = " + src + (is_table ? "\n-- " : ", ");
@@ -544,9 +549,7 @@ public class PgSchemaOption implements Serializable {
 
 					annotation += PgSchemaUtil.collapseWhiteSpace(child.getTextContent());
 
-					Element e = (Element) child;
-
-					String src = e.getAttribute("source");
+					src = ((Element) child).getAttribute("source");
 
 					if (src != null && !src.isEmpty())
 						annotation += (is_table ? "\n-- " : ", ") + "URI-reference = " + src;
@@ -572,20 +575,26 @@ public class PgSchemaOption implements Serializable {
 
 		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
 
+			if (anno.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
 			if (!anno.getNodeName().equals(xs_prefix_ + "annotation"))
 				continue;
 
+			String child_name, src;
+
 			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-				String child_name = child.getNodeName();
+				if (child.getNodeType() != Node.ELEMENT_NODE)
+					continue;
+
+				child_name = child.getNodeName();
 
 				if (child_name.equals(xs_prefix_ + "appinfo")) {
 
 					String annotation = PgSchemaUtil.collapseWhiteSpace(child.getTextContent());
 
-					Element e = (Element) child;
-
-					String src = e.getAttribute("source");
+					src = ((Element) child).getAttribute("source");
 
 					if (src != null && !src.isEmpty())
 						annotation += ", URI-reference = " + src;
@@ -612,12 +621,20 @@ public class PgSchemaOption implements Serializable {
 
 		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
 
+			if (anno.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
 			if (!anno.getNodeName().equals(xs_prefix_ + "annotation"))
 				continue;
 
+			String child_name, src, annotation;
+
 			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-				String child_name = child.getNodeName();
+				if (child.getNodeType() != Node.ELEMENT_NODE)
+					continue;
+
+				child_name = child.getNodeName();
 
 				if (child_name.equals(xs_prefix_ + "documentation")) {
 
@@ -625,11 +642,9 @@ public class PgSchemaOption implements Serializable {
 
 					if (one_liner) {
 
-						String annotation = PgSchemaUtil.collapseWhiteSpace(text);
+						annotation = PgSchemaUtil.collapseWhiteSpace(text);
 
-						Element e = (Element) child;
-
-						String src = e.getAttribute("source");
+						src = ((Element) child).getAttribute("source");
 
 						if (src != null && !src.isEmpty())
 							annotation += ", URI-reference = " + src;

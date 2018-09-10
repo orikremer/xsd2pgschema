@@ -306,9 +306,7 @@ public class PgSchema implements Serializable {
 
 			if (child_name.equals(option.xs_prefix_ + "include") || child_name.equals(option.xs_prefix_ + "import")) {
 
-				Element child_e = (Element) child;
-
-				String schema_location = child_e.getAttribute("schemaLocation");
+				String schema_location = ((Element) child).getAttribute("schemaLocation");
 
 				if (schema_location != null && !schema_location.isEmpty()) {
 
@@ -415,9 +413,7 @@ public class PgSchema implements Serializable {
 
 			if (child.getNodeName().equals(option.xs_prefix_ + "element")) {
 
-				Element child_e = (Element) child;
-
-				String _abstract = child_e.getAttribute("abstract");
+				String _abstract = ((Element) child).getAttribute("abstract");
 
 				if (_abstract != null && _abstract.equals("true"))
 					continue;
@@ -476,9 +472,7 @@ public class PgSchema implements Serializable {
 
 			if (child.getNodeName().equals(option.xs_prefix_ + "element")) {
 
-				Element child_e = (Element) child;
-
-				String _abstract = child_e.getAttribute("abstract");
+				String _abstract = ((Element) child).getAttribute("abstract");
 
 				if (_abstract != null && _abstract.equals("true"))
 					continue;
@@ -1194,9 +1188,7 @@ public class PgSchema implements Serializable {
 
 		PgTable table = new PgTable(getPgSchemaOf(def_namespaces.get("")), def_namespaces.get(""), def_schema_location);
 
-		Element e = (Element) node;
-
-		String name = e.getAttribute("name");
+		String name = ((Element) node).getAttribute("name");
 
 		table.xname = PgSchemaUtil.getUnqualifiedName(name);
 		table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
@@ -1267,9 +1259,7 @@ public class PgSchema implements Serializable {
 
 		PgField dummy = new PgField();
 
-		Element e = (Element) node;
-
-		String name = e.getAttribute("name");
+		String name = ((Element) node).getAttribute("name");
 
 		if (name != null && !name.isEmpty()) {
 
@@ -1293,9 +1283,7 @@ public class PgSchema implements Serializable {
 
 					boolean unique_key = table.addNestedKey(option, child_table.pg_schema_name, PgSchemaUtil.getUnqualifiedName(name), dummy, node);
 
-					Element child_e = (Element) node;
-
-					String child_name = child_e.getAttribute("name");
+					String child_name = name;
 
 					child_table.xname = PgSchemaUtil.getUnqualifiedName(child_name);
 					child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
@@ -1349,9 +1337,7 @@ public class PgSchema implements Serializable {
 
 		PgTable table = new PgTable(getPgSchemaOf(def_namespaces.get("")), def_namespaces.get(""), def_schema_location);
 
-		Element e = (Element) node;
-
-		String name = e.getAttribute("name");
+		String name = ((Element) node).getAttribute("name");
 
 		table.xname = PgSchemaUtil.getUnqualifiedName(name);
 		table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
@@ -1428,9 +1414,7 @@ public class PgSchema implements Serializable {
 
 		PgTable table = new PgTable(getPgSchemaOf(def_namespaces.get("")), def_namespaces.get(""), def_schema_location);
 
-		Element e = (Element) node;
-
-		String name = e.getAttribute("name");
+		String name = ((Element) node).getAttribute("name");
 
 		table.xname = PgSchemaUtil.getUnqualifiedName(name);
 		table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
@@ -1473,9 +1457,7 @@ public class PgSchema implements Serializable {
 
 		PgTable table = new PgTable(getPgSchemaOf(def_namespaces.get("")), def_namespaces.get(""), def_schema_location);
 
-		Element e = (Element) node;
-
-		String name = e.getAttribute("name");
+		String name = ((Element) node).getAttribute("name");
 
 		table.xname = PgSchemaUtil.getUnqualifiedName(name);
 		table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
@@ -1575,7 +1557,7 @@ public class PgSchema implements Serializable {
 			if (child_name.equals(option.xs_prefix_ + "annotation"))
 				continue;
 
-			else if (child_name.equals(option.xs_prefix_ + "any"))
+			if (child_name.equals(option.xs_prefix_ + "any"))
 				extractAny(child, table);
 
 			else if (child_name.equals(option.xs_prefix_ + "anyAttribute"))
@@ -1615,10 +1597,10 @@ public class PgSchema implements Serializable {
 	 */
 	private void extractForeignKeyRef(final PgSchema root_schema, Node node, Node parent_node) {
 
-		Element e = (Element) node;
+		Element elem = (Element) node;
 
-		String name = e.getAttribute("name");
-		String refer = e.getAttribute("refer");
+		String name = elem.getAttribute("name");
+		String refer = elem.getAttribute("refer");
 
 		if (name == null || name.isEmpty() || refer == null || refer.isEmpty() || !refer.contains(":"))
 			return;
@@ -1744,10 +1726,10 @@ public class PgSchema implements Serializable {
 
 		PgField field = new PgField();
 
-		Element e = (Element) node;
+		Element elem = (Element) node;
 
-		String name = e.getAttribute("name");
-		String ref = e.getAttribute("ref");
+		String name = elem.getAttribute("name");
+		String ref = elem.getAttribute("ref");
 
 		if (attribute)
 			field.attribute = true;
@@ -1816,16 +1798,12 @@ public class PgSchema implements Serializable {
 
 					boolean has_complex_child = false;
 
-					String child_name;
-
 					for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 						if (child.getNodeType() != Node.ELEMENT_NODE)
 							continue;
 
-						child_name = child.getNodeName();
-
-						if (child_name.equals(option.xs_prefix_ + "complexType")) {
+						if (child.getNodeName().equals(option.xs_prefix_ + "complexType")) {
 
 							has_complex_child = true;
 
@@ -1840,11 +1818,7 @@ public class PgSchema implements Serializable {
 							if (!unique_key)
 								table.cancelUniqueKey();
 
-							Element child_e = (Element) node;
-
-							child_name = child_e.getAttribute("name");
-
-							child_table.xname = PgSchemaUtil.getUnqualifiedName(child_name);
+							child_table.xname = PgSchemaUtil.getUnqualifiedName(name);
 							child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
 
 							table.required = child_table.required = true;
@@ -1893,11 +1867,7 @@ public class PgSchema implements Serializable {
 						if (!unique_key)
 							table.cancelUniqueKey();
 
-						Element child_e = (Element) node;
-
-						child_name = child_e.getAttribute("name");
-
-						child_table.xname = PgSchemaUtil.getUnqualifiedName(child_name);
+						child_table.xname = PgSchemaUtil.getUnqualifiedName(name);
 						child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
 
 						table.required = child_table.required = true;
@@ -1949,11 +1919,7 @@ public class PgSchema implements Serializable {
 					if (!unique_key)
 						table.cancelUniqueKey();
 
-					Element child_e = (Element) node;
-
-					String child_name = child_e.getAttribute("name");
-
-					child_table.xname = PgSchemaUtil.getUnqualifiedName(child_name);
+					child_table.xname = PgSchemaUtil.getUnqualifiedName(name);
 					child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
 
 					table.required = child_table.required = true;
@@ -2004,9 +1970,7 @@ public class PgSchema implements Serializable {
 
 					String ref_xname = PgSchemaUtil.getUnqualifiedName(ref);
 
-					Element child_e = (Element) child;
-
-					child_name = PgSchemaUtil.getUnqualifiedName(child_e.getAttribute("name"));
+					child_name = PgSchemaUtil.getUnqualifiedName(((Element) child).getAttribute("name"));
 
 					if (child_name.equals(ref_xname) && (
 							(table.target_namespace != null && table.target_namespace.equals(getNamespaceUriOfQName(ref))) ||
@@ -2140,13 +2104,13 @@ public class PgSchema implements Serializable {
 
 		PgTable table = new PgTable(getPgSchemaOf(foreign_table), foreign_table.target_namespace, def_schema_location);
 
-		Element e = (Element) node;
+		Element elem = (Element) node;
 
-		String type = e.getAttribute("type");
+		String type = elem.getAttribute("type");
 
 		if (type == null || type.isEmpty()) {
 
-			String name = e.getAttribute("name");
+			String name = elem.getAttribute("name");
 
 			table.xname = PgSchemaUtil.getUnqualifiedName(name);
 			table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
@@ -2203,13 +2167,13 @@ public class PgSchema implements Serializable {
 	 */
 	private void extractAttributeGroup(final PgSchema root_schema, Node node, PgTable table) throws PgSchemaException {
 
-		Element e = (Element) node;
+		Element elem = (Element) node;
 
-		String ref = e.getAttribute("ref");
+		String ref = elem.getAttribute("ref");
 
 		if (ref == null || ref.isEmpty()) {
 
-			ref = e.getAttribute("defaultAttributesApply");
+			ref = elem.getAttribute("defaultAttributesApply");
 
 			if (ref == null || !ref.equals("true"))
 				return;
@@ -2248,9 +2212,7 @@ public class PgSchema implements Serializable {
 	 */
 	private void extractModelGroup(final PgSchema root_schema, Node node, PgTable table) throws PgSchemaException {
 
-		Element e = (Element) node;
-
-		String ref = e.getAttribute("ref");
+		String ref = ((Element) node).getAttribute("ref");
 
 		if (ref == null || ref.isEmpty())
 			return;
@@ -2382,9 +2344,7 @@ public class PgSchema implements Serializable {
 
 			if (child.getNodeName().equals(option.xs_prefix_ + "extension")) {
 
-				Element child_e = (Element) child;
-
-				table.addNestedKey(option, table.pg_schema_name, PgSchemaUtil.getUnqualifiedName(child_e.getAttribute("base")));
+				table.addNestedKey(option, table.pg_schema_name, PgSchemaUtil.getUnqualifiedName(((Element) child).getAttribute("base")));
 
 				extractComplexContentExt(root_schema, root_node, child, table);
 
@@ -2449,7 +2409,7 @@ public class PgSchema implements Serializable {
 			if (child_name.equals(option.xs_prefix_ + "annotation"))
 				continue;
 
-			else if (child_name.equals(option.xs_prefix_ + "any"))
+			if (child_name.equals(option.xs_prefix_ + "any"))
 				extractAny(child, table);
 
 			else if (child_name.equals(option.xs_prefix_ + "anyAttribute"))
@@ -5048,9 +5008,9 @@ public class PgSchema implements Serializable {
 
 				if (child.hasAttributes()) {
 
-					Element child_e = (Element) child;
+					Element child_elem = (Element) child;
 
-					String[] name_attr = child_e.getAttribute("name").replaceFirst(PgSchemaUtil.sph_member_op, "\\.").split("\\.");
+					String[] name_attr = child_elem.getAttribute("name").replaceFirst(PgSchemaUtil.sph_member_op, "\\.").split("\\.");
 
 					if (name_attr.length != 2)
 						continue;
@@ -5070,7 +5030,7 @@ public class PgSchema implements Serializable {
 
 					field.attr_sel = sph_attr;
 
-					String type_attr = child_e.getAttribute("type");
+					String type_attr = child_elem.getAttribute("type");
 
 					if (type_attr != null && type_attr.contains("multi"))
 						field.sph_mva = true;

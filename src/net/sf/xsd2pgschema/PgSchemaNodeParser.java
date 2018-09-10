@@ -472,9 +472,7 @@ public abstract class PgSchemaNodeParser {
 			if (!node.hasAttributes())
 				return;
 
-			Element e = (Element) node;
-
-			content = e.getAttribute(field.xname);
+			content = ((Element) node).getAttribute(field.xname);
 
 		}
 
@@ -487,9 +485,7 @@ public abstract class PgSchemaNodeParser {
 			if (!parent_node.hasAttributes())
 				return;
 
-			Element e = (Element) parent_node;
-
-			content = e.getAttribute(field.foreign_table_xname);
+			content = ((Element) parent_node).getAttribute(field.foreign_table_xname);
 
 		}
 
