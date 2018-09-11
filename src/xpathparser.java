@@ -55,20 +55,18 @@ public class xpathparser {
 		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(true);
 
+		option.verbose = true; // turn on verbose mode
+
 		/** The FST configuration. */
 		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
 
-		/** The FST optimization. */
-		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class);
+		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class); // FST optimization
 
 		/** The XPath query. */
 		String xpath_query = "";
 
 		/** The XPath variable reference. */
 		HashMap<String, String> variables = new HashMap<String, String>();
-
-		// turn on verbose mode
-		option.verbose = true;
 
 		for (int i = 0; i < args.length; i++) {
 

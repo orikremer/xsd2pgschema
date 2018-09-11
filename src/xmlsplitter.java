@@ -54,14 +54,13 @@ public class xmlsplitter {
 	 */
 	public static void main(String[] args) {
 
-		/** The schema option. */
+		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(false);
 
 		/** The FST configuration. */
 		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
 
-		/** The FST optimization. */
-		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class);
+		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class); // FST optimization
 
 		/** The XML file filter. */
 		XmlFileFilter xml_file_filter = new XmlFileFilter();

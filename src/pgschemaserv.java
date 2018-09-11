@@ -49,8 +49,7 @@ public class pgschemaserv {
 		/** The FST configuration. */
 		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
 
-		/** The FST optimization. */
-		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class);
+		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class); // FST optimization
 
 		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(true);

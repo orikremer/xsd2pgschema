@@ -47,8 +47,10 @@ public class xmlvalidator {
 		/** The check sum directory name. */
 		String check_sum_dir_name = "";
 
-		/** The schema option. */
+		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(true);
+
+		option.validate = true; // enable XML Schema validation
 
 		/** The XML file filter. */
 		XmlFileFilter xml_file_filter = new XmlFileFilter();
@@ -64,8 +66,6 @@ public class xmlvalidator {
 
 		/** The max threads. */
 		int max_thrds = cpu_num;
-
-		option.validate = true;
 
 		boolean touch_xml = false;
 

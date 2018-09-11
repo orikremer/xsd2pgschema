@@ -52,7 +52,7 @@ public class xsd2jsonschema {
 		/** The JSON builder option. */
 		JsonBuilderOption jsonb_option = new JsonBuilderOption();
 
-		/** The schema option. */
+		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(jsonb_option.type);
 
 		option.pg_schema_server = false; // stand alone

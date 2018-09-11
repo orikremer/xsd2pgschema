@@ -50,8 +50,11 @@ public class chksumstat {
 		/** The check sum directory name. */
 		String check_sum_dir_name = "";
 
-		/** The schema option. */
+		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(true);
+
+		option.sync = option.sync_dry_run = true; // dry-run synchronization
+		option.sync_weak = false;
 
 		/** The XML file filter. */
 		XmlFileFilter xml_file_filter = new XmlFileFilter();
@@ -76,9 +79,6 @@ public class chksumstat {
 
 		/** The max threads. */
 		int max_thrds = cpu_num;
-
-		option.sync = option.sync_dry_run = true;
-		option.sync_weak = false;
 
 		boolean touch_xml = false;
 

@@ -57,14 +57,15 @@ public class xml2pgcsv {
 		/** The check sum directory name. */
 		String check_sum_dir_name = "";
 
-		/** The schema option. */
+		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(true);
+
+		option.usePgCsv(); // CSV format
 
 		/** The FST configuration. */
 		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
 
-		/** The FST optimization. */
-		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class);
+		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class); // FST optimization
 
 		/** The PostgreSQL option. */
 		PgOption pg_option = new PgOption();
@@ -86,8 +87,6 @@ public class xml2pgcsv {
 
 		/** The max threads. */
 		int max_thrds = cpu_num;
-
-		option.usePgCsv();
 
 		boolean touch_xml = false;
 

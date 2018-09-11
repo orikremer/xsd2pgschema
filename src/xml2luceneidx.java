@@ -58,17 +58,15 @@ public class xml2luceneidx {
 		/** The check sum directory name. */
 		String check_sum_dir_name = "";
 
-		/** The schema option. */
+		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(false);
 
-		/** Cancel relational model extension by default. */
-		option.cancelRelDataExt();
+		option.cancelRelDataExt(); // turn off relational model extension
 
 		/** The FST configuration. */
 		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
 
-		/** The FST optimization. */
-		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class);
+		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class); // FST optimization
 
 		/** The XML file filter. */
 		XmlFileFilter xml_file_filter = new XmlFileFilter();

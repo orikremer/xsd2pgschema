@@ -48,13 +48,11 @@ public class xsd2pgschema {
 		/** The PostgreSQL DDL output name. */
 		String ddl_output = "";
 
-		/** The schema option. */
+		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(true);
 
 		option.ddl_output = true; // output PostgreSQL DDL
-
 		option.hash_algorithm = ""; // assumed hash algorithm should be empty
-
 		option.pg_schema_server = false; // stand alone
 
 		for (int i = 0; i < args.length; i++) {

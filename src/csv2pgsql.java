@@ -57,13 +57,12 @@ public class csv2pgsql {
 		/** The FST configuration. */
 		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
 
-		/** The FST optimization. */
-		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class);
+		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class); // FST optimization
 
 		/** The PostgreSQL option. */
 		PgOption pg_option = new PgOption();
 
-		option.usePgCsv();
+		option.usePgCsv(); // CSV format
 
 		for (int i = 0; i < args.length; i++) {
 

@@ -53,14 +53,15 @@ public class xml2json {
 	 */
 	public static void main(String[] args) {
 
-		/** The schema option. */
+		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(false);
+
+		option.cancelRelDataExt(); // turn off relational data extension
 
 		/** The FST configuration. */
 		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
 
-		/** The FST optimization. */
-		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class);
+		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class); // FST optimization
 
 		/** The JSON builder option. */
 		JsonBuilderOption jsonb_option = new JsonBuilderOption();
@@ -82,8 +83,6 @@ public class xml2json {
 
 		/** The max threads. */
 		int max_thrds = cpu_num;
-
-		option.cancelRelDataExt();
 
 		boolean touch_xml = false;
 

@@ -59,14 +59,15 @@ public class xml2sphinxds {
 		/** The check sum directory name. */
 		String check_sum_dir_name = "";
 
-		/** The schema option. */
+		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(false);
+
+		option.cancelRelDataExt(); // turn off relational data extension
 
 		/** The FST configuration. */
 		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
 
-		/** The FST optimization. */
-		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class);
+		fst_conf.registerClass(PgSchemaServerQuery.class,PgSchemaServerReply.class,PgSchema.class); // FST optimization
 
 		/** The XML file filter. */
 		XmlFileFilter xml_file_filter = new XmlFileFilter();
@@ -100,8 +101,6 @@ public class xml2sphinxds {
 
 		/** The max threads. */
 		int max_thrds = cpu_num;
-
-		option.cancelRelDataExt();
 
 		boolean touch_xml = false;
 
