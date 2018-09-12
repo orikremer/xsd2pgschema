@@ -899,11 +899,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		boolean array_json = !table.virtual && array_all;
 
-		List<PgField> fields = table.fields;
-
-		for (int f = 0; f < fields.size(); f++) {
-
-			PgField field = fields.get(f);
+		for (PgField field : table.fields) {
 
 			if (field.jsonb == null)
 				continue;
@@ -1164,11 +1160,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		boolean unique_table = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child);
 
-		List<PgField> fields = table.fields;
-
-		for (int f = 0; f < fields.size(); f++) {
-
-			PgField field = fields.get(f);
+		for (PgField field : table.fields) {
 
 			if (field.jsonb == null)
 				continue;

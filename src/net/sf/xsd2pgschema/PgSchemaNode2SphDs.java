@@ -71,7 +71,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 			field_prefix = table.name + PgSchemaUtil.sph_member_op;
 
-			values = new String[fields.size()];
+			values = new String[fields_size];
 
 		}
 
@@ -156,7 +156,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 		}
 
-		for (int f = 0; f < fields.size(); f++) {
+		for (int f = 0; f < fields_size; f++) {
 
 			PgField field = fields.get(f);
 
@@ -209,7 +209,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 		if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
 			return;
 
-		for (int f = 0; f < fields.size(); f++) {
+		for (int f = 0; f < fields_size; f++) {
 
 			PgField field = fields.get(f);
 

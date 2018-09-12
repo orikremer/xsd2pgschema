@@ -6229,10 +6229,9 @@ public class PgSchema implements Serializable {
 			// attribute, any_attribute
 
 			int param_id = 1;
+			int n;
 
-			for (int f = 0; f < fields.size(); f++) {
-
-				PgField field = fields.get(f);
+			for (PgField field : fields) {
 
 				if (doc_key_name != null && field.pname.equals(doc_key_name))
 					document_id = rset.getString(param_id);
@@ -6302,9 +6301,7 @@ public class PgSchema implements Serializable {
 
 			param_id = 1;
 
-			for (int f = 0; f < fields.size(); f++) {
-
-				PgField field = fields.get(f);
+			for (PgField field : fields) {
 
 				if (xmlb.insert_doc_key && field.document_key) {
 
@@ -6455,10 +6452,9 @@ public class PgSchema implements Serializable {
 			// nested key
 
 			param_id = 1;
+			n = 0;
 
-			for (int f = 0, n = 0; f < fields.size(); f++) {
-
-				PgField field = fields.get(f);
+			for (PgField field : fields) {
 
 				if (field.nested_key && !field.nested_key_as_attr) {
 
@@ -6578,6 +6574,7 @@ public class PgSchema implements Serializable {
 			}
 
 			int param_id = 1;
+			int n;
 
 			if (use_doc_key_index)
 				table.ps.setString(param_id++, document_id);
@@ -6618,9 +6615,7 @@ public class PgSchema implements Serializable {
 
 				param_id = 1;
 
-				for (int f = 0; f < fields.size(); f++) {
-
-					PgField field = fields.get(f);
+				for (PgField field : fields) { 
 
 					if (field.attribute) {
 
@@ -6708,9 +6703,7 @@ public class PgSchema implements Serializable {
 
 				param_id = 1;
 
-				for (int f = 0; f < fields.size(); f++) {
-
-					PgField field = fields.get(f);
+				for (PgField field : fields) {
 
 					if (field.simple_content && !field.simple_attribute && !as_attr) {
 
@@ -6834,10 +6827,9 @@ public class PgSchema implements Serializable {
 				// nested key
 
 				param_id = 1;
+				n = 0;
 
-				for (int f = 0, n = 0; f < fields.size(); f++) {
-
-					PgField field = fields.get(f);
+				for (PgField field : fields) {
 
 					if (field.nested_key && !field.nested_key_as_attr) {
 
@@ -7116,10 +7108,9 @@ public class PgSchema implements Serializable {
 			// attribute, any_attribute
 
 			int param_id = 1;
+			int n;
 
-			for (int f = 0; f < fields.size(); f++) {
-
-				PgField field = fields.get(f);
+			for (PgField field : fields) {
 
 				if (doc_key_name != null && field.pname.equals(doc_key_name))
 					document_id = rset.getString(param_id);
@@ -7189,9 +7180,7 @@ public class PgSchema implements Serializable {
 
 			param_id = 1;
 
-			for (int f = 0; f < fields.size(); f++) {
-
-				PgField field = fields.get(f);
+			for (PgField field : fields) {
 
 				if (jsonb.insert_doc_key && field.document_key) {
 
@@ -7290,10 +7279,9 @@ public class PgSchema implements Serializable {
 			// nested key
 
 			param_id = 1;
+			n = 0;
 
-			for (int f = 0, n = 0; f < fields.size(); f++) {
-
-				PgField field = fields.get(f);
+			for (PgField field : fields) {
 
 				if (field.nested_key && !field.nested_key_as_attr) {
 
@@ -7404,6 +7392,7 @@ public class PgSchema implements Serializable {
 			}
 
 			int param_id = 1;
+			int n;
 
 			if (use_doc_key_index)
 				table.ps.setString(param_id++, document_id);
@@ -7442,9 +7431,7 @@ public class PgSchema implements Serializable {
 
 				param_id = 1;
 
-				for (int f = 0; f < fields.size(); f++) {
-
-					PgField field = fields.get(f);
+				for (PgField field : fields) {
 
 					if (field.attribute) {
 
@@ -7546,9 +7533,7 @@ public class PgSchema implements Serializable {
 
 				param_id = 1;
 
-				for (int f = 0; f < fields.size(); f++) {
-
-					PgField field = fields.get(f);
+				for (PgField field : fields) {
 
 					if (field.simple_content && !field.simple_attribute && !as_attr) {
 
@@ -7643,10 +7628,9 @@ public class PgSchema implements Serializable {
 				// nested key
 
 				param_id = 1;
+				n = 0;
 
-				for (int f = 0, n = 0; f < fields.size(); f++) {
-
-					PgField field = fields.get(f);
+				for (PgField field : fields) {
 
 					if (field.nested_key && !field.nested_key_as_attr) {
 

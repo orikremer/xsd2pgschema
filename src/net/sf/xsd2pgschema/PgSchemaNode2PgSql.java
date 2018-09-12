@@ -92,7 +92,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				boolean pg_named_schema = schema.option.pg_named_schema;
 
-				for (int f = 0; f < fields.size(); f++) {
+				for (int f = 0; f < fields_size; f++) {
 
 					PgField field = fields.get(f);
 
@@ -116,7 +116,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						sql.append("INSERT INTO " + schema.getPgNameOf(table) + " VALUES ( ");
 
-						for (int f = 0; f < fields.size(); f++) {
+						for (int f = 0; f < fields_size; f++) {
 
 							PgField field = fields.get(f);
 
@@ -139,7 +139,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						sql.append(" ON CONFLICT ( " + pkey_name + " ) DO UPDATE SET ");
 
-						for (int f = 0; f < fields.size(); f++) {
+						for (int f = 0; f < fields_size; f++) {
 
 							PgField field = fields.get(f);
 
@@ -181,7 +181,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						sql.append("INSERT INTO " + schema.getPgNameOf(table) + " VALUES ( ");
 
-						for (int f = 0; f < fields.size(); f++) {
+						for (int f = 0; f < fields_size; f++) {
 
 							PgField field = fields.get(f);
 
@@ -214,7 +214,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
 
-				occupied = new boolean[fields.size()];
+				occupied = new boolean[fields_size];
 
 			} catch (SQLException e) {
 				throw new PgSchemaException(e);
@@ -310,7 +310,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			if (rel_data_ext) {
 
-				for (int f = 0; f < fields.size(); f++) {
+				for (int f = 0; f < fields_size; f++) {
 
 					PgField field = fields.get(f);
 
@@ -420,7 +420,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else {
 
-				for (int f = 0; f < fields.size(); f++) {
+				for (int f = 0; f < fields_size; f++) {
 
 					PgField field = fields.get(f);
 
@@ -515,7 +515,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			par_idx = 1;
 
-			for (int f = 0; f < fields.size(); f++) {
+			for (int f = 0; f < fields_size; f++) {
 
 				PgField field = fields.get(f);
 
@@ -533,7 +533,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				ins_idx = param_size;
 
-				for (int f = 0; f < fields.size(); f++) {
+				for (int f = 0; f < fields_size; f++) {
 
 					PgField field = fields.get(f);
 

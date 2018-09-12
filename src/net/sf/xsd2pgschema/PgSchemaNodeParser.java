@@ -81,6 +81,9 @@ public abstract class PgSchemaNodeParser {
 	/** The field list. */
 	protected List<PgField> fields;
 
+	/** The size of field list. */
+	protected int fields_size;
+
 	/** The array of nested key. */
 	protected List<PgSchemaNestedKey> nested_keys = null;
 
@@ -159,6 +162,7 @@ public abstract class PgSchemaNodeParser {
 		document_id_len = document_id.length();
 
 		fields = table.fields;
+		fields_size = fields.size();
 
 		if (table.nested_fields > 0)
 			nested_keys = new ArrayList<PgSchemaNestedKey>();

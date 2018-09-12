@@ -78,7 +78,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			concat_value_space = jsonb.concat_value_space;
 
-			values = new String[fields.size()];
+			values = new String[fields_size];
 
 		}
 
@@ -168,9 +168,11 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 					Node test_node = node_test.proc_node;
 
+					boolean exists;
+
 					for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-						boolean exists = existsNestedNode(test_node, _nested_key.table);
+						exists = existsNestedNode(test_node, _nested_key.table);
 
 						traverseNestedNodeCol(exists || indirect ? test_node : proc_node, _nested_key.asOfChild(node_test, exists), indent_level + (virtual ? 0 : 1));
 
@@ -207,9 +209,11 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 					Node test_node = node_test.proc_node;
 
+					boolean exists;
+
 					for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-						boolean exists = existsNestedNode(test_node, _nested_key.table);
+						exists = existsNestedNode(test_node, _nested_key.table);
 
 						traverseNestedNodeObj(exists || indirect ? test_node : proc_node, _nested_key.asOfChild(node_test, exists), indent_level + (table.relational ? 0 : 1));
 
@@ -473,7 +477,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		}
 
-		for (int f = 0; f < fields.size(); f++) {
+		for (int f = 0; f < fields_size; f++) {
 
 			PgField field = fields.get(f);
 
@@ -530,7 +534,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		boolean not_empty = false;
 
-		for (int f = 0; f < fields.size(); f++) {
+		for (int f = 0; f < fields_size; f++) {
 
 			PgField field = fields.get(f);
 

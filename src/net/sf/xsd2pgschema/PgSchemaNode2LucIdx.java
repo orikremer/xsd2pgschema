@@ -76,7 +76,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			field_prefix = table.name + ".";
 
-			values = new String[fields.size()];
+			values = new String[fields_size];
 
 		}
 
@@ -163,7 +163,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		if (!rel_data_ext) {
 
-			for (int f = 0; f < fields.size(); f++) {
+			for (int f = 0; f < fields_size; f++) {
 
 				PgField field = fields.get(f);
 
@@ -216,7 +216,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
 				return;
 
-			for (int f = 0; f < fields.size(); f++) {
+			for (int f = 0; f < fields_size; f++) {
 
 				PgField field = fields.get(f);
 
@@ -237,7 +237,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		else {
 
-			for (int f = 0; f < fields.size(); f++) {
+			for (int f = 0; f < fields_size; f++) {
 
 				PgField field = fields.get(f);
 
@@ -310,7 +310,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
 				return;
 
-			for (int f = 0; f < fields.size(); f++) {
+			for (int f = 0; f < fields_size; f++) {
 
 				PgField field = fields.get(f);
 
