@@ -73,6 +73,9 @@ public class PgSchema implements Serializable {
 	/** The default schema location. */
 	private String def_schema_location = null;
 
+	/** The default namespaces (key=prefix, value=namespace_uri). */
+	private HashMap<String, String> def_namespaces = null;
+
 	/** The list of PostgreSQL table. */
 	private List<PgTable> tables = null;
 
@@ -100,10 +103,6 @@ public class PgSchema implements Serializable {
 	/** The duplicated schema locations (key=duplicated schema location, value=unique schema location). */
 	@Flat
 	private HashMap<String, String> dup_schema_locations = null;
-
-	/** The default namespaces (key=prefix, value=namespace_uri). */
-	@Flat
-	private HashMap<String, String> def_namespaces = null;
 
 	/** The attribute group definitions. */
 	@Flat
@@ -1121,9 +1120,32 @@ public class PgSchema implements Serializable {
 
 		realize();
 
-		foreign_keys.clear();
+		// never change to access, set null for serialization
 
-		foreign_keys = null; // never chance to access, set null for serialization
+		schema_locations.clear();
+		schema_locations = null;
+
+		if (option.pg_named_schema) {
+
+			pg_named_schemata.clear();
+			pg_named_schemata = null;
+
+		}
+
+		unq_schema_locations.clear();
+		unq_schema_locations = null;
+
+		dup_schema_locations.clear();
+		dup_schema_locations = null;
+
+		attr_groups.clear();
+		attr_groups = null;
+
+		model_groups.clear();
+		model_groups = null;
+
+		foreign_keys.clear();
+		foreign_keys = null;
 
 		// check root table exists
 
