@@ -155,9 +155,6 @@ public class PgField implements Serializable {
 	/** Whether @maxOccurs is greater than 1 || @minOccurs is greater than 1. */
 	protected boolean list_holder = false;
 
-	/** The constraint name in PostgreSQL. */
-	protected String constraint_name = null;
-
 	/** The foreign table id. */
 	protected int foreign_table_id = -1;
 
@@ -255,6 +252,10 @@ public class PgField implements Serializable {
 	/** The content of xs:annotation. */
 	@Flat
 	protected String anno = null;
+
+	/** The constraint name in PostgreSQL. */
+	@Flat
+	protected String constraint_name = null;
 
 	/** The @substitutionGroup. */
 	@Flat

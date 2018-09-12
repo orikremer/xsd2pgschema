@@ -19,8 +19,6 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.io.Serializable;
-
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -29,10 +27,7 @@ import org.w3c.dom.Node;
  *
  * @author yokochi
  */
-public class PgForeignKey implements Serializable {
-
-	/** The default serial version ID. */
-	private static final long serialVersionUID = 1L;
+public class PgForeignKey {
 
 	/** The foreign key name in PostgreSQL. */
 	protected String name;

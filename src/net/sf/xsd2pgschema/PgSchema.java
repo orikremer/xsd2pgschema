@@ -73,29 +73,11 @@ public class PgSchema implements Serializable {
 	/** The default schema location. */
 	private String def_schema_location = null;
 
-	/** The schema locations. */
-	private HashSet<String> schema_locations = null;
-
-	/** The PostgreSQL named schemata. */
-	private HashSet<String> pg_named_schemata = null;
-
-	/** The unique schema locations (value) with its target namespace (key). */
-	private HashMap<String, String> unq_schema_locations = null;
-
-	/** The duplicated schema locations (key=duplicated schema location, value=unique schema location). */
-	private HashMap<String, String> dup_schema_locations = null;
-
 	/** The list of PostgreSQL table. */
 	private List<PgTable> tables = null;
 
-	/** The list of PostgreSQL foreign key. */
-	private List<PgForeignKey> foreign_keys = null;
-
 	/** The PostgreSQL data model option. */
 	protected PgSchemaOption option = null;
-
-	/** The full-text index filter. */
-	protected IndexFilter index_filter = null;
 
 	/** The PostgreSQL root table. */
 	private PgTable root_table = null;
@@ -103,11 +85,25 @@ public class PgSchema implements Serializable {
 	/** The PostgreSQL table for questing document id. */
 	private PgTable doc_id_table = null;
 
-	/** The default namespaces (key=prefix, value=namespace_uri). */
-	private HashMap<String, String> def_namespaces = null;
+	/** The schema locations. */
+	@Flat
+	private HashSet<String> schema_locations = null;
 
-	/** Whether hash algorithm has been defined (internal use only). */
-	private boolean has_hash_algorithm = false;
+	/** The PostgreSQL named schemata. */
+	@Flat
+	private HashSet<String> pg_named_schemata = null;
+
+	/** The unique schema locations (value) with its target namespace (key). */
+	@Flat
+	private HashMap<String, String> unq_schema_locations = null;
+
+	/** The duplicated schema locations (key=duplicated schema location, value=unique schema location). */
+	@Flat
+	private HashMap<String, String> dup_schema_locations = null;
+
+	/** The default namespaces (key=prefix, value=namespace_uri). */
+	@Flat
+	private HashMap<String, String> def_namespaces = null;
 
 	/** The attribute group definitions. */
 	@Flat
@@ -117,9 +113,9 @@ public class PgSchema implements Serializable {
 	@Flat
 	private List<PgTable> model_groups = null;
 
-	/** The parent of default schema location. */
+	/** The list of PostgreSQL foreign key. */
 	@Flat
-	private String def_schema_parent = null;
+	private List<PgForeignKey> foreign_keys = null;
 
 	/** The pending list of attribute groups. */
 	@Flat
@@ -128,6 +124,10 @@ public class PgSchema implements Serializable {
 	/** The pending list of model groups. */
 	@Flat
 	private List<PgPendingGroup> pending_model_groups = null;
+
+	/** The parent of default schema location. */
+	@Flat
+	private String def_schema_parent = null;
 
 	/** The top level xs:annotation. */
 	@Flat
@@ -149,13 +149,13 @@ public class PgSchema implements Serializable {
 	@Flat
 	private String def_attrs = null;
 
-	/** The statistics message on schema. */
-	@Flat
-	private StringBuilder def_stat_msg = null;
-
 	/** The current document id. */
 	@Flat
 	private String document_id = null;
+
+	/** The statistics message on schema. */
+	@Flat
+	private StringBuilder def_stat_msg = null;
 
 	/** The current depth of table (internal use only). */
 	@Flat
@@ -1056,20 +1056,6 @@ public class PgSchema implements Serializable {
 
 		other_namespaces.clear();
 
-		// message digest algorithm
-
-		if (!option.hash_algorithm.isEmpty() && !option.hash_size.equals(PgHashSize.debug_string)) {
-			/*
-			try {
-				MessageDigest.getInstance(option.hash_algorithm);
-			} catch (NoSuchAlgorithmException e) {
-				throw new PgSchemaException(e);
-			}
-			 */
-			has_hash_algorithm = true;
-
-		}
-
 		// statistics
 
 		if (option.ddl_output) {
@@ -1134,6 +1120,10 @@ public class PgSchema implements Serializable {
 		// realize PostgreSQL DDL
 
 		realize();
+
+		foreign_keys.clear();
+
+		foreign_keys = null; // never chance to access, set null for serialization
 
 		// check root table exists
 
@@ -3014,8 +3004,12 @@ public class PgSchema implements Serializable {
 		System.out.println("--  append xpath key: " + option.xpath_key);
 		System.out.println("--  retain constraint of primary/foreign key: " + option.retain_key);
 		System.out.println("--  retrieve field annotation: " + !option.no_field_anno);
-		if (option.rel_model_ext || option.serial_key)
-			System.out.println("--  " + (has_hash_algorithm ? "" : "assumed ") + "hash algorithm: " + (has_hash_algorithm ? option.hash_algorithm : PgSchemaUtil.def_hash_algorithm));
+		if (option.rel_model_ext || option.serial_key) {
+			if (!option.hash_algorithm.isEmpty() && !option.hash_size.equals(PgHashSize.debug_string))
+				System.out.println("--  hash algorithm: " + option.hash_algorithm);
+			else
+				System.out.println("--  assumed hash algorithm: " + PgSchemaUtil.def_hash_algorithm);
+		}
 		if (option.rel_model_ext)
 			System.out.println("--  hash key type: " + option.hash_size.name().replace("_", " ") + " bits");
 		if (option.serial_key)
@@ -3888,8 +3882,6 @@ public class PgSchema implements Serializable {
 	 */
 	public void applyIndexFilter(IndexFilter index_filter, boolean include_system_keys) throws PgSchemaException {
 
-		this.index_filter = index_filter;
-
 		applyAttr(index_filter);
 
 		if (index_filter.fields != null)
@@ -4165,9 +4157,9 @@ public class PgSchema implements Serializable {
 	 * @param key_name source string
 	 * @return String hash key
 	 */
-	protected String getHashKeyString(MessageDigest md_hash_key, String key_name) {
+	private String getHashKeyString(MessageDigest md_hash_key, String key_name) {
 
-		if (!has_hash_algorithm) // debug mode
+		if (md_hash_key == null) // debug mode
 			return key_name;
 
 		try {
@@ -4954,10 +4946,11 @@ public class PgSchema implements Serializable {
 	 *
 	 * @param xml_parser XML parser
 	 * @param md_hash_key instance of message digest
+	 * @param index_filter index filter
 	 * @param lucene_doc Lucene document
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2LucIdx(XmlParser xml_parser, MessageDigest md_hash_key, org.apache.lucene.document.Document lucene_doc) throws PgSchemaException {
+	public void xml2LucIdx(XmlParser xml_parser, MessageDigest md_hash_key, IndexFilter index_filter, org.apache.lucene.document.Document lucene_doc) throws PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -4967,7 +4960,7 @@ public class PgSchema implements Serializable {
 
 		lucene_doc.add(new StringField(option.document_key_name, document_id, Field.Store.YES));
 
-		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(this, md_hash_key, document_id, null, root_table, lucene_doc);
+		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(this, md_hash_key, document_id, null, root_table, index_filter.min_word_len, index_filter.lucene_numeric_index, lucene_doc);
 
 		node2lucidx.parseRootNode(node);
 
@@ -5261,10 +5254,11 @@ public class PgSchema implements Serializable {
 	 *
 	 * @param xml_parser XML parser
 	 * @param md_hash_key instance of message digest
+	 * @param index_filter index filter
 	 * @param buffw buffered writer of Sphinx xmlpipe2 file
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2SphDs(XmlParser xml_parser, MessageDigest md_hash_key, BufferedWriter buffw) throws PgSchemaException {
+	public void xml2SphDs(XmlParser xml_parser, MessageDigest md_hash_key, IndexFilter index_filter, BufferedWriter buffw) throws PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
 
@@ -5278,7 +5272,7 @@ public class PgSchema implements Serializable {
 			buffw.write("<sphinx:document id=\"" + getHashKeyString(md_hash_key, document_id) + "\" xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
 			buffw.write("<" + option.document_key_name + ">" + StringEscapeUtils.escapeXml10(document_id) + "</" + option.document_key_name + ">\n");
 
-			PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(this, md_hash_key, document_id, null, root_table, buffw);
+			PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(this, md_hash_key, document_id, null, root_table, index_filter.min_word_len, buffw);
 
 			node2sphds.parseRootNode(node);
 

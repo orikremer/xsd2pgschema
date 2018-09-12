@@ -393,7 +393,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 				XmlParser xml_parser = new XmlParser(client.doc_builder, validator, xml_file_path, xml_file_filter);
 
-				client.schema.xml2SphDs(xml_parser, md_hash_key, buffw);
+				client.schema.xml2SphDs(xml_parser, md_hash_key, index_filter, buffw);
 
 				buffw.close();
 

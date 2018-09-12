@@ -68,6 +68,9 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	/** The PgSchema client. */
 	private PgSchemaClientImpl client;
 
+	/** The index filter. */
+	private IndexFilter index_filter;
+
 	/** The XML validator. */
 	private XmlValidator validator;
 
@@ -191,7 +194,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		option = client.option;
 
 		client.schema.applyXmlPostEditor(xml_post_editor);
-		client.schema.applyIndexFilter(index_filter, option.rel_data_ext);
+		client.schema.applyIndexFilter(this.index_filter = index_filter, option.rel_data_ext);
 
 		// prepare XML validator
 
@@ -370,7 +373,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 				org.apache.lucene.document.Document lucene_doc = new org.apache.lucene.document.Document();
 
-				client.schema.xml2LucIdx(xml_parser, md_hash_key, lucene_doc);
+				client.schema.xml2LucIdx(xml_parser, md_hash_key, index_filter, lucene_doc);
 
 				if (_shard_id == null)
 					writer.addDocument(lucene_doc);

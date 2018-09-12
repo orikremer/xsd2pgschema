@@ -19,7 +19,6 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import java.io.Serializable;
 import java.util.HashSet;
 
 /**
@@ -27,10 +26,7 @@ import java.util.HashSet;
  *
  * @author yokochi
  */
-public class IndexFilter implements Serializable {
-
-	/** The default serial version ID. */
-	private static final long serialVersionUID = 1L;
+public class IndexFilter {
 
 	/** The attributes for partial index. */
 	protected HashSet<String> attrs = new HashSet<String>();

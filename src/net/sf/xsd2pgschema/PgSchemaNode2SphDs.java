@@ -56,20 +56,20 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	 * @param document_id document id
 	 * @param parent_table parent table (set null if current table is root table)
 	 * @param table current table
+	 * @param min_word_len minimum word length for indexing
 	 * @param buffw buffered writer
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2SphDs(final PgSchema schema, final MessageDigest md_hash_key, final String document_id, final PgTable parent_table, final PgTable table, final BufferedWriter buffw) throws PgSchemaException {
+	public PgSchemaNode2SphDs(final PgSchema schema, final MessageDigest md_hash_key, final String document_id, final PgTable parent_table, final PgTable table, final int min_word_len, final BufferedWriter buffw) throws PgSchemaException {
 
 		super(schema, md_hash_key, document_id, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
 
+		this.min_word_len = min_word_len;
 		this.buffw = buffw;
 
 		if (table.indexable) {
 
 			field_prefix = table.name + PgSchemaUtil.sph_member_op;
-
-			min_word_len = schema.index_filter.min_word_len;
 
 			values = new String[fields.size()];
 
@@ -87,7 +87,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(schema, md_hash_key, document_id, table, nested_key.table, buffw);
+		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(schema, md_hash_key, document_id, table, nested_key.table, min_word_len, buffw);
 
 		try {
 

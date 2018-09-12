@@ -84,7 +84,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		super(schema, md_hash_key, document_id, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
 
 		this.update = update;
-
 		this.db_conn = db_conn;
 
 		if (table.writable) {
