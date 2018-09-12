@@ -166,11 +166,13 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				if (nested_keys != null) {
 
+					Node test_node = node_test.proc_node;
+
 					for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-						boolean exists = existsNestedNode(_nested_key.table, node_test.proc_node);
+						boolean exists = existsNestedNode(test_node, _nested_key.table);
 
-						traverseNestedNodeCol(exists || indirect ? node_test.proc_node : proc_node, _nested_key.asOfChild(node_test, exists), indent_level + (virtual ? 0 : 1));
+						traverseNestedNodeCol(exists || indirect ? test_node : proc_node, _nested_key.asOfChild(node_test, exists), indent_level + (virtual ? 0 : 1));
 
 					}
 
@@ -203,11 +205,13 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				if (nested_keys != null) {
 
+					Node test_node = node_test.proc_node;
+
 					for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-						boolean exists = existsNestedNode(_nested_key.table, node_test.proc_node);
+						boolean exists = existsNestedNode(test_node, _nested_key.table);
 
-						traverseNestedNodeObj(exists || indirect ? node_test.proc_node : proc_node, _nested_key.asOfChild(node_test, exists), indent_level + (table.relational ? 0 : 1));
+						traverseNestedNodeObj(exists || indirect ? test_node : proc_node, _nested_key.asOfChild(node_test, exists), indent_level + (table.relational ? 0 : 1));
 
 					}
 
@@ -246,7 +250,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-				if (existsNestedNode(_nested_key.table, node))
+				if (existsNestedNode(node, _nested_key.table))
 					traverseNestedNodeCol(node, _nested_key.asOfChild(this), indent_level + (virtual ? 0 : 1));
 
 			}
@@ -265,7 +269,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-					if (existsNestedNode(_nested_key.table, node))
+					if (existsNestedNode(node, _nested_key.table))
 						traverseNestedNodeObj(node, _nested_key.asOfChild(this), indent_level + (table.relational ? 0 : 1));
 
 				}

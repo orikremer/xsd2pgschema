@@ -243,13 +243,15 @@ public abstract class PgSchemaNodeParser {
 
 			if (nested_keys != null) {
 
+				Node test_node = node_test.proc_node;
+
 				boolean exists;
 
 				for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-					exists = existsNestedNode(_nested_key.table, node_test.proc_node);
+					exists = existsNestedNode(test_node, _nested_key.table);
 
-					traverseNestedNode(exists || indirect ? node_test.proc_node : proc_node, _nested_key.asOfChild(node_test, exists));
+					traverseNestedNode(exists || indirect ? test_node : proc_node, _nested_key.asOfChild(node_test, exists));
 
 				}
 
@@ -276,7 +278,7 @@ public abstract class PgSchemaNodeParser {
 
 		for (PgSchemaNestedKey _nested_key : nested_keys) {
 
-			if (existsNestedNode(_nested_key.table, node))
+			if (existsNestedNode(node, _nested_key.table))
 				traverseNestedNode(node, _nested_key.asOfChild(this));
 
 		}
@@ -325,6 +327,9 @@ public abstract class PgSchemaNodeParser {
 		if (!matchesParentNode(current_key, field.parent_node))
 			return null;
 
+		if (!matchesAncestorNode(current_key, field.ancestor_node))
+			return null;
+
 		if (field.nested_key_as_attr) {
 
 			if (!node.getParentNode().hasAttributes())
@@ -332,10 +337,13 @@ public abstract class PgSchemaNodeParser {
 
 		}
 
-		else if (!matchesAncestorNode(current_key, field.ancestor_node) || table.has_nested_key_as_attr && current_key.contains("@"))
+		else if (table.has_nested_key_as_attr && current_key.contains("@"))
 			return null;
 
 		PgTable nested_table = schema.getTable(field.foreign_table_id);
+
+		if (!nested_table.virtual && !existsNestedNode(node, nested_table))
+			return null;
 
 		PgSchemaNestedKey nested_key = new PgSchemaNestedKey(nested_table, field, current_key);
 
@@ -855,11 +863,11 @@ public abstract class PgSchemaNodeParser {
 	/**
 	 * Return whether nested node exists.
 	 *
-	 * @param nested_table nested table
 	 * @param node current node
+	 * @param nested_table nested table
 	 * @return boolean whether nested node exists
 	 */
-	protected boolean existsNestedNode(final PgTable nested_table, final Node node) {
+	protected boolean existsNestedNode(final Node node, final PgTable nested_table) {
 
 		if (nested_table.virtual)
 			return nested_table.content_holder;
