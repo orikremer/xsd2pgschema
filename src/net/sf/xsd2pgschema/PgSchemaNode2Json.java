@@ -93,7 +93,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 */
 	public void parseRootNode(final Node root_node, int indent_level) throws PgSchemaException {
 
-		parse(new PgSchemaNodeTester(root_node, current_key = document_id + "/" + table.xname));
+		node_test.setRootNode(root_node, current_key = document_id + "/" + table.xname);
+
+		parse();
 
 		if (not_complete)
 			return;
@@ -128,19 +130,18 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	/**
 	 * Parse child node: Column- or Object-oriented JSON format
 	 *
-	 * @param node_test node tester
 	 * @param nested_key nested key
 	 * @param indent_level current indent level
 	 * @return boolean whether current node is the last one
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected boolean parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key, int indent_level) throws PgSchemaException {
+	protected boolean parseChildNode(final PgSchemaNestedKey nested_key, int indent_level) throws PgSchemaException {
 
-		parse(node_test);
+		parse();
 
 		boolean virtual = table.virtual;
 		boolean as_attr = nested_key.as_attr;
-		boolean last_node = isLastNode(node_test, nested_key);
+		boolean last_node = isLastNode(nested_key);
 
 		switch (type) {
 		case column:
@@ -164,7 +165,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				visited = true;
 
-				if (nested_keys != null) {
+				if (nested_keys != null && nested_keys.size() > 0) {
 
 					Node test_node = node_test.proc_node;
 
@@ -205,7 +206,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				visited = true;
 
-				if (nested_keys != null) {
+				if (nested_keys != null && nested_keys.size() > 0) {
 
 					Node test_node = node_test.proc_node;
 
@@ -239,7 +240,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 */
 	protected void parseChildNode(final Node node, final PgSchemaNestedKey nested_key, int indent_level) throws PgSchemaException {
 
-		parse(new PgSchemaNodeTester(node, nested_key));
+		node_test.setNode(node, nested_key);
+
+		parse();
 
 		boolean virtual = table.virtual;
 		boolean as_attr = nested_key.as_attr;
@@ -307,12 +310,10 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2json);
-
-				if (node_test.omissible)
+				if (node2json.isOmissible(parent_node, node, nested_key))
 					continue;
 
-				if (node2json.parseChildNode(node_test, nested_key))
+				if (node2json.parseChildNode(nested_key))
 					break;
 
 			}
@@ -354,12 +355,10 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2json);
-
-				if (node_test.omissible)
+				if (node2json.isOmissible(parent_node, node, nested_key))
 					continue;
 
-				if (node2json.parseChildNode(node_test, nested_key, json_indent_level))
+				if (node2json.parseChildNode(nested_key, json_indent_level))
 					break;
 
 			}
@@ -414,12 +413,10 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2json);
-
-				if (node_test.omissible)
+				if (node2json.isOmissible(parent_node, node, nested_key))
 					continue;
 
-				if (node2json.parseChildNode(node_test, nested_key, json_indent_level))
+				if (node2json.parseChildNode(nested_key, json_indent_level))
 					break;
 
 			}
@@ -447,11 +444,10 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	/**
 	 * Parse processing node.
 	 *
-	 * @param node_test node tester
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	protected void parse(final PgSchemaNodeTester node_test) throws PgSchemaException {
+	protected void parse() throws PgSchemaException {
 
 		if (table.visited_key.equals(current_key = node_test.current_key))
 			return;

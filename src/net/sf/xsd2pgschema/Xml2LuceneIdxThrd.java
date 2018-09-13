@@ -318,6 +318,8 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		Integer _shard_id = null;
 		IndexWriter writer = writers[shard_id];
 
+		org.apache.lucene.document.Document lucene_doc = new org.apache.lucene.document.Document();
+
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
 
 		long start_time = System.currentTimeMillis();
@@ -370,8 +372,6 @@ public class Xml2LuceneIdxThrd implements Runnable {
 			try {
 
 				XmlParser xml_parser = new XmlParser(client.doc_builder, validator, xml_file_path, xml_file_filter);
-
-				org.apache.lucene.document.Document lucene_doc = new org.apache.lucene.document.Document();
 
 				client.schema.xml2LucIdx(xml_parser, md_hash_key, index_filter, lucene_doc);
 

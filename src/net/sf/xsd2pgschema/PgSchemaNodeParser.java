@@ -87,6 +87,9 @@ public abstract class PgSchemaNodeParser {
 	/** The array of nested key. */
 	protected List<PgSchemaNestedKey> nested_keys = null;
 
+	/** The node tester. */
+	protected PgSchemaNodeTester node_test = new PgSchemaNodeTester();
+
 	/** The ordinal number of sibling node. */
 	protected int node_ordinal = 1;
 
@@ -219,7 +222,9 @@ public abstract class PgSchemaNodeParser {
 	 */
 	public void parseRootNode(final Node root_node) throws PgSchemaException {
 
-		parse(new PgSchemaNodeTester(root_node, current_key = document_id + "/" + table.xname));
+		node_test.setRootNode(root_node, current_key = document_id + "/" + table.xname);
+
+		parse();
 
 		if (not_complete || nested_keys == null)
 			return;
@@ -232,20 +237,19 @@ public abstract class PgSchemaNodeParser {
 	/**
 	 * Parse child node.
 	 *
-	 * @param node_test node tester
 	 * @param nested_key nested key
 	 * @return boolean whether current node is the last one
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected boolean parseChildNode(final PgSchemaNodeTester node_test, final PgSchemaNestedKey nested_key) throws PgSchemaException {
+	protected boolean parseChildNode(final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		parse(node_test);
+		parse();
 
 		if (!not_complete) {
 
 			visited = true;
 
-			if (nested_keys != null) {
+			if (nested_keys != null && nested_keys.size() > 0) {
 
 				Node test_node = node_test.proc_node;
 
@@ -263,7 +267,7 @@ public abstract class PgSchemaNodeParser {
 
 		}
 
-		return isLastNode(node_test, nested_key);
+		return isLastNode(nested_key);
 	}
 
 	/**
@@ -275,7 +279,9 @@ public abstract class PgSchemaNodeParser {
 	 */
 	protected void parseChildNode(final Node node, PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		parse(new PgSchemaNodeTester(node, nested_key));
+		node_test.setNode(node, nested_key);
+
+		parse();
 
 		if (not_complete || nested_keys == null)
 			return;
@@ -301,10 +307,9 @@ public abstract class PgSchemaNodeParser {
 	/**
 	 * Abstract parser of processing node.
 	 *
-	 * @param node_test node tester
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	abstract protected void parse(final PgSchemaNodeTester node_test) throws PgSchemaException;
+	abstract protected void parse() throws PgSchemaException;
 
 	/**
 	 * Clear node parser.
@@ -412,6 +417,18 @@ public abstract class PgSchemaNodeParser {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Return whether current node is omissible.
+	 *
+	 * @param parent_node parent node
+	 * @param node current node
+	 * @param nested_key nested key
+	 * @return boolean whether current node is omissible.
+	 */
+	protected boolean isOmissible(final Node parent_node, final Node node, final PgSchemaNestedKey nested_key) {
+		return node_test.isOmissible(this, parent_node, node, nested_key);
 	}
 
 	/**
@@ -896,11 +913,10 @@ public abstract class PgSchemaNodeParser {
 	/**
 	 * Return whether current node is the last one.
 	 *
-	 * @param node_test node_test
 	 * @param nested_key nested key
 	 * @return boolean whether current node is the last one
 	 */
-	protected boolean isLastNode(PgSchemaNodeTester node_test, PgSchemaNestedKey nested_key) {
+	protected boolean isLastNode(PgSchemaNestedKey nested_key) {
 
 		if (last_node == null && node_test.last_node != null)
 			last_node = node_test.last_node;

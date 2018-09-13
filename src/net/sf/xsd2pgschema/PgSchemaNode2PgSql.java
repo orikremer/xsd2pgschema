@@ -243,12 +243,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				PgSchemaNodeTester node_test = new PgSchemaNodeTester(parent_node, node, table, nested_key, node2pgsql);
-
-				if (node_test.omissible)
+				if (node2pgsql.isOmissible(parent_node, node, nested_key))
 					continue;
 
-				if (node2pgsql.parseChildNode(node_test, nested_key))
+				if (node2pgsql.parseChildNode(nested_key))
 					break;
 
 			}
@@ -273,11 +271,10 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/**
 	 * Parse processing node.
 	 *
-	 * @param node_test node tester
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	protected void parse(final PgSchemaNodeTester node_test) throws PgSchemaException {
+	protected void parse() throws PgSchemaException {
 
 		if (table.visited_key.equals(current_key = node_test.current_key))
 			return;

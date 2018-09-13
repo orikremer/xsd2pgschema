@@ -43,9 +43,6 @@ public class PgSchemaNodeTester {
 	/** The last node. */
 	protected Node last_node = null;
 
-	/** Whether this node is omissible. */
-	protected boolean omissible = false;
-
 	/** Whether parent node as attribute. */
 	protected boolean as_attr;
 
@@ -56,12 +53,12 @@ public class PgSchemaNodeTester {
 	protected int node_ordinal = 1;
 
 	/**
-	 * Setup root node as processing node.
+	 * Set root node as processing node.
 	 *
 	 * @param root_node root node
 	 * @param root_key root key
 	 */
-	public PgSchemaNodeTester(Node root_node, String root_key) {
+	public void setRootNode(Node root_node, String root_key) {
 
 		proc_node = root_node;
 		parent_key = null;
@@ -71,16 +68,17 @@ public class PgSchemaNodeTester {
 	}
 
 	/**
-	 * Setup current node as processing node.
+	 * Return whether current node is omissible.
 	 *
+	 * @param node_parser node parser
 	 * @param parent_node parent node
 	 * @param node current node
-	 * @param parent_table parent table
 	 * @param nested_key nested key
-	 * @param node_parser node parser
+	 * @return boolean whether current node is omissible
 	 */
-	public PgSchemaNodeTester(final Node parent_node, final Node node, final PgTable parent_table, final PgSchemaNestedKey nested_key, final PgSchemaNodeParser node_parser) {
+	public boolean isOmissible(final PgSchemaNodeParser node_parser, final Node parent_node, final Node node, final PgSchemaNestedKey nested_key) {
 
+		PgTable parent_table = node_parser.parent_table;
 		PgTable table = nested_key.table;
 
 		String qname = node.getNodeName();
@@ -93,12 +91,8 @@ public class PgSchemaNodeTester {
 
 		if (!virtual && !xname.equals(table_xname) && (!indirect || (indirect && (parent_table.virtual || !xname.equals(parent_table.xname))))) {
 
-			if (!as_attr || (as_attr && !parent_node.hasAttributes())) {
-
-				omissible = true;
-
-				return;
-			}
+			if (!as_attr || (as_attr && !parent_node.hasAttributes()))
+				return true;
 
 		}
 
@@ -110,12 +104,8 @@ public class PgSchemaNodeTester {
 
 		if (nested_key.list_holder) {
 
-			if (indirect && node_ordinal < nested_key.target_ordinal) {
-
-				omissible = true;
-
-				return;
-			}
+			if (indirect && node_ordinal < nested_key.target_ordinal)
+				return true;
 
 			if (!virtual)
 				current_key += "[" + node_ordinal + "]"; // XPath predicate
@@ -140,12 +130,8 @@ public class PgSchemaNodeTester {
 
 		}
 
-		if (table.visited_key.equals(current_key)) {
-
-			omissible = true;
-
-			return;
-		}
+		if (table.visited_key.equals(current_key))
+			return true;
 
 		parent_key = nested_key.parent_key;
 
@@ -176,15 +162,16 @@ public class PgSchemaNodeTester {
 
 		}
 
+		return false;
 	}
 
 	/**
-	 * Setup current node as processing node.
+	 * Set current node as processing node.
 	 *
 	 * @param node current node
 	 * @param nested_key nested key
 	 */
-	public PgSchemaNodeTester(Node node, PgSchemaNestedKey nested_key) {
+	public void setNode(Node node, PgSchemaNestedKey nested_key) {
 
 		proc_node = node;
 		parent_key = nested_key.parent_key;
