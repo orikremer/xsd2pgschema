@@ -13,7 +13,7 @@ fi
 DB_NAME=uniprotkb
 DB_USER=$USER
 
-psql -U $DB_USER -l | grep $DB_NAME > /dev/null || echo "database \"$DB_NAME\" does not exist." && exit 1
+psql -U $DB_USER -l | grep $DB_NAME > /dev/null || ( echo "database \"$DB_NAME\" does not exist." && exit 1 )
 
 XML_DIR=uniprot_xml
 
@@ -82,7 +82,7 @@ if [ $? = 0 ] && [ ! -s $err_file ] ; then
 
 else
 
- echo "$0 aborted."
+ echo $0 aborted.
  exit 1
 
 fi

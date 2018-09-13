@@ -87,7 +87,7 @@ for dic_name in ${DIC_NAMES[@]} ; do
 
  else
 
-  echo "$0 aborted."
+  echo $0 aborted.
   exit 1
 
  fi
@@ -120,7 +120,7 @@ for dic_name in ${DIC_NAMES[@]} ; do
 
    if [ $? != 0 ] ; then
 
-    echo "$0 aborted."
+    echo $0 aborted.
     exit 1
 
    fi
