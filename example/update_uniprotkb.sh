@@ -7,9 +7,9 @@ DB_GZ=$DB_NAME.xml.gz
 
 WGET_LOG=wget.log
 
-wget -c -m ftp://$DB_FTP/$DB_GZ -o $WGET_LOG || ( cat $WGET_LOG; exit 1 )
+wget -c -m ftp://$DB_FTP/$DB_GZ -o $WGET_LOG || cat $WGET_LOG && exit 1
 
-grep 'not retrieving' $WGET_LOG > /dev/null && ( echo $DB_NAME is update.; exit 0 )
+grep 'not retrieving' $WGET_LOG > /dev/null && echo $DB_NAME is update. && exit 0
 
 XSD_SCHEMA=uniprot.xsd
 

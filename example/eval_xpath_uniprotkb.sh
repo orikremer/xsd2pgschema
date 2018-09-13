@@ -11,7 +11,7 @@ fi
 DB_NAME=uniprotkb
 DB_USER=$USER
 
-psql -U $DB_USER -l | grep $DB_NAME > /dev/null || ( echo "database \"$DB_NAME\" does not exist."; exit 1 )
+psql -U $DB_USER -l | grep $DB_NAME > /dev/null || echo "database \"$DB_NAME\" does not exist." && exit 1
 
 XSD_SCHEMA=uniprot.xsd
 
