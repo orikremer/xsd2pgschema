@@ -1,8 +1,9 @@
 ﻿ Changes in xsd2pgschema 3.0.3 (release 2018-09-14)
 
-  Allowed qualified XPath query evaluation even if public schema has been applied on PostgreSQL.
+  Fixed incomplete PostgreSQL data model when multiple XML Schemata were included or imported.
   More strict implementation of identity constraint definition (xs:key and xs:keyref).
   Stabilized quoted table annotation.
+  Allowed qualified XPath query evaluation even if public schema has been applied on PostgreSQL.
 
  Changes in xsd2pgschema 3.0.2 (release 2018-09-12)
 
