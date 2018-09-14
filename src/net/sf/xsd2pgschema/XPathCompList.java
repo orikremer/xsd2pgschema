@@ -58,7 +58,7 @@ import com.github.antlr.grammars_v4.xpath.xpathParser.UnaryExprNoRootContext;
 import com.github.antlr.grammars_v4.xpath.xpathParser.VariableReferenceContext;
 
 /**
- * XPath AST serializer.
+ * XPath parse tree serializer.
  *
  * @author yokochi
  */
@@ -115,8 +115,10 @@ public class XPathCompList {
 	/** The qualifier of namespace URI in PostgreSQL XPath. */
 	private final String pg_xpath_prefix_ = pg_xpath_prefix + ":";
 
+	// XPath parser being aware of XML Schema
+
 	/**
-	 * Instance of XPath AST serializer.
+	 * Instance of XPath parse tree serializer (XPath parser being aware of XML Schema).
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param tree XPath parse tree
@@ -151,7 +153,6 @@ public class XPathCompList {
 			return;
 
 		union_counter = step_counter = 0;
-		wild_card = false;
 
 		if (verbose)
 			System.out.println("\nSerialized axis and node-test of query: '"+ tree.getText() + "'");
@@ -172,7 +173,7 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Clear XPath AST serializer.
+	 * Clear XPath parse tree serializer.
 	 */
 	public void clear() {
 
@@ -235,7 +236,7 @@ public class XPathCompList {
 	private int step_counter;
 
 	/** Whether wild card follows. */
-	private boolean wild_card;
+	private boolean wild_card = false;
 
 	/**
 	 * Serialize XPath parse tree to XPath component list.
@@ -8030,6 +8031,95 @@ public class XPathCompList {
 
 		path_exprs.forEach(path_expr -> System.out.println(path_expr.getReadablePath() + " (terminus type: " + path_expr.terminus.name() + ") -> " + path_expr.sql));
 
+	}
+
+	// XPath parser for identity constraint definition of XML Schema
+
+	/**
+	 * Instance of XPath parse tree serializer (XPath parser for identity constraint definition of XML Schema).
+	 *
+	 * @param tree XPath parse tree
+	 */
+	public XPathCompList(ParseTree tree) {
+
+		comps = new ArrayList<XPathComp>();
+
+		if (!testParserTree(tree, " "))
+			return;
+
+		union_counter = step_counter = 0;
+
+		serializeTree(tree);
+
+	}
+
+	/**
+	 * Return array of the last QName component.
+	 *
+	 * @return XPathComp[] array of the last Qname component
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public XPathComp[] getLastQNameComp() throws PgSchemaException {
+
+		int union_size = getLastUnionId() + 1;
+
+		XPathComp[] last_named_comp = new XPathComp[union_size];
+
+		for (int union_id = 0; union_id < union_size; union_id++) {
+
+			for (int step_id = 0; step_id <= getLastStepId(union_id); step_id++) {
+
+				XPathComp[] comps = arrayOf(union_id, step_id);
+
+				for (XPathComp comp : comps) {
+
+					Class<?> anyClass = comp.tree.getClass();
+
+					// TerminalNodeImpl node
+
+					if (anyClass.equals(TerminalNodeImpl.class))
+						continue;
+
+					// AbbreviatedStepContext node
+
+					else if (anyClass.equals(AbbreviatedStepContext.class))
+						continue;
+
+					// AxisSpecifierContext node
+
+					else if (anyClass.equals(AxisSpecifierContext.class))
+						continue;
+
+					// NCNameContext node
+
+					else if (anyClass.equals(NCNameContext.class))
+						last_named_comp[union_id] = comp;
+
+					// NodeTestContext node
+
+					else if (anyClass.equals(NodeTestContext.class))
+						continue;
+
+					// NameTestContext node
+
+					else if (anyClass.equals(NameTestContext.class))
+						last_named_comp[union_id] = comp;
+
+					// PredicateContext node
+
+					else if (anyClass.equals(PredicateContext.class))
+						break;
+
+					else
+						throw new PgSchemaException(comp.tree);
+
+				}
+
+			}
+
+		}
+
+		return last_named_comp;
 	}
 
 }

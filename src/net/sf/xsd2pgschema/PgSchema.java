@@ -729,7 +729,7 @@ public class PgSchema implements Serializable {
 
 		// append annotation of nested tables if possible
 
-		tables.parallelStream().filter(table -> table.virtual && table.anno != null).forEach(table -> {
+		tables.stream().filter(table -> table.virtual && table.anno != null).forEach(table -> {
 
 			table.fields.stream().filter(field -> field.nested_key).forEach(field -> {
 
@@ -1221,20 +1221,12 @@ public class PgSchema implements Serializable {
 
 		table.addPrimaryKey(option, true);
 
-		String child_name;
-
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			child_name = child.getNodeName();
-
-			if (child_name.equals(option.xs_prefix_ + "complexType") || child_name.equals(option.xs_prefix_ + "simpleType"))
-				extractField(root_schema, root_node, child, table, false);
-
-			else if (child_name.equals(option.xs_prefix_ + "keyref"))
-				extractForeignKeyRef(root_schema, child, node);
+			extractField(root_schema, root_node, child, table, false);
 
 		}
 
@@ -1247,9 +1239,9 @@ public class PgSchema implements Serializable {
 
 		tables.add(table);
 
-		if (root_element) {
+		extractRootElementType(root_schema, root_node, node, table);
 
-			addRootOrphanItem(root_schema, root_node, node, table);
+		if (root_element) {
 
 			if (tables.parallelStream().anyMatch(_table -> _table.xs_type.equals(XsTableType.xs_root)))
 				root_table = tables.parallelStream().filter(_table -> _table.xs_type.equals(XsTableType.xs_root)).findFirst().get();
@@ -1259,7 +1251,7 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
-	 * Add orphan item of root element.
+	 * Extract root element type.
 	 *
 	 * @param root_schema root schema object
 	 * @param root_node root node
@@ -1267,7 +1259,7 @@ public class PgSchema implements Serializable {
 	 * @param table root table
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void addRootOrphanItem(final PgSchema root_schema, final Node root_node, Node node, PgTable table) throws PgSchemaException {
+	private void extractRootElementType(final PgSchema root_schema, final Node root_node, Node node, PgTable table) throws PgSchemaException {
 
 		PgField dummy = new PgField();
 
@@ -1394,8 +1386,14 @@ public class PgSchema implements Serializable {
 
 			extractAttributeGroup(root_schema, node, table); // default attribute group
 
-			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling())
+			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+				if (child.getNodeType() != Node.ELEMENT_NODE)
+					continue;
+
 				extractField(root_schema, root_node, child, table, false);
+
+			}
 
 		}
 
@@ -1443,8 +1441,14 @@ public class PgSchema implements Serializable {
 
 		table.level = 0;
 
-		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling())
+		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
 			extractField(root_schema, root_node, child, table, false);
+
+		}
 
 		if (avoidTableDuplication(root_schema, root_schema.attr_groups, table)) {
 
@@ -1486,8 +1490,14 @@ public class PgSchema implements Serializable {
 
 		table.level = 0;
 
-		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling())
+		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
 			extractField(root_schema, root_node, child, table, false);
+
+		}
 
 		if (avoidTableDuplication(root_schema, root_schema.model_groups, table)) {
 
@@ -1512,49 +1522,54 @@ public class PgSchema implements Serializable {
 	 */
 	private void extractField(final PgSchema root_schema, final Node root_node, Node node, PgTable table, boolean has_complex_parent) throws PgSchemaException {
 
-		String node_name = node.getNodeName();
+		String node_name = node.getNodeName().substring(option.xs_prefix_.length());
 
-		if (node_name.equals(option.xs_prefix_ + "any")) {
+		if (node_name.equals("any")) {
 			extractAny(node, table);
 			return;
 		}
 
-		else if (node_name.equals(option.xs_prefix_ + "anyAttribute")) {
+		else if (node_name.equals("anyAttribute")) {
 			extractAnyAttribute(node, table);
 			return;
 		}
 
-		else if (node_name.equals(option.xs_prefix_ + "attribute")) {
+		else if (node_name.equals("attribute")) {
 			extractAttribute(root_schema, root_node, node, table);
 			return;
 		}
 
-		else if (node_name.equals(option.xs_prefix_ + "attributeGroup")) {
+		else if (node_name.equals("attributeGroup")) {
 			extractAttributeGroup(root_schema, node, table);
 			return;
 		}
 
-		else if (node_name.equals(option.xs_prefix_ + "element")) {
+		else if (node_name.equals("element")) {
 			extractElement(root_schema, root_node, node, table, has_complex_parent);
 			return;
 		}
 
-		else if (node_name.equals(option.xs_prefix_ + "group")) {
+		else if (node_name.equals("group")) {
 			extractModelGroup(root_schema, node, table);
 			return;
 		}
 
-		else if (node_name.equals(option.xs_prefix_ + "simpleContent")) {
+		else if (node_name.equals("simpleContent")) {
 			extractSimpleContent(root_schema, root_node, node, table, false);
 			return;
 		}
 
-		else if (node_name.equals(option.xs_prefix_ + "complexContent")) {
+		else if (node_name.equals("complexContent")) {
 			extractComplexContent(root_schema, root_node, node, table);
 			return;
 		}
 
-		else if (node_name.equals(option.xs_prefix_ + "complexType"))
+		else if (node_name.equals("keyref")) {
+			extractForeignKeyRef(root_schema, node);
+			return;
+		}
+
+		else if (node_name.equals("complexType"))
 			has_complex_parent = true;
 
 		String child_name;
@@ -1564,34 +1579,37 @@ public class PgSchema implements Serializable {
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			child_name = child.getNodeName();
+			child_name = child.getNodeName().substring(option.xs_prefix_.length());
 
-			if (child_name.equals(option.xs_prefix_ + "annotation"))
+			if (child_name.equals("annotation"))
 				continue;
 
-			if (child_name.equals(option.xs_prefix_ + "any"))
+			if (child_name.equals("any"))
 				extractAny(child, table);
 
-			else if (child_name.equals(option.xs_prefix_ + "anyAttribute"))
+			else if (child_name.equals("anyAttribute"))
 				extractAnyAttribute(child, table);
 
-			else if (child_name.equals(option.xs_prefix_ + "attribute"))
+			else if (child_name.equals("attribute"))
 				extractAttribute(root_schema, root_node, child, table);
 
-			else if (child_name.equals(option.xs_prefix_ + "attributeGroup"))
+			else if (child_name.equals("attributeGroup"))
 				extractAttributeGroup(root_schema, child, table);
 
-			else if (child_name.equals(option.xs_prefix_ + "element"))
+			else if (child_name.equals("element"))
 				extractElement(root_schema, root_node, child, table, has_complex_parent);
 
-			else if (child_name.equals(option.xs_prefix_ + "group"))
+			else if (child_name.equals("group"))
 				extractModelGroup(root_schema, child, table);
 
-			else if (child_name.equals(option.xs_prefix_ + "simpleContent"))
+			else if (child_name.equals("simpleContent"))
 				extractSimpleContent(root_schema, root_node, child, table, false);
 
-			else if (child_name.equals(option.xs_prefix_ + "complexContent"))
+			else if (child_name.equals("complexContent"))
 				extractComplexContent(root_schema, root_node, child, table);
+
+			else if (child_name.equals("keyref"))
+				extractForeignKeyRef(root_schema, child);
 
 			else
 				extractField(root_schema, root_node, child, table, has_complex_parent);
@@ -1601,23 +1619,23 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
-	 * Extract foreign key under xs:keyref.
+	 * Extract foreign key from xs:keyref.
 	 *
 	 * @param root_schema root schema object
 	 * @param node current node
-	 * @param parent_node parent node
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractForeignKeyRef(final PgSchema root_schema, Node node, Node parent_node) {
+	private void extractForeignKeyRef(final PgSchema root_schema, Node node) throws PgSchemaException {
 
 		Element elem = (Element) node;
 
 		String name = elem.getAttribute("name");
 		String refer = elem.getAttribute("refer");
 
-		if (name == null || name.isEmpty() || refer == null || refer.isEmpty() || !refer.contains(":"))
+		if (name == null || name.isEmpty() || refer == null || refer.isEmpty())
 			return;
 
-		PgForeignKey foreign_key = new PgForeignKey(option, getPgSchemaOf(def_namespaces.get("")), node, parent_node, name, PgSchemaUtil.getUnqualifiedName(refer));
+		PgForeignKey foreign_key = new PgForeignKey(option, getPgSchemaOf(def_namespaces.get("")), node, name, PgSchemaUtil.getUnqualifiedName(refer));
 
 		if (foreign_key.isEmpty())
 			return;
@@ -1848,8 +1866,14 @@ public class PgSchema implements Serializable {
 
 							child_table.addForeignKey(option, table);
 
-							for (Node grandchild = child.getFirstChild(); grandchild != null; grandchild = grandchild.getNextSibling())
+							for (Node grandchild = child.getFirstChild(); grandchild != null; grandchild = grandchild.getNextSibling()) {
+
+								if (grandchild.getNodeType() != Node.ELEMENT_NODE)
+									continue;
+
 								extractField(root_schema, root_node, grandchild, child_table, true);
+
+							}
 
 							child_table.removeProhibitedAttrs();
 							child_table.removeBlockedSubstitutionGroups();
@@ -2154,8 +2178,14 @@ public class PgSchema implements Serializable {
 		table.addPrimaryKey(option, true);
 		table.addForeignKey(option, foreign_table);
 
-		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling())
+		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
 			extractField(root_schema, root_node, child, table, false);
+
+		}
 
 		table.removeProhibitedAttrs();
 		table.removeBlockedSubstitutionGroups();
@@ -6615,7 +6645,7 @@ public class PgSchema implements Serializable {
 
 				param_id = 1;
 
-				for (PgField field : fields) { 
+				for (PgField field : fields) {
 
 					if (field.attribute) {
 

@@ -738,6 +738,9 @@ public class PgTable implements Serializable {
 	 */
 	public boolean matchesNodeName(String node_name, boolean wild_card) {
 
+		if (node_name.startsWith(prefix + ":"))
+			node_name = PgSchemaUtil.getUnqualifiedName(node_name);
+
 		if (wild_card)
 			return xname.matches(node_name);
 

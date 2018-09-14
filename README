@@ -1,4 +1,9 @@
-﻿ Changes in xsd2pgschema 3.0.2 (release 2018-09-12)
+﻿ Changes in xsd2pgschema 3.0.2 (release 2018-09-14)
+
+  Allowed qualified XPath query evaluation even if public schema has been applied on PostgreSQL.
+  More strict implementation of identity constraint definition (xs:key and xs:keyref).
+
+ Changes in xsd2pgschema 3.0.2 (release 2018-09-12)
 
   Changed --no-rel option in xml2luceneidx was set by default since performance and frequency, added --rel option for backward compatibility.
   Detected unreachable nested keys that contributed performance and database size.

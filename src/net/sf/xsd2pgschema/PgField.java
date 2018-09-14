@@ -1570,6 +1570,9 @@ public class PgField implements Serializable {
 
 		String _xname = as_attr ? (simple_attribute || simple_attr_cond ? foreign_table_xname : xname) : xname;
 
+		if (node_name.startsWith(prefix + ":"))
+			node_name = PgSchemaUtil.getUnqualifiedName(node_name);
+
 		if (wild_card)
 			return _xname.matches(node_name);
 
@@ -2662,10 +2665,8 @@ public class PgField implements Serializable {
 			}
 
 		} finally {
-			if (check != null) {
+			if (check != null)
 				check.setLength(0);
-				check = null;
-			}
 		}
 
 		return null;
@@ -2981,8 +2982,8 @@ public class PgField implements Serializable {
 
 		} finally {
 			sb.setLength(0);
-			sb = null;
 		}
+
 	}
 
 	/**
@@ -4064,7 +4065,6 @@ public class PgField implements Serializable {
 
 					} finally {
 						sb.setLength(0);
-						sb = null;
 					}
 
 				}

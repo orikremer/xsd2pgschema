@@ -19,8 +19,17 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import com.github.antlr.grammars_v4.xpath.xpathBaseListener;
+import com.github.antlr.grammars_v4.xpath.xpathLexer;
+import com.github.antlr.grammars_v4.xpath.xpathParser;
+import com.github.antlr.grammars_v4.xpath.xpathParser.MainContext;
 
 /**
  * PostgreSQL foreign key declaration.
@@ -65,11 +74,11 @@ public class PgForeignKey {
 	 * @param option PostgreSQL data model option
 	 * @param pg_schema_name PostgreSQL schema name
 	 * @param node current node
-	 * @param parent_node parent node
 	 * @param name foreign key name
 	 * @param key_name key name
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgForeignKey(PgSchemaOption option, String pg_schema_name, Node node, Node parent_node, String name, String key_name) {
+	public PgForeignKey(PgSchemaOption option, String pg_schema_name, Node node, String name, String key_name) throws PgSchemaException {
 
 		String xs_prefix_ = option.xs_prefix_;
 
@@ -83,21 +92,19 @@ public class PgForeignKey {
 		child_field_xnames = extractFieldNames(option, node);
 		child_field_pnames = option.case_sense ? child_field_xnames : child_field_xnames.toLowerCase();
 
-		for (Node child = parent_node.getFirstChild(); child != null; child = child.getNextSibling()) {
+		NodeList key_nodes = node.getOwnerDocument().getElementsByTagName(xs_prefix_ + "key");
 
-			if (child.getNodeType() != Node.ELEMENT_NODE)
+		for (int i = 0; i < key_nodes.getLength(); i++) {
+
+			Node key_node = key_nodes.item(i);
+
+			if (!key_name.equals(((Element) key_node).getAttribute("name")))
 				continue;
 
-			if (!child.getNodeName().equals(xs_prefix_ + "key"))
-				continue;
-
-			if (!key_name.equals(((Element) child).getAttribute("name")))
-				continue;
-
-			parent_table_xname = extractTableName(option, child);
+			parent_table_xname = extractTableName(option, key_node);
 			parent_table_pname = option.case_sense ? parent_table_xname : parent_table_xname.toLowerCase();
 
-			parent_field_xnames = extractFieldNames(option, child);
+			parent_field_xnames = extractFieldNames(option, key_node);
 			parent_field_pnames = option.case_sense ? parent_field_xnames : parent_field_xnames.toLowerCase();
 
 			break;
@@ -111,25 +118,74 @@ public class PgForeignKey {
 	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 * @return String child table name
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private String extractTableName(PgSchemaOption option, Node node) {
+	private String extractTableName(PgSchemaOption option, Node node) throws PgSchemaException {
 
 		String xs_prefix_ = option.xs_prefix_;
 
-		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+		StringBuilder sb = new StringBuilder();
 
-			if (child.getNodeType() != Node.ELEMENT_NODE)
-				continue;
+		try {
 
-			if (!child.getNodeName().equals(xs_prefix_ + "selector"))
-				continue;
+			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			String[] xpath = ((Element) child).getAttribute("xpath").split("/");
+				if (child.getNodeType() != Node.ELEMENT_NODE)
+					continue;
 
-			return PgSchemaUtil.getUnqualifiedName(xpath[xpath.length - 1]).replace("@", "");
+				if (!child.getNodeName().equals(xs_prefix_ + "selector"))
+					continue;
+
+				String xpath_expr = ((Element) child).getAttribute("xpath");
+
+				if (xpath_expr == null || xpath_expr.isEmpty())
+					return null;
+
+				xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_expr));
+
+				CommonTokenStream tokens = new CommonTokenStream(lexer);
+
+				xpathParser parser = new xpathParser(tokens);
+				parser.addParseListener(new xpathBaseListener());
+
+				MainContext main = parser.main();
+
+				ParseTree tree = main.children.get(0);
+				String main_text = main.getText();
+
+				if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
+					throw new PgSchemaException("Invalid XPath expression. (" + main_text + ")");
+
+				XPathCompList xpath_comp_list = new XPathCompList(tree);
+
+				if (xpath_comp_list.comps.size() == 0)
+					throw new PgSchemaException("Insufficient XPath expression. (" + main_text + ")");
+
+				XPathComp[] last_qname_comp = xpath_comp_list.getLastQNameComp();
+
+				for (XPathComp comp : last_qname_comp) {
+
+					if (comp != null)
+						sb.append(PgSchemaUtil.getUnqualifiedName(comp.tree.getText()) + ", ");
+
+				}
+
+				xpath_comp_list.clear();
+
+				int len = sb.length();
+
+				if (len > 0)
+					sb.setLength(len - 2);
+
+				break;
+			}
+
+			return sb.toString();
+
+		} finally {
+			sb.setLength(0);
 		}
 
-		return null;
 	}
 
 	/**
@@ -138,31 +194,73 @@ public class PgForeignKey {
 	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 * @return String child field names separated by comma
+	 * @throws PgSchemaException the pg schema exception
 	 */
-	private String extractFieldNames(PgSchemaOption option, Node node) {
+	private String extractFieldNames(PgSchemaOption option, Node node) throws PgSchemaException {
 
 		String xs_prefix_ = option.xs_prefix_;
 
-		String fields = "";
+		StringBuilder sb = new StringBuilder();
 
-		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+		try {
 
-			if (child.getNodeType() != Node.ELEMENT_NODE)
-				continue;
+			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			if (!child.getNodeName().equals(xs_prefix_ + "field"))
-				continue;
+				if (child.getNodeType() != Node.ELEMENT_NODE)
+					continue;
 
-			String[] xpath = ((Element) child).getAttribute("xpath").split(":");
+				if (!child.getNodeName().equals(xs_prefix_ + "field"))
+					continue;
 
-			if (fields.isEmpty())
-				fields = xpath[xpath.length - 1].replace("@", "");
-			else
-				fields = fields.concat(", " + xpath[xpath.length - 1]).replace("@", "");
+				String xpath_expr = ((Element) child).getAttribute("xpath");
 
+				if (xpath_expr == null || xpath_expr.isEmpty())
+					return null;
+
+				xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_expr));
+
+				CommonTokenStream tokens = new CommonTokenStream(lexer);
+
+				xpathParser parser = new xpathParser(tokens);
+				parser.addParseListener(new xpathBaseListener());
+
+				MainContext main = parser.main();
+
+				ParseTree tree = main.children.get(0);
+				String main_text = main.getText();
+
+				if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
+					throw new PgSchemaException("Invalid XPath expression. (" + main_text + ")");
+
+				XPathCompList xpath_comp_list = new XPathCompList(tree);
+
+				if (xpath_comp_list.comps.size() == 0)
+					throw new PgSchemaException("Insufficient XPath expression. (" + main_text + ")");
+
+				XPathComp[] last_qname_comp = xpath_comp_list.getLastQNameComp();
+
+				for (XPathComp comp : last_qname_comp) {
+
+					if (comp != null)
+						sb.append(PgSchemaUtil.getUnqualifiedName(comp.tree.getText()) + ", ");
+
+				}
+
+				xpath_comp_list.clear();
+
+			}
+
+			int len = sb.length();
+
+			if (len > 0)
+				sb.setLength(len - 2);
+
+			return sb.toString();
+
+		} finally {
+			sb.setLength(0);
 		}
 
-		return fields;
 	}
 
 	/**
