@@ -34,7 +34,6 @@ import java.util.HashSet;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.annotations.Flat;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -75,8 +74,11 @@ public class PgSchemaOption implements Serializable {
 	/** Whether to enable explicit named schema. */
 	public boolean pg_named_schema = false;
 
-	/** Whether to retain primary key/foreign key constraint in PostgreSQL DDL. */
-	public boolean retain_key = true;
+	/** Whether to retain primary key/foreign key/unique constraint in PostgreSQL DDL. */
+	public boolean pg_retain_key = true;
+
+	/** The max tuple size of unique constraint in PostgreSQL DDL derived from xs:key (ignore the limit if non-positive value). */
+	public int pg_max_uniq_tuple_size = 1;
 
 	/** Whether to use TSV format in PostgreSQL data migration. */
 	protected boolean pg_tab_delimiter = true;
@@ -274,7 +276,7 @@ public class PgSchemaOption implements Serializable {
 	 */
 	public void cancelRelDataExt() {
 
-		rel_data_ext = document_key = serial_key = xpath_key = retain_key = false;
+		rel_data_ext = document_key = serial_key = xpath_key = pg_retain_key = false;
 
 	}
 
@@ -283,7 +285,7 @@ public class PgSchemaOption implements Serializable {
 	 */
 	public void enableRelDataExt() {
 
-		rel_model_ext = rel_data_ext = document_key = retain_key = true;
+		rel_model_ext = rel_data_ext = document_key = pg_retain_key = true;
 
 	}
 
@@ -505,166 +507,6 @@ public class PgSchemaOption implements Serializable {
 	}
 
 	/**
-	 * Extract one-liner annotation from xs:annotation/xs:appinfo|xs:documentation.
-	 *
-	 * @param node current node
-	 * @param is_table the is table
-	 * @return String annotation
-	 */
-	public String extractAnnotation(Node node, boolean is_table) {
-
-		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
-
-			if (anno.getNodeType() != Node.ELEMENT_NODE)
-				continue;
-
-			if (!anno.getNodeName().equals(xs_prefix_ + "annotation"))
-				continue;
-
-			String child_name, src;
-			String annotation = "";
-
-			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-				if (child.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-
-				child_name = child.getNodeName();
-
-				if (child_name.equals(xs_prefix_ + "appinfo")) {
-
-					annotation = PgSchemaUtil.collapseWhiteSpace(child.getTextContent());
-
-					if (!annotation.isEmpty())
-						annotation += "\n-- ";
-
-					src = ((Element) child).getAttribute("source");
-
-					if (src != null && !src.isEmpty())
-						annotation += (is_table ? "\n-- " : ", ") + "URI-reference = " + src + (is_table ? "\n-- " : ", ");
-
-				}
-
-				else if (child_name.equals(xs_prefix_ + "documentation")) {
-
-					annotation += PgSchemaUtil.collapseWhiteSpace(child.getTextContent());
-
-					src = ((Element) child).getAttribute("source");
-
-					if (src != null && !src.isEmpty())
-						annotation += (is_table ? "\n-- " : ", ") + "URI-reference = " + src;
-
-				}
-
-			}
-
-			if (annotation != null && !annotation.isEmpty())
-				return annotation;
-		}
-
-		return null;
-	}
-
-	/**
-	 * Extract one-liner annotation from xs:annotation/xs:appinfo.
-	 *
-	 * @param node current node
-	 * @return String appinfo of annotation
-	 */
-	public String extractAppinfo(Node node) {
-
-		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
-
-			if (anno.getNodeType() != Node.ELEMENT_NODE)
-				continue;
-
-			if (!anno.getNodeName().equals(xs_prefix_ + "annotation"))
-				continue;
-
-			String child_name, src;
-
-			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-				if (child.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-
-				child_name = child.getNodeName();
-
-				if (child_name.equals(xs_prefix_ + "appinfo")) {
-
-					String annotation = PgSchemaUtil.collapseWhiteSpace(child.getTextContent());
-
-					src = ((Element) child).getAttribute("source");
-
-					if (src != null && !src.isEmpty())
-						annotation += ", URI-reference = " + src;
-
-					if (annotation != null && !annotation.isEmpty())
-						return annotation;
-				}
-
-			}
-
-		}
-
-		return null;
-	}
-
-	/**
-	 * Extract annotation from xs:annotation/xs:documentation.
-	 *
-	 * @param node current node
-	 * @param one_liner return whether one-liner annotation or exact one
-	 * @return String documentation of annotation
-	 */
-	public String extractDocumentation(Node node, boolean one_liner) {
-
-		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
-
-			if (anno.getNodeType() != Node.ELEMENT_NODE)
-				continue;
-
-			if (!anno.getNodeName().equals(xs_prefix_ + "annotation"))
-				continue;
-
-			String child_name, src, annotation;
-
-			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-				if (child.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-
-				child_name = child.getNodeName();
-
-				if (child_name.equals(xs_prefix_ + "documentation")) {
-
-					String text = child.getTextContent();
-
-					if (one_liner) {
-
-						annotation = PgSchemaUtil.collapseWhiteSpace(text);
-
-						src = ((Element) child).getAttribute("source");
-
-						if (src != null && !src.isEmpty())
-							annotation += ", URI-reference = " + src;
-
-						if (annotation != null && !annotation.isEmpty())
-							return annotation;
-					}
-
-					else if (text != null && !text.isEmpty())
-						return text;
-				}
-
-			}
-
-		}
-
-		return null;
-	}
-
-	/**
 	 * Instance message digest for check sum.
 	 *
 	 * @param check_sum_algorithm algorithm name of message digest
@@ -793,7 +635,10 @@ public class PgSchemaOption implements Serializable {
 		if (pg_named_schema != option.pg_named_schema)
 			return false;
 
-		if (retain_key != option.retain_key)
+		if (pg_retain_key != option.pg_retain_key)
+			return false;
+
+		if (pg_max_uniq_tuple_size != option.pg_max_uniq_tuple_size)
 			return false;
 
 		if (pg_tab_delimiter != option.pg_tab_delimiter)

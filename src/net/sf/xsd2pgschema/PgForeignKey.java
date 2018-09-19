@@ -19,20 +19,12 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.github.antlr.grammars_v4.xpath.xpathBaseListener;
-import com.github.antlr.grammars_v4.xpath.xpathLexer;
-import com.github.antlr.grammars_v4.xpath.xpathParser;
-import com.github.antlr.grammars_v4.xpath.xpathParser.MainContext;
-
 /**
- * PostgreSQL foreign key declaration.
+ * PostgreSQL foreign key declaration from xs:keyref.
  *
  * @author yokochi
  */
@@ -71,28 +63,25 @@ public class PgForeignKey {
 	/**
 	 * Instance of PgForeignKey.
 	 *
-	 * @param option PostgreSQL data model option
 	 * @param pg_schema_name PostgreSQL schema name
+	 * @param key_nodes node list of xs:key
 	 * @param node current node
 	 * @param name foreign key name
 	 * @param key_name key name
+	 * @param case_sense whether retain case sensitive name in PostgreSQL DDL
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgForeignKey(PgSchemaOption option, String pg_schema_name, Node node, String name, String key_name) throws PgSchemaException {
-
-		String xs_prefix_ = option.xs_prefix_;
+	public PgForeignKey(String pg_schema_name, NodeList key_nodes, Node node, String name, String key_name, boolean case_sense) throws PgSchemaException {
 
 		this.name = name;
 
 		this.pg_schema_name = pg_schema_name;
 
-		child_table_xname = extractTableName(option, node);
-		child_table_pname = option.case_sense ? child_table_xname : child_table_xname.toLowerCase();
+		child_table_xname = PgSchemaUtil.extractSelectorXPath(node);
+		child_table_pname = case_sense ? child_table_xname : child_table_xname.toLowerCase();
 
-		child_field_xnames = extractFieldNames(option, node);
-		child_field_pnames = option.case_sense ? child_field_xnames : child_field_xnames.toLowerCase();
-
-		NodeList key_nodes = node.getOwnerDocument().getElementsByTagName(xs_prefix_ + "key");
+		child_field_xnames = PgSchemaUtil.extractFieldXPath(node);
+		child_field_pnames = case_sense ? child_field_xnames : child_field_xnames.toLowerCase();
 
 		for (int i = 0; i < key_nodes.getLength(); i++) {
 
@@ -101,164 +90,13 @@ public class PgForeignKey {
 			if (!key_name.equals(((Element) key_node).getAttribute("name")))
 				continue;
 
-			parent_table_xname = extractTableName(option, key_node);
-			parent_table_pname = option.case_sense ? parent_table_xname : parent_table_xname.toLowerCase();
+			parent_table_xname = PgSchemaUtil.extractSelectorXPath(key_node);
+			parent_table_pname = case_sense ? parent_table_xname : parent_table_xname.toLowerCase();
 
-			parent_field_xnames = extractFieldNames(option, key_node);
-			parent_field_pnames = option.case_sense ? parent_field_xnames : parent_field_xnames.toLowerCase();
+			parent_field_xnames = PgSchemaUtil.extractFieldXPath(key_node);
+			parent_field_pnames = case_sense ? parent_field_xnames : parent_field_xnames.toLowerCase();
 
 			break;
-		}
-
-	}
-
-	/**
-	 * Extract child table name from xs:selector/@xpath.
-	 *
-	 * @param option PostgreSQL data model option
-	 * @param node current node
-	 * @return String child table name
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	private String extractTableName(PgSchemaOption option, Node node) throws PgSchemaException {
-
-		String xs_prefix_ = option.xs_prefix_;
-
-		StringBuilder sb = new StringBuilder();
-
-		try {
-
-			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-				if (child.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-
-				if (!child.getNodeName().equals(xs_prefix_ + "selector"))
-					continue;
-
-				String xpath_expr = ((Element) child).getAttribute("xpath");
-
-				if (xpath_expr == null || xpath_expr.isEmpty())
-					return null;
-
-				xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_expr));
-
-				CommonTokenStream tokens = new CommonTokenStream(lexer);
-
-				xpathParser parser = new xpathParser(tokens);
-				parser.addParseListener(new xpathBaseListener());
-
-				MainContext main = parser.main();
-
-				ParseTree tree = main.children.get(0);
-				String main_text = main.getText();
-
-				if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
-					throw new PgSchemaException("Invalid XPath expression. (" + main_text + ")");
-
-				XPathCompList xpath_comp_list = new XPathCompList(tree);
-
-				if (xpath_comp_list.comps.size() == 0)
-					throw new PgSchemaException("Insufficient XPath expression. (" + main_text + ")");
-
-				XPathComp[] last_qname_comp = xpath_comp_list.getLastQNameComp();
-
-				for (XPathComp comp : last_qname_comp) {
-
-					if (comp != null)
-						sb.append(PgSchemaUtil.getUnqualifiedName(comp.tree.getText()) + ", ");
-
-				}
-
-				xpath_comp_list.clear();
-
-				int len = sb.length();
-
-				if (len > 0)
-					sb.setLength(len - 2);
-
-				break;
-			}
-
-			return sb.toString();
-
-		} finally {
-			sb.setLength(0);
-		}
-
-	}
-
-	/**
-	 * Extract child field names from xs:field/@xpath.
-	 *
-	 * @param option PostgreSQL data model option
-	 * @param node current node
-	 * @return String child field names separated by comma
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	private String extractFieldNames(PgSchemaOption option, Node node) throws PgSchemaException {
-
-		String xs_prefix_ = option.xs_prefix_;
-
-		StringBuilder sb = new StringBuilder();
-
-		try {
-
-			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-				if (child.getNodeType() != Node.ELEMENT_NODE)
-					continue;
-
-				if (!child.getNodeName().equals(xs_prefix_ + "field"))
-					continue;
-
-				String xpath_expr = ((Element) child).getAttribute("xpath");
-
-				if (xpath_expr == null || xpath_expr.isEmpty())
-					return null;
-
-				xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_expr));
-
-				CommonTokenStream tokens = new CommonTokenStream(lexer);
-
-				xpathParser parser = new xpathParser(tokens);
-				parser.addParseListener(new xpathBaseListener());
-
-				MainContext main = parser.main();
-
-				ParseTree tree = main.children.get(0);
-				String main_text = main.getText();
-
-				if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
-					throw new PgSchemaException("Invalid XPath expression. (" + main_text + ")");
-
-				XPathCompList xpath_comp_list = new XPathCompList(tree);
-
-				if (xpath_comp_list.comps.size() == 0)
-					throw new PgSchemaException("Insufficient XPath expression. (" + main_text + ")");
-
-				XPathComp[] last_qname_comp = xpath_comp_list.getLastQNameComp();
-
-				for (XPathComp comp : last_qname_comp) {
-
-					if (comp != null)
-						sb.append(PgSchemaUtil.getUnqualifiedName(comp.tree.getText()) + ", ");
-
-				}
-
-				xpath_comp_list.clear();
-
-			}
-
-			int len = sb.length();
-
-			if (len > 0)
-				sb.setLength(len - 2);
-
-			return sb.toString();
-
-		} finally {
-			sb.setLength(0);
 		}
 
 	}

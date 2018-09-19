@@ -198,7 +198,7 @@ public class xml2pgsql {
 				option.cache_xsd = false;
 
 			else if (args[i].equals("--no-key"))
-				option.retain_key = false;
+				option.pg_retain_key = false;
 
 			else if (args[i].startsWith("--valid"))
 				option.validate = option.full_check = true;
@@ -518,7 +518,7 @@ public class xml2pgsql {
 		System.err.println("        --no-doc-key (remove " + option.document_key_name + " column from all relations, effective only with relational model extension)");
 		System.err.println("        --ser-key (append " + option.serial_key_name + " column in child relation of list holder)");
 		System.err.println("        --xpath-key (append " + option.xpath_key_name + " column in all relations)");
-		System.err.println("        --no-key (turn off constraint of primary key/foreign key)");
+		System.err.println("        --no-key (turn off constraint of primary key/foreign key/unique)");
 		System.err.println("        --validate (turn on XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
 		System.err.println("        --well-formed (validate only whether document is well-formed)");

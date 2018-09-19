@@ -384,38 +384,38 @@ public class PgField implements Serializable {
 
 			}
 
+			Element child_elem;
 			String child_name;
 
 			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-				if (child.getNodeType() != Node.ELEMENT_NODE)
+				if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
 					continue;
 
-				child_name = child.getNodeName();
+				child_elem = (Element) child;
+				child_name = child_elem.getLocalName();
 
-				if (child_name.equals(xs_prefix_ + "annotation"))
+				if (child_name.equals("annotation"))
 					continue;
 
-				else if (child_name.equals(xs_prefix_ + "any") ||
-						child_name.equals(xs_prefix_ + "anyAttribute") ||
-						child_name.equals(xs_prefix_ + "attribute") ||
-						child_name.equals(xs_prefix_ + "attributeGroup") ||
-						child_name.equals(xs_prefix_ + "element") ||
-						child_name.equals(xs_prefix_ + "group"))
+				else if (child_name.equals("any") ||
+						child_name.equals("anyAttribute") ||
+						child_name.equals("attribute") ||
+						child_name.equals("attributeGroup") ||
+						child_name.equals("element") ||
+						child_name.equals("group"))
 					return;
 
 				else if (child.hasAttributes()) {
 
-					Element elem = (Element) child;
-
-					String _type = elem.getAttribute("type");
+					String _type = child_elem.getAttribute("type");
 
 					if (_type != null && !_type.isEmpty()) {
 						type = _type;
 						return;
 					}
 
-					String item_type = elem.getAttribute("itemType"); // xs:list
+					String item_type = child_elem.getAttribute("itemType"); // xs:list
 
 					if (item_type != null && !item_type.isEmpty()) {
 						_list = true;
@@ -423,7 +423,7 @@ public class PgField implements Serializable {
 						return;
 					}
 
-					String mem_types = elem.getAttribute("memberTypes"); // xs:union
+					String mem_types = child_elem.getAttribute("memberTypes"); // xs:union
 
 					if (mem_types != null && !mem_types.isEmpty()) {
 						_union = true;
@@ -431,14 +431,14 @@ public class PgField implements Serializable {
 						return;
 					}
 
-					String _substitution_group = elem.getAttribute("substitutionGroup");
+					String _substitution_group = child_elem.getAttribute("substitutionGroup");
 
 					if (_substitution_group != null && !_substitution_group.isEmpty()) {
 						substitution_group = _substitution_group;
 						return;
 					}
 
-					String base = elem.getAttribute("base");
+					String base = child_elem.getAttribute("base");
 
 					if (base != null && !base.isEmpty()) {
 						type = base;
@@ -549,12 +549,9 @@ public class PgField implements Serializable {
 	/**
 	 * Extract @maxOccurs.
 	 *
-	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	protected void extractMaxOccurs(PgSchemaOption option, Node node) {
-
-		String xs_prefix_ = option.xs_prefix_;
+	protected void extractMaxOccurs(Node node) {
 
 		if (node.hasAttributes()) {
 
@@ -577,13 +574,14 @@ public class PgField implements Serializable {
 
 		if (parent_node != null) {
 
-			String parent_name = parent_node.getNodeName();
+			Element parent_elem = (Element) parent_node;
+			String parent_name = parent_elem.getLocalName();
 
-			if (parent_name.equals(xs_prefix_ + "all") ||
-					parent_name.equals(xs_prefix_ + "choice") ||
-					parent_name.equals(xs_prefix_ + "sequence")) {
+			if (parent_name.equals("all") ||
+					parent_name.equals("choice") ||
+					parent_name.equals("sequence")) {
 
-				String _maxoccurs = ((Element) parent_node).getAttribute("maxOccurs");
+				String _maxoccurs = parent_elem.getAttribute("maxOccurs");
 
 				if (_maxoccurs != null && !_maxoccurs.isEmpty()) {
 
@@ -600,29 +598,31 @@ public class PgField implements Serializable {
 
 		// test child nodes
 
+		Element child_elem;
 		String child_name;
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			if (child.getNodeType() != Node.ELEMENT_NODE)
+			if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
 				continue;
 
-			child_name = child.getNodeName();
+			child_elem = (Element) child;
+			child_name = child_elem.getLocalName();
 
-			if (child_name.equals(xs_prefix_ + "annotation"))
+			if (child_name.equals("annotation"))
 				continue;
 
-			else if (child_name.equals(xs_prefix_ + "any") ||
-					child_name.equals(xs_prefix_ + "anyAttribute") ||
-					child_name.equals(xs_prefix_ + "attribute") ||
-					child_name.equals(xs_prefix_ + "attributeGroup") ||
-					child_name.equals(xs_prefix_ + "element") ||
-					child_name.equals(xs_prefix_ + "group"))
+			else if (child_name.equals("any") ||
+					child_name.equals("anyAttribute") ||
+					child_name.equals("attribute") ||
+					child_name.equals("attributeGroup") ||
+					child_name.equals("element") ||
+					child_name.equals("group"))
 				return;
 
 			else if (child.hasAttributes()) {
 
-				String _maxoccurs = ((Element) child).getAttribute("maxOccurs");
+				String _maxoccurs = child_elem.getAttribute("maxOccurs");
 
 				if (_maxoccurs != null && !_maxoccurs.isEmpty()) {
 
@@ -636,7 +636,7 @@ public class PgField implements Serializable {
 			}
 
 			if (child.hasChildNodes())
-				extractMaxOccurs(option, child);
+				extractMaxOccurs(child);
 
 		}
 
@@ -645,12 +645,9 @@ public class PgField implements Serializable {
 	/**
 	 * Extract @minOccurs.
 	 *
-	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	protected void extractMinOccurs(PgSchemaOption option, Node node) {
-
-		String xs_prefix_ = option.xs_prefix_;
+	protected void extractMinOccurs(Node node) {
 
 		if (node.hasAttributes()) {
 
@@ -673,13 +670,14 @@ public class PgField implements Serializable {
 
 		if (parent_node != null) {
 
-			String parent_name = parent_node.getNodeName();
+			Element parent_elem = (Element) parent_node;
+			String parent_name = parent_elem.getLocalName();
 
-			if (parent_name.equals(xs_prefix_ + "all") ||
-					parent_name.equals(xs_prefix_ + "choice") ||
-					parent_name.equals(xs_prefix_ + "sequence")) {
+			if (parent_name.equals("all") ||
+					parent_name.equals("choice") ||
+					parent_name.equals("sequence")) {
 
-				String _minoccurs = ((Element) parent_node).getAttribute("minOccurs");
+				String _minoccurs = parent_elem.getAttribute("minOccurs");
 
 				if (_minoccurs != null && !_minoccurs.isEmpty()) {
 
@@ -696,29 +694,31 @@ public class PgField implements Serializable {
 
 		// test child nodes
 
+		Element child_elem;
 		String child_name;
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			if (child.getNodeType() != Node.ELEMENT_NODE)
+			if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
 				continue;
 
-			child_name = child.getNodeName();
+			child_elem = (Element) child;
+			child_name = child_elem.getLocalName();
 
-			if (child_name.equals(xs_prefix_ + "annotation"))
+			if (child_name.equals("annotation"))
 				continue;
 
-			else if (child_name.equals(xs_prefix_ + "any") ||
-					child_name.equals(xs_prefix_ + "anyAttribute") ||
-					child_name.equals(xs_prefix_ + "attribute") ||
-					child_name.equals(xs_prefix_ + "attributeGroup") ||
-					child_name.equals(xs_prefix_ + "element") ||
-					child_name.equals(xs_prefix_ + "group"))
+			else if (child_name.equals("any") ||
+					child_name.equals("anyAttribute") ||
+					child_name.equals("attribute") ||
+					child_name.equals("attributeGroup") ||
+					child_name.equals("element") ||
+					child_name.equals("group"))
 				return;
 
 			else if (child.hasAttributes()) {
 
-				String _minoccurs = ((Element) child).getAttribute("minOccurs");
+				String _minoccurs = child_elem.getAttribute("minOccurs");
 
 				if (_minoccurs != null && !_minoccurs.isEmpty()) {
 
@@ -732,7 +732,7 @@ public class PgField implements Serializable {
 			}
 
 			if (child.hasChildNodes())
-				extractMinOccurs(option, child);
+				extractMinOccurs(child);
 
 		}
 
@@ -843,44 +843,45 @@ public class PgField implements Serializable {
 	 */
 	protected void extractEnumeration(PgSchemaOption option, Node node) {
 
-		String xs_prefix_ = option.xs_prefix_;
-
 		enumeration = xenumeration = null;
 
 		String child_name;
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			if (child.getNodeType() != Node.ELEMENT_NODE)
+			if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
 				continue;
 
-			child_name = child.getNodeName();
+			child_name = ((Element) child).getLocalName();
 
-			if (child_name.equals(xs_prefix_ + "annotation"))
+			if (child_name.equals("annotation"))
 				continue;
 
-			else if (child_name.equals(xs_prefix_ + "any") ||
-					child_name.equals(xs_prefix_ + "anyAttribute") ||
-					child_name.equals(xs_prefix_ + "attribute") ||
-					child_name.equals(xs_prefix_ + "attributeGroup") ||
-					child_name.equals(xs_prefix_ + "element") ||
-					child_name.equals(xs_prefix_ + "group"))
+			else if (child_name.equals("any") ||
+					child_name.equals("anyAttribute") ||
+					child_name.equals("attribute") ||
+					child_name.equals("attributeGroup") ||
+					child_name.equals("element") ||
+					child_name.equals("group"))
 				return;
 
-			else if (child_name.equals(xs_prefix_ + "restriction")) {
+			else if (child_name.equals("restriction")) {
 
+				Element enum_elem;
 				String value;
 
 				int length = 0;
 
 				for (Node enum_node = child.getFirstChild(); enum_node != null; enum_node = enum_node.getNextSibling()) {
 
-					if (enum_node.getNodeType() != Node.ELEMENT_NODE)
+					if (enum_node.getNodeType() != Node.ELEMENT_NODE || !enum_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
 						continue;
 
-					if (enum_node.getNodeName().equals(xs_prefix_ + "enumeration")) {
+					enum_elem = (Element) enum_node;
 
-						value = ((Element) enum_node).getAttribute("value");
+					if (enum_elem.getLocalName().equals("enumeration")) {
+
+						value = enum_elem.getAttribute("value");
 
 						if (value != null && !value.isEmpty())
 							length++;
@@ -901,12 +902,14 @@ public class PgField implements Serializable {
 
 				for (Node enum_node = child.getFirstChild(); enum_node != null; enum_node = enum_node.getNextSibling()) {
 
-					if (enum_node.getNodeType() != Node.ELEMENT_NODE)
+					if (enum_node.getNodeType() != Node.ELEMENT_NODE || !enum_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
 						continue;
 
-					if (enum_node.getNodeName().equals(xs_prefix_ + "enumeration")) {
+					enum_elem = (Element) enum_node;
 
-						value = ((Element) enum_node).getAttribute("value");
+					if (enum_elem.getLocalName().equals("enumeration")) {
+
+						value = enum_elem.getAttribute("value");
 
 						if (value != null && !value.isEmpty()) {
 
@@ -991,7 +994,7 @@ public class PgField implements Serializable {
 
 				if (type == null) {
 
-					type = xs_prefix_ + "string";
+					type = option.xs_prefix_ + "string";
 					xs_type = XsDataType.xs_string;
 
 				}
@@ -1009,12 +1012,9 @@ public class PgField implements Serializable {
 	/**
 	 * Extract xs:restriction/xs:any@value.
 	 *
-	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	protected void extractRestriction(PgSchemaOption option, Node node) {
-
-		String xs_prefix_ = option.xs_prefix_;
+	protected void extractRestriction(Node node) {
 
 		length = null; // xs:length
 		min_length = null; // xs:minLength
@@ -1039,37 +1039,40 @@ public class PgField implements Serializable {
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			if (child.getNodeType() != Node.ELEMENT_NODE)
+			if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
 				continue;
 
-			child_name = child.getNodeName();
+			child_name = ((Element) child).getLocalName();
 
-			if (child_name.equals(xs_prefix_ + "annotation"))
+			if (child_name.equals("annotation"))
 				continue;
 
-			else if (child_name.equals(xs_prefix_ + "any") ||
-					child_name.equals(xs_prefix_ + "anyAttribute") ||
-					child_name.equals(xs_prefix_ + "attribute") ||
-					child_name.equals(xs_prefix_ + "attributeGroup") ||
-					child_name.equals(xs_prefix_ + "element") ||
-					child_name.equals(xs_prefix_ + "group"))
+			else if (child_name.equals("any") ||
+					child_name.equals("anyAttribute") ||
+					child_name.equals("attribute") ||
+					child_name.equals("attributeGroup") ||
+					child_name.equals("element") ||
+					child_name.equals("group"))
 				return;
 
-			else if (child_name.equals(xs_prefix_ + "restriction")) {
+			else if (child_name.equals("restriction")) {
 
+				Element rest_elem;
 				String value;
 
 				for (Node rest_node = child.getFirstChild(); rest_node != null; rest_node = rest_node.getNextSibling()) {
 
-					if (rest_node.getNodeType() != Node.ELEMENT_NODE)
+					if (rest_node.getNodeType() != Node.ELEMENT_NODE || !rest_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
 						continue;
 
-					value = ((Element) rest_node).getAttribute("value");
+					rest_elem = (Element) rest_node;
+
+					value = rest_elem.getAttribute("value");
 
 					if (value == null || value.isEmpty())
 						continue;
 
-					if (rest_node.getNodeName().equals(xs_prefix_ + "length")) {
+					if (rest_elem.getLocalName().equals("length")) {
 
 						try {
 
@@ -1092,7 +1095,7 @@ public class PgField implements Serializable {
 
 					}
 
-					else if (rest_node.getNodeName().equals(xs_prefix_ + "minLength")) {
+					else if (rest_elem.getLocalName().equals("minLength")) {
 
 						try {
 
@@ -1115,7 +1118,7 @@ public class PgField implements Serializable {
 
 					}
 
-					else if (rest_node.getNodeName().equals(xs_prefix_ + "maxLength")) {
+					else if (rest_elem.getLocalName().equals("maxLength")) {
 
 						try {
 
@@ -1138,14 +1141,14 @@ public class PgField implements Serializable {
 
 					}
 
-					else if (rest_node.getNodeName().equals(xs_prefix_ + "pattern")) {
+					else if (rest_elem.getLocalName().equals("pattern")) {
 
 						restriction = true;
 						pattern = value;
 
 					}
 
-					else if (rest_node.getNodeName().equals(xs_prefix_ + "maxInclusive")) {
+					else if (rest_elem.getLocalName().equals("maxInclusive")) {
 
 						try {
 
@@ -1180,7 +1183,7 @@ public class PgField implements Serializable {
 
 					}
 
-					else if (rest_node.getNodeName().equals(xs_prefix_ + "maxExclusive")) {
+					else if (rest_elem.getLocalName().equals("maxExclusive")) {
 
 						try {
 
@@ -1215,7 +1218,7 @@ public class PgField implements Serializable {
 
 					}
 
-					else if (rest_node.getNodeName().equals(xs_prefix_ + "minExclusive")) {
+					else if (rest_elem.getLocalName().equals("minExclusive")) {
 
 						try {
 
@@ -1250,7 +1253,7 @@ public class PgField implements Serializable {
 
 					}
 
-					else if (rest_node.getNodeName().equals(xs_prefix_ + "minInclusive")) {
+					else if (rest_elem.getLocalName().equals("minInclusive")) {
 
 						try {
 
@@ -1285,7 +1288,7 @@ public class PgField implements Serializable {
 
 					}
 
-					else if (rest_node.getNodeName().equals(xs_prefix_ + "totalDigits")) {
+					else if (rest_elem.getLocalName().equals("totalDigits")) {
 
 						try {
 
@@ -1308,7 +1311,7 @@ public class PgField implements Serializable {
 
 					}
 
-					else if (rest_node.getNodeName().equals(xs_prefix_ + "fractionDigits")) {
+					else if (rest_elem.getLocalName().equals("fractionDigits")) {
 
 						try {
 
@@ -1331,7 +1334,7 @@ public class PgField implements Serializable {
 
 					}
 
-					else if (rest_node.getNodeName().equals(xs_prefix_ + "whiteSpace")) {
+					else if (rest_elem.getLocalName().equals("whiteSpace")) {
 
 						if (value.equals("replace") || value.equals("collapse")) {
 
@@ -1342,14 +1345,14 @@ public class PgField implements Serializable {
 
 					}
 
-					else if (rest_node.getNodeName().equals(xs_prefix_ + "explicitTimezone")) {
+					else if (rest_elem.getLocalName().equals("explicitTimezone")) {
 
 						restriction = true;
 						explicit_timezone = value;
 
 					}
 
-					else if (rest_node.getNodeName().equals(xs_prefix_ + "assertions")) {
+					else if (rest_elem.getLocalName().equals("assertions")) {
 
 						restriction = true;
 						assertions = value;
@@ -1362,7 +1365,7 @@ public class PgField implements Serializable {
 			}
 
 			if (child.hasChildNodes())
-				extractRestriction(option, child);
+				extractRestriction(child);
 
 		}
 

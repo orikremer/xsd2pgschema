@@ -245,15 +245,20 @@ public class Xml2PgSqlThrd implements Runnable {
 
 			if (show_progress) {
 
-				long current_time = System.currentTimeMillis();
-
 				int remains = xml_file_queue.size();
-				int progress = total - remains;
 
-				long etc_time = current_time + (current_time - start_time) * remains / progress;
-				Date etc_date = new Date(etc_time);
+				if (polled % (remains > 100 ? 100 : remains > 10 ? 10 : 1) == 0) {
 
-				System.out.print("\rMigrated " + progress + " of " + total + " ... (ETC " + sdf.format(etc_date) + ")");
+					long current_time = System.currentTimeMillis();
+
+					int progress = total - remains;
+
+					long etc_time = current_time + (current_time - start_time) * remains / progress;
+					Date etc_date = new Date(etc_time);
+
+					System.out.print("\rMigrated " + progress + " of " + total + " ... (ETC " + sdf.format(etc_date) + ")");
+
+				}
 
 			}
 

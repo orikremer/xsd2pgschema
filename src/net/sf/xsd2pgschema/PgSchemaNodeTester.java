@@ -19,6 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 /**
@@ -141,17 +142,12 @@ public class PgSchemaNodeTester {
 
 		if (!virtual && indirect) {
 
-			String child_name;
-
 			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 				if (child.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if ((child_name = child.getLocalName()) == null)
-					child_name = PgSchemaUtil.getUnqualifiedName(child.getNodeName());
-
-				if (child_name.equals(table_xname)) {
+				if (((Element) child).getLocalName().equals(table_xname)) {
 
 					proc_node = child;
 

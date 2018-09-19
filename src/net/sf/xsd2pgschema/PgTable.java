@@ -139,10 +139,6 @@ public class PgTable implements Serializable {
 	@Flat
 	protected String anno = null;
 
-	/** Whether table is realized in PostgreSQL DDL (internal use only). */
-	@Flat
-	protected boolean realized = false;
-
 	/** Whether table is subset of database (internal use only). */
 	@Flat
 	protected boolean filt_out = false;
@@ -341,14 +337,12 @@ public class PgTable implements Serializable {
 	 */
 	protected void addPrimaryKey(PgSchemaOption option, boolean unique_key) {
 
-		String xs_prefix_ = option.xs_prefix_;
-
 		if (option.document_key) {
 
 			PgField field = new PgField();
 
 			field.name = field.pname = field.xname = option.document_key_name;
-			field.type = xs_prefix_ + "string";
+			field.type = option.xs_prefix_ + "string";
 			field.xs_type = XsDataType.xs_string;
 			field.document_key = true;
 
@@ -384,8 +378,6 @@ public class PgTable implements Serializable {
 	 */
 	protected boolean addNestedKey(PgSchemaOption option, String pg_schema_name, String xname, PgField ref_field, Node node) {
 
-		String xs_prefix_ = option.xs_prefix_;
-
 		if (xname == null || xname.isEmpty())
 			return false;
 
@@ -420,10 +412,10 @@ public class PgTable implements Serializable {
 
 		while (parent_node != null) {
 
-			NamedNodeMap parent_attrs = parent_node.getAttributes();
-
-			if (parent_node.getNodeName().equals(xs_prefix_ + "element"))
+			if (parent_node.getNodeType() == Node.ELEMENT_NODE && parent_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri) && parent_node.getLocalName().equals("element"))
 				break;
+
+			NamedNodeMap parent_attrs = parent_node.getAttributes();
 
 			if (parent_attrs != null) {
 

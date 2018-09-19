@@ -56,11 +56,21 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.FSTObjectOutput;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
+import com.github.antlr.grammars_v4.xpath.xpathBaseListener;
+import com.github.antlr.grammars_v4.xpath.xpathLexer;
+import com.github.antlr.grammars_v4.xpath.xpathParser;
+import com.github.antlr.grammars_v4.xpath.xpathParser.MainContext;
 
 /**
  * Utility functions and default values.
@@ -752,7 +762,7 @@ public class PgSchemaUtil {
 	 * @return String replaced string
 	 */
 	public static String replaceWhiteSpace(String text) {
-		return PgSchemaUtil.ws_rep_pattern.matcher(text).replaceAll(" ");
+		return ws_rep_pattern.matcher(text).replaceAll(" ");
 	}
 
 	/**
@@ -762,7 +772,7 @@ public class PgSchemaUtil {
 	 * @return String collapsed string
 	 */
 	public static String collapseWhiteSpace(String text) {
-		return PgSchemaUtil.ws_col_pattern.matcher(replaceWhiteSpace(text)).replaceAll(" ").trim();
+		return ws_col_pattern.matcher(replaceWhiteSpace(text)).replaceAll(" ").trim();
 	}
 
 	/**
@@ -772,7 +782,326 @@ public class PgSchemaUtil {
 	 * @return String escaped string
 	 */
 	public static String escapeTsv(String text) {
-		return PgSchemaUtil.tab_pattern.matcher(PgSchemaUtil.lf_pattern.matcher(PgSchemaUtil.bs_pattern.matcher(text).replaceAll("\\\\\\\\")).replaceAll("\\\\n")).replaceAll("\\\\t");
+		return tab_pattern.matcher(lf_pattern.matcher(bs_pattern.matcher(text).replaceAll("\\\\\\\\")).replaceAll("\\\\n")).replaceAll("\\\\t");
+	}
+
+	/**
+	 * Extract one-liner annotation from xs:annotation/xs:appinfo|xs:documentation.
+	 *
+	 * @param node current node
+	 * @param is_table the is table
+	 * @return String annotation
+	 */
+	public static String extractAnnotation(Node node, boolean is_table) {
+
+		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
+
+			if (anno.getNodeType() != Node.ELEMENT_NODE || !anno.getNamespaceURI().equals(xs_namespace_uri))
+				continue;
+
+			if (!((Element) anno).getLocalName().equals("annotation"))
+				continue;
+
+			Element child_elem;
+			String child_name, src;
+			String annotation = "";
+
+			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+				if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(xs_namespace_uri))
+					continue;
+
+				child_elem = (Element) child;
+				child_name = child_elem.getLocalName();
+
+				if (child_name.equals("appinfo")) {
+
+					annotation = collapseWhiteSpace(child.getTextContent());
+
+					if (!annotation.isEmpty())
+						annotation += "\n-- ";
+
+					src = child_elem.getAttribute("source");
+
+					if (src != null && !src.isEmpty())
+						annotation += (is_table ? "\n-- " : ", ") + "URI-reference = " + src + (is_table ? "\n-- " : ", ");
+
+				}
+
+				else if (child_name.equals("documentation")) {
+
+					annotation += collapseWhiteSpace(child.getTextContent());
+
+					src = child_elem.getAttribute("source");
+
+					if (src != null && !src.isEmpty())
+						annotation += (is_table ? "\n-- " : ", ") + "URI-reference = " + src;
+
+				}
+
+			}
+
+			if (annotation != null && !annotation.isEmpty())
+				return annotation;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Extract one-liner annotation from xs:annotation/xs:appinfo.
+	 *
+	 * @param node current node
+	 * @return String appinfo of annotation
+	 */
+	public static String extractAppinfo(Node node) {
+
+		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
+
+			if (anno.getNodeType() != Node.ELEMENT_NODE || !anno.getNamespaceURI().equals(xs_namespace_uri))
+				continue;
+
+			if (!((Element) anno).getLocalName().equals("annotation"))
+				continue;
+
+			Element child_elem;
+			String child_name, src;
+
+			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+				if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(xs_namespace_uri))
+					continue;
+
+				child_elem = (Element) child;
+				child_name = child_elem.getLocalName();
+
+				if (child_name.equals("appinfo")) {
+
+					String annotation = collapseWhiteSpace(child.getTextContent());
+
+					src = child_elem.getAttribute("source");
+
+					if (src != null && !src.isEmpty())
+						annotation += ", URI-reference = " + src;
+
+					if (annotation != null && !annotation.isEmpty())
+						return annotation;
+				}
+
+			}
+
+		}
+
+		return null;
+	}
+
+	/**
+	 * Extract annotation from xs:annotation/xs:documentation.
+	 *
+	 * @param node current node
+	 * @param one_liner return whether one-liner annotation or exact one
+	 * @return String documentation of annotation
+	 */
+	public static String extractDocumentation(Node node, boolean one_liner) {
+
+		for (Node anno = node.getFirstChild(); anno != null; anno = anno.getNextSibling()) {
+
+			if (anno.getNodeType() != Node.ELEMENT_NODE || !anno.getNamespaceURI().equals(xs_namespace_uri))
+				continue;
+
+			if (!((Element) anno).getLocalName().equals("annotation"))
+				continue;
+
+			Element child_elem;
+			String child_name, src, annotation;
+
+			for (Node child = anno.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+				if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(xs_namespace_uri))
+					continue;
+
+				child_elem = (Element) child;
+				child_name = child_elem.getLocalName();
+
+				if (child_name.equals("documentation")) {
+
+					String text = child.getTextContent();
+
+					if (one_liner) {
+
+						annotation = collapseWhiteSpace(text);
+
+						src = child_elem.getAttribute("source");
+
+						if (src != null && !src.isEmpty())
+							annotation += ", URI-reference = " + src;
+
+						if (annotation != null && !annotation.isEmpty())
+							return annotation;
+					}
+
+					else if (text != null && !text.isEmpty())
+						return text;
+				}
+
+			}
+
+		}
+
+		return null;
+	}
+
+	/**
+	 * Extract table name from xs:selector/@xpath.
+	 *
+	 * @param node current node
+	 * @return String child table name
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public static String extractSelectorXPath(Node node) throws PgSchemaException {
+
+		StringBuilder sb = new StringBuilder();
+
+		try {
+
+			Element child_elem;
+
+			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+				if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(xs_namespace_uri))
+					continue;
+
+				child_elem = (Element) child;
+
+				if (!child_elem.getLocalName().equals("selector"))
+					continue;
+
+				String xpath_expr = child_elem.getAttribute("xpath");
+
+				if (xpath_expr == null || xpath_expr.isEmpty())
+					return null;
+
+				xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_expr));
+
+				CommonTokenStream tokens = new CommonTokenStream(lexer);
+
+				xpathParser parser = new xpathParser(tokens);
+				parser.addParseListener(new xpathBaseListener());
+
+				MainContext main = parser.main();
+
+				ParseTree tree = main.children.get(0);
+				String main_text = main.getText();
+
+				if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
+					throw new PgSchemaException("Invalid XPath expression. (" + main_text + ")");
+
+				XPathCompList xpath_comp_list = new XPathCompList(tree);
+
+				if (xpath_comp_list.comps.size() == 0)
+					throw new PgSchemaException("Insufficient XPath expression. (" + main_text + ")");
+
+				XPathComp[] last_qname_comp = xpath_comp_list.getLastQNameComp();
+
+				for (XPathComp comp : last_qname_comp) {
+
+					if (comp != null)
+						sb.append(getUnqualifiedName(comp.tree.getText()) + ", ");
+
+				}
+
+				xpath_comp_list.clear();
+
+				int len = sb.length();
+
+				if (len > 0)
+					sb.setLength(len - 2);
+
+				break;
+			}
+
+			return sb.toString();
+
+		} finally {
+			sb.setLength(0);
+		}
+
+	}
+
+	/**
+	 * Extract field names from xs:field/@xpath.
+	 *
+	 * @param node current node
+	 * @return String child field names separated by comma
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public static String extractFieldXPath(Node node) throws PgSchemaException {
+
+		StringBuilder sb = new StringBuilder();
+
+		try {
+
+			Element child_elem;
+
+			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+				if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(xs_namespace_uri))
+					continue;
+
+				child_elem = (Element) child;
+
+				if (!child_elem.getLocalName().equals("field"))
+					continue;
+
+				String xpath_expr = child_elem.getAttribute("xpath");
+
+				if (xpath_expr == null || xpath_expr.isEmpty())
+					return null;
+
+				xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_expr));
+
+				CommonTokenStream tokens = new CommonTokenStream(lexer);
+
+				xpathParser parser = new xpathParser(tokens);
+				parser.addParseListener(new xpathBaseListener());
+
+				MainContext main = parser.main();
+
+				ParseTree tree = main.children.get(0);
+				String main_text = main.getText();
+
+				if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
+					throw new PgSchemaException("Invalid XPath expression. (" + main_text + ")");
+
+				XPathCompList xpath_comp_list = new XPathCompList(tree);
+
+				if (xpath_comp_list.comps.size() == 0)
+					throw new PgSchemaException("Insufficient XPath expression. (" + main_text + ")");
+
+				XPathComp[] last_qname_comp = xpath_comp_list.getLastQNameComp();
+
+				for (XPathComp comp : last_qname_comp) {
+
+					if (comp != null)
+						sb.append(getUnqualifiedName(comp.tree.getText()) + ", ");
+
+				}
+
+				xpath_comp_list.clear();
+
+			}
+
+			int len = sb.length();
+
+			if (len > 0)
+				sb.setLength(len - 2);
+
+			return sb.toString();
+
+		} finally {
+			sb.setLength(0);
+		}
+
 	}
 
 	/**

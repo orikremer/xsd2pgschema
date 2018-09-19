@@ -324,21 +324,28 @@ public class Xml2LuceneIdxThrd implements Runnable {
 
 		long start_time = System.currentTimeMillis();
 
+		int polled = 0;
+
 		Path xml_file_path;
 
 		while ((xml_file_path = xml_file_queue.poll()) != null) {
 
 			if (show_progress) {
 
-				long current_time = System.currentTimeMillis();
-
 				int remains = xml_file_queue.size();
-				int progress = total - remains;
 
-				long etc_time = current_time + (current_time - start_time) * remains / progress;
-				Date etc_date = new Date(etc_time);
+				if (polled % (remains > 100 ? 100 : remains > 10 ? 10 : 1) == 0) {
 
-				System.out.print("\rIndexed " + progress + " of " + total + " ... (ETC " + sdf.format(etc_date) + ")");
+					long current_time = System.currentTimeMillis();
+
+					int progress = total - remains;
+
+					long etc_time = current_time + (current_time - start_time) * remains / progress;
+					Date etc_date = new Date(etc_time);
+
+					System.out.print("\rIndexed " + progress + " of " + total + " ... (ETC " + sdf.format(etc_date) + ")");
+
+				}
 
 			}
 
@@ -395,6 +402,8 @@ public class Xml2LuceneIdxThrd implements Runnable {
 				System.err.println("Exception occurred while processing XML document: " + xml_file_path.toAbsolutePath().toString());
 				e.printStackTrace();
 			}
+
+			++polled;
 
 			if (changed)
 				continue;

@@ -1,4 +1,11 @@
-﻿ Changes in xsd2pgschema 3.0.3 (release 2018-09-14)
+﻿ Changes in xsd2pgschema 3.0.3 (release 2018-09-19)
+
+  Added support to generate PostgreSQL UNIQUE constraint from xs:unique.
+  Added support to generate PostgreSQL UNIQUE constraint from xs:key matching with tuple size condition below.
+  Added --max-uniq-tuple-size option in xsd2pgschema main class that regulated the generation of UNIQUE constraint derived from xs:key.
+  Revised comments in PostgreSQL DDL.
+
+ Changes in xsd2pgschema 3.0.3 (release 2018-09-14)
 
   Fixed incomplete PostgreSQL data model when multiple XML Schemata were included or imported.
   More strict implementation of identity constraint definition (xs:key and xs:keyref).
