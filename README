@@ -1,4 +1,4 @@
-﻿ Changes in xsd2pgschema 3.0.3 (release 2018-09-19)
+﻿ Changes in xsd2pgschema 3.0.4 (release 2018-09-19)
 
   Added support to generate PostgreSQL UNIQUE constraint from xs:unique.
   Added support to generate PostgreSQL UNIQUE constraint from xs:key matching with tuple size condition below.
