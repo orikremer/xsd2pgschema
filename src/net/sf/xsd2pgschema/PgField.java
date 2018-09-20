@@ -65,7 +65,7 @@ public class PgField implements Serializable {
 	/** The target namespace (@targetNamespace). */
 	protected String target_namespace = PgSchemaUtil.xs_namespace_uri;
 
-	/** The namespace restriction for any content (@nanespace). */
+	/** The namespace restriction for any content (@namespace). */
 	protected String namespace = "##any";
 
 	/** The prefix of target namespace. */
@@ -4304,7 +4304,7 @@ public class PgField implements Serializable {
 	}
 
 	/**
-	 * Return normalized content.
+	 * Normalize content as PostgreSQL value.
 	 *
 	 * @param value content
 	 * @return String normalized content
@@ -4387,7 +4387,7 @@ public class PgField implements Serializable {
 	 * @param value content
 	 * @throws SQLException the SQL exception
 	 */
-	protected void writeValue2PgSql(PreparedStatement ps, int par_idx, int ins_idx, String value) throws SQLException {
+	protected void write(PreparedStatement ps, int par_idx, int ins_idx, String value) throws SQLException {
 
 		boolean upsert = ins_idx != -1;
 
@@ -4585,7 +4585,7 @@ public class PgField implements Serializable {
 	 * @param xml_object XML object
 	 * @throws SQLException the SQL exception
 	 */
-	protected void writeValue2PgSql(PreparedStatement ps, int par_idx, int ins_idx, SQLXML xml_object) throws SQLException {
+	protected void write(PreparedStatement ps, int par_idx, int ins_idx, SQLXML xml_object) throws SQLException {
 
 		boolean upsert = ins_idx != -1;
 
@@ -4611,7 +4611,7 @@ public class PgField implements Serializable {
 	 * @param min_word_len_filter whether it exceeds minimum word length
 	 * @param lucene_numeric_index whether numeric values are stored in Lucene index
 	 */
-	protected void writeValue2LucIdx(org.apache.lucene.document.Document lucene_doc, String name, String value, boolean min_word_len_filter, boolean lucene_numeric_index) {
+	protected void write(org.apache.lucene.document.Document lucene_doc, String name, String value, boolean min_word_len_filter, boolean lucene_numeric_index) {
 
 		if (attr_sel_rdy) {
 
@@ -4723,7 +4723,7 @@ public class PgField implements Serializable {
 	 * @param value content
 	 * @param min_word_len_filter whether it exceeds minimum word length
 	 */
-	protected void writeValue2SphDs(BufferedWriter buffw, String attr_name, String value, boolean min_word_len_filter) {
+	protected void write(BufferedWriter buffw, String attr_name, String value, boolean min_word_len_filter) {
 
 		try {
 
@@ -4817,7 +4817,7 @@ public class PgField implements Serializable {
 	 * @param concat_value_space the JSON key value space with concatenation
 	 * @return boolean whether value is successfully set
 	 */
-	protected boolean writeValue2JsonBuf(JsonSchemaVersion schema_ver, String value, boolean fragment, final String concat_value_space) {
+	protected boolean write(JsonSchemaVersion schema_ver, String value, boolean fragment, final String concat_value_space) {
 
 		if (jsonb == null)
 			return false;
@@ -4942,15 +4942,15 @@ public class PgField implements Serializable {
 	// XPath evaluation over PostgreSQL
 
 	/**
-	 * Retrieve value from ResultSet.
+	 * Retrieve content from ResultSet.
 	 *
 	 * @param rset result set
 	 * @param par_idx parameter index id
 	 * @param fill_default_value whether to fill default value in case of empty
-	 * @return String retrieved value
+	 * @return String retrieved content
 	 * @throws SQLException the SQL exception
 	 */
-	public String retrieveValue(ResultSet rset, int par_idx, boolean fill_default_value) throws SQLException {
+	public String retrieve(ResultSet rset, int par_idx, boolean fill_default_value) throws SQLException {
 
 		Object obj = rset.getObject(par_idx);
 
@@ -5098,7 +5098,7 @@ public class PgField implements Serializable {
 	 * @param value content
 	 * @return String normalized content
 	 */
-	public String normalizeAsJson(JsonSchemaVersion schema_ver, String value) {
+	public String normalize(JsonSchemaVersion schema_ver, String value) {
 
 		if (value == null || value.isEmpty()) {
 

@@ -318,7 +318,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					else if (field.document_key) {
 
-						field.writeValue2PgSql(ps, par_idx, ins_idx, document_id);
+						field.write(ps, par_idx, ins_idx, document_id);
 						occupied[f] = true;
 
 					}
@@ -356,7 +356,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 							if (!content.isEmpty()) {
 
-								field.writeValue2PgSql(ps, par_idx, ins_idx, content);
+								field.write(ps, par_idx, ins_idx, content);
 								occupied[f] = true;
 
 							}
@@ -382,7 +382,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 								xml_object.setString(content);
 
-								field.writeValue2PgSql(ps, par_idx, ins_idx, xml_object);
+								field.write(ps, par_idx, ins_idx, xml_object);
 
 								xml_object.free();
 
@@ -433,7 +433,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					else if (field.document_key) {
 
-						field.writeValue2PgSql(ps, par_idx, ins_idx, document_id);
+						field.write(ps, par_idx, ins_idx, document_id);
 						occupied[f] = true;
 
 					}
@@ -446,7 +446,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 							if (!content.isEmpty()) {
 
-								field.writeValue2PgSql(ps, par_idx, ins_idx, content);
+								field.write(ps, par_idx, ins_idx, content);
 								occupied[f] = true;
 
 							}
@@ -472,7 +472,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 								xml_object.setString(content);
 
-								field.writeValue2PgSql(ps, par_idx, ins_idx, xml_object);
+								field.write(ps, par_idx, ins_idx, xml_object);
 
 								xml_object.free();
 

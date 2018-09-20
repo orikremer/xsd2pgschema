@@ -6183,7 +6183,7 @@ public class PgSchema implements Serializable {
 
 				switch (terminus) {
 				case element:
-					content = field.retrieveValue(rset, 1, fill_default_value);
+					content = field.retrieve(rset, 1, fill_default_value);
 
 					if (content != null && !content.isEmpty()) {
 
@@ -6244,7 +6244,7 @@ public class PgSchema implements Serializable {
 					}
 					break;
 				case simple_content:
-					content = field.retrieveValue(rset, 1, fill_default_value);
+					content = field.retrieve(rset, 1, fill_default_value);
 
 					// simple content
 
@@ -6308,7 +6308,7 @@ public class PgSchema implements Serializable {
 					}
 					break;
 				case attribute:
-					content = field.retrieveValue(rset, 1, fill_default_value);
+					content = field.retrieve(rset, 1, fill_default_value);
 
 					// attribute
 
@@ -6448,7 +6448,7 @@ public class PgSchema implements Serializable {
 						PgField _field = table.getField(column_name);
 
 						if (_field != null)
-							content = field.retrieveValue(rset, 1, fill_default_value);
+							content = field.retrieve(rset, 1, fill_default_value);
 
 						xml_writer.writeCharacters(content);
 						xml_writer.writeCharacters(xmlb.getLineFeedCode());
@@ -6537,7 +6537,7 @@ public class PgSchema implements Serializable {
 
 				if (field.attribute) {
 
-					String content = field.retrieveValue(rset, param_id, fill_default_value);
+					String content = field.retrieve(rset, param_id, fill_default_value);
 
 					if ((content != null && !content.isEmpty()) || field.required) {
 
@@ -6631,7 +6631,7 @@ public class PgSchema implements Serializable {
 
 				else if (field.simple_content && !field.simple_attribute) {
 
-					String content = field.retrieveValue(rset, param_id, fill_default_value);
+					String content = field.retrieve(rset, param_id, fill_default_value);
 
 					if (content != null && !content.isEmpty()) {
 
@@ -6666,7 +6666,7 @@ public class PgSchema implements Serializable {
 
 				else if (field.element) {
 
-					String content = field.retrieveValue(rset, param_id, fill_default_value);
+					String content = field.retrieve(rset, param_id, fill_default_value);
 
 					if ((content != null && !content.isEmpty()) || field.required) {
 
@@ -6918,7 +6918,7 @@ public class PgSchema implements Serializable {
 
 					if (field.attribute) {
 
-						String content = field.retrieveValue(rset, param_id, fill_default_value);
+						String content = field.retrieve(rset, param_id, fill_default_value);
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
@@ -6939,7 +6939,7 @@ public class PgSchema implements Serializable {
 
 					else if ((field.simple_attribute || field.simple_attr_cond) && as_attr) {
 
-						String content = field.retrieveValue(rset, param_id, fill_default_value);
+						String content = field.retrieve(rset, param_id, fill_default_value);
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
@@ -7006,7 +7006,7 @@ public class PgSchema implements Serializable {
 
 					if (field.simple_content && !field.simple_attribute && !as_attr) {
 
-						String content = field.retrieveValue(rset, param_id, fill_default_value);
+						String content = field.retrieve(rset, param_id, fill_default_value);
 
 						if (content != null && !content.isEmpty()) {
 
@@ -7041,7 +7041,7 @@ public class PgSchema implements Serializable {
 
 					else if (field.element) {
 
-						String content = field.retrieveValue(rset, param_id, fill_default_value);
+						String content = field.retrieve(rset, param_id, fill_default_value);
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
@@ -7258,11 +7258,11 @@ public class PgSchema implements Serializable {
 
 				switch (terminus) {
 				case element:
-					content = field.retrieveValue(rset, 1, fill_default_value);
+					content = field.retrieve(rset, 1, fill_default_value);
 					jsonb.writeFieldFrag(field, as_attr, content);
 					break;
 				case simple_content:
-					content = field.retrieveValue(rset, 1, fill_default_value);
+					content = field.retrieve(rset, 1, fill_default_value);
 
 					// simple content
 
@@ -7279,7 +7279,7 @@ public class PgSchema implements Serializable {
 						jsonb.writeFieldFrag(field, as_attr = true, content);
 					break;
 				case attribute:
-					content = field.retrieveValue(rset, 1, fill_default_value);
+					content = field.retrieve(rset, 1, fill_default_value);
 
 					// attribute
 
@@ -7329,7 +7329,7 @@ public class PgSchema implements Serializable {
 						PgField _field = table.getField(column_name);
 
 						if (_field != null)
-							content = field.retrieveValue(rset, 1, fill_default_value);
+							content = field.retrieve(rset, 1, fill_default_value);
 
 						jsonb.buffer.append(content + jsonb.concat_line_feed);
 
@@ -7416,7 +7416,7 @@ public class PgSchema implements Serializable {
 
 				if (field.attribute) {
 
-					String content = field.retrieveValue(rset, param_id, fill_default_value);
+					String content = field.retrieve(rset, param_id, fill_default_value);
 
 					if ((content != null && !content.isEmpty()) || field.required) {
 
@@ -7501,7 +7501,7 @@ public class PgSchema implements Serializable {
 
 				else if (field.simple_content && !field.simple_attribute) {
 
-					String content = field.retrieveValue(rset, param_id, fill_default_value);
+					String content = field.retrieve(rset, param_id, fill_default_value);
 
 					if (content != null && !content.isEmpty()) {
 
@@ -7522,7 +7522,7 @@ public class PgSchema implements Serializable {
 
 				else if (field.element) {
 
-					String content = field.retrieveValue(rset, param_id, fill_default_value);
+					String content = field.retrieve(rset, param_id, fill_default_value);
 
 					if ((content != null && !content.isEmpty()) || field.required) {
 
@@ -7734,12 +7734,12 @@ public class PgSchema implements Serializable {
 
 					if (field.attribute) {
 
-						String content = field.retrieveValue(rset, param_id, fill_default_value);
+						String content = field.retrieve(rset, param_id, fill_default_value);
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
 							if (array_field)
-								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.concat_value_space);
+								field.write(jsonb.schema_ver, content, false, jsonb.concat_value_space);
 
 							else {
 
@@ -7762,12 +7762,12 @@ public class PgSchema implements Serializable {
 
 					else if ((field.simple_attribute || field.simple_attr_cond) && as_attr) {
 
-						String content = field.retrieveValue(rset, param_id, fill_default_value);
+						String content = field.retrieve(rset, param_id, fill_default_value);
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
 							if (array_field)
-								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.concat_value_space);
+								field.write(jsonb.schema_ver, content, false, jsonb.concat_value_space);
 
 							else {
 
@@ -7836,12 +7836,12 @@ public class PgSchema implements Serializable {
 
 					if (field.simple_content && !field.simple_attribute && !as_attr) {
 
-						String content = field.retrieveValue(rset, param_id, fill_default_value);
+						String content = field.retrieve(rset, param_id, fill_default_value);
 
 						if (content != null && !content.isEmpty()) {
 
 							if (array_field)
-								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.concat_value_space);
+								field.write(jsonb.schema_ver, content, false, jsonb.concat_value_space);
 
 							else {
 
@@ -7864,12 +7864,12 @@ public class PgSchema implements Serializable {
 
 					else if (field.element) {
 
-						String content = field.retrieveValue(rset, param_id, fill_default_value);
+						String content = field.retrieve(rset, param_id, fill_default_value);
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
 							if (array_field)
-								field.writeValue2JsonBuf(jsonb.schema_ver, content, false, jsonb.concat_value_space);
+								field.write(jsonb.schema_ver, content, false, jsonb.concat_value_space);
 
 							else {
 

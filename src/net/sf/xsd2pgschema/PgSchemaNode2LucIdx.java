@@ -224,7 +224,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 					if ((value == null ? 0 : value.length()) == 0)
 						continue;
 
-					field.writeValue2LucIdx(lucene_doc, field_prefix + field.name, value, value_len >= min_word_len, numeric_index);
+					field.write(lucene_doc, field_prefix + field.name, value, value_len >= min_word_len, numeric_index);
 
 				}
 
@@ -325,7 +325,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 					if ((value == null ? 0 : value.length()) == 0)
 						continue;
 
-					field.writeValue2LucIdx(lucene_doc, field_prefix + field.name, value, value_len >= min_word_len, numeric_index);
+					field.write(lucene_doc, field_prefix + field.name, value, value_len >= min_word_len, numeric_index);
 
 				}
 

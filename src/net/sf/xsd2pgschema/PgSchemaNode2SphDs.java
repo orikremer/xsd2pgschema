@@ -217,7 +217,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 				if ((value == null ? 0 : value.length()) == 0)
 					continue;
 
-				field.writeValue2SphDs(buffw, field_prefix + field.name, value, value_len >= min_word_len);
+				field.write(buffw, field_prefix + field.name, value, value_len >= min_word_len);
 
 			}
 

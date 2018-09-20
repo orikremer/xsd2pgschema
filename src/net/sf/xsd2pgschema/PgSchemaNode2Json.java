@@ -534,7 +534,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			PgField field = fields.get(f);
 
-			if (field.jsonable && field.writeValue2JsonBuf(schema_ver, values[f], false, concat_value_space))
+			if (field.jsonable && field.write(schema_ver, values[f], false, concat_value_space))
 				not_empty = true;
 
 		}

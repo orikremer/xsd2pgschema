@@ -1211,9 +1211,9 @@ public class JsonBuilder extends CommonBuilder {
 	public void writeFieldFrag(PgField field, boolean as_attr, String content) {
 
 		if (array_all)
-			field.writeValue2JsonBuf(schema_ver, content, false, concat_value_space);
+			field.write(schema_ver, content, false, concat_value_space);
 		else
-			buffer.append(getIndentSpaces(1) + getKeyDecl(field, as_attr) + field.normalizeAsJson(schema_ver, content) + line_feed_code + ",");
+			buffer.append(getIndentSpaces(1) + getKeyDecl(field, as_attr) + field.normalize(schema_ver, content) + line_feed_code + ",");
 
 	}
 
@@ -1257,7 +1257,7 @@ public class JsonBuilder extends CommonBuilder {
 	public void writeAnyFieldFrag(PgField field, String local_name, boolean as_attr, String content, final int indent_level) {
 
 		if (array_all)
-			field.writeValue2JsonBuf(schema_ver, content, true, concat_value_space);
+			field.write(schema_ver, content, true, concat_value_space);
 
 		else
 			writeAnyField(local_name, as_attr, content, indent_level);
@@ -1335,7 +1335,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		boolean array_field = table != null && !table.virtual && !table.list_holder && !table.bridge && array_all;
 
-		buffer.append(getIndentSpaces(indent_level) + getKeyDecl(field, as_attr) + (array_field ? "[" : "") + field.normalizeAsJson(schema_ver, content) + (array_field ? end_array_concat_code : concat_line_feed));
+		buffer.append(getIndentSpaces(indent_level) + getKeyDecl(field, as_attr) + (array_field ? "[" : "") + field.normalize(schema_ver, content) + (array_field ? end_array_concat_code : concat_line_feed));
 
 	}
 
