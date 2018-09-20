@@ -286,6 +286,12 @@ public class XmlSplitterImpl {
 
 			xml_event_factory = XMLEventFactory.newInstance();
 
+			XMLInputFactory in_factory = XMLInputFactory.newInstance();
+
+			InputStream in;
+			XMLEventReader reader;
+			XMLEvent event;
+			EventHandler handler;
 			Path xml_file_path;
 
 			while ((xml_file_path = xml_file_queue.poll()) != null) {
@@ -294,11 +300,9 @@ public class XmlSplitterImpl {
 
 				// XML event reader of source XML file
 
-				XMLInputFactory in_factory = XMLInputFactory.newInstance();
+				in = PgSchemaUtil.getSchemaInputStream(xml_file_path);
 
-				InputStream in = PgSchemaUtil.getSchemaInputStream(xml_file_path);
-
-				XMLEventReader reader = in_factory.createXMLEventReader(in);
+				reader = in_factory.createXMLEventReader(in);
 
 				// XML event writer for XML header
 
@@ -313,9 +317,9 @@ public class XmlSplitterImpl {
 
 				while (reader.hasNext()) {
 
-					XMLEvent event = reader.nextEvent();
+					event = reader.nextEvent();
 
-					EventHandler handler = read_handlers.get(event.getEventType());
+					handler = read_handlers.get(event.getEventType());
 
 					handler.handleEvent(event);
 
@@ -459,9 +463,11 @@ public class XmlSplitterImpl {
 
 					if (iter_attr != null) {
 
+						javax.xml.stream.events.Attribute attr;
+
 						while (iter_attr.hasNext()) {
 
-							javax.xml.stream.events.Attribute attr = (Attribute) iter_attr.next();
+							attr = (Attribute) iter_attr.next();
 
 							if (doc_key_path.equals(attr_doc_key_holder + "/@" + attr.getName())) {
 

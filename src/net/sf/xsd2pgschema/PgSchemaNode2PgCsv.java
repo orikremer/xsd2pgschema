@@ -165,11 +165,13 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		}
 
+		PgField field;
+
 		if (rel_data_ext) {
 
 			for (int f = 0; f < fields_size; f++) {
 
-				PgField field = fields.get(f);
+				field = fields.get(f);
 
 				if (field.omissible)
 					continue;
@@ -256,7 +258,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			for (int f = 0; f < fields_size; f++) {
 
-				PgField field = fields.get(f);
+				field = fields.get(f);
 
 				// nested_key
 
@@ -326,9 +328,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			for (int f = 0; f < fields_size; f++) {
 
-				PgField field = fields.get(f);
-
-				if (field.omissible)
+				if (fields.get(f).omissible)
 					continue;
 
 				sb.append(values[f] + pg_delimiter);

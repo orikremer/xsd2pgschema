@@ -408,32 +408,28 @@ public class PgTable implements Serializable {
 		field.minoccurs = ref_field.minoccurs;
 		field.list_holder = ref_field.list_holder;
 
-		Node parent_node = node.getParentNode();
+		Node parent_node = node.getParentNode(), parent_attr;
+
+		NamedNodeMap parent_attrs;
 
 		while (parent_node != null) {
 
 			if (parent_node.getNodeType() == Node.ELEMENT_NODE && parent_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri) && parent_node.getLocalName().equals("element"))
 				break;
 
-			NamedNodeMap parent_attrs = parent_node.getAttributes();
+			parent_attrs = parent_node.getAttributes();
 
 			if (parent_attrs != null) {
 
 				for (int i = 0; i < parent_attrs.getLength(); i++) {
 
-					Node parent_attr = parent_attrs.item(i);
+					parent_attr = parent_attrs.item(i);
 
-					if (parent_attr != null) {
+					if (parent_attr != null && parent_attr.getNodeName().equals("name")) {
 
-						String node_name = parent_attr.getNodeName();
+						field.parent_node = parent_attr.getNodeValue();
 
-						if (node_name.equals("name")) {
-
-							field.parent_node = parent_attr.getNodeValue();
-
-							break;
-						}
-
+						break;
 					}
 
 				}

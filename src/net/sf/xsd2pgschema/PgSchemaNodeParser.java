@@ -641,15 +641,16 @@ public abstract class PgSchemaNodeParser {
 
 		Document doc = null;
 		Element doc_root = null;
+		Node _child;
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			String _child_name = ((Element) child).getLocalName();
+			String child_name = ((Element) child).getLocalName();
 
-			if (fields.parallelStream().filter(field -> field.element).anyMatch(field -> _child_name.equals(field.xname)))
+			if (fields.parallelStream().filter(field -> field.element).anyMatch(field -> child_name.equals(field.xname)))
 				continue;
 
 			if (!has_any) { // initial instance of new document
@@ -661,7 +662,7 @@ public abstract class PgSchemaNodeParser {
 
 			}
 
-			Node _child = doc.importNode(child, true);
+			_child = doc.importNode(child, true);
 
 			removeWhiteSpace(_child);
 			removePrefixOfElement(_child);
@@ -776,9 +777,11 @@ public abstract class PgSchemaNodeParser {
 
 			HashSet<String> prefixes = new HashSet<String>();
 
+			Node attr;
+
 			for (int i = 0; i < attrs.getLength(); i++) {
 
-				Node attr = attrs.item(i);
+				attr = attrs.item(i);
 
 				if (attr != null) {
 
@@ -793,7 +796,7 @@ public abstract class PgSchemaNodeParser {
 
 			for (int i = 0; i < attrs.getLength(); i++) {
 
-				Node attr = attrs.item(i);
+				attr = attrs.item(i);
 
 				if (attr != null) {
 
@@ -890,6 +893,7 @@ public abstract class PgSchemaNodeParser {
 
 			if (((Element) child).getLocalName().equals(nested_table.xname))
 				return true;
+
 		}
 
 		return false;

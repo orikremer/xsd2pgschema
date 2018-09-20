@@ -83,9 +83,11 @@ public class PgForeignKey {
 		child_field_xnames = PgSchemaUtil.extractFieldXPath(node);
 		child_field_pnames = case_sense ? child_field_xnames : child_field_xnames.toLowerCase();
 
+		Node key_node;
+
 		for (int i = 0; i < key_nodes.getLength(); i++) {
 
-			Node key_node = key_nodes.item(i);
+			key_node = key_nodes.item(i);
 
 			if (!key_name.equals(((Element) key_node).getAttribute("name")))
 				continue;

@@ -158,11 +158,13 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		}
 
+		PgField field;
+
 		if (!rel_data_ext) {
 
 			for (int f = 0; f < fields_size; f++) {
 
-				PgField field = fields.get(f);
+				field = fields.get(f);
 
 				// nested_key
 
@@ -215,7 +217,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			for (int f = 0; f < fields_size; f++) {
 
-				PgField field = fields.get(f);
+				field = fields.get(f);
 
 				if (field.indexable) {
 
@@ -236,7 +238,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			for (int f = 0; f < fields_size; f++) {
 
-				PgField field = fields.get(f);
+				field = fields.get(f);
 
 				// primary_key
 
@@ -309,7 +311,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			for (int f = 0; f < fields_size; f++) {
 
-				PgField field = fields.get(f);
+				field = fields.get(f);
 
 				if (field.system_key) {
 

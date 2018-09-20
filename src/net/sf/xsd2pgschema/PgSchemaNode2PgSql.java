@@ -92,9 +92,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				boolean pg_named_schema = schema.option.pg_named_schema;
 
+				PgField field;
+
 				for (int f = 0; f < fields_size; f++) {
 
-					PgField field = fields.get(f);
+					field = fields.get(f);
 
 					if (field.omissible)
 						continue;
@@ -104,7 +106,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				}
 
 				if (update && rel_data_ext)
-					upsert = fields.parallelStream().filter(field -> field.primary_key).findFirst().get().unique_key;
+					upsert = fields.parallelStream().filter(_field -> _field.primary_key).findFirst().get().unique_key;
 
 				// upsert
 
@@ -118,7 +120,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						for (int f = 0; f < fields_size; f++) {
 
-							PgField field = fields.get(f);
+							field = fields.get(f);
 
 							if (field.omissible)
 								continue;
@@ -135,13 +137,13 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 						sql.setLength(sql.length() - 2);
 						sql.append(" )");
 
-						String pkey_name = PgSchemaUtil.avoidPgReservedWords(fields.parallelStream().filter(field -> field.primary_key).findFirst().get().pname);
+						String pkey_name = PgSchemaUtil.avoidPgReservedWords(fields.parallelStream().filter(_field -> _field.primary_key).findFirst().get().pname);
 
 						sql.append(" ON CONFLICT ( " + pkey_name + " ) DO UPDATE SET ");
 
 						for (int f = 0; f < fields_size; f++) {
 
-							PgField field = fields.get(f);
+							field = fields.get(f);
 
 							if (field.omissible || field.primary_key)
 								continue;
@@ -183,7 +185,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						for (int f = 0; f < fields_size; f++) {
 
-							PgField field = fields.get(f);
+							field = fields.get(f);
 
 							if (field.omissible)
 								continue;
@@ -305,11 +307,13 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		try {
 
+			PgField field;
+
 			if (rel_data_ext) {
 
 				for (int f = 0; f < fields_size; f++) {
 
-					PgField field = fields.get(f);
+					field = fields.get(f);
 
 					if (field.omissible)
 						continue;
@@ -419,7 +423,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				for (int f = 0; f < fields_size; f++) {
 
-					PgField field = fields.get(f);
+					field = fields.get(f);
 
 					// nested_key
 
@@ -514,7 +518,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			for (int f = 0; f < fields_size; f++) {
 
-				PgField field = fields.get(f);
+				field = fields.get(f);
 
 				if (field.omissible)
 					continue;
@@ -532,7 +536,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				for (int f = 0; f < fields_size; f++) {
 
-					PgField field = fields.get(f);
+					field = fields.get(f);
 
 					if (field.omissible || field.primary_key)
 						continue;

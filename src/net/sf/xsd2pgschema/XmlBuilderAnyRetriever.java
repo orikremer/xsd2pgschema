@@ -154,14 +154,16 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 
 				nest_test.has_child_elem = true;
 
+				String attr_name, content;
+
 				for (int i = 0; i < atts.getLength(); i++) {
 
-					String attr_name = atts.getQName(i);
+					attr_name = atts.getQName(i);
 
 					if (attr_name.startsWith("xmlns"))
 						continue;
 
-					String content = atts.getValue(i);
+					content = atts.getValue(i);
 
 					if (content != null && !content.isEmpty()) {
 

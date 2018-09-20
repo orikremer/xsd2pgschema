@@ -909,9 +909,7 @@ public class JsonBuilder extends CommonBuilder {
 				if (field.jsonb_null_size == 1 && field.getJsonSchemaFormat(schema_ver) != null)
 					continue;
 
-				boolean array_field = array_json || field.jsonb_col_size > 1;
-
-				writeField(field, as_attr, array_field, indent_level);
+				writeField(field, as_attr, array_json || field.jsonb_col_size > 1, indent_level);
 
 			}
 
@@ -946,9 +944,7 @@ public class JsonBuilder extends CommonBuilder {
 
 			for (String fragment : fragments) {
 
-				String[] items = fragment.split("\n");
-
-				for (String item : items) {
+				for (String item : fragment.split("\n")) {
 
 					String item_path = item.substring(0, item.indexOf(':'));
 					String parent_path = getParentPath(item_path);
@@ -1002,13 +998,13 @@ public class JsonBuilder extends CommonBuilder {
 
 			item_paths.stream().filter(item_path -> getParentPath(item_path).equals(cur_path) && getLastNameOfPath(item_path).startsWith("@")).forEach(item_path -> {
 
+				boolean has_value;
+
 				for (String fragment : fragments) {
 
-					boolean has_value = false;
+					has_value = false;
 
-					String[] items = fragment.split("\n");
-
-					for (String item : items) {
+					for (String item : fragment.split("\n")) {
 
 						if (item.substring(0, item.lastIndexOf(':')).equals(item_path)) {
 
@@ -1051,9 +1047,7 @@ public class JsonBuilder extends CommonBuilder {
 
 			for (String fragment : fragments) {
 
-				String[] items = fragment.split("\n");
-
-				for (String item : items) {
+				for (String item : fragment.split("\n")) {
 
 					if (item.substring(0, item.lastIndexOf(':')).equals(item_path)) {
 
@@ -1165,13 +1159,8 @@ public class JsonBuilder extends CommonBuilder {
 			if (field.jsonb == null)
 				continue;
 
-			if ((field.required || field.jsonb_not_empty) && field.jsonb_col_size > 0) {
-
-				boolean array_field = array_all || (!unique_table && field.jsonb_col_size > 1);
-
-				writeField(field, false, array_field, indent_level);
-
-			}
+			if ((field.required || field.jsonb_not_empty) && field.jsonb_col_size > 0)
+				writeField(field, false, array_all || (!unique_table && field.jsonb_col_size > 1), indent_level);
 
 			field.jsonb.setLength(0);
 

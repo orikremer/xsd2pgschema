@@ -231,11 +231,12 @@ public class PgSchema implements Serializable {
 
 		NamedNodeMap root_attrs = root_node.getAttributes();
 
+		Node root_attr;
 		String node_name, target_namespace;
 
 		for (int i = 0; i < root_attrs.getLength(); i++) {
 
-			Node root_attr = root_attrs.item(i);
+			root_attr = root_attrs.item(i);
 
 			if (root_attr != null) {
 
@@ -313,7 +314,7 @@ public class PgSchema implements Serializable {
 		// include or import namespace
 
 		Element child_elem;
-		String child_name;
+		String child_name, schema_location;
 
 		for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -331,7 +332,7 @@ public class PgSchema implements Serializable {
 
 			option.setPrefixOfXmlSchema(doc, def_schema_location);
 
-			String schema_location = child_elem.getAttribute("schemaLocation");
+			schema_location = child_elem.getAttribute("schemaLocation");
 
 			if (schema_location != null && !schema_location.isEmpty()) {
 
@@ -686,9 +687,11 @@ public class PgSchema implements Serializable {
 
 				Iterator<PgField> iterator = table.fields.iterator();
 
+				PgField field;
+
 				while (iterator.hasNext()) {
 
-					PgField field = iterator.next();
+					field = iterator.next();
 
 					if (field.nested_key) {
 
@@ -752,27 +755,31 @@ public class PgSchema implements Serializable {
 
 		tables.parallelStream().forEach(table -> {
 
-			Iterator<PgField> iterator = table.fields.iterator();
+			Iterator<PgField> iterator = table.fields.iterator(), _iterator;
+
+			PgField field, _field;
+			PgTable nested_table, _nested_table;
+			boolean changed;
 
 			while (iterator.hasNext()) {
 
-				PgField field = iterator.next();
+				field = iterator.next();
 
 				if (!field.nested_key)
 					continue;
 
-				PgTable nested_table = getForeignTable(field);
+				nested_table = getForeignTable(field);
 
 				if (nested_table.virtual)
 					continue;
 
-				boolean changed = false;
+				changed = false;
 
-				Iterator<PgField> _iterator = table.fields.iterator();
+				_iterator = table.fields.iterator();
 
 				while (_iterator.hasNext()) {
 
-					PgField _field = _iterator.next();
+					_field = _iterator.next();
 
 					if (!_field.nested_key)
 						continue;
@@ -780,7 +787,7 @@ public class PgSchema implements Serializable {
 					if (_field.equals(field))
 						continue;
 
-					PgTable _nested_table = getForeignTable(_field);
+					_nested_table = getForeignTable(_field);
 
 					if (!_nested_table.virtual)
 						continue;
@@ -846,21 +853,23 @@ public class PgSchema implements Serializable {
 
 				field.parent_node = null;
 
-				boolean infinite_loop = false;
+				boolean infinite_loop = false, has_content, has_foreign_key;
+
+				PgTable parent_table, _parent_table;
 
 				for (String parent_node : parent_nodes) {
 
-					PgTable parent_table = getCanTable(field.foreign_schema, parent_node);
+					parent_table = getCanTable(field.foreign_schema, parent_node);
 
 					if (parent_table == null)
 						continue;
 
-					boolean has_content = false;
-					boolean has_foreign_key = false;
+					has_content = false;
+					has_foreign_key = false;
 
 					do {
 
-						PgTable _parent_table = parent_table;
+						_parent_table = parent_table;
 
 						for (PgField parent_field : _parent_table.fields) {
 
@@ -880,7 +889,9 @@ public class PgSchema implements Serializable {
 									for (String _parent_node : _parent_nodes) {
 
 										if (_parent_node.equals(parent_field.foreign_table_xname)) {
+
 											has_parent_node = true;
+
 											break;
 										}
 
@@ -967,9 +978,11 @@ public class PgSchema implements Serializable {
 
 					String[] _ancestor_nodes = sb.toString().split(" ");
 
+					boolean has_ancestor_node;
+
 					for (String ancestor_node : ancestor_nodes) {
 
-						boolean has_ancestor_node = false;
+						has_ancestor_node = false;
 
 						for (String _ancestor_node : _ancestor_nodes) {
 
@@ -2640,9 +2653,11 @@ public class PgSchema implements Serializable {
 
 		List<PgField> known_fields = known_table.fields;
 
+		PgField known_field;
+
 		for (PgField field : fields) {
 
-			PgField known_field = known_table.getPgField(field.pname);
+			known_field = known_table.getPgField(field.pname);
 
 			// append new field to known table
 
@@ -2694,13 +2709,13 @@ public class PgSchema implements Serializable {
 
 			if (fields.parallelStream().anyMatch(field -> !field.primary_key && field.required)) {
 
-				for (PgField known_field : known_fields) {
+				for (PgField _known_field : known_fields) {
 
-					if (table.getPgField(known_field.pname) == null) {
+					if (table.getPgField(_known_field.pname) == null) {
 
 						changed = true;
 
-						if (!known_field.primary_key && known_field.required)
+						if (!_known_field.primary_key && _known_field.required)
 							name_collision = true;
 
 					}
@@ -3337,11 +3352,15 @@ public class PgSchema implements Serializable {
 
 		// append foreign key constraint
 
+		boolean relational;
+		PgTable child_table, parent_table;
+		String[] child_field_pnames, parent_field_pnames;
+
 		for (PgForeignKey foreign_key : foreign_keys) {
 
-			boolean relational = false;
+			relational = false;
 
-			PgTable child_table = getChildTable(foreign_key);
+			child_table = getChildTable(foreign_key);
 
 			if (child_table != null)
 				relational = child_table.relational;
@@ -3349,7 +3368,7 @@ public class PgSchema implements Serializable {
 			if (!option.rel_model_ext && relational)
 				continue;
 
-			PgTable parent_table = getParentTable(foreign_key);
+			parent_table = getParentTable(foreign_key);
 
 			if (parent_table != null)
 				relational = parent_table.relational;
@@ -3357,17 +3376,19 @@ public class PgSchema implements Serializable {
 			if (!option.rel_model_ext && relational)
 				continue;
 
-			String[] child_field_pnames = foreign_key.child_field_pnames.split(" ");
-			String[] parent_field_pnames = foreign_key.parent_field_pnames.split(" ");
+			child_field_pnames = foreign_key.child_field_pnames.split(" ");
+			parent_field_pnames = foreign_key.parent_field_pnames.split(" ");
 
 			if (child_field_pnames.length == parent_field_pnames.length) {
+
+				String constraint_name;
 
 				for (int i = 0; i < child_field_pnames.length; i++) {
 
 					child_field_pnames[i] = child_field_pnames[i].replaceFirst(",$", "");
 					parent_field_pnames[i] = parent_field_pnames[i].replaceFirst(",$", "");
 
-					String constraint_name = "KR_" + foreign_key.name + (child_field_pnames.length > 1 ? "_" + i : "");
+					constraint_name = "KR_" + foreign_key.name + (child_field_pnames.length > 1 ? "_" + i : "");
 
 					if (constraint_name.length() > PgSchemaUtil.max_enum_len)
 						constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
@@ -3405,13 +3426,16 @@ public class PgSchema implements Serializable {
 
 		Iterator<PgField> iterator = table.fields.iterator();
 
+		PgField field;
+		PgTable admin_table;
+
 		while (iterator.hasNext()) {
 
-			PgField field = iterator.next();
+			field = iterator.next();
 
 			if (field.foreign_key) {
 
-				PgTable admin_table = getForeignTable(field);
+				admin_table = getForeignTable(field);
 
 				if (admin_table != null) {
 
@@ -3750,11 +3774,14 @@ public class PgSchema implements Serializable {
 
 		int total = 0;
 
+		boolean relational;
+		PgTable table;
+
 		for (PgKey key : keys) {
 
-			boolean relational = false;
+			relational = false;
 
-			PgTable table = getTable(key);
+			table = getTable(key);
 
 			if (table != null)
 				relational = table.relational;
@@ -3807,11 +3834,15 @@ public class PgSchema implements Serializable {
 
 		int total = 0;
 
+		boolean relational;
+		PgTable child_table, parent_table;
+		String[] child_field_pnames, parent_field_pnames;
+
 		for (PgForeignKey foreign_key : foreign_keys) {
 
-			boolean relational = false;
+			relational = false;
 
-			PgTable child_table = getChildTable(foreign_key);
+			child_table = getChildTable(foreign_key);
 
 			if (child_table != null)
 				relational = child_table.relational;
@@ -3819,7 +3850,7 @@ public class PgSchema implements Serializable {
 			if (!option.rel_model_ext && relational)
 				continue;
 
-			PgTable parent_table = getParentTable(foreign_key);
+			parent_table = getParentTable(foreign_key);
 
 			if (parent_table != null)
 				relational = parent_table.relational;
@@ -3827,8 +3858,8 @@ public class PgSchema implements Serializable {
 			if (!option.rel_model_ext && relational)
 				continue;
 
-			String[] child_field_pnames = foreign_key.child_field_pnames.split(" ");
-			String[] parent_field_pnames = foreign_key.parent_field_pnames.split(" ");
+			child_field_pnames = foreign_key.child_field_pnames.split(" ");
+			parent_field_pnames = foreign_key.parent_field_pnames.split(" ");
 
 			if (child_field_pnames.length == parent_field_pnames.length)
 				total += child_field_pnames.length;
@@ -3879,14 +3910,18 @@ public class PgSchema implements Serializable {
 
 		option.post_editor_resolved = true;
 
+		String[] key_val, key;
+		String schema_name, table_name, field_name;
+		PgTable table;
+
 		for (String filt_in : xml_post_editor.filt_ins) {
 
-			String[] key_val = filt_in.split(":");
-			String[] key = key_val[0].split("\\.");
+			key_val = filt_in.split(":");
+			key = key_val[0].split("\\.");
 
-			String schema_name = null;
-			String table_name = null;
-			String field_name = null;
+			schema_name = null;
+			table_name = null;
+			field_name = null;
 
 			if (option.pg_named_schema) {
 
@@ -3924,7 +3959,7 @@ public class PgSchema implements Serializable {
 
 			}
 
-			PgTable table = getTable(schema_name, table_name);
+			table = getTable(schema_name, table_name);
 
 			if (table == null)
 				throw new PgSchemaException("Not found " + table_name + ".");
@@ -3951,21 +3986,22 @@ public class PgSchema implements Serializable {
 		// select nested table
 
 		boolean append_table;
+		PgTable nested_table;
 
 		do {
 
 			append_table = false;
 
-			for (PgTable table : tables) {
+			for (PgTable _table : tables) {
 
-				if (table.filt_out) {
+				if (_table.filt_out) {
 
-					for (PgField field : table.fields) {
+					for (PgField field : _table.fields) {
 
 						if (!field.nested_key)
 							continue;
 
-						PgTable nested_table = getForeignTable(field);
+						nested_table = getForeignTable(field);
 
 						if (nested_table.filt_out)
 							continue;
@@ -3984,12 +4020,12 @@ public class PgSchema implements Serializable {
 
 		// inverse filt_out flag and update requirement
 
-		tables.parallelStream().forEach(table -> {
+		tables.parallelStream().forEach(_table -> {
 
-			table.filt_out = !table.filt_out;
+			_table.filt_out = !_table.filt_out;
 
-			if (table.filt_out)
-				table.required = table.writable = false;
+			if (_table.filt_out)
+				_table.required = _table.writable = false;
 
 		});
 
@@ -4013,14 +4049,18 @@ public class PgSchema implements Serializable {
 
 		option.post_editor_resolved = true;
 
+		String[] key_val, key;
+		String schema_name, table_name, field_name;
+		PgTable table;
+
 		for (String filt_out : xml_post_editor.filt_outs) {
 
-			String[] key_val = filt_out.split(":");
-			String[] key = key_val[0].split("\\.");
+			key_val = filt_out.split(":");
+			key = key_val[0].split("\\.");
 
-			String schema_name = null;
-			String table_name = null;
-			String field_name = null;
+			schema_name = null;
+			table_name = null;
+			field_name = null;
 
 			if (option.pg_named_schema) {
 
@@ -4060,7 +4100,7 @@ public class PgSchema implements Serializable {
 
 			String[] rex_pattern = key_val[1].split("\\|");
 
-			PgTable table = getTable(schema_name, table_name);
+			table = getTable(schema_name, table_name);
 
 			if (table == null)
 				throw new PgSchemaException("Not found " + table_name + ".");
@@ -4120,16 +4160,21 @@ public class PgSchema implements Serializable {
 
 		option.post_editor_resolved = true;
 
+		String[] key_val, key;
+		String schema_name, table_name, field_name, filled_text;
+		PgTable table;
+		PgField field;
+
 		for (String fill_this : xml_post_editor.fill_these) {
 
-			String[] key_val = fill_this.split(":");
-			String[] key = key_val[0].split("\\.");
+			key_val = fill_this.split(":");
+			key = key_val[0].split("\\.");
 
-			String schema_name = null;
-			String table_name = null;
-			String field_name = null;
+			schema_name = null;
+			table_name = null;
+			field_name = null;
 
-			String filled_text = key_val.length > 1 ? key_val[1] : "";
+			filled_text = key_val.length > 1 ? key_val[1] : "";
 
 			if (option.pg_named_schema) {
 
@@ -4167,7 +4212,7 @@ public class PgSchema implements Serializable {
 
 			}
 
-			PgTable table = getTable(schema_name, table_name);
+			table = getTable(schema_name, table_name);
 
 			if (table == null)
 				throw new PgSchemaException("Not found " + table_name + ".");
@@ -4175,7 +4220,7 @@ public class PgSchema implements Serializable {
 			if (table.xs_type.equals(XsTableType.xs_root))
 				throw new PgSchemaException(table_name + " is unselectable (root table).");
 
-			PgField field = table.getField(field_name);
+			field = table.getField(field_name);
 
 			if (field != null) {
 
@@ -4252,13 +4297,16 @@ public class PgSchema implements Serializable {
 		if (index_filter.attrs.size() == 0)
 			return;
 
+		String[] key;
+		String schema_name = PgSchemaUtil.pg_public_schema_name, table_name, field_name;
+		PgTable table;
+
 		for (String attr : index_filter.attrs) {
 
-			String[] key = attr.split("\\.");
+			key = attr.split("\\.");
 
-			String schema_name = PgSchemaUtil.pg_public_schema_name;
-			String table_name = null;
-			String field_name = null;
+			table_name = null;
+			field_name = null;
 
 			switch (key.length) {
 			case 2:
@@ -4270,7 +4318,7 @@ public class PgSchema implements Serializable {
 				throw new PgSchemaException(attr + ": argument should be expressed by \"table_name.column_name\".");
 			}
 
-			PgTable table = getTable(schema_name, table_name);
+			table = getTable(schema_name, table_name);
 
 			if (table == null)
 				throw new PgSchemaException("Not found " + table_name + ".");
@@ -4316,13 +4364,17 @@ public class PgSchema implements Serializable {
 		if (index_filter.sph_mvas.size() == 0)
 			return;
 
+		String[] key;
+		String schema_name = PgSchemaUtil.pg_public_schema_name, table_name, field_name;
+		PgTable table;
+		PgField field;
+
 		for (String sph_mva : index_filter.sph_mvas) {
 
-			String[] key = sph_mva.split("\\.");
+			key = sph_mva.split("\\.");
 
-			String schema_name = PgSchemaUtil.pg_public_schema_name;
-			String table_name = null;
-			String field_name = null;
+			table_name = null;
+			field_name = null;
 
 			switch (key.length) {
 			case 2:
@@ -4334,7 +4386,7 @@ public class PgSchema implements Serializable {
 				throw new PgSchemaException(sph_mva + ": argument should be expressed by \"table_name.column_name\".");
 			}
 
-			PgTable table = getTable(schema_name, table_name);
+			table = getTable(schema_name, table_name);
 
 			if (table == null)
 				throw new PgSchemaException("Not found " + table_name + ".");
@@ -4342,7 +4394,7 @@ public class PgSchema implements Serializable {
 			if (table.xs_type.equals(XsTableType.xs_root))
 				throw new PgSchemaException(table_name + " is unselectable (root table).");
 
-			PgField field = table.getField(field_name);
+			field = table.getField(field_name);
 
 			if (field != null) {
 
@@ -4398,13 +4450,18 @@ public class PgSchema implements Serializable {
 
 		option.field_resolved = true;
 
-		for (String field : index_filter.fields) {
+		String[] key;
+		String schema_name, table_name, field_name;
+		PgTable table;
+		PgField field;
 
-			String[] key = field.split("\\.");
+		for (String index_field : index_filter.fields) {
 
-			String schema_name = null;
-			String table_name = null;
-			String field_name = null;
+			key = index_field.split("\\.");
+
+			schema_name = null;
+			table_name = null;
+			field_name = null;
 
 			if (option.pg_named_schema) {
 
@@ -4416,7 +4473,7 @@ public class PgSchema implements Serializable {
 					schema_name = key[0];
 					break;
 				default:
-					throw new PgSchemaException(field + ": argument should be expressed by \"schema_name.table_name.column_name\".");
+					throw new PgSchemaException(index_field + ": argument should be expressed by \"schema_name.table_name.column_name\".");
 				}
 
 			}
@@ -4431,29 +4488,29 @@ public class PgSchema implements Serializable {
 					schema_name = PgSchemaUtil.pg_public_schema_name;
 					break;
 				default:
-					throw new PgSchemaException(field + ": argument should be expressed by \"table_name.column_name\".");
+					throw new PgSchemaException(index_field + ": argument should be expressed by \"table_name.column_name\".");
 				}
 
 			}
 
-			PgTable _table = getTable(schema_name, table_name);
+			table = getTable(schema_name, table_name);
 
-			if (_table == null)
+			if (table == null)
 				throw new PgSchemaException("Not found " + table_name + ".");
 
-			if (_table.xs_type.equals(XsTableType.xs_root))
+			if (table.xs_type.equals(XsTableType.xs_root))
 				throw new PgSchemaException(table_name + " is unselectable (root table).");
 
 			if (field_name != null && !field_name.isEmpty()) {
 
-				PgField _field = _table.getField(field_name);
+				field = table.getField(field_name);
 
-				if (_field != null) {
+				if (field != null) {
 
-					if (_field.system_key || _field.user_key)
+					if (field.system_key || field.user_key)
 						throw new PgSchemaException(table_name + "." + field_name + " is administrative key.");
 
-					_field.field_sel = true;
+					field.field_sel = true;
 
 				}
 
@@ -4463,7 +4520,7 @@ public class PgSchema implements Serializable {
 			}
 
 			else
-				_table.fields.parallelStream().filter(_field -> !_field.system_key && !_field.user_key).forEach(_field -> _field.field_sel = true);
+				table.fields.parallelStream().filter(_field -> !_field.system_key && !_field.user_key).forEach(_field -> _field.field_sel = true);
 
 		}
 
@@ -4931,9 +4988,11 @@ public class PgSchema implements Serializable {
 
 					boolean has_index = false;
 
+					String column_name;
+
 					while (rset.next()) {
 
-						String column_name = rset.getString("COLUMN_NAME");
+						column_name = rset.getString("COLUMN_NAME");
 
 						if (column_name != null && column_name.contains(doc_key_name)) {
 
@@ -5012,14 +5071,16 @@ public class PgSchema implements Serializable {
 
 					ResultSet rset = meta.getIndexInfo(null, option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name, false, true);
 
+					String index_name, column_name, sql;
+
 					while (rset.next()) {
 
-						String index_name = rset.getString("INDEX_NAME");
-						String column_name = rset.getString("COLUMN_NAME");
+						index_name = rset.getString("INDEX_NAME");
+						column_name = rset.getString("COLUMN_NAME");
 
 						if (index_name != null && index_name.equalsIgnoreCase("IDX_" + table_name + "_" + doc_key_name) && column_name != null && column_name.equals(doc_key_name)) {
 
-							String sql = "DROP INDEX " + PgSchemaUtil.avoidPgReservedWords(index_name);
+							sql = "DROP INDEX " + PgSchemaUtil.avoidPgReservedWords(index_name);
 
 							stat.execute(sql);
 
@@ -5209,17 +5270,19 @@ public class PgSchema implements Serializable {
 
 						List<PgField> fields = table.fields.stream().filter(field -> !field.omissible).collect(Collectors.toList());
 
-						int col_id = 0;
+						int col_id = 0, db_column_type;
+						String db_column_name;
+						PgField field;
 
 						while (rset_col.next()) {
 
-							String db_column_name = rset_col.getString("COLUMN_NAME");
-							int db_column_type = rset_col.getInt("DATA_TYPE");
+							db_column_name = rset_col.getString("COLUMN_NAME");
+							db_column_type = rset_col.getInt("DATA_TYPE");
 
 							if (db_column_type == java.sql.Types.NUMERIC) // NUMERIC and DECIMAL are equivalent in PostgreSQL
 								db_column_type = java.sql.Types.DECIMAL;
 
-							PgField field = fields.get(col_id++);
+							field = fields.get(col_id++);
 
 							if (!field.pname.equals(db_column_name))
 								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.pname + " found in an incorrect order."); // found in an incorrect order
@@ -5307,6 +5370,7 @@ public class PgSchema implements Serializable {
 			throw new PgSchemaException("Not found sphinx:schema root element in Sphinx data source: " + PgSchemaUtil.sph_schema_name);
 
 		String child_name;
+		boolean sph_field, sph_attr;
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -5315,8 +5379,8 @@ public class PgSchema implements Serializable {
 
 			child_name = child.getNodeName();
 
-			boolean sph_field = child_name.equals("sphinx:field");
-			boolean sph_attr = child_name.equals("sphinx:attr");
+			sph_field = child_name.equals("sphinx:field");
+			sph_attr = child_name.equals("sphinx:attr");
 
 			if (sph_field || sph_attr) {
 
@@ -6177,9 +6241,9 @@ public class PgSchema implements Serializable {
 
 		try {
 
-			while (rset.next()) {
+			String content;
 
-				String content;
+			while (rset.next()) {
 
 				switch (terminus) {
 				case element:
@@ -7252,9 +7316,9 @@ public class PgSchema implements Serializable {
 
 		try {
 
-			while (rset.next()) {
+			String content;
 
-				String content;
+			while (rset.next()) {
 
 				switch (terminus) {
 				case element:

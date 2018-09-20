@@ -215,27 +215,28 @@ public class Xml2PgCsvThrd implements Runnable {
 		boolean show_progress = thrd_id == 0 && total > 1;
 
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
-
-		long start_time = System.currentTimeMillis();
-
-		int polled = 0;
+		long start_time = System.currentTimeMillis(), current_time, etc_time;
+		int polled = 0, queue_size, progress;
+		Date etc_date;
 
 		Path xml_file_path;
+
+		XmlParser xml_parser;
 
 		while ((xml_file_path = xml_file_queue.poll()) != null) {
 
 			if (show_progress) {
 
-				int remains = xml_file_queue.size();
+				queue_size = xml_file_queue.size();
 
-				if (polled % (remains > 100 ? 100 : remains > 10 ? 10 : 1) == 0) {
+				if (polled % (queue_size > 100 ? 10 : 1) == 0) {
 
-					long current_time = System.currentTimeMillis();
+					current_time = System.currentTimeMillis();
 
-					int progress = total - remains;
+					progress = total - queue_size;
 
-					long etc_time = current_time + (current_time - start_time) * remains / progress;
-					Date etc_date = new Date(etc_time);
+					etc_time = current_time + (current_time - start_time) * queue_size / progress;
+					etc_date = new Date(etc_time);
 
 					System.out.print("\rConverted " + progress + " of " + total + " ... (ETC " + sdf.format(etc_date) + ")");
 
@@ -257,7 +258,7 @@ public class Xml2PgCsvThrd implements Runnable {
 
 			try {
 
-				XmlParser xml_parser = new XmlParser(client.doc_builder, validator, xml_file_path, xml_file_filter);
+				xml_parser = new XmlParser(client.doc_builder, validator, xml_file_path, xml_file_filter);
 
 				client.schema.xml2PgCsv(xml_parser, md_hash_key, work_dir);
 

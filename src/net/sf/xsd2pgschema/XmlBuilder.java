@@ -127,9 +127,11 @@ public class XmlBuilder extends CommonBuilder {
 
 		XmlBuilderPendingElem elem;
 
+		int size;
+
 		while ((elem = pending_elem.pollLast()) != null) {
 
-			int size = pending_elem.size();
+			size = pending_elem.size();
 
 			elem.attr_only = size > 0 ? false : attr_only;
 

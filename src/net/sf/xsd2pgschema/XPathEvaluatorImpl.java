@@ -259,11 +259,13 @@ public class XPathEvaluatorImpl {
 
 						}
 
+						String value;
+
 						while (rset.next()) {
 
 							for (int i = 1; i <= column_count; i++) {
 
-								String value = rset.getString(i);
+								value = rset.getString(i);
 
 								if (value == null || value.isEmpty())
 									_bout.write(option.pg_null.getBytes());

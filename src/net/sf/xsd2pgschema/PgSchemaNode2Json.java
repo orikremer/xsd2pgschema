@@ -473,9 +473,11 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		}
 
+		PgField field;
+
 		for (int f = 0; f < fields_size; f++) {
 
-			PgField field = fields.get(f);
+			field = fields.get(f);
 
 			// nested_key
 
@@ -532,7 +534,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		for (int f = 0; f < fields_size; f++) {
 
-			PgField field = fields.get(f);
+			field = fields.get(f);
 
 			if (field.jsonable && field.write(schema_ver, values[f], false, concat_value_space))
 				not_empty = true;

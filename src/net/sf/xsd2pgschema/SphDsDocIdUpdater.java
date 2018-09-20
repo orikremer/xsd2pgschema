@@ -132,11 +132,14 @@ public class SphDsDocIdUpdater {
 
 		XMLEventReader reader = in_factory.createXMLEventReader(in);
 
+		XMLEvent event;
+		EventHandler handler;
+
 		while (reader.hasNext()) {
 
-			XMLEvent event = reader.nextEvent();
+			event = reader.nextEvent();
 
-			EventHandler handler = read_handlers.get(event.getEventType());
+			handler = read_handlers.get(event.getEventType());
 
 			handler.handleEvent(event);
 
@@ -158,9 +161,9 @@ public class SphDsDocIdUpdater {
 
 		while (reader.hasNext()) {
 
-			XMLEvent event = reader.nextEvent();
+			event = reader.nextEvent();
 
-			EventHandler handler = read_handlers.get(event.getEventType());
+			handler = read_handlers.get(event.getEventType());
 
 			handler.handleEvent(event);
 

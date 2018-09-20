@@ -156,12 +156,13 @@ public class dsmerge4sphinx {
 						BufferedReader buffr = Files.newBufferedReader(src_sphinx_conf_path);
 
 						String line = null;
+						String[] src_name;
 
 						while ((line = buffr.readLine()) != null) {
 
 							if (line.startsWith("source ")) {
 
-								String[] src_name = line.split(" ");
+								src_name = line.split(" ");
 
 								if (src_name.length > 1) {
 

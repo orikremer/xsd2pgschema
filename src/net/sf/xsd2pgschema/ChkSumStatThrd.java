@@ -87,15 +87,15 @@ public class ChkSumStatThrd implements Runnable {
 	@Override
 	public void run() {
 
-		Path xml_file_path;
+		Path xml_file_path, has_path;
+		XmlParser xml_parser;
+		String document_id;
 
 		while ((xml_file_path = xml_file_queue.poll()) != null) {
 
-			XmlParser xml_parser = new XmlParser(xml_file_path, xml_file_filter);
+			xml_parser = new XmlParser(xml_file_path, xml_file_filter);
 
-			String document_id = xml_parser.document_id;
-
-			Path has_path;
+			document_id = xml_parser.document_id;
 
 			synchronized (sync_del_doc_rows) {
 				has_path = sync_del_doc_rows.remove(document_id);

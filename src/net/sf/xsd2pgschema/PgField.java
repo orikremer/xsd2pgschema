@@ -471,18 +471,19 @@ public class PgField implements Serializable {
 				return;
 			}
 
-			XsDataType xs_type1 = XsDataType.valueOf("xs_" + _type1[1]);
+			XsDataType xs_type1 = XsDataType.valueOf("xs_" + _type1[1]), xs_type2;
+			String[] _type2;
 
 			for (int i = 1; i < types.length; i++) {
 
-				String[] _type2 = types[i].split(":");
+				_type2 = types[i].split(":");
 
 				if (_type2.length != 2 || !_type2[0].equals(xs_prefix)) {
 					type = xs_prefix_ + "string";
 					return;
 				}
 
-				XsDataType xs_type2 = XsDataType.valueOf("xs_" + _type2[1]);
+				xs_type2 = XsDataType.valueOf("xs_" + _type2[1]);
 
 				xs_type1 = xs_type1.leastCommonOf(xs_type2);
 
@@ -961,6 +962,7 @@ public class PgField implements Serializable {
 							continue;
 
 						length++;
+
 					}
 
 					if (length == 0)

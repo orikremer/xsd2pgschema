@@ -212,16 +212,16 @@ public class XPathCompList {
 
 		boolean valid = false;
 
+		ParseTree child;
+
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
-			ParseTree child = tree.getChild(i);
-
-			boolean has_children = child.getChildCount() > 1;
+			child = tree.getChild(i);
 
 			if (verbose)
 				System.out.println(indent + child.getClass().getSimpleName() + " '" + child.getText() + "' " + child.getSourceInterval().toString());
 
-			if (testParserTree(child, indent + " ") || has_children)
+			if (testParserTree(child, indent + " ") || child.getChildCount() > 1)
 				valid = true;
 
 		}
@@ -245,12 +245,19 @@ public class XPathCompList {
 	 */
 	private void serializeTree(ParseTree tree) {
 
+		ParseTree child;
+
+		Class<?> anyClass;
+		String text;
+
+		boolean union_expr;
+
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
-			ParseTree child = tree.getChild(i);
+			child = tree.getChild(i);
 
-			Class<?> anyClass = child.getClass();
-			String text = child.getText();
+			anyClass = child.getClass();
+			text = child.getText();
 
 			if (anyClass.equals(TerminalNodeImpl.class)) {
 
@@ -262,7 +269,7 @@ public class XPathCompList {
 					continue;
 				}
 
-				boolean union_expr = text.equals("|");
+				union_expr = text.equals("|");
 
 				if (union_expr) {
 
@@ -334,18 +341,21 @@ public class XPathCompList {
 	 */
 	private void traceChildOfStepContext(ParseTree tree) {
 
+		ParseTree child;
+
+		Class<?> anyClass;
+		String text;
+
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
-			ParseTree child = tree.getChild(i);
+			child = tree.getChild(i);
 
-			Class<?> anyClass = child.getClass();
-			String text = child.getText();
+			anyClass = child.getClass();
+			text = child.getText();
 
 			if (hasEffectiveChildOfQNameContext(child)) {
 
-				XPathComp comp = new XPathComp(union_counter, step_counter, child);
-
-				comps.add(comp);
+				comps.add(new XPathComp(union_counter, step_counter, child));
 
 				if (verbose)
 					System.out.print(" " + anyClass.getSimpleName() + " '" + text + "'");
@@ -357,9 +367,7 @@ public class XPathCompList {
 
 			else if (hasChildOfTerminalNodeImpl(child)) {
 
-				XPathComp comp = new XPathComp(union_counter, step_counter, child);
-
-				comps.add(comp);
+				comps.add(new XPathComp(union_counter, step_counter, child));
 
 				if (verbose)
 					System.out.print(" " + anyClass.getSimpleName() + " '" + text + "'");
@@ -385,9 +393,11 @@ public class XPathCompList {
 	 */
 	private boolean hasEffectiveChildOfQNameContext(ParseTree tree) {
 
+		ParseTree child;
+
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
-			ParseTree child = tree.getChild(i);
+			child = tree.getChild(i);
 
 			if (child.getClass().equals(QNameContext.class))
 				return child.getChildCount() > 1;
@@ -410,9 +420,11 @@ public class XPathCompList {
 
 		int children = 0;
 
+		ParseTree child;
+
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
-			ParseTree child = tree.getChild(i);
+			child = tree.getChild(i);
 
 			if (!child.getText().isEmpty())
 				children++;
@@ -430,9 +442,11 @@ public class XPathCompList {
 	 */
 	private boolean hasChildOfTerminalNodeImpl(ParseTree tree) {
 
+		ParseTree child;
+
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
-			ParseTree child = tree.getChild(i);
+			child = tree.getChild(i);
 
 			if (child.getClass().equals(TerminalNodeImpl.class))
 				return true;
@@ -450,9 +464,11 @@ public class XPathCompList {
 	 */
 	private String getTextOfChildTerminalNodeImpl(ParseTree tree) {
 
+		ParseTree child;
+
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
-			ParseTree child = tree.getChild(i);
+			child = tree.getChild(i);
 
 			if (child.getClass().equals(TerminalNodeImpl.class))
 				return child.getText();
@@ -474,9 +490,11 @@ public class XPathCompList {
 
 		try {
 
+			ParseTree child;
+
 			for (int i = 0; i < tree.getChildCount(); i++) {
 
-				ParseTree child = tree.getChild(i);
+				child = tree.getChild(i);
 
 				if (child.getClass().equals(TerminalNodeImpl.class))
 					list.add(child.getText());
@@ -626,15 +644,19 @@ public class XPathCompList {
 	 */
 	public void validate(boolean ends_with_text) throws PgSchemaException {
 
+		XPathComp[] comps;
+
+		Class<?> anyClass;
+
 		for (int union_id = 0; union_id <= getLastUnionId(); union_id++) {
 
 			for (int step_id = 0; step_id <= getLastStepId(union_id); step_id++) {
 
-				XPathComp[] comps = arrayOf(union_id, step_id);
+				comps = arrayOf(union_id, step_id);
 
 				for (XPathComp comp : comps) {
 
-					Class<?> anyClass = comp.tree.getClass();
+					anyClass = comp.tree.getClass();
 
 					// TerminalNodeImpl node
 
@@ -670,9 +692,7 @@ public class XPathCompList {
 
 					else if (anyClass.equals(PredicateContext.class)) {
 
-						XPathComp[] pred_comps = arrayOfPredicateContext(union_id, step_id);
-
-						for (XPathComp pred_comp : pred_comps)
+						for (XPathComp pred_comp : arrayOfPredicateContext(union_id, step_id))
 							testPredicateContext(pred_comp);
 
 						break;
@@ -862,9 +882,11 @@ public class XPathCompList {
 
 			boolean target_comp = false;
 
+			Class<?> _anyClass;
+
 			for (XPathComp _comp : comps) {
 
-				Class<?> _anyClass = _comp.tree.getClass();
+				_anyClass = _comp.tree.getClass();
 
 				if (_anyClass.equals(NameTestContext.class) || _anyClass.equals(PredicateContext.class))
 					break;
@@ -886,7 +908,7 @@ public class XPathCompList {
 
 			for (XPathComp _comp : comps) {
 
-				Class<?> _anyClass = _comp.tree.getClass();
+				_anyClass = _comp.tree.getClass();
 
 				if (_anyClass.equals(PredicateContext.class))
 					break;
@@ -909,10 +931,12 @@ public class XPathCompList {
 
 				StringBuilder sb = new StringBuilder();
 
+				String _text;
+
 				for (XPathComp _comp : comps) {
 
-					Class<?> _anyClass = _comp.tree.getClass();
-					String _text = _comp.tree.getText();
+					_anyClass = _comp.tree.getClass();
+					_text = _comp.tree.getText();
 
 					if (_anyClass.equals(PredicateContext.class))
 						break;
@@ -1043,9 +1067,11 @@ public class XPathCompList {
 
 				});
 
+				int _path_exprs_size;
+
 				for (PgTable table : tables) {
 
-					int _path_exprs_size = path_exprs.size();
+					_path_exprs_size = path_exprs.size();
 
 					table.fields.stream().filter(field -> field.matchesNodeName(option, text, false, wild_card) && field.element).forEach(field -> {
 
@@ -1130,9 +1156,11 @@ public class XPathCompList {
 
 							});
 
+							int _path_exprs_size;
+
 							for (PgTable table : tables) {
 
-								int _path_exprs_size = _list.path_exprs.size();
+								_path_exprs_size = _list.path_exprs.size();
 
 								table.fields.stream().filter(field -> field.matchesNodeName(option, text, false, wild_card) && field.element).forEach(field -> {
 
@@ -1214,6 +1242,7 @@ public class XPathCompList {
 						// check current nested_key
 
 						boolean has_any = false;
+						int _touched_size;
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
@@ -1223,7 +1252,7 @@ public class XPathCompList {
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
 							boolean first_nest = _ft_ids == null;
-							int _touched_size = touched_ft_ids.size();
+							_touched_size = touched_ft_ids.size();
 
 							for (Integer foreign_table_id : ft_ids) {
 
@@ -1296,7 +1325,7 @@ public class XPathCompList {
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
 								boolean first_nest = _ft_ids == null;
-								int _touched_size = touched_ft_ids.size();
+								_touched_size = touched_ft_ids.size();
 
 								for (Integer foreign_table_id : ft_ids) {
 
@@ -1387,9 +1416,11 @@ public class XPathCompList {
 
 			else {
 
+				int _path_exprs_size;
+
 				for (PgTable table : tables) {
 
-					int _path_exprs_size = path_exprs.size();
+					_path_exprs_size = path_exprs.size();
 
 					table.fields.stream().filter(field -> field.matchesNodeName(option, text, true, wild_card) && (field.attribute || field.simple_attribute || field.simple_attr_cond)).forEach(field -> {
 
@@ -1453,9 +1484,11 @@ public class XPathCompList {
 
 							if (!path_expr.terminus.equals(XPathCompType.any_element)) {
 
+								int _path_exprs_size;
+
 								for (PgTable table : tables) {
 
-									int _path_exprs_size = _list.path_exprs.size();
+									_path_exprs_size = _list.path_exprs.size();
 
 									table.fields.stream().filter(field -> field.matchesNodeName(option, text, true, wild_card) && (field.attribute || field.simple_attribute || field.simple_attr_cond)).forEach(field -> {
 
@@ -1539,6 +1572,7 @@ public class XPathCompList {
 						// check current nested_key
 
 						boolean has_any_attribute = false;
+						int _touched_size;
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
@@ -1547,7 +1581,7 @@ public class XPathCompList {
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
-							int _touched_size = touched_ft_ids.size();
+							_touched_size = touched_ft_ids.size();
 
 							for (Integer foreign_table_id : ft_ids) {
 
@@ -1599,7 +1633,7 @@ public class XPathCompList {
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
-								int _touched_size = touched_ft_ids.size();
+								_touched_size = touched_ft_ids.size();
 
 								for (Integer foreign_table_id : ft_ids) {
 
@@ -1738,12 +1772,16 @@ public class XPathCompList {
 
 		Iterator<XPathExpr> iter = path_exprs.iterator();
 
+		XPathExpr path_expr;
+		String[] _path;
+		String last_path;
+
 		while (iter.hasNext()) {
 
-			XPathExpr path_expr = iter.next();
+			path_expr = iter.next();
 
-			String[] _path = path_expr.path.split("/");
-			String last_path = _path[_path.length - 1];
+			_path = path_expr.path.split("/");
+			last_path = _path[_path.length - 1];
 
 			if (!(wild_card ? last_path.matches(composite_text) : last_path.equals(text)))
 				iter.remove();
@@ -1900,9 +1938,11 @@ public class XPathCompList {
 
 				});
 
+				int _path_exprs_size;
+
 				for (PgTable table : tables) {
 
-					int _path_exprs_size = path_exprs.size();
+					_path_exprs_size = path_exprs.size();
 
 					table.fields.stream().filter(field -> field.element).forEach(field -> {
 
@@ -1987,9 +2027,11 @@ public class XPathCompList {
 
 							});
 
+							int _path_exprs_size;
+
 							for (PgTable table : tables) {
 
-								int _path_exprs_size = _list.path_exprs.size();
+								_path_exprs_size = _list.path_exprs.size();
 
 								table.fields.stream().filter(field -> field.element).forEach(field -> {
 
@@ -2071,6 +2113,7 @@ public class XPathCompList {
 						// check current nested_key
 
 						boolean has_any = false;
+						int _touched_size;
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
@@ -2080,7 +2123,7 @@ public class XPathCompList {
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
 							boolean first_nest = _ft_ids == null;
-							int _touched_size = touched_ft_ids.size();
+							_touched_size = touched_ft_ids.size();
 
 							for (Integer foreign_table_id : ft_ids) {
 
@@ -2153,7 +2196,7 @@ public class XPathCompList {
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
 								boolean first_nest = _ft_ids == null;
-								int _touched_size = touched_ft_ids.size();
+								_touched_size = touched_ft_ids.size();
 
 								for (Integer foreign_table_id : ft_ids) {
 
@@ -2240,9 +2283,11 @@ public class XPathCompList {
 
 			else {
 
+				int _path_exprs_size;
+
 				for (PgTable table : tables) {
 
-					int _path_exprs_size = path_exprs.size();
+					_path_exprs_size = path_exprs.size();
 
 					table.fields.stream().filter(field -> field.attribute || field.simple_attribute || field.simple_attr_cond).forEach(field -> {
 
@@ -2300,9 +2345,11 @@ public class XPathCompList {
 
 							if (!path_expr.terminus.equals(XPathCompType.any_element)) {
 
+								int _path_exprs_size;
+
 								for (PgTable table : tables) {
 
-									int _path_exprs_size = _list.path_exprs.size();
+									_path_exprs_size = _list.path_exprs.size();
 
 									table.fields.stream().filter(field -> field.attribute || field.simple_attribute || field.simple_attr_cond).forEach(field -> {
 
@@ -2378,6 +2425,7 @@ public class XPathCompList {
 						// check current nested_key
 
 						boolean has_any_attribute = false;
+						int _touched_size;
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
@@ -2386,7 +2434,7 @@ public class XPathCompList {
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
-							int _touched_size = touched_ft_ids.size();
+							_touched_size = touched_ft_ids.size();
 
 							for (Integer foreign_table_id : ft_ids) {
 
@@ -2441,7 +2489,7 @@ public class XPathCompList {
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
-								int _touched_size = touched_ft_ids.size();
+								_touched_size = touched_ft_ids.size();
 
 								for (Integer foreign_table_id : ft_ids) {
 
@@ -2568,9 +2616,11 @@ public class XPathCompList {
 
 			XPathComp first_comp = comps[0];
 
+			Class<?> _anyClass;
+
 			for (XPathComp _comp : comps) {
 
-				Class<?> _anyClass = _comp.tree.getClass();
+				_anyClass = _comp.tree.getClass();
 
 				if (_anyClass.equals(PredicateContext.class))
 					break;
@@ -2593,10 +2643,12 @@ public class XPathCompList {
 
 				StringBuilder sb = new StringBuilder();
 
+				String _text;
+
 				for (XPathComp _comp : comps) {
 
-					Class<?> _anyClass = _comp.tree.getClass();
-					String _text = _comp.tree.getText();
+					_anyClass = _comp.tree.getClass();
+					_text = _comp.tree.getText();
 
 					if (_anyClass.equals(PredicateContext.class))
 						break;
@@ -2746,9 +2798,11 @@ public class XPathCompList {
 
 				});
 
+				int _path_exprs_size;
+
 				for (PgTable table : tables) {
 
-					int _path_exprs_size = path_exprs.size();
+					_path_exprs_size = path_exprs.size();
 
 					table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
 
@@ -2831,9 +2885,11 @@ public class XPathCompList {
 
 							});
 
+							int _path_exprs_size;
+
 							for (PgTable table : tables) {
 
-								int _path_exprs_size = _list.path_exprs.size();
+								_path_exprs_size = _list.path_exprs.size();
 
 								table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
 
@@ -2915,6 +2971,7 @@ public class XPathCompList {
 						// check current nested_key
 
 						boolean has_any = false;
+						int _touched_size;
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
@@ -2924,7 +2981,7 @@ public class XPathCompList {
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
 							boolean first_nest = _ft_ids == null;
-							int _touched_size = touched_ft_ids.size();
+							_touched_size = touched_ft_ids.size();
 
 							for (Integer foreign_table_id : ft_ids) {
 
@@ -2997,7 +3054,7 @@ public class XPathCompList {
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
 								boolean first_nest = _ft_ids == null;
-								int _touched_size = touched_ft_ids.size();
+								_touched_size = touched_ft_ids.size();
 
 								for (Integer foreign_table_id : ft_ids) {
 
@@ -3090,9 +3147,11 @@ public class XPathCompList {
 
 			else {
 
+				int _path_exprs_size;
+
 				for (PgTable table : tables) {
 
-					int _path_exprs_size = path_exprs.size();
+					_path_exprs_size = path_exprs.size();
 
 					table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
 
@@ -3152,9 +3211,11 @@ public class XPathCompList {
 
 						if (abs_location_path) {
 
+							int _path_exprs_size;
+
 							for (PgTable table : tables) {
 
-								int _path_exprs_size = _list.path_exprs.size();
+								_path_exprs_size = _list.path_exprs.size();
 
 								table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
 
@@ -3236,6 +3297,7 @@ public class XPathCompList {
 						// check current nested_key
 
 						boolean has_any_attribute = false;
+						int _touched_size;
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
@@ -3244,7 +3306,7 @@ public class XPathCompList {
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
-							int _touched_size = touched_ft_ids.size();
+							_touched_size = touched_ft_ids.size();
 
 							for (Integer foreign_table_id : ft_ids) {
 
@@ -3299,7 +3361,7 @@ public class XPathCompList {
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
-								int _touched_size = touched_ft_ids.size();
+								_touched_size = touched_ft_ids.size();
 
 								for (Integer foreign_table_id : ft_ids) {
 
@@ -3483,13 +3545,17 @@ public class XPathCompList {
 
 		Iterator<XPathExpr> iter = path_exprs.iterator();
 
+		XPathExpr path_expr;
+		String[] name;
+		int len;
+
 		while (iter.hasNext()) {
 
-			XPathExpr path_expr = iter.next();
+			path_expr = iter.next();
 
-			String[] name = path_expr.path.split("/");
+			name = path_expr.path.split("/");
 
-			int len = name.length;
+			len = name.length;
 
 			PgTable table;
 
@@ -3549,18 +3615,22 @@ public class XPathCompList {
 
 				boolean found_field = false;
 
+				int _touched_size;
+
+				PgTable foreign_table;
+				PgField foreign_field;
+
 				while (ft_ids != null && ft_ids.length > 0 && !found_field) {
 
-					int _touched_size = touched_ft_ids.size();
+					_touched_size = touched_ft_ids.size();
 
 					for (Integer foreign_table_id : ft_ids) {
 
 						if (!touched_ft_ids.add(foreign_table_id))
 							continue;
 
-						PgTable foreign_table = schema.getTable(foreign_table_id);
-
-						PgField foreign_field = foreign_table.getCanField(field_xname);
+						foreign_table = schema.getTable(foreign_table_id);
+						foreign_field = foreign_table.getCanField(field_xname);
 
 						if (foreign_field != null) {
 
@@ -3630,6 +3700,11 @@ public class XPathCompList {
 
 		int path_expr_size = pred_list.sizeOfPathExpr();
 
+		XPathComp[] union_comps, pred_comps;
+		XPathPredExpr predicate;
+
+		Class<?> anyClass;
+
 		for (XPathExpr path_expr : path_exprs) {
 
 			// no path expression in predicate
@@ -3637,87 +3712,83 @@ public class XPathCompList {
 			if (path_expr_size == 0)
 				pred_exprs.add(new XPathPredExpr(comp, path_expr, -1));
 
-			// otherwise, validate path expression with schema
+			// validate path expression with schema
 
-			else {
+			for (int union_id = 0; union_id <= pred_list.getLastUnionId(); union_id++) {
 
-				for (int union_id = 0; union_id <= pred_list.getLastUnionId(); union_id++) {
+				union_comps = pred_list.arrayOf(union_id);
 
-					XPathComp[] union_comps = pred_list.arrayOf(union_id);
+				if (union_comps.length == 0) // no path expression
+					continue;
 
-					if (union_comps.length == 0) // no path expression
-						continue;
+				predicate = new XPathPredExpr(comp, path_expr, union_id);
 
-					XPathPredExpr predicate = new XPathPredExpr(comp, path_expr, union_id);
+				pred_list.replacePathExprs(predicate);
 
-					pred_list.replacePathExprs(predicate);
+				for (int step_id = 0; step_id <= pred_list.getLastStepId(union_id); step_id++) {
 
-					for (int step_id = 0; step_id <= pred_list.getLastStepId(union_id); step_id++) {
+					pred_comps = pred_list.arrayOf(union_id, step_id);
 
-						XPathComp[] pred_comps = pred_list.arrayOf(union_id, step_id);
+					for (XPathComp pred_comp : pred_comps) {
 
-						for (XPathComp pred_comp : pred_comps) {
+						anyClass = pred_comp.tree.getClass();
 
-							Class<?> anyClass = pred_comp.tree.getClass();
+						// TerminalNodeImpl node
 
-							// TerminalNodeImpl node
+						if (anyClass.equals(TerminalNodeImpl.class))
+							pred_list.testTerminalNodeImpl(pred_comp, true);
 
-							if (anyClass.equals(TerminalNodeImpl.class))
-								pred_list.testTerminalNodeImpl(pred_comp, true);
+						// AbbreviatedStepContext node
 
-							// AbbreviatedStepContext node
+						else if (anyClass.equals(AbbreviatedStepContext.class))
+							pred_list.testAbbreviateStepContext(pred_comp, true);
 
-							else if (anyClass.equals(AbbreviatedStepContext.class))
-								pred_list.testAbbreviateStepContext(pred_comp, true);
+						// AxisSpecifierContext node
 
-							// AxisSpecifierContext node
+						else if (anyClass.equals(AxisSpecifierContext.class))
+							pred_list.testAxisSpecifierContext(pred_comp, pred_comps);
 
-							else if (anyClass.equals(AxisSpecifierContext.class))
-								pred_list.testAxisSpecifierContext(pred_comp, pred_comps);
+						// NCNameContext node
 
-							// NCNameContext node
+						else if (anyClass.equals(NCNameContext.class))
+							pred_list.testNCNameContext(pred_comp, pred_comps, true);
 
-							else if (anyClass.equals(NCNameContext.class))
-								pred_list.testNCNameContext(pred_comp, pred_comps, true);
+						// NodeTestContext node
 
-							// NodeTestContext node
+						else if (anyClass.equals(NodeTestContext.class))
+							pred_list.testNodeTestContext(pred_comp, pred_comps, true);
 
-							else if (anyClass.equals(NodeTestContext.class))
-								pred_list.testNodeTestContext(pred_comp, pred_comps, true);
+						// NameTestContext node
 
-							// NameTestContext node
+						else if (anyClass.equals(NameTestContext.class))
+							pred_list.testNameTestContext(pred_comp, pred_comps, true);
 
-							else if (anyClass.equals(NameTestContext.class))
-								pred_list.testNameTestContext(pred_comp, pred_comps, true);
-
-							else
-								throw new PgSchemaException(pred_comp.tree);
-
-							if (pred_list.path_exprs.isEmpty())
-								break;
-
-						}
+						else
+							throw new PgSchemaException(pred_comp.tree);
 
 						if (pred_list.path_exprs.isEmpty())
 							break;
 
 					}
 
-					// store valid path expressions in predicate
-
-					if (pred_list.path_exprs.size() > 0) {
-
-						predicate.replaceDstPathExprs(pred_list.path_exprs);
-						pred_exprs.add(predicate);
-
-					}
-
-					else
-						throw new PgSchemaException(union_comps[0].tree, def_schema_location);
-
-					pred_list.clearPathExprs();
+					if (pred_list.path_exprs.isEmpty())
+						break;
 
 				}
+
+				// store valid path expressions in predicate
+
+				if (pred_list.path_exprs.size() > 0) {
+
+					predicate.replaceDstPathExprs(pred_list.path_exprs);
+					pred_exprs.add(predicate);
+
+				}
+
+				else
+					throw new PgSchemaException(union_comps[0].tree, def_schema_location);
+
+				pred_list.clearPathExprs();
 
 			}
 
@@ -4556,16 +4627,18 @@ public class XPathCompList {
 	 */
 	private boolean testPredicateTree(XPathComp src_comp, XPathExpr src_path_expr, ParseTree tree, boolean has_children, String indent) throws PgSchemaException {
 
-		boolean valid = false;
+		boolean valid = false, _has_children;
+
+		ParseTree child;
 
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
-			ParseTree child = tree.getChild(i);
+			child = tree.getChild(i);
 
 			if (child.getClass().equals(TerminalNodeImpl.class))
 				continue;
 
-			boolean _has_children = !child.getText().isEmpty() && (hasEffectiveChildren(child) || hasChildOfTerminalNodeImpl(child));
+			_has_children = !child.getText().isEmpty() && (hasEffectiveChildren(child) || hasChildOfTerminalNodeImpl(child));
 
 			if (testPredicateTree(src_comp, src_path_expr, child, _has_children, indent + " ") || _has_children)
 				valid = true;
@@ -4643,7 +4716,7 @@ public class XPathCompList {
 
 						for (int i = 0; i < tree.getChildCount(); i++) {
 
-							ParseTree child = tree.getChild(i);
+							child = tree.getChild(i);
 
 							if (child.getClass().equals(TerminalNodeImpl.class))
 								continue;
@@ -4769,9 +4842,11 @@ public class XPathCompList {
 
 		String var_name = null;
 
+		ParseTree child;
+
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
-			ParseTree child = tree.getChild(i);
+			child = tree.getChild(i);
 
 			if (child.getClass().equals(TerminalNodeImpl.class))
 				continue;
@@ -5009,33 +5084,34 @@ public class XPathCompList {
 
 		String[] terminal_codes = getTextArrayOfChildTerminalNodeImpl(tree);
 
-		BigDecimal result = null;
+		BigDecimal result = null, value;
+		XPathSqlExpr sql_expr;
 
 		for (int expr_id = start_id; expr_id < end_id; expr_id++) {
 
-			if (result == null)
+			if (result == null) {
+
 				result = new BigDecimal(sql_predicates.get(expr_id).predicate);
 
-			else {
+				continue;
+			}
 
-				XPathSqlExpr sql_expr = sql_predicates.get(expr_id);
+			sql_expr = sql_predicates.get(expr_id);
 
-				if (sql_expr.predicate.equals("0"))
-					continue;
+			if (sql_expr.predicate.equals("0"))
+				continue;
 
-				BigDecimal value = new BigDecimal(sql_expr.predicate);
+			value = new BigDecimal(sql_expr.predicate);
 
-				switch (terminal_codes[expr_id - 1]) {
-				case "+":
-					result = result.add(value);
-					break;
-				case "-":
-					result = result.subtract(value);
-					break;
-				default:
-					throw new PgSchemaException(tree);
-				}
-
+			switch (terminal_codes[expr_id - 1]) {
+			case "+":
+				result = result.add(value);
+				break;
+			case "-":
+				result = result.subtract(value);
+				break;
+			default:
+				throw new PgSchemaException(tree);
 			}
 
 		}
@@ -5046,7 +5122,7 @@ public class XPathCompList {
 
 			src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, null, result.toString(), XPathCompType.text, parent, tree));
 
-			src_path_expr.sql_predicates.removeIf(sql_expr -> sql_expr.parent_tree.equals(tree));
+			src_path_expr.sql_predicates.removeIf(_sql_expr -> _sql_expr.parent_tree.equals(tree));
 
 		}
 
@@ -5211,9 +5287,11 @@ public class XPathCompList {
 
 		String func_name = null;
 
+		ParseTree child;
+
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
-			ParseTree child = tree.getChild(i);
+			child = tree.getChild(i);
 
 			if (child.getClass().equals(TerminalNodeImpl.class))
 				continue;
@@ -6036,9 +6114,11 @@ public class XPathCompList {
 					char[] froms = second_arg.toCharArray();
 					char[] tos = third_arg.toCharArray();
 
+					char src;
+
 					for (int l = 0; l < srcs.length; l++) {
 
-						char src = srcs[l];
+						src = srcs[l];
 
 						for (int m = 0; m < froms.length; m++) {
 
@@ -6370,13 +6450,15 @@ public class XPathCompList {
 
 		List<XPathSqlExpr> any_sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_predicate -> sql_predicate.terminus.equals(XPathCompType.any_element)).collect(Collectors.toList());
 
+		XPathSqlExpr sql_expr_1, sql_expr_2;
+
 		for (int i = 0; i < any_sql_predicates.size() - 1; i++) {
 
-			XPathSqlExpr sql_expr_1 = any_sql_predicates.get(i);
+			sql_expr_1 = any_sql_predicates.get(i);
 
 			for (int j = i + 1; j < any_sql_predicates.size(); j++) {
 
-				XPathSqlExpr sql_expr_2 = any_sql_predicates.get(j);
+				sql_expr_2 = any_sql_predicates.get(j);
 
 				if (sql_expr_1.path.contains(sql_expr_2.path))
 					sql_predicates.remove(sql_expr_2);
@@ -6401,9 +6483,11 @@ public class XPathCompList {
 
 		boolean successive = false;
 
+		XPathSqlExpr sql_expr;
+
 		for (int expr_id = offset; expr_id < sql_predicates.size(); expr_id++) {
 
-			XPathSqlExpr sql_expr = sql_predicates.get(expr_id);
+			sql_expr = sql_predicates.get(expr_id);
 
 			if (sql_expr.predicate != null) {
 
@@ -6433,9 +6517,11 @@ public class XPathCompList {
 
 		boolean successive = false;
 
+		XPathSqlExpr sql_expr;
+
 		for (int expr_id = offset; expr_id < sql_predicates.size(); expr_id++) {
 
-			XPathSqlExpr sql_expr = sql_predicates.get(expr_id);
+			sql_expr = sql_predicates.get(expr_id);
 
 			if (sql_expr.predicate != null) {
 
@@ -6491,12 +6577,15 @@ public class XPathCompList {
 	 */
 	private boolean translatePredicateTree(XPathExpr src_path_expr, ParseTree tree, boolean has_children, StringBuilder sb, LinkedList<StringBuilder> sb_list) throws PgSchemaException {
 
-		boolean valid = false;
+		boolean valid = false, _has_children;
+
+		ParseTree child;
+		Class<?> childClass;
 
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
-			ParseTree child = tree.getChild(i);
-			Class<?> childClass = child.getClass();
+			child = tree.getChild(i);
+			childClass = child.getClass();
 
 			if (childClass.equals(TerminalNodeImpl.class))
 				continue;
@@ -6504,7 +6593,7 @@ public class XPathCompList {
 			else if (childClass.equals(FunctionCallContext.class))
 				sb_list.addFirst(new StringBuilder());
 
-			boolean _has_children = !child.getText().isEmpty() && (hasEffectiveChildren(child) || hasChildOfTerminalNodeImpl(child));
+			_has_children = !child.getText().isEmpty() && (hasEffectiveChildren(child) || hasChildOfTerminalNodeImpl(child));
 
 			if (translatePredicateTree(src_path_expr, child, _has_children, sb, sb_list) || _has_children)
 				valid = true;
@@ -6681,9 +6770,11 @@ public class XPathCompList {
 
 		}
 
+		XPathSqlExpr sql_expr;
+
 		for (int expr_id = 0; expr_id < pred_size; expr_id++) {
 
-			XPathSqlExpr sql_expr = sql_predicates.get(expr_id);
+			sql_expr = sql_predicates.get(expr_id);
 
 			switch (sql_expr.terminus) {
 			case element:
@@ -6759,9 +6850,11 @@ public class XPathCompList {
 
 		}
 
+		XPathSqlExpr sql_expr;
+
 		for (int expr_id = 0; expr_id < pred_size; expr_id++) {
 
-			XPathSqlExpr sql_expr = sql_predicates.get(expr_id);
+			sql_expr = sql_predicates.get(expr_id);
 
 			switch (sql_expr.terminus) {
 			case element:
@@ -6829,9 +6922,11 @@ public class XPathCompList {
 
 			String func_name = null;
 
+			ParseTree child;
+
 			for (int i = 0; i < tree.getChildCount(); i++) {
 
-				ParseTree child = tree.getChild(i);
+				child = tree.getChild(i);
 
 				if (child.getClass().equals(TerminalNodeImpl.class))
 					continue;
@@ -7048,25 +7143,25 @@ public class XPathCompList {
 			return;
 		}
 
-		PgTable target_table = null;
-		String target_table_path = null;
+		PgTable target_table = null, _target_table;
+		String target_table_path = null, _target_path;
 
-		PgTable joined_table = null;
-		String joined_table_path = null;
+		PgTable joined_table = null, _joined_table;
+		String joined_table_path = null, _joined_path;
 
-		int min_distance = -1;
+		int min_distance = -1, distance;
 
 		for (Entry<PgTable, String> joined : joined_tables.entrySet()) {
 
-			PgTable _joined_table = joined.getKey();
-			String _joined_path = joined.getValue();
+			_joined_table = joined.getKey();
+			_joined_path = joined.getValue();
 
 			for (Entry<PgTable, String> target : target_tables.entrySet()) {
 
-				PgTable _target_table = target.getKey();
-				String _target_path = target.getValue();
+				_target_table = target.getKey();
+				_target_path = target.getValue();
 
-				int distance = getDistanceOfTables(_joined_path, _target_path);
+				distance = getDistanceOfTables(_joined_path, _target_path);
 
 				if (distance > 0) {
 
@@ -7106,21 +7201,26 @@ public class XPathCompList {
 
 		if (min_distance != 1) {
 
+			char[] target_char, joined_char;
+			int last_match;
+
+			String common_path;
+
 			for (Entry<PgTable, String> joined : joined_tables.entrySet()) {
 
-				PgTable _joined_table = joined.getKey();
-				String _joined_path = joined.getValue();
+				_joined_table = joined.getKey();
+				_joined_path = joined.getValue();
 
-				char[] joined_char = _joined_path.toCharArray();
+				joined_char = _joined_path.toCharArray();
 
 				for (Entry<PgTable, String> target : target_tables.entrySet()) {
 
-					PgTable _target_table = target.getKey();
-					String _target_path = target.getValue();
+					_target_table = target.getKey();
+					_target_path = target.getValue();
 
-					char[] target_char = _target_path.toCharArray();
+					target_char = _target_path.toCharArray();
 
-					int last_match = 0;
+					last_match = 0;
 
 					for (int l = 0; l < joined_char.length && l < target_char.length; l++) {
 
@@ -7134,9 +7234,9 @@ public class XPathCompList {
 					if (last_match == 0 || last_match == target_char.length - 1)
 						continue;
 
-					String common_path = _target_path.substring(0, last_match + 1);
+					common_path = _target_path.substring(0, last_match + 1);
 
-					int distance = getDistanceOfTables(joined.getValue(), common_path);
+					distance = getDistanceOfTables(joined.getValue(), common_path);
 
 					if (distance > 0) {
 
@@ -7240,16 +7340,19 @@ public class XPathCompList {
 
 		boolean found_table = false;
 
+		int _touched_size;
+		PgTable foreign_table;
+
 		while (ft_ids != null && ft_ids.length > 0 && !found_table) {
 
-			int _touched_size = touched_ft_ids.size();
+			_touched_size = touched_ft_ids.size();
 
 			for (Integer foreign_table_id : ft_ids) {
 
 				if (!touched_ft_ids.add(foreign_table_id))
 					continue;
 
-				PgTable foreign_table = schema.getTable(foreign_table_id);
+				foreign_table = schema.getTable(foreign_table_id);
 
 				if (foreign_table.equals(dst_table)) {
 
@@ -7408,25 +7511,25 @@ public class XPathCompList {
 			return;
 		}
 
-		PgTable target_table = null;
-		String target_table_path = null;
+		PgTable target_table = null, _target_table;
+		String target_table_path = null, _target_path;
 
-		PgTable joined_table = null;
-		String joined_table_path = null;
+		PgTable joined_table = null, _joined_table;
+		String joined_table_path = null, _joined_path;
 
-		int min_distance = -1;
+		int min_distance = -1, distance;
 
 		for (Entry<PgTable, String> joined : joined_tables.entrySet()) {
 
-			PgTable _joined_table = joined.getKey();
-			String _joined_path = joined.getValue();
+			_joined_table = joined.getKey();
+			_joined_path = joined.getValue();
 
 			for (Entry<PgTable, String> target : target_tables.entrySet()) {
 
-				PgTable _target_table = target.getKey();
-				String _target_path = target.getValue();
+				_target_table = target.getKey();
+				_target_path = target.getValue();
 
-				int distance = getDistanceOfTables(_joined_path, _target_path);
+				distance = getDistanceOfTables(_joined_path, _target_path);
 
 				if (distance > 0) {
 
@@ -7466,21 +7569,26 @@ public class XPathCompList {
 
 		if (min_distance != 1) {
 
+			char[] target_char, joined_char;
+			int last_match;
+
+			String common_path;
+
 			for (Entry<PgTable, String> joined : joined_tables.entrySet()) {
 
-				PgTable _joined_table = joined.getKey();
-				String _joined_path = joined.getValue();
+				_joined_table = joined.getKey();
+				_joined_path = joined.getValue();
 
-				char[] joined_char = _joined_path.toCharArray();
+				joined_char = _joined_path.toCharArray();
 
 				for (Entry<PgTable, String> target : target_tables.entrySet()) {
 
-					PgTable _target_table = target.getKey();
-					String _target_path = target.getValue();
+					_target_table = target.getKey();
+					_target_path = target.getValue();
 
-					char[] target_char = _target_path.toCharArray();
+					target_char = _target_path.toCharArray();
 
-					int last_match = 0;
+					last_match = 0;
 
 					for (int l = 0; l < joined_char.length && l < target_char.length; l++) {
 
@@ -7494,9 +7602,9 @@ public class XPathCompList {
 					if (last_match == 0 || last_match == target_char.length - 1)
 						continue;
 
-					String common_path = _target_path.substring(0, last_match + 1);
+					common_path = _target_path.substring(0, last_match + 1);
 
-					int distance = getDistanceOfTables(joined.getValue(), common_path);
+					distance = getDistanceOfTables(joined.getValue(), common_path);
 
 					if (distance > 0) {
 
@@ -7553,12 +7661,14 @@ public class XPathCompList {
 
 			int _touched_size = touched_ft_ids.size();
 
+			PgTable foreign_table;
+
 			for (Integer foreign_table_id : ft_ids) {
 
 				if (!touched_ft_ids.add(foreign_table_id))
 					continue;
 
-				PgTable foreign_table = schema.getTable(foreign_table_id);
+				foreign_table = schema.getTable(foreign_table_id);
 
 				if (foreign_table.equals(dst_table)) {
 
@@ -7767,12 +7877,14 @@ public class XPathCompList {
 
 					int _touched_size = touched_ft_ids.size();
 
+					PgTable foreign_table;
+
 					for (Integer foreign_table_id : ft_ids) {
 
 						if (!touched_ft_ids.add(foreign_table_id))
 							continue;
 
-						PgTable foreign_table = schema.getTable(foreign_table_id);
+						foreign_table = schema.getTable(foreign_table_id);
 
 						// check foreign element
 
@@ -7817,12 +7929,14 @@ public class XPathCompList {
 
 					int _touched_size = touched_ft_ids.size();
 
+					PgTable foreign_table;
+
 					for (Integer foreign_table_id : ft_ids) {
 
 						if (!touched_ft_ids.add(foreign_table_id))
 							continue;
 
-						PgTable foreign_table = schema.getTable(foreign_table_id);
+						foreign_table = schema.getTable(foreign_table_id);
 
 						// check foreign simple_cont
 
@@ -7867,16 +7981,19 @@ public class XPathCompList {
 
 					int _touched_size = touched_ft_ids.size();
 
+					PgTable foreign_table;
+					Optional<PgField> opt;
+
 					for (Integer foreign_table_id : ft_ids) {
 
 						if (!touched_ft_ids.add(foreign_table_id))
 							continue;
 
-						PgTable foreign_table = schema.getTable(foreign_table_id);
+						foreign_table = schema.getTable(foreign_table_id);
 
 						// check foreign attribute
 
-						Optional<PgField> opt = foreign_table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && (field.attribute ? field.xname.equals(_field_xname) : field.foreign_table_xname.equals(_field_xname))).findFirst();
+						opt = foreign_table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && (field.attribute ? field.xname.equals(_field_xname) : field.foreign_table_xname.equals(_field_xname))).findFirst();
 
 						if (opt.isPresent()) {
 
@@ -7919,12 +8036,14 @@ public class XPathCompList {
 
 					int _touched_size = touched_ft_ids.size();
 
+					PgTable foreign_table;
+
 					for (Integer foreign_table_id : ft_ids) {
 
 						if (!touched_ft_ids.add(foreign_table_id))
 							continue;
 
-						PgTable foreign_table = schema.getTable(foreign_table_id);
+						foreign_table = schema.getTable(foreign_table_id);
 
 						// check foreign attribute
 
@@ -7972,12 +8091,14 @@ public class XPathCompList {
 
 					int _touched_size = touched_ft_ids.size();
 
+					PgTable foreign_table;
+
 					for (Integer foreign_table_id : ft_ids) {
 
 						if (!touched_ft_ids.add(foreign_table_id))
 							continue;
 
-						PgTable foreign_table = schema.getTable(foreign_table_id);
+						foreign_table = schema.getTable(foreign_table_id);
 
 						// check foreign attribute
 
@@ -8063,17 +8184,18 @@ public class XPathCompList {
 
 		int union_size = getLastUnionId() + 1;
 
-		XPathComp[] last_named_comp = new XPathComp[union_size];
+		XPathComp[] last_named_comp = new XPathComp[union_size], comps;
+		Class<?> anyClass;
 
 		for (int union_id = 0; union_id < union_size; union_id++) {
 
 			for (int step_id = 0; step_id <= getLastStepId(union_id); step_id++) {
 
-				XPathComp[] comps = arrayOf(union_id, step_id);
+				comps = arrayOf(union_id, step_id);
 
 				for (XPathComp comp : comps) {
 
-					Class<?> anyClass = comp.tree.getClass();
+					anyClass = comp.tree.getClass();
 
 					// TerminalNodeImpl node
 

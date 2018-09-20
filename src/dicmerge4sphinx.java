@@ -108,21 +108,23 @@ public class dicmerge4sphinx {
 
 				BufferedReader buffr = Files.newBufferedReader(dic_file_path);
 
-				String line = null;
+				String line = null, keyword;
+				String[] parsed_line;
+				int freq;
 
 				while ((line = buffr.readLine()) != null) {
 
-					String[] parsed_line = line.split("[\\s,]+");
+					parsed_line = line.split("[\\s,]+");
 
 					if (parsed_line.length != 2)
 						continue;
 
-					String keyword = parsed_line[0];
+					keyword = parsed_line[0];
 
 					if (keyword.isEmpty())
 						continue;
 
-					int freq = Integer.valueOf(parsed_line[1]);
+					freq = Integer.valueOf(parsed_line[1]);
 
 					if (dic_files > 0 && dictionary.containsKey(keyword))
 						freq += dictionary.get(keyword);
@@ -153,12 +155,13 @@ public class dicmerge4sphinx {
 
 			buffw.write("</sphinx:schema>\n");
 
-			int id = 0;
+			int id = 0, freq;
+			String keyword;
 
 			for (Entry<String, Integer> entry : dictionary.entrySet()) {
 
-				String keyword = (String) entry.getKey();
-				int freq = (int) entry.getValue();
+				keyword = (String) entry.getKey();
+				freq = (int) entry.getValue();
 
 				if (freq < freq_threshold)
 					continue;

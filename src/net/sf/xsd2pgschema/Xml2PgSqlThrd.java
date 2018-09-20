@@ -234,27 +234,28 @@ public class Xml2PgSqlThrd implements Runnable {
 		boolean update = false;
 
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
-
-		long start_time = System.currentTimeMillis();
-
-		int polled = 0;
+		long start_time = System.currentTimeMillis(), current_time, etc_time;
+		int polled = 0, queue_size, progress;
+		Date etc_date;
 
 		Path xml_file_path;
+
+		XmlParser xml_parser;
 
 		while ((xml_file_path = xml_file_queue.poll()) != null) {
 
 			if (show_progress) {
 
-				int remains = xml_file_queue.size();
+				queue_size = xml_file_queue.size();
 
-				if (polled % (remains > 100 ? 100 : remains > 10 ? 10 : 1) == 0) {
+				if (polled % (queue_size > 100 ? 10 : 1) == 0) {
 
-					long current_time = System.currentTimeMillis();
+					current_time = System.currentTimeMillis();
 
-					int progress = total - remains;
+					progress = total - queue_size;
 
-					long etc_time = current_time + (current_time - start_time) * remains / progress;
-					Date etc_date = new Date(etc_time);
+					etc_time = current_time + (current_time - start_time) * queue_size / progress;
+					etc_date = new Date(etc_time);
 
 					System.out.print("\rMigrated " + progress + " of " + total + " ... (ETC " + sdf.format(etc_date) + ")");
 
@@ -266,7 +267,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 				try {
 
-					XmlParser xml_parser = new XmlParser(xml_file_path, xml_file_filter);
+					xml_parser = new XmlParser(xml_file_path, xml_file_filter);
 
 					update = doc_rows.contains(xml_parser.document_id);
 
@@ -291,7 +292,7 @@ public class Xml2PgSqlThrd implements Runnable {
 
 			try {
 
-				XmlParser xml_parser = new XmlParser(client.doc_builder, validator, xml_file_path, xml_file_filter);
+				xml_parser = new XmlParser(client.doc_builder, validator, xml_file_path, xml_file_filter);
 
 				client.schema.xml2PgSql(xml_parser, md_hash_key, update, db_conn);
 

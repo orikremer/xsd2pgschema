@@ -94,24 +94,32 @@ public class XmlValidatorThrd implements Runnable {
 		boolean show_progress = thrd_id == 0 && total > 1;
 
 		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
-
-		long start_time = System.currentTimeMillis();
+		long start_time = System.currentTimeMillis(), current_time, etc_time;
+		int polled = 0, queue_size, progress;
+		Date etc_date;
 
 		Path xml_file_path;
+
+		XmlParser xml_parser;
 
 		while ((xml_file_path = xml_file_queue.poll()) != null) {
 
 			if (show_progress) {
 
-				long current_time = System.currentTimeMillis();
+				queue_size = xml_file_queue.size();
 
-				int remains = xml_file_queue.size();
-				int progress = total - remains;
+				if (polled % (queue_size > 100 ? 10 : 1) == 0) {
 
-				long etc_time = current_time + (current_time - start_time) * remains / progress;
-				Date etc_date = new Date(etc_time);
+					current_time = System.currentTimeMillis();
 
-				System.out.print("\rDone " + progress + " of " + total + " ... (ETC " + sdf.format(etc_date) + ")");
+					progress = total - queue_size;
+
+					etc_time = current_time + (current_time - start_time) * queue_size / progress;
+					etc_date = new Date(etc_time);
+
+					System.out.print("\rDone " + progress + " of " + total + " ... (ETC " + sdf.format(etc_date) + ")");
+
+				}
 
 			}
 
@@ -119,7 +127,7 @@ public class XmlValidatorThrd implements Runnable {
 
 				try {
 
-					XmlParser xml_parser = new XmlParser(xml_file_path, xml_file_filter);
+					xml_parser = new XmlParser(xml_file_path, xml_file_filter);
 
 					if (xml_parser.identify(option, md_chk_sum))
 						continue;
@@ -137,6 +145,8 @@ public class XmlValidatorThrd implements Runnable {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+
+			++polled;
 
 		}
 

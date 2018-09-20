@@ -171,11 +171,14 @@ public class SphDsDocIdCleaner {
 
 		interim_events = new ArrayList<XMLEvent>();
 
+		XMLEvent event;
+		EventHandler handler;
+
 		while (reader.hasNext()) {
 
-			XMLEvent event = reader.nextEvent();
+			event = reader.nextEvent();
 
-			EventHandler handler = read_handlers.get(event.getEventType());
+			handler = read_handlers.get(event.getEventType());
 
 			handler.handleEvent(event);
 
@@ -287,15 +290,18 @@ public class SphDsDocIdCleaner {
 
 				if (iter_attr != null) {
 
+					javax.xml.stream.events.Attribute attr;
+					String doc_id;
+
 					while (iter_attr.hasNext()) {
 
-						javax.xml.stream.events.Attribute attr = (Attribute) iter_attr.next();
+						attr = (Attribute) iter_attr.next();
 
 						if (doc_key_path.equals(attr_doc_key_holder + "/@" + attr.getName())) {
 
 							no_document_key = false;
 
-							String doc_id = attr.getValue();
+							doc_id = attr.getValue();
 
 							omit_doc_unit = del_doc_set.contains(doc_id) || !doc_set.add(doc_id);
 

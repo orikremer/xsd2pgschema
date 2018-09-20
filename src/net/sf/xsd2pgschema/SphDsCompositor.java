@@ -271,16 +271,19 @@ public class SphDsCompositor extends DefaultHandler {
 	 */
 	private void write() throws IOException {
 
+		StringBuilder _sb;
+		String attr_name;
+
+		int len;
+
 		for (Entry<String, StringBuilder> e : sph_attr_builders.entrySet()) {
 
-			StringBuilder _sb = e.getValue();
+			_sb = e.getValue();
 
-			int len = _sb.length();
-
-			if (len == 0)
+			if ((len = _sb.length()) == 0)
 				continue;
 
-			String attr_name = e.getKey();
+			attr_name = e.getKey();
 
 			sph_mvattr = sph_mvas.contains(attr_name);
 
