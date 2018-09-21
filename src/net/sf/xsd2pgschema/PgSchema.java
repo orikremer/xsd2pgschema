@@ -987,7 +987,9 @@ public class PgSchema implements Serializable {
 						for (String _ancestor_node : _ancestor_nodes) {
 
 							if (_ancestor_node.equals(ancestor_node)) {
+
 								has_ancestor_node = true;
+
 								break;
 							}
 
@@ -2098,11 +2100,9 @@ public class PgSchema implements Serializable {
 
 				if (child_name.equals(attribute ? "attribute" : "element")) {
 
-					String ref_xname = PgSchemaUtil.getUnqualifiedName(ref);
-
 					child_name = PgSchemaUtil.getUnqualifiedName(child_elem.getAttribute("name"));
 
-					if (child_name.equals(ref_xname) && (
+					if (child_name.equals(PgSchemaUtil.getUnqualifiedName(ref)) && (
 							(table.target_namespace != null && table.target_namespace.equals(getNamespaceUriOfQName(ref))) ||
 							(table.target_namespace == null && getNamespaceUriOfQName(ref) == null))) {
 
@@ -2418,14 +2418,14 @@ public class PgSchema implements Serializable {
 
 			table.fields.add(field);
 
+			String grandchild_name;
+
 			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 				if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
 					continue;
 
 				if (((Element) child).getLocalName().equals("extension")) {
-
-					String grandchild_name;
 
 					for (Node grandchild = child.getFirstChild(); grandchild != null; grandchild = grandchild.getNextSibling()) {
 
@@ -3354,6 +3354,7 @@ public class PgSchema implements Serializable {
 
 		boolean relational;
 		PgTable child_table, parent_table;
+		String constraint_name;
 		String[] child_field_pnames, parent_field_pnames;
 
 		for (PgForeignKey foreign_key : foreign_keys) {
@@ -3380,8 +3381,6 @@ public class PgSchema implements Serializable {
 			parent_field_pnames = foreign_key.parent_field_pnames.split(" ");
 
 			if (child_field_pnames.length == parent_field_pnames.length) {
-
-				String constraint_name;
 
 				for (int i = 0; i < child_field_pnames.length; i++) {
 
@@ -6580,12 +6579,19 @@ public class PgSchema implements Serializable {
 		try {
 
 			XmlBuilderNestTester nest_test = new XmlBuilderNestTester(table, xmlb);
+			XmlBuilderPendingElem elem = new XmlBuilderPendingElem(table, nest_test.current_indent_space, true);
+			XmlBuilderPendingAttr attr;
 
-			xmlb.pending_elem.push(new XmlBuilderPendingElem(table, nest_test.current_indent_space, true));
+			xmlb.pending_elem.push(elem);
 
 			List<PgField> fields = table.fields;
 
 			String doc_key_name = (option.document_key || option.in_place_document_key) ? getDocKeyName(table) : null;
+			String content;
+
+			Object key;
+
+			boolean attr_only;
 
 			document_id = null;
 
@@ -6601,13 +6607,13 @@ public class PgSchema implements Serializable {
 
 				if (field.attribute) {
 
-					String content = field.retrieve(rset, param_id, fill_default_value);
+					content = field.retrieve(rset, param_id, fill_default_value);
 
 					if ((content != null && !content.isEmpty()) || field.required) {
 
-						XmlBuilderPendingAttr attr = new XmlBuilderPendingAttr(field, content);
+						attr = new XmlBuilderPendingAttr(field, content);
 
-						XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
+						elem = xmlb.pending_elem.peek();
 
 						if (elem != null)
 							elem.appendPendingAttr(attr);
@@ -6648,7 +6654,7 @@ public class PgSchema implements Serializable {
 
 				else if (field.nested_key_as_attr) {
 
-					Object key = rset.getObject(param_id);
+					key = rset.getObject(param_id);
 
 					if (key != null)
 						nest_test.merge(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, true, nest_test));
@@ -6671,9 +6677,7 @@ public class PgSchema implements Serializable {
 					if (table.equals(root_table))
 						throw new PgSchemaException("Not allowed to insert document key to root element.");
 
-					XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
-
-					if (elem != null)
+					if (xmlb.pending_elem.peek() != null)
 						xmlb.writePendingElems(false);
 
 					xmlb.writePendingSimpleCont();
@@ -6695,13 +6699,11 @@ public class PgSchema implements Serializable {
 
 				else if (field.simple_content && !field.simple_attribute) {
 
-					String content = field.retrieve(rset, param_id, fill_default_value);
+					content = field.retrieve(rset, param_id, fill_default_value);
 
 					if (content != null && !content.isEmpty()) {
 
-						XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
-
-						if (elem != null)
+						if (xmlb.pending_elem.peek() != null)
 							xmlb.writePendingElems(false);
 
 						if (field.simple_primitive_list) {
@@ -6730,13 +6732,11 @@ public class PgSchema implements Serializable {
 
 				else if (field.element) {
 
-					String content = field.retrieve(rset, param_id, fill_default_value);
+					content = field.retrieve(rset, param_id, fill_default_value);
 
 					if ((content != null && !content.isEmpty()) || field.required) {
 
-						XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
-
-						if (elem != null)
+						if (xmlb.pending_elem.peek() != null)
 							xmlb.writePendingElems(false);
 
 						xmlb.writePendingSimpleCont();
@@ -6821,7 +6821,7 @@ public class PgSchema implements Serializable {
 
 				if (field.nested_key && !field.nested_key_as_attr) {
 
-					Object key = rset.getObject(param_id);
+					key = rset.getObject(param_id);
 
 					if (key != null) {
 
@@ -6840,11 +6840,9 @@ public class PgSchema implements Serializable {
 
 			if (nest_test.has_content || nest_test.has_simple_content) {
 
-				boolean attr_only = false;
+				attr_only = false;
 
-				XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
-
-				if (elem != null)
+				if (xmlb.pending_elem.peek() != null)
 					xmlb.writePendingElems(attr_only = true);
 
 				xmlb.writePendingSimpleCont();
@@ -6907,6 +6905,8 @@ public class PgSchema implements Serializable {
 		try {
 
 			XmlBuilderNestTester nest_test = new XmlBuilderNestTester(table, parent_nest_test);
+			XmlBuilderPendingElem elem;
+			XmlBuilderPendingAttr attr;
 
 			String table_ns = table.target_namespace;
 			String table_prefix = table.prefix;
@@ -6926,7 +6926,12 @@ public class PgSchema implements Serializable {
 
 			PgField primary_key = fields.parallelStream().filter(field -> field.primary_key).findFirst().get();
 
+			String content;
+
+			Object key;
+
 			boolean use_doc_key_index = document_id != null && !primary_key.unique_key;
+			boolean attr_only;
 
 			if (table.ps == null || table.ps.isClosed()) {
 
@@ -6982,13 +6987,13 @@ public class PgSchema implements Serializable {
 
 					if (field.attribute) {
 
-						String content = field.retrieve(rset, param_id, fill_default_value);
+						content = field.retrieve(rset, param_id, fill_default_value);
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
-							XmlBuilderPendingAttr attr = new XmlBuilderPendingAttr(field, content);
+							attr = new XmlBuilderPendingAttr(field, content);
 
-							XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
+							elem = xmlb.pending_elem.peek();
 
 							if (elem != null)
 								elem.appendPendingAttr(attr);
@@ -7003,13 +7008,13 @@ public class PgSchema implements Serializable {
 
 					else if ((field.simple_attribute || field.simple_attr_cond) && as_attr) {
 
-						String content = field.retrieve(rset, param_id, fill_default_value);
+						content = field.retrieve(rset, param_id, fill_default_value);
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
-							XmlBuilderPendingAttr attr = new XmlBuilderPendingAttr(field, getForeignTable(field), content);
+							attr = new XmlBuilderPendingAttr(field, getForeignTable(field), content);
 
-							XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
+							elem = xmlb.pending_elem.peek();
 
 							if (elem != null)
 								elem.appendPendingAttr(attr);
@@ -7050,7 +7055,7 @@ public class PgSchema implements Serializable {
 
 					else if (field.nested_key_as_attr) {
 
-						Object key = rset.getObject(param_id);
+						key = rset.getObject(param_id);
 
 						if (key != null)
 							nest_test.merge(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, true, nest_test));
@@ -7070,13 +7075,11 @@ public class PgSchema implements Serializable {
 
 					if (field.simple_content && !field.simple_attribute && !as_attr) {
 
-						String content = field.retrieve(rset, param_id, fill_default_value);
+						content = field.retrieve(rset, param_id, fill_default_value);
 
 						if (content != null && !content.isEmpty()) {
 
-							XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
-
-							if (elem != null)
+							if (xmlb.pending_elem.peek() != null)
 								xmlb.writePendingElems(false);
 
 							if (field.simple_primitive_list) {
@@ -7105,13 +7108,11 @@ public class PgSchema implements Serializable {
 
 					else if (field.element) {
 
-						String content = field.retrieve(rset, param_id, fill_default_value);
+						content = field.retrieve(rset, param_id, fill_default_value);
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
-							XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
-
-							if (elem != null)
+							if (xmlb.pending_elem.peek() != null)
 								xmlb.writePendingElems(false);
 
 							xmlb.writePendingSimpleCont();
@@ -7196,7 +7197,7 @@ public class PgSchema implements Serializable {
 
 					if (field.nested_key && !field.nested_key_as_attr) {
 
-						Object key = rset.getObject(param_id);
+						key = rset.getObject(param_id);
 
 						if (key != null) {
 
@@ -7217,11 +7218,9 @@ public class PgSchema implements Serializable {
 
 					if (nest_test.has_content || nest_test.has_simple_content) {
 
-						boolean attr_only = false;
+						attr_only = false;
 
-						XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
-
-						if (elem != null)
+						if (xmlb.pending_elem.peek() != null)
 							xmlb.writePendingElems(attr_only = true);
 
 						xmlb.writePendingSimpleCont();
@@ -7253,11 +7252,9 @@ public class PgSchema implements Serializable {
 
 				if (nest_test.has_content || nest_test.has_simple_content) {
 
-					boolean attr_only = false;
+					attr_only = false;
 
-					XmlBuilderPendingElem elem = xmlb.pending_elem.peek();
-
-					if (elem != null)
+					if (xmlb.pending_elem.peek() != null)
 						xmlb.writePendingElems(attr_only = true);
 
 					xmlb.writePendingSimpleCont();
@@ -7311,7 +7308,6 @@ public class PgSchema implements Serializable {
 		PgField field = path_expr.sql_subject.field;
 
 		boolean fill_default_value = option.fill_default_value;
-
 		boolean as_attr = false;
 
 		try {
@@ -7459,12 +7455,19 @@ public class PgSchema implements Serializable {
 		try {
 
 			JsonBuilderNestTester nest_test = new JsonBuilderNestTester(table, jsonb);
+			JsonBuilderPendingElem elem = new JsonBuilderPendingElem(table, nest_test.current_indent_level);
+			JsonBuilderPendingAttr attr;
 
-			jsonb.pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
+			jsonb.pending_elem.push(elem);
 
 			List<PgField> fields = table.fields;
 
 			String doc_key_name = (option.document_key || option.in_place_document_key) ? getDocKeyName(table) : null;
+			String content;
+
+			Object key;
+
+			boolean attr_only;
 
 			document_id = null;
 
@@ -7480,13 +7483,13 @@ public class PgSchema implements Serializable {
 
 				if (field.attribute) {
 
-					String content = field.retrieve(rset, param_id, fill_default_value);
+					content = field.retrieve(rset, param_id, fill_default_value);
 
 					if ((content != null && !content.isEmpty()) || field.required) {
 
-						JsonBuilderPendingAttr attr = new JsonBuilderPendingAttr(field, content, nest_test.child_indent_level);
+						attr = new JsonBuilderPendingAttr(field, content, nest_test.child_indent_level);
 
-						JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
+						elem = jsonb.pending_elem.peek();
 
 						if (elem != null)
 							elem.appendPendingAttr(attr);
@@ -7527,7 +7530,7 @@ public class PgSchema implements Serializable {
 
 				else if (field.nested_key_as_attr) {
 
-					Object key = rset.getObject(param_id);
+					key = rset.getObject(param_id);
 
 					if (key != null)
 						nest_test.merge(nestChildNode2Json(db_conn, getTable(field.foreign_table_id), key, true, nest_test));
@@ -7550,9 +7553,7 @@ public class PgSchema implements Serializable {
 					if (table.equals(root_table))
 						throw new PgSchemaException("Not allowed to insert document key to root element.");
 
-					JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
-
-					if (elem != null)
+					if (jsonb.pending_elem.peek() != null)
 						jsonb.writePendingElems(false);
 
 					jsonb.writePendingSimpleCont();
@@ -7565,13 +7566,11 @@ public class PgSchema implements Serializable {
 
 				else if (field.simple_content && !field.simple_attribute) {
 
-					String content = field.retrieve(rset, param_id, fill_default_value);
+					content = field.retrieve(rset, param_id, fill_default_value);
 
 					if (content != null && !content.isEmpty()) {
 
-						JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
-
-						if (elem != null)
+						if (jsonb.pending_elem.peek() != null)
 							jsonb.writePendingElems(false);
 
 						jsonb.writePendingSimpleCont();
@@ -7586,13 +7585,11 @@ public class PgSchema implements Serializable {
 
 				else if (field.element) {
 
-					String content = field.retrieve(rset, param_id, fill_default_value);
+					content = field.retrieve(rset, param_id, fill_default_value);
 
 					if ((content != null && !content.isEmpty()) || field.required) {
 
-						JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
-
-						if (elem != null)
+						if (jsonb.pending_elem.peek() != null)
 							jsonb.writePendingElems(false);
 
 						jsonb.writePendingSimpleCont();
@@ -7648,7 +7645,7 @@ public class PgSchema implements Serializable {
 
 				if (field.nested_key && !field.nested_key_as_attr) {
 
-					Object key = rset.getObject(param_id);
+					key = rset.getObject(param_id);
 
 					if (key != null) {
 
@@ -7667,11 +7664,9 @@ public class PgSchema implements Serializable {
 
 			if (nest_test.has_content || nest_test.has_simple_content) {
 
-				boolean attr_only = false;
+				attr_only = false;
 
-				JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
-
-				if (elem != null)
+				if (jsonb.pending_elem.peek() != null)
 					jsonb.writePendingElems(attr_only = true);
 
 				jsonb.writePendingSimpleCont();
@@ -7727,6 +7722,8 @@ public class PgSchema implements Serializable {
 		try {
 
 			JsonBuilderNestTester nest_test = new JsonBuilderNestTester(table, parent_nest_test);
+			JsonBuilderPendingElem elem;
+			JsonBuilderPendingAttr attr;
 
 			boolean no_list_and_bridge = !table.list_holder && table.bridge;
 			boolean array_field = !table.virtual && !no_list_and_bridge && table.nested_fields == 0 && !as_attr && jsonb.type.equals(JsonType.column);
@@ -7744,7 +7741,12 @@ public class PgSchema implements Serializable {
 
 			PgField primary_key = fields.parallelStream().filter(field -> field.primary_key).findFirst().get();
 
+			String content;
+
+			Object key;
+
 			boolean use_doc_key_index = document_id != null && !primary_key.unique_key;
+			boolean attr_only;
 
 			if (table.ps == null || table.ps.isClosed()) {
 
@@ -7798,7 +7800,7 @@ public class PgSchema implements Serializable {
 
 					if (field.attribute) {
 
-						String content = field.retrieve(rset, param_id, fill_default_value);
+						content = field.retrieve(rset, param_id, fill_default_value);
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
@@ -7807,9 +7809,9 @@ public class PgSchema implements Serializable {
 
 							else {
 
-								JsonBuilderPendingAttr attr = new JsonBuilderPendingAttr(field, content, nest_test.child_indent_level);
+								attr = new JsonBuilderPendingAttr(field, content, nest_test.child_indent_level);
 
-								JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
+								elem = jsonb.pending_elem.peek();
 
 								if (elem != null)
 									elem.appendPendingAttr(attr);
@@ -7826,7 +7828,7 @@ public class PgSchema implements Serializable {
 
 					else if ((field.simple_attribute || field.simple_attr_cond) && as_attr) {
 
-						String content = field.retrieve(rset, param_id, fill_default_value);
+						content = field.retrieve(rset, param_id, fill_default_value);
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
@@ -7835,9 +7837,9 @@ public class PgSchema implements Serializable {
 
 							else {
 
-								JsonBuilderPendingAttr attr = new JsonBuilderPendingAttr(field, getForeignTable(field), content, nest_test.child_indent_level - 1); // decreasing indent level means simple attribute or conditional attribute derives from parent table
+								attr = new JsonBuilderPendingAttr(field, getForeignTable(field), content, nest_test.child_indent_level - 1); // decreasing indent level means simple attribute or conditional attribute derives from parent table
 
-								JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
+								elem = jsonb.pending_elem.peek();
 
 								if (elem != null)
 									elem.appendPendingAttr(attr);
@@ -7880,7 +7882,7 @@ public class PgSchema implements Serializable {
 
 					else if (field.nested_key_as_attr) {
 
-						Object key = rset.getObject(param_id);
+						key = rset.getObject(param_id);
 
 						if (key != null)
 							nest_test.merge(nestChildNode2Json(db_conn, getTable(field.foreign_table_id), key, true, nest_test));
@@ -7900,7 +7902,7 @@ public class PgSchema implements Serializable {
 
 					if (field.simple_content && !field.simple_attribute && !as_attr) {
 
-						String content = field.retrieve(rset, param_id, fill_default_value);
+						content = field.retrieve(rset, param_id, fill_default_value);
 
 						if (content != null && !content.isEmpty()) {
 
@@ -7909,9 +7911,7 @@ public class PgSchema implements Serializable {
 
 							else {
 
-								JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
-
-								if (elem != null)
+								if (jsonb.pending_elem.peek() != null)
 									jsonb.writePendingElems(false);
 
 								jsonb.writePendingSimpleCont();
@@ -7928,7 +7928,7 @@ public class PgSchema implements Serializable {
 
 					else if (field.element) {
 
-						String content = field.retrieve(rset, param_id, fill_default_value);
+						content = field.retrieve(rset, param_id, fill_default_value);
 
 						if ((content != null && !content.isEmpty()) || field.required) {
 
@@ -7937,9 +7937,7 @@ public class PgSchema implements Serializable {
 
 							else {
 
-								JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
-
-								if (elem != null)
+								if (jsonb.pending_elem.peek() != null)
 									jsonb.writePendingElems(false);
 
 								jsonb.writePendingSimpleCont();
@@ -7997,7 +7995,7 @@ public class PgSchema implements Serializable {
 
 					if (field.nested_key && !field.nested_key_as_attr) {
 
-						Object key = rset.getObject(param_id);
+						key = rset.getObject(param_id);
 
 						if (key != null) {
 
@@ -8018,11 +8016,9 @@ public class PgSchema implements Serializable {
 
 					if (nest_test.has_content || nest_test.has_simple_content) {
 
-						boolean attr_only = false;
+						attr_only = false;
 
-						JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
-
-						if (elem != null)
+						if (jsonb.pending_elem.peek() != null)
 							jsonb.writePendingElems(attr_only = true);
 
 						jsonb.writePendingSimpleCont();
@@ -8048,11 +8044,9 @@ public class PgSchema implements Serializable {
 
 				if (nest_test.has_content || nest_test.has_simple_content) {
 
-					boolean attr_only = false;
+					attr_only = false;
 
-					JsonBuilderPendingElem elem = jsonb.pending_elem.peek();
-
-					if (elem != null)
+					if (jsonb.pending_elem.peek() != null)
 						jsonb.writePendingElems(attr_only = true);
 
 					jsonb.writePendingSimpleCont();
