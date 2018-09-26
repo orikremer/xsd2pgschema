@@ -18,6 +18,10 @@ limitations under the License.
  */
 
 import net.sf.xsd2pgschema.*;
+import net.sf.xsd2pgschema.implement.Xml2SphinxDsThrd;
+import net.sf.xsd2pgschema.option.*;
+import net.sf.xsd2pgschema.serverutil.*;
+import net.sf.xsd2pgschema.type.*;
 
 import java.io.File;
 import java.io.FilenameFilter;

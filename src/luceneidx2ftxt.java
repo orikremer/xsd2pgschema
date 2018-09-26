@@ -18,6 +18,7 @@ limitations under the License.
  */
 
 import net.sf.xsd2pgschema.*;
+import net.sf.xsd2pgschema.luceneutil.InputIteratorWrapper;
 
 import java.io.IOException;
 import java.io.OutputStream;

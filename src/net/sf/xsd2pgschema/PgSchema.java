@@ -60,6 +60,36 @@ import org.postgresql.core.BaseConnection;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
+import net.sf.xsd2pgschema.docbuilder.JsonBuilder;
+import net.sf.xsd2pgschema.docbuilder.JsonBuilderAnyAttrRetriever;
+import net.sf.xsd2pgschema.docbuilder.JsonBuilderAnyRetriever;
+import net.sf.xsd2pgschema.docbuilder.JsonBuilderNestTester;
+import net.sf.xsd2pgschema.docbuilder.JsonBuilderOption;
+import net.sf.xsd2pgschema.docbuilder.JsonBuilderPendingAttr;
+import net.sf.xsd2pgschema.docbuilder.JsonBuilderPendingElem;
+import net.sf.xsd2pgschema.docbuilder.JsonType;
+import net.sf.xsd2pgschema.docbuilder.XmlBuilder;
+import net.sf.xsd2pgschema.docbuilder.XmlBuilderAnyAttrRetriever;
+import net.sf.xsd2pgschema.docbuilder.XmlBuilderAnyRetriever;
+import net.sf.xsd2pgschema.docbuilder.XmlBuilderNestTester;
+import net.sf.xsd2pgschema.docbuilder.XmlBuilderPendingAttr;
+import net.sf.xsd2pgschema.docbuilder.XmlBuilderPendingElem;
+import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2Json;
+import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2LucIdx;
+import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2PgCsv;
+import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2PgSql;
+import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2SphDs;
+import net.sf.xsd2pgschema.option.IndexFilter;
+import net.sf.xsd2pgschema.option.PgSchemaOption;
+import net.sf.xsd2pgschema.option.XmlPostEditor;
+import net.sf.xsd2pgschema.type.PgHashSize;
+import net.sf.xsd2pgschema.type.XsFieldType;
+import net.sf.xsd2pgschema.type.XsTableType;
+import net.sf.xsd2pgschema.xmlutil.XmlParser;
+import net.sf.xsd2pgschema.xpathparser.XPathCompList;
+import net.sf.xsd2pgschema.xpathparser.XPathCompType;
+import net.sf.xsd2pgschema.xpathparser.XPathExpr;
+
 /**
  * PostgreSQL data model.
  *
@@ -80,7 +110,7 @@ public class PgSchema implements Serializable {
 	private List<PgTable> tables = null;
 
 	/** The PostgreSQL data model option. */
-	protected PgSchemaOption option = null;
+	public PgSchemaOption option = null;
 
 	/** The PostgreSQL root table. */
 	private PgTable root_table = null;
@@ -1068,7 +1098,7 @@ public class PgSchema implements Serializable {
 
 				field.name = field.pname = field.xname = option.document_key_name;
 				field.type = option.xs_prefix_ + "string";
-				field.xs_type = XsDataType.xs_string;
+				field.xs_type = XsFieldType.xs_string;
 				field.document_key = true;
 
 				table.fields.add(0, field);
@@ -1769,7 +1799,7 @@ public class PgSchema implements Serializable {
 		if ((field.anno = PgSchemaUtil.extractAnnotation(node, false)) != null)
 			field.xanno_doc = PgSchemaUtil.extractDocumentation(node, false);
 
-		field.xs_type = XsDataType.xs_any;
+		field.xs_type = XsFieldType.xs_any;
 		field.type = field.xs_type.name();
 
 		field.extractTargetNamespace(this, node); // require type definition
@@ -1799,7 +1829,7 @@ public class PgSchema implements Serializable {
 		if ((field.anno = PgSchemaUtil.extractAnnotation(node, false)) != null)
 			field.xanno_doc = PgSchemaUtil.extractDocumentation(node, false);
 
-		field.xs_type = XsDataType.xs_anyAttribute;
+		field.xs_type = XsFieldType.xs_anyAttribute;
 		field.type = field.xs_type.name();
 
 		field.extractTargetNamespace(this, node); // require type definition
@@ -2028,7 +2058,7 @@ public class PgSchema implements Serializable {
 
 					else if (!has_complex_child) {
 
-						field.xs_type = XsDataType.valueOf("xs_" + type[1]);
+						field.xs_type = XsFieldType.valueOf("xs_" + type[1]);
 
 						table.fields.add(field);
 
@@ -2157,7 +2187,7 @@ public class PgSchema implements Serializable {
 
 							if (type.length != 0 && type[0].equals(option.xs_prefix)) {
 
-								field.xs_type = XsDataType.valueOf("xs_" + type[1]);
+								field.xs_type = XsFieldType.valueOf("xs_" + type[1]);
 
 								table.fields.add(field);
 
@@ -2414,7 +2444,7 @@ public class PgSchema implements Serializable {
 
 		if (type.length != 0 && type[0].equals(option.xs_prefix)) {
 
-			field.xs_type = XsDataType.valueOf("xs_" + type[1]);
+			field.xs_type = XsFieldType.valueOf("xs_" + type[1]);
 
 			table.fields.add(field);
 
@@ -2795,7 +2825,7 @@ public class PgSchema implements Serializable {
 	 * @param prefix prefix of namespace URI
 	 * @return String namespace URI
 	 */
-	protected String getNamespaceUriForPrefix(String prefix) {
+	public String getNamespaceUriForPrefix(String prefix) {
 		return def_namespaces.get(prefix);
 	}
 
@@ -2849,7 +2879,7 @@ public class PgSchema implements Serializable {
 	 * @param table table
 	 * @return String PostgreSQL name of table
 	 */
-	protected String getPgNameOf(PgTable table) {
+	public String getPgNameOf(PgTable table) {
 		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(table.pname);
 	}
 
@@ -2900,7 +2930,7 @@ public class PgSchema implements Serializable {
 	 *
 	 * @return List table list
 	 */
-	protected List<PgTable> getTableList() {
+	public List<PgTable> getTableList() {
 		return tables;
 	}
 
@@ -2909,7 +2939,7 @@ public class PgSchema implements Serializable {
 	 *
 	 * @return PgTable root table
 	 */
-	protected PgTable getRootTable() {
+	public PgTable getRootTable() {
 		return root_table;
 	}
 
@@ -2919,7 +2949,7 @@ public class PgSchema implements Serializable {
 	 * @param table_id table id
 	 * @return PgTable table
 	 */
-	protected PgTable getTable(int table_id) {
+	public PgTable getTable(int table_id) {
 		return table_id < 0 || table_id >= tables.size() ? null : tables.get(table_id);
 	}
 
@@ -3035,7 +3065,7 @@ public class PgSchema implements Serializable {
 	 * @param field field of either nested key of foreign key
 	 * @return PgTable foreign table
 	 */
-	protected PgTable getForeignTable(PgField field) {
+	public PgTable getForeignTable(PgField field) {
 		return field.foreign_table_id == -1 ? getCanTable(field.foreign_schema, field.foreign_table_xname) : getTable(field.foreign_table_id);
 	}
 
@@ -4275,7 +4305,7 @@ public class PgSchema implements Serializable {
 
 		// select all xs:ID as attribute
 
-		tables.parallelStream().forEach(table -> table.fields.stream().filter(field -> field.xs_type.equals(XsDataType.xs_ID)).forEach(field -> field.attr_sel = true));
+		tables.parallelStream().forEach(table -> table.fields.stream().filter(field -> field.xs_type.equals(XsFieldType.xs_ID)).forEach(field -> field.attr_sel = true));
 
 		// type dependent attribute selection
 
@@ -4847,7 +4877,7 @@ public class PgSchema implements Serializable {
 	 * @return String document key name
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected String getDocKeyName(PgTable table) throws PgSchemaException {
+	public String getDocKeyName(PgTable table) throws PgSchemaException {
 
 		if (option.document_key)
 			return option.document_key_name;
@@ -5702,7 +5732,7 @@ public class PgSchema implements Serializable {
 
 	/** The JSON builder. */
 	@Flat
-	protected JsonBuilder jsonb = null;
+	public JsonBuilder jsonb = null;
 
 	/**
 	 * Initialize JSON builder.
@@ -6230,9 +6260,9 @@ public class PgSchema implements Serializable {
 
 		PgField field = path_expr.sql_subject.field;
 
-		String field_name = field.getCanName();
-		String field_ns = field.getTagetNamespace();
-		String field_prefix = field.getPrefix();
+		String field_name = field.xname;
+		String field_ns = field.target_namespace;
+		String field_prefix = field.prefix;
 
 		boolean fill_default_value = option.fill_default_value;
 

@@ -72,6 +72,9 @@ import com.github.antlr.grammars_v4.xpath.xpathLexer;
 import com.github.antlr.grammars_v4.xpath.xpathParser;
 import com.github.antlr.grammars_v4.xpath.xpathParser.MainContext;
 
+import net.sf.xsd2pgschema.xpathparser.XPathComp;
+import net.sf.xsd2pgschema.xpathparser.XPathCompList;
+
 /**
  * Utility functions and default values.
  *

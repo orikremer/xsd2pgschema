@@ -18,6 +18,8 @@ limitations under the License.
  */
 
 import net.sf.xsd2pgschema.*;
+import net.sf.xsd2pgschema.implement.XmlValidatorThrd;
+import net.sf.xsd2pgschema.option.*;
 
 import java.io.File;
 import java.io.FilenameFilter;

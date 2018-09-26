@@ -18,6 +18,10 @@ limitations under the License.
  */
 
 import net.sf.xsd2pgschema.*;
+import net.sf.xsd2pgschema.option.*;
+import net.sf.xsd2pgschema.serverutil.*;
+import net.sf.xsd2pgschema.type.*;
+import net.sf.xsd2pgschema.xpathparser.XPathCompList;
 
 import java.io.IOException;
 import java.io.InputStream;

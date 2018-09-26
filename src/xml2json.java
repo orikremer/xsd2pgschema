@@ -18,6 +18,10 @@ limitations under the License.
  */
 
 import net.sf.xsd2pgschema.*;
+import net.sf.xsd2pgschema.docbuilder.*;
+import net.sf.xsd2pgschema.implement.Xml2JsonThrd;
+import net.sf.xsd2pgschema.option.*;
+import net.sf.xsd2pgschema.serverutil.*;
 
 import java.io.File;
 import java.io.FilenameFilter;

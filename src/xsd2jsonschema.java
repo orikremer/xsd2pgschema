@@ -18,6 +18,8 @@ limitations under the License.
  */
 
 import net.sf.xsd2pgschema.*;
+import net.sf.xsd2pgschema.docbuilder.*;
+import net.sf.xsd2pgschema.option.*;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;

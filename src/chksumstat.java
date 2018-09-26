@@ -18,6 +18,9 @@ limitations under the License.
  */
 
 import net.sf.xsd2pgschema.*;
+import net.sf.xsd2pgschema.implement.ChkSumStatThrd;
+import net.sf.xsd2pgschema.option.*;
+import net.sf.xsd2pgschema.xmlutil.XmlParser;
 
 import java.io.File;
 import java.io.FilenameFilter;

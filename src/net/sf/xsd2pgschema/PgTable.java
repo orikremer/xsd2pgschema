@@ -31,6 +31,10 @@ import org.nustaq.serialization.annotations.Flat;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import net.sf.xsd2pgschema.option.PgSchemaOption;
+import net.sf.xsd2pgschema.type.XsFieldType;
+import net.sf.xsd2pgschema.type.XsTableType;
+
 /**
  * PostgreSQL table declaration.
  *
@@ -42,82 +46,78 @@ public class PgTable implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/** The PostgreSQL schema name (default schema name is "public"). */
-	protected String pg_schema_name;
+	public String pg_schema_name;
 
 	/** The target namespace. */
-	protected String target_namespace;
+	public String target_namespace;
 
 	/** The prefix of target namespace. */
-	protected String prefix = "";
-
-	/** The schema location. */
-	protected String schema_location;
+	public String prefix = "";
 
 	/** The canonical name in XML Schema. */
-	protected String xname = "";
+	public String xname = "";
 
 	/** The table name in PostgreSQL. */
-	protected String pname = "";
+	public String pname = "";
 
 	/** The table name. */
-	protected String name = "";
+	public String name = "";
 
 	/** The table type classified by xs_root (root node), xs_root_child (children node of root node), xs_admin_root (administrative root node), xs_admin_child (children node of administrative node). */
-	protected XsTableType xs_type;
+	public XsTableType xs_type;
 
 	/** The field list. */
-	protected List<PgField> fields = null;
-
-	/** The depth of table. */
-	protected int level = -1;
+	public List<PgField> fields = null;
 
 	/** The generation order in PostgreSQL DDL. */
 	protected int order = 0;
 
 	/** The number of nested field. */
-	protected int nested_fields = 0;
+	public int nested_fields = 0;
 
 	/** Whether content holder. */
-	protected boolean content_holder = false;
+	public boolean content_holder = false;
 
 	/** Whether list holder. */
-	protected boolean list_holder = false;
+	public boolean list_holder = false;
 
 	/** Whether bridge table. */
-	protected boolean bridge = false;
+	public boolean bridge = false;
 
 	/** Whether xs_type equals xs_admin_root. */
-	protected boolean virtual = false;
+	public boolean virtual = false;
 
 	/** Whether bridge table | virtual table | !content_holder. */
-	protected boolean relational = false;
-
-	/** Whether table has foreign key. */
-	protected boolean has_foreign_key = false;
+	public boolean relational = false;
 
 	/** Whether table has any element. */
-	protected boolean has_any = false;
+	public boolean has_any = false;
 
 	/** Whether table has any attribute. */
-	protected boolean has_any_attribute = false;
+	public boolean has_any_attribute = false;
 
 	/** Whether table has required field. */
-	protected boolean has_required_field = false;
+	public boolean has_required_field = false;
 
 	/** Whether table has nested key as attribute. */
-	protected boolean has_nested_key_as_attr = false;
+	public boolean has_nested_key_as_attr = false;
 
 	/** Whether table has simple content as attribute. */
-	protected boolean has_simple_attribute = false;
-
-	/** Whether name collision occurs. */
-	protected boolean name_collision = false;
+	public boolean has_simple_attribute = false;
 
 	/** Whether table is referred from child table. */
 	protected boolean required = false;
 
 	/** Whether table could have writer. */
-	protected boolean writable = false;
+	public boolean writable = false;
+
+	/** Whether name collision occurs. */
+	@Flat
+	protected boolean name_collision = false;
+
+	/** Whether table has foreign key. */
+	@Flat
+	protected boolean has_foreign_key = false;
 
 	/** Whether table has pending group. */
 	@Flat
@@ -125,11 +125,19 @@ public class PgTable implements Serializable {
 
 	/** Whether table is indexable. */
 	@Flat
-	protected boolean indexable = false;
+	public boolean indexable = false;
 
 	/** Whether table is JSON convertible. */
 	@Flat
-	protected boolean jsonable = false;
+	public boolean jsonable = false;
+
+	/** The depth of table. */
+	@Flat
+	protected int level = -1;
+
+	/** The schema location. */
+	@Flat
+	protected String schema_location;
 
 	/** The xs:annotation/xs:documentation (as is). */
 	@Flat
@@ -137,7 +145,7 @@ public class PgTable implements Serializable {
 
 	/** The xs:annotation. */
 	@Flat
-	protected String anno = null;
+	public String anno = null;
 
 	/** Whether table is subset of database (internal use only). */
 	@Flat
@@ -145,27 +153,27 @@ public class PgTable implements Serializable {
 
 	/** The visited key (internal use only). */
 	@Flat
-	protected String visited_key = "";
+	public String visited_key = "";
 
 	/** The current path of buffered writer (internal use only). */
 	@Flat
-	protected Path pathw = null;
+	public Path pathw = null;
 
 	/** The current buffered writer (internal use only). */
 	@Flat
-	protected BufferedWriter buffw = null;
+	public BufferedWriter buffw = null;
 
 	/** Whether JSON buffer of arbitrary field is not empty (internal use only). */
 	@Flat
-	protected boolean jsonb_not_empty = false;
+	public boolean jsonb_not_empty = false;
 
 	/** The primary prepared statement (internal use only). */
 	@Flat
-	protected PreparedStatement ps = null;
+	public PreparedStatement ps = null;
 
 	/** The secondary prepared statement (internal use only). */
 	@Flat
-	protected PreparedStatement ps2 = null;
+	public PreparedStatement ps2 = null;
 
 	/**
 	 * Instance of PostgreSQL table.
@@ -187,39 +195,16 @@ public class PgTable implements Serializable {
 	 */
 	protected void classify() {
 
-		testContentHolder();
-		testListHolder();
-		testBridge();
-		testVirtual();
-		testForeignKey();
-		testHasAny();
-		testHasAnyAttribute();
-
-	}
-
-	/**
-	 * Determine content holder table having one of arbitrary content field such as attribute, element, simple content.
-	 */
-	private void testContentHolder() {
+		// determine content holder table having one of arbitrary content field such as attribute, element, simple content
 
 		content_holder = fields.parallelStream().anyMatch(arg -> !arg.document_key && !arg.primary_key && !arg.foreign_key && !arg.nested_key && !arg.serial_key && !arg.xpath_key);
 		relational = bridge || virtual || !content_holder;
 
-	}
-
-	/**
-	 * Determine list holder table having one of field whose occurrence is unbounded.
-	 */
-	private void testListHolder() {
+		// determine list holder table having one of field whose occurrence is unbounded
 
 		list_holder = fields.parallelStream().filter(arg -> arg.nested_key).anyMatch(arg -> arg.list_holder);
 
-	}
-
-	/**
-	 * Determine bridge table having primary key and a nested key.
-	 */
-	private void testBridge() {
+		// determine bridge table having primary key and a nested key
 
 		boolean has_primary_key = false;
 		boolean has_nested_key = false;
@@ -248,40 +233,20 @@ public class PgTable implements Serializable {
 		bridge = (has_primary_key && has_nested_key);
 		relational = bridge || virtual || !content_holder;
 
-	}
-
-	/**
-	 * Determine virtual table equals administrative table (xs_admin_root).
-	 */
-	private void testVirtual() {
+		// determine virtual table equals administrative table (xs_admin_root)
 
 		virtual = xs_type.equals(XsTableType.xs_admin_root);
 		relational = bridge || virtual || !content_holder;
 
-	}
-
-	/**
-	 * Determine table has foreign key constraint.
-	 */
-	private void testForeignKey() {
+		// determine table has foreign key constraint
 
 		has_foreign_key = fields.parallelStream().anyMatch(arg -> arg.foreign_key);
 
-	}
-
-	/**
-	 * Determine table has any element.
-	 */
-	private void testHasAny() {
+		// determine table has any element
 
 		has_any = fields.parallelStream().anyMatch(arg -> arg.any);
 
-	}
-
-	/**
-	 * Determine table has any attribute.
-	 */
-	private void testHasAnyAttribute() {
+		// determine table has any attribute
 
 		has_any_attribute = fields.parallelStream().anyMatch(arg -> arg.any_attribute);
 
@@ -343,7 +308,7 @@ public class PgTable implements Serializable {
 
 			field.name = field.pname = field.xname = option.document_key_name;
 			field.type = option.xs_prefix_ + "string";
-			field.xs_type = XsDataType.xs_string;
+			field.xs_type = XsFieldType.xs_string;
 			field.document_key = true;
 
 			fields.add(field);
@@ -573,42 +538,6 @@ public class PgTable implements Serializable {
 
 		fields.add(field);
 
-	}
-
-	/**
-	 * Return target namespace.
-	 *
-	 * @return String target namespace
-	 */
-	public String getTargetNamespace() {
-		return target_namespace;
-	}
-
-	/**
-	 * Return prefix of target namespace.
-	 *
-	 * @return String prefix of target namespace
-	 */
-	public String getPrefix() {
-		return prefix;
-	}
-
-	/**
-	 * Return canonical name in XML Schema.
-	 *
-	 * @return String canonical name of table
-	 */
-	public String getCanName() {
-		return xname;
-	}
-
-	/**
-	 * Return table name.
-	 *
-	 * @return String table name
-	 */
-	public String getName() {
-		return name;
 	}
 
 	/**

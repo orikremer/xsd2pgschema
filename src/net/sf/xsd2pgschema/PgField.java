@@ -52,6 +52,12 @@ import org.nustaq.serialization.annotations.Flat;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import net.sf.xsd2pgschema.docbuilder.JsonBuilder;
+import net.sf.xsd2pgschema.docbuilder.JsonSchemaVersion;
+import net.sf.xsd2pgschema.luceneutil.VecTextField;
+import net.sf.xsd2pgschema.option.PgSchemaOption;
+import net.sf.xsd2pgschema.type.XsFieldType;
+
 /**
  * PostgreSQL field declaration.
  *
@@ -63,22 +69,22 @@ public class PgField implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/** The target namespace (@targetNamespace). */
-	protected String target_namespace = PgSchemaUtil.xs_namespace_uri;
+	public String target_namespace = PgSchemaUtil.xs_namespace_uri;
 
 	/** The namespace restriction for any content (@namespace). */
-	protected String namespace = "##any";
+	public String namespace = "##any";
 
 	/** The prefix of target namespace. */
-	protected String prefix = "";
+	public String prefix = "";
 
 	/** The canonical name in XML Schema. */
-	protected String xname = "";
+	public String xname = "";
 
 	/** The field name in PostgreSQL. */
-	protected String pname = "";
+	public String pname = "";
 
 	/** The field name. */
-	protected String name = "";
+	public String name = "";
 
 	/** The data type in XML document. */
 	protected String xtype = null;
@@ -92,101 +98,101 @@ public class PgField implements Serializable {
 	/** The @minOccurs. */
 	protected String minoccurs = "1";
 
-	/** The XML Schema data type. */
-	protected XsDataType xs_type;
+	/** The field type. */
+	public XsFieldType xs_type;
 
 	/** Whether target namespace equals URI of XML Schema 1.x. */
-	protected boolean is_xs_namespace = true;
+	public boolean is_xs_namespace = true;
 
 	/** Whether xs:element. */
-	protected boolean element = false;
+	public boolean element = false;
 
 	/** Whether xs:attribute. */
-	protected boolean attribute = false;
+	public boolean attribute = false;
 
 	/** Whether xs:simpleContent. */
-	protected boolean simple_content = false;
+	public boolean simple_content = false;
 
 	/** Whether xs:simpleContent as primitive list. */
-	protected boolean simple_primitive_list = false;
+	public boolean simple_primitive_list = false;
 
 	/** Whether xs:simpleContent as attribute. */
-	protected boolean simple_attribute = false;
+	public boolean simple_attribute = false;
 
 	/** Whether xs:simpleContent as attribute conditionally, which depends on parent node. */
-	protected boolean simple_attr_cond = false;
+	public boolean simple_attr_cond = false;
 
 	/** Whether xs:any. */
-	protected boolean any = false;
+	public boolean any = false;
 
 	/** Whether xs:anyAttribute. */
-	protected boolean any_attribute = false;
+	public boolean any_attribute = false;
 
 	/** Whether primary key. */
-	protected boolean primary_key = false;
+	public boolean primary_key = false;
 
 	/** Whether unique key. */
-	protected boolean unique_key = false;
+	public boolean unique_key = false;
 
 	/** Whether foreign key. */
-	protected boolean foreign_key = false;
+	public boolean foreign_key = false;
 
 	/** Whether nested key. */
-	protected boolean nested_key = false;
+	public boolean nested_key = false;
 
 	/** Whether nested key as attribute. */
-	protected boolean nested_key_as_attr = false;
+	public boolean nested_key_as_attr = false;
 
 	/** Whether document key. */
-	protected boolean document_key = false;
+	public boolean document_key = false;
 
 	/** Whether serial key. */
-	protected boolean serial_key = false;
+	public boolean serial_key = false;
 
 	/** Whether XPath key. */
-	protected boolean xpath_key = false;
+	public boolean xpath_key = false;
 
 	/** Whether @use="required" | @nillable="false". */
 	protected boolean xrequired = false;
 
 	/** Whether @use="required" | @nillalbe="false", but be false in PostgreSQL when name collision occurs. */
-	protected boolean required = false;
+	public boolean required = false;
 
 	/** Whether @maxOccurs is greater than 1 || @minOccurs is greater than 1. */
-	protected boolean list_holder = false;
+	public boolean list_holder = false;
 
 	/** The foreign table id. */
-	protected int foreign_table_id = -1;
+	public int foreign_table_id = -1;
 
 	/** The schema name of foreign table in PostgreSQL (default schema name is "public"). */
 	protected String foreign_schema = PgSchemaUtil.pg_public_schema_name;
 
 	/** The foreign table name in XML Schema. */
-	protected String foreign_table_xname = null;
+	public String foreign_table_xname = null;
 
 	/** The foreign table name in PostgreSQL. */
 	protected String foreign_table_pname = null;
 
 	/** The foreign field name in PostgreSQL. */
-	protected String foreign_field_pname = null;
+	public String foreign_field_pname = null;
 
 	/** The ancestor node names. */
-	protected String ancestor_node = null;
+	public String ancestor_node = null;
 
 	/** The parent node names. */
-	protected String parent_node = null;
+	public String parent_node = null;
 
 	/** The @fixed. */
 	protected String fixed_value = null;
 
 	/** The @default. */
-	protected String default_value = null;
+	public String default_value = null;
 
 	/** Whether field has any restriction. */
 	protected boolean restriction = false;
 
 	/** The xs:enumeration. */
-	protected String enum_name = null;
+	public String enum_name = null;
 
 	/** The array of xs:enumeration in XML document. */
 	protected String[] xenumeration = null;
@@ -195,16 +201,16 @@ public class PgField implements Serializable {
 	protected String[] enumeration = null;
 
 	/** The xs:length restriction. */
-	protected String length = null;
+	public String length = null;
 
 	/** The xs:minLength restriction. */
-	protected String min_length = null;
+	public String min_length = null;
 
 	/** The xs:maxLength restriction. */
-	protected String max_length = null;
+	public String max_length = null;
 
 	/** The xs:pattern restriction. */
-	protected String pattern = null;
+	public String pattern = null;
 
 	/** The xs:maxInclusive restriction. */
 	protected String max_inclusive = null;
@@ -234,16 +240,16 @@ public class PgField implements Serializable {
 	protected boolean _list = false;
 
 	/** Whether it has any system's administrative key (primary_key || foreign_key || nested_key). */
-	protected boolean system_key = false;
+	public boolean system_key = false;
 
 	/** Whether it has any user's discretion key (document_key || serial_key || xpath_key). */
 	protected boolean user_key = false;
 
 	/** Whether field is omissible. */
-	protected boolean omissible = false;
+	public boolean omissible = false;
 
 	/** Whether field is JSON convertible. */
-	protected boolean jsonable = true;
+	public boolean jsonable = true;
 
 	/** The content of xs:annotation/xs:documentation (as is). */
 	@Flat
@@ -251,7 +257,7 @@ public class PgField implements Serializable {
 
 	/** The content of xs:annotation. */
 	@Flat
-	protected String anno = null;
+	public String anno = null;
 
 	/** The constraint name in PostgreSQL. */
 	@Flat
@@ -271,7 +277,7 @@ public class PgField implements Serializable {
 
 	/** The filled text used in post XML edition. */
 	@Flat
-	protected String filled_text = null;
+	public String filled_text = null;
 
 	/** The filter patterns in post XML edition. */
 	@Flat
@@ -291,7 +297,7 @@ public class PgField implements Serializable {
 
 	/** Whether field is indexable. */
 	@Flat
-	protected boolean indexable = true;
+	public boolean indexable = true;
 
 	/** Whether Sphinx multi-valued attribute. */
 	@Flat
@@ -311,27 +317,27 @@ public class PgField implements Serializable {
 
 	/** The --fill-this option. */
 	@Flat
-	protected boolean fill_this = false;
+	public boolean fill_this = false;
 
 	/** The --filt-out option. */
 	@Flat
-	protected boolean filt_out = false;
+	public boolean filt_out = false;
 
 	/** Whether JSON buffer is not empty (internal use only). */
 	@Flat
-	protected boolean jsonb_not_empty = false;
+	public boolean jsonb_not_empty = false;
 
 	/** The size of data in JSON buffer (internal use only). */
 	@Flat
-	protected int jsonb_col_size = 0;
+	public int jsonb_col_size = 0;
 
 	/** The size of null data in JSON buffer (internal use only). */
 	@Flat
-	protected int jsonb_null_size = 0;
+	public int jsonb_null_size = 0;
 
 	/** The JSON buffer (internal use only). */
 	@Flat
-	protected StringBuilder jsonb = null;
+	public StringBuilder jsonb = null;
 
 	/**
 	 * Extract @type, @itemType, @memberTypes or @base and set type.
@@ -471,7 +477,7 @@ public class PgField implements Serializable {
 				return;
 			}
 
-			XsDataType xs_type1 = XsDataType.valueOf("xs_" + _type1[1]), xs_type2;
+			XsFieldType xs_type1 = XsFieldType.valueOf("xs_" + _type1[1]), xs_type2;
 			String[] _type2;
 
 			for (int i = 1; i < types.length; i++) {
@@ -483,7 +489,7 @@ public class PgField implements Serializable {
 					return;
 				}
 
-				xs_type2 = XsDataType.valueOf("xs_" + _type2[1]);
+				xs_type2 = XsFieldType.valueOf("xs_" + _type2[1]);
 
 				xs_type1 = xs_type1.leastCommonOf(xs_type2);
 
@@ -997,7 +1003,7 @@ public class PgField implements Serializable {
 				if (type == null) {
 
 					type = option.xs_prefix_ + "string";
-					xs_type = XsDataType.xs_string;
+					xs_type = XsFieldType.xs_string;
 
 				}
 
@@ -1385,19 +1391,19 @@ public class PgField implements Serializable {
 		switch (option.hash_size) {
 		case native_default:
 			type = xs_prefix_ + "hexBinary";
-			xs_type = XsDataType.xs_hexBinary;
+			xs_type = XsFieldType.xs_hexBinary;
 			break;
 		case unsigned_int_32:
 			type = xs_prefix_ + "unsignedInt";
-			xs_type = XsDataType.xs_unsignedInt;
+			xs_type = XsFieldType.xs_unsignedInt;
 			break;
 		case unsigned_long_64:
 			type = xs_prefix_ + "unsignedLong";
-			xs_type = XsDataType.xs_unsignedLong;
+			xs_type = XsFieldType.xs_unsignedLong;
 			break;
 		default:
 			type = xs_prefix_ + "string";
-			xs_type = XsDataType.xs_string;
+			xs_type = XsFieldType.xs_string;
 		}
 
 	}
@@ -1414,11 +1420,11 @@ public class PgField implements Serializable {
 		switch (option.ser_size) {
 		case unsigned_int_32:
 			type = xs_prefix_ + "unsignedInt";
-			xs_type = XsDataType.xs_unsignedInt;
+			xs_type = XsFieldType.xs_unsignedInt;
 			break;
 		case unsigned_short_16:
 			type = xs_prefix_ + "unsignedShort";
-			xs_type = XsDataType.xs_unsignedShort;
+			xs_type = XsFieldType.xs_unsignedShort;
 			break;
 		}
 
@@ -1582,44 +1588,6 @@ public class PgField implements Serializable {
 			return _xname.matches(node_name);
 
 		return node_name.equals("*") || _xname.equals(node_name);
-	}
-
-	// PostgreSQL schema generation
-
-	/**
-	 * Return target namespace.
-	 *
-	 * @return String target namespace
-	 */
-	public String getTagetNamespace() {
-		return target_namespace;
-	}
-
-	/**
-	 * Return prefix of target namespace.
-	 *
-	 * @return String prefix of target namespace
-	 */
-	public String getPrefix() {
-		return prefix;
-	}
-
-	/**
-	 * Return canonical name in XML Schema.
-	 *
-	 * @return String canonical name of field
-	 */
-	public String getCanName() {
-		return xname;
-	}
-
-	/**
-	 * Return field name.
-	 *
-	 * @return String field name
-	 */
-	public String getName() {
-		return name;
 	}
 
 	// PostgreSQL DDL
@@ -2853,7 +2821,7 @@ public class PgField implements Serializable {
 	 *
 	 * @return String JSON Schema default value
 	 */
-	protected String getJsonSchemaDefaultValue() {
+	public String getJsonSchemaDefaultValue() {
 
 		switch (xs_type) {
 		case xs_boolean:
@@ -2919,7 +2887,7 @@ public class PgField implements Serializable {
 	 * @param concat_value_space the JSON key value space with concatenation
 	 * @return String JSON Schema enumeration array
 	 */
-	protected String getJsonSchemaEnumArray(final String concat_value_space) {
+	public String getJsonSchemaEnumArray(final String concat_value_space) {
 
 		StringBuilder sb = new StringBuilder();
 
@@ -2998,7 +2966,7 @@ public class PgField implements Serializable {
 	 * @return String JSON Schema maximum value
 	 */
 	@Deprecated
-	protected String getJsonSchemaMaximumValueDraftV4(JsonBuilder jsonb) {
+	public String getJsonSchemaMaximumValueDraftV4(JsonBuilder jsonb) {
 
 		final String exclusive_maximum = jsonb.concat_value_space + jsonb.getCanKeyDecl("exclusiveMaximum") + "true";
 
@@ -3277,7 +3245,7 @@ public class PgField implements Serializable {
 	 * @return String JSON Schema minimum value
 	 */
 	@Deprecated
-	protected String getJsonSchemaMinimumValueDraftV4(JsonBuilder jsonb) {
+	public String getJsonSchemaMinimumValueDraftV4(JsonBuilder jsonb) {
 
 		final String exclusive_minimum = jsonb.concat_value_space + jsonb.getCanKeyDecl("exclusiveMinimum") + "true";
 
@@ -3517,7 +3485,7 @@ public class PgField implements Serializable {
 	 * @param jsonb JSON builder
 	 * @return String JSON Schema maximum value
 	 */
-	protected String getJsonSchemaMaximumValue(JsonBuilder jsonb) {
+	public String getJsonSchemaMaximumValue(JsonBuilder jsonb) {
 
 		final String maximum_ = jsonb.getCanKeyDecl("maximum");
 		final String exclusive_maximum_ = jsonb.getCanKeyDecl("exclusiveMaximum");
@@ -3798,7 +3766,7 @@ public class PgField implements Serializable {
 	 * @param jsonb JSON builder
 	 * @return String JSON Schema minimum value
 	 */
-	protected String getJsonSchemaMinimumValue(JsonBuilder jsonb) {
+	public String getJsonSchemaMinimumValue(JsonBuilder jsonb) {
 
 		final String minimum_ = jsonb.getCanKeyDecl("minimum");
 		final String exclusive_minimum_ = jsonb.getCanKeyDecl("exclusiveMinimum");
@@ -4040,7 +4008,7 @@ public class PgField implements Serializable {
 	 *
 	 * @return String JSON Schema multipleOf value
 	 */
-	protected String getJsonSchemaMultipleOfValue() {
+	public String getJsonSchemaMultipleOfValue() {
 
 		switch (xs_type) {
 		case xs_float:
@@ -4108,7 +4076,7 @@ public class PgField implements Serializable {
 	 * @param schema_ver JSON Schema version assumed
 	 * @return String JSON Schema format definition
 	 */
-	protected String getJsonSchemaFormat(JsonSchemaVersion schema_ver) {
+	public String getJsonSchemaFormat(JsonSchemaVersion schema_ver) {
 
 		boolean latest = schema_ver.isLatest();
 
@@ -4389,7 +4357,7 @@ public class PgField implements Serializable {
 	 * @param value content
 	 * @throws SQLException the SQL exception
 	 */
-	protected void write(PreparedStatement ps, int par_idx, int ins_idx, String value) throws SQLException {
+	public void write(PreparedStatement ps, int par_idx, int ins_idx, String value) throws SQLException {
 
 		boolean upsert = ins_idx != -1;
 
@@ -4587,7 +4555,7 @@ public class PgField implements Serializable {
 	 * @param xml_object XML object
 	 * @throws SQLException the SQL exception
 	 */
-	protected void write(PreparedStatement ps, int par_idx, int ins_idx, SQLXML xml_object) throws SQLException {
+	public void write(PreparedStatement ps, int par_idx, int ins_idx, SQLXML xml_object) throws SQLException {
 
 		boolean upsert = ins_idx != -1;
 
@@ -4613,7 +4581,7 @@ public class PgField implements Serializable {
 	 * @param min_word_len_filter whether it exceeds minimum word length
 	 * @param lucene_numeric_index whether numeric values are stored in Lucene index
 	 */
-	protected void write(org.apache.lucene.document.Document lucene_doc, String name, String value, boolean min_word_len_filter, boolean lucene_numeric_index) {
+	public void write(org.apache.lucene.document.Document lucene_doc, String name, String value, boolean min_word_len_filter, boolean lucene_numeric_index) {
 
 		if (attr_sel_rdy) {
 
@@ -4725,7 +4693,7 @@ public class PgField implements Serializable {
 	 * @param value content
 	 * @param min_word_len_filter whether it exceeds minimum word length
 	 */
-	protected void write(BufferedWriter buffw, String attr_name, String value, boolean min_word_len_filter) {
+	public void write(BufferedWriter buffw, String attr_name, String value, boolean min_word_len_filter) {
 
 		try {
 
@@ -4819,7 +4787,7 @@ public class PgField implements Serializable {
 	 * @param concat_value_space the JSON key value space with concatenation
 	 * @return boolean whether value is successfully set
 	 */
-	protected boolean write(JsonSchemaVersion schema_ver, String value, boolean fragment, final String concat_value_space) {
+	public boolean write(JsonSchemaVersion schema_ver, String value, boolean fragment, final String concat_value_space) {
 
 		if (jsonb == null)
 			return false;
