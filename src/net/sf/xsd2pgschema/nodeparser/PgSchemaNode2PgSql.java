@@ -21,8 +21,6 @@ package net.sf.xsd2pgschema.nodeparser;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLXML;
@@ -48,14 +46,11 @@ import net.sf.xsd2pgschema.type.PgSerSize;
  */
 public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
-	/** The database connection. */
-	private Connection db_conn;
+	/** Whether to update. */
+	private boolean update;
 
 	/** The prepared statement. */
 	private PreparedStatement ps = null;
-
-	/** Whether to update. */
-	private boolean update;
 
 	/** Whether to upsert. */
 	private boolean upsert = false;
@@ -79,20 +74,16 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * Node parser for PostgreSQL data migration.
 	 *
 	 * @param schema PostgreSQL data model
-	 * @param md_hash_key instance of message digest
-	 * @param document_id document id
 	 * @param parent_table parent table (set null if current table is root table)
 	 * @param table current table
 	 * @param update whether update or insertion
-	 * @param db_conn database connection
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2PgSql(final PgSchema schema, final MessageDigest md_hash_key, final String document_id, final PgTable parent_table, final PgTable table, final boolean update, final Connection db_conn) throws PgSchemaException {
+	public PgSchemaNode2PgSql(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean update) throws PgSchemaException {
 
-		super(schema, md_hash_key, document_id, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
+		super(schema, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
 
 		this.update = update;
-		this.db_conn = db_conn;
 
 		if (table.writable) {
 
@@ -171,7 +162,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						sql.append(" WHERE EXCLUDED." + pkey_name + " = ?");
 
-						table.ps2 = db_conn.prepareStatement(sql.toString());
+						table.ps2 = schema.db_conn.prepareStatement(sql.toString());
 
 						sql.setLength(0);
 
@@ -210,7 +201,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 						sql.setLength(sql.length() - 2);
 						sql.append(" )");
 
-						table.ps = db_conn.prepareStatement(sql.toString());
+						table.ps = schema.db_conn.prepareStatement(sql.toString());
 
 						sql.setLength(0);
 
@@ -244,7 +235,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(schema, md_hash_key, document_id, table, nested_key.table, update, db_conn);
+		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(schema, table, nested_key.table, update);
 
 		try {
 
@@ -390,7 +381,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 							if (setAnyContent(proc_node, field) && !content.isEmpty()) {
 
-								SQLXML xml_object = db_conn.createSQLXML();
+								SQLXML xml_object = schema.db_conn.createSQLXML();
 
 								xml_object.setString(content);
 
@@ -480,7 +471,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 							if (setAnyContent(proc_node, field) && !content.isEmpty()) {
 
-								SQLXML xml_object = db_conn.createSQLXML();
+								SQLXML xml_object = schema.db_conn.createSQLXML();
 
 								xml_object.setString(content);
 

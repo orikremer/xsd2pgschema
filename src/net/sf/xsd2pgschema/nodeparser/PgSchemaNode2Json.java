@@ -20,7 +20,6 @@ limitations under the License.
 package net.sf.xsd2pgschema.nodeparser;
 
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.util.Arrays;
 
 import javax.xml.transform.TransformerException;
@@ -65,19 +64,15 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 * Node parser for JSON conversion.
 	 *
 	 * @param schema PostgreSQL data model
-	 * @param md_hash_key instance of message digest
-	 * @param document_id document id
 	 * @param parent_table parent table (set null if current table is root table)
 	 * @param table current table
-	 * @param jsonb JSON builder
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2Json(final PgSchema schema, final MessageDigest md_hash_key, final String document_id, final PgTable parent_table, final PgTable table, final JsonBuilder jsonb) throws PgSchemaException {
+	public PgSchemaNode2Json(final PgSchema schema, final PgTable parent_table, final PgTable table) throws PgSchemaException {
 
-		super(schema, md_hash_key, document_id, parent_table, table, PgSchemaNodeParserType.json_conversion);
+		super(schema, parent_table, table, PgSchemaNodeParserType.json_conversion);
 
-		this.jsonb = jsonb;
-
+		jsonb = schema.jsonb;
 		type = jsonb.type;
 
 		if (table.jsonable) {
@@ -309,7 +304,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, md_hash_key, document_id, table, nested_key.table, jsonb);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, table, nested_key.table);
 
 		try {
 
@@ -349,7 +344,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		PgTable current_table = nested_key.table;
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, md_hash_key, document_id, table, current_table, jsonb);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, table, current_table);
 
 		try {
 
@@ -403,7 +398,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		PgTable current_table = nested_key.table;
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, md_hash_key, document_id, table, current_table, jsonb);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, table, current_table);
 
 		try {
 

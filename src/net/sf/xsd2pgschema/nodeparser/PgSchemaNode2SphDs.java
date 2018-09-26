@@ -21,7 +21,6 @@ package net.sf.xsd2pgschema.nodeparser;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.util.Arrays;
 
 import javax.xml.transform.TransformerException;
@@ -42,14 +41,11 @@ import net.sf.xsd2pgschema.PgTable;
  */
 public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
-	/** The buffered writer for data conversion. */
-	private BufferedWriter buffw;
+	/** The minimum word length for indexing. */
+	private int min_word_len;
 
 	/** The prefix of index field. */
 	private String field_prefix;
-
-	/** The minimum word length for indexing. */
-	private int min_word_len;
 
 	/** The content of fields. */
 	private String[] values;
@@ -58,20 +54,16 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	 * Node parser for Sphinx xmlpipe2 conversion.
 	 *
 	 * @param schema PostgreSQL data model
-	 * @param md_hash_key instance of message digest
-	 * @param document_id document id
 	 * @param parent_table parent table (set null if current table is root table)
 	 * @param table current table
 	 * @param min_word_len minimum word length for indexing
-	 * @param buffw buffered writer
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2SphDs(final PgSchema schema, final MessageDigest md_hash_key, final String document_id, final PgTable parent_table, final PgTable table, final int min_word_len, final BufferedWriter buffw) throws PgSchemaException {
+	public PgSchemaNode2SphDs(final PgSchema schema, final PgTable parent_table, final PgTable table, final int min_word_len) throws PgSchemaException {
 
-		super(schema, md_hash_key, document_id, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
+		super(schema, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
 
 		this.min_word_len = min_word_len;
-		this.buffw = buffw;
 
 		if (table.indexable) {
 
@@ -93,7 +85,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(schema, md_hash_key, document_id, table, nested_key.table, min_word_len, buffw);
+		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(schema, table, nested_key.table, min_word_len);
 
 		try {
 
@@ -214,6 +206,8 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 		if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
 			return;
 
+		BufferedWriter sph_ds_buffw = schema.sph_ds_buffw;
+
 		for (int f = 0; f < fields_size; f++) {
 
 			field = fields.get(f);
@@ -225,7 +219,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 				if ((value == null ? 0 : value.length()) == 0)
 					continue;
 
-				field.write(buffw, field_prefix + field.name, value, value_len >= min_word_len);
+				field.write(sph_ds_buffw, field_prefix + field.name, value, value_len >= min_word_len);
 
 			}
 

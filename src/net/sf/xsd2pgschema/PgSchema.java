@@ -100,6 +100,9 @@ public class PgSchema implements Serializable {
 	/** The default serial version ID. */
 	private static final long serialVersionUID = 1L;
 
+	/** The PostgreSQL data model option. */
+	public PgSchemaOption option = null;
+
 	/** The default schema location. */
 	private String def_schema_location = null;
 
@@ -108,9 +111,6 @@ public class PgSchema implements Serializable {
 
 	/** The list of PostgreSQL table. */
 	private List<PgTable> tables = null;
-
-	/** The PostgreSQL data model option. */
-	public PgSchemaOption option = null;
 
 	/** The PostgreSQL root table. */
 	private PgTable root_table = null;
@@ -197,10 +197,6 @@ public class PgSchema implements Serializable {
 	/** The default attributes. */
 	@Flat
 	private String def_attrs = null;
-
-	/** The current document id. */
-	@Flat
-	private String document_id = null;
 
 	/** The statistics message on schema. */
 	@Flat
@@ -2884,18 +2880,6 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
-	 * Return PostgreSQL name of table.
-	 *
-	 * @param db_conn database connection
-	 * @param table table
-	 * @return String PostgreSQL name of table
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	private String getPgNameOf(Connection db_conn, PgTable table) throws PgSchemaException {
-		return (option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(getDbTableName(db_conn, table.pname));
-	}
-
-	/**
 	 * Return PostgreSQL name of child table.
 	 *
 	 * @param foreign_key foreign key
@@ -4557,14 +4541,17 @@ public class PgSchema implements Serializable {
 
 	}
 
+	/** The instance of message digest. */
+	@Flat
+	public MessageDigest md_hash_key = null;
+
 	/**
 	 * Determine hash key of source string.
 	 *
-	 * @param md_hash_key instance of message digest
 	 * @param key_name source string
 	 * @return String hash key
 	 */
-	private String getHashKeyString(MessageDigest md_hash_key, String key_name) {
+	private String getHashKeyString(String key_name) {
 
 		if (md_hash_key == null) // debug mode
 			return key_name;
@@ -4603,6 +4590,10 @@ public class PgSchema implements Serializable {
 			throw new PgSchemaException("Not found root table in XML Schema: " + def_schema_location);
 
 	}
+
+	/** The current document id. */
+	@Flat
+	public String document_id = null;
 
 	/**
 	 * Return root node of document.
@@ -4683,6 +4674,8 @@ public class PgSchema implements Serializable {
 
 		Node node = getRootNode(xml_parser);
 
+		this.md_hash_key = md_hash_key;
+
 		tables.parallelStream().filter(table -> table.writable).forEach(table -> {
 
 			if (table.pathw == null)
@@ -4692,7 +4685,7 @@ public class PgSchema implements Serializable {
 
 		// parse root node and write to data (CSV/TSV) file
 
-		PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(this, md_hash_key, document_id, null, root_table);
+		PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(this, null, root_table);
 
 		node2pgcsv.parseRootNode(node);
 
@@ -4745,13 +4738,13 @@ public class PgSchema implements Serializable {
 
 					if (Files.exists(data_path)) {
 
-						String sql = "COPY " + getPgNameOf(db_conn, table) + " FROM STDIN" + (option.pg_tab_delimiter ? "" : " CSV");
+						String sql = "COPY " + getPgNameOf(table) + " FROM STDIN" + (option.pg_tab_delimiter ? "" : " CSV");
 
 						copy_man.copyIn(sql, Files.newInputStream(data_path));
 
 					}
 
-				} catch (SQLException | IOException | PgSchemaException e) {
+				} catch (SQLException | IOException e) {
 					System.err.println("Exception occurred while processing " + (option.pg_tab_delimiter ? "TSV" : "CSV") + " document: " + data_path.toAbsolutePath().toString());
 					e.printStackTrace();
 				}
@@ -4765,6 +4758,10 @@ public class PgSchema implements Serializable {
 	}
 
 	// PostgreSQL data migration via prepared statement
+
+	/** The database connection. */
+	@Flat
+	public Connection db_conn = null;
 
 	/** Whether to set all constraints deferred. */
 	@Flat
@@ -4782,6 +4779,9 @@ public class PgSchema implements Serializable {
 	public void xml2PgSql(XmlParser xml_parser, MessageDigest md_hash_key, boolean update, Connection db_conn) throws PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
+
+		this.md_hash_key = md_hash_key;
+		this.db_conn = db_conn;
 
 		boolean sync_rescue = option.sync_rescue;
 
@@ -4807,14 +4807,14 @@ public class PgSchema implements Serializable {
 
 		if (update || sync_rescue) {
 
-			deleteBeforeUpdate(db_conn, option.rel_data_ext && option.pg_retain_key, document_id);
+			deleteBeforeUpdate(option.rel_data_ext && option.pg_retain_key);
 
 			if (!option.rel_data_ext || !option.pg_retain_key || sync_rescue)
 				update = false;
 
 		}
 
-		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, md_hash_key, document_id, null, root_table, update, db_conn);
+		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, null, root_table, update);
 
 		node2pgsql.parseRootNode(node);
 
@@ -4852,7 +4852,7 @@ public class PgSchema implements Serializable {
 
 			Statement stat = db_conn.createStatement();
 
-			String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + " FROM " + getPgNameOf(db_conn, doc_id_table);
+			String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + " FROM " + getPgNameOf(doc_id_table);
 
 			ResultSet rset = stat.executeQuery(sql);
 
@@ -4912,10 +4912,16 @@ public class PgSchema implements Serializable {
 
 		if (!option.rel_data_ext) {
 
+			this.db_conn = db_conn;
+
 			set.forEach(id -> {
 
 				try {
-					deleteBeforeUpdate(db_conn, false, id);
+
+					document_id = id;
+
+					deleteBeforeUpdate(false);
+
 				} catch (PgSchemaException e) {
 					e.printStackTrace();
 				}
@@ -4929,17 +4935,15 @@ public class PgSchema implements Serializable {
 	/**
 	 * Execute PostgreSQL DELETE command before INSERT for all tables of current document.
 	 *
-	 * @param db_conn database connection
 	 * @param no_pkey delete whether relations not having primary key or uniformly (false)
-	 * @param document_id target document id
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void deleteBeforeUpdate(Connection db_conn, boolean no_pkey, String document_id) throws PgSchemaException {
+	private void deleteBeforeUpdate(boolean no_pkey) throws PgSchemaException {
 
 		try {
 
 			if (has_db_rows == null)
-				initHasDbRows(db_conn);
+				initHasDbRows();
 
 			Statement stat = db_conn.createStatement();
 
@@ -4948,7 +4952,7 @@ public class PgSchema implements Serializable {
 
 			if (has_db_rows.get(doc_id_table.pname)) {
 
-				String sql = "DELETE FROM " + getPgNameOf(db_conn, doc_id_table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + "='" + document_id + "'";
+				String sql = "DELETE FROM " + getPgNameOf(doc_id_table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(doc_id_table)) + "='" + document_id + "'";
 
 				has_doc_id = stat.executeUpdate(sql) > 0;
 
@@ -4962,7 +4966,7 @@ public class PgSchema implements Serializable {
 
 						try {
 
-							String sql = "DELETE FROM " + getPgNameOf(db_conn, table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
+							String sql = "DELETE FROM " + getPgNameOf(table) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(getDocKeyName(table)) + "='" + document_id + "'";
 
 							stat.executeUpdate(sql);
 
@@ -4996,8 +5000,10 @@ public class PgSchema implements Serializable {
 	 */
 	public void createDocKeyIndex(Connection db_conn, int min_row_count) throws PgSchemaException {
 
+		this.db_conn = db_conn;
+
 		if (has_db_rows == null)
-			initHasDbRows(db_conn);
+			initHasDbRows();
 
 		try {
 
@@ -5036,7 +5042,7 @@ public class PgSchema implements Serializable {
 
 					if (!has_index) {
 
-						String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + getPgNameOf(db_conn, table) + " LIMIT " + min_row_count + " ) AS trunc";
+						String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + getPgNameOf(table) + " LIMIT " + min_row_count + " ) AS trunc";
 
 						rset = stat.executeQuery(sql);
 
@@ -5044,7 +5050,7 @@ public class PgSchema implements Serializable {
 
 							if (rset.getInt(1) == min_row_count) {
 
-								sql = "CREATE INDEX IDX_" + table_name + "_" + doc_key_name + " ON " + getPgNameOf(db_conn, table) + " ( " + PgSchemaUtil.avoidPgReservedWords(doc_key_name) + " )";
+								sql = "CREATE INDEX IDX_" + table_name + "_" + doc_key_name + " ON " + getPgNameOf(table) + " ( " + PgSchemaUtil.avoidPgReservedWords(doc_key_name) + " )";
 
 								stat.execute(sql);
 
@@ -5081,8 +5087,10 @@ public class PgSchema implements Serializable {
 	 */
 	public void dropDocKeyIndex(Connection db_conn) throws PgSchemaException {
 
+		this.db_conn = db_conn;
+
 		if (has_db_rows == null)
-			initHasDbRows(db_conn);
+			initHasDbRows();
 
 		try {
 
@@ -5142,10 +5150,9 @@ public class PgSchema implements Serializable {
 	/**
 	 * Initialize whether PostgreSQL table has any rows.
 	 *
-	 * @param db_conn database connection
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void initHasDbRows(Connection db_conn) throws PgSchemaException {
+	private void initHasDbRows() throws PgSchemaException {
 
 		try {
 
@@ -5156,7 +5163,7 @@ public class PgSchema implements Serializable {
 
 			String doc_id_table_name = doc_id_table.pname;
 
-			String sql1 = "SELECT EXISTS( SELECT 1 FROM " + getPgNameOf(db_conn, doc_id_table) + " LIMIT 1 )";
+			String sql1 = "SELECT EXISTS( SELECT 1 FROM " + getPgNameOf(doc_id_table) + " LIMIT 1 )";
 
 			ResultSet rset1 = stat.executeQuery(sql1);
 
@@ -5175,7 +5182,7 @@ public class PgSchema implements Serializable {
 
 					try {
 
-						String sql2 = "SELECT EXISTS( SELECT 1 FROM " + getPgNameOf(db_conn, table) + " LIMIT 1 )";
+						String sql2 = "SELECT EXISTS( SELECT 1 FROM " + getPgNameOf(table) + " LIMIT 1 )";
 
 						ResultSet rset2 = stat.executeQuery(sql2);
 
@@ -5184,7 +5191,7 @@ public class PgSchema implements Serializable {
 
 						rset2.close();
 
-					} catch (SQLException | PgSchemaException e) {
+					} catch (SQLException e) {
 						e.printStackTrace();
 					}
 
@@ -5209,11 +5216,10 @@ public class PgSchema implements Serializable {
 	/**
 	 * Return exact table name in PostgreSQL
 	 *
-	 * @param db_conn database connection
 	 * @param table_name table name
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private String getDbTableName(Connection db_conn, String table_name) throws PgSchemaException {
+	private String getDbTableName(String table_name) throws PgSchemaException {
 
 		if (db_tables == null) {
 
@@ -5252,6 +5258,8 @@ public class PgSchema implements Serializable {
 	 */
 	public void testPgSql(Connection db_conn, boolean strict) throws PgSchemaException {
 
+		this.db_conn = db_conn;
+
 		try {
 
 			DatabaseMetaData meta = db_conn.getMetaData();
@@ -5264,7 +5272,7 @@ public class PgSchema implements Serializable {
 
 					String pg_schema_name = getPgSchemaOf(table);
 					String table_name = table.pname;
-					String db_table_name = getDbTableName(db_conn, table_name);
+					String db_table_name = getDbTableName(table_name);
 
 					ResultSet rset_col = meta.getColumns(null, pg_schema_name, db_table_name, null);
 
@@ -5354,6 +5362,10 @@ public class PgSchema implements Serializable {
 
 	// Lucene full-text indexing
 
+	/** The Lucene document. */
+	@Flat
+	public org.apache.lucene.document.Document lucene_doc = null;
+
 	/**
 	 * Lucene document conversion.
 	 *
@@ -5367,13 +5379,16 @@ public class PgSchema implements Serializable {
 
 		Node node = getRootNode(xml_parser);
 
+		this.md_hash_key = md_hash_key;
+		this.lucene_doc = lucene_doc;
+
 		resetAttrSelRdy();
 
 		// parse root node and store into Lucene document
 
 		lucene_doc.add(new StringField(option.document_key_name, document_id, Field.Store.YES));
 
-		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(this, md_hash_key, document_id, null, root_table, index_filter.min_word_len, index_filter.lucene_numeric_index, lucene_doc);
+		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(this, null, root_table, index_filter.min_word_len, index_filter.lucene_numeric_index);
 
 		node2lucidx.parseRootNode(node);
 
@@ -5663,18 +5678,25 @@ public class PgSchema implements Serializable {
 
 	}
 
+	/** The buffered writer of Sphinx xmlpipe2 file. */
+	@Flat
+	public BufferedWriter sph_ds_buffw = null;
+
 	/**
 	 * Sphinx xmlpipe2 conversion.
 	 *
 	 * @param xml_parser XML parser
 	 * @param md_hash_key instance of message digest
 	 * @param index_filter index filter
-	 * @param buffw buffered writer of Sphinx xmlpipe2 file
+	 * @param sph_ds_buffw buffered writer of Sphinx xmlpipe2 file
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void xml2SphDs(XmlParser xml_parser, MessageDigest md_hash_key, IndexFilter index_filter, BufferedWriter buffw) throws PgSchemaException {
+	public void xml2SphDs(XmlParser xml_parser, MessageDigest md_hash_key, IndexFilter index_filter, BufferedWriter sph_ds_buffw) throws PgSchemaException {
 
 		Node node = getRootNode(xml_parser);
+
+		this.md_hash_key = md_hash_key;
+		this.sph_ds_buffw = sph_ds_buffw;
 
 		resetAttrSelRdy();
 
@@ -5682,17 +5704,17 @@ public class PgSchema implements Serializable {
 
 		try {
 
-			buffw.write("<?xml version=\"" + PgSchemaUtil.def_xml_version + "\" encoding=\"" + PgSchemaUtil.def_encoding + "\"?>\n");
-			buffw.write("<sphinx:document id=\"" + getHashKeyString(md_hash_key, document_id) + "\" xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
-			buffw.write("<" + option.document_key_name + ">" + StringEscapeUtils.escapeXml10(document_id) + "</" + option.document_key_name + ">\n");
+			sph_ds_buffw.write("<?xml version=\"" + PgSchemaUtil.def_xml_version + "\" encoding=\"" + PgSchemaUtil.def_encoding + "\"?>\n");
+			sph_ds_buffw.write("<sphinx:document id=\"" + getHashKeyString(document_id) + "\" xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
+			sph_ds_buffw.write("<" + option.document_key_name + ">" + StringEscapeUtils.escapeXml10(document_id) + "</" + option.document_key_name + ">\n");
 
-			PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(this, md_hash_key, document_id, null, root_table, index_filter.min_word_len, buffw);
+			PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(this, null, root_table, index_filter.min_word_len);
 
 			node2sphds.parseRootNode(node);
 
 			node2sphds.clear();
 
-			buffw.write("</sphinx:document>\n");
+			sph_ds_buffw.write("</sphinx:document>\n");
 
 		} catch (IOException e) {
 			throw new PgSchemaException(e);
@@ -5915,13 +5937,15 @@ public class PgSchema implements Serializable {
 
 		Node node = getRootNode(xml_parser);
 
+		this.md_hash_key = md_hash_key;
+
 		clearJsonBuilder();
 
 		jsonb.writeStartDocument(true);
 
 		// parse root node and store to JSON buffer
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, md_hash_key, document_id, null, root_table, jsonb);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
 
 		node2json.parseRootNode(node, 1);
 
@@ -6047,13 +6071,15 @@ public class PgSchema implements Serializable {
 
 		Node node = getRootNode(xml_parser);
 
+		this.md_hash_key = md_hash_key;
+
 		clearJsonBuilder();
 
 		jsonb.writeStartDocument(true);
 
 		// parse root node and store to JSON buffer
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, md_hash_key, document_id, null, root_table, jsonb);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
 
 		node2json.parseRootNode(node, 1);
 
@@ -6166,13 +6192,15 @@ public class PgSchema implements Serializable {
 
 		Node node = getRootNode(xml_parser);
 
+		this.md_hash_key = md_hash_key;
+
 		clearJsonBuilder();
 
 		jsonb.writeStartDocument(true);
 
 		// parse root node and store to JSON buffer
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, md_hash_key, document_id, null, root_table, jsonb);
+		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table);
 
 		node2json.parseRootNode(node);
 
@@ -6597,6 +6625,8 @@ public class PgSchema implements Serializable {
 		if (!terminus.equals(XPathCompType.table))
 			return;
 
+		this.db_conn = db_conn;
+
 		PgTable table = path_expr.sql_subject.table;
 
 		String table_ns = table.target_namespace;
@@ -6687,7 +6717,7 @@ public class PgSchema implements Serializable {
 					key = rset.getObject(param_id);
 
 					if (key != null)
-						nest_test.merge(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, true, nest_test));
+						nest_test.merge(nestChildNode2Xml(getTable(field.foreign_table_id), key, true, nest_test));
 
 				}
 
@@ -6857,7 +6887,7 @@ public class PgSchema implements Serializable {
 
 						nest_test.has_child_elem |= n++ > 0;
 
-						nest_test.merge(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, false, nest_test));
+						nest_test.merge(nestChildNode2Xml(getTable(field.foreign_table_id), key, false, nest_test));
 
 					}
 
@@ -6918,7 +6948,6 @@ public class PgSchema implements Serializable {
 	/**
 	 * Nest node and compose XML document.
 	 *
-	 * @param db_conn database connection
 	 * @param table current table
 	 * @param parent_key parent key
 	 * @param as_attr whether parent key is simple attribute
@@ -6926,7 +6955,7 @@ public class PgSchema implements Serializable {
 	 * @return XmlBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */	
-	private XmlBuilderNestTester nestChildNode2Xml(final Connection db_conn, final PgTable table, final Object parent_key, final boolean as_attr, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
+	private XmlBuilderNestTester nestChildNode2Xml(final PgTable table, final Object parent_key, final boolean as_attr, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		boolean fill_default_value = option.fill_default_value;
 
@@ -6965,7 +6994,7 @@ public class PgSchema implements Serializable {
 
 			if (table.ps == null || table.ps.isClosed()) {
 
-				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + (use_doc_key_index ? PgSchemaUtil.avoidPgReservedOps(getDocKeyName(table)) + " = ? AND " : "") + PgSchemaUtil.avoidPgReservedWords(primary_key.pname) + " = ?";
+				String sql = "SELECT * FROM " + getPgNameOf(table) + " WHERE " + (use_doc_key_index ? PgSchemaUtil.avoidPgReservedOps(getDocKeyName(table)) + " = ? AND " : "") + PgSchemaUtil.avoidPgReservedWords(primary_key.pname) + " = ?";
 
 				table.ps = db_conn.prepareStatement(sql);
 
@@ -7088,7 +7117,7 @@ public class PgSchema implements Serializable {
 						key = rset.getObject(param_id);
 
 						if (key != null)
-							nest_test.merge(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, true, nest_test));
+							nest_test.merge(nestChildNode2Xml(getTable(field.foreign_table_id), key, true, nest_test));
 
 					}
 
@@ -7233,7 +7262,7 @@ public class PgSchema implements Serializable {
 
 							nest_test.has_child_elem |= n++ > 0;
 
-							nest_test.merge(nestChildNode2Xml(db_conn, getTable(field.foreign_table_id), key, false, nest_test));
+							nest_test.merge(nestChildNode2Xml(getTable(field.foreign_table_id), key, false, nest_test));
 
 						}
 
@@ -7476,11 +7505,13 @@ public class PgSchema implements Serializable {
 		if (!terminus.equals(XPathCompType.table))
 			return;
 
-		jsonb.writeStartDocument(false);
+		this.db_conn = db_conn;
 
 		PgTable table = path_expr.sql_subject.table;
 
 		boolean fill_default_value = option.fill_default_value;
+
+		jsonb.writeStartDocument(false);
 
 		try {
 
@@ -7563,7 +7594,7 @@ public class PgSchema implements Serializable {
 					key = rset.getObject(param_id);
 
 					if (key != null)
-						nest_test.merge(nestChildNode2Json(db_conn, getTable(field.foreign_table_id), key, true, nest_test));
+						nest_test.merge(nestChildNode2Json(getTable(field.foreign_table_id), key, true, nest_test));
 
 				}
 
@@ -7681,7 +7712,7 @@ public class PgSchema implements Serializable {
 
 						nest_test.has_child_elem |= n++ > 0;
 
-						nest_test.merge(nestChildNode2Json(db_conn, getTable(field.foreign_table_id), key, false, nest_test));
+						nest_test.merge(nestChildNode2Json(getTable(field.foreign_table_id), key, false, nest_test));
 
 					}
 
@@ -7737,7 +7768,6 @@ public class PgSchema implements Serializable {
 	/**
 	 * Nest node and compose JSON document.
 	 *
-	 * @param db_conn database connection
 	 * @param table current table
 	 * @param parent_key parent key
 	 * @param as_attr whether parent key is simple attribute
@@ -7745,7 +7775,7 @@ public class PgSchema implements Serializable {
 	 * @return JsonBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */	
-	private JsonBuilderNestTester nestChildNode2Json(final Connection db_conn, final PgTable table, final Object parent_key, final boolean as_attr, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
+	private JsonBuilderNestTester nestChildNode2Json(final PgTable table, final Object parent_key, final boolean as_attr, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		boolean fill_default_value = option.fill_default_value;
 
@@ -7780,7 +7810,7 @@ public class PgSchema implements Serializable {
 
 			if (table.ps == null || table.ps.isClosed()) {
 
-				String sql = "SELECT * FROM " + getPgNameOf(db_conn, table) + " WHERE " + (use_doc_key_index ? PgSchemaUtil.avoidPgReservedOps(getDocKeyName(table)) + " = ? AND " : "") + PgSchemaUtil.avoidPgReservedWords(primary_key.pname) + " = ?";
+				String sql = "SELECT * FROM " + getPgNameOf(table) + " WHERE " + (use_doc_key_index ? PgSchemaUtil.avoidPgReservedOps(getDocKeyName(table)) + " = ? AND " : "") + PgSchemaUtil.avoidPgReservedWords(primary_key.pname) + " = ?";
 
 				table.ps = db_conn.prepareStatement(sql);
 
@@ -7915,7 +7945,7 @@ public class PgSchema implements Serializable {
 						key = rset.getObject(param_id);
 
 						if (key != null)
-							nest_test.merge(nestChildNode2Json(db_conn, getTable(field.foreign_table_id), key, true, nest_test));
+							nest_test.merge(nestChildNode2Json(getTable(field.foreign_table_id), key, true, nest_test));
 
 					}
 
@@ -8031,7 +8061,7 @@ public class PgSchema implements Serializable {
 
 							nest_test.has_child_elem |= n++ > 0;
 
-							nest_test.merge(nestChildNode2Json(db_conn, getTable(field.foreign_table_id), key, false, nest_test));
+							nest_test.merge(nestChildNode2Json(getTable(field.foreign_table_id), key, false, nest_test));
 
 						}
 

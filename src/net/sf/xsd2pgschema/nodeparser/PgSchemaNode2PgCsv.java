@@ -22,7 +22,6 @@ package net.sf.xsd2pgschema.nodeparser;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.security.MessageDigest;
 import java.util.Arrays;
 
 import javax.xml.transform.TransformerException;
@@ -70,15 +69,13 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	 * Node parser for CSV conversion.
 	 *
 	 * @param schema PostgreSQL data model
-	 * @param md_hash_key instance of message digest
-	 * @param document_id document id
 	 * @param parent_table parent table (set null if current table is root table)
 	 * @param table current table
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2PgCsv(final PgSchema schema, final MessageDigest md_hash_key, final String document_id, final PgTable parent_table, final PgTable table) throws PgSchemaException {
+	public PgSchemaNode2PgCsv(final PgSchema schema, final PgTable parent_table, final PgTable table) throws PgSchemaException {
 
-		super(schema, md_hash_key, document_id, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
+		super(schema, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
 
 		if (table.writable) {
 
@@ -112,7 +109,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(schema, md_hash_key, document_id, table, nested_key.table);
+		PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(schema, table, nested_key.table);
 
 		try {
 

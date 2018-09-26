@@ -20,7 +20,6 @@ limitations under the License.
 package net.sf.xsd2pgschema.nodeparser;
 
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.util.Arrays;
 
 import javax.xml.transform.TransformerException;
@@ -42,17 +41,14 @@ import net.sf.xsd2pgschema.luceneutil.NoIdxStringField;
  */
 public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
-	/** The Lucene document. */
-	private org.apache.lucene.document.Document lucene_doc;
-
-	/** The prefix of index field. */
-	private String field_prefix;
-
 	/** The minimum word length for indexing. */
 	private int min_word_len;
 
 	/** Whether numeric values are stored in Lucene index. */
 	private boolean numeric_index;
+
+	/** The prefix of index field. */
+	private String field_prefix;
 
 	/** The content of fields. */
 	private String[] values;
@@ -61,22 +57,18 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 * Node parser for Lucene document conversion.
 	 *
 	 * @param schema PostgreSQL data model
-	 * @param md_hash_key instance of message digest
-	 * @param document_id document id
 	 * @param parent_table parent table (set null if current table is root table)
 	 * @param table current table
 	 * @param min_word_len minimum word length for indexing
 	 * @param numeric_index whether numeric values are stored in Lucene index
-	 * @param lucene_doc Lucene document
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2LucIdx(final PgSchema schema, final MessageDigest md_hash_key, final String document_id, final PgTable parent_table, final PgTable table, final int min_word_len, boolean numeric_index, final org.apache.lucene.document.Document lucene_doc) throws PgSchemaException {
+	public PgSchemaNode2LucIdx(final PgSchema schema, final PgTable parent_table, final PgTable table, final int min_word_len, boolean numeric_index) throws PgSchemaException {
 
-		super(schema, md_hash_key, document_id, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
+		super(schema, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
 
 		this.min_word_len = min_word_len;
 		this.numeric_index = numeric_index;
-		this.lucene_doc = lucene_doc;
 
 		if (table.indexable) {
 
@@ -98,7 +90,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(schema, md_hash_key, document_id, table, nested_key.table, min_word_len, numeric_index, lucene_doc);
+		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(schema, table, nested_key.table, min_word_len, numeric_index);
 
 		try {
 
@@ -221,6 +213,8 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
 				return;
 
+			org.apache.lucene.document.Document lucene_doc = schema.lucene_doc;
+
 			for (int f = 0; f < fields_size; f++) {
 
 				field = fields.get(f);
@@ -314,6 +308,8 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
 				return;
+
+			org.apache.lucene.document.Document lucene_doc = schema.lucene_doc;
 
 			for (int f = 0; f < fields_size; f++) {
 

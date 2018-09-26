@@ -149,22 +149,20 @@ public abstract class PgSchemaNodeParser {
 	 * Node parser.
 	 *
 	 * @param schema PostgreSQL data model
-	 * @param md_hash_key instance of message digest
-	 * @param document_id document id
 	 * @param parent_table parent table
 	 * @param table current table
 	 * @param parser_type node parser type
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNodeParser(final PgSchema schema, final MessageDigest md_hash_key, final String document_id, final PgTable parent_table, final PgTable table, final PgSchemaNodeParserType parser_type) throws PgSchemaException {
+	public PgSchemaNodeParser(final PgSchema schema, final PgTable parent_table, final PgTable table, final PgSchemaNodeParserType parser_type) throws PgSchemaException {
 
 		this.schema = schema;
-		this.md_hash_key = md_hash_key;
-		this.document_id = document_id;
 		this.parent_table = parent_table;
 		this.table = table;
 		this.parser_type = parser_type;
 
+		md_hash_key = schema.md_hash_key;
+		document_id = schema.document_id;
 		rel_data_ext = schema.option.rel_data_ext;
 		fill_default_value = schema.option.fill_default_value;
 		hash_size = schema.option.hash_size;
