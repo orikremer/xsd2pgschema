@@ -60,7 +60,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	private String pg_null;
 
 	/** Whether default serial key size (unsigned int 32 bit). */
-	private boolean def_ser_size;
+	private boolean is_def_ser_size;
 
 	/** The content of fields. */
 	private String[] values;
@@ -79,6 +79,9 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		if (table.writable) {
 
+			if (rel_data_ext || schema.option.xpath_key)
+				md_hash_key = schema.md_hash_key;
+
 			sb = new StringBuilder();
 
 			buffw = table.buffw;
@@ -89,7 +92,8 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			pg_null = schema.option.pg_null;
 
-			def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
+			if (schema.option.serial_key)
+				is_def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
 
 			values = new String[fields_size];
 
@@ -246,7 +250,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				// serial_key
 
 				else if (field.serial_key) {
-					values[f] = def_ser_size ? Integer.toString(node_test.node_ordinal) : Short.toString((short) node_test.node_ordinal);
+					values[f] = is_def_ser_size ? Integer.toString(node_test.node_ordinal) : Short.toString((short) node_test.node_ordinal);
 				}
 
 				// xpath_key
@@ -313,7 +317,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				// serial_key
 
 				else if (field.serial_key) {
-					values[f] = def_ser_size ? Integer.toString(node_test.node_ordinal) : Short.toString((short) node_test.node_ordinal);
+					values[f] = is_def_ser_size ? Integer.toString(node_test.node_ordinal) : Short.toString((short) node_test.node_ordinal);
 				}
 
 				// xpath_key

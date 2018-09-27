@@ -337,7 +337,6 @@ public class xml2json {
 
 						Thread _thrd = thrd[thrd_id] = new Thread(new Xml2JsonThrd(thrd_id, get_thrd[thrd_id], clients, json_dir_path, xml_file_filter, xml_file_queue, xml_post_editor, jsonb_option), thrd_name);
 
-						_thrd.setPriority(Thread.MAX_PRIORITY);
 						_thrd.start();
 
 					} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
@@ -369,7 +368,6 @@ public class xml2json {
 
 					Thread _thrd = thrd[thrd_id] = new Thread(new Xml2JsonThrd(thrd_id, is, json_dir_path, xml_file_filter, xml_file_queue, xml_post_editor, option, jsonb_option), thrd_name);
 
-					_thrd.setPriority(Thread.MAX_PRIORITY);
 					_thrd.start();
 
 				} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {

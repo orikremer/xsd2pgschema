@@ -431,7 +431,6 @@ public class xml2luceneidx {
 							else
 								_thrd = thrd[_thrd_id] = new Thread(new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, get_thrd[_thrd_id], _thrd_id, clients, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, idx_dir_path, writers, doc_rows), thrd_name);
 
-							_thrd.setPriority(Thread.MAX_PRIORITY);
 							_thrd.start();
 
 						} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
@@ -473,7 +472,6 @@ public class xml2luceneidx {
 						else
 							_thrd = thrd[_thrd_id] = new Thread(new Xml2LuceneIdxThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, xml_post_editor, option, index_filter, idx_dir_path, writers, doc_rows), thrd_name);
 
-						_thrd.setPriority(Thread.MAX_PRIORITY);
 						_thrd.start();
 
 					} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {

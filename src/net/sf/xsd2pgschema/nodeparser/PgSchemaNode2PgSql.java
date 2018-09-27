@@ -65,7 +65,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	private PgHashSize hash_size;
 
 	/** Whether default serial key size (unsigned int 32 bit). */
-	private boolean def_ser_size;
+	private boolean is_def_ser_size;
 
 	/** Whether field is occupied. */
 	private boolean[] occupied;
@@ -86,6 +86,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		this.update = update;
 
 		if (table.writable) {
+
+			if (rel_data_ext || schema.option.xpath_key)
+				md_hash_key = schema.md_hash_key;
 
 			try {
 
@@ -213,7 +216,8 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				hash_size = schema.option.hash_size;
 
-				def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
+				if (schema.option.serial_key)
+					is_def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
 
 				occupied = new boolean[fields_size];
 
@@ -733,7 +737,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 */
 	private void writeSerKey(int field_id, int ordinal) throws SQLException {
 
-		if (def_ser_size) {
+		if (is_def_ser_size) {
 			ps.setInt(par_idx, ordinal);
 			if (upsert)
 				ps.setInt(ins_idx, ordinal);

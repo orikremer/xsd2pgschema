@@ -161,13 +161,11 @@ public abstract class PgSchemaNodeParser {
 		this.table = table;
 		this.parser_type = parser_type;
 
-		md_hash_key = schema.md_hash_key;
 		document_id = schema.document_id;
+		document_id_len = schema.document_id_len;
 		rel_data_ext = schema.option.rel_data_ext;
 		fill_default_value = schema.option.fill_default_value;
 		hash_size = schema.option.hash_size;
-
-		document_id_len = document_id.length();
 
 		fields = table.fields;
 		fields_size = fields.size();
@@ -338,10 +336,10 @@ public abstract class PgSchemaNodeParser {
 	 */
 	protected String setNestedKey(final Node node, final PgField field, final String current_key) {
 
-		if (!matchesParentNode(current_key, field.parent_node))
+		if (!matchesParentNode(field, current_key))
 			return null;
 
-		if (!matchesAncestorNode(current_key, field.ancestor_node))
+		if (!matchesAncestorNode(field, current_key))
 			return null;
 
 		if (field.nested_key_as_attr) {
@@ -369,13 +367,13 @@ public abstract class PgSchemaNodeParser {
 	/**
 	 * Return whether parent node name matches.
 	 *
+	 * @param field current field
 	 * @param current_key current key
-	 * @param parent_node the parent node
 	 * @return boolean whether parent node's name matches
 	 */
-	private boolean matchesParentNode(final String current_key, final String parent_node) {
+	private boolean matchesParentNode(final PgField field, final String current_key) {
 
-		if (parent_node == null)
+		if (field.parent_nodes == null)
 			return true;
 
 		String[] path = current_key.substring(document_id_len).split("\\/"); // XPath notation
@@ -385,26 +383,19 @@ public abstract class PgSchemaNodeParser {
 		if (node_name.contains("[")) // list case
 			node_name = node_name.substring(0, node_name.lastIndexOf('['));
 
-		for (String _parent_node : parent_node.split(" ")) {
-
-			if (_parent_node.equals(node_name))
-				return true;
-
-		}
-
-		return false;
+		return field.matchesParentNode(node_name);
 	}
 
 	/**
 	 * Return whether ancestor node name matches.
 	 *
+	 * @param field current field
 	 * @param current_key current key
-	 * @param ancestor_node the ancestor node
 	 * @return boolean whether parent node's name matches
 	 */
-	private boolean matchesAncestorNode(final String current_key, final String ancestor_node) {
+	private boolean matchesAncestorNode(final PgField field, final String current_key) {
 
-		if (ancestor_node == null)
+		if (field.ancestor_nodes == null)
 			return true;
 
 		String[] path = current_key.substring(document_id_len).split("\\/"); // XPath notation
@@ -414,14 +405,7 @@ public abstract class PgSchemaNodeParser {
 		if (node_name.contains("[")) // list case
 			node_name = node_name.substring(0, node_name.lastIndexOf('['));
 
-		for (String _ancestor_node : ancestor_node.split(" ")) {
-
-			if (_ancestor_node.equals(node_name))
-				return true;
-
-		}
-
-		return false;
+		return field.matchesAncestorNode(node_name);
 	}
 
 	/**
@@ -551,7 +535,7 @@ public abstract class PgSchemaNodeParser {
 
 			if (field.simple_primitive_list) {
 
-				if (content != null && fields.parallelStream().anyMatch(_field -> _field.nested_key && matchesParentNode(current_key, _field.parent_node)))
+				if (content != null && fields.parallelStream().anyMatch(_field -> _field.nested_key && matchesParentNode(_field, current_key)))
 					content = null;
 
 				null_simple_list = content == null;

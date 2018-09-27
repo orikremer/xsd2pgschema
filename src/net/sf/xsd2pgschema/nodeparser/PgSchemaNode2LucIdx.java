@@ -72,6 +72,9 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		if (table.indexable) {
 
+			if (rel_data_ext)
+				md_hash_key = schema.md_hash_key;
+
 			field_prefix = table.name + ".";
 
 			values = new String[fields_size];

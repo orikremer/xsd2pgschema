@@ -231,7 +231,6 @@ public class chksumstat {
 
 				Thread _thrd = thrd[thrd_id] = new Thread(new ChkSumStatThrd(xml_file_filter, xml_file_queue, sync_new_doc_rows, sync_up_doc_rows, sync_del_doc_rows, option), thrd_name);
 
-				_thrd.setPriority(Thread.MAX_PRIORITY);
 				_thrd.start();
 
 			} catch (NoSuchAlgorithmException e) {

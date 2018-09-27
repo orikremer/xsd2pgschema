@@ -458,7 +458,6 @@ public class xml2sphinxds {
 							else
 								_thrd = thrd[_thrd_id] = new Thread(new Xml2SphinxDsThrd(shard_id, shard_size, thrd_id, get_thrd[_thrd_id], _thrd_id, clients, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows), thrd_name);
 
-							_thrd.setPriority(Thread.MAX_PRIORITY);
 							_thrd.start();
 
 						} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
@@ -500,7 +499,6 @@ public class xml2sphinxds {
 						else
 							_thrd = thrd[_thrd_id] = new Thread(new Xml2SphinxDsThrd(shard_id, shard_size, thrd_id, is, xml_file_filter, xml_file_queue, xml_post_editor, option, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows), thrd_name);
 
-						_thrd.setPriority(Thread.MAX_PRIORITY);
 						_thrd.start();
 
 					} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | PgSchemaException e) {

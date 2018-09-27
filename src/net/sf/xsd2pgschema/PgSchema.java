@@ -1040,6 +1040,14 @@ public class PgSchema implements Serializable {
 
 		}));
 
+		// split parent node name
+
+		tables.parallelStream().filter(table -> table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> field.parent_nodes = field.parent_node.split(" ")));
+
+		// split ancestor node name
+
+		tables.parallelStream().filter(table -> table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.ancestor_node != null).forEach(field -> field.ancestor_nodes = field.ancestor_node.split(" ")));
+
 		// update requirement flag due to foreign key
 
 		foreign_keys.forEach(foreign_key -> {
@@ -4595,6 +4603,10 @@ public class PgSchema implements Serializable {
 	@Flat
 	public String document_id = null;
 
+	/** The length of current document id. */
+	@Flat
+	public int document_id_len;
+
 	/**
 	 * Return root node of document.
 	 *
@@ -4614,6 +4626,8 @@ public class PgSchema implements Serializable {
 			throw new PgSchemaException("Not found root element (node_name: " + root_table.xname + ") in XML: " + document_id);
 
 		document_id = xml_parser.document_id;
+
+		document_id_len = document_id.length();
 
 		return node;
 	}

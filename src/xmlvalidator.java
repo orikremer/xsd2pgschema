@@ -205,7 +205,6 @@ public class xmlvalidator {
 
 				Thread _thrd = thrd[thrd_id] = new Thread(new XmlValidatorThrd(thrd_id, xml_file_filter, xml_file_queue, option), thrd_name);
 
-				_thrd.setPriority(Thread.MAX_PRIORITY);
 				_thrd.start();
 
 

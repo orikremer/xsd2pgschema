@@ -427,7 +427,6 @@ public class xml2pgsql {
 
 						Thread _thrd = thrd[thrd_id] = new Thread(new Xml2PgSqlThrd(thrd_id, get_thrd[thrd_id], clients, xml_file_filter, xml_file_queue, xml_post_editor, pg_option), thrd_name);
 
-						_thrd.setPriority(Thread.MAX_PRIORITY);
 						_thrd.start();
 
 					} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | SQLException | PgSchemaException e) {
@@ -459,7 +458,6 @@ public class xml2pgsql {
 
 					Thread _thrd = thrd[thrd_id] = new Thread(new Xml2PgSqlThrd(thrd_id, is, xml_file_filter, xml_file_queue, xml_post_editor, option, pg_option), thrd_name);
 
-					_thrd.setPriority(Thread.MAX_PRIORITY);
 					_thrd.start();
 
 				} catch (NoSuchAlgorithmException | ParserConfigurationException | SAXException | IOException | SQLException | PgSchemaException e) {

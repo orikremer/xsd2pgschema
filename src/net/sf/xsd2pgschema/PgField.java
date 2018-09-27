@@ -176,11 +176,17 @@ public class PgField implements Serializable {
 	/** The foreign field name in PostgreSQL. */
 	public String foreign_field_pname = null;
 
-	/** The ancestor node names. */
+	/** The concatenated ancestor node names. */
 	public String ancestor_node = null;
 
-	/** The parent node names. */
+	/** The concatenated parent node names. */
 	public String parent_node = null;
+
+	/** The array of ancestor node name. */
+	public String[] ancestor_nodes = null;
+
+	/** The array of parent node name. */
+	public String[] parent_nodes = null;
 
 	/** The @fixed. */
 	protected String fixed_value = null;
@@ -1497,6 +1503,63 @@ public class PgField implements Serializable {
 
 		jsonable = true;
 
+	}
+
+	/**
+	 * Return whether node name contains one of parent node names.
+	 *
+	 * @param node_name node name
+	 * @return boolean whether node name contains one of parent node names
+	 */
+	public boolean containsParentNode(String node_name) {
+
+		if (parent_nodes == null)
+			return true;
+
+		for (String parent_node : parent_nodes) {
+
+			if (node_name.contains(parent_node))
+				return true;
+
+		}
+
+		return false;
+	}
+
+	/**
+	 * Return whether node name matches ancestor node names.
+	 *
+	 * @param node_name node name
+	 * @return boolean whether node name matches ancestor node names
+	 */
+	public boolean matchesAncestorNode(String node_name) {
+
+		for (String ancestor_node : ancestor_nodes) {
+
+			if (node_name.equals(ancestor_node))
+				return true;
+
+		}
+
+		return false;
+	}
+
+	/**
+	 * Return whether node name matches parent node names.
+	 *
+	 * @param node_name node name
+	 * @return boolean whether node name matches parent node names
+	 */
+	public boolean matchesParentNode(String node_name) {
+
+		for (String parent_node : parent_nodes) {
+
+			if (node_name.equals(parent_node))
+				return true;
+
+		}
+
+		return false;
 	}
 
 	/**
