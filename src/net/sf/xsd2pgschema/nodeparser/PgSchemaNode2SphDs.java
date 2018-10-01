@@ -130,12 +130,15 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 		if (table.visited_key.equals(current_key = node_test.current_key))
 			return;
 
+		if (table.has_parent_restriction)
+			current_path = current_key.substring(document_id_len).split("\\/"); // XPath notation
+
 		proc_node = node_test.proc_node;
 		indirect = node_test.indirect;
 
 		if (!table.indexable) {
 
-			fields.stream().filter(field -> field.nested_key).forEach(field -> setNestedKey(proc_node, field, current_key));
+			fields.stream().filter(field -> field.nested_key).forEach(field -> setNestedKey(proc_node, field));
 
 			return;
 		}
@@ -160,7 +163,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 			// nested_key
 
 			if (field.nested_key)
-				setNestedKey(proc_node, field, current_key);
+				setNestedKey(proc_node, field);
 
 			else if (field.indexable) {
 
@@ -168,7 +171,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 				if (field.attribute || field.simple_content || field.element) {
 
-					if (setContent(proc_node, field, current_key, node_test.as_attr, false))
+					if (setContent(proc_node, field, node_test.as_attr, false))
 						values[f] = content;
 
 					else if (field.required) {

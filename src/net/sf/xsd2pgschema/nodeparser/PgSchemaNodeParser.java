@@ -55,7 +55,6 @@ import net.sf.xsd2pgschema.PgSchema;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
-import net.sf.xsd2pgschema.type.PgHashSize;
 
 /**
  * Abstract node parser.
@@ -69,12 +68,6 @@ public abstract class PgSchemaNodeParser {
 
 	/** The relational data extension. */
 	protected boolean rel_data_ext;
-
-	/** Whether to fill @default value. */
-	private boolean fill_default_value;
-
-	/** The size of hash key. */
-	private PgHashSize hash_size;
 
 	/** The parent table. */
 	protected PgTable parent_table;
@@ -121,6 +114,9 @@ public abstract class PgSchemaNodeParser {
 	/** The current key name. */
 	protected String current_key;
 
+	/** The current path. */
+	protected String[] current_path;
+
 	/** The document id. */
 	protected String document_id;
 
@@ -164,8 +160,6 @@ public abstract class PgSchemaNodeParser {
 		document_id = schema.document_id;
 		document_id_len = schema.document_id_len;
 		rel_data_ext = schema.option.rel_data_ext;
-		fill_default_value = schema.option.fill_default_value;
-		hash_size = schema.option.hash_size;
 
 		fields = table.fields;
 		fields_size = fields.size();
@@ -331,16 +325,19 @@ public abstract class PgSchemaNodeParser {
 	 *
 	 * @param node current node
 	 * @param field current field
-	 * @param current_key current key
 	 * @return String nested key name, null if invalid
 	 */
-	protected String setNestedKey(final Node node, final PgField field, final String current_key) {
+	protected String setNestedKey(final Node node, final PgField field) {
 
-		if (!matchesParentNode(field, current_key))
-			return null;
+		if (table.has_parent_restriction) {
 
-		if (!matchesAncestorNode(field, current_key))
-			return null;
+			if (!matchesParentNode(field))
+				return null;
+
+			if (!matchesAncestorNode(field))
+				return null;
+
+		}
 
 		if (field.nested_key_as_attr) {
 
@@ -368,17 +365,14 @@ public abstract class PgSchemaNodeParser {
 	 * Return whether parent node name matches.
 	 *
 	 * @param field current field
-	 * @param current_key current key
 	 * @return boolean whether parent node's name matches
 	 */
-	private boolean matchesParentNode(final PgField field, final String current_key) {
+	private boolean matchesParentNode(final PgField field) {
 
 		if (field.parent_nodes == null)
 			return true;
 
-		String[] path = current_key.substring(document_id_len).split("\\/"); // XPath notation
-
-		String node_name = path[path.length - (table.virtual ? 1 : 2)];
+		String node_name = current_path[current_path.length - (table.virtual ? 1 : 2)];
 
 		if (node_name.contains("[")) // list case
 			node_name = node_name.substring(0, node_name.lastIndexOf('['));
@@ -390,17 +384,14 @@ public abstract class PgSchemaNodeParser {
 	 * Return whether ancestor node name matches.
 	 *
 	 * @param field current field
-	 * @param current_key current key
 	 * @return boolean whether parent node's name matches
 	 */
-	private boolean matchesAncestorNode(final PgField field, final String current_key) {
+	private boolean matchesAncestorNode(final PgField field) {
 
 		if (field.ancestor_nodes == null)
 			return true;
 
-		String[] path = current_key.substring(document_id_len).split("\\/"); // XPath notation
-
-		String node_name = path[path.length - (table.virtual ? 2 : 3)];
+		String node_name = current_path[current_path.length - (table.virtual ? 2 : 3)];
 
 		if (node_name.contains("[")) // list case
 			node_name = node_name.substring(0, node_name.lastIndexOf('['));
@@ -425,12 +416,11 @@ public abstract class PgSchemaNodeParser {
 	 *
 	 * @param node current node
 	 * @param field current field
-	 * @param current_key current key
 	 * @param as_attr whether nested key as attribute
 	 * @param pg_enum_limit whether PostgreSQL enumeration length limit is applied
 	 * @return boolean whether content is valid
 	 */
-	protected boolean setContent(final Node node, final PgField field, final String current_key, final boolean as_attr, final boolean pg_enum_limit) {
+	protected boolean setContent(final Node node, final PgField field, final boolean as_attr, final boolean pg_enum_limit) {
 
 		content = null;
 
@@ -438,7 +428,7 @@ public abstract class PgSchemaNodeParser {
 			setAttribute(node, field);
 
 		else if (field.simple_content)
-			setSimpleContent(node, field, current_key);
+			setSimpleContent(node, field);
 
 		else if (field.element)
 			setElement(node, field);
@@ -514,10 +504,9 @@ public abstract class PgSchemaNodeParser {
 	 *
 	 * @param node current node
 	 * @param field current field
-	 * @param current_key current key
 	 * @return boolean whether simple content has value
 	 */
-	private void setSimpleContent(final Node node, final PgField field, final String current_key) {
+	private void setSimpleContent(final Node node, final PgField field) {
 
 		try {
 
@@ -535,7 +524,7 @@ public abstract class PgSchemaNodeParser {
 
 			if (field.simple_primitive_list) {
 
-				if (content != null && fields.parallelStream().anyMatch(_field -> _field.nested_key && matchesParentNode(_field, current_key)))
+				if (content != null && fields.parallelStream().anyMatch(_field -> _field.nested_key && matchesParentNode(_field)))
 					content = null;
 
 				null_simple_list = content == null;
@@ -580,7 +569,7 @@ public abstract class PgSchemaNodeParser {
 	 */
 	private boolean applyContentFilter(final PgField field, boolean pg_enum_limit) {
 
-		if (field.default_value != null && fill_default_value && (content == null || content.isEmpty()))
+		if (field.default_value != null && (content == null || content.isEmpty()) && schema.option.fill_default_value)
 			content = field.default_value;
 
 		if (field.fill_this)
@@ -922,7 +911,7 @@ public abstract class PgSchemaNodeParser {
 
 			byte[] bytes = md_hash_key.digest(key_name.getBytes());
 
-			switch (hash_size) {
+			switch (schema.option.hash_size) {
 			case native_default:
 				return "E'\\\\x" + DatatypeConverter.printHexBinary(bytes) + "'"; // PostgreSQL hex format
 			case unsigned_long_64:

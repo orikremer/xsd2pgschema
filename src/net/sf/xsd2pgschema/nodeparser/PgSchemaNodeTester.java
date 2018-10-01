@@ -65,6 +65,7 @@ public class PgSchemaNodeTester {
 	public void setRootNode(Node root_node, String root_key) {
 
 		proc_node = root_node;
+
 		parent_key = null;
 		primary_key = current_key = root_key;
 		as_attr = indirect = false;
@@ -90,8 +91,6 @@ public class PgSchemaNodeTester {
 		String table_xname = table.xname;
 
 		boolean virtual = table.virtual;
-		indirect = nested_key.indirect;
-		as_attr = nested_key.as_attr;
 
 		if (!virtual && !xname.equals(table_xname) && (!indirect || (indirect && (parent_table.virtual || !xname.equals(parent_table.xname))))) {
 
@@ -100,13 +99,16 @@ public class PgSchemaNodeTester {
 
 		}
 
-		// processing key name
-
+		parent_key = nested_key.parent_key;
 		primary_key = current_key = nested_key.current_key;
+		as_attr = nested_key.as_attr;
+		indirect = nested_key.indirect;
 
-		node_ordinal = node_parser.node_ordinal;
+		// processing key
 
 		if (nested_key.list_holder) {
+
+			node_ordinal = node_parser.node_ordinal;
 
 			if (indirect && node_ordinal < nested_key.target_ordinal)
 				return true;
@@ -114,7 +116,7 @@ public class PgSchemaNodeTester {
 			if (!virtual)
 				current_key += "[" + node_ordinal + "]"; // XPath predicate
 
-			if ((last_node = node_parser.last_node) == null) {
+			if (last_node == null && (last_node = node_parser.last_node) == null) {
 
 				for (Node child = parent_node.getLastChild(); child != null; child = child.getPreviousSibling()) {
 
@@ -137,11 +139,9 @@ public class PgSchemaNodeTester {
 		if (table.visited_key.equals(current_key))
 			return true;
 
-		parent_key = nested_key.parent_key;
-
 		// processing node
 
-		proc_node = virtual ? node.getParentNode() : node;
+		proc_node = virtual ? parent_node : node;
 
 		if (!virtual && indirect) {
 
@@ -173,6 +173,7 @@ public class PgSchemaNodeTester {
 	public void setNode(Node node, PgSchemaNestedKey nested_key) {
 
 		proc_node = node;
+
 		parent_key = nested_key.parent_key;
 		primary_key = current_key = nested_key.current_key;
 		as_attr = nested_key.as_attr;

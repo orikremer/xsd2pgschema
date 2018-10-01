@@ -152,12 +152,15 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 		if (table.visited_key.equals(current_key = node_test.current_key))
 			return;
 
+		if (table.has_parent_restriction)
+			current_path = current_key.substring(document_id_len).split("\\/"); // XPath notation
+
 		proc_node = node_test.proc_node;
 		indirect = node_test.indirect;
 
 		if (!table.writable) {
 
-			fields.stream().filter(field -> field.nested_key).forEach(field -> setNestedKey(proc_node, field, current_key));
+			fields.stream().filter(field -> field.nested_key).forEach(field -> setNestedKey(proc_node, field));
 
 			return;
 		}
@@ -209,7 +212,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 					String nested_key;
 
-					if ((nested_key = setNestedKey(proc_node, field, current_key)) != null)
+					if ((nested_key = setNestedKey(proc_node, field)) != null)
 						values[f] = getHashKeyString(nested_key);
 
 				}
@@ -218,7 +221,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				else if (field.attribute || field.simple_content || field.element) {
 
-					if (setContent(proc_node, field, current_key, node_test.as_attr, true)) {
+					if (setContent(proc_node, field, node_test.as_attr, true)) {
 
 						if (!content.isEmpty())
 							values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
@@ -271,7 +274,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				// nested_key
 
 				if (field.nested_key)
-					setNestedKey(proc_node, field, current_key);
+					setNestedKey(proc_node, field);
 
 				else if (field.omissible)
 					continue;
@@ -285,7 +288,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				else if (field.attribute || field.simple_content || field.element) {
 
-					if (setContent(proc_node, field, current_key, node_test.as_attr, true)) {
+					if (setContent(proc_node, field, node_test.as_attr, true)) {
 
 						if (!content.isEmpty())
 							values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
