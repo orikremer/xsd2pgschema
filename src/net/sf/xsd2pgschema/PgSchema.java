@@ -4611,10 +4611,6 @@ public class PgSchema implements Serializable {
 	@Flat
 	public String document_id = null;
 
-	/** The length of current document id. */
-	@Flat
-	public int document_id_len;
-
 	/**
 	 * Return root node of document.
 	 *
@@ -4634,8 +4630,6 @@ public class PgSchema implements Serializable {
 			throw new PgSchemaException("Not found root element (node_name: " + root_table.xname + ") in XML: " + document_id);
 
 		document_id = xml_parser.document_id;
-
-		document_id_len = document_id.length();
 
 		return node;
 	}

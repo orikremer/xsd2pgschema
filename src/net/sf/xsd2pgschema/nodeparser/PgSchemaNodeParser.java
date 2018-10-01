@@ -55,6 +55,7 @@ import net.sf.xsd2pgschema.PgSchema;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
+import net.sf.xsd2pgschema.type.PgHashSize;
 
 /**
  * Abstract node parser.
@@ -120,11 +121,11 @@ public abstract class PgSchemaNodeParser {
 	/** The document id. */
 	protected String document_id;
 
-	/** The length of document id. */
-	protected int document_id_len;
-
 	/** The common content holder for element, simple_content and attribute. */
 	protected String content;
+
+	/** The size of hash key. */
+	protected PgHashSize hash_size;
 
 	/** The common content holder for xs:any and xs:anyAttribute. */
 	protected StringBuilder any_content = null;
@@ -158,7 +159,6 @@ public abstract class PgSchemaNodeParser {
 		this.parser_type = parser_type;
 
 		document_id = schema.document_id;
-		document_id_len = schema.document_id_len;
 		rel_data_ext = schema.option.rel_data_ext;
 
 		fields = table.fields;
@@ -246,7 +246,7 @@ public abstract class PgSchemaNodeParser {
 
 			visited = true;
 
-			if (nested_keys != null && nested_keys.size() > 0) {
+			if (nested_keys != null) {
 
 				Node test_node = node_test.proc_node;
 
@@ -315,7 +315,7 @@ public abstract class PgSchemaNodeParser {
 	 */
 	public void clear() throws PgSchemaException {
 
-		if (nested_keys != null)
+		if (nested_keys != null && nested_keys.size() > 0)
 			nested_keys.clear();
 
 	}
@@ -911,7 +911,7 @@ public abstract class PgSchemaNodeParser {
 
 			byte[] bytes = md_hash_key.digest(key_name.getBytes());
 
-			switch (schema.option.hash_size) {
+			switch (hash_size) {
 			case native_default:
 				return "E'\\\\x" + DatatypeConverter.printHexBinary(bytes) + "'"; // PostgreSQL hex format
 			case unsigned_long_64:

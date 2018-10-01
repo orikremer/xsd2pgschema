@@ -36,7 +36,6 @@ import net.sf.xsd2pgschema.PgSchema;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
-import net.sf.xsd2pgschema.type.PgHashSize;
 import net.sf.xsd2pgschema.type.PgSerSize;
 
 /**
@@ -61,9 +60,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/** The size of parameters. */
 	private int param_size = 1;
 
-	/** The size of hash key. */
-	private PgHashSize hash_size;
-
 	/** Whether default serial key size (unsigned int 32 bit). */
 	private boolean is_def_ser_size;
 
@@ -87,8 +83,13 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		if (table.writable) {
 
-			if (rel_data_ext || schema.option.xpath_key)
+			if (rel_data_ext || schema.option.xpath_key) {
+
 				md_hash_key = schema.md_hash_key;
+				hash_size = schema.option.hash_size;
+
+			}
+
 
 			try {
 
@@ -214,8 +215,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				}
 
-				hash_size = schema.option.hash_size;
-
 				if (schema.option.serial_key)
 					is_def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
 
@@ -285,10 +284,13 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			return;
 
 		if (table.has_parent_restriction)
-			current_path = current_key.substring(document_id_len).split("\\/"); // XPath notation
+			current_path = current_key.split("\\/"); // XPath notation
 
 		proc_node = node_test.proc_node;
 		indirect = node_test.indirect;
+
+		if (nested_keys != null && nested_keys.size() > 0)
+			nested_keys.clear();
 
 		if (!table.writable) {
 
@@ -297,16 +299,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			return;
 		}
 
-		if (node_test.node_ordinal > 1) {
+		not_complete = null_simple_list = false;
 
-			not_complete = null_simple_list = false;
-
-			Arrays.fill(occupied, false);
-
-			if (nested_keys != null)
-				nested_keys.clear();
-
-		}
+		Arrays.fill(occupied, false);
 
 		par_idx = 1;
 		ins_idx = upsert ? param_size : -1;
@@ -414,7 +409,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					// xpath_key
 
 					else if (field.xpath_key)
-						writeHashKey(f, current_key.substring(document_id_len));
+						writeHashKey(f, current_key.substring(document_id.length()));
 
 					par_idx++;
 
@@ -504,7 +499,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					// xpath_key
 
 					else if (field.xpath_key)
-						writeHashKey(f, current_key.substring(document_id_len));
+						writeHashKey(f, current_key.substring(document_id.length()));
 
 					par_idx++;
 

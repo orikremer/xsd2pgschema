@@ -79,8 +79,12 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		if (table.writable) {
 
-			if (rel_data_ext || schema.option.xpath_key)
+			if (rel_data_ext || schema.option.xpath_key) {
+
 				md_hash_key = schema.md_hash_key;
+				hash_size = schema.option.hash_size;
+
+			}
 
 			sb = new StringBuilder();
 
@@ -153,10 +157,13 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 			return;
 
 		if (table.has_parent_restriction)
-			current_path = current_key.substring(document_id_len).split("\\/"); // XPath notation
+			current_path = current_key.split("\\/"); // XPath notation
 
 		proc_node = node_test.proc_node;
 		indirect = node_test.indirect;
+
+		if (nested_keys != null && nested_keys.size() > 0)
+			nested_keys.clear();
 
 		if (!table.writable) {
 
@@ -165,16 +172,9 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 			return;
 		}
 
-		if (node_test.node_ordinal > 1) {
+		not_complete = null_simple_list = false;
 
-			not_complete = null_simple_list = false;
-
-			Arrays.fill(values, pg_null);
-
-			if (nested_keys != null)
-				nested_keys.clear();
-
-		}
+		Arrays.fill(values, pg_null);
 
 		PgField field;
 
@@ -259,7 +259,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				// xpath_key
 
 				else if (field.xpath_key)
-					values[f] = getHashKeyString(current_key.substring(document_id_len));
+					values[f] = getHashKeyString(current_key.substring(document_id.length()));
 
 			}
 
@@ -326,7 +326,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				// xpath_key
 
 				else if (field.xpath_key)
-					values[f] = getHashKeyString(current_key.substring(document_id_len));
+					values[f] = getHashKeyString(current_key.substring(document_id.length()));
 
 			}
 
