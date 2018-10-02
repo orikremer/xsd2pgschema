@@ -41,9 +41,6 @@ public class PgSchemaNodeTester {
 	/** The current key name. */
 	protected String current_key;
 
-	/** The original current key name (internal use only). */
-	private String _current_key;
-
 	/** The processing node. */
 	protected Node proc_node;
 
@@ -58,6 +55,27 @@ public class PgSchemaNodeTester {
 
 	/** The ordinal number of sibling node. */
 	protected int node_ordinal = 1;
+
+	/** The target ordinal number of sibling node (internal use only). */
+	protected int target_ordinal;
+
+	/** The original current key name (internal use only). */
+	private String _current_key;
+
+	/** The parent table (internal use only). */
+	private PgTable parent_table;
+
+	/** The current table (internal use only). */
+	private PgTable table;
+
+	/** The canonical table name in XML Schema (internal use only). */
+	private String table_xname;
+
+	/** Whether the table is virtual (internal use only). */
+	private boolean virtual;
+
+	/** Whether nested key is list holder (internal use only). */
+	private boolean list_holder;
 
 	/**
 	 * Set root node as processing node.
@@ -76,38 +94,43 @@ public class PgSchemaNodeTester {
 	}
 
 	/**
-	 * Set key.
+	 * Prepare for child node.
 	 *
+	 * @param parent_table parent_table
 	 * @param nested_key nested_key
 	 */
-	public void setKey(final PgSchemaNestedKey nested_key) {
+	public void prepForChildNode(final PgTable parent_table, final PgSchemaNestedKey nested_key) {
+
+		this.parent_table = parent_table;
+
+		table = nested_key.table;
+
+		table_xname = table.xname;
+		virtual = table.virtual;
+
+		target_ordinal = nested_key.target_ordinal;
 
 		parent_key = nested_key.parent_key;
 		primary_key = current_key = _current_key = nested_key.current_key;
 		as_attr = nested_key.as_attr;
 		indirect = nested_key.indirect;
+		list_holder = nested_key.list_holder;
 
 	}
 
 	/**
 	 * Return whether current node is omissible.
 	 *
-	 * @param node_parser node parser
 	 * @param parent_node parent node
 	 * @param node current node
-	 * @param nested_key nested key
+	 * @param node_ordinal the ordinal number of sibling node
+	 * @param last_node the last node
 	 * @return boolean whether current node is omissible
 	 */
-	public boolean isOmissible(final PgSchemaNodeParser node_parser, final Node parent_node, final Node node, final PgSchemaNestedKey nested_key) {
-
-		PgTable parent_table = node_parser.parent_table;
-		PgTable table = nested_key.table;
+	public boolean isOmissibleNode(final Node parent_node, final Node node, final int node_ordinal, final Node last_node) {
 
 		String qname = node.getNodeName();
 		String xname = PgSchemaUtil.getUnqualifiedName(qname);
-		String table_xname = table.xname;
-
-		boolean virtual = table.virtual;
 
 		if (!virtual && !xname.equals(table_xname) && (!indirect || (indirect && (parent_table.virtual || !xname.equals(parent_table.xname))))) {
 
@@ -118,17 +141,17 @@ public class PgSchemaNodeTester {
 
 		// processing key
 
-		if (nested_key.list_holder) {
+		if (list_holder) {
 
-			node_ordinal = node_parser.node_ordinal;
+			this.node_ordinal = node_ordinal;
 
-			if (indirect && node_ordinal < nested_key.target_ordinal)
+			if (indirect && node_ordinal < target_ordinal)
 				return true;
 
 			if (!virtual)
 				current_key = _current_key + "[" + node_ordinal + "]"; // XPath predicate
 
-			if (last_node == null && (last_node = node_parser.last_node) == null) {
+			if (this.last_node == null && (this.last_node = last_node) == null) {
 
 				for (Node child = parent_node.getLastChild(); child != null; child = child.getPreviousSibling()) {
 
@@ -137,7 +160,7 @@ public class PgSchemaNodeTester {
 
 					if (qname.equals(child.getNodeName())) {
 
-						last_node = child;
+						this.last_node = child;
 
 						break;
 					}
@@ -181,7 +204,7 @@ public class PgSchemaNodeTester {
 	 *
 	 * @param node current node
 	 */
-	public void setNode(Node node) {
+	public void setProcNode(Node node) {
 
 		proc_node = node;
 

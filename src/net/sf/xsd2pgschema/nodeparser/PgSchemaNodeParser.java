@@ -100,6 +100,9 @@ public abstract class PgSchemaNodeParser {
 	/** Whether simple content as primitive list is null. */
 	protected boolean null_simple_list = false;
 
+	/** Whether xs_type equals xs_admin_root. */
+	protected boolean virtual;
+
 	/** Whether any nested node has been visited. */
 	protected boolean visited;
 
@@ -170,7 +173,8 @@ public abstract class PgSchemaNodeParser {
 		if (table.nested_fields > 0)
 			nested_keys = new ArrayList<PgSchemaNestedKey>();
 
-		visited = !table.virtual;
+		virtual = table.virtual;
+		visited = !virtual;
 
 		if (table.has_any || table.has_any_attribute) {
 
@@ -237,11 +241,10 @@ public abstract class PgSchemaNodeParser {
 	/**
 	 * Parse child node.
 	 *
-	 * @param nested_key nested key
 	 * @return boolean whether current node is the last one
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected boolean parseChildNode(final PgSchemaNestedKey nested_key) throws PgSchemaException {
+	protected boolean parseChildNode() throws PgSchemaException {
 
 		parse();
 
@@ -255,11 +258,11 @@ public abstract class PgSchemaNodeParser {
 
 				boolean exists;
 
-				for (PgSchemaNestedKey _nested_key : nested_keys) {
+				for (PgSchemaNestedKey nested_key : nested_keys) {
 
-					exists = existsNestedNode(test_node, _nested_key.table);
+					exists = existsNestedNode(test_node, nested_key.table);
 
-					traverseNestedNode(exists || indirect ? test_node : proc_node, _nested_key.asOfChild(node_test, exists));
+					traverseNestedNode(exists || indirect ? test_node : proc_node, nested_key.asOfChild(node_test, exists));
 
 				}
 
@@ -267,40 +270,28 @@ public abstract class PgSchemaNodeParser {
 
 		}
 
-		return isLastNode(nested_key);
-	}
-
-	/**
-	 * Prepare for child node.
-	 *
-	 * @param nested_key nested key
-	 */
-	protected void prepChildNode(final PgSchemaNestedKey nested_key) {
-
-		node_test.setKey(nested_key);
-
+		return isLastNode();
 	}
 
 	/**
 	 * Parse child node.
 	 *
 	 * @param node current node
-	 * @param nested_key nested key
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void parseChildNode(final Node node, PgSchemaNestedKey nested_key) throws PgSchemaException {
+	protected void parseChildNode(final Node node) throws PgSchemaException {
 
-		node_test.setNode(node);
+		node_test.setProcNode(node);
 
 		parse();
 
 		if (not_complete || nested_keys == null)
 			return;
 
-		for (PgSchemaNestedKey _nested_key : nested_keys) {
+		for (PgSchemaNestedKey nested_key : nested_keys) {
 
-			if (existsNestedNode(node, _nested_key.table))
-				traverseNestedNode(node, _nested_key.asOfChild(this));
+			if (existsNestedNode(node, nested_key.table))
+				traverseNestedNode(node, nested_key.asOfChild(this));
 
 		}
 
@@ -384,28 +375,16 @@ public abstract class PgSchemaNodeParser {
 
 		int path_len = current_path.length;
 
-		parent_node_name = current_path[path_len - (table.virtual ? 1 : 2)];
+		parent_node_name = current_path[path_len - (virtual ? 1 : 2)];
 
 		if (parent_node_name.contains("[")) // list case
 			parent_node_name = parent_node_name.substring(0, parent_node_name.lastIndexOf('['));
 
-		ancestor_node_name = current_path[path_len - (table.virtual ? 2 : 3)];
+		ancestor_node_name = current_path[path_len - (virtual ? 2 : 3)];
 
 		if (ancestor_node_name.contains("[")) // list case
 			ancestor_node_name = ancestor_node_name.substring(0, ancestor_node_name.lastIndexOf('['));
 
-	}
-
-	/**
-	 * Return whether current node is omissible.
-	 *
-	 * @param parent_node parent node
-	 * @param node current node
-	 * @param nested_key nested key
-	 * @return boolean whether current node is omissible.
-	 */
-	protected boolean isOmissible(final Node parent_node, final Node node, final PgSchemaNestedKey nested_key) {
-		return node_test.isOmissible(this, parent_node, node, nested_key);
 	}
 
 	/**
@@ -877,18 +856,17 @@ public abstract class PgSchemaNodeParser {
 	/**
 	 * Return whether current node is the last one.
 	 *
-	 * @param nested_key nested key
 	 * @return boolean whether current node is the last one
 	 */
-	protected boolean isLastNode(PgSchemaNestedKey nested_key) {
+	protected boolean isLastNode() {
 
 		if (last_node == null && node_test.last_node != null)
 			last_node = node_test.last_node;
 
 		try {
-			return last_node == null || node_test.proc_node.equals(last_node) || (nested_key.indirect && node_ordinal == nested_key.target_ordinal);
+			return last_node == null || node_test.proc_node.equals(last_node) || (node_test.indirect && node_ordinal == node_test.target_ordinal);
 		} finally {
-			node_ordinal++;
+			++node_ordinal;
 		}
 
 	}
