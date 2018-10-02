@@ -1042,11 +1042,11 @@ public class PgSchema implements Serializable {
 
 		tables.parallelStream().filter(table -> table.nested_fields > 0).forEach(table -> {
 
-			// decide whether table has nested key with parent node name restriction
+			// decide whether table has nested key with parent/ancestor path restriction
 
 			if (table.fields.stream().anyMatch(field -> field.nested_key && (field.parent_node != null || field.ancestor_node != null))) {
 
-				table.has_parent_restriction = true;
+				table.has_path_restriction = true;
 
 				// split parent node name
 

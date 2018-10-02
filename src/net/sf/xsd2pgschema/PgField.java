@@ -1511,7 +1511,7 @@ public class PgField implements Serializable {
 	 * @param node_name node name
 	 * @return boolean whether node name contains one of parent node names
 	 */
-	public boolean containsParentNode(String node_name) {
+	public boolean containsParentNodeName(String node_name) {
 
 		if (parent_nodes == null)
 			return true;
@@ -1532,7 +1532,10 @@ public class PgField implements Serializable {
 	 * @param node_name node name
 	 * @return boolean whether node name matches ancestor node names
 	 */
-	public boolean matchesAncestorNode(String node_name) {
+	public boolean matchesAncestorNodeName(String node_name) {
+
+		if (ancestor_nodes == null)
+			return true;
 
 		for (String ancestor_node : ancestor_nodes) {
 
@@ -1550,7 +1553,10 @@ public class PgField implements Serializable {
 	 * @param node_name node name
 	 * @return boolean whether node name matches parent node names
 	 */
-	public boolean matchesParentNode(String node_name) {
+	public boolean matchesParentNodeName(String node_name) {
+
+		if (parent_nodes == null)
+			return true;
 
 		for (String parent_node : parent_nodes) {
 

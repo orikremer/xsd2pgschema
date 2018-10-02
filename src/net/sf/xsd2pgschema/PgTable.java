@@ -105,8 +105,8 @@ public class PgTable implements Serializable {
 	/** Whether table has simple content as attribute. */
 	public boolean has_simple_attribute = false;
 
-	/** Whether table has nested key with parent node name restriction. */
-	public boolean has_parent_restriction = false;
+	/** Whether table has nested key with parent/ancestor path restriction. */
+	public boolean has_path_restriction = false;
 
 	/** Whether table is referred from child table. */
 	protected boolean required = false;

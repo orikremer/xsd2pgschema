@@ -132,13 +132,13 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 		if (table.visited_key.equals(current_key = node_test.current_key))
 			return;
 
-		if (table.has_parent_restriction)
-			current_path = current_key.split("\\/"); // XPath notation
+		if (table.has_path_restriction)
+			extractParentAncestorNodeName();
 
 		proc_node = node_test.proc_node;
 		indirect = node_test.indirect;
 
-		if (nested_keys != null && nested_keys.size() > 0)
+		if (node_ordinal > 1 && nested_keys != null && nested_keys.size() > 0)
 			nested_keys.clear();
 
 		if (!table.indexable) {
@@ -148,9 +148,13 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 			return;
 		}
 
-		not_complete = null_simple_list = false;
+		if (node_ordinal > 1) {
 
-		Arrays.fill(values, null);
+			not_complete = null_simple_list = false;
+
+			Arrays.fill(values, null);
+
+		}
 
 		PgField field;
 
@@ -217,7 +221,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 				value = values[f];
 
-				if ((value == null ? 0 : value.length()) == 0)
+				if ((value_len = (value == null ? 0 : value.length())) == 0)
 					continue;
 
 				field.write(sph_ds_buffw, field_prefix + field.name, value, value_len >= min_word_len);
