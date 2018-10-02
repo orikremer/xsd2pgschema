@@ -99,6 +99,8 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(schema, table, nested_key.table, min_word_len, numeric_index);
 
+		node2lucidx.prepChildNode(nested_key);
+
 		try {
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {

@@ -87,6 +87,8 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(schema, table, nested_key.table, min_word_len);
 
+		node2sphds.prepChildNode(nested_key);
+
 		try {
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {

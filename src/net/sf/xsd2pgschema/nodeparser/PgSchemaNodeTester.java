@@ -41,6 +41,9 @@ public class PgSchemaNodeTester {
 	/** The current key name. */
 	protected String current_key;
 
+	/** The original current key name (internal use only). */
+	private String _current_key;
+
 	/** The processing node. */
 	protected Node proc_node;
 
@@ -67,8 +70,22 @@ public class PgSchemaNodeTester {
 		proc_node = root_node;
 
 		parent_key = null;
-		primary_key = current_key = root_key;
+		primary_key = current_key = _current_key = root_key;
 		as_attr = indirect = false;
+
+	}
+
+	/**
+	 * Set key.
+	 *
+	 * @param nested_key nested_key
+	 */
+	public void setKey(final PgSchemaNestedKey nested_key) {
+
+		parent_key = nested_key.parent_key;
+		primary_key = current_key = _current_key = nested_key.current_key;
+		as_attr = nested_key.as_attr;
+		indirect = nested_key.indirect;
 
 	}
 
@@ -99,10 +116,8 @@ public class PgSchemaNodeTester {
 
 		}
 
-		parent_key = nested_key.parent_key;
-		primary_key = current_key = nested_key.current_key;
-		as_attr = nested_key.as_attr;
-		indirect = nested_key.indirect;
+		if (!current_key.equals(_current_key))
+			current_key = _current_key;
 
 		// processing key
 
@@ -168,16 +183,13 @@ public class PgSchemaNodeTester {
 	 * Set current node as processing node.
 	 *
 	 * @param node current node
-	 * @param nested_key nested key
 	 */
-	public void setNode(Node node, PgSchemaNestedKey nested_key) {
+	public void setNode(Node node) {
 
 		proc_node = node;
 
-		parent_key = nested_key.parent_key;
-		primary_key = current_key = nested_key.current_key;
-		as_attr = nested_key.as_attr;
-		indirect = nested_key.indirect;
+		if (!current_key.equals(_current_key))
+			current_key = _current_key;
 
 	}
 

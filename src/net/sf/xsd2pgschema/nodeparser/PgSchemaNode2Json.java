@@ -243,7 +243,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 */
 	protected void parseChildNode(final Node node, final PgSchemaNestedKey nested_key, int indent_level) throws PgSchemaException {
 
-		node_test.setNode(node, nested_key);
+		node_test.setNode(node);
 
 		parse();
 
@@ -306,6 +306,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, table, nested_key.table);
 
+		node2json.prepChildNode(nested_key);
+
 		try {
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {
@@ -345,6 +347,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		PgTable current_table = nested_key.table;
 
 		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, table, current_table);
+
+		node2json.prepChildNode(nested_key);
 
 		try {
 
@@ -399,6 +403,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		PgTable current_table = nested_key.table;
 
 		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, table, current_table);
+
+		node2json.prepChildNode(nested_key);
 
 		try {
 

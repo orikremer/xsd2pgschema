@@ -119,6 +119,8 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(schema, table, nested_key.table);
 
+		node2pgcsv.prepChildNode(nested_key);
+
 		try {
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {

@@ -1042,17 +1042,21 @@ public class PgSchema implements Serializable {
 
 		tables.parallelStream().filter(table -> table.nested_fields > 0).forEach(table -> {
 
-			// split parent node name
-
-			table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> field.parent_nodes = field.parent_node.split(" "));
-
-			// split ancestor node name
-
-			table.fields.stream().filter(field -> field.nested_key && field.ancestor_node != null).forEach(field -> field.ancestor_nodes = field.ancestor_node.split(" "));
-
 			// decide whether table has nested key with parent node name restriction
 
-			table.has_parent_restriction = table.fields.stream().anyMatch(field -> field.nested_key && (field.parent_node != null || field.ancestor_node != null));
+			if (table.fields.stream().anyMatch(field -> field.nested_key && (field.parent_node != null || field.ancestor_node != null))) {
+
+				table.has_parent_restriction = true;
+
+				// split parent node name
+
+				table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> field.parent_nodes = field.parent_node.split(" "));
+
+				// split ancestor node name
+
+				table.fields.stream().filter(field -> field.nested_key && field.ancestor_node != null).forEach(field -> field.ancestor_nodes = field.ancestor_node.split(" "));
+
+			}
 
 		});
 

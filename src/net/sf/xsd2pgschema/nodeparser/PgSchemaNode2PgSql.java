@@ -240,6 +240,8 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(schema, table, nested_key.table, update);
 
+		node2pgsql.prepChildNode(nested_key);
+
 		try {
 
 			for (Node node = parent_node.getFirstChild(); node != null; node = node.getNextSibling()) {

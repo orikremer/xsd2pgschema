@@ -268,6 +268,17 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
+	 * Prepare for child node.
+	 *
+	 * @param nested_key nested key
+	 */
+	protected void prepChildNode(final PgSchemaNestedKey nested_key) {
+
+		node_test.setKey(nested_key);
+
+	}
+
+	/**
 	 * Parse child node.
 	 *
 	 * @param node current node
@@ -276,7 +287,7 @@ public abstract class PgSchemaNodeParser {
 	 */
 	protected void parseChildNode(final Node node, PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		node_test.setNode(node, nested_key);
+		node_test.setNode(node);
 
 		parse();
 
