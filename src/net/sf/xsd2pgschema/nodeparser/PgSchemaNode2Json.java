@@ -305,7 +305,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, nested_key.table);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
-		node_test.prepForChildNode(parent_table, nested_key);
+		node_test.prepForChildNode(table, nested_key);
 
 		try {
 
@@ -348,7 +348,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, current_table);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
-		node_test.prepForChildNode(parent_table, nested_key);
+		node_test.prepForChildNode(table, nested_key);
 
 		try {
 
@@ -405,7 +405,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, current_table);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
-		node_test.prepForChildNode(parent_table, nested_key);
+		node_test.prepForChildNode(table, nested_key);
 
 		try {
 

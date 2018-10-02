@@ -241,7 +241,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		PgSchemaNode2PgSql node_parser = new PgSchemaNode2PgSql(schema, table, nested_key.table, update);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
-		node_test.prepForChildNode(parent_table, nested_key);
+		node_test.prepForChildNode(table, nested_key);
 
 		try {
 

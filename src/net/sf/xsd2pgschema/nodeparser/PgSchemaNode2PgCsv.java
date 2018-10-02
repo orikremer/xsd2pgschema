@@ -120,7 +120,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 		PgSchemaNode2PgCsv node_parser = new PgSchemaNode2PgCsv(schema, table, nested_key.table);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
-		node_test.prepForChildNode(parent_table, nested_key);
+		node_test.prepForChildNode(table, nested_key);
 
 		try {
 
