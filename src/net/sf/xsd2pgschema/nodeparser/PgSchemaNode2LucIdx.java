@@ -100,7 +100,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 		PgSchemaNode2LucIdx node_parser = new PgSchemaNode2LucIdx(schema, table, nested_key.table, min_word_len, numeric_index);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
-		node_test.prepForChildNode(table, nested_key);
+		node_test.prepare(table, nested_key);
 
 		try {
 

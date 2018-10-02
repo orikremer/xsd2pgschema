@@ -94,22 +94,20 @@ public class PgSchemaNodeTester {
 	}
 
 	/**
-	 * Prepare for child node.
+	 * Prepare node tester.
 	 *
 	 * @param parent_table parent_table
 	 * @param nested_key nested_key
 	 */
-	public void prepForChildNode(final PgTable parent_table, final PgSchemaNestedKey nested_key) {
+	public void prepare(final PgTable parent_table, final PgSchemaNestedKey nested_key) {
 
 		this.parent_table = parent_table;
-
 		table = nested_key.table;
 
 		table_xname = table.xname;
 		virtual = table.virtual;
 
 		target_ordinal = nested_key.target_ordinal;
-
 		parent_key = nested_key.parent_key;
 		primary_key = current_key = _current_key = nested_key.current_key;
 		as_attr = nested_key.as_attr;
