@@ -97,9 +97,9 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(schema, table, nested_key.table, min_word_len, numeric_index);
+		PgSchemaNode2LucIdx node_parser = new PgSchemaNode2LucIdx(schema, table, nested_key.table, min_word_len, numeric_index);
 
-		node2lucidx.prepChildNode(nested_key);
+		node_parser.prepChildNode(nested_key);
 
 		try {
 
@@ -108,21 +108,21 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (node2lucidx.isOmissible(parent_node, node, nested_key))
+				if (node_parser.isOmissible(parent_node, node, nested_key))
 					continue;
 
-				if (node2lucidx.parseChildNode(nested_key))
+				if (node_parser.parseChildNode(nested_key))
 					break;
 
 			}
 
-			if (node2lucidx.visited)
+			if (node_parser.visited)
 				return;
 
-			node2lucidx.parseChildNode(parent_node, nested_key);
+			node_parser.parseChildNode(parent_node, nested_key);
 
 		} finally {
-			node2lucidx.clear();
+			node_parser.clear();
 		}
 
 	}

@@ -304,9 +304,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, table, nested_key.table);
+		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, nested_key.table);
 
-		node2json.prepChildNode(nested_key);
+		node_parser.prepChildNode(nested_key);
 
 		try {
 
@@ -315,21 +315,21 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (node2json.isOmissible(parent_node, node, nested_key))
+				if (node_parser.isOmissible(parent_node, node, nested_key))
 					continue;
 
-				if (node2json.parseChildNode(nested_key))
+				if (node_parser.parseChildNode(nested_key))
 					break;
 
 			}
 
-			if (node2json.visited)
+			if (node_parser.visited)
 				return;
 
-			node2json.parseChildNode(parent_node, nested_key);
+			node_parser.parseChildNode(parent_node, nested_key);
 
 		} finally {
-			node2json.clear();
+			node_parser.clear();
 		}
 
 	}
@@ -346,9 +346,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		PgTable current_table = nested_key.table;
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, table, current_table);
+		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, current_table);
 
-		node2json.prepChildNode(nested_key);
+		node_parser.prepChildNode(nested_key);
 
 		try {
 
@@ -362,20 +362,20 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (node2json.isOmissible(parent_node, node, nested_key))
+				if (node_parser.isOmissible(parent_node, node, nested_key))
 					continue;
 
-				if (node2json.parseChildNode(nested_key, json_indent_level))
+				if (node_parser.parseChildNode(nested_key, json_indent_level))
 					break;
 
 			}
 
 			try {
 
-				if (node2json.visited)
+				if (node_parser.visited)
 					return;
 
-				node2json.parseChildNode(parent_node, nested_key, json_indent_level);
+				node_parser.parseChildNode(parent_node, nested_key, json_indent_level);
 
 			} finally {
 
@@ -385,7 +385,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			}
 
 		} finally {
-			node2json.clear();
+			node_parser.clear();
 		}
 
 	}
@@ -402,9 +402,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		PgTable current_table = nested_key.table;
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(schema, table, current_table);
+		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, current_table);
 
-		node2json.prepChildNode(nested_key);
+		node_parser.prepChildNode(nested_key);
 
 		try {
 
@@ -422,20 +422,20 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (node2json.isOmissible(parent_node, node, nested_key))
+				if (node_parser.isOmissible(parent_node, node, nested_key))
 					continue;
 
-				if (node2json.parseChildNode(nested_key, json_indent_level))
+				if (node_parser.parseChildNode(nested_key, json_indent_level))
 					break;
 
 			}
 
 			try {
 
-				if (node2json.visited)
+				if (node_parser.visited)
 					return;
 
-				node2json.parseChildNode(parent_node, nested_key, json_indent_level);
+				node_parser.parseChildNode(parent_node, nested_key, json_indent_level);
 
 			} finally {
 
@@ -445,7 +445,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			}
 
 		} finally {
-			node2json.clear();
+			node_parser.clear();
 		}
 
 	}

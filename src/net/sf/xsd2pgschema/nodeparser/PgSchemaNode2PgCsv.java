@@ -117,9 +117,9 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(schema, table, nested_key.table);
+		PgSchemaNode2PgCsv node_parser = new PgSchemaNode2PgCsv(schema, table, nested_key.table);
 
-		node2pgcsv.prepChildNode(nested_key);
+		node_parser.prepChildNode(nested_key);
 
 		try {
 
@@ -128,21 +128,21 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (node2pgcsv.isOmissible(parent_node, node, nested_key))
+				if (node_parser.isOmissible(parent_node, node, nested_key))
 					continue;
 
-				if (node2pgcsv.parseChildNode(nested_key))
+				if (node_parser.parseChildNode(nested_key))
 					break;
 
 			}
 
-			if (node2pgcsv.visited)
+			if (node_parser.visited)
 				return;
 
-			node2pgcsv.parseChildNode(parent_node, nested_key);
+			node_parser.parseChildNode(parent_node, nested_key);
 
 		} finally {
-			node2pgcsv.clear();
+			node_parser.clear();
 		}
 
 	}

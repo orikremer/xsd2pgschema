@@ -85,9 +85,9 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(schema, table, nested_key.table, min_word_len);
+		PgSchemaNode2SphDs node_parser = new PgSchemaNode2SphDs(schema, table, nested_key.table, min_word_len);
 
-		node2sphds.prepChildNode(nested_key);
+		node_parser.prepChildNode(nested_key);
 
 		try {
 
@@ -96,21 +96,21 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (node2sphds.isOmissible(parent_node, node, nested_key))
+				if (node_parser.isOmissible(parent_node, node, nested_key))
 					continue;
 
-				if (node2sphds.parseChildNode(nested_key))
+				if (node_parser.parseChildNode(nested_key))
 					break;
 
 			}
 
-			if (node2sphds.visited)
+			if (node_parser.visited)
 				return;
 
-			node2sphds.parseChildNode(parent_node, nested_key);
+			node_parser.parseChildNode(parent_node, nested_key);
 
 		} finally {
-			node2sphds.clear();
+			node_parser.clear();
 		}
 
 	}

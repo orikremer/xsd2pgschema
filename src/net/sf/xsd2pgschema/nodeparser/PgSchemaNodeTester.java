@@ -116,9 +116,6 @@ public class PgSchemaNodeTester {
 
 		}
 
-		if (!current_key.equals(_current_key))
-			current_key = _current_key;
-
 		// processing key
 
 		if (nested_key.list_holder) {
@@ -129,7 +126,7 @@ public class PgSchemaNodeTester {
 				return true;
 
 			if (!virtual)
-				current_key += "[" + node_ordinal + "]"; // XPath predicate
+				current_key = _current_key + "[" + node_ordinal + "]"; // XPath predicate
 
 			if (last_node == null && (last_node = node_parser.last_node) == null) {
 
@@ -188,8 +185,7 @@ public class PgSchemaNodeTester {
 
 		proc_node = node;
 
-		if (!current_key.equals(_current_key))
-			current_key = _current_key;
+		current_key = _current_key;
 
 	}
 
