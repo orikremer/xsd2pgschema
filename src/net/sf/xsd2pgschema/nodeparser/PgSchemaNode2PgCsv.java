@@ -91,9 +91,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 			buffw = table.buffw;
 
 			pg_tab_delimiter = schema.option.pg_tab_delimiter;
-
 			pg_delimiter = schema.option.pg_delimiter;
-
 			pg_null = schema.option.pg_null;
 
 			if (schema.option.serial_key)

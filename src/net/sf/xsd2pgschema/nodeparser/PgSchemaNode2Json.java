@@ -78,7 +78,6 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		if (table.jsonable) {
 
 			schema_ver = jsonb.schema_ver;
-
 			concat_value_space = jsonb.concat_value_space;
 
 			values = new String[fields_size];

@@ -371,16 +371,16 @@ public abstract class PgSchemaNodeParser {
 	 */
 	protected void extractParentAncestorNodeName() {
 
-		String[] current_path = current_key.split("\\/"); // XPath notation
+		String[] path = current_key.split("\\/"); // XPath notation
 
-		int path_len = current_path.length;
+		int path_len = path.length;
 
-		parent_node_name = current_path[path_len - (virtual ? 1 : 2)];
+		parent_node_name = path[path_len - (virtual ? 1 : 2)];
 
 		if (parent_node_name.contains("[")) // list case
 			parent_node_name = parent_node_name.substring(0, parent_node_name.lastIndexOf('['));
 
-		ancestor_node_name = current_path[path_len - (virtual ? 2 : 3)];
+		ancestor_node_name = path[path_len - (virtual ? 2 : 3)];
 
 		if (ancestor_node_name.contains("[")) // list case
 			ancestor_node_name = ancestor_node_name.substring(0, ancestor_node_name.lastIndexOf('['));
@@ -520,12 +520,14 @@ public abstract class PgSchemaNodeParser {
 	 */
 	private void setElement(final Node node, final PgField field) {
 
+		String field_xname = field.xname;
+
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			if (((Element) child).getLocalName().equals(field.xname)) {
+			if (((Element) child).getLocalName().equals(field_xname)) {
 
 				content = child.getTextContent();
 
@@ -840,12 +842,14 @@ public abstract class PgSchemaNodeParser {
 		if (nested_table.virtual)
 			return nested_table.content_holder;
 
+		String nested_table_xname = nested_table.xname;
+
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 			if (child.getNodeType() != Node.ELEMENT_NODE)
 				continue;
 
-			if (((Element) child).getLocalName().equals(nested_table.xname))
+			if (((Element) child).getLocalName().equals(nested_table_xname))
 				return true;
 
 		}
