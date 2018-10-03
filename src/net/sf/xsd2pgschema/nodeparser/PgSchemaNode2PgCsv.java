@@ -121,7 +121,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 		PgSchemaNode2PgCsv node_parser = new PgSchemaNode2PgCsv(schema, table, nested_key.table, nested_key.as_attr);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
-		node_test.prepare(table, nested_key);
+		node_test.prepare(table, parent_node, nested_key);
 
 		try {
 
@@ -130,7 +130,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (node_test.isOmissibleNode(parent_node, node))
+				if (node_test.isOmissibleNode(node))
 					continue;
 
 				if (node_parser.parseChildNode())

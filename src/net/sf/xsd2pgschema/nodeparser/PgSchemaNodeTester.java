@@ -44,17 +44,20 @@ public class PgSchemaNodeTester {
 	/** The processing node. */
 	protected Node proc_node;
 
-	/** The last node. */
-	protected Node last_node = null;
-
 	/** The ordinal number of sibling node. */
 	protected int node_ordinal = 1;
 
 	/** The target ordinal number of sibling node. */
-	protected int target_ordinal;
+	private int target_ordinal;
 
 	/** The original processing key name. */
 	private String _proc_key;
+
+	/** The parent node. */
+	private Node parent_node;
+
+	/** The last node. */
+	private Node last_node = null;
 
 	/** The parent table. */
 	private PgTable parent_table;
@@ -94,12 +97,15 @@ public class PgSchemaNodeTester {
 	/**
 	 * Prepare node tester for child node.
 	 *
-	 * @param parent_table parent_table
+	 * @param parent_table parent table
+	 * @param parent_node parent node
 	 * @param nested_key nested_key
 	 */
-	public void prepare(final PgTable parent_table, final PgSchemaNestedKey nested_key) {
+	public void prepare(final PgTable parent_table, final Node parent_node, final PgSchemaNestedKey nested_key) {
 
 		this.parent_table = parent_table;
+		this.parent_node = parent_node;
+
 		table = nested_key.table;
 
 		table_xname = table.xname;
@@ -117,11 +123,10 @@ public class PgSchemaNodeTester {
 	/**
 	 * Return whether current node is omissible.
 	 *
-	 * @param parent_node parent node
 	 * @param node current node
 	 * @return boolean whether current node is omissible
 	 */
-	public boolean isOmissibleNode(final Node parent_node, final Node node) {
+	public boolean isOmissibleNode(final Node node) {
 
 		String qname = node.getNodeName();
 		String xname = PgSchemaUtil.getUnqualifiedName(qname);
