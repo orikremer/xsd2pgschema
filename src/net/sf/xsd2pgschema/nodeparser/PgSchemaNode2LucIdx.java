@@ -59,11 +59,12 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 * @param schema PostgreSQL data model
 	 * @param parent_table parent table (set null if current table is root table)
 	 * @param table current table
+	 * @param as_attr whether parent node as attribute
 	 * @param min_word_len minimum word length for indexing
 	 * @param numeric_index whether numeric values are stored in Lucene index
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2LucIdx(final PgSchema schema, final PgTable parent_table, final PgTable table, final int min_word_len, boolean numeric_index) throws PgSchemaException {
+	public PgSchemaNode2LucIdx(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean as_attr, final int min_word_len, boolean numeric_index) throws PgSchemaException {
 
 		super(schema, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
 
@@ -71,6 +72,8 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 		this.numeric_index = numeric_index;
 
 		if (table.indexable) {
+
+			this.as_attr = as_attr;
 
 			if (rel_data_ext) {
 
@@ -97,7 +100,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2LucIdx node_parser = new PgSchemaNode2LucIdx(schema, table, nested_key.table, min_word_len, numeric_index);
+		PgSchemaNode2LucIdx node_parser = new PgSchemaNode2LucIdx(schema, table, nested_key.table, nested_key.as_attr, min_word_len, numeric_index);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepare(table, nested_key);
@@ -109,7 +112,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (node_test.isOmissibleNode(parent_node, node, node_parser.node_ordinal, node_parser.last_node))
+				if (node_test.isOmissibleNode(parent_node, node))
 					continue;
 
 				if (node_parser.parseChildNode())
@@ -142,17 +145,15 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	@Override
 	protected void parse() throws PgSchemaException {
 
-		if (table.visited_key.equals(current_key = node_test.current_key))
+		if (table.visited_key.equals(current_key = node_test.proc_key))
 			return;
 
 		if (table.has_path_restriction)
 			extractParentAncestorNodeName();
 
-		proc_node = node_test.proc_node;
-		indirect = node_test.indirect;
+		Node proc_node = node_test.proc_node;
 
-		if (node_ordinal > 1 && nested_keys != null && nested_keys.size() > 0)
-			nested_keys.clear();
+		clear();
 
 		if (!table.indexable) {
 
@@ -161,7 +162,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			return;
 		}
 
-		if (node_ordinal > 1) {
+		if (visited) {
 
 			not_complete = null_simple_list = false;
 
@@ -188,7 +189,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 					if (field.attribute || field.simple_content || field.element) {
 
-						if (setContent(proc_node, field, node_test.as_attr, false))
+						if (setContent(proc_node, field, false))
 							values[f] = content;
 
 						else if (field.required) {
@@ -284,7 +285,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 					if (field.attribute || field.simple_content || field.element) {
 
-						if (setContent(proc_node, field, node_test.as_attr, false))
+						if (setContent(proc_node, field, false))
 							values[f] = content;
 
 						else if (field.required) {

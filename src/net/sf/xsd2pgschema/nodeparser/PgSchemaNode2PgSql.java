@@ -72,16 +72,19 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @param schema PostgreSQL data model
 	 * @param parent_table parent table (set null if current table is root table)
 	 * @param table current table
+	 * @param as_attr whether parent node as attribute
 	 * @param update whether update or insertion
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2PgSql(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean update) throws PgSchemaException {
+	public PgSchemaNode2PgSql(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean as_attr, final boolean update) throws PgSchemaException {
 
 		super(schema, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
 
 		this.update = update;
 
 		if (table.writable) {
+
+			this.as_attr = as_attr;
 
 			if (rel_data_ext || schema.option.xpath_key) {
 
@@ -238,7 +241,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2PgSql node_parser = new PgSchemaNode2PgSql(schema, table, nested_key.table, update);
+		PgSchemaNode2PgSql node_parser = new PgSchemaNode2PgSql(schema, table, nested_key.table, nested_key.as_attr, update);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepare(table, nested_key);
@@ -250,7 +253,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (node_test.isOmissibleNode(parent_node, node, node_parser.node_ordinal, node_parser.last_node))
+				if (node_test.isOmissibleNode(parent_node, node))
 					continue;
 
 				if (node_parser.parseChildNode())
@@ -283,17 +286,15 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	@Override
 	protected void parse() throws PgSchemaException {
 
-		if (table.visited_key.equals(current_key = node_test.current_key))
+		if (table.visited_key.equals(current_key = node_test.proc_key))
 			return;
 
 		if (table.has_path_restriction)
 			extractParentAncestorNodeName();
 
-		proc_node = node_test.proc_node;
-		indirect = node_test.indirect;
+		Node proc_node = node_test.proc_node;
 
-		if (node_ordinal > 1 && nested_keys != null && nested_keys.size() > 0)
-			nested_keys.clear();
+		super.clear();
 
 		if (!table.writable) {
 
@@ -302,7 +303,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			return;
 		}
 
-		if (node_ordinal > 1) {
+		if (visited) {
 
 			not_complete = null_simple_list = false;
 
@@ -364,7 +365,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					else if (field.attribute || field.simple_content || field.element) {
 
-						if (setContent(proc_node, field, node_test.as_attr, true)) {
+						if (setContent(proc_node, field, true)) {
 
 							if (!content.isEmpty()) {
 
@@ -454,7 +455,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					else if (field.attribute || field.simple_content || field.element) {
 
-						if (setContent(proc_node, field, node_test.as_attr, true)) {
+						if (setContent(proc_node, field, true)) {
 
 							if (!content.isEmpty()) {
 

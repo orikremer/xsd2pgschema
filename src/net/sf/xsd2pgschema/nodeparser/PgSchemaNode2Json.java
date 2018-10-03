@@ -66,9 +66,10 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 * @param schema PostgreSQL data model
 	 * @param parent_table parent table (set null if current table is root table)
 	 * @param table current table
+	 * @param as_attr whether parent node as attribute
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2Json(final PgSchema schema, final PgTable parent_table, final PgTable table) throws PgSchemaException {
+	public PgSchemaNode2Json(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean as_attr) throws PgSchemaException {
 
 		super(schema, parent_table, table, PgSchemaNodeParserType.json_conversion);
 
@@ -76,6 +77,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		type = jsonb.type;
 
 		if (table.jsonable) {
+
+			this.as_attr = as_attr;
 
 			schema_ver = jsonb.schema_ver;
 			concat_value_space = jsonb.concat_value_space;
@@ -95,7 +98,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 */
 	public void parseRootNode(final Node root_node, int indent_level) throws PgSchemaException {
 
-		node_test.setRootNode(root_node, current_key = document_id + "/" + table.xname);
+		node_test.setRootNode(root_node, document_id + "/" + table.xname);
 
 		parse();
 
@@ -140,9 +143,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		parse();
 
-		boolean virtual = table.virtual;
-		boolean as_attr = node_test.as_attr;
-		boolean last_node = isLastNode();
+		boolean last_node = node_test.isLastNode();
 
 		switch (type) {
 		case column:
@@ -168,17 +169,10 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				if (nested_keys != null && nested_keys.size() > 0) {
 
-					Node test_node = node_test.proc_node;
+					Node proc_node = node_test.proc_node;
 
-					boolean exists;
-
-					for (PgSchemaNestedKey nested_key : nested_keys) {
-
-						exists = existsNestedNode(test_node, nested_key.table);
-
-						traverseNestedNodeCol(exists || indirect ? test_node : proc_node, nested_key.asOfChild(node_test, exists), indent_level + (virtual ? 0 : 1));
-
-					}
+					for (PgSchemaNestedKey nested_key : nested_keys)
+						traverseNestedNodeCol(proc_node, nested_key.asOfChild(node_test, existsNestedNode(proc_node, nested_key.table)), indent_level + (virtual ? 0 : 1));
 
 				}
 
@@ -209,17 +203,10 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				if (nested_keys != null && nested_keys.size() > 0) {
 
-					Node test_node = node_test.proc_node;
+					Node proc_node = node_test.proc_node;
 
-					boolean exists;
-
-					for (PgSchemaNestedKey nested_key : nested_keys) {
-
-						exists = existsNestedNode(test_node, nested_key.table);
-
-						traverseNestedNodeObj(exists || indirect ? test_node : proc_node, nested_key.asOfChild(node_test, exists), indent_level + (table.relational ? 0 : 1));
-
-					}
+					for (PgSchemaNestedKey nested_key : nested_keys)
+						traverseNestedNodeObj(proc_node, nested_key.asOfChild(node_test, existsNestedNode(proc_node, nested_key.table)), indent_level + (table.relational ? 0 : 1));
 
 				}
 
@@ -243,9 +230,6 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		node_test.setProcNode(node);
 
 		parse();
-
-		boolean virtual = table.virtual;
-		boolean as_attr = node_test.as_attr;
 
 		switch (type) {
 		case column:
@@ -301,7 +285,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, nested_key.table);
+		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, nested_key.table, nested_key.as_attr);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepare(table, nested_key);
@@ -313,7 +297,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (node_test.isOmissibleNode(parent_node, node, node_parser.node_ordinal, node_parser.last_node))
+				if (node_test.isOmissibleNode(parent_node, node))
 					continue;
 
 				if (node_parser.parseChildNode())
@@ -344,7 +328,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		PgTable current_table = nested_key.table;
 
-		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, current_table);
+		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, current_table, nested_key.as_attr);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepare(table, nested_key);
@@ -361,7 +345,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (node_test.isOmissibleNode(parent_node, node, node_parser.node_ordinal, node_parser.last_node))
+				if (node_test.isOmissibleNode(parent_node, node))
 					continue;
 
 				if (node_parser.parseChildNode(json_indent_level))
@@ -401,7 +385,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		PgTable current_table = nested_key.table;
 
-		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, current_table);
+		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, current_table, nested_key.as_attr);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepare(table, nested_key);
@@ -422,7 +406,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node.getNodeType() != Node.ELEMENT_NODE)
 					continue;
 
-				if (node_test.isOmissibleNode(parent_node, node, node_parser.node_ordinal, node_parser.last_node))
+				if (node_test.isOmissibleNode(parent_node, node))
 					continue;
 
 				if (node_parser.parseChildNode(json_indent_level))
@@ -458,17 +442,15 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	@Override
 	protected void parse() throws PgSchemaException {
 
-		if (table.visited_key.equals(current_key = node_test.current_key))
+		if (table.visited_key.equals(current_key = node_test.proc_key))
 			return;
 
 		if (table.has_path_restriction)
 			extractParentAncestorNodeName();
 
-		proc_node = node_test.proc_node;
-		indirect = node_test.indirect;
+		Node proc_node = node_test.proc_node;
 
-		if (node_ordinal > 1 && nested_keys != null && nested_keys.size() > 0)
-			nested_keys.clear();
+		clear();
 
 		if (!table.jsonable) {
 
@@ -477,7 +459,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			return;
 		}
 
-		if (node_ordinal > 1) {
+		if (visited) {
 
 			not_complete = null_simple_list = false;
 
@@ -502,7 +484,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				if (field.attribute || field.simple_content || field.element) {
 
-					if (setContent(proc_node, field, node_test.as_attr, false))
+					if (setContent(proc_node, field, false))
 						values[f] = content;
 
 					else if (field.required) {

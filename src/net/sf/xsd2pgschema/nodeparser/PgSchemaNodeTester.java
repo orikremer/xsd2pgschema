@@ -35,11 +35,11 @@ public class PgSchemaNodeTester {
 	/** The parent key name. */
 	protected String parent_key;
 
-	/** The current primary key name. */
+	/** The primary key name. */
 	protected String primary_key;
 
-	/** The current key name. */
-	protected String current_key;
+	/** The processing key name. */
+	protected String proc_key;
 
 	/** The processing node. */
 	protected Node proc_node;
@@ -47,34 +47,34 @@ public class PgSchemaNodeTester {
 	/** The last node. */
 	protected Node last_node = null;
 
-	/** Whether parent node as attribute. */
-	protected boolean as_attr;
-
-	/** Whether child node is not nested node (indirect). */
-	protected boolean indirect;
-
 	/** The ordinal number of sibling node. */
 	protected int node_ordinal = 1;
 
-	/** The target ordinal number of sibling node (internal use only). */
+	/** The target ordinal number of sibling node. */
 	protected int target_ordinal;
 
-	/** The original current key name (internal use only). */
-	private String _current_key;
+	/** The original processing key name. */
+	private String _proc_key;
 
-	/** The parent table (internal use only). */
+	/** The parent table. */
 	private PgTable parent_table;
 
-	/** The current table (internal use only). */
+	/** The current table. */
 	private PgTable table;
 
-	/** The canonical table name in XML Schema (internal use only). */
+	/** The canonical table name in XML Schema. */
 	private String table_xname;
 
-	/** Whether the table is virtual (internal use only). */
+	/** Whether virtual table. */
 	private boolean virtual;
 
-	/** Whether nested key is list holder (internal use only). */
+	/** Whether parent node as attribute. */
+	private boolean as_attr;
+
+	/** Whether child node is not nested node (indirect). */
+	private boolean indirect;
+
+	/** Whether nested key is list holder. */
 	private boolean list_holder;
 
 	/**
@@ -87,14 +87,12 @@ public class PgSchemaNodeTester {
 
 		proc_node = root_node;
 
-		parent_key = null;
-		primary_key = current_key = _current_key = root_key;
-		as_attr = indirect = false;
+		primary_key = proc_key = root_key;
 
 	}
 
 	/**
-	 * Prepare node tester.
+	 * Prepare node tester for child node.
 	 *
 	 * @param parent_table parent_table
 	 * @param nested_key nested_key
@@ -109,7 +107,7 @@ public class PgSchemaNodeTester {
 
 		target_ordinal = nested_key.target_ordinal;
 		parent_key = nested_key.parent_key;
-		primary_key = current_key = _current_key = nested_key.current_key;
+		primary_key = proc_key = _proc_key = nested_key.current_key;
 		as_attr = nested_key.as_attr;
 		indirect = nested_key.indirect;
 		list_holder = nested_key.list_holder;
@@ -121,11 +119,9 @@ public class PgSchemaNodeTester {
 	 *
 	 * @param parent_node parent node
 	 * @param node current node
-	 * @param node_ordinal the ordinal number of sibling node
-	 * @param last_node the last node
 	 * @return boolean whether current node is omissible
 	 */
-	public boolean isOmissibleNode(final Node parent_node, final Node node, final int node_ordinal, final Node last_node) {
+	public boolean isOmissibleNode(final Node parent_node, final Node node) {
 
 		String qname = node.getNodeName();
 		String xname = PgSchemaUtil.getUnqualifiedName(qname);
@@ -141,15 +137,13 @@ public class PgSchemaNodeTester {
 
 		if (list_holder) {
 
-			this.node_ordinal = node_ordinal;
-
 			if (indirect && node_ordinal < target_ordinal)
 				return true;
 
 			if (!virtual)
-				current_key = _current_key + "[" + node_ordinal + "]"; // XPath predicate
+				proc_key = _proc_key + "[" + node_ordinal + "]"; // XPath predicate
 
-			if (this.last_node == null && (this.last_node = last_node) == null) {
+			if (last_node == null) {
 
 				for (Node child = parent_node.getLastChild(); child != null; child = child.getPreviousSibling()) {
 
@@ -158,7 +152,7 @@ public class PgSchemaNodeTester {
 
 					if (qname.equals(child.getNodeName())) {
 
-						this.last_node = child;
+						last_node = child;
 
 						break;
 					}
@@ -169,7 +163,7 @@ public class PgSchemaNodeTester {
 
 		}
 
-		if (table.visited_key.equals(current_key))
+		if (table.visited_key.equals(proc_key))
 			return true;
 
 		// processing node
@@ -198,6 +192,21 @@ public class PgSchemaNodeTester {
 	}
 
 	/**
+	 * Return whether current node is the last one.
+	 *
+	 * @return boolean whether current node is the last one
+	 */
+	public boolean isLastNode() {
+
+		try {
+			return last_node == null || proc_node.equals(last_node) || (indirect && node_ordinal == target_ordinal);
+		} finally {
+			++node_ordinal;
+		}
+
+	}
+
+	/**
 	 * Set current node as processing node.
 	 *
 	 * @param node current node
@@ -206,7 +215,7 @@ public class PgSchemaNodeTester {
 
 		proc_node = node;
 
-		current_key = _current_key;
+		proc_key = _proc_key;
 
 	}
 

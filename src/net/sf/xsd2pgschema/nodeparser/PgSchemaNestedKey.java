@@ -74,13 +74,13 @@ public class PgSchemaNestedKey {
 	/**
 	 * Set nested key as of root node.
 	 *
-	 * @param parser node parser
+	 * @param node_parser node parser
 	 * @return PgSchemaNestedKey nested key
 	 */
-	public PgSchemaNestedKey asOfRoot(PgSchemaNodeParser parser) {
+	public PgSchemaNestedKey asOfRoot(PgSchemaNodeParser node_parser) {
 
-		parent_key = parser.current_key;
-		indirect = parser.table.bridge;
+		parent_key = node_parser.current_key;
+		indirect = false;
 
 		return this;
 	}
@@ -105,12 +105,12 @@ public class PgSchemaNestedKey {
 	/**
 	 * Set nested key as of child node.
 	 *
-	 * @param parser node parser
+	 * @param node_parser node parser
 	 * @return PgSchemaNestedKey nested key
 	 */
-	public PgSchemaNestedKey asOfChild(PgSchemaNodeParser parser) {
+	public PgSchemaNestedKey asOfChild(PgSchemaNodeParser node_parser) {
 
-		parent_key = parser.current_key;
+		parent_key = node_parser.current_key;
 		indirect = false;
 
 		return this;

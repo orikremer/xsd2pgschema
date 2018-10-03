@@ -91,8 +91,11 @@ public abstract class PgSchemaNodeParser {
 	/** The node tester. */
 	protected PgSchemaNodeTester node_test = new PgSchemaNodeTester();
 
-	/** The ordinal number of sibling node. */
-	protected int node_ordinal = 1;
+	/** Whether virtual table. */
+	protected boolean virtual;
+
+	/** Whether parent node as attribute. */
+	protected boolean as_attr;
 
 	/** Whether values are not complete. */
 	protected boolean not_complete = false;
@@ -100,20 +103,8 @@ public abstract class PgSchemaNodeParser {
 	/** Whether simple content as primitive list is null. */
 	protected boolean null_simple_list = false;
 
-	/** Whether xs_type equals xs_admin_root. */
-	protected boolean virtual;
-
 	/** Whether any nested node has been visited. */
 	protected boolean visited;
-
-	/** Whether child node is not nested node (indirect). */
-	protected boolean indirect;
-
-	/** The processing node. */
-	protected Node proc_node;
-
-	/** The last node. */
-	protected Node last_node = null;
 
 	/** The current key name. */
 	protected String current_key;
@@ -226,7 +217,7 @@ public abstract class PgSchemaNodeParser {
 	 */
 	public void parseRootNode(final Node root_node) throws PgSchemaException {
 
-		node_test.setRootNode(root_node, current_key = document_id + "/" + table.xname);
+		node_test.setRootNode(root_node, document_id + "/" + table.xname);
 
 		parse();
 
@@ -254,23 +245,16 @@ public abstract class PgSchemaNodeParser {
 
 			if (nested_keys != null) {
 
-				Node test_node = node_test.proc_node;
+				Node proc_node = node_test.proc_node;
 
-				boolean exists;
-
-				for (PgSchemaNestedKey nested_key : nested_keys) {
-
-					exists = existsNestedNode(test_node, nested_key.table);
-
-					traverseNestedNode(exists || indirect ? test_node : proc_node, nested_key.asOfChild(node_test, exists));
-
-				}
+				for (PgSchemaNestedKey nested_key : nested_keys)
+					traverseNestedNode(proc_node, nested_key.asOfChild(node_test, existsNestedNode(proc_node, nested_key.table)));
 
 			}
 
 		}
 
-		return isLastNode();
+		return node_test.isLastNode();
 	}
 
 	/**
@@ -320,7 +304,7 @@ public abstract class PgSchemaNodeParser {
 	 */
 	public void clear() throws PgSchemaException {
 
-		if (nested_keys != null && nested_keys.size() > 0)
+		if (visited && nested_keys != null && nested_keys.size() > 0)
 			nested_keys.clear();
 
 	}
@@ -367,6 +351,33 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
+	 * Return whether nested node exists.
+	 *
+	 * @param node current node
+	 * @param nested_table nested table
+	 * @return boolean whether nested node exists
+	 */
+	protected boolean existsNestedNode(final Node node, final PgTable nested_table) {
+
+		if (nested_table.virtual)
+			return nested_table.content_holder;
+
+		String nested_table_xname = nested_table.xname;
+
+		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
+			if (((Element) child).getLocalName().equals(nested_table_xname))
+				return true;
+
+		}
+
+		return false;
+	}
+
+	/**
 	 * Extract parent/ancestor node name.
 	 */
 	protected void extractParentAncestorNodeName() {
@@ -392,11 +403,10 @@ public abstract class PgSchemaNodeParser {
 	 *
 	 * @param node current node
 	 * @param field current field
-	 * @param as_attr whether nested key as attribute
 	 * @param pg_enum_limit whether PostgreSQL enumeration length limit is applied
 	 * @return boolean whether content is valid
 	 */
-	protected boolean setContent(final Node node, final PgField field, final boolean as_attr, final boolean pg_enum_limit) {
+	protected boolean setContent(final Node node, final PgField field, final boolean pg_enum_limit) {
 
 		content = null;
 
@@ -828,51 +838,6 @@ public abstract class PgSchemaNodeParser {
 		}
 
 		return has_any_attr;
-	}
-
-	/**
-	 * Return whether nested node exists.
-	 *
-	 * @param node current node
-	 * @param nested_table nested table
-	 * @return boolean whether nested node exists
-	 */
-	protected boolean existsNestedNode(final Node node, final PgTable nested_table) {
-
-		if (nested_table.virtual)
-			return nested_table.content_holder;
-
-		String nested_table_xname = nested_table.xname;
-
-		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-			if (child.getNodeType() != Node.ELEMENT_NODE)
-				continue;
-
-			if (((Element) child).getLocalName().equals(nested_table_xname))
-				return true;
-
-		}
-
-		return false;
-	}
-
-	/**
-	 * Return whether current node is the last one.
-	 *
-	 * @return boolean whether current node is the last one
-	 */
-	protected boolean isLastNode() {
-
-		if (last_node == null && node_test.last_node != null)
-			last_node = node_test.last_node;
-
-		try {
-			return last_node == null || node_test.proc_node.equals(last_node) || (node_test.indirect && node_ordinal == node_test.target_ordinal);
-		} finally {
-			++node_ordinal;
-		}
-
 	}
 
 	/**
