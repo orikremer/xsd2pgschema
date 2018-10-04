@@ -91,7 +91,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Traverser nested node.
+	 * Traverse nested node.
 	 *
 	 * @param parent_node parent node
 	 * @param nested_key nested key
@@ -103,7 +103,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 		PgSchemaNode2LucIdx node_parser = new PgSchemaNode2LucIdx(schema, table, nested_key.table, nested_key.as_attr, min_word_len, numeric_index);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
-		node_test.prepare(table, parent_node, nested_key);
+		node_test.prepForTraversal(table, parent_node, nested_key);
 
 		try {
 
@@ -115,7 +115,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				if (node_test.isOmissibleNode(node))
 					continue;
 
-				if (node_parser.parseChildNode())
+				if (node_parser.parseProcNode())
 					break;
 
 			}
@@ -123,7 +123,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			if (node_parser.visited)
 				return;
 
-			node_parser.parseChildNode(parent_node);
+			node_parser.parseNode(parent_node);
 
 		} finally {
 			node_parser.clear();

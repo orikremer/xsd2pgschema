@@ -133,13 +133,13 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse child node: Column- or Object-oriented JSON format
+	 * Parse processing node: Column- or Object-oriented JSON format
 	 *
 	 * @param indent_level current indent level
-	 * @return boolean whether current node is the last one
+	 * @return boolean whether the node is the last one
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected boolean parseChildNode(int indent_level) throws PgSchemaException {
+	protected boolean parseProcNode(int indent_level) throws PgSchemaException {
 
 		parse();
 
@@ -219,13 +219,13 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse child node: Column- or Object-oriented JSON format
+	 * Parse current node: Column- or Object-oriented JSON format
 	 *
 	 * @param node current node
 	 * @param indent_level current indent level
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void parseChildNode(final Node node, int indent_level) throws PgSchemaException {
+	protected void parseNode(final Node node, int indent_level) throws PgSchemaException {
 
 		node_test.setProcNode(node);
 
@@ -288,7 +288,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, nested_key.table, nested_key.as_attr);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
-		node_test.prepare(table, parent_node, nested_key);
+		node_test.prepForTraversal(table, parent_node, nested_key);
 
 		try {
 
@@ -300,7 +300,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node_test.isOmissibleNode(node))
 					continue;
 
-				if (node_parser.parseChildNode())
+				if (node_parser.parseProcNode())
 					break;
 
 			}
@@ -308,7 +308,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			if (node_parser.visited)
 				return;
 
-			node_parser.parseChildNode(parent_node);
+			node_parser.parseNode(parent_node);
 
 		} finally {
 			node_parser.clear();
@@ -331,7 +331,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, current_table, nested_key.as_attr);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
-		node_test.prepare(table, parent_node, nested_key);
+		node_test.prepForTraversal(table, parent_node, nested_key);
 
 		try {
 
@@ -348,7 +348,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node_test.isOmissibleNode(node))
 					continue;
 
-				if (node_parser.parseChildNode(json_indent_level))
+				if (node_parser.parseProcNode(json_indent_level))
 					break;
 
 			}
@@ -358,7 +358,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node_parser.visited)
 					return;
 
-				node_parser.parseChildNode(parent_node, json_indent_level);
+				node_parser.parseNode(parent_node, json_indent_level);
 
 			} finally {
 
@@ -388,7 +388,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, current_table, nested_key.as_attr);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
-		node_test.prepare(table, parent_node, nested_key);
+		node_test.prepForTraversal(table, parent_node, nested_key);
 
 		try {
 
@@ -409,7 +409,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node_test.isOmissibleNode(node))
 					continue;
 
-				if (node_parser.parseChildNode(json_indent_level))
+				if (node_parser.parseProcNode(json_indent_level))
 					break;
 
 			}
@@ -419,7 +419,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (node_parser.visited)
 					return;
 
-				node_parser.parseChildNode(parent_node, json_indent_level);
+				node_parser.parseNode(parent_node, json_indent_level);
 
 			} finally {
 

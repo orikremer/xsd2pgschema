@@ -244,7 +244,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		PgSchemaNode2PgSql node_parser = new PgSchemaNode2PgSql(schema, table, nested_key.table, nested_key.as_attr, update);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
-		node_test.prepare(table, parent_node, nested_key);
+		node_test.prepForTraversal(table, parent_node, nested_key);
 
 		try {
 
@@ -256,7 +256,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				if (node_test.isOmissibleNode(node))
 					continue;
 
-				if (node_parser.parseChildNode())
+				if (node_parser.parseProcNode())
 					break;
 
 			}
@@ -264,7 +264,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			if (node_parser.visited)
 				return;
 
-			node_parser.parseChildNode(parent_node);
+			node_parser.parseNode(parent_node);
 
 		} finally {
 			node_parser.clear();

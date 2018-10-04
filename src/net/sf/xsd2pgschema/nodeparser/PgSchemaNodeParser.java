@@ -230,12 +230,12 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse child node.
+	 * Parse processing node.
 	 *
-	 * @return boolean whether current node is the last one
+	 * @return boolean whether the node is the last one
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected boolean parseChildNode() throws PgSchemaException {
+	protected boolean parseProcNode() throws PgSchemaException {
 
 		parse();
 
@@ -258,12 +258,12 @@ public abstract class PgSchemaNodeParser {
 	}
 
 	/**
-	 * Parse child node.
+	 * Parse current node.
 	 *
 	 * @param node current node
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	protected void parseChildNode(final Node node) throws PgSchemaException {
+	protected void parseNode(final Node node) throws PgSchemaException {
 
 		node_test.setProcNode(node);
 

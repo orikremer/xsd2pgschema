@@ -95,13 +95,13 @@ public class PgSchemaNodeTester {
 	}
 
 	/**
-	 * Prepare node tester for child node.
+	 * Prepare node tester for traversal of nested node.
 	 *
 	 * @param parent_table parent table
 	 * @param parent_node parent node
 	 * @param nested_key nested_key
 	 */
-	public void prepare(final PgTable parent_table, final Node parent_node, final PgSchemaNestedKey nested_key) {
+	public void prepForTraversal(final PgTable parent_table, final Node parent_node, final PgSchemaNestedKey nested_key) {
 
 		this.parent_table = parent_table;
 		this.parent_node = parent_node;
@@ -121,7 +121,8 @@ public class PgSchemaNodeTester {
 	}
 
 	/**
-	 * Return whether current node is omissible.
+	 * Set current node as processing node if the node is not omissible.
+	 * prepForTraversal() should be called beforehand.
 	 *
 	 * @param node current node
 	 * @return boolean whether current node is omissible
@@ -198,6 +199,7 @@ public class PgSchemaNodeTester {
 
 	/**
 	 * Return whether current node is the last one.
+	 * prepForTraversal() and isOmissibleNode() should be called beforehand.
 	 *
 	 * @return boolean whether current node is the last one
 	 */
@@ -213,6 +215,7 @@ public class PgSchemaNodeTester {
 
 	/**
 	 * Set current node as processing node.
+	 * prepForTraversal() should be called beforehand.
 	 *
 	 * @param node current node
 	 */
