@@ -439,7 +439,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					if (field.nested_key)
 						setNestedKey(proc_node, field);
 
-					else if (field.omissible)
+					if (field.omissible)
 						continue;
 
 					// document_key
