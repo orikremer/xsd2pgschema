@@ -116,11 +116,11 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				switch (type) {
 				case column:
 					for (PgSchemaNestedKey nested_key : nested_keys)
-						traverseNestedNodeCol(root_node, nested_key.asOfRoot(this), indent_level + (table.virtual ? 0 : 1));
+						traverseNestedNodeCol(root_node, nested_key.asIs(this), indent_level + (table.virtual ? 0 : 1));
 					break;
 				default: // object
 					for (PgSchemaNestedKey nested_key : nested_keys)
-						traverseNestedNodeObj(root_node, nested_key.asOfRoot(this), indent_level + (table.relational ? 0 : 1));
+						traverseNestedNodeObj(root_node, nested_key.asIs(this), indent_level + (table.relational ? 0 : 1));
 				}
 
 			}
@@ -172,7 +172,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 					Node proc_node = node_test.proc_node;
 
 					for (PgSchemaNestedKey nested_key : nested_keys)
-						traverseNestedNodeCol(proc_node, nested_key.asOfChild(node_test, existsNestedNode(proc_node, nested_key.table)), indent_level + (virtual ? 0 : 1));
+						traverseNestedNodeCol(proc_node, nested_key.asOfChild(this), indent_level + (virtual ? 0 : 1));
 
 				}
 
@@ -206,7 +206,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 					Node proc_node = node_test.proc_node;
 
 					for (PgSchemaNestedKey nested_key : nested_keys)
-						traverseNestedNodeObj(proc_node, nested_key.asOfChild(node_test, existsNestedNode(proc_node, nested_key.table)), indent_level + (table.relational ? 0 : 1));
+						traverseNestedNodeObj(proc_node, nested_key.asOfChild(this), indent_level + (table.relational ? 0 : 1));
 
 				}
 
@@ -242,7 +242,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			for (PgSchemaNestedKey nested_key : nested_keys) {
 
 				if (existsNestedNode(node, nested_key.table))
-					traverseNestedNodeCol(node, nested_key.asOfChild(this), indent_level + (virtual ? 0 : 1));
+					traverseNestedNodeCol(node, nested_key.asIs(this), indent_level + (virtual ? 0 : 1));
 
 			}
 			break;
@@ -261,7 +261,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				for (PgSchemaNestedKey nested_key : nested_keys) {
 
 					if (existsNestedNode(node, nested_key.table))
-						traverseNestedNodeObj(node, nested_key.asOfChild(this), indent_level + (table.relational ? 0 : 1));
+						traverseNestedNodeObj(node, nested_key.asIs(this), indent_level + (table.relational ? 0 : 1));
 
 				}
 

@@ -225,7 +225,7 @@ public abstract class PgSchemaNodeParser {
 			return;
 
 		for (PgSchemaNestedKey nested_key : nested_keys)
-			traverseNestedNode(root_node, nested_key.asOfRoot(this));
+			traverseNestedNode(root_node, nested_key.asIs(this));
 
 	}
 
@@ -248,7 +248,7 @@ public abstract class PgSchemaNodeParser {
 				Node proc_node = node_test.proc_node;
 
 				for (PgSchemaNestedKey nested_key : nested_keys)
-					traverseNestedNode(proc_node, nested_key.asOfChild(node_test, existsNestedNode(proc_node, nested_key.table)));
+					traverseNestedNode(proc_node, nested_key.asOfChild(this));
 
 			}
 
@@ -275,7 +275,7 @@ public abstract class PgSchemaNodeParser {
 		for (PgSchemaNestedKey nested_key : nested_keys) {
 
 			if (existsNestedNode(node, nested_key.table))
-				traverseNestedNode(node, nested_key.asOfChild(this));
+				traverseNestedNode(node, nested_key.asIs(this));
 
 		}
 
@@ -340,7 +340,7 @@ public abstract class PgSchemaNodeParser {
 
 		PgTable nested_table = schema.getTable(field.foreign_table_id);
 
-		if (!nested_table.virtual && !existsNestedNode(node, nested_table))
+		if (!nested_table.virtual && !field.nested_key_as_attr && !existsNestedNode(node, nested_table))
 			return null;
 
 		PgSchemaNestedKey nested_key = new PgSchemaNestedKey(nested_table, field, current_key);

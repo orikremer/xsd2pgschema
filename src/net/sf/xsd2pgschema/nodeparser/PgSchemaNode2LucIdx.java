@@ -47,6 +47,9 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	/** Whether numeric values are stored in Lucene index. */
 	private boolean numeric_index;
 
+	/** The Lucene document. */
+	private org.apache.lucene.document.Document lucene_doc;
+
 	/** The prefix of index field. */
 	private String field_prefix;
 
@@ -81,6 +84,8 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				hash_size = schema.option.hash_size;
 
 			}
+
+			lucene_doc = schema.lucene_doc;
 
 			field_prefix = table.name + ".";
 
@@ -172,83 +177,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		PgField field;
 
-		if (!rel_data_ext) {
-
-			for (int f = 0; f < fields_size; f++) {
-
-				field = fields.get(f);
-
-				// nested_key
-
-				if (field.nested_key)
-					setNestedKey(proc_node, field);
-
-				else if (field.indexable) {
-
-					// attribute, simple_content, element
-
-					if (field.attribute || field.simple_content || field.element) {
-
-						if (setContent(proc_node, field, false))
-							values[f] = content;
-
-						else if (field.required) {
-
-							not_complete = true;
-
-							return;
-						}
-
-					}
-
-					// any, any_attribute
-
-					else if (field.any || field.any_attribute) {
-
-						try {
-
-							if (setAnyContent(proc_node, field)) {
-
-								values[f] = any_content.toString().trim();
-								any_content.setLength(0);
-
-							}
-
-						} catch (TransformerException | IOException | SAXException e) {
-							throw new PgSchemaException(e);
-						}
-
-					}
-
-				}
-
-			}
-
-			if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
-				return;
-
-			org.apache.lucene.document.Document lucene_doc = schema.lucene_doc;
-
-			for (int f = 0; f < fields_size; f++) {
-
-				field = fields.get(f);
-
-				if (field.indexable) {
-
-					value = values[f];
-
-					if ((value_len = (value == null ? 0 : value.length())) == 0)
-						continue;
-
-					field.write(lucene_doc, field_prefix + field.name, value, value_len >= min_word_len, numeric_index);
-
-				}
-
-			}
-
-		}
-
-		else {
+		if (rel_data_ext) {
 
 			for (int f = 0; f < fields_size; f++) {
 
@@ -323,8 +252,6 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
 				return;
 
-			org.apache.lucene.document.Document lucene_doc = schema.lucene_doc;
-
 			for (int f = 0; f < fields_size; f++) {
 
 				field = fields.get(f);
@@ -337,6 +264,80 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				}
 
 				else if (field.indexable) {
+
+					value = values[f];
+
+					if ((value_len = (value == null ? 0 : value.length())) == 0)
+						continue;
+
+					field.write(lucene_doc, field_prefix + field.name, value, value_len >= min_word_len, numeric_index);
+
+				}
+
+			}
+
+		}
+
+		else {
+
+			for (int f = 0; f < fields_size; f++) {
+
+				field = fields.get(f);
+
+				// nested_key
+
+				if (field.nested_key)
+					setNestedKey(proc_node, field);
+
+				else if (field.indexable) {
+
+					// attribute, simple_content, element
+
+					if (field.attribute || field.simple_content || field.element) {
+
+						if (setContent(proc_node, field, false))
+							values[f] = content;
+
+						else if (field.required) {
+
+							not_complete = true;
+
+							return;
+						}
+
+					}
+
+					// any, any_attribute
+
+					else if (field.any || field.any_attribute) {
+
+						try {
+
+							if (setAnyContent(proc_node, field)) {
+
+								values[f] = any_content.toString().trim();
+								any_content.setLength(0);
+
+							}
+
+						} catch (TransformerException | IOException | SAXException e) {
+							throw new PgSchemaException(e);
+						}
+
+					}
+
+				}
+
+			}
+
+			if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
+				return;
+
+			for (int f = 0; f < fields_size; f++) {
+
+				field = fields.get(f);
+
+				if (field.indexable) {
 
 					value = values[f];
 

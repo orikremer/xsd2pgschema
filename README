@@ -1,8 +1,10 @@
-﻿ Changes in xsd2pgschema 3.0.4 (release 2018-09-19)
+﻿ Changes in xsd2pgschema 3.0.4 (release 2018-10-11)
 
   Added support for xs:unique and xs:key (generation of PostgreSQL multi-column UNIQUE constraint including a document key at least).
   Added --max-uniq-tuple-size option in xsd2pgschema main class that regulated the generation of PostgreSQL UNIQUE constraint derived from xs:key.
   Revised statistics and comments in PostgreSQL DDL.
+  Fixed PSQLException (The column index is out of range) when relational model extension was disabled (affects 3.0.4 released before Oct 10).
+  Fixed nested key as attribute was unreachable since 3.0.2 update.
 
  Changes in xsd2pgschema 3.0.3 (release 2018-09-14)
 

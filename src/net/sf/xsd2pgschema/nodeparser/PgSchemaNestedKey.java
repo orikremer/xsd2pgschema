@@ -72,12 +72,12 @@ public class PgSchemaNestedKey {
 	}
 
 	/**
-	 * Set nested key as of root node.
+	 * Set nested key as is.
 	 *
 	 * @param node_parser node parser
 	 * @return PgSchemaNestedKey nested key
 	 */
-	public PgSchemaNestedKey asOfRoot(PgSchemaNodeParser node_parser) {
+	public PgSchemaNestedKey asIs(PgSchemaNodeParser node_parser) {
 
 		parent_key = node_parser.current_key;
 		indirect = false;
@@ -86,32 +86,19 @@ public class PgSchemaNestedKey {
 	}
 
 	/**
-	 * Set nested key as of child node.
-	 *
-	 * @param node_test node tester
-	 * @param exists whether child node is nested node
-	 * @return PgSchemaNestedKey nested key
-	 */
-	public PgSchemaNestedKey asOfChild(PgSchemaNodeTester node_test, boolean exists) {
-
-		parent_key = node_test.primary_key;
-
-		if (indirect = !exists)
-			target_ordinal = node_test.node_ordinal;
-
-		return this;
-	}
-
-	/**
-	 * Set nested key as of child node.
+	 * Set nested key as of child.
 	 *
 	 * @param node_parser node parser
 	 * @return PgSchemaNestedKey nested key
 	 */
 	public PgSchemaNestedKey asOfChild(PgSchemaNodeParser node_parser) {
 
-		parent_key = node_parser.current_key;
-		indirect = false;
+		PgSchemaNodeTester node_test = node_parser.node_test;
+
+		parent_key = node_test.primary_key;
+
+		if (indirect = !node_parser.existsNestedNode(node_test.proc_node, table))
+			target_ordinal = node_test.node_ordinal;
 
 		return this;
 	}

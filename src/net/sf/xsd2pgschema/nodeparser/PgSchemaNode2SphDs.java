@@ -44,6 +44,9 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	/** The minimum word length for indexing. */
 	private int min_word_len;
 
+	/** The buffered writer of Sphinx xmlpipe2 file. */
+	private BufferedWriter sph_ds_buffw;
+
 	/** The prefix of index field. */
 	private String field_prefix;
 
@@ -69,6 +72,8 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 		if (table.indexable) {
 
 			this.as_attr = as_attr;
+
+			sph_ds_buffw = schema.sph_ds_buffw;
 
 			field_prefix = table.name + PgSchemaUtil.sph_member_op;
 
@@ -212,8 +217,6 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 		if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
 			return;
-
-		BufferedWriter sph_ds_buffw = schema.sph_ds_buffw;
 
 		for (int f = 0; f < fields_size; f++) {
 
