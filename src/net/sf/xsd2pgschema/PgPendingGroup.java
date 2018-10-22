@@ -30,7 +30,7 @@ public class PgPendingGroup {
 	protected String ref_group;
 
 	/** The PostgreSQL schema name. */
-	protected String pg_schema_name;
+	protected String schema_name;
 
 	/** The canonical group name. */
 	protected String xname;
@@ -42,14 +42,14 @@ public class PgPendingGroup {
 	 * Instance of PgPendingGroup.
 	 *
 	 * @param ref_group reference group name
-	 * @param pg_schema_name PostgreSQL schema name
+	 * @param schema_name PostgreSQL schema name
 	 * @param xname canonical group name
 	 * @param insert_position insert position in fields
 	 */
-	public PgPendingGroup(String ref_group, String pg_schema_name, String xname, int insert_position) {
+	public PgPendingGroup(String ref_group, String schema_name, String xname, int insert_position) {
 
 		this.ref_group = ref_group;
-		this.pg_schema_name = pg_schema_name;
+		this.schema_name = schema_name;
 		this.xname = xname;
 		this.insert_position = insert_position;
 

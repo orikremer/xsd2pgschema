@@ -22,6 +22,7 @@ package net.sf.xsd2pgschema.sphinxutil;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -165,7 +166,7 @@ public class SphDsDocIdCleaner {
 
 		// XML event writer of extracted XML file
 
-		BufferedWriter bout = Files.newBufferedWriter(sph_data_out_path);
+		BufferedWriter bout = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(sph_data_out_path), PgSchemaUtil.def_encoding), PgSchemaUtil.def_buffered_output_stream_buffer_size);
 
 		xml_writer = out_factory.createXMLEventWriter(bout);
 

@@ -22,6 +22,7 @@ package net.sf.xsd2pgschema.implement;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -670,7 +671,7 @@ public class XmlSplitterImpl {
 
 		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 
-		bout = Files.newBufferedWriter(xml_file_path);
+		bout = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(xml_file_path), PgSchemaUtil.def_encoding), PgSchemaUtil.def_buffered_output_stream_buffer_size);
 
 		// XML event writer of split XML file
 

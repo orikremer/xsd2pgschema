@@ -48,6 +48,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	/** The JSON type. */
 	private JsonType type;
 
+	/** Whether bridge table | virtual table | !content_holder. */
+	public boolean relational;
+
 	/** Whether any content was written. */
 	private boolean written = false;
 
@@ -75,6 +78,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		jsonb = schema.jsonb;
 		type = jsonb.type;
+
+		relational = table.relational;
 
 		if (table.jsonable) {
 
@@ -116,11 +121,11 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				switch (type) {
 				case column:
 					for (PgSchemaNestedKey nested_key : nested_keys)
-						traverseNestedNodeCol(root_node, nested_key.asIs(this), indent_level + (table.virtual ? 0 : 1));
+						traverseNestedNodeCol(root_node, nested_key.asIs(this), indent_level + (virtual ? 0 : 1));
 					break;
 				default: // object
 					for (PgSchemaNestedKey nested_key : nested_keys)
-						traverseNestedNodeObj(root_node, nested_key.asIs(this), indent_level + (table.relational ? 0 : 1));
+						traverseNestedNodeObj(root_node, nested_key.asIs(this), indent_level + (relational ? 0 : 1));
 				}
 
 			}
@@ -206,7 +211,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 					Node proc_node = node_test.proc_node;
 
 					for (PgSchemaNestedKey nested_key : nested_keys)
-						traverseNestedNodeObj(proc_node, nested_key.asOfChild(this), indent_level + (table.relational ? 0 : 1));
+						traverseNestedNodeObj(proc_node, nested_key.asOfChild(this), indent_level + (relational ? 0 : 1));
 
 				}
 
@@ -261,7 +266,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				for (PgSchemaNestedKey nested_key : nested_keys) {
 
 					if (existsNestedNode(node, nested_key.table))
-						traverseNestedNodeObj(node, nested_key.asIs(this), indent_level + (table.relational ? 0 : 1));
+						traverseNestedNodeObj(node, nested_key.asIs(this), indent_level + (relational ? 0 : 1));
 
 				}
 
@@ -482,7 +487,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				// attribute, simple_content, element
 
-				if (field.attribute || field.simple_content || field.element) {
+				if (field.content_holder) {
 
 					if (setContent(proc_node, field, false))
 						values[f] = content;
@@ -498,7 +503,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				// any, any_attribute
 
-				else if (field.any || field.any_attribute) {
+				else if (field.any_content_holder) {
 
 					try {
 

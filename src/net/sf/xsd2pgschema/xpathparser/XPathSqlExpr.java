@@ -228,55 +228,60 @@ public class XPathSqlExpr {
 
 		switch (terminus) {
 		case element:
-			opt = table.fields.parallelStream().filter(field -> field.element && field.xname.equals(xname)).findFirst();
-			if (opt.isPresent())
-				field = opt.get();
-			else {
-				if (current_tree != null)
-					throw new PgSchemaException(current_tree);
-				else throw new PgSchemaException();
+			if (table.has_element) {
+				opt = table.fields.parallelStream().filter(field -> field.element && field.xname.equals(xname)).findFirst();
+				if (opt.isPresent()) {
+					field = opt.get();
+					break;
+				}
 			}
-			break;
+			if (current_tree != null)
+				throw new PgSchemaException(current_tree);
+			else throw new PgSchemaException();
 		case simple_content:
-			opt = table.fields.parallelStream().filter(field -> field.simple_content && !field.simple_attribute && field.xname.equals(xname)).findFirst();
-			if (opt.isPresent())
-				field = opt.get();
-			else {
-				if (current_tree != null)
-					throw new PgSchemaException(current_tree);
-				else throw new PgSchemaException();
+			if (table.has_simple_content) {
+				opt = table.fields.parallelStream().filter(field -> field.simple_content && !field.simple_attribute && field.xname.equals(xname)).findFirst();
+				if (opt.isPresent()) {
+					field = opt.get();
+					break;
+				}
 			}
-			break;
+			if (current_tree != null)
+				throw new PgSchemaException(current_tree);
+			else throw new PgSchemaException();
 		case attribute:
-			opt = table.fields.parallelStream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && (field.attribute ? field.xname.equals(xname) : field.foreign_table_xname.equals(xname))).findFirst();
-			if (opt.isPresent())
-				field = opt.get();
-			else {
-				if (current_tree != null)
-					throw new PgSchemaException(current_tree);
-				else throw new PgSchemaException();
+			if (table.has_attribute || table.has_simple_attribute) {
+				opt = table.fields.parallelStream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && (field.attribute ? field.xname.equals(xname) : field.foreign_table_xname.equals(xname))).findFirst();
+				if (opt.isPresent()) {
+					field = opt.get();
+					break;
+				}
 			}
-			break;
+			if (current_tree != null)
+				throw new PgSchemaException(current_tree);
+			else throw new PgSchemaException();
 		case any_element:
-			opt = table.fields.parallelStream().filter(field -> field.any && field.xname.equals(xname)).findFirst();
-			if (opt.isPresent())
-				field = opt.get();
-			else {
-				if (current_tree != null)
-					throw new PgSchemaException(current_tree);
-				else throw new PgSchemaException();
+			if (table.has_any) {
+				opt = table.fields.parallelStream().filter(field -> field.any && field.xname.equals(xname)).findFirst();
+				if (opt.isPresent()) {
+					field = opt.get();
+					break;
+				}
 			}
-			break;
+			if (current_tree != null)
+				throw new PgSchemaException(current_tree);
+			else throw new PgSchemaException();
 		case any_attribute:
-			opt = table.fields.parallelStream().filter(field -> field.any_attribute && field.xname.equals(xname)).findFirst();
-			if (opt.isPresent())
-				field = opt.get();
-			else {
-				if (current_tree != null)
-					throw new PgSchemaException(current_tree);
-				else throw new PgSchemaException();
+			if (table.has_any_attribute) {
+				opt = table.fields.parallelStream().filter(field -> field.any_attribute && field.xname.equals(xname)).findFirst();
+				if (opt.isPresent()) {
+					field = opt.get();
+					break;
+				}
 			}
-			break;
+			if (current_tree != null)
+				throw new PgSchemaException(current_tree);
+			else throw new PgSchemaException();
 		default:
 			throw new PgSchemaException();
 		}

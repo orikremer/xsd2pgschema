@@ -96,8 +96,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			try {
 
-				boolean pg_named_schema = schema.option.pg_named_schema;
-
 				PgField field;
 
 				for (int f = 0; f < fields_size; f++) {
@@ -112,7 +110,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				}
 
 				if (update && rel_data_ext)
-					upsert = fields.parallelStream().filter(_field -> _field.primary_key).findFirst().get().unique_key;
+					upsert = table.has_unique_primary_key;
 
 				// upsert
 
@@ -122,7 +120,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						StringBuilder sql = new StringBuilder();
 
-						sql.append("INSERT INTO " + schema.getPgNameOf(table) + " VALUES ( ");
+						sql.append("INSERT INTO " + table.pgname + " VALUES ( ");
 
 						for (int f = 0; f < fields_size; f++) {
 
@@ -134,7 +132,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 							if (field.enum_name == null)
 								sql.append("?");
 							else
-								sql.append("?::" + (pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+								sql.append("?::" + table.schema_pgname + field.enum_name);
 
 							sql.append(", ");
 
@@ -143,9 +141,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 						sql.setLength(sql.length() - 2);
 						sql.append(" )");
 
-						String pkey_name = PgSchemaUtil.avoidPgReservedWords(fields.parallelStream().filter(_field -> _field.primary_key).findFirst().get().pname);
-
-						sql.append(" ON CONFLICT ( " + pkey_name + " ) DO UPDATE SET ");
+						sql.append(" ON CONFLICT ( " + table.primary_key_pgname + " ) DO UPDATE SET ");
 
 						for (int f = 0; f < fields_size; f++) {
 
@@ -159,7 +155,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 							if (field.enum_name == null)
 								sql.append("?");
 							else
-								sql.append("?::" + (pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+								sql.append("?::" + table.schema_pgname + field.enum_name);
 
 							sql.append(", ");
 
@@ -167,7 +163,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						sql.setLength(sql.length() - 2);
 
-						sql.append(" WHERE EXCLUDED." + pkey_name + " = ?");
+						sql.append(" WHERE EXCLUDED." + table.primary_key_pgname + " = ?");
 
 						table.ps2 = schema.db_conn.prepareStatement(sql.toString());
 
@@ -187,7 +183,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						StringBuilder sql = new StringBuilder();
 
-						sql.append("INSERT INTO " + schema.getPgNameOf(table) + " VALUES ( ");
+						sql.append("INSERT INTO " + table.pgname + " VALUES ( ");
 
 						for (int f = 0; f < fields_size; f++) {
 
@@ -199,7 +195,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 							if (field.enum_name == null)
 								sql.append("?");
 							else
-								sql.append("?::" + (pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.pg_schema_name) + "." : "") + field.enum_name);
+								sql.append("?::" + table.schema_pgname + field.enum_name);
 
 							sql.append(", ");
 
@@ -363,7 +359,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					// attribute, simple_content, element
 
-					else if (field.attribute || field.simple_content || field.element) {
+					else if (field.content_holder) {
 
 						if (setContent(proc_node, field, true)) {
 
@@ -385,7 +381,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					// any, any_attribute
 
-					else if (field.any || field.any_attribute) {
+					else if (field.any_content_holder) {
 
 						try {
 
@@ -434,7 +430,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					field = fields.get(f);
 
-					// nested_key
+					// nested_key should be processed
 
 					if (field.nested_key)
 						setNestedKey(proc_node, field);
@@ -453,7 +449,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					// attribute, simple_content, element
 
-					else if (field.attribute || field.simple_content || field.element) {
+					else if (field.content_holder) {
 
 						if (setContent(proc_node, field, true)) {
 
@@ -475,7 +471,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					// any, any_attribute
 
-					else if (field.any || field.any_attribute) {
+					else if (field.any_content_holder) {
 
 						try {
 

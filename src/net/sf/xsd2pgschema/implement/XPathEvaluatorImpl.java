@@ -22,6 +22,8 @@ package net.sf.xsd2pgschema.implement;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,7 +37,6 @@ import java.sql.Statement;
 import java.util.HashMap;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -115,6 +116,12 @@ public class XPathEvaluatorImpl {
 
 	}
 
+	/** The XPath query previously translated. */
+	private String _xpath_query = "";
+
+	/** The XPath variables previously translated. */
+	private String _variables = "";
+
 	/**
 	 * Translate XPath to SQL.
 	 *
@@ -125,6 +132,17 @@ public class XPathEvaluatorImpl {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void translate(String xpath_query, HashMap<String, String> variables) throws IOException, xpathListenerException, PgSchemaException {
+
+		StringBuilder sb = new StringBuilder();
+
+		variables.entrySet().stream().forEach(arg -> sb.append(arg.getKey() + arg.getValue()));
+
+		String variables_ = sb.toString();
+
+		sb.setLength(0);
+
+		if (xpath_query.equals(_xpath_query) && variables_.equals(_variables))
+			return;
 
 		long start_time = System.currentTimeMillis();
 
@@ -162,7 +180,7 @@ public class XPathEvaluatorImpl {
 		System.out.println("Input XPath query:");
 		System.out.println(main_text);
 
-		System.out.println("\nTarget path in XML Schema: " + PgSchemaUtil.getSchemaName(option.root_schema_location));
+		System.out.println("\nTarget path in XML Schema: " + option.root_schema_location);
 		xpath_comp_list.showPathExprs();
 
 		// translate XPath to SQL
@@ -179,6 +197,9 @@ public class XPathEvaluatorImpl {
 		System.out.println("\nXPath parse time: " + (end_time - start_time) + " ms");
 		System.out.println("XPath validation time: " + (end_time_ - end_time) + " ms");
 		System.out.println("\nSQL translation time: " + (end_time2 - start_time2) + " ms\n");
+
+		_xpath_query = xpath_query;
+		_variables = variables_;
 
 	}
 
@@ -237,6 +258,8 @@ public class XPathEvaluatorImpl {
 				try {
 
 					ResultSet rset = stat.executeQuery(path_expr.sql);
+
+					stat.setFetchSize(PgSchemaUtil.pg_min_rows_for_doc_key_index);
 
 					ResultSetMetaData meta = rset.getMetaData();
 
@@ -339,13 +362,11 @@ public class XPathEvaluatorImpl {
 		if (xpath_comp_list == null)
 			throw new PgSchemaException("Not parsed XPath expression ever.");
 
-		XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
-
 		try {
 
 			Path out_file_path = null;
 
-			BufferedOutputStream bout = null;
+			OutputStream out = null;
 
 			if (!out_file_name.isEmpty() && !out_file_name.equals("stdout")) {
 
@@ -362,23 +383,24 @@ public class XPathEvaluatorImpl {
 
 				out_file_path = Paths.get(out_dir_name, out_file_name);
 
-				bout = new BufferedOutputStream(Files.newOutputStream(out_file_path));
+				out = new BufferedOutputStream(Files.newOutputStream(out_file_path), PgSchemaUtil.def_buffered_output_stream_buffer_size);
 
-				xml_writer = out_factory.createXMLStreamWriter(bout);
+				xml_writer = xmlb.out_factory.createXMLStreamWriter(out);
 
 			}
 
 			else
-				xml_writer = out_factory.createXMLStreamWriter(System.out);
+				xml_writer = xmlb.out_factory.createXMLStreamWriter(out = System.out);
+
+			xmlb.setXmlWriter(xml_writer, out);
 
 			if (xmlb.append_declare) {
 
 				xml_writer.writeStartDocument(PgSchemaUtil.def_encoding, PgSchemaUtil.def_xml_version);
-				xml_writer.writeCharacters(xmlb.getLineFeedCode());
+
+				xmlb.writeLineFeedCode();
 
 			}
-
-			xmlb.setXmlWriter(xml_writer);
 
 			client.schema.initXmlBuilder(xmlb);
 
@@ -395,6 +417,8 @@ public class XPathEvaluatorImpl {
 				try {
 
 					ResultSet rset = stat.executeQuery(path_expr.sql);
+
+					stat.setFetchSize(PgSchemaUtil.pg_min_rows_for_doc_key_index);
 
 					// table node
 
@@ -427,7 +451,7 @@ public class XPathEvaluatorImpl {
 
 			if (out_file_path != null) {
 
-				bout.close();
+				out.close();
 
 				System.out.println("Generated XML document: " + out_file_path.toAbsolutePath().toString());
 
@@ -470,7 +494,7 @@ public class XPathEvaluatorImpl {
 
 			Path out_file_path = null;
 
-			BufferedOutputStream bout = null;
+			OutputStream out = null;
 
 			if (!out_file_name.isEmpty() && !out_file_name.equals("stdout")) {
 
@@ -487,12 +511,12 @@ public class XPathEvaluatorImpl {
 
 				out_file_path = Paths.get(out_dir_name, out_file_name);
 
-				bout = new BufferedOutputStream(Files.newOutputStream(out_file_path));
+				out = Files.newOutputStream(out_file_path);
 
 			}
 
 			else
-				bout = new BufferedOutputStream(System.out);
+				out = new PrintStream(System.out);
 
 			client.schema.jsonb.resetStatus();
 
@@ -507,6 +531,8 @@ public class XPathEvaluatorImpl {
 				try {
 
 					ResultSet rset = stat.executeQuery(path_expr.sql);
+
+					stat.setFetchSize(PgSchemaUtil.pg_min_rows_for_doc_key_index);
 
 					// table node
 
@@ -530,7 +556,7 @@ public class XPathEvaluatorImpl {
 
 			});
 
-			client.schema.writeJsonBuilder(bout);
+			client.schema.writeJsonBuilder(out);
 
 			long end_time = System.currentTimeMillis();
 
@@ -538,7 +564,7 @@ public class XPathEvaluatorImpl {
 
 			if (out_file_path != null) {
 
-				bout.close();
+				out.close();
 
 				System.out.println("Generated JSON document: " + out_file_path.toAbsolutePath().toString());
 				System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
@@ -547,8 +573,8 @@ public class XPathEvaluatorImpl {
 
 			else {
 
-				bout.write(String.valueOf("\nSQL execution time: " + (end_time - start_time) + " ms\n").getBytes());
-				bout.flush();
+				out.write(String.valueOf("\nSQL execution time: " + (end_time - start_time) + " ms\n").getBytes());
+				out.flush();
 
 			}
 

@@ -228,6 +228,10 @@ public class PgSchemaOption implements Serializable {
 	@Flat
 	private boolean _no_doc_key = false;
 
+	/** Whether check sum directory exists. */
+	@Flat
+	private boolean _check_sum_dir_exists = false;
+
 	/**
 	 * Instance of PostgreSQL data model option.
 	 *
@@ -544,7 +548,7 @@ public class PgSchemaOption implements Serializable {
 	 * @return boolean whether synchronization is possible
 	 */
 	public boolean isSynchronizable(boolean allow_sync_weak) {
-		return (allow_sync_weak && sync_weak) || (sync && check_sum_dir_name != null && Files.isDirectory(Paths.get(check_sum_dir_name)));
+		return (allow_sync_weak && sync_weak) || (sync && check_sum_dir_name != null && (_check_sum_dir_exists || (_check_sum_dir_exists = Files.isDirectory(Paths.get(check_sum_dir_name)))));
 	}
 
 	/**

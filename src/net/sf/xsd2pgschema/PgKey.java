@@ -32,7 +32,7 @@ public class PgKey {
 	protected String name;
 
 	/** The PostgreSQL schema name. */
-	protected String pg_schema_name;
+	protected String schema_name;
 
 	/** The table name (canonical). */
 	protected String table_xname;
@@ -49,17 +49,17 @@ public class PgKey {
 	/**
 	 * Instance of PgKey.
 	 *
-	 * @param pg_schema_name PostgreSQL schema name
+	 * @param schema_name PostgreSQL schema name
 	 * @param node current node
 	 * @param name key name
 	 * @param case_sense whether retain case sensitive name in PostgreSQL DDL
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgKey(String pg_schema_name, Node node, String name, boolean case_sense) throws PgSchemaException {
+	public PgKey(String schema_name, Node node, String name, boolean case_sense) throws PgSchemaException {
 
 		this.name = name;
 
-		this.pg_schema_name = pg_schema_name;
+		this.schema_name = schema_name;
 
 		table_xname = PgSchemaUtil.extractSelectorXPath(node);
 		table_pname = case_sense ? table_xname : table_xname.toLowerCase();
@@ -92,7 +92,7 @@ public class PgKey {
 	 * @return boolean whether key matches
 	 */
 	public boolean equals(PgKey key) {
-		return pg_schema_name.equals(key.pg_schema_name) &&
+		return schema_name.equals(key.schema_name) &&
 				table_xname.equals(key.table_xname) &&
 				field_xnames.equals(key.field_xnames);
 	}

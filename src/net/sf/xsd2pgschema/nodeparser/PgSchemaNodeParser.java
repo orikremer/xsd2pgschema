@@ -231,6 +231,7 @@ public abstract class PgSchemaNodeParser {
 
 	/**
 	 * Parse processing node.
+	 * prepForTraversal() should be called beforehand.
 	 *
 	 * @return boolean whether the node is the last one
 	 * @throws PgSchemaException the pg schema exception
@@ -421,7 +422,7 @@ public abstract class PgSchemaNodeParser {
 
 		if (applyContentFilter(field, pg_enum_limit)) {
 
-			if (content != null && field.validate(content)) {
+			if (content != null && !content.isEmpty()) { // && field.validate(content)) { skip validation while data migration for performance
 
 				if (pg_enum_limit) // normalize data for PostgreSQL
 					content = field.normalize(content);
@@ -616,7 +617,7 @@ public abstract class PgSchemaNodeParser {
 
 			String child_name = ((Element) child).getLocalName();
 
-			if (fields.parallelStream().filter(field -> field.element).anyMatch(field -> child_name.equals(field.xname)))
+			if (table.has_element && fields.parallelStream().filter(field -> field.element).anyMatch(field -> child_name.equals(field.xname)))
 				continue;
 
 			if (!has_any) { // initial instance of new document
@@ -774,7 +775,7 @@ public abstract class PgSchemaNodeParser {
 					if (prefixes.size() > 0 && attr_name.contains(":") && prefixes.contains(attr_name.substring(0, attr_name.indexOf(':'))))
 						continue;
 
-					if (fields.parallelStream().filter(field -> field.attribute).anyMatch(field -> attr_name.equals(field.xname)))
+					if (table.has_attribute && fields.parallelStream().filter(field -> field.attribute).anyMatch(field -> attr_name.equals(field.xname)))
 						continue;
 
 					String attr_value = attr.getNodeValue();

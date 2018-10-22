@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -409,7 +410,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			try {
 
-				buffw = Files.newBufferedWriter(sph_doc_file_path);
+				buffw = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(sph_doc_file_path), PgSchemaUtil.def_encoding), PgSchemaUtil.def_buffered_output_stream_buffer_size);
 
 				xml_parser = new XmlParser(client.doc_builder, validator, xml_file_path, xml_file_filter);
 
@@ -500,7 +501,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 
 			client.schema.writeSphSchema(sph_data_source_path, true);
 
-			BufferedWriter buffw = Files.newBufferedWriter(sph_data_source_path, StandardOpenOption.APPEND);
+			BufferedWriter buffw = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(sph_data_source_path, StandardOpenOption.APPEND), PgSchemaUtil.def_encoding), PgSchemaUtil.def_buffered_output_stream_buffer_size);
 
 			if (sax_parser == null) {
 

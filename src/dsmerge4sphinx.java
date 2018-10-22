@@ -25,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -237,7 +238,7 @@ public class dsmerge4sphinx {
 
 			client.schema.writeSphSchema(dst_sphinx_data_source_path, true);
 
-			BufferedWriter buffw = Files.newBufferedWriter(dst_sphinx_data_source_path);
+			BufferedWriter buffw = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(dst_sphinx_data_source_path), PgSchemaUtil.def_encoding), PgSchemaUtil.def_buffered_output_stream_buffer_size);
 
 			for (String src_ds_dir_name : src_ds_dir_list) {
 

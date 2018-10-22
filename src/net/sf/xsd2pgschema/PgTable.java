@@ -23,6 +23,7 @@ import java.io.BufferedWriter;
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.sql.PreparedStatement;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -46,7 +47,7 @@ public class PgTable implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/** The PostgreSQL schema name (default schema name is "public"). */
-	public String pg_schema_name;
+	public String schema_name;
 
 	/** The target namespace. */
 	public String target_namespace;
@@ -66,14 +67,32 @@ public class PgTable implements Serializable {
 	/** The table type classified by xs_root (root node), xs_root_child (children node of root node), xs_admin_root (administrative root node), xs_admin_child (children node of administrative node). */
 	public XsTableType xs_type;
 
+	/** The PostgreSQL schema name (used in SQL clause). */
+	public String schema_pgname;
+
+	/** The table name in PostgreSQL (used in SQL clause). */
+	public String pgname = null;
+
+	/** The primary key name in PostgreSQL (used in SQL clause). */
+	public String primary_key_pgname = null;
+
+	/** The document key name in PostgreSQL (used in SQL clause). */
+	public String doc_key_pgname = null;
+
+	/** The document key name in PostgreSQL. */
+	public String doc_key_pname = null;
+
 	/** The field list. */
 	public List<PgField> fields = null;
 
 	/** The generation order in PostgreSQL DDL. */
 	protected int order = 0;
 
-	/** The number of nested field. */
+	/** The total number of field as nested key. */
 	public int nested_fields = 0;
+
+	/** The total number of field as foreign key. */
+	public int foreign_fields = 0;
 
 	/** Whether content holder. */
 	public boolean content_holder = false;
@@ -90,11 +109,23 @@ public class PgTable implements Serializable {
 	/** Whether bridge table | virtual table | !content_holder. */
 	public boolean relational = false;
 
+	/** Whether table has element. */
+	public boolean has_element = false;
+
+	/** Whether table has attribute. */
+	public boolean has_attribute = false;
+
+	/** Whether table has simple content. */
+	public boolean has_simple_content = false;
+
 	/** Whether table has any element. */
 	public boolean has_any = false;
 
 	/** Whether table has any attribute. */
 	public boolean has_any_attribute = false;
+
+	/** Whether table has unique primary key. */
+	public boolean has_unique_primary_key = false;
 
 	/** Whether table has required field. */
 	public boolean has_required_field = false;
@@ -117,10 +148,6 @@ public class PgTable implements Serializable {
 	/** Whether name collision occurs. */
 	@Flat
 	protected boolean name_collision = false;
-
-	/** Whether table has foreign key. */
-	@Flat
-	protected boolean has_foreign_key = false;
 
 	/** Whether table has pending group. */
 	@Flat
@@ -178,16 +205,20 @@ public class PgTable implements Serializable {
 	@Flat
 	public PreparedStatement ps2 = null;
 
+	/** The absolute XPath expression (internal use only). */
+	@Flat
+	public HashMap<String, String> abs_xpath_expr = null;
+
 	/**
 	 * Instance of PostgreSQL table.
 	 *
-	 * @param pg_schema_name PosgreSQL schema name
+	 * @param schema_name PosgreSQL schema name
 	 * @param target_namespace target namespace URI
 	 * @param schema_location schema location
 	 */
-	public PgTable(String pg_schema_name, String target_namespace, String schema_location) {
+	public PgTable(String schema_name, String target_namespace, String schema_location) {
 
-		this.pg_schema_name = pg_schema_name;
+		this.schema_name = schema_name;
 		this.target_namespace = target_namespace;
 		this.schema_location = schema_location;
 
@@ -198,16 +229,15 @@ public class PgTable implements Serializable {
 	 */
 	protected void classify() {
 
-		// determine content holder table having one of arbitrary content field such as attribute, element, simple content
+		// whether content holder table having one of arbitrary content field such as attribute, element, simple content
 
-		content_holder = fields.parallelStream().anyMatch(arg -> !arg.document_key && !arg.primary_key && !arg.foreign_key && !arg.nested_key && !arg.serial_key && !arg.xpath_key);
-		relational = bridge || virtual || !content_holder;
+		content_holder = fields.stream().anyMatch(field -> !field.document_key && !field.primary_key && !field.foreign_key && !field.nested_key && !field.serial_key && !field.xpath_key);
 
-		// determine list holder table having one of field whose occurrence is unbounded
+		// whether list holder table having one of field whose occurrence is unbounded
 
-		list_holder = fields.parallelStream().filter(arg -> arg.nested_key).anyMatch(arg -> arg.list_holder);
+		list_holder = fields.stream().filter(field -> field.nested_key).anyMatch(field -> field.list_holder);
 
-		// determine bridge table having primary key and a nested key
+		// whether bridge table having primary key and a nested key
 
 		boolean has_primary_key = false;
 		boolean has_nested_key = false;
@@ -234,24 +264,38 @@ public class PgTable implements Serializable {
 		}
 
 		bridge = (has_primary_key && has_nested_key);
-		relational = bridge || virtual || !content_holder;
 
-		// determine virtual table equals administrative table (xs_admin_root)
+		// whether virtual table equals administrative table (xs_admin_root)
 
 		virtual = xs_type.equals(XsTableType.xs_admin_root);
+
+		// whether table required for relational model extension
+
 		relational = bridge || virtual || !content_holder;
 
-		// determine table has foreign key constraint
+		// the number of foreign key constraint
 
-		has_foreign_key = fields.parallelStream().anyMatch(arg -> arg.foreign_key);
+		foreign_fields = (int) fields.stream().filter(field -> field.foreign_key).count();
 
-		// determine table has any element
+		// whether table has element
 
-		has_any = fields.parallelStream().anyMatch(arg -> arg.any);
+		has_element = fields.stream().anyMatch(field -> field.element);
 
-		// determine table has any attribute
+		// whether table has attribute
 
-		has_any_attribute = fields.parallelStream().anyMatch(arg -> arg.any_attribute);
+		has_attribute = fields.stream().anyMatch(field -> field.attribute);
+
+		// whether table has simple content
+
+		has_simple_content = fields.stream().anyMatch(field -> field.simple_content);
+
+		// whether table has any element
+
+		has_any = fields.stream().anyMatch(field -> field.any);
+
+		// whether table has any attribute
+
+		has_any_attribute = fields.stream().anyMatch(field -> field.any_attribute);
 
 	}
 
@@ -338,18 +382,18 @@ public class PgTable implements Serializable {
 	 * Add a nested key.
 	 *
 	 * @param option PostgreSQL data model option
-	 * @param pg_schema_name PostgreSQL schema name
+	 * @param schema_name PostgreSQL schema name
 	 * @param xname canonical name of nested key
 	 * @param ref_field reference field
 	 * @param node current node
 	 * @return boolean whether reference field is unique
 	 */
-	protected boolean addNestedKey(PgSchemaOption option, String pg_schema_name, String xname, PgField ref_field, Node node) {
+	protected boolean addNestedKey(PgSchemaOption option, String schema_name, String xname, PgField ref_field, Node node) {
 
 		if (xname == null || xname.isEmpty())
 			return false;
 
-		if (this.pg_schema_name.equals(pg_schema_name) && this.xname.equals(xname))
+		if (this.schema_name.equals(schema_name) && this.xname.equals(xname))
 			return false;
 
 		String name = option.case_sense ? xname : xname.toLowerCase();
@@ -367,7 +411,7 @@ public class PgTable implements Serializable {
 		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
 			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 		field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
-		field.foreign_schema = pg_schema_name;
+		field.foreign_schema = schema_name;
 		field.foreign_table_xname = xname;
 		field.foreign_table_pname = name.equals(this.pname) ? "_" + name : name;
 		field.foreign_field_pname = name + "_id";
@@ -423,10 +467,10 @@ public class PgTable implements Serializable {
 	 * Add a nested key from foreign table.
 	 *
 	 * @param option PostgreSQL data model option
-	 * @param pg_schema_name PostgreSQL schema name
+	 * @param schema_name PostgreSQL schema name
 	 * @param xname canonical name of foreign table
 	 */
-	protected void addNestedKey(PgSchemaOption option, String pg_schema_name, String xname) {
+	protected void addNestedKey(PgSchemaOption option, String schema_name, String xname) {
 
 		if (!option.rel_model_ext)
 			return;
@@ -434,7 +478,7 @@ public class PgTable implements Serializable {
 		if (xname == null || xname.isEmpty())
 			return;
 
-		if (this.pg_schema_name.equals(pg_schema_name) && this.xname.equals(xname))
+		if (this.schema_name.equals(schema_name) && this.xname.equals(xname))
 			return;
 
 		String name = option.case_sense ? xname : xname.toLowerCase();
@@ -451,7 +495,7 @@ public class PgTable implements Serializable {
 		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
 			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 		field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
-		field.foreign_schema = pg_schema_name;
+		field.foreign_schema = schema_name;
 		field.foreign_table_xname = xname;
 		field.foreign_table_pname = name.equals(this.pname) ? "_" + name : name;
 		field.foreign_field_pname = name + "_id";
@@ -468,14 +512,14 @@ public class PgTable implements Serializable {
 	 */
 	protected void addForeignKey(PgSchemaOption option, PgTable foreign_table) {
 
-		if (pg_schema_name.equals(foreign_table.pg_schema_name) && xname.equals(foreign_table.xname))
+		if (schema_name.equals(foreign_table.schema_name) && xname.equals(foreign_table.xname))
 			return;
 
-		foreign_table.fields.stream().filter(arg -> arg.primary_key).forEach(arg -> {
+		foreign_table.fields.stream().filter(foreign_field -> foreign_field.primary_key).forEach(foreign_field -> {
 
 			PgField field = new PgField();
 
-			field.xname = arg.xname;
+			field.xname = foreign_field.xname;
 			field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
 			field.pname = avoidFieldDuplication(option, field.xname);
 			field.setHashKeyType(option);
@@ -484,10 +528,10 @@ public class PgTable implements Serializable {
 			if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
 				field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 			field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
-			field.foreign_schema = foreign_table.pg_schema_name;
+			field.foreign_schema = foreign_table.schema_name;
 			field.foreign_table_xname = foreign_table.xname;
 			field.foreign_table_pname = foreign_table.pname;
-			field.foreign_field_pname = arg.pname;
+			field.foreign_field_pname = foreign_field.pname;
 
 			fields.add(field);
 
@@ -506,7 +550,7 @@ public class PgTable implements Serializable {
 		if (!option.rel_model_ext)
 			return;
 
-		if (fields.parallelStream().anyMatch(arg -> arg.serial_key)) // already has a serial key
+		if (fields.stream().anyMatch(field -> field.serial_key)) // already has a serial key
 			return;
 
 		PgField field = new PgField();
@@ -528,7 +572,7 @@ public class PgTable implements Serializable {
 	 */
 	protected void addXPathKey(PgSchemaOption option) {
 
-		if (fields.parallelStream().anyMatch(arg -> arg.xpath_key)) // already has an xpath key
+		if (fields.stream().anyMatch(field -> field.xpath_key)) // already has an xpath key
 			return;
 
 		PgField field = new PgField();
@@ -617,7 +661,7 @@ public class PgTable implements Serializable {
 	 */
 	protected void removeProhibitedAttrs() {
 
-		fields.removeIf(arg -> arg.prohibited);
+		fields.removeIf(field -> field.prohibited);
 
 	}
 
@@ -626,7 +670,7 @@ public class PgTable implements Serializable {
 	 */
 	protected void removeBlockedSubstitutionGroups() {
 
-		fields.parallelStream().filter(arg -> arg.rep_substitution_group && arg.block_value != null && arg.block_value.equals("substitution")).map(arg -> arg.xname).collect(Collectors.toList()).forEach(xname -> fields.removeIf(arg -> arg.substitution_group != null && arg.substitution_group.equals(xname)));
+		fields.parallelStream().filter(field -> field.rep_substitution_group && field.block_value != null && field.block_value.equals("substitution")).map(field -> field.xname).collect(Collectors.toList()).forEach(xname -> fields.removeIf(field -> field.substitution_group != null && field.substitution_group.equals(xname)));
 
 	}
 
@@ -635,16 +679,16 @@ public class PgTable implements Serializable {
 	 */
 	protected void cancelUniqueKey() {
 
-		fields.parallelStream().filter(arg -> arg.primary_key).forEach(arg -> arg.unique_key = false);
+		fields.parallelStream().filter(field -> field.primary_key).forEach(field -> field.unique_key = false);
 
 	}
 
 	/**
-	 * Determine the total number of nested keys.
+	 * Determine the total number of field as nested key.
 	 */
 	protected void countNestedFields() {
 
-		if ((nested_fields = (int) fields.parallelStream().filter(arg -> arg.nested_key).count()) > 0)
+		if ((nested_fields = (int) fields.parallelStream().filter(field -> field.nested_key).count()) > 0)
 			required = true;
 
 	}

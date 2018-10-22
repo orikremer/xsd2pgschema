@@ -19,9 +19,12 @@ limitations under the License.
 
 package net.sf.xsd2pgschema.docbuilder;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.LinkedList;
 
+import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
@@ -33,6 +36,9 @@ import net.sf.xsd2pgschema.PgSchemaUtil;
  * @author yokochi
  */
 public class XmlBuilder extends CommonBuilder {
+
+	/** Instance of XMLOutputFactory. */
+	public XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 
 	/** Whether to append XML declaration. */
 	public boolean append_declare = true;
@@ -94,10 +100,12 @@ public class XmlBuilder extends CommonBuilder {
 	 * Set XML stream writer.
 	 *
 	 * @param writer XML stream writer
+	 * @param out output stream of XML stream writer
 	 */
-	public void setXmlWriter(XMLStreamWriter writer) {
+	public void setXmlWriter(XMLStreamWriter writer, OutputStream out) {
 
 		this.writer = writer;
+		this.out = out;
 
 	}
 
@@ -111,21 +119,13 @@ public class XmlBuilder extends CommonBuilder {
 	}
 
 	/**
-	 * Return current line feed code.
-	 *
-	 * @return String line feed code
-	 */
-	public String getLineFeedCode() {
-		return line_feed_code;
-	}
-
-	/**
 	 * Write pending elements.
 	 *
 	 * @param attr_only whether element has attribute only
 	 * @throws XMLStreamException the XML stream exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public void writePendingElems(boolean attr_only) throws XMLStreamException {
+	public void writePendingElems(boolean attr_only) throws XMLStreamException, IOException {
 
 		XmlBuilderPendingElem elem;
 
@@ -140,7 +140,7 @@ public class XmlBuilder extends CommonBuilder {
 			elem.write(this);
 
 			if (size > 0)
-				writer.writeCharacters(line_feed_code);
+				writeLineFeedCode();
 
 		}
 
@@ -171,6 +171,95 @@ public class XmlBuilder extends CommonBuilder {
 
 		super.clear();
 
+	}
+
+	/** The OutputStream of XML stream writer. */
+	private OutputStream out;
+
+	/**
+	 * Write simple element without consideration of charset.
+	 *
+	 * @param prefix prefix
+	 * @param local_name local name
+	 * @param content content
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws XMLStreamException the XML stream exception
+	 */
+	public void writeSimpleElement(String prefix, String local_name, String content) throws IOException, XMLStreamException {
+
+		String simple_elem_tab = "<<" + (prefix.isEmpty() ? "" : prefix + ":") + local_name + ">" + line_feed_code;
+
+		byte[] bytes = getBytes(simple_elem_tab);
+
+		out.write(bytes, 1, bytes.length - (line_feed ? 2 : 1));
+
+		writer.writeCharacters(content);
+
+		bytes[1] = '/';
+
+		out.write(bytes);
+
+	}
+
+	/**
+	 * Write simple empty element without consideration of charset.
+	 *
+	 * @param prefix prefix
+	 * @param local_name local name
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public void writeSimpleEmptyElement(String prefix, String local_name) throws IOException {
+
+		String empty_elem_tab = "<" + (prefix.isEmpty() ? "" : prefix + ":") + local_name + " " + PgSchemaUtil.xsi_prefix + ":nil=\"true\"/>" + line_feed_code;
+
+		out.write(getBytes(empty_elem_tab));
+
+	}
+
+	/**
+	 * Write simple characters without consideration of charset.
+	 *
+	 * @param string string.
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws XMLStreamException the XML stream exception
+	 */
+	public void writeSimpleCharacters(String string) throws IOException, XMLStreamException {
+
+		out.write(getBytes(string));
+
+	}
+
+	/**
+	 * Write line feed code.
+	 *
+	 * @throws XMLStreamException the XML stream exception
+	 */
+	public void writeLineFeedCode() throws XMLStreamException {
+
+		if (line_feed)
+			writer.writeCharacters(line_feed_code);
+
+	}
+
+	/**
+	 * Return byte array of string without consideration of charset.
+	 *
+	 * @param string string
+	 * @return byte[] byte array of the string
+	 */
+	private byte[] getBytes(String string) {
+
+		int len = string.length();
+		char chars[] = new char[len];
+
+		string.getChars(0, len, chars, 0);
+
+		byte ret[] = new byte[len];
+
+		for (int j = 0; j < len; j++)
+			ret[j] = (byte) chars[j];
+
+		return ret;
 	}
 
 	/**

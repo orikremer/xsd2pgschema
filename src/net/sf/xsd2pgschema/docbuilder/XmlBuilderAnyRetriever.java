@@ -19,7 +19,10 @@ limitations under the License.
 
 package net.sf.xsd2pgschema.docbuilder;
 
+import java.io.IOException;
+
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
 import org.xml.sax.Attributes;
 
@@ -45,6 +48,9 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 	/** The XML builder. */
 	private XmlBuilder xmlb;
 
+	/** The XML stream writer. */
+	private XMLStreamWriter xml_writer;
+
 	/** Whether this is first node. */
 	private boolean first_node = true;
 
@@ -67,6 +73,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 		prefix = field.prefix;
 		this.nest_test = nest_test;
 		this.xmlb = xmlb;
+		this.xml_writer = xmlb.writer;
 
 		current_indent_space = nest_test.child_indent_space;
 
@@ -94,9 +101,9 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 
 					xmlb.writePendingSimpleCont();
 
-					xmlb.writer.writeCharacters((nest_test.has_child_elem ? "" : xmlb.line_feed_code) + current_indent_space);
+					xml_writer.writeCharacters((nest_test.has_child_elem ? "" : xmlb.line_feed_code) + current_indent_space);
 
-				} catch (XMLStreamException e) {
+				} catch (XMLStreamException | IOException e) {
 					e.printStackTrace();
 				}
 
@@ -129,7 +136,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 
 					if (!PgSchemaUtil.null_simple_cont_pattern.matcher(content).matches()) {
 
-						xmlb.writer.writeCharacters(content);
+						xml_writer.writeCharacters(content);
 
 						nest_test.has_content = has_simple_content = true;
 
@@ -140,14 +147,14 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 				}
 
 				if (!has_simple_content && !first_node)
-					xmlb.writer.writeCharacters(xmlb.line_feed_code + current_indent_space);
+					xml_writer.writeCharacters(xmlb.line_feed_code + current_indent_space);
 
-				xmlb.writer.writeStartElement(prefix, qName, target_namespace);
+				xml_writer.writeStartElement(prefix, qName, target_namespace);
 
 				if (root_child && xmlb.append_xmlns) {
 
 					if (!prefix.isEmpty() && !xmlb.appended_xmlns.contains(prefix))
-						xmlb.writer.writeNamespace(prefix, target_namespace);
+						xml_writer.writeNamespace(prefix, target_namespace);
 
 				}
 
@@ -170,7 +177,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 
 					if (content != null && !content.isEmpty()) {
 
-						xmlb.writer.writeAttribute(attr_name, content);
+						xml_writer.writeAttribute(attr_name, content);
 
 						nest_test.has_content = true;
 
@@ -218,7 +225,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 
 					if (!PgSchemaUtil.null_simple_cont_pattern.matcher(content).matches()) {
 
-						xmlb.writer.writeCharacters(content);
+						xml_writer.writeCharacters(content);
 
 						nest_test.has_content = has_simple_content = true;
 
@@ -229,12 +236,12 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 				}
 
 				if (!has_simple_content)
-					xmlb.writer.writeCharacters(current_indent_space);
+					xml_writer.writeCharacters(current_indent_space);
 
-				xmlb.writer.writeEndElement();
+				xml_writer.writeEndElement();
 
 				if (len > cur_path_offset)
-					xmlb.writer.writeCharacters(xmlb.line_feed_code);
+					xmlb.writeLineFeedCode();
 
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
@@ -247,7 +254,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 		if (len == 0) {
 
 			try {
-				xmlb.writer.writeCharacters(xmlb.line_feed_code);
+				xmlb.writeLineFeedCode();
 			} catch (XMLStreamException e) {
 				e.printStackTrace();
 			}

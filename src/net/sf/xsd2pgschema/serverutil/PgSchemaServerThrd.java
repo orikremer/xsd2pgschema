@@ -143,7 +143,6 @@ public class PgSchemaServerThrd implements Runnable {
 				if (get_opt.isPresent()) {
 
 					PgSchemaServerImpl get_item = get_opt.get();
-
 					get_item.touch();
 
 					reply.message = server_info_header + green_color + "GET" + server_info_footer;
@@ -160,6 +159,8 @@ public class PgSchemaServerThrd implements Runnable {
 
 				sb.append(server_status_info_header + " count of data models: " + list.size() + "\n");
 
+				Calendar cal = Calendar.getInstance();
+
 				list.forEach(arg -> {
 
 					sb.append(server_status_info_header + "-----------------------------------------------------------\n");
@@ -168,14 +169,13 @@ public class PgSchemaServerThrd implements Runnable {
 					sb.append(server_status_info_header + " length of data model   : " + arg.schema_bytes.length + "\n");
 					sb.append(server_status_info_header + " hash code of data model: " + arg.option.hashCode() + "\n");
 
-					Calendar dt_cal = Calendar.getInstance();
-					dt_cal.setTimeInMillis(arg.last_access_time_millis);
+					cal.setTimeInMillis(arg.last_access_time_millis);
 
-					sb.append(server_status_info_header + " last accessed time     : " + DatatypeConverter.printDateTime(dt_cal) + "\n");
+					sb.append(server_status_info_header + " last accessed time     : " + DatatypeConverter.printDateTime(cal) + "\n");
 
-					dt_cal.setTimeInMillis(arg.last_access_time_millis + pg_schema_server_lifetime);
+					cal.setTimeInMillis(arg.last_access_time_millis + pg_schema_server_lifetime);
 
-					sb.append(server_status_info_header + " expired time           : " + DatatypeConverter.printDateTime(dt_cal) + "\n");
+					sb.append(server_status_info_header + " expired time           : " + DatatypeConverter.printDateTime(cal) + "\n");
 
 				});
 

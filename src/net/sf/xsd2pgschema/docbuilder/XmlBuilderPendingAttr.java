@@ -85,6 +85,9 @@ public class XmlBuilderPendingAttr extends CommonPendingAttr {
 
 			if (field != null) {
 
+				String field_ns = field.target_namespace;
+				String field_prefix = field.prefix;
+
 				// attribute
 
 				if (field.attribute) {
@@ -96,14 +99,14 @@ public class XmlBuilderPendingAttr extends CommonPendingAttr {
 
 						if (xmlb.append_xmlns && other_namespaces != null) {
 
-							if (other_namespaces.contains(field.target_namespace))
-								xmlb.writer.writeNamespace(field.prefix, field.target_namespace);
+							if (other_namespaces.contains(field_ns))
+								xmlb.writer.writeNamespace(field_prefix, field_ns);
 							else
-								other_namespaces.add(field.target_namespace);
+								other_namespaces.add(field_ns);
 
 						}
 
-						xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.xname, content);
+						xmlb.writer.writeAttribute(field_prefix, field_ns, field.xname, content);
 
 					}
 
@@ -120,14 +123,14 @@ public class XmlBuilderPendingAttr extends CommonPendingAttr {
 
 						if (xmlb.append_xmlns && other_namespaces != null) {
 
-							if (other_namespaces.contains(field.target_namespace))
-								xmlb.writer.writeNamespace(field.prefix, field.target_namespace);
+							if (other_namespaces.contains(field_ns))
+								xmlb.writer.writeNamespace(field_prefix, field_ns);
 							else
-								other_namespaces.add(field.target_namespace);
+								other_namespaces.add(field_ns);
 
 						}
 
-						xmlb.writer.writeAttribute(field.prefix, field.target_namespace, field.foreign_table_xname, content);
+						xmlb.writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, content);
 
 					}
 
@@ -139,21 +142,24 @@ public class XmlBuilderPendingAttr extends CommonPendingAttr {
 
 			else {
 
-				if (any_field.prefix.isEmpty() || any_field.namespace.isEmpty() || xmlb.appended_xmlns.contains(any_field.prefix))
+				String field_ns = any_field.namespace;
+				String field_prefix = any_field.prefix;
+
+				if (field_prefix.isEmpty() || field_ns.isEmpty() || xmlb.appended_xmlns.contains(field_prefix))
 					xmlb.writer.writeAttribute(local_name, content);
 
 				else {
 
 					if (xmlb.append_xmlns && other_namespaces != null) {
 
-						if (other_namespaces.contains(any_field.namespace))
-							xmlb.writer.writeNamespace(any_field.prefix, any_field.namespace);
+						if (other_namespaces.contains(field_ns))
+							xmlb.writer.writeNamespace(field_prefix, field_ns);
 						else
-							other_namespaces.add(any_field.namespace);
+							other_namespaces.add(field_ns);
 
 					}
 
-					xmlb.writer.writeAttribute(any_field.prefix, any_field.namespace, local_name, content);
+					xmlb.writer.writeAttribute(field_prefix, field_ns, local_name, content);
 
 				}
 

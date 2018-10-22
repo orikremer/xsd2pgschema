@@ -1,4 +1,10 @@
-﻿ Changes in xsd2pgschema 3.0.4 (release 2018-10-11)
+﻿ Changes in xsd2pgschema 3.0.5 (release 2018-10-22)
+
+  Added support for CREATE/DROP of PostgreSQL index on attribute like BaseX. (--create-attr-index, --no-create-attr-index (default), --drop-attr-index, and --max-attr-cols-for-index options)
+  Fixed potential bug in XPath parser about XPath expression including any element (xs:any).
+  Performance improvements in data migration, full-text index, XPath parser, and XPath evaluation by buffer size optimization, SQL optimization, reduction of excess validation, memory caching of frequently accessed status values, etc.
+
+ Changes in xsd2pgschema 3.0.4 (release 2018-10-11)
 
   Added support for xs:unique and xs:key (generation of PostgreSQL multi-column UNIQUE constraint including a document key at least).
   Added --max-uniq-tuple-size option in xsd2pgschema main class that regulated the generation of PostgreSQL UNIQUE constraint derived from xs:key.
@@ -49,7 +55,7 @@
 
  Changes in xsd2pgschema 2.12.5 (release 2018-07-20)
 
-  Added support for create/drop PostgreSQL index on document key (--create-doc-key-index, --no-create-doc-key-index (default), and --drop-doc-key-index options in xml2pgcsv, xml2pgtsv, and xml2pgsql main classes, respectively)
+  Added support for CREATE/DROP PostgreSQL index on document key. (--create-doc-key-index, --no-create-doc-key-index (default), and --drop-doc-key-index options, respectively)
   Added --min-rows-for-doc-key-index option to set minimum rows in a table for creation of PostgreSQL index on document key. (default=10000)
   Enabled to use PostgreSQL index on document key by default in differential update (--sync and --sync-weak options).
   Improved performance in differential update as a result.

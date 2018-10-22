@@ -39,7 +39,7 @@ public class JsonBuilderPendingElem {
 	protected int indent_level;
 
 	/** The pending attribute. */
-	protected LinkedHashMap<String, JsonBuilderPendingAttr> pending_attrs = new LinkedHashMap<String, JsonBuilderPendingAttr>();
+	private LinkedHashMap<String, JsonBuilderPendingAttr> pending_attrs = null;
 
 	/**
 	 * Instance of pending element.
@@ -60,6 +60,9 @@ public class JsonBuilderPendingElem {
 	 * @param attr pending attribute
 	 */
 	public void appendPendingAttr(JsonBuilderPendingAttr attr) {
+
+		if (pending_attrs == null)
+			pending_attrs = new LinkedHashMap<String, JsonBuilderPendingAttr>();
 
 		// attribute, simple attribute
 
@@ -82,7 +85,7 @@ public class JsonBuilderPendingElem {
 
 		jsonb.writeStartTable(table, true, indent_level);
 
-		if (pending_attrs.size() > 0) {
+		if (pending_attrs != null) {
 
 			// attribute
 
@@ -113,7 +116,8 @@ public class JsonBuilderPendingElem {
 	 */
 	public void clear() {
 
-		pending_attrs.clear();
+		if (pending_attrs != null)
+			pending_attrs.clear();
 
 	}
 

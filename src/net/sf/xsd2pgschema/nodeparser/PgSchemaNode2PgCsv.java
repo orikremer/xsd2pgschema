@@ -225,7 +225,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				// attribute, simple_content, element
 
-				else if (field.attribute || field.simple_content || field.element) {
+				else if (field.content_holder) {
 
 					if (setContent(proc_node, field, true)) {
 
@@ -243,7 +243,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				// any, any_attribute
 
-				else if (field.any || field.any_attribute) {
+				else if (field.any_content_holder) {
 
 					try {
 
@@ -277,7 +277,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				field = fields.get(f);
 
-				// nested_key
+				// nested_key should be processed
 
 				if (field.nested_key)
 					setNestedKey(proc_node, field);
@@ -292,7 +292,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				// attribute, simple_content, element
 
-				else if (field.attribute || field.simple_content || field.element) {
+				else if (field.content_holder) {
 
 					if (setContent(proc_node, field, true)) {
 
@@ -310,7 +310,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				// any, any_attribute
 
-				else if (field.any || field.any_attribute) {
+				else if (field.any_content_holder) {
 
 					try {
 

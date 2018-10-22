@@ -34,7 +34,7 @@ public class PgForeignKey {
 	protected String name;
 
 	/** The PostgreSQL schema name. */
-	protected String pg_schema_name;
+	protected String schema_name;
 
 	/** The child table name (canonical). */
 	protected String child_table_xname;
@@ -63,7 +63,7 @@ public class PgForeignKey {
 	/**
 	 * Instance of PgForeignKey.
 	 *
-	 * @param pg_schema_name PostgreSQL schema name
+	 * @param schema_name PostgreSQL schema name
 	 * @param key_nodes node list of xs:key
 	 * @param node current node
 	 * @param name foreign key name
@@ -71,11 +71,11 @@ public class PgForeignKey {
 	 * @param case_sense whether retain case sensitive name in PostgreSQL DDL
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgForeignKey(String pg_schema_name, NodeList key_nodes, Node node, String name, String key_name, boolean case_sense) throws PgSchemaException {
+	public PgForeignKey(String schema_name, NodeList key_nodes, Node node, String name, String key_name, boolean case_sense) throws PgSchemaException {
 
 		this.name = name;
 
-		this.pg_schema_name = pg_schema_name;
+		this.schema_name = schema_name;
 
 		child_table_xname = PgSchemaUtil.extractSelectorXPath(node);
 		child_table_pname = case_sense ? child_table_xname : child_table_xname.toLowerCase();
@@ -132,7 +132,7 @@ public class PgForeignKey {
 	 * @return boolean whether foreign key matches
 	 */
 	public boolean equals(PgForeignKey foreign_key) {
-		return pg_schema_name.equals(foreign_key.pg_schema_name) &&
+		return schema_name.equals(foreign_key.schema_name) &&
 				child_table_xname.equals(foreign_key.child_table_xname) && parent_table_xname.equals(foreign_key.parent_table_xname) &&
 				child_field_xnames.equals(foreign_key.child_field_xnames) && parent_field_xnames.equals(foreign_key.parent_field_xnames);
 	}

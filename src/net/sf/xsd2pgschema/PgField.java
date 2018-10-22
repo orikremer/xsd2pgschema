@@ -35,7 +35,6 @@ import java.time.LocalTime;
 import java.time.OffsetTime;
 import java.time.format.DateTimeParseException;
 import java.util.Calendar;
-import java.util.TimeZone;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -244,6 +243,15 @@ public class PgField implements Serializable {
 
 	/** Whether xs:list. */
 	protected boolean _list = false;
+
+	/** Whether it is DTD data holder (element || attribute). */
+	protected boolean dtd_data_holder = false;
+
+	/** Whether it is content holder (element || attribute || simple_content). */
+	public boolean content_holder = false;
+
+	/** Whether it is any content holder (any || any_attribute). */
+	public boolean any_content_holder = false;
 
 	/** Whether it has any system's administrative key (primary_key || foreign_key || nested_key). */
 	public boolean system_key = false;
@@ -1437,6 +1445,33 @@ public class PgField implements Serializable {
 	}
 
 	/**
+	 * Decide whether field is DTD data holder.
+	 */
+	protected void setDTDDataHolder() {
+
+		dtd_data_holder = element || attribute;
+
+	}
+
+	/**
+	 * Decide whether field is content holder.
+	 */
+	protected void setContentHolder() {
+
+		content_holder = element || attribute || simple_content;
+
+	}
+
+	/**
+	 * Decide whether field is any content holder.
+	 */
+	protected void setAnyContentHolder() {
+
+		any_content_holder = any || any_attribute;
+
+	}
+
+	/**
 	 * Decide whether field is system key.
 	 */
 	protected void setSystemKey() {
@@ -1462,7 +1497,7 @@ public class PgField implements Serializable {
 	 */
 	protected void setOmissible(PgTable table, PgSchemaOption option) {
 
-		if ((element || attribute) && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name))) {
+		if (dtd_data_holder && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name))) {
 			omissible = true;
 			return;
 		}
@@ -1479,7 +1514,7 @@ public class PgField implements Serializable {
 	 */
 	protected void setIndexable(PgTable table, PgSchemaOption option) {
 
-		if (system_key || user_key || ((element || attribute) && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name)))) {
+		if (system_key || user_key || (dtd_data_holder && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name)))) {
 			indexable = false;
 			return;
 		}
@@ -1496,7 +1531,7 @@ public class PgField implements Serializable {
 	 */
 	protected void setJsonable(PgTable table, PgSchemaOption option) {
 
-		if (system_key || user_key || ((element || attribute) && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name)))) {
+		if (system_key || user_key || (dtd_data_holder && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name)))) {
 			jsonable = false;
 			return;
 		}
@@ -1645,7 +1680,7 @@ public class PgField implements Serializable {
 	 */
 	public boolean matchesNodeName(PgSchemaOption option, String node_name, boolean as_attr, boolean wild_card) {
 
-		if ((element || attribute) && option.discarded_document_key_names.contains(name))
+		if (dtd_data_holder && option.discarded_document_key_names.contains(name))
 			return false;
 
 		String _xname = as_attr ? (simple_attribute || simple_attr_cond ? foreign_table_xname : xname) : xname;
@@ -4187,8 +4222,6 @@ public class PgField implements Serializable {
 		}
 
 		switch (xs_type) {
-		case xs_boolean:
-			return true;
 		case xs_bigserial:
 			try {
 				return Long.parseLong(value) > 0;
@@ -4342,6 +4375,14 @@ public class PgField implements Serializable {
 
 	}
 
+	/** The instance of calendar. */
+	@Flat
+	private Calendar cal = null;
+
+	/** The instance of simple date format. */
+	@Flat
+	private SimpleDateFormat sdf = null;
+
 	/**
 	 * Normalize content as PostgreSQL value.
 	 *
@@ -4358,18 +4399,22 @@ public class PgField implements Serializable {
 		case xs_date:
 		case xs_gYearMonth:
 		case xs_gYear:
-			Calendar cal = Calendar.getInstance();
+			if (cal == null)
+				cal = Calendar.getInstance();
+			else
+				cal.setTimeZone(PgSchemaUtil.tz_loc);
 
 			cal.setTime(PgSchemaUtil.parseDate(value));
 			cal.set(Calendar.HOUR_OF_DAY, 0);
 			cal.set(Calendar.MINUTE, 0);
 			cal.set(Calendar.SECOND, 0);
 			cal.set(Calendar.MILLISECOND, 0);
-			cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+			cal.setTimeZone(PgSchemaUtil.tz_utc);
 
-			SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+			if (sdf == null)
+				sdf = new SimpleDateFormat("yyyy-MM-dd");
 
-			return format.format(cal.getTime());
+			return sdf.format(cal.getTime());
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
@@ -4527,10 +4572,14 @@ public class PgField implements Serializable {
 				if (upsert)
 					ps.setTimestamp(ins_idx, timestamp);
 			} else {
-				Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-				ps.setTimestamp(par_idx, timestamp, calendar);
+				if (cal == null)
+					cal = Calendar.getInstance(PgSchemaUtil.tz_utc);
+				else
+					cal.setTimeZone(PgSchemaUtil.tz_utc);
+
+				ps.setTimestamp(par_idx, timestamp, cal);
 				if (upsert)
-					ps.setTimestamp(ins_idx, timestamp, calendar);
+					ps.setTimestamp(ins_idx, timestamp, cal);
 			}
 			break;
 		case xs_time:
@@ -4550,18 +4599,22 @@ public class PgField implements Serializable {
 					}
 				}
 			} else {
-				Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+				if (cal == null)
+					cal = Calendar.getInstance(PgSchemaUtil.tz_utc);
+				else
+					cal.setTimeZone(PgSchemaUtil.tz_utc);
+
 				try {
 					Time time = java.sql.Time.valueOf(OffsetTime.parse(value).toLocalTime());
-					ps.setTime(par_idx, time, calendar);
+					ps.setTime(par_idx, time, cal);
 					if (upsert)
-						ps.setTime(ins_idx, time, calendar);
+						ps.setTime(ins_idx, time, cal);
 				} catch (DateTimeParseException e) {
 					Time time = java.sql.Time.valueOf(LocalTime.parse(value));
 					try {
-						ps.setTime(par_idx, time, calendar);
+						ps.setTime(par_idx, time, cal);
 						if (upsert)
-							ps.setTime(ins_idx, time, calendar);
+							ps.setTime(ins_idx, time, cal);
 					} catch (DateTimeParseException e2) {
 					}
 				}
@@ -4570,14 +4623,17 @@ public class PgField implements Serializable {
 		case xs_date:
 		case xs_gYearMonth:
 		case xs_gYear:
-			Calendar cal = Calendar.getInstance();
+			if (cal == null)
+				cal = Calendar.getInstance();
+			else
+				cal.setTimeZone(PgSchemaUtil.tz_loc);
 
 			cal.setTime(PgSchemaUtil.parseDate(value));
 			cal.set(Calendar.HOUR_OF_DAY, 0);
 			cal.set(Calendar.MINUTE, 0);
 			cal.set(Calendar.SECOND, 0);
 			cal.set(Calendar.MILLISECOND, 0);
-			cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+			cal.setTimeZone(PgSchemaUtil.tz_utc);
 
 			Date date = new java.sql.Date(cal.getTimeInMillis());
 
@@ -4991,80 +5047,87 @@ public class PgField implements Serializable {
 	 */
 	public String retrieve(ResultSet rset, int par_idx, boolean fill_default_value) throws SQLException {
 
-		Object obj = rset.getObject(par_idx);
-
-		if (obj == null)
-			return fill_default_value ? default_value : null;
-
 		if (enum_name != null) {
 
 			String ret = rset.getString(par_idx);
 
-			if (ret.length() < PgSchemaUtil.max_enum_len)
-				return ret;
+			if (ret != null) {
 
-			for (String enum_string : xenumeration) {
+				if (ret.length() < PgSchemaUtil.max_enum_len)
+					return ret;
 
-				if (enum_string.startsWith(ret))
-					return enum_string;
+				for (String enum_string : xenumeration) {
+
+					if (enum_string.startsWith(ret))
+						return enum_string;
+
+				}
 
 			}
 
-			return null;
+			return fill_default_value ? default_value : null;
 		}
 
 		switch (xs_type) {
-		case xs_boolean:
-			return DatatypeConverter.printBoolean(rset.getBoolean(par_idx));
-		case xs_hexBinary:
-			return DatatypeConverter.printHexBinary(rset.getBytes(par_idx));
-		case xs_base64Binary:
-			return DatatypeConverter.printBase64Binary(rset.getBytes(par_idx));
 		case xs_dateTime:
 			Timestamp ts = rset.getTimestamp(par_idx);
 
 			if (ts == null)
-				return null;
+				return fill_default_value ? default_value : null;
 
-			Calendar dt_cal = Calendar.getInstance();
-			dt_cal.setTimeInMillis(ts.getTime());
+			if (cal == null)
+				cal = Calendar.getInstance();
+			else
+				cal.setTimeZone(PgSchemaUtil.tz_loc);
 
 			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) { }
-			else
-				dt_cal.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-			return DatatypeConverter.printDateTime(dt_cal);
+			else
+				cal.setTimeZone(PgSchemaUtil.tz_utc);
+
+			cal.setTimeInMillis(ts.getTime());
+
+			return DatatypeConverter.printDateTime(cal);
 		case xs_time:
 			Time tm = rset.getTime(par_idx);
 
 			if (tm == null)
-				return null;
+				return fill_default_value ? default_value : null;
 
-			Calendar t_cal = Calendar.getInstance();
-			t_cal.setTimeInMillis(tm.getTime());
+			if (cal == null)
+				cal = Calendar.getInstance();
+			else
+				cal.setTimeZone(PgSchemaUtil.tz_loc);
 
 			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) { }
-			else
-				t_cal.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-			return DatatypeConverter.printTime(t_cal);
+			else
+				cal.setTimeZone(PgSchemaUtil.tz_utc);
+
+			cal.setTimeInMillis(tm.getTime());
+
+			return DatatypeConverter.printTime(cal);
 		case xs_date:
 		case xs_gYearMonth:
 		case xs_gYear:
 			Date d = rset.getDate(par_idx);
 
 			if (d == null)
-				return null;
+				return fill_default_value ? default_value : null;
 
-			Calendar d_cal = Calendar.getInstance();
-			d_cal.setTime(d);
-			d_cal.set(Calendar.HOUR_OF_DAY, 0);
-			d_cal.set(Calendar.MINUTE, 0);
-			d_cal.set(Calendar.SECOND, 0);
-			d_cal.set(Calendar.MILLISECOND, 0);
-			d_cal.setTimeZone(TimeZone.getTimeZone("UTC"));
+			if (cal == null)
+				cal = Calendar.getInstance();
+			else
+				cal.setTimeZone(PgSchemaUtil.tz_loc);
 
-			String ret = DatatypeConverter.printDate(d_cal);
+			cal.setTime(d);
+			cal.set(Calendar.HOUR_OF_DAY, 0);
+			cal.set(Calendar.MINUTE, 0);
+			cal.set(Calendar.SECOND, 0);
+			cal.set(Calendar.MILLISECOND, 0);
+			cal.setTimeZone(PgSchemaUtil.tz_utc);
+
+			String ret = DatatypeConverter.printDate(cal);
 
 			switch (xs_type) {
 			case xs_date:
@@ -5074,18 +5137,10 @@ public class PgField implements Serializable {
 			default: // xs_gYear
 				return ret.substring(0, ret.indexOf('-'));
 			}
-		case xs_float:
-		case xs_double:
-			switch (xs_type) {
-			case xs_float:
-				return String.valueOf((float) obj); // rset.getFloat(par_idx));
-			default: // xs_double
-				return String.valueOf((double) obj); // rset.getDouble(par_idx));
-			}
 		case xs_decimal:
 			BigDecimal bd = rset.getBigDecimal(par_idx);
 
-			return bd != null ? bd.toString() : null;
+			return bd != null ? bd.toString() : (fill_default_value ? default_value : null);
 		case xs_bigserial:
 		case xs_long:
 		case xs_bigint:
@@ -5123,7 +5178,32 @@ public class PgField implements Serializable {
 		case xs_ID:
 		case xs_IDREF:
 		case xs_ENTITY:
-			return rset.getString(par_idx);
+			String value = rset.getString(par_idx);
+
+			return value != null ? value : (fill_default_value ? default_value : null);
+		default:
+		}
+
+		Object obj = rset.getObject(par_idx);
+
+		if (obj == null)
+			return fill_default_value ? default_value : null;
+
+		switch (xs_type) {
+		case xs_boolean:
+			return DatatypeConverter.printBoolean((boolean) obj); // rset.getBoolean(par_idx));
+		case xs_hexBinary:
+			return DatatypeConverter.printHexBinary((byte[]) obj); // rset.getBytes(par_idx));
+		case xs_base64Binary:
+			return DatatypeConverter.printBase64Binary((byte[]) obj); // rset.getBytes(par_idx));
+		case xs_float:
+		case xs_double:
+			switch (xs_type) {
+			case xs_float:
+				return String.valueOf((float) obj); // rset.getFloat(par_idx));
+			default: // xs_double
+				return String.valueOf((double) obj); // rset.getDouble(par_idx));
+			}
 		default: // xs_any, xs_anyAttribute
 		}
 

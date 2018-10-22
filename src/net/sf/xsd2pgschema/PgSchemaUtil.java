@@ -200,7 +200,16 @@ public class PgSchemaUtil {
 	public static final String[] pg_reserved_ops = { "+", "-", "*", "/", "%", "^", "|/", "||/", "!", "!!", "@", "&", "|", "#", "~", "<<", ">>" };
 
 	/** The minimum rows for creation of PostgreSQL index on document key. */
-	public static final int pg_min_rows_for_doc_key_index = 10000;
+	public static final int pg_min_rows_for_doc_key_index = 2048;
+
+	/** The maximum attribute columns for creation of PostgreSQL index on the attributes (except for in-place document key). */
+	public static final int pg_max_attr_cols_for_index = 1;
+
+	/** The limit number of attribute columns for creation of PostgreSQL index on the attributes (except for in-place document key). */
+	public static final int pg_limit_attr_cols_for_index = 128;
+
+	/** The default buffer size for BufferedOutputStream(). */
+	public static final int def_buffered_output_stream_buffer_size = 1024 * 128;
 
 	/** The compiled pattern matches capital code. */
 	public static final Pattern cap_pattern = Pattern.compile(".*[A-Z].*", Pattern.MULTILINE);
@@ -225,6 +234,12 @@ public class PgSchemaUtil {
 
 	/** The compiled pattern matches simple content. */
 	public static final Pattern null_simple_cont_pattern = Pattern.compile("^\\s+$", Pattern.MULTILINE);
+
+	/** The UTC time zone. */
+	public static final TimeZone tz_utc = TimeZone.getTimeZone("UTC");
+
+	/** The local time zone. */
+	public static final TimeZone tz_loc = TimeZone.getDefault();
 
 	/**
 	 * Return input stream of XSD file path with decompression.
@@ -419,22 +434,6 @@ public class PgSchemaUtil {
 			return null;
 		}
 
-	}
-
-	/**
-	 * Return XSD name of schema location.
-	 *
-	 * @param schema_location schema location
-	 * @return String schema location
-	 */
-	public static String getSchemaName(String schema_location) {
-
-		if (url_pattern.matcher(schema_location).matches())
-			return schema_location;
-
-		Path schema_file_path = Paths.get(schema_location);
-
-		return schema_file_path.getFileName().toString();
 	}
 
 	/**
@@ -737,8 +736,7 @@ public class PgSchemaUtil {
 			try {
 
 				date = DateUtils.parseDate(value, date_patterns_z);
-				TimeZone tz = TimeZone.getTimeZone("UTC");
-				int offset_sec = tz.getRawOffset() / 1000;
+				int offset_sec = tz_utc.getRawOffset() / 1000;
 				date = DateUtils.addSeconds(date, offset_sec);
 
 			} catch (ParseException e2) {

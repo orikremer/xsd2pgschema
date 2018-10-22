@@ -156,16 +156,28 @@ public class xml2pgcsv {
 				pg_option.test = true;
 
 			else if (args[i].equals("--create-doc-key-index"))
-				pg_option.setCreateDocKeyIndexOption(true);
+				pg_option.setCreateDocKeyIndex(true);
 
 			else if (args[i].equals("--no-create-doc-key-index"))
-				pg_option.setCreateDocKeyIndexOption(false);
+				pg_option.setCreateDocKeyIndex(false);
 
 			else if (args[i].equals("--drop-doc-key-index"))
-				pg_option.setDropDocKeyIndexOption();
+				pg_option.setDropDocKeyIndex();
 
 			else if (args[i].equals("--min-rows-for-doc-key-index") && i + 1 < args.length)
 				pg_option.setMinRowsForDocKeyIndex(args[++i]);
+
+			else if (args[i].equals("--create-attr-index"))
+				pg_option.setCreateAttrIndex(true);
+
+			else if (args[i].equals("--no-create-attr-index"))
+				pg_option.setCreateAttrIndex(false);
+
+			else if (args[i].equals("--drop-attr-index"))
+				pg_option.setDropAttrIndex();
+
+			else if (args[i].equals("--max-attr-cols-for-index") && i + 1 < args.length)
+				pg_option.setMaxAttrColsForIndex(args[++i]);
 
 			else if (args[i].equals("--fill-default-value"))
 				xml_post_editor.fill_default_value = true;
@@ -267,7 +279,7 @@ public class xml2pgcsv {
 				option.pg_schema_server_port = Integer.valueOf(args[++i]);
 
 			else if (args[i].equals("--sync") && i + 1 < args.length) {
-				pg_option.tryToCreateDocKeyIndexOption(option.sync = true);
+				pg_option.tryToCreateDocKeyIndex(option.sync = true);
 				check_sum_dir_name = args[++i];
 			}
 
@@ -307,7 +319,7 @@ public class xml2pgcsv {
 
 		if (option.sync && !option.document_key && !option.in_place_document_key) {
 			System.out.println("Ignored --sync option because either document key or in-place document key was not defined.");
-			pg_option.tryToCreateDocKeyIndexOption(option.sync = false);
+			pg_option.tryToCreateDocKeyIndex(option.sync = false);
 		}
 
 		if (option.root_schema_location.isEmpty()) {
@@ -531,6 +543,10 @@ public class xml2pgcsv {
 		System.err.println("        --no-create-doc-key-index (do not create PostgreSQL index on document key, default if no --sync option)");
 		System.err.println("        --drop-doc-key-index (drop PostgreSQL index on document key if exists)");
 		System.err.println("        --min-rows-for-doc-key-index MIN_ROWS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_min_rows_for_doc_key_index + "\")");
+		System.err.println("        --create-attr-index (create PostgreSQL index on attribute if not exists)");
+		System.err.println("        --no-create-attr-index (do not create PostgreSQL index on attribute, default)");
+		System.err.println("        --drop-attr-index (drop PostgreSQL index on attribute if exists)");
+		System.err.println("        --max-attr-cols-for-index MAX_ATTR_COLS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_max_attr_cols_for_index + "\")");
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");

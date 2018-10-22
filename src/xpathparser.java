@@ -221,7 +221,7 @@ public class xpathparser {
 			System.out.println("Input XPath query:");
 			System.out.println(" " + main_text);
 
-			System.out.println("\nTarget path in XML Schema: " + PgSchemaUtil.getSchemaName(option.root_schema_location));
+			System.out.println("\nTarget path in XML Schema: " + option.root_schema_location);
 			xpath_comp_list.showPathExprs();
 
 			System.out.println("\nThe XPath query is valid.");

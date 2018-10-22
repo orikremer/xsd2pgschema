@@ -212,7 +212,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 					// attribute, simple_content, element
 
-					if (field.attribute || field.simple_content || field.element) {
+					if (field.content_holder) {
 
 						if (setContent(proc_node, field, false))
 							values[f] = content;
@@ -228,7 +228,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 					// any, any_attribute
 
-					else if (field.any || field.any_attribute) {
+					else if (field.any_content_holder) {
 
 						try {
 
@@ -293,7 +293,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 					// attribute, simple_content, element
 
-					if (field.attribute || field.simple_content || field.element) {
+					if (field.content_holder) {
 
 						if (setContent(proc_node, field, false))
 							values[f] = content;
@@ -309,7 +309,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 					// any, any_attribute
 
-					else if (field.any || field.any_attribute) {
+					else if (field.any_content_holder) {
 
 						try {
 

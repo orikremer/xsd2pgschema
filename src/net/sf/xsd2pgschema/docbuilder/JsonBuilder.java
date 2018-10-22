@@ -19,9 +19,8 @@ limitations under the License.
 
 package net.sf.xsd2pgschema.docbuilder;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -833,7 +832,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		System.out.print(buffer.toString());
 
-		buffer.setLength(0);
+		clear(true);
 
 	}
 
@@ -1176,24 +1175,6 @@ public class JsonBuilder extends CommonBuilder {
 
 	}
 
-	/**
-	 * Write buffer to BufferedWriter.
-	 *
-	 * @param buffw buffered writer
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void write(BufferedWriter buffw) throws PgSchemaException {
-
-		try {
-			buffw.write(buffer.toString());
-		} catch (IOException e) {
-			throw new PgSchemaException(e);
-		}
-
-		buffer.setLength(0);
-
-	}
-
 	// XPath evaluation over PostgreSQL (fragment)
 
 	/**
@@ -1377,20 +1358,20 @@ public class JsonBuilder extends CommonBuilder {
 	}
 
 	/**
-	 * Write buffer to BufferredOutputStream.
+	 * Write buffer to OutputStream.
 	 *
-	 * @param bout buffered output stream
+	 * @param out output stream
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void write(BufferedOutputStream bout) throws PgSchemaException {
+	public void write(OutputStream out) throws PgSchemaException {
 
 		try {
-			bout.write(buffer.toString().getBytes());
+			out.write(buffer.toString().getBytes());
 		} catch (IOException e) {
 			throw new PgSchemaException(e);
 		}
 
-		buffer.setLength(0);
+		clear(true);
 
 	}
 

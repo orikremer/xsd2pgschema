@@ -19,10 +19,12 @@ limitations under the License.
 
 package net.sf.xsd2pgschema.docbuilder;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
@@ -45,7 +47,7 @@ public class XmlBuilderPendingElem {
 	protected boolean attr_only;
 
 	/** The pending attribute. */
-	protected LinkedHashMap<String, XmlBuilderPendingAttr> pending_attrs = new LinkedHashMap<String, XmlBuilderPendingAttr>();
+	private LinkedHashMap<String, XmlBuilderPendingAttr> pending_attrs = null;
 
 	/**
 	 * Instance of pending element.
@@ -69,6 +71,9 @@ public class XmlBuilderPendingElem {
 	 */
 	public void appendPendingAttr(XmlBuilderPendingAttr attr) {
 
+		if (pending_attrs == null)
+			pending_attrs = new LinkedHashMap<String, XmlBuilderPendingAttr>();
+
 		// attribute, simple attribute
 
 		if (attr.field != null)
@@ -86,33 +91,39 @@ public class XmlBuilderPendingElem {
 	 *
 	 * @param xmlb XML builder
 	 * @throws XMLStreamException the XML stream exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public void write(XmlBuilder xmlb) throws XMLStreamException {
+	public void write(XmlBuilder xmlb) throws XMLStreamException, IOException {
 
-		HashSet<String> other_namespaces = new HashSet<String>();
+		XMLStreamWriter xml_writer = xmlb.writer;
 
-		xmlb.writer.writeCharacters(header);
+		String table_ns = table.target_namespace;
+		String table_prefix = table.prefix;
+
+		xmlb.writeSimpleCharacters(header);
 
 		if (attr_only)
-			xmlb.writer.writeEmptyElement(table.prefix, table.xname, table.target_namespace);
+			xml_writer.writeEmptyElement(table_prefix, table.xname, table_ns);
 		else
-			xmlb.writer.writeStartElement(table.prefix, table.xname, table.target_namespace);
+			xml_writer.writeStartElement(table_prefix, table.xname, table_ns);
 
 		if (xmlb.append_xmlns) {
 
-			if (!xmlb.appended_xmlns.contains(table.prefix)) {
-				xmlb.writer.writeNamespace(table.prefix, table.target_namespace);
-				xmlb.appended_xmlns.add(table.prefix);
+			if (!xmlb.appended_xmlns.contains(table_prefix)) {
+				xml_writer.writeNamespace(table_prefix, table_ns);
+				xmlb.appended_xmlns.add(table_prefix);
 			}
 
 			if (table.has_required_field && !xmlb.appended_xmlns.contains(PgSchemaUtil.xsi_prefix)) {
-				xmlb.writer.writeNamespace(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri);
+				xml_writer.writeNamespace(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri);
 				xmlb.appended_xmlns.add(PgSchemaUtil.xsi_prefix);
 			}
 
 		}
 
-		if (pending_attrs.size() > 0) {
+		if (pending_attrs != null) {
+
+			HashSet<String> other_namespaces = new HashSet<String>();
 
 			pending_attrs.values().forEach(pending_attr -> {
 
@@ -124,11 +135,11 @@ public class XmlBuilderPendingElem {
 
 			});
 
+			other_namespaces.clear();
+
 			clear();
 
 		}
-
-		other_namespaces.clear();
 
 	}
 
@@ -137,7 +148,8 @@ public class XmlBuilderPendingElem {
 	 */
 	public void clear() {
 
-		pending_attrs.clear();
+		if (pending_attrs != null)
+			pending_attrs.clear();
 
 	}
 
