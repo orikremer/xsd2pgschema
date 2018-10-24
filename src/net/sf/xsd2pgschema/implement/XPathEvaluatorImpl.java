@@ -55,6 +55,7 @@ import com.github.antlr.grammars_v4.xpath.xpathParser.MainContext;
 
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
+import net.sf.xsd2pgschema.PgTable;
 import net.sf.xsd2pgschema.serverutil.PgSchemaClientImpl;
 import net.sf.xsd2pgschema.docbuilder.JsonBuilderOption;
 import net.sf.xsd2pgschema.docbuilder.XmlBuilder;
@@ -267,12 +268,14 @@ public class XPathEvaluatorImpl {
 
 					if (terminus.isField() || terminus.isText()) {
 
-						_bout.write(meta.getColumnName(1).getBytes());
+						_bout.write(PgSchemaUtil.getBytes(meta.getColumnName(1)));
 						_bout.write('\n');
+
+						boolean latin_1_encoded = path_expr.sql_subject.field.latin_1_encoded;
 
 						while (rset.next()) {
 
-							_bout.write(rset.getString(1).getBytes());
+							_bout.write(latin_1_encoded ? PgSchemaUtil.getBytes(rset.getString(1)) : rset.getString(1).getBytes());
 							_bout.write('\n');
 
 						}
@@ -284,13 +287,20 @@ public class XPathEvaluatorImpl {
 					else {
 
 						int column_count = meta.getColumnCount();
+						boolean[] latin_1_encoded = new boolean[column_count + 1];
+
+						PgTable table = path_expr.sql_subject.table;
 
 						for (int i = 1; i <= column_count; i++) {
 
-							_bout.write(meta.getColumnName(i).getBytes());
+							_bout.write(PgSchemaUtil.getBytes(meta.getColumnName(i)));
 							_bout.write((i < column_count ? option.pg_delimiter : '\n'));
 
+							latin_1_encoded[i] = table.fields.get(i - 1).latin_1_encoded;
+
 						}
+
+						byte[] _pg_null = PgSchemaUtil.getBytes(option.pg_null);
 
 						String value;
 
@@ -299,11 +309,14 @@ public class XPathEvaluatorImpl {
 							for (int i = 1; i <= column_count; i++) {
 
 								value = rset.getString(i);
+								boolean _latin_1_encoded = latin_1_encoded[i];
 
 								if (value == null || value.isEmpty())
-									_bout.write(option.pg_null.getBytes());
+									_bout.write(_pg_null);
+								else if (option.pg_delimiter == '\t')
+									_bout.write(_latin_1_encoded ? PgSchemaUtil.getBytes(PgSchemaUtil.escapeTsv(value)) : PgSchemaUtil.escapeTsv(value).getBytes());
 								else
-									_bout.write(option.pg_delimiter == '\t' ? PgSchemaUtil.escapeTsv(value).getBytes() : StringEscapeUtils.escapeCsv(value).getBytes());
+									_bout.write(_latin_1_encoded ? PgSchemaUtil.getBytes(StringEscapeUtils.escapeCsv(value)) : StringEscapeUtils.escapeCsv(value).getBytes());
 
 								_bout.write((i < column_count ? option.pg_delimiter : '\n'));
 
@@ -336,7 +349,7 @@ public class XPathEvaluatorImpl {
 
 			else {
 
-				bout.write(String.valueOf("\nSQL execution time: " + (end_time - start_time) + " ms\n").getBytes());
+				bout.write(PgSchemaUtil.getBytes("\nSQL execution time: " + (end_time - start_time) + " ms\n"));
 				bout.flush();
 
 			}
@@ -573,7 +586,7 @@ public class XPathEvaluatorImpl {
 
 			else {
 
-				out.write(String.valueOf("\nSQL execution time: " + (end_time - start_time) + " ms\n").getBytes());
+				out.write(PgSchemaUtil.getBytes("\nSQL execution time: " + (end_time - start_time) + " ms\n"));
 				out.flush();
 
 			}

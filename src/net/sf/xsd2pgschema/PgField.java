@@ -269,8 +269,8 @@ public class PgField implements Serializable {
 	/** Whether field is JSON convertible. */
 	public boolean jsonable = false;
 
-	/** Whether field is Latin-1 encoded element. */
-	public boolean latin_1_encoded_elem = false;
+	/** Whether field is Latin-1 encoded. */
+	public boolean latin_1_encoded = false;
 
 	/** The XML start/end element tag. */
 	public byte[] start_end_elem_tag = null;

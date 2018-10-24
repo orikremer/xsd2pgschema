@@ -298,7 +298,8 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		if (!table.writable) {
 
-			fields.stream().filter(field -> field.nested_key).forEach(field -> setNestedKey(proc_node, field));
+			if (nested_keys != null)
+				fields.stream().filter(field -> field.nested_key).forEach(field -> setNestedKey(proc_node, field));
 
 			return;
 		}
@@ -604,7 +605,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		try {
 
-			return md_hash_key.digest(key_name.getBytes());
+			return md_hash_key.digest(PgSchemaUtil.getBytes(key_name));
 
 		} finally {
 			md_hash_key.reset();
@@ -622,7 +623,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		try {
 
-			byte[] hash = md_hash_key.digest(key_name.getBytes());
+			byte[] hash = md_hash_key.digest(PgSchemaUtil.getBytes(key_name));
 
 			BigInteger bint = new BigInteger(hash);
 
@@ -644,7 +645,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		try {
 
-			byte[] hash = md_hash_key.digest(key_name.getBytes());
+			byte[] hash = md_hash_key.digest(PgSchemaUtil.getBytes(key_name));
 
 			BigInteger bint = new BigInteger(hash);
 

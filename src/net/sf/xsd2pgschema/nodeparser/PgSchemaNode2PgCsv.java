@@ -169,7 +169,8 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		if (!table.writable) {
 
-			fields.stream().filter(field -> field.nested_key).forEach(field -> setNestedKey(proc_node, field));
+			if (nested_keys != null)
+				fields.stream().filter(field -> field.nested_key).forEach(field -> setNestedKey(proc_node, field));
 
 			return;
 		}

@@ -1348,6 +1348,10 @@ public class PgSchema implements Serializable {
 		if (!option.rel_data_ext)
 			tables.parallelStream().filter(table -> table.writable && !(table.required && (option.rel_data_ext || !table.relational))).forEach(table -> table.writable = false);
 
+		// decide Latin-1 encoded field
+
+		tables.parallelStream().filter(table -> table.writable).forEach(table -> table.fields.stream().forEach(field -> field.latin_1_encoded = field.xs_type.isLatin1Encoded()));
+
 		// set XML start/end element tag template for document key
 
 		tables.parallelStream().filter(table -> table.writable).forEach(table -> table.fields.stream().filter(field -> field.document_key).forEach(field -> field.start_end_elem_tag = PgSchemaUtil.getBytes("<<" + (table.prefix.isEmpty() ? "" : table.prefix + ":") + field.xname + ">")));
@@ -1355,8 +1359,6 @@ public class PgSchema implements Serializable {
 		// set XML start/end/empty element tag template for element
 
 		tables.parallelStream().filter(table -> table.writable && table.has_element).forEach(table -> table.fields.stream().filter(field -> field.element).forEach(field -> {
-
-			field.latin_1_encoded_elem = field.xs_type.isLatin1Encoded();
 
 			String prefix = field.is_xs_namespace ? table.prefix : field.prefix;
 
@@ -4612,7 +4614,7 @@ public class PgSchema implements Serializable {
 
 		try {
 
-			byte[] bytes = md_hash_key.digest(key_name.getBytes());
+			byte[] bytes = md_hash_key.digest(PgSchemaUtil.getBytes(key_name));
 
 			switch (option.hash_size) {
 			case native_default:
@@ -7032,7 +7034,7 @@ public class PgSchema implements Serializable {
 
 							if (content != null) {
 
-								xmlb.writeSimpleElement(field.start_end_elem_tag, field.latin_1_encoded_elem, content);
+								xmlb.writeSimpleElement(field.start_end_elem_tag, field.latin_1_encoded, content);
 								/*
 								if (field.is_xs_namespace)
 									xml_writer.writeStartElement(table_prefix, field.xname, table_ns);
@@ -7245,7 +7247,7 @@ public class PgSchema implements Serializable {
 					ps.setLong(param_id, (long) parent_key);
 					break;
 				default:
-					ps.setString(param_id, (String) parent_key);
+					throw new PgSchemaException("Not allowed to use string hash key (debug mode) for XPath evaluation.");
 				}
 
 			}
@@ -7423,7 +7425,7 @@ public class PgSchema implements Serializable {
 
 								if (content != null) {
 
-									xmlb.writeSimpleElement(field.start_end_elem_tag, field.latin_1_encoded_elem, content);
+									xmlb.writeSimpleElement(field.start_end_elem_tag, field.latin_1_encoded, content);
 									/*
 									if (field.is_xs_namespace)
 										xml_writer.writeStartElement(table_prefix, field.xname, table_ns);
@@ -8217,7 +8219,7 @@ public class PgSchema implements Serializable {
 					ps.setLong(param_id, (long) parent_key);
 					break;
 				default:
-					ps.setString(param_id, (String) parent_key);
+					throw new PgSchemaException("Not allowed to use string hash key (debug mode) for XPath evaluation.");
 				}
 
 			}
