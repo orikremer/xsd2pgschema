@@ -83,6 +83,9 @@ public class PgSchemaOption implements Serializable {
 	/** Whether to enable explicit named schema. */
 	public boolean pg_named_schema = false;
 
+	/** Whether to map xs:integer to BigInteger in Java, and DECIMAL in PostgreSQL DDL or not (int in Java, INTEGER in PostgreSQL). */
+	public boolean pg_map_big_integer = false;
+
 	/** Whether to retain primary key/foreign key/unique constraint in PostgreSQL DDL. */
 	public boolean pg_retain_key = true;
 
@@ -646,6 +649,9 @@ public class PgSchemaOption implements Serializable {
 			return false;
 
 		if (pg_named_schema != option.pg_named_schema)
+			return false;
+
+		if (pg_map_big_integer != option.pg_map_big_integer)
 			return false;
 
 		if (pg_retain_key != option.pg_retain_key)

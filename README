@@ -1,4 +1,15 @@
-﻿ Changes in xsd2pgschema 3.0.5 (release 2018-10-22)
+﻿ Changes in xsd2pgschema 3.0.6 (release 2018-10-24)
+
+  Added support for xs:dateTimeStamp, xs:yearMonthDuration, xs:dayTimeDuration.
+  Dropped support for non-standard data types, bigserial, serial.
+  Allowed to map standard mathematical concept of integer numbers (xs:integer, xs:nonNegativeInteger, xs:nonPositiveInteger, xs:positiveInteger, xs:negativeInteger) to BigInteger in Java, DECIMAL in PostgreSQL. Please use to --pg-map-big-integer option. Otherwise, map to signed int 32 bits by default.
+  Added xsi:schemaLocation attribute in result of XPath evaluation.
+  Added xsi:nil attributes in empty element if @nillable="true". Please use --xml-no-nil-elem option in xpath2xml main class to suppress the xsi:nil attribute.
+  Fixed --xml-insert-doc-key option did not work in 3.0.5.
+  Further performance improvements in XPath evaluation.
+  Revised comments in PostgreSQL DDL with regard to the mapping of integer numbers.
+
+ Changes in xsd2pgschema 3.0.5 (release 2018-10-22)
 
   Added support for CREATE/DROP of PostgreSQL index on attribute like BaseX. (--create-attr-index, --no-create-attr-index (default), --drop-attr-index, and --max-attr-cols-for-index options)
   Fixed potential bug in XPath parser about XPath expression including any element (xs:any).

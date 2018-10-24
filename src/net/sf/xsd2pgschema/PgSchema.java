@@ -1226,7 +1226,7 @@ public class PgSchema implements Serializable {
 
 			});
 
-			table.has_required_field = table.fields.stream().anyMatch(field -> field.element && field.required);
+			table.has_nillable_element = table.fields.stream().anyMatch(field -> field.element && field.nillable);
 
 		});
 
@@ -3214,6 +3214,7 @@ public class PgSchema implements Serializable {
 		System.out.println("--  append document key: " + option.document_key);
 		System.out.println("--  append serial key: " + option.serial_key);
 		System.out.println("--  append xpath key: " + option.xpath_key);
+		System.out.println("--  map big integer: " + option.pg_map_big_integer);
 		System.out.println("--  retain constraint: " + option.pg_retain_key);
 		System.out.println("--  retrieve field annotation: " + !option.no_field_anno);
 		if (option.rel_model_ext || option.serial_key) {
@@ -3659,6 +3660,16 @@ public class PgSchema implements Serializable {
 			else if (!field.primary_key && !option.document_key && option.in_place_document_key && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))
 				System.out.println("-- IN-PLACE DOCUMENT KEY");
 
+			if (!field.system_key && !field.user_key) {
+
+				if (option.pg_map_big_integer && field.getSqlDataType(option.pg_map_big_integer) == java.sql.Types.DECIMAL && !field.xs_type.equals(XsFieldType.xs_decimal))
+					System.out.println("-- must be treated as a BigInteger outside of JDBC");
+
+				else if (!option.pg_map_big_integer && field.getSqlDataType(option.pg_map_big_integer) == java.sql.Types.INTEGER && !field.xs_type.equals(XsFieldType.xs_int) && !field.xs_type.equals(XsFieldType.xs_unsignedInt))
+					System.out.println("-- map mathematical concept of integer number (" + field.type + ") to int 32 bits");
+
+			}
+
 			if (!field.required && field.xrequired) {
 
 				if (field.fixed_value == null || field.fixed_value.isEmpty())
@@ -3667,28 +3678,12 @@ public class PgSchema implements Serializable {
 				else {
 					System.out.print("-- must have a constraint ");
 
-					switch (field.xs_type) {
-					case xs_anyType:
-					case xs_string:
-					case xs_normalizedString:
-					case xs_token:
-					case xs_language:
-					case xs_Name:
-					case xs_QName:
-					case xs_NCName:
-					case xs_anyURI:
-					case xs_NOTATION:
-					case xs_NMTOKEN:
-					case xs_NMTOKENS:
-					case xs_ID:
-					case xs_IDREF:
-					case xs_IDREFS:
-					case xs_ENTITY:
-					case xs_ENTITIES:
-						System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = '" + field.fixed_value + "' ) ");
+					switch (field.xs_type.getJsonSchemaType()) {
+					case "\"number\"":
+						System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = " + field.fixed_value + " ) ");
 						break;
 					default:
-						System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = " + field.fixed_value + " ) ");
+						System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = '" + field.fixed_value + "' ) ");
 					}
 
 					System.out.println(", but dismissed due to name collision");
@@ -3696,34 +3691,18 @@ public class PgSchema implements Serializable {
 			}
 
 			if (field.enum_name == null || field.enum_name.isEmpty())
-				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.pname) + " " + field.getPgDataType());
+				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.pname) + " " + field.getPgDataType(option.pg_map_big_integer));
 			else
 				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.pname) + " " + table.schema_pgname + field.enum_name);
 
 			if ((field.required || !field.xrequired) && field.fixed_value != null && !field.fixed_value.isEmpty()) {
 
-				switch (field.xs_type) {
-				case xs_anyType:
-				case xs_string:
-				case xs_normalizedString:
-				case xs_token:
-				case xs_language:
-				case xs_Name:
-				case xs_QName:
-				case xs_NCName:
-				case xs_anyURI:
-				case xs_NOTATION:
-				case xs_NMTOKEN:
-				case xs_NMTOKENS:
-				case xs_ID:
-				case xs_IDREF:
-				case xs_IDREFS:
-				case xs_ENTITY:
-				case xs_ENTITIES:
-					System.out.print(" CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = '" + field.fixed_value + "' )");
+				switch (field.xs_type.getJsonSchemaType()) {
+				case "\"number\"":
+					System.out.print(" CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = " + field.fixed_value + " )");
 					break;
 				default:
-					System.out.print(" CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = " + field.fixed_value + " )");
+					System.out.print(" CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = '" + field.fixed_value + "' )");
 				}
 
 			}
@@ -4474,18 +4453,17 @@ public class PgSchema implements Serializable {
 					throw new PgSchemaException(table_name + "." + field_name + " is administrative key.");
 
 				switch (field.xs_type) {
-				case xs_bigserial:
+				// case xs_bigserial:
+				// case xs_serial:
+				case xs_integer:
+				case xs_nonNegativeInteger:
+				case xs_nonPositiveInteger:
+				case xs_positiveInteger:
+				case xs_negativeInteger:
 				case xs_long:
 				case xs_bigint:
 				case xs_unsignedLong:
-				case xs_duration:
-				case xs_serial:
-				case xs_integer:
 				case xs_int:
-				case xs_nonPositiveInteger:
-				case xs_negativeInteger:
-				case xs_nonNegativeInteger:
-				case xs_positiveInteger:
 				case xs_unsignedInt:
 				case xs_short:
 				case xs_unsignedShort:
@@ -5570,8 +5548,8 @@ public class PgSchema implements Serializable {
 							if (!field.pname.equals(db_column_name))
 								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.pname + " found in an incorrect order."); // found in an incorrect order
 
-							if (field.getSqlDataType() != db_column_type)
-								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.pname + " column type " + JDBCType.valueOf(db_column_type) + " is incorrect with " + JDBCType.valueOf(field.getSqlDataType()) + "."); // column type is incorrect
+							if (field.getSqlDataType(option.pg_map_big_integer) != db_column_type)
+								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.pname + " column type " + JDBCType.valueOf(db_column_type) + " is incorrect with " + JDBCType.valueOf(field.getSqlDataType(option.pg_map_big_integer)) + "."); // column type is incorrect
 
 						}
 
@@ -5755,22 +5733,17 @@ public class PgSchema implements Serializable {
 					case xs_boolean:
 						attrs = " type=\"bool\"";
 						break;
-					case xs_bigserial:
+						// case xs_bigserial:
+						// case xs_serial:
+					case xs_integer:
+					case xs_nonNegativeInteger:
+					case xs_nonPositiveInteger:
+					case xs_positiveInteger:
+					case xs_negativeInteger:
 					case xs_long:
 					case xs_bigint:
 					case xs_unsignedLong:
-					case xs_duration:
-						attrs = " type=\"bigint\"";
-						break;
-					case xs_serial:
-					case xs_integer:
 					case xs_int:
-					case xs_nonPositiveInteger:
-					case xs_negativeInteger:
-					case xs_nonNegativeInteger:
-					case xs_positiveInteger:
-						attrs = " type=\"int\" bits=\"32\"";
-						break;
 					case xs_unsignedInt:
 						attrs = " type=\"int\" bits=\"32\"";
 						break;
@@ -5780,18 +5753,15 @@ public class PgSchema implements Serializable {
 						attrs = " type=\"float\"";
 						break;
 					case xs_short:
-						attrs = " type=\"int\" bits=\"16\"";
-						break;
 					case xs_unsignedShort:
 						attrs = " type=\"int\" bits=\"16\"";
 						break;
 					case xs_byte:
-						attrs = " type=\"int\" bits=\"8\"";
-						break;
 					case xs_unsignedByte:
 						attrs = " type=\"int\" bits=\"8\"";
 						break;
 					case xs_dateTime:
+					case xs_dateTimeStamp:
 					case xs_time:
 					case xs_date:
 					case xs_gYearMonth:
@@ -5865,23 +5835,17 @@ public class PgSchema implements Serializable {
 					case xs_boolean:
 						buffw.write("\txmlpipe_attr_bool       = " + attr_name + "\n");
 						break;
-					case xs_bigserial:
+						// case xs_bigserial:
+						// case xs_serial:
+					case xs_integer:
+					case xs_nonNegativeInteger:
+					case xs_nonPositiveInteger:
+					case xs_positiveInteger:
+					case xs_negativeInteger:
 					case xs_long:
 					case xs_bigint:
 					case xs_unsignedLong:
-					case xs_duration:
-						if (field.sph_mva)
-							buffw.write("\txmlpipe_attr_multi_64   = " + attr_name + "\n");
-						else
-							buffw.write("\txmlpipe_attr_bigint     = " + attr_name + "\n");
-						break;
-					case xs_serial:
-					case xs_integer:
 					case xs_int:
-					case xs_nonPositiveInteger:
-					case xs_negativeInteger:
-					case xs_nonNegativeInteger:
-					case xs_positiveInteger:
 					case xs_unsignedInt:
 					case xs_short:
 					case xs_unsignedShort:
@@ -5898,6 +5862,7 @@ public class PgSchema implements Serializable {
 						buffw.write("\txmlpipe_attr_float      = " + attr_name + "\n");
 						break;
 					case xs_dateTime:
+					case xs_dateTimeStamp:
 					case xs_time:
 					case xs_date:
 					case xs_gYearMonth:
@@ -6493,6 +6458,14 @@ public class PgSchema implements Serializable {
 
 	// XPath query evaluation over PostgreSQL
 
+	/** Whether map xs:integer to BigInteger. */
+	@Flat
+	private boolean map_big_integer;
+
+	/** Whether fill @default value. */
+	@Flat
+	private boolean fill_default_value;
+
 	// XML composer over PostgreSQL
 
 	/** The XML builder. */
@@ -6506,8 +6479,15 @@ public class PgSchema implements Serializable {
 	 */
 	public void initXmlBuilder(XmlBuilder xmlb) {
 
-		this.xmlb = xmlb;
-		this.xmlb.clear();
+		if (this.xmlb == null) {
+
+			xmlb.xsi_schema_location = def_namespaces.get("") + " " + PgSchemaUtil.getSchemaFileName(option.root_schema_location);
+			xmlb.has_nillable_element = tables.parallelStream().anyMatch(table -> table.has_nillable_element);
+
+			this.xmlb = xmlb;
+			this.xmlb.clear();
+
+		}
 
 	}
 
@@ -6538,7 +6518,8 @@ public class PgSchema implements Serializable {
 		String field_ns = field.target_namespace;
 		String field_prefix = field.prefix;
 
-		boolean fill_default_value = option.fill_default_value;
+		map_big_integer = option.pg_map_big_integer;
+		fill_default_value = option.fill_default_value;
 
 		XMLStreamWriter xml_writer = xmlb.writer;
 		boolean append_xmlns = xmlb.append_xmlns;
@@ -6551,7 +6532,7 @@ public class PgSchema implements Serializable {
 
 				switch (terminus) {
 				case element:
-					content = field.retrieve(rset, 1, fill_default_value);
+					content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
 
 					if (content != null) {
 
@@ -6612,7 +6593,7 @@ public class PgSchema implements Serializable {
 					}
 					break;
 				case simple_content:
-					content = field.retrieve(rset, 1, fill_default_value);
+					content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
 
 					// simple content
 
@@ -6657,26 +6638,10 @@ public class PgSchema implements Serializable {
 
 						}
 
-						else if (field.required) {
-
-							xml_writer.writeEmptyElement(parent_table.prefix, parent_table.xname, parent_table.target_namespace);
-
-							if (append_xmlns)
-								xml_writer.writeNamespace(parent_table.prefix, parent_table.target_namespace);
-
-							if (field.is_xs_namespace)
-								xml_writer.writeAttribute(field.foreign_table_xname, "");
-							else	
-								xml_writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, "");
-
-							xmlb.writeLineFeedCode();
-
-						}
-
 					}
 					break;
 				case attribute:
-					content = field.retrieve(rset, 1, fill_default_value);
+					content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
 
 					// attribute
 
@@ -6693,22 +6658,6 @@ public class PgSchema implements Serializable {
 								xml_writer.writeAttribute(field_name, content);
 							else
 								xml_writer.writeAttribute(field_prefix, field_ns, field_name, content);
-
-							xmlb.writeLineFeedCode();
-
-						}
-
-						else if (field.required) {
-
-							xml_writer.writeEmptyElement(table_prefix, table_name, table_ns);
-
-							if (append_xmlns)
-								xml_writer.writeNamespace(table_prefix, table_ns);
-
-							if (field_ns.equals(PgSchemaUtil.xs_namespace_uri))
-								xml_writer.writeAttribute(field_name, "");
-							else
-								xml_writer.writeAttribute(field_prefix, field_ns, field_name, "");
 
 							xmlb.writeLineFeedCode();
 
@@ -6733,23 +6682,6 @@ public class PgSchema implements Serializable {
 								xml_writer.writeAttribute(field.foreign_table_xname, content);
 							else	
 								xml_writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, content);
-
-							xmlb.writeLineFeedCode();
-
-						}
-
-						else if (field.required) {
-
-							xml_writer.writeEmptyElement(parent_table.prefix, parent_table.xname, parent_table.target_namespace);
-
-							if (append_xmlns)
-								xml_writer.writeNamespace(parent_table.prefix, parent_table.target_namespace);
-
-
-							if (field.is_xs_namespace)
-								xml_writer.writeAttribute(field.foreign_table_xname, "");
-							else	
-								xml_writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, "");
 
 							xmlb.writeLineFeedCode();
 
@@ -6816,7 +6748,7 @@ public class PgSchema implements Serializable {
 						PgField _field = table.getField(column_name);
 
 						if (_field != null)
-							content = field.retrieve(rset, 1, fill_default_value);
+							content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
 
 						xml_writer.writeCharacters(content);
 
@@ -6879,10 +6811,12 @@ public class PgSchema implements Serializable {
 
 		PgTable table = path_expr.sql_subject.table;
 
-		String table_ns = table.target_namespace;
 		String table_prefix = table.prefix;
 
-		boolean fill_default_value = option.fill_default_value;
+		map_big_integer = option.pg_map_big_integer;
+		fill_default_value = option.fill_default_value;
+
+		boolean append_nil_elem = xmlb.append_nil_elem;
 
 		XMLStreamWriter xml_writer = xmlb.writer;
 		LinkedList<XmlBuilderPendingElem> pending_elem = xmlb.pending_elem;
@@ -6938,9 +6872,9 @@ public class PgSchema implements Serializable {
 
 					if (field.attribute) {
 
-						content = field.retrieve(rset, param_id, fill_default_value);
+						content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
 
-						if (content != null || field.required) {
+						if (content != null) {
 
 							attr = new XmlBuilderPendingAttr(field, content);
 
@@ -7002,24 +6936,26 @@ public class PgSchema implements Serializable {
 
 			// simple_content, element, any
 
-			if (table.has_simple_content || table.has_element || table.has_any) {
+			if (table.has_simple_content || table.has_element || table.has_any || option.document_key) {
 
 				param_id = 1;
 
 				for (PgField field : fields) {
 
-					if (xmlb.insert_doc_key && field.document_key) {
-
+					if (xmlb.insert_doc_key && field.document_key && !table.equals(root_table)) {
+						/*
 						if (table.equals(root_table))
 							throw new PgSchemaException("Not allowed to insert document key to root element.");
-
+						 */
 						if (pending_elem.peek() != null)
 							xmlb.writePendingElems(false);
 
 						xmlb.writePendingSimpleCont();
 
-						xmlb.writeSimpleCharacters((nest_test.has_child_elem ? "" : line_feed_code) + nest_test.child_indent_space);
+						xml_writer.writeCharacters((nest_test.has_child_elem ? "" : line_feed_code) + nest_test.child_indent_space); // avoid xmlb.writeSimpleCharacters since corruption
 
+						xmlb.insertDocKey(table_prefix, field.xname, rset.getString(param_id));
+						/*
 						if (field.is_xs_namespace)
 							xml_writer.writeStartElement(table_prefix, field.xname, table_ns);
 						else
@@ -7028,14 +6964,14 @@ public class PgSchema implements Serializable {
 						xml_writer.writeCharacters(rset.getString(param_id));
 
 						xml_writer.writeEndElement();
-
+						 */
 						nest_test.has_child_elem = nest_test.has_content = nest_test.has_insert_doc_key = true;
 
 					}
 
 					else if (field.simple_content && !field.simple_attribute) {
 
-						content = field.retrieve(rset, param_id, fill_default_value);
+						content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
 
 						if (content != null) {
 
@@ -7068,20 +7004,20 @@ public class PgSchema implements Serializable {
 
 					else if (field.element) {
 
-						content = field.retrieve(rset, param_id, fill_default_value);
+						content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
 
-						if (content != null || field.required) {
+						if (content != null || (field.nillable && append_nil_elem)) {
 
 							if (pending_elem.peek() != null)
 								xmlb.writePendingElems(false);
 
 							xmlb.writePendingSimpleCont();
 
-							xml_writer.writeCharacters((nest_test.has_child_elem ? "" : line_feed_code) + nest_test.child_indent_space); // avoid xmlb.writeSimpleCharacters
+							xml_writer.writeCharacters((nest_test.has_child_elem ? "" : line_feed_code) + nest_test.child_indent_space); // avoid xmlb.writeSimpleCharacters since corruption
 
 							if (content != null) {
 
-								xmlb.writeSimpleElement(field.is_xs_namespace ? table_prefix : field.prefix, field.xname, content);
+								xmlb.writeSimpleElement(field.is_xs_namespace ? table_prefix : field.prefix, field.xname, content, field.xs_type.isLatin1Encodable());
 								/*
 								if (field.is_xs_namespace)
 									xml_writer.writeStartElement(table_prefix, field.xname, table_ns);
@@ -7237,7 +7173,7 @@ public class PgSchema implements Serializable {
 	 */	
 	private XmlBuilderNestTester nestChildNode2Xml(final PgTable table, final Object parent_key, final boolean as_attr, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
-		boolean fill_default_value = option.fill_default_value;
+		boolean append_nil_elem = xmlb.append_nil_elem;
 
 		XMLStreamWriter xml_writer = xmlb.writer;
 		LinkedList<XmlBuilderPendingElem> pending_elem = xmlb.pending_elem;
@@ -7257,10 +7193,10 @@ public class PgSchema implements Serializable {
 			if (not_virtual && not_list_and_bridge && !as_attr) {
 
 				pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
-				/*
+
 				if (parent_nest_test.has_insert_doc_key)
 					parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
-				 */
+
 			}
 
 			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
@@ -7316,10 +7252,10 @@ public class PgSchema implements Serializable {
 				if (not_virtual && !not_list_and_bridge && !as_attr) {
 
 					pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
-					/*
+
 					if (parent_nest_test.has_insert_doc_key)
 						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
-					 */
+
 					if (!table.bridge)
 						nest_test.has_child_elem = false;
 
@@ -7335,9 +7271,9 @@ public class PgSchema implements Serializable {
 
 						if (field.attribute) {
 
-							content = field.retrieve(rset, param_id, fill_default_value);
+							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
 
-							if (content != null || field.required) {
+							if (content != null) {
 
 								attr = new XmlBuilderPendingAttr(field, content);
 
@@ -7357,9 +7293,9 @@ public class PgSchema implements Serializable {
 
 						else if ((field.simple_attribute || field.simple_attr_cond) && as_attr) {
 
-							content = field.retrieve(rset, param_id, fill_default_value);
+							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
 
-							if (content != null || field.required) {
+							if (content != null) {
 
 								attr = new XmlBuilderPendingAttr(field, getForeignTable(field), content);
 
@@ -7428,7 +7364,7 @@ public class PgSchema implements Serializable {
 
 						if (field.simple_content && !field.simple_attribute && !as_attr) {
 
-							content = field.retrieve(rset, param_id, fill_default_value);
+							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
 
 							if (content != null) {
 
@@ -7461,20 +7397,20 @@ public class PgSchema implements Serializable {
 
 						else if (field.element) {
 
-							content = field.retrieve(rset, param_id, fill_default_value);
+							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
 
-							if (content != null || field.required) {
+							if (content != null || (field.nillable && append_nil_elem)) {
 
 								if (pending_elem.peek() != null)
 									xmlb.writePendingElems(false);
 
 								xmlb.writePendingSimpleCont();
 
-								xml_writer.writeCharacters((nest_test.has_child_elem ? "" : line_feed_code) + nest_test.child_indent_space); // avoid xmlb.writeSimpleCharacters
+								xml_writer.writeCharacters((nest_test.has_child_elem ? "" : line_feed_code) + nest_test.child_indent_space); // avoid xmlb.writeSimpleCharacters since corruption
 
 								if (content != null) {
 
-									xmlb.writeSimpleElement(field.is_xs_namespace ? table_prefix : field.prefix, field.xname, content);
+									xmlb.writeSimpleElement(field.is_xs_namespace ? table_prefix : field.prefix, field.xname, content, field.xs_type.isLatin1Encodable());
 									/*
 									if (field.is_xs_namespace)
 										xml_writer.writeStartElement(table_prefix, field.xname, table_ns);
@@ -7504,10 +7440,10 @@ public class PgSchema implements Serializable {
 								 */
 								if (!nest_test.has_child_elem || !nest_test.has_content)
 									nest_test.has_child_elem = nest_test.has_content = true;
-								/*
+
 								if (parent_nest_test.has_insert_doc_key)
 									parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
-								 */
+
 							}
 
 						}
@@ -7527,10 +7463,10 @@ public class PgSchema implements Serializable {
 									nest_test.any_sax_parser.parse(in, any);
 
 									nest_test.any_sax_parser.reset();
-									/*
-									if (nest_test.has_insert_doc_key)
+
+									if (parent_nest_test.has_insert_doc_key)
 										parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
-									 */
+
 									in.close();
 
 								}
@@ -7682,10 +7618,10 @@ public class PgSchema implements Serializable {
 			if (not_virtual_and_not_list_and_bridge) {
 
 				pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
-				/*
+
 				if (parent_nest_test.has_insert_doc_key)
 					parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
-				 */
+
 			}
 
 			// nested key
@@ -7766,10 +7702,11 @@ public class PgSchema implements Serializable {
 		jsonb.writeStartDocument(false);
 
 		PgTable table = path_expr.sql_subject.table;
-
 		PgField field = path_expr.sql_subject.field;
 
-		boolean fill_default_value = option.fill_default_value;
+		map_big_integer = option.pg_map_big_integer;
+		fill_default_value = option.fill_default_value;
+
 		boolean as_attr = false;
 
 		String concat_line_feed = jsonb.concat_line_feed;
@@ -7782,11 +7719,11 @@ public class PgSchema implements Serializable {
 
 				switch (terminus) {
 				case element:
-					content = field.retrieve(rset, 1, fill_default_value);
+					content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
 					jsonb.writeFieldFrag(field, as_attr, content);
 					break;
 				case simple_content:
-					content = field.retrieve(rset, 1, fill_default_value);
+					content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
 
 					// simple content
 
@@ -7799,24 +7736,24 @@ public class PgSchema implements Serializable {
 
 					// simple attribute
 
-					else if (content != null || field.required)
+					else if (content != null)
 						jsonb.writeFieldFrag(field, as_attr = true, content);
 					break;
 				case attribute:
-					content = field.retrieve(rset, 1, fill_default_value);
+					content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
 
 					// attribute
 
 					if (field.attribute) {
 
-						if (content != null || field.required)
+						if (content != null)
 							jsonb.writeFieldFrag(field, as_attr, content);
 
 					}
 
 					// simple attribute
 
-					else if (content != null || field.required)
+					else if (content != null)
 						jsonb.writeFieldFrag(field, as_attr = true, content);
 					break;
 				case any_attribute:
@@ -7853,7 +7790,7 @@ public class PgSchema implements Serializable {
 						PgField _field = table.getField(column_name);
 
 						if (_field != null)
-							content = field.retrieve(rset, 1, fill_default_value);
+							content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
 
 						jsonb.buffer.append(content + concat_line_feed);
 
@@ -7914,7 +7851,8 @@ public class PgSchema implements Serializable {
 
 		PgTable table = path_expr.sql_subject.table;
 
-		boolean fill_default_value = option.fill_default_value;
+		map_big_integer = option.pg_map_big_integer;
+		fill_default_value = option.fill_default_value;
 
 		LinkedList<JsonBuilderPendingElem> pending_elem = jsonb.pending_elem;
 
@@ -7970,9 +7908,9 @@ public class PgSchema implements Serializable {
 
 					if (field.attribute) {
 
-						content = field.retrieve(rset, param_id, fill_default_value);
+						content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
 
-						if (content != null || field.required) {
+						if (content != null) {
 
 							attr = new JsonBuilderPendingAttr(field, content, nest_test.child_indent_level);
 
@@ -8034,17 +7972,17 @@ public class PgSchema implements Serializable {
 
 			// simple_content, element, any
 
-			if (table.has_simple_content || table.has_element || table.has_any) {
+			if (table.has_simple_content || table.has_element || table.has_any || option.document_key) {
 
 				param_id = 1;
 
 				for (PgField field : fields) {
 
-					if (jsonb.insert_doc_key && field.document_key) {
-
+					if (jsonb.insert_doc_key && field.document_key && !table.equals(root_table)) {
+						/*
 						if (table.equals(root_table))
 							throw new PgSchemaException("Not allowed to insert document key to root element.");
-
+						 */
 						if (pending_elem.peek() != null)
 							jsonb.writePendingElems(false);
 
@@ -8058,7 +7996,7 @@ public class PgSchema implements Serializable {
 
 					else if (field.simple_content && !field.simple_attribute) {
 
-						content = field.retrieve(rset, param_id, fill_default_value);
+						content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
 
 						if (content != null) {
 
@@ -8077,9 +8015,9 @@ public class PgSchema implements Serializable {
 
 					else if (field.element) {
 
-						content = field.retrieve(rset, param_id, fill_default_value);
+						content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
 
-						if (content != null || field.required) {
+						if (content != null) {
 
 							if (pending_elem.peek() != null)
 								jsonb.writePendingElems(false);
@@ -8113,6 +8051,9 @@ public class PgSchema implements Serializable {
 								nest_test.any_sax_parser.parse(in, any);
 
 								nest_test.any_sax_parser.reset();
+
+								if (nest_test.has_insert_doc_key)
+									nest_test.has_insert_doc_key = false;
 
 								in.close();
 
@@ -8207,8 +8148,6 @@ public class PgSchema implements Serializable {
 	 */	
 	private JsonBuilderNestTester nestChildNode2Json(final PgTable table, final Object parent_key, final boolean as_attr, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
 
-		boolean fill_default_value = option.fill_default_value;
-
 		LinkedList<JsonBuilderPendingElem> pending_elem = jsonb.pending_elem;
 		JsonSchemaVersion schema_ver = jsonb.schema_ver;
 		String concat_value_space = jsonb.concat_value_space;
@@ -8226,10 +8165,10 @@ public class PgSchema implements Serializable {
 			if (not_virtual && (not_list_and_bridge || array_field) && !as_attr) {
 
 				pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
-				/*
+
 				if (parent_nest_test.has_insert_doc_key)
 					parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
-				 */
+
 			}
 
 			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
@@ -8285,10 +8224,10 @@ public class PgSchema implements Serializable {
 				if (not_virtual && !(not_list_and_bridge || array_field) && !as_attr) {
 
 					pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
-					/*
+
 					if (parent_nest_test.has_insert_doc_key)
 						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
-					 */
+
 					if (!table.bridge)
 						nest_test.has_child_elem = false;
 
@@ -8304,9 +8243,9 @@ public class PgSchema implements Serializable {
 
 						if (field.attribute) {
 
-							content = field.retrieve(rset, param_id, fill_default_value);
+							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
 
-							if (content != null || field.required) {
+							if (content != null) {
 
 								if (array_field)
 									field.write(schema_ver, content, false, concat_value_space);
@@ -8333,9 +8272,9 @@ public class PgSchema implements Serializable {
 
 						else if ((field.simple_attribute || field.simple_attr_cond) && as_attr) {
 
-							content = field.retrieve(rset, param_id, fill_default_value);
+							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
 
-							if (content != null || field.required) {
+							if (content != null) {
 
 								if (array_field)
 									field.write(schema_ver, content, false, concat_value_space);
@@ -8411,7 +8350,7 @@ public class PgSchema implements Serializable {
 
 						if (field.simple_content && !field.simple_attribute && !as_attr) {
 
-							content = field.retrieve(rset, param_id, fill_default_value);
+							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
 
 							if (content != null) {
 
@@ -8437,9 +8376,9 @@ public class PgSchema implements Serializable {
 
 						else if (field.element) {
 
-							content = field.retrieve(rset, param_id, fill_default_value);
+							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
 
-							if (content != null || field.required) {
+							if (content != null) {
 
 								if (array_field)
 									field.write(schema_ver, content, false, concat_value_space);
@@ -8457,10 +8396,10 @@ public class PgSchema implements Serializable {
 
 								if (!nest_test.has_child_elem || !nest_test.has_content)
 									nest_test.has_child_elem = nest_test.has_content = true;
-								/*
+
 								if (parent_nest_test.has_insert_doc_key)
 									parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
-								 */
+
 							}
 
 						}
@@ -8480,6 +8419,9 @@ public class PgSchema implements Serializable {
 									nest_test.any_sax_parser.parse(in, any);
 
 									nest_test.any_sax_parser.reset();
+
+									if (parent_nest_test.has_insert_doc_key)
+										parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
 
 									in.close();
 
@@ -8623,10 +8565,10 @@ public class PgSchema implements Serializable {
 		if (not_virtual && (not_list_and_bridge || array_field)) {
 
 			pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
-			/*
+
 			if (parent_nest_test.has_insert_doc_key)
 				parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
-			 */
+
 		}
 
 		int n = 0;

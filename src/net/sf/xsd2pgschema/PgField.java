@@ -23,6 +23,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -150,6 +151,9 @@ public class PgField implements Serializable {
 
 	/** Whether XPath key. */
 	public boolean xpath_key = false;
+
+	/** Whether @nillable="true". */
+	public boolean nillable = false;
 
 	/** Whether @use="required" | @nillable="false". */
 	protected boolean xrequired = false;
@@ -505,7 +509,7 @@ public class PgField implements Serializable {
 
 				xs_type2 = XsFieldType.valueOf("xs_" + _type2[1]);
 
-				xs_type1 = xs_type1.leastCommonOf(xs_type2);
+				xs_type1 = xs_type1.leastCommonOf(xs_type2, option.pg_map_big_integer);
 
 			}
 
@@ -783,8 +787,12 @@ public class PgField implements Serializable {
 
 			String nillable = elem.getAttribute("nillable");
 
-			if (nillable != null && !nillable.isEmpty())
+			if (nillable != null && !nillable.isEmpty()) {
+
 				required = nillable.equals("false");
+				this.nillable = nillable.equals("true");
+
+			}
 
 		}
 
@@ -1699,9 +1707,11 @@ public class PgField implements Serializable {
 	/**
 	 * Return PostgreSQL DDL type definition.
 	 *
+	 *
+	 * @param map_big_integer whether map xs:integer to BigInteger
 	 * @return String PostgreSQL DDL type definition
 	 */
-	public String getPgDataType() {
+	public String getPgDataType(boolean map_big_integer) {
 
 		String _name = PgSchemaUtil.avoidPgReservedWords(pname);
 
@@ -1716,10 +1726,10 @@ public class PgField implements Serializable {
 			case xs_hexBinary:
 			case xs_base64Binary:
 				return "BYTEA";
-			case xs_bigserial:
-				return "BIGSERIAL";
-			case xs_serial:
-				return "SERIAL";
+				// case xs_bigserial:
+				//	return "BIGSERIAL";
+				// case xs_serial:
+				//	return "SERIAL";
 			case xs_float:
 				base = "REAL";
 
@@ -1862,7 +1872,7 @@ public class PgField implements Serializable {
 
 						BigDecimal bd = new BigDecimal(min_inclusive);
 
-						check.append(_name + " >= " + bd + " AND ");
+						check.append(_name + " >= " + bd.toString() + " AND ");
 
 					} catch (NumberFormatException e) {
 					}
@@ -1875,7 +1885,7 @@ public class PgField implements Serializable {
 
 						BigDecimal bd = new BigDecimal(min_exclusive);
 
-						check.append(_name + " > " + bd + " AND ");
+						check.append(_name + " > " + bd.toString() + " AND ");
 
 					} catch (NumberFormatException e) {
 					}
@@ -1888,7 +1898,7 @@ public class PgField implements Serializable {
 
 						BigDecimal bd = new BigDecimal(max_inclusive);
 
-						check.append(_name + " <= " + bd + " AND ");
+						check.append(_name + " <= " + bd.toString() + " AND ");
 
 					} catch (NumberFormatException e) {
 					}
@@ -1901,7 +1911,7 @@ public class PgField implements Serializable {
 
 						BigDecimal bd = new BigDecimal(max_exclusive);
 
-						check.append(_name + " < " + bd + " AND ");
+						check.append(_name + " < " + bd.toString() + " AND ");
 
 					} catch (NumberFormatException e) {
 					}
@@ -1913,6 +1923,69 @@ public class PgField implements Serializable {
 
 				return base;
 			case xs_integer:
+				base = map_big_integer ? "DECIMAL" : "INTEGER";
+
+				if (!restriction)
+					return base;
+
+				check = new StringBuilder();
+
+				if (min_inclusive != null) {
+
+					try {
+
+						BigInteger bi = new BigInteger(min_inclusive);
+
+						check.append(_name + " >= " + bi.toString() + " AND ");
+
+					} catch (NumberFormatException e) {
+					}
+
+				}
+
+				else if (min_exclusive != null) {
+
+					try {
+
+						BigInteger bi = new BigInteger(min_exclusive);
+
+						check.append(_name + " > " + bi.toString() + " AND ");
+
+					} catch (NumberFormatException e) {
+					}
+
+				}
+
+				if (max_inclusive != null) {
+
+					try {
+
+						BigInteger bi = new BigInteger(max_inclusive);
+
+						check.append(_name + " <= " + bi.toString() + " AND ");
+
+					} catch (NumberFormatException e) {
+					}
+
+				}
+
+				else if (max_exclusive != null) {
+
+					try {
+
+						BigInteger bi = new BigInteger(max_exclusive);
+
+						check.append(_name + " < " + bi.toString() + " AND ");
+
+					} catch (NumberFormatException e) {
+					}
+
+				}
+
+				if (check.length() > 4)
+					return base + " CHECK ( " + check.substring(0, check.length() - 4) + ")";
+
+				return base;
 			case xs_int:
 				base = "INTEGER";
 
@@ -2150,7 +2223,7 @@ public class PgField implements Serializable {
 
 				return base;
 			case xs_nonPositiveInteger:
-				base = "INTEGER";
+				base = map_big_integer ? "DECIMAL" : "INTEGER";
 
 				check = new StringBuilder();
 
@@ -2163,9 +2236,9 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(min_inclusive);
+							BigInteger bi = new BigInteger(min_inclusive);
 
-							check.append(_name + " >= " + i + " AND ");
+							check.append(_name + " >= " + bi.toString() + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -2176,9 +2249,9 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(min_exclusive);
+							BigInteger bi = new BigInteger(min_exclusive);
 
-							check.append(_name + " > " + i + " AND ");
+							check.append(_name + " > " + bi.toString() + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -2189,10 +2262,10 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(max_inclusive);
+							BigInteger bi = new BigInteger(max_inclusive);
 
-							if (i < 0)
-								check.append(_name + " <= " + i + " AND ");
+							if (bi.compareTo(BigInteger.ZERO) < 0)
+								check.append(_name + " <= " + bi.toString() + " AND ");
 							else
 								check.append(_name + " <= 0 AND ");
 
@@ -2206,10 +2279,10 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(max_exclusive);
+							BigInteger bi = new BigInteger(max_exclusive);
 
-							if (i < 1)
-								check.append(_name + " < " + i + " AND ");
+							if (bi.compareTo(BigInteger.ONE) < 0)
+								check.append(_name + " < " + bi.toString() + " AND ");
 							else
 								check.append(_name + " <= 0 AND ");
 
@@ -2226,7 +2299,7 @@ public class PgField implements Serializable {
 
 				return base + " CHECK ( " + check.substring(0, check.length() - 4) + ")";
 			case xs_negativeInteger:
-				base = "INTEGER";
+				base = map_big_integer ? "DECIMAL" : "INTEGER";
 
 				check = new StringBuilder();
 
@@ -2239,9 +2312,9 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(min_inclusive);
+							BigInteger bi = new BigInteger(min_inclusive);
 
-							check.append(_name + " >= " + i + " AND ");
+							check.append(_name + " >= " + bi.toString() + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -2252,9 +2325,9 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(min_exclusive);
+							BigInteger bi = new BigInteger(min_exclusive);
 
-							check.append(_name + " > " + i + " AND ");
+							check.append(_name + " > " + bi.toString() + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -2265,10 +2338,10 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(max_inclusive);
+							BigInteger bi = new BigInteger(max_inclusive);
 
-							if (i < -1)
-								check.append(_name + " <= " + i + " AND ");
+							if (bi.compareTo(new BigInteger("-1")) < 0)
+								check.append(_name + " <= " + bi.toString() + " AND ");
 							else
 								check.append(_name + " < 0 AND ");
 
@@ -2282,10 +2355,10 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(max_exclusive);
+							BigInteger bi = new BigInteger(max_exclusive);
 
-							if (i < 0)
-								check.append(_name + " < " + i + " AND ");
+							if (bi.compareTo(BigInteger.ZERO) < 0)
+								check.append(_name + " < " + bi.toString() + " AND ");
 							else
 								check.append(_name + " < 0 AND ");
 
@@ -2302,8 +2375,7 @@ public class PgField implements Serializable {
 
 				return base + " CHECK ( " + check.substring(0, check.length() - 4) + ")";
 			case xs_nonNegativeInteger:
-			case xs_unsignedInt:
-				base = "INTEGER";
+				base = map_big_integer ? "DECIMAL" : "INTEGER";
 
 				check = new StringBuilder();
 
@@ -2316,10 +2388,10 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(min_inclusive);
+							BigInteger bi = new BigInteger(min_inclusive);
 
-							if (i > 0)
-								check.append(_name + " >= " + i + " AND ");
+							if (bi.compareTo(BigInteger.ZERO) > 0)
+								check.append(_name + " >= " + bi.toString() + " AND ");
 							else
 								check.append(_name + " >= 0 AND ");
 
@@ -2333,10 +2405,10 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(min_exclusive);
+							BigInteger bi = new BigInteger(min_exclusive);
 
-							if (i > -1)
-								check.append(_name + " > " + i + " AND ");
+							if (bi.compareTo(new BigInteger("-1")) > 0)
+								check.append(_name + " > " + bi.toString() + " AND ");
 							else
 								check.append(_name + " >= 0 AND ");
 
@@ -2353,9 +2425,9 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(max_inclusive);
+							BigInteger bi = new BigInteger(max_inclusive);
 
-							check.append(_name + " <= " + i + " AND ");
+							check.append(_name + " <= " + bi.toString() + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -2366,9 +2438,9 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(max_exclusive);
+							BigInteger bi = new BigInteger(max_exclusive);
 
-							check.append(_name + " < " + i + " AND ");
+							check.append(_name + " < " + bi.toString() + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -2382,7 +2454,7 @@ public class PgField implements Serializable {
 							int i = Integer.parseInt(total_digits);
 
 							if (i > 0)
-								check.append(_name + " < " + (int) Math.pow(10, i) + " AND ");
+								check.append(_name + " < " + BigDecimal.TEN.pow(i).toBigInteger().toString() + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -2393,7 +2465,7 @@ public class PgField implements Serializable {
 
 				return base + " CHECK ( " + check.substring(0, check.length() - 4) + ")";
 			case xs_positiveInteger:
-				base = "INTEGER";
+				base = map_big_integer ? "DECIMAL" : "INTEGER";
 
 				check = new StringBuilder();
 
@@ -2406,10 +2478,10 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(min_inclusive);
+							BigInteger bi = new BigInteger(min_inclusive);
 
-							if (i > 1)
-								check.append(_name + " >= " + i + " AND ");
+							if (bi.compareTo(BigInteger.ONE) > 0)
+								check.append(_name + " >= " + bi.toString() + " AND ");
 							else
 								check.append(_name + " > 0 AND ");
 
@@ -2423,10 +2495,10 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(min_exclusive);
+							BigInteger bi = new BigInteger(min_exclusive);
 
-							if (i > 0)
-								check.append(_name + " > " + i + " AND ");
+							if (bi.compareTo(BigInteger.ZERO) > 0)
+								check.append(_name + " > " + bi.toString() + " AND ");
 							else
 								check.append(_name + " > 0 AND ");
 
@@ -2443,9 +2515,9 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(max_inclusive);
+							BigInteger bi = new BigInteger(max_inclusive);
 
-							check.append(_name + " <= " + i + " AND ");
+							check.append(_name + " <= " + bi.toString() + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -2456,9 +2528,9 @@ public class PgField implements Serializable {
 
 						try {
 
-							int i = Integer.parseInt(max_exclusive);
+							BigInteger bi = new BigInteger(max_exclusive);
 
-							check.append(_name + " < " + i + " AND ");
+							check.append(_name + " < " + bi.toString() + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -2472,7 +2544,7 @@ public class PgField implements Serializable {
 							int i = Integer.parseInt(total_digits);
 
 							if (i > 0)
-								check.append(_name + " < " + (int) Math.pow(10, i) + " AND ");
+								check.append(_name + " < " + BigDecimal.TEN.pow(i).toBigInteger().toString() + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -2563,6 +2635,96 @@ public class PgField implements Serializable {
 
 							if (i > 0)
 								check.append(_name + " < " + (long) Math.pow(10, i) + " AND ");
+
+						} catch (NumberFormatException e) {
+						}
+
+					}
+
+				}
+
+				return base + " CHECK ( " + check.substring(0, check.length() - 4) + ")";
+			case xs_unsignedInt:
+				base = "INTEGER";
+
+				check = new StringBuilder();
+
+				if (!restriction)
+					check.append(_name + " >= 0 AND ");
+
+				else {
+
+					if (min_inclusive != null) {
+
+						try {
+
+							int i = Integer.parseInt(min_inclusive);
+
+							if (i > 0)
+								check.append(_name + " >= " + i + " AND ");
+							else
+								check.append(_name + " >= 0 AND ");
+
+						} catch (NumberFormatException e) {
+							check.append(_name + " >= 0 AND ");
+						}
+
+					}
+
+					else if (min_exclusive != null) {
+
+						try {
+
+							int i = Integer.parseInt(min_exclusive);
+
+							if (i > -1)
+								check.append(_name + " > " + i + " AND ");
+							else
+								check.append(_name + " >= 0 AND ");
+
+						} catch (NumberFormatException e) {
+							check.append(_name + " >= 0 AND ");
+						}
+
+					}
+
+					else
+						check.append(_name + " >= 0 AND ");
+
+					if (max_inclusive != null) {
+
+						try {
+
+							int i = Integer.parseInt(max_inclusive);
+
+							check.append(_name + " <= " + i + " AND ");
+
+						} catch (NumberFormatException e) {
+						}
+
+					}
+
+					else if (max_exclusive != null) {
+
+						try {
+
+							int i = Integer.parseInt(max_exclusive);
+
+							check.append(_name + " < " + i + " AND ");
+
+						} catch (NumberFormatException e) {
+						}
+
+					}
+
+					if (total_digits != null) {
+
+						try {
+
+							int i = Integer.parseInt(total_digits);
+
+							if (i > 0)
+								check.append(_name + " < " + (int) Math.pow(10, i) + " AND ");
 
 						} catch (NumberFormatException e) {
 						}
@@ -2668,6 +2830,8 @@ public class PgField implements Serializable {
 					return "TIMESTAMP";
 				else
 					return "TIMESTAMP WITH TIME ZONE";
+			case xs_dateTimeStamp:
+				return "TIMESTAMP WITH TIME ZONE";
 			case xs_time:
 				if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required")))
 					return "TIME";
@@ -2677,27 +2841,29 @@ public class PgField implements Serializable {
 			case xs_gYearMonth:
 			case xs_gYear:
 				return "DATE";
-			case xs_gMonthDay:
-			case xs_gMonth:
-			case xs_gDay:
 			case xs_duration:
-			case xs_anyType:
+			case xs_yearMonthDuration:
+			case xs_dayTimeDuration:
+			case xs_gMonth:
+			case xs_gMonthDay:
+			case xs_gDay:
 			case xs_string:
+			case xs_anyURI:
+			case xs_QName:
+			case xs_NOTATION:
 			case xs_normalizedString:
 			case xs_token:
-			case xs_NMTOKEN:
-			case xs_NMTOKENS:
-			case xs_IDREFS:
-			case xs_ENTITIES:
-			case xs_NOTATION:
 			case xs_language:
 			case xs_Name:
-			case xs_QName:
 			case xs_NCName:
-			case xs_anyURI:
-			case xs_ID:
-			case xs_IDREF:
 			case xs_ENTITY:
+			case xs_ID:
+			case xs_IDREF:	
+			case xs_NMTOKEN:
+			case xs_ENTITIES:
+			case xs_IDREFS:
+			case xs_NMTOKENS:
+			case xs_anyType:
 				if (_list) // length restriction of xs:list is not effective
 					return "TEXT";
 
@@ -2752,9 +2918,10 @@ public class PgField implements Serializable {
 	/**
 	 * Return java.sql.Types.
 	 *
+	 * @param map_big_integer whether map xs:integer to BigInteger
 	 * @return int java.sqlTypes
 	 */
-	public int getSqlDataType() {
+	public int getSqlDataType(boolean map_big_integer) {
 
 		if (enum_name != null)
 			return java.sql.Types.VARCHAR;
@@ -2765,18 +2932,13 @@ public class PgField implements Serializable {
 		case xs_hexBinary:
 		case xs_base64Binary:
 			return java.sql.Types.BINARY;
-		case xs_bigserial:
+			// case xs_bigserial:
 		case xs_long:
 		case xs_bigint:
 		case xs_unsignedLong:
 			return java.sql.Types.BIGINT;
-		case xs_serial:
-		case xs_integer:
+			// case xs_serial:
 		case xs_int:
-		case xs_nonPositiveInteger:
-		case xs_negativeInteger:
-		case xs_nonNegativeInteger:
-		case xs_positiveInteger:
 		case xs_unsignedInt:
 			return java.sql.Types.INTEGER;
 		case xs_float:
@@ -2785,6 +2947,12 @@ public class PgField implements Serializable {
 			return java.sql.Types.DOUBLE;
 		case xs_decimal:
 			return java.sql.Types.DECIMAL;
+		case xs_integer:
+		case xs_nonNegativeInteger:
+		case xs_nonPositiveInteger:
+		case xs_positiveInteger:
+		case xs_negativeInteger:
+			return map_big_integer ? java.sql.Types.DECIMAL : java.sql.Types.INTEGER;
 		case xs_short:
 		case xs_byte:
 		case xs_unsignedShort:
@@ -2795,6 +2963,8 @@ public class PgField implements Serializable {
 				return java.sql.Types.TIMESTAMP;
 			else
 				return java.sql.Types.TIMESTAMP_WITH_TIMEZONE;
+		case xs_dateTimeStamp:
+			return java.sql.Types.TIMESTAMP_WITH_TIMEZONE;
 		case xs_time:
 			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required")))
 				return java.sql.Types.TIME;
@@ -2804,27 +2974,29 @@ public class PgField implements Serializable {
 		case xs_gYearMonth:
 		case xs_gYear:
 			return java.sql.Types.DATE;
-		case xs_gMonthDay:
-		case xs_gMonth:
-		case xs_gDay:
 		case xs_duration:
-		case xs_anyType:
+		case xs_yearMonthDuration:
+		case xs_dayTimeDuration:
+		case xs_gMonth:
+		case xs_gMonthDay:
+		case xs_gDay:
 		case xs_string:
+		case xs_anyURI:
+		case xs_QName:
+		case xs_NOTATION:
 		case xs_normalizedString:
 		case xs_token:
-		case xs_NMTOKEN:
-		case xs_NMTOKENS:
-		case xs_IDREFS:
-		case xs_ENTITIES:
-		case xs_NOTATION:
 		case xs_language:
 		case xs_Name:
-		case xs_QName:
 		case xs_NCName:
-		case xs_anyURI:
-		case xs_ID:
-		case xs_IDREF:
 		case xs_ENTITY:
+		case xs_ID:
+		case xs_IDREF:	
+		case xs_NMTOKEN:
+		case xs_ENTITIES:
+		case xs_IDREFS:
+		case xs_NMTOKENS:
+		case xs_anyType:
 			return java.sql.Types.VARCHAR;
 		case xs_any:
 		case xs_anyAttribute:
@@ -2848,24 +3020,24 @@ public class PgField implements Serializable {
 		case xs_base64Binary:
 			return "decode('" + value + "','base64')";
 		case xs_boolean:
-		case xs_bigserial:
-		case xs_serial:
+			// case xs_bigserial:
+			// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
+		case xs_integer:
+		case xs_nonNegativeInteger:
+		case xs_nonPositiveInteger:
+		case xs_positiveInteger:
+		case xs_negativeInteger:
 		case xs_long:
 		case xs_bigint:
 		case xs_unsignedLong:
-		case xs_integer:
 		case xs_int:
-		case xs_nonPositiveInteger:
-		case xs_negativeInteger:
-		case xs_nonNegativeInteger:
-		case xs_positiveInteger:
 		case xs_unsignedInt:
 		case xs_short:
-		case xs_byte:
 		case xs_unsignedShort:
+		case xs_byte:
 		case xs_unsignedByte:
 			return value;
 		case xs_dateTime:
@@ -2873,6 +3045,8 @@ public class PgField implements Serializable {
 				return "TIMESTAMP '" + value + "'";
 			else
 				return "TIMESTAMP WITH TIME ZONE '" + value + "'";
+		case xs_dateTimeStamp:
+			return "TIMESTAMP WITH TIME ZONE '" + value + "'";
 		case xs_time:
 			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required")))
 				return "TIME '" + value + "'";
@@ -2882,27 +3056,29 @@ public class PgField implements Serializable {
 		case xs_gYearMonth:
 		case xs_gYear:
 			return "DATE '" + value + "'";
-		case xs_gMonthDay:
-		case xs_gMonth:
-		case xs_gDay:
 		case xs_duration:
-		case xs_anyType:
+		case xs_yearMonthDuration:
+		case xs_dayTimeDuration:
+		case xs_gMonth:
+		case xs_gMonthDay:
+		case xs_gDay:
 		case xs_string:
+		case xs_anyURI:
+		case xs_QName:
+		case xs_NOTATION:
 		case xs_normalizedString:
 		case xs_token:
-		case xs_NMTOKEN:
-		case xs_NMTOKENS:
-		case xs_IDREFS:
-		case xs_ENTITIES:
-		case xs_NOTATION:
 		case xs_language:
 		case xs_Name:
-		case xs_QName:
 		case xs_NCName:
-		case xs_anyURI:
-		case xs_ID:
-		case xs_IDREF:
 		case xs_ENTITY:
+		case xs_ID:
+		case xs_IDREF:	
+		case xs_NMTOKEN:
+		case xs_ENTITIES:
+		case xs_IDREFS:
+		case xs_NMTOKENS:
+		case xs_anyType:
 			if (enum_name == null)
 				return "'" + value.replace("'", "''") + "'";
 			else {
@@ -2929,55 +3105,57 @@ public class PgField implements Serializable {
 
 		switch (xs_type) {
 		case xs_boolean:
-			return default_value;
-		case xs_bigserial:
-		case xs_serial:
+			// case xs_bigserial:
+			// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
+		case xs_integer:
+		case xs_nonNegativeInteger:
+		case xs_nonPositiveInteger:
+		case xs_positiveInteger:
+		case xs_negativeInteger:
 		case xs_long:
 		case xs_bigint:
-		case xs_integer:
-		case xs_int:
-		case xs_short:
-		case xs_byte:
-		case xs_nonPositiveInteger:
-		case xs_negativeInteger:
-		case xs_nonNegativeInteger:
-		case xs_unsignedInt:
-		case xs_positiveInteger:
 		case xs_unsignedLong:
+		case xs_int:
+		case xs_unsignedInt:
+		case xs_short:
 		case xs_unsignedShort:
+		case xs_byte:
 		case xs_unsignedByte:
 			return default_value;
 		case xs_hexBinary:
 		case xs_base64Binary:
-		case xs_dateTime:
-		case xs_time:
-		case xs_date:
-		case xs_gYearMonth:
-		case xs_gYear:
-		case xs_gMonthDay:
-		case xs_gMonth:
-		case xs_gDay:
 		case xs_duration:
-		case xs_anyType:
+		case xs_yearMonthDuration:
+		case xs_dayTimeDuration:
+		case xs_dateTime:
+		case xs_dateTimeStamp:
+		case xs_date:
+		case xs_time:
+		case xs_gYear:
+		case xs_gYearMonth:
+		case xs_gMonth:
+		case xs_gMonthDay:
+		case xs_gDay:
 		case xs_string:
+		case xs_anyURI:
+		case xs_QName:
+		case xs_NOTATION:
 		case xs_normalizedString:
 		case xs_token:
-		case xs_NMTOKEN:
-		case xs_NMTOKENS:
-		case xs_IDREFS:
-		case xs_ENTITIES:
-		case xs_NOTATION:
 		case xs_language:
 		case xs_Name:
-		case xs_QName:
 		case xs_NCName:
-		case xs_anyURI:
-		case xs_ID:
-		case xs_IDREF:
 		case xs_ENTITY:
+		case xs_ID:
+		case xs_IDREF:	
+		case xs_NMTOKEN:
+		case xs_ENTITIES:
+		case xs_IDREFS:
+		case xs_NMTOKENS:
+		case xs_anyType:
 			return "\"" + StringEscapeUtils.escapeEcmaScript(default_value) + "\"";
 		default: // xs_any, xs_anyAttribute
 		}
@@ -2999,56 +3177,59 @@ public class PgField implements Serializable {
 
 			switch (xs_type) {
 			case xs_boolean:
-			case xs_bigserial:
-			case xs_serial:
+				// case xs_bigserial:
+				// case xs_serial:
 			case xs_float:
 			case xs_double:
 			case xs_decimal:
+			case xs_integer:
+			case xs_nonNegativeInteger:
+			case xs_nonPositiveInteger:
+			case xs_positiveInteger:
+			case xs_negativeInteger:
 			case xs_long:
 			case xs_bigint:
-			case xs_integer:
-			case xs_int:
-			case xs_short:
-			case xs_byte:
-			case xs_nonPositiveInteger:
-			case xs_negativeInteger:
-			case xs_nonNegativeInteger:
-			case xs_unsignedInt:
-			case xs_positiveInteger:
 			case xs_unsignedLong:
+			case xs_int:
+			case xs_unsignedInt:
+			case xs_short:
 			case xs_unsignedShort:
+			case xs_byte:
 			case xs_unsignedByte:
 				for (String enumeration : xenumeration)
 					sb.append(enumeration + concat_value_space);
 				break;
 			case xs_hexBinary:
 			case xs_base64Binary:
-			case xs_dateTime:
-			case xs_time:
-			case xs_date:
-			case xs_gYearMonth:
-			case xs_gYear:
-			case xs_gMonthDay:
-			case xs_gMonth:
-			case xs_gDay:
 			case xs_duration:
-			case xs_anyType:
+			case xs_yearMonthDuration:
+			case xs_dayTimeDuration:
+			case xs_dateTime:
+			case xs_dateTimeStamp:
+			case xs_date:
+			case xs_time:
+			case xs_gYear:
+			case xs_gYearMonth:
+			case xs_gMonth:
+			case xs_gMonthDay:
+			case xs_gDay:
 			case xs_string:
+			case xs_anyURI:
+			case xs_QName:
+			case xs_NOTATION:
 			case xs_normalizedString:
 			case xs_token:
-			case xs_NMTOKEN:
-			case xs_NMTOKENS:
-			case xs_IDREFS:
-			case xs_ENTITIES:
-			case xs_NOTATION:
 			case xs_language:
 			case xs_Name:
-			case xs_QName:
 			case xs_NCName:
-			case xs_anyURI:
-			case xs_ID:
-			case xs_IDREF:
 			case xs_ENTITY:
+			case xs_ID:
+			case xs_IDREF:	
+			case xs_NMTOKEN:
+			case xs_ENTITIES:
+			case xs_IDREFS:
+			case xs_NMTOKENS:
+			case xs_anyType:
 				for (String enumeration : xenumeration)
 					sb.append("\"" + StringEscapeUtils.escapeEcmaScript(enumeration) + "\"" + concat_value_space);
 				break;
@@ -3077,14 +3258,14 @@ public class PgField implements Serializable {
 		int i;
 
 		switch (xs_type) {
-		case xs_bigserial:
-		case xs_serial:
+		// case xs_bigserial:
+		// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
+		case xs_integer:
 		case xs_long:
 		case xs_bigint:
-		case xs_integer:
 		case xs_int:
 		case xs_short:
 		case xs_byte:
@@ -3101,7 +3282,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(max_inclusive) < 0)
+					BigInteger bi = new BigInteger(max_inclusive);
+
+					if (bi.compareTo(BigInteger.ZERO) < 0)
 						return max_inclusive;
 					else
 						return "0";
@@ -3116,7 +3299,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(max_exclusive) < 1)
+					BigInteger bi = new BigInteger(max_exclusive);
+
+					if (bi.compareTo(BigInteger.ONE) < 0)
 						return max_exclusive + exclusive_maximum;
 					else
 						return "0";
@@ -3137,7 +3322,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(max_inclusive) < -1)
+					BigInteger bi = new BigInteger(max_inclusive);
+
+					if (bi.compareTo(new BigInteger("-1")) < 0)
 						return max_inclusive;
 					else
 						return "0" + exclusive_maximum;
@@ -3152,7 +3339,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(max_exclusive) < 0)
+					BigInteger bi = new BigInteger(max_exclusive);
+
+					if (bi.compareTo(BigInteger.ZERO) < 0)
 						return max_exclusive + exclusive_maximum;
 					else
 						return "0" + exclusive_maximum;
@@ -3166,7 +3355,6 @@ public class PgField implements Serializable {
 			else
 				return "0" + exclusive_maximum;
 		case xs_nonNegativeInteger:
-		case xs_unsignedInt:
 			if (!restriction)
 				return null;
 
@@ -3174,7 +3362,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(max_inclusive);
+					new BigInteger(max_inclusive);
 
 					return max_inclusive;
 
@@ -3187,7 +3375,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(max_exclusive);
+					new BigInteger(max_exclusive);
 
 					return max_exclusive + exclusive_maximum;
 
@@ -3201,7 +3389,7 @@ public class PgField implements Serializable {
 				try {
 
 					if ((i = Integer.parseInt(total_digits)) > 0)
-						return String.valueOf((int) Math.pow(10, i)) + exclusive_maximum;
+						return BigDecimal.TEN.pow(i).toBigInteger().toString() + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3216,7 +3404,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(max_inclusive);
+					new BigInteger(max_inclusive);
 
 					return max_inclusive;
 
@@ -3229,7 +3417,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(max_exclusive);
+					new BigInteger(max_exclusive);
 
 					return max_exclusive + exclusive_maximum;
 
@@ -3243,7 +3431,7 @@ public class PgField implements Serializable {
 				try {
 
 					if ((i = Integer.parseInt(total_digits)) > 0)
-						return String.valueOf((int) Math.pow(10, i)) + exclusive_maximum;
+						return BigDecimal.TEN.pow(i).toBigInteger().toString() + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3286,6 +3474,48 @@ public class PgField implements Serializable {
 
 					if ((i = Integer.parseInt(total_digits)) > 0)
 						return String.valueOf((long) Math.pow(10, i)) + exclusive_maximum;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+			break;
+		case xs_unsignedInt:
+			if (!restriction)
+				return null;
+
+			if (max_inclusive != null) {
+
+				try {
+
+					Integer.parseInt(max_inclusive);
+
+					return max_inclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			else if (max_exclusive != null) {
+
+				try {
+
+					Integer.parseInt(max_exclusive);
+
+					return max_exclusive + exclusive_maximum;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			if (total_digits != null) {
+
+				try {
+
+					if ((i = Integer.parseInt(total_digits)) > 0)
+						return String.valueOf((int) Math.pow(10, i)) + exclusive_maximum;
 
 				} catch (NumberFormatException e) {
 				}
@@ -3354,14 +3584,14 @@ public class PgField implements Serializable {
 		final String exclusive_minimum = jsonb.concat_value_space + jsonb.getCanKeyDecl("exclusiveMinimum") + "true";
 
 		switch (xs_type) {
-		case xs_bigserial:
-		case xs_serial:
+		// case xs_bigserial:
+		// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
+		case xs_integer:
 		case xs_long:
 		case xs_bigint:
-		case xs_integer:
 		case xs_int:
 		case xs_short:
 		case xs_byte:
@@ -3378,7 +3608,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(min_inclusive);
+					new BigInteger(min_inclusive);
 
 					return min_inclusive;
 
@@ -3391,7 +3621,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(min_exclusive);
+					new BigInteger(min_exclusive);
 
 					return min_exclusive + exclusive_minimum;
 
@@ -3408,7 +3638,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(min_inclusive);
+					new BigInteger(min_inclusive);
 
 					return min_inclusive;
 
@@ -3421,7 +3651,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(min_exclusive);
+					new BigInteger(min_exclusive);
 
 					return min_exclusive + exclusive_minimum;
 
@@ -3431,7 +3661,6 @@ public class PgField implements Serializable {
 			}
 			break;
 		case xs_nonNegativeInteger:
-		case xs_unsignedInt:
 			if (!restriction)
 				return "0";
 
@@ -3439,7 +3668,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(min_inclusive) > 0)
+					BigInteger bi = new BigInteger(min_inclusive);
+
+					if (bi.compareTo(BigInteger.ZERO) > 0)
 						return min_inclusive;
 					else
 						return "0";
@@ -3454,7 +3685,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(min_exclusive) > -1)
+					BigInteger bi = new BigInteger(min_exclusive);
+
+					if (bi.compareTo(new BigInteger("-1")) > 0)
 						return min_exclusive + exclusive_minimum;
 					else
 						return "0";
@@ -3475,7 +3708,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(min_inclusive) > 1)
+					BigInteger bi = new BigInteger(min_inclusive);
+
+					if (bi.compareTo(BigInteger.ONE) > 0)
 						return min_inclusive;
 					else
 						return "0" + exclusive_minimum;
@@ -3490,7 +3725,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(min_exclusive) > 0)
+					BigInteger bi = new BigInteger(min_exclusive);
+
+					if (bi.compareTo(BigInteger.ZERO) > 0)
 						return min_exclusive + exclusive_minimum;
 					else
 						return "0" + exclusive_minimum;
@@ -3527,6 +3764,42 @@ public class PgField implements Serializable {
 				try {
 
 					if (Long.parseLong(min_exclusive) > -1)
+						return min_exclusive + exclusive_minimum;
+					else
+						return "0";
+
+				} catch (NumberFormatException e) {
+					return "0";
+				}
+
+			}
+
+			else
+				return "0";
+		case xs_unsignedInt:
+			if (!restriction)
+				return "0";
+
+			if (min_inclusive != null) {
+
+				try {
+
+					if (Integer.parseInt(min_inclusive) > 0)
+						return min_inclusive;
+					else
+						return "0";
+
+				} catch (NumberFormatException e) {
+					return "0";
+				}
+
+			}
+
+			else if (min_exclusive != null) {
+
+				try {
+
+					if (Integer.parseInt(min_exclusive) > -1)
 						return min_exclusive + exclusive_minimum;
 					else
 						return "0";
@@ -3599,14 +3872,14 @@ public class PgField implements Serializable {
 		int i;
 
 		switch (xs_type) {
-		case xs_bigserial:
-		case xs_serial:
+		// case xs_bigserial:
+		// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
+		case xs_integer:
 		case xs_long:
 		case xs_bigint:
-		case xs_integer:
 		case xs_int:
 		case xs_short:
 		case xs_byte:
@@ -3623,7 +3896,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(max_inclusive) < 0)
+					BigInteger bi = new BigInteger(max_inclusive);
+
+					if (bi.compareTo(BigInteger.ZERO) < 0)
 						return maximum_ + max_inclusive;
 					else
 						return maximum_zero;
@@ -3638,7 +3913,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(max_exclusive) < 1)
+					BigInteger bi = new BigInteger(max_exclusive);
+
+					if (bi.compareTo(BigInteger.ONE) < 0)
 						return exclusive_maximum_ + max_exclusive;
 					else
 						return maximum_zero;
@@ -3659,7 +3936,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(max_inclusive) < -1)
+					BigInteger bi = new BigInteger(max_inclusive);
+
+					if (bi.compareTo(new BigInteger("-1")) < 0)
 						return maximum_ + max_inclusive;
 					else
 						return exclusive_maximum_zero;
@@ -3674,7 +3953,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(max_exclusive) < 0)
+					BigInteger bi = new BigInteger(max_exclusive);
+
+					if (bi.compareTo(BigInteger.ZERO) < 0)
 						return exclusive_maximum_ + max_exclusive;
 					else
 						return exclusive_maximum_zero;
@@ -3688,7 +3969,6 @@ public class PgField implements Serializable {
 			else
 				return exclusive_maximum_zero;
 		case xs_nonNegativeInteger:
-		case xs_unsignedInt:
 			if (!restriction)
 				return null;
 
@@ -3696,7 +3976,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(max_inclusive);
+					new BigInteger(max_inclusive);
 
 					return maximum_ + max_inclusive;
 
@@ -3709,7 +3989,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(max_exclusive);
+					new BigInteger(max_exclusive);
 
 					return exclusive_maximum_ + max_exclusive;
 
@@ -3723,7 +4003,7 @@ public class PgField implements Serializable {
 				try {
 
 					if ((i = Integer.parseInt(total_digits)) > 0)
-						return exclusive_maximum_ + String.valueOf((int) Math.pow(10, i));
+						return exclusive_maximum_ + BigDecimal.TEN.pow(i).toBigInteger().toString();
 
 				} catch (NumberFormatException e) {
 				}
@@ -3738,7 +4018,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(max_inclusive);
+					new BigInteger(max_inclusive);
 
 					return maximum_ + max_inclusive;
 
@@ -3751,7 +4031,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(max_exclusive);
+					new BigInteger(max_exclusive);
 
 					return exclusive_maximum_ + max_exclusive;
 
@@ -3765,7 +4045,7 @@ public class PgField implements Serializable {
 				try {
 
 					if ((i = Integer.parseInt(total_digits)) > 0)
-						return exclusive_maximum_ + String.valueOf((int) Math.pow(10, i));
+						return exclusive_maximum_ + BigDecimal.TEN.pow(i).toBigInteger().toString();
 
 				} catch (NumberFormatException e) {
 				}
@@ -3808,6 +4088,48 @@ public class PgField implements Serializable {
 
 					if ((i = Integer.parseInt(total_digits)) > 0)
 						return exclusive_maximum_ + String.valueOf((long) Math.pow(10, i));
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+			break;
+		case xs_unsignedInt:
+			if (!restriction)
+				return null;
+
+			if (max_inclusive != null) {
+
+				try {
+
+					Integer.parseInt(max_inclusive);
+
+					return maximum_ + max_inclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			else if (max_exclusive != null) {
+
+				try {
+
+					Integer.parseInt(max_exclusive);
+
+					return exclusive_maximum_ + max_exclusive;
+
+				} catch (NumberFormatException e) {
+				}
+
+			}
+
+			if (total_digits != null) {
+
+				try {
+
+					if ((i = Integer.parseInt(total_digits)) > 0)
+						return exclusive_maximum_ + String.valueOf((int) Math.pow(10, i));
 
 				} catch (NumberFormatException e) {
 				}
@@ -3878,14 +4200,14 @@ public class PgField implements Serializable {
 		final String exclusive_minimum_zero = exclusive_minimum_ + "0";
 
 		switch (xs_type) {
-		case xs_bigserial:
-		case xs_serial:
+		// case xs_bigserial:
+		// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
+		case xs_integer:
 		case xs_long:
 		case xs_bigint:
-		case xs_integer:
 		case xs_int:
 		case xs_short:
 		case xs_byte:
@@ -3902,7 +4224,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(min_inclusive);
+					new BigInteger(min_inclusive);
 
 					return minimum_ + min_inclusive;
 
@@ -3915,7 +4237,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(min_exclusive);
+					new BigInteger(min_exclusive);
 
 					return exclusive_minimum_ + min_exclusive;
 
@@ -3932,7 +4254,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(min_inclusive);
+					new BigInteger(min_inclusive);
 
 					return minimum_ + min_inclusive;
 
@@ -3945,7 +4267,7 @@ public class PgField implements Serializable {
 
 				try {
 
-					Integer.parseInt(min_exclusive);
+					new BigInteger(min_exclusive);
 
 					return exclusive_minimum_ + min_exclusive;
 
@@ -3955,7 +4277,6 @@ public class PgField implements Serializable {
 			}
 			break;
 		case xs_nonNegativeInteger:
-		case xs_unsignedInt:
 			if (!restriction)
 				return minimum_zero;
 
@@ -3963,7 +4284,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(min_inclusive) > 0)
+					BigInteger bi = new BigInteger(min_inclusive);
+
+					if (bi.compareTo(BigInteger.ZERO) > 0)
 						return minimum_ + min_inclusive;
 					else
 						return minimum_zero;
@@ -3978,7 +4301,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(min_exclusive) > -1)
+					BigInteger bi = new BigInteger(min_exclusive);
+
+					if (bi.compareTo(new BigInteger("-1")) > 0)
 						return exclusive_minimum_ + min_exclusive;
 					else
 						return minimum_zero;
@@ -3999,7 +4324,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(min_inclusive) > 1)
+					BigInteger bi = new BigInteger(min_inclusive);
+
+					if (bi.compareTo(BigInteger.ONE) > 0)
 						return minimum_ + min_inclusive;
 					else
 						return exclusive_minimum_zero;
@@ -4014,7 +4341,9 @@ public class PgField implements Serializable {
 
 				try {
 
-					if (Integer.parseInt(min_exclusive) > 0)
+					BigInteger bi = new BigInteger(min_exclusive);
+
+					if (bi.compareTo(BigInteger.ZERO) > 0)
 						return exclusive_minimum_ + min_exclusive;
 					else
 						return exclusive_minimum_zero;
@@ -4051,6 +4380,42 @@ public class PgField implements Serializable {
 				try {
 
 					if (Long.parseLong(min_exclusive) > -1)
+						return exclusive_minimum_ + min_exclusive;
+					else
+						return minimum_zero;
+
+				} catch (NumberFormatException e) {
+					return minimum_zero;
+				}
+
+			}
+
+			else
+				return minimum_zero;
+		case xs_unsignedInt:
+			if (!restriction)
+				return minimum_zero;
+
+			if (min_inclusive != null) {
+
+				try {
+
+					if (Integer.parseInt(min_inclusive) > 0)
+						return minimum_ + min_inclusive;
+					else
+						return minimum_zero;
+
+				} catch (NumberFormatException e) {
+					return minimum_zero;
+				}
+
+			}
+
+			else if (min_exclusive != null) {
+
+				try {
+
+					if (Integer.parseInt(min_exclusive) > -1)
 						return exclusive_minimum_ + min_exclusive;
 					else
 						return minimum_zero;
@@ -4150,20 +4515,20 @@ public class PgField implements Serializable {
 				return null;
 			}
 			break;
-		case xs_bigserial:
-		case xs_serial:
+			// case xs_bigserial:
+			// case xs_serial:
+		case xs_integer:
+		case xs_nonNegativeInteger:
+		case xs_nonPositiveInteger:
+		case xs_positiveInteger:
+		case xs_negativeInteger:
 		case xs_long:
 		case xs_bigint:
-		case xs_integer:
 		case xs_int:
 		case xs_short:
 		case xs_byte:
-		case xs_nonPositiveInteger:
-		case xs_negativeInteger:
-		case xs_nonNegativeInteger:
-		case xs_unsignedInt:
-		case xs_positiveInteger:
 		case xs_unsignedLong:
+		case xs_unsignedInt:
 		case xs_unsignedShort:
 		case xs_unsignedByte:
 			return "1";
@@ -4186,6 +4551,7 @@ public class PgField implements Serializable {
 
 		switch (xs_type) {
 		case xs_dateTime:
+		case xs_dateTimeStamp:
 			return "date-time";
 		case xs_time:
 			return latest ? "time" : null;
@@ -4214,14 +4580,11 @@ public class PgField implements Serializable {
 	 */
 	public boolean validate(String value) {
 
-		if (restriction && min_length != null) {
-
-			if (value.length() < Integer.valueOf(min_length))
-				return false;
-
-		}
+		if (restriction && min_length != null && value.length() < Integer.valueOf(min_length))
+			return false;
 
 		switch (xs_type) {
+		/*
 		case xs_bigserial:
 			try {
 				return Long.parseLong(value) > 0;
@@ -4234,6 +4597,7 @@ public class PgField implements Serializable {
 			} catch (NumberFormatException e) {
 				return false;
 			}
+		 */
 		case xs_hexBinary:
 			try {
 				DatatypeConverter.parseHexBinary(value);
@@ -4276,6 +4640,36 @@ public class PgField implements Serializable {
 			}
 			return true;
 		case xs_integer:
+			try {
+				new BigInteger(value);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+			return true;
+		case xs_nonNegativeInteger:
+			try {
+				return (new BigInteger(value).compareTo(BigInteger.ZERO)) >= 0;
+			} catch (NumberFormatException e) {
+				return false;
+			}
+		case xs_nonPositiveInteger:
+			try {
+				return (new BigInteger(value).compareTo(BigInteger.ZERO) <= 0);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+		case xs_positiveInteger:
+			try {
+				return (new BigInteger(value).compareTo(BigInteger.ZERO) > 0);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+		case xs_negativeInteger:
+			try {
+				return (new BigInteger(value).compareTo(BigInteger.ZERO) < 0);
+			} catch (NumberFormatException e) {
+				return false;
+			}
 		case xs_int:
 			try {
 				Integer.parseInt(value);
@@ -4291,34 +4685,15 @@ public class PgField implements Serializable {
 				return false;
 			}
 			return true;
-		case xs_nonPositiveInteger:
-			try {
-				return Integer.parseInt(value) <= 0;
-			} catch (NumberFormatException e) {
-				return false;
-			}
-		case xs_negativeInteger:
-			try {
-				return Integer.parseInt(value) < 0;
-			} catch (NumberFormatException e) {
-				return false;
-			}
-		case xs_nonNegativeInteger:
-		case xs_unsignedInt:
-			try {
-				return Integer.parseInt(value) >= 0;
-			} catch (NumberFormatException e) {
-				return false;
-			}
-		case xs_positiveInteger:
-			try {
-				return Integer.parseInt(value) > 0;
-			} catch (NumberFormatException e) {
-				return false;
-			}
 		case xs_unsignedLong:
 			try {
 				return Long.parseLong(value) >= 0;
+			} catch (NumberFormatException e) {
+				return false;
+			}
+		case xs_unsignedInt:
+			try {
+				return Integer.parseInt(value) >= 0;
 			} catch (NumberFormatException e) {
 				return false;
 			}
@@ -4330,6 +4705,7 @@ public class PgField implements Serializable {
 				return false;
 			}
 		case xs_dateTime:
+		case xs_dateTimeStamp:
 		case xs_date:
 		case xs_gYearMonth:
 		case xs_gYear:
@@ -4468,10 +4844,11 @@ public class PgField implements Serializable {
 	 * @param ps prepared statement
 	 * @param par_idx parameter index
 	 * @param ins_idx parameter index for upsert
+	 * @param map_big_integer whether map xs:integer to BigInteger
 	 * @param value content
 	 * @throws SQLException the SQL exception
 	 */
-	public void write(PreparedStatement ps, int par_idx, int ins_idx, String value) throws SQLException {
+	public void write(PreparedStatement ps, int par_idx, int ins_idx, boolean map_big_integer, String value) throws SQLException {
 
 		boolean upsert = ins_idx != -1;
 
@@ -4501,7 +4878,7 @@ public class PgField implements Serializable {
 			if (upsert)
 				ps.setBytes(ins_idx, base64bin_value);
 			break;
-		case xs_bigserial:
+			// case xs_bigserial:
 		case xs_long:
 		case xs_bigint:
 		case xs_unsignedLong:
@@ -4514,13 +4891,8 @@ public class PgField implements Serializable {
 				e.printStackTrace();
 			}
 			break;
-		case xs_serial:
-		case xs_integer:
+			// case xs_serial:
 		case xs_int:
-		case xs_nonPositiveInteger:
-		case xs_negativeInteger:
-		case xs_nonNegativeInteger:
-		case xs_positiveInteger:
 		case xs_unsignedInt:
 		case xs_short:
 		case xs_byte:
@@ -4565,9 +4937,36 @@ public class PgField implements Serializable {
 				e.printStackTrace();
 			}
 			break;
+		case xs_integer:
+		case xs_nonNegativeInteger:
+		case xs_nonPositiveInteger:
+		case xs_positiveInteger:
+		case xs_negativeInteger:
+			if (map_big_integer) {
+				try {
+					BigDecimal bigdec_value = new BigDecimal(value);
+					ps.setBigDecimal(par_idx, bigdec_value);
+					if (upsert)
+						ps.setBigDecimal(ins_idx, bigdec_value);
+				} catch (NumberFormatException e) {
+					e.printStackTrace();
+				}
+			}
+			else {
+				try {
+					int int_value = Integer.valueOf(value);
+					ps.setInt(par_idx, int_value);
+					if (upsert)
+						ps.setInt(ins_idx, int_value);
+				} catch (NumberFormatException e) {
+					e.printStackTrace();
+				}
+			}
+			break;
 		case xs_dateTime:
+		case xs_dateTimeStamp:
 			Timestamp timestamp = new java.sql.Timestamp(PgSchemaUtil.parseDate(value).getTime());
-			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) {
+			if ((!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) && xs_type.equals(XsFieldType.xs_dateTime)) {
 				ps.setTimestamp(par_idx, timestamp);
 				if (upsert)
 					ps.setTimestamp(ins_idx, timestamp);
@@ -4641,27 +5040,29 @@ public class PgField implements Serializable {
 			if (upsert)
 				ps.setDate(ins_idx, date);
 			break;
-		case xs_gMonthDay:
-		case xs_gMonth:
-		case xs_gDay:
 		case xs_duration:
-		case xs_anyType:
+		case xs_yearMonthDuration:
+		case xs_dayTimeDuration:
+		case xs_gMonth:
+		case xs_gMonthDay:
+		case xs_gDay:
 		case xs_string:
+		case xs_anyURI:
+		case xs_QName:
+		case xs_NOTATION:
 		case xs_normalizedString:
 		case xs_token:
-		case xs_NMTOKEN:
-		case xs_NMTOKENS:
-		case xs_IDREFS:
-		case xs_ENTITIES:
-		case xs_NOTATION:
 		case xs_language:
 		case xs_Name:
-		case xs_QName:
 		case xs_NCName:
-		case xs_anyURI:
-		case xs_ID:
-		case xs_IDREF:
 		case xs_ENTITY:
+		case xs_ID:
+		case xs_IDREF:	
+		case xs_NMTOKEN:
+		case xs_ENTITIES:
+		case xs_IDREFS:
+		case xs_NMTOKENS:
+		case xs_anyType:
 			ps.setString(par_idx, value);
 			if (upsert)
 				ps.setString(ins_idx, value);
@@ -4711,7 +5112,7 @@ public class PgField implements Serializable {
 		if (attr_sel_rdy) {
 
 			switch (xs_type) {
-			case xs_bigserial:
+			// case xs_bigserial:
 			case xs_long:
 			case xs_bigint:
 			case xs_unsignedLong:
@@ -4719,13 +5120,13 @@ public class PgField implements Serializable {
 				if (lucene_numeric_index)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 				break;
-			case xs_serial:
+				// case xs_serial:
 			case xs_integer:
-			case xs_int:
-			case xs_nonPositiveInteger:
-			case xs_negativeInteger:
 			case xs_nonNegativeInteger:
+			case xs_nonPositiveInteger:
 			case xs_positiveInteger:
+			case xs_negativeInteger:
+			case xs_int:
 			case xs_unsignedInt:
 			case xs_short:
 			case xs_byte:
@@ -4747,6 +5148,7 @@ public class PgField implements Serializable {
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 				break;
 			case xs_dateTime:
+			case xs_dateTimeStamp:
 				java.util.Date util_time = PgSchemaUtil.parseDate(value);
 				lucene_doc.add(new StringField(name, DateTools.dateToString(util_time, DateTools.Resolution.SECOND), Field.Store.YES));
 				break;
@@ -4780,20 +5182,20 @@ public class PgField implements Serializable {
 		}
 
 		switch (xs_type) {
-		case xs_bigserial:
-		case xs_serial:
+		// case xs_bigserial:
+		// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
+		case xs_integer:
+		case xs_nonNegativeInteger:
+		case xs_nonPositiveInteger:
+		case xs_positiveInteger:
+		case xs_negativeInteger:
 		case xs_long:
 		case xs_bigint:
 		case xs_unsignedLong:
-		case xs_integer:
 		case xs_int:
-		case xs_nonPositiveInteger:
-		case xs_negativeInteger:
-		case xs_nonNegativeInteger:
-		case xs_positiveInteger:
 		case xs_unsignedInt:
 		case xs_short:
 		case xs_byte:
@@ -4829,21 +5231,21 @@ public class PgField implements Serializable {
 				buffw.write("<" + attr_name + ">");
 
 				switch (xs_type) {
-				case xs_bigserial:
-				case xs_long:
-				case xs_bigint:
-				case xs_unsignedLong:
-				case xs_serial:
-				case xs_integer:
-				case xs_int:
-				case xs_nonPositiveInteger:
-				case xs_negativeInteger:
-				case xs_nonNegativeInteger:
-				case xs_positiveInteger:
-				case xs_unsignedInt:
+				// case xs_bigserial:
+				// case xs_serial:
 				case xs_float:
 				case xs_double:
 				case xs_decimal:
+				case xs_integer:
+				case xs_nonNegativeInteger:
+				case xs_nonPositiveInteger:
+				case xs_positiveInteger:
+				case xs_negativeInteger:
+				case xs_long:
+				case xs_bigint:
+				case xs_unsignedLong:
+				case xs_int:
+				case xs_unsignedInt:
 				case xs_short:
 				case xs_byte:
 				case xs_unsignedShort:
@@ -4851,6 +5253,7 @@ public class PgField implements Serializable {
 					buffw.write(value);
 					break;
 				case xs_dateTime:
+				case xs_dateTimeStamp:
 				case xs_date:
 				case xs_gYearMonth:
 				case xs_gYear:
@@ -4869,20 +5272,20 @@ public class PgField implements Serializable {
 			}
 
 			switch (xs_type) {
-			case xs_bigserial:
-			case xs_serial:
+			// case xs_bigserial:
+			// case xs_serial:
 			case xs_float:
 			case xs_double:
 			case xs_decimal:
+			case xs_integer:
+			case xs_nonNegativeInteger:
+			case xs_nonPositiveInteger:
+			case xs_positiveInteger:
+			case xs_negativeInteger:
 			case xs_long:
 			case xs_bigint:
 			case xs_unsignedLong:
-			case xs_integer:
 			case xs_int:
-			case xs_nonPositiveInteger:
-			case xs_negativeInteger:
-			case xs_nonNegativeInteger:
-			case xs_positiveInteger:
 			case xs_unsignedInt:
 			case xs_short:
 			case xs_byte:
@@ -4933,20 +5336,20 @@ public class PgField implements Serializable {
 
 			switch (xs_type) {
 			case xs_boolean:
-			case xs_bigserial:
-			case xs_serial:
+				// case xs_bigserial:
+				// case xs_serial:
 			case xs_float:
 			case xs_double:
 			case xs_decimal:
+			case xs_integer:
+			case xs_nonNegativeInteger:
+			case xs_nonPositiveInteger:
+			case xs_positiveInteger:
+			case xs_negativeInteger:
 			case xs_long:
 			case xs_bigint:
 			case xs_unsignedLong:
-			case xs_integer:
 			case xs_int:
-			case xs_nonPositiveInteger:
-			case xs_negativeInteger:
-			case xs_nonNegativeInteger:
-			case xs_positiveInteger:
 			case xs_unsignedInt:
 			case xs_short:
 			case xs_byte:
@@ -4976,21 +5379,21 @@ public class PgField implements Serializable {
 
 		switch (xs_type) {
 		case xs_boolean:
-		case xs_bigserial:
-		case xs_long:
-		case xs_bigint:
-		case xs_unsignedLong:
-		case xs_serial:
-		case xs_integer:
-		case xs_int:
-		case xs_nonPositiveInteger:
-		case xs_negativeInteger:
-		case xs_nonNegativeInteger:
-		case xs_positiveInteger:
-		case xs_unsignedInt:
+			// case xs_bigserial:
+			// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
+		case xs_integer:
+		case xs_nonNegativeInteger:
+		case xs_nonPositiveInteger:
+		case xs_positiveInteger:
+		case xs_negativeInteger:
+		case xs_long:
+		case xs_bigint:
+		case xs_unsignedLong:
+		case xs_int:
+		case xs_unsignedInt:
 		case xs_short:
 		case xs_byte:
 		case xs_unsignedShort:
@@ -5041,11 +5444,12 @@ public class PgField implements Serializable {
 	 *
 	 * @param rset result set
 	 * @param par_idx parameter index id
+	 * @param map_big_integer whether map xs:integer to BigInteger
 	 * @param fill_default_value whether to fill default value in case of empty
 	 * @return String retrieved content
 	 * @throws SQLException the SQL exception
 	 */
-	public String retrieve(ResultSet rset, int par_idx, boolean fill_default_value) throws SQLException {
+	public String retrieve(ResultSet rset, int par_idx, boolean map_big_integer, boolean fill_default_value) throws SQLException {
 
 		if (enum_name != null) {
 
@@ -5070,6 +5474,7 @@ public class PgField implements Serializable {
 
 		switch (xs_type) {
 		case xs_dateTime:
+		case xs_dateTimeStamp:
 			Timestamp ts = rset.getTimestamp(par_idx);
 
 			if (ts == null)
@@ -5080,7 +5485,7 @@ public class PgField implements Serializable {
 			else
 				cal.setTimeZone(PgSchemaUtil.tz_loc);
 
-			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) { }
+			if ((!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) && xs_type.equals(XsFieldType.xs_dateTime)) { }
 
 			else
 				cal.setTimeZone(PgSchemaUtil.tz_utc);
@@ -5141,43 +5546,54 @@ public class PgField implements Serializable {
 			BigDecimal bd = rset.getBigDecimal(par_idx);
 
 			return bd != null ? bd.toString() : (fill_default_value ? default_value : null);
-		case xs_bigserial:
+		case xs_integer:
+		case xs_nonNegativeInteger:
+		case xs_nonPositiveInteger:
+		case xs_positiveInteger:
+		case xs_negativeInteger:
+			if (map_big_integer) {
+
+				BigDecimal _bd = rset.getBigDecimal(par_idx);
+
+				return _bd != null ? _bd.toBigInteger().toString() : (fill_default_value ? default_value : null);
+			}
+			// break through
+			// number
+			// case xs_bigserial:
+			// case xs_serial:
 		case xs_long:
 		case xs_bigint:
 		case xs_unsignedLong:
-		case xs_serial:
-		case xs_integer:
 		case xs_int:
-		case xs_nonPositiveInteger:
-		case xs_negativeInteger:
-		case xs_nonNegativeInteger:
-		case xs_positiveInteger:
 		case xs_unsignedInt:
 		case xs_short:
 		case xs_byte:
 		case xs_unsignedShort:
 		case xs_unsignedByte:
-		case xs_gMonthDay:
-		case xs_gMonth:
-		case xs_gDay:
+			// string	
 		case xs_duration:
-		case xs_anyType:
+		case xs_yearMonthDuration:
+		case xs_dayTimeDuration:
+		case xs_gMonth:
+		case xs_gMonthDay:
+		case xs_gDay:
 		case xs_string:
+		case xs_anyURI:
+		case xs_QName:
+		case xs_NOTATION:
 		case xs_normalizedString:
 		case xs_token:
-		case xs_NMTOKEN:
-		case xs_NMTOKENS:
-		case xs_IDREFS:
-		case xs_ENTITIES:
-		case xs_NOTATION:
 		case xs_language:
 		case xs_Name:
-		case xs_QName:
 		case xs_NCName:
-		case xs_anyURI:
-		case xs_ID:
-		case xs_IDREF:
 		case xs_ENTITY:
+		case xs_ID:
+		case xs_IDREF:	
+		case xs_NMTOKEN:
+		case xs_ENTITIES:
+		case xs_IDREFS:
+		case xs_NMTOKENS:
+		case xs_anyType:
 			String value = rset.getString(par_idx);
 
 			return value != null ? value : (fill_default_value ? default_value : null);
@@ -5223,20 +5639,20 @@ public class PgField implements Serializable {
 
 			switch (xs_type) {
 			case xs_boolean:
-			case xs_bigserial:
-			case xs_serial:
+				// case xs_bigserial:
+				// case xs_serial:
 			case xs_float:
 			case xs_double:
 			case xs_decimal:
+			case xs_integer:
+			case xs_nonNegativeInteger:
+			case xs_nonPositiveInteger:
+			case xs_positiveInteger:
+			case xs_negativeInteger:
 			case xs_long:
 			case xs_bigint:
 			case xs_unsignedLong:
-			case xs_integer:
 			case xs_int:
-			case xs_nonPositiveInteger:
-			case xs_negativeInteger:
-			case xs_nonNegativeInteger:
-			case xs_positiveInteger:
 			case xs_unsignedInt:
 			case xs_short:
 			case xs_byte:
@@ -5251,20 +5667,20 @@ public class PgField implements Serializable {
 
 		switch (xs_type) {
 		case xs_boolean:
-		case xs_bigserial:
-		case xs_serial:
+			// case xs_bigserial:
+			// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
+		case xs_integer:
+		case xs_nonNegativeInteger:
+		case xs_nonPositiveInteger:
+		case xs_positiveInteger:
+		case xs_negativeInteger:
 		case xs_long:
 		case xs_bigint:
 		case xs_unsignedLong:
-		case xs_integer:
 		case xs_int:
-		case xs_nonPositiveInteger:
-		case xs_negativeInteger:
-		case xs_nonNegativeInteger:
-		case xs_positiveInteger:
 		case xs_unsignedInt:
 		case xs_short:
 		case xs_byte:

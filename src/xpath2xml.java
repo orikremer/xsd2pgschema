@@ -126,7 +126,10 @@ public class xpath2xml {
 				xmlb.append_declare = false;
 
 			else if (args[i].equals("--xml-no-xmlns"))
-				xmlb.append_xmlns = false;
+				xmlb.append_xmlns = xmlb.append_nil_elem = false;
+
+			else if (args[i].equals("--xml-no-nil-elem"))
+				xmlb.append_nil_elem = false;
 
 			else if (args[i].equals("--xml-indent-offset") && i + 1 < args.length)
 				xmlb.setIndentOffset(args[++i]);
@@ -169,6 +172,9 @@ public class xpath2xml {
 
 			else if (args[i].equals("--pg-named-schema"))
 				option.pg_named_schema = true;
+
+			else if (args[i].equals("--pg-map-big-integer"))
+				option.pg_map_big_integer = true;
 
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
@@ -313,6 +319,7 @@ public class xpath2xml {
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
+		System.err.println("        --pg-map-big-integer (map xs:integer to BigInteger according to the W3C rules)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
@@ -328,6 +335,7 @@ public class xpath2xml {
 		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
 		System.err.println("        --xml-no-declare (dismiss XML declaration)");
 		System.err.println("        --xml-no-xmlns (dismiss XML namespace declaration)");
+		System.err.println("        --xml-no-nil-elem (dismiss nillable element)");
 		System.err.println("        --xml-indent-offset INTEGER (default=" + xmlb.getIndentOffset() + ", min=0, max=4)");
 		System.err.println("        --xml-insert-doc-key (insert document key in result)");
 		System.err.println("        --xml-no-linefeed (dismiss line feed code)");

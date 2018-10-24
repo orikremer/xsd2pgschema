@@ -40,11 +40,20 @@ public class XmlBuilder extends CommonBuilder {
 	/** Instance of XMLOutputFactory. */
 	public XMLOutputFactory out_factory = XMLOutputFactory.newInstance();
 
+	/** The @xsi:schemaLocation value. */
+	public String xsi_schema_location = "";
+
 	/** Whether to append XML declaration. */
 	public boolean append_declare = true;
 
 	/** Whether to append namespace declaration. */
 	public boolean append_xmlns = true;
+
+	/** Whether to append @xsi:nil="true" for nillable element. */
+	public boolean append_nil_elem = true;
+
+	/** Whether data model has nillable element. */
+	public boolean has_nillable_element = false;
 
 	/** The indent offset. */
 	protected int indent_offset = PgSchemaUtil.indent_offset;
@@ -177,7 +186,7 @@ public class XmlBuilder extends CommonBuilder {
 	private OutputStream out;
 
 	/**
-	 * Write simple element without consideration of charset.
+	 * Insert document key.
 	 *
 	 * @param prefix prefix
 	 * @param local_name local name
@@ -185,7 +194,33 @@ public class XmlBuilder extends CommonBuilder {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public void writeSimpleElement(String prefix, String local_name, String content) throws IOException, XMLStreamException {
+	public void insertDocKey(String prefix, String local_name, String content) throws IOException, XMLStreamException {
+
+		String simple_elem_tab = "<<" + (prefix.isEmpty() ? "" : prefix + ":") + local_name + ">";
+
+		byte[] bytes = getBytes(simple_elem_tab);
+
+		out.write(bytes, 1, bytes.length - 1);
+
+		writer.writeCharacters(content);
+
+		bytes[1] = '/';
+
+		out.write(bytes);
+
+	}
+
+	/**
+	 * Write simple element without consideration of charset.
+	 *
+	 * @param prefix prefix
+	 * @param local_name local name
+	 * @param content content
+	 * @param latin_1 whether content is encoded using Latin-1 charset
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws XMLStreamException the XML stream exception
+	 */
+	public void writeSimpleElement(String prefix, String local_name, String content, boolean latin_1) throws IOException, XMLStreamException {
 
 		String simple_elem_tab = "<<" + (prefix.isEmpty() ? "" : prefix + ":") + local_name + ">" + line_feed_code;
 
@@ -193,7 +228,10 @@ public class XmlBuilder extends CommonBuilder {
 
 		out.write(bytes, 1, bytes.length - (line_feed ? 2 : 1));
 
-		writer.writeCharacters(content);
+		if (latin_1)
+			out.write(getBytes(content));
+		else
+			writer.writeCharacters(content);
 
 		bytes[1] = '/';
 

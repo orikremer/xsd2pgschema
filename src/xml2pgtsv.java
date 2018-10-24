@@ -216,6 +216,9 @@ public class xml2pgtsv {
 			else if (args[i].equals("--pg-named-schema"))
 				option.pg_named_schema = true;
 
+			else if (args[i].equals("--pg-map-big-integer"))
+				option.pg_map_big_integer = true;
+
 			else if (args[i].equals("--pg-comma-delimiter"))
 				option.usePgCsv();
 
@@ -547,6 +550,7 @@ public class xml2pgtsv {
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
+		System.err.println("        --pg-map-big-integer (map xs:integer to BigInteger according to the W3C rules)");
 		System.err.println("        --pg-comma-delimiter (use comma separated file)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --sync CHECK_SUM_DIRECTORY (generate check sum files for differential udpate, select --create-doc-key-index option by default)");

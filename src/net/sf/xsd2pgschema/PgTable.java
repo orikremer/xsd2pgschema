@@ -127,8 +127,8 @@ public class PgTable implements Serializable {
 	/** Whether table has unique primary key. */
 	public boolean has_unique_primary_key = false;
 
-	/** Whether table has required field. */
-	public boolean has_required_field = false;
+	/** Whether table has @nillable="true" element. */
+	public boolean has_nillable_element = false;
 
 	/** Whether table has nested key as attribute. */
 	public boolean has_nested_key_as_attr = false;

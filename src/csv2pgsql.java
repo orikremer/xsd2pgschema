@@ -143,6 +143,9 @@ public class csv2pgsql {
 			else if (args[i].equals("--pg-named-schema"))
 				option.pg_named_schema = true;
 
+			else if (args[i].equals("--pg-map-big-integer"))
+				option.pg_map_big_integer = true;
+
 			else if (args[i].equals("--pg-tab-delimiter"))
 				option.usePgTsv();
 
@@ -293,6 +296,7 @@ public class csv2pgsql {
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
+		System.err.println("        --pg-map-big-integer (map xs:integer to BigInteger according to the W3C rules)");
 		System.err.println("        --pg-tab-delimiter (use tab separated file)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --doc-key-name DOC_KEY_NAME (default=\"" + option.def_document_key_name + "\")");

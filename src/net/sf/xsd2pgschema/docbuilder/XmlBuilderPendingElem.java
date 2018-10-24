@@ -29,6 +29,7 @@ import javax.xml.stream.XMLStreamWriter;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
+import net.sf.xsd2pgschema.type.XsTableType;
 
 /**
  * Pending element in XML builder.
@@ -110,13 +111,26 @@ public class XmlBuilderPendingElem {
 		if (xmlb.append_xmlns) {
 
 			if (!xmlb.appended_xmlns.contains(table_prefix)) {
+
 				xml_writer.writeNamespace(table_prefix, table_ns);
 				xmlb.appended_xmlns.add(table_prefix);
+
 			}
 
-			if (table.has_required_field && !xmlb.appended_xmlns.contains(PgSchemaUtil.xsi_prefix)) {
-				xml_writer.writeNamespace(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri);
-				xmlb.appended_xmlns.add(PgSchemaUtil.xsi_prefix);
+			if (!xmlb.appended_xmlns.contains(PgSchemaUtil.xsi_prefix)) {
+
+				boolean root_table = table.xs_type.equals(XsTableType.xs_root);
+
+				if (root_table || table.has_nillable_element) {
+
+					xml_writer.writeNamespace(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri);
+					xmlb.appended_xmlns.add(PgSchemaUtil.xsi_prefix);
+
+					if (root_table)
+						xml_writer.writeAttribute(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri, "schemaLocation", xmlb.xsi_schema_location);
+
+				}
+
 			}
 
 		}
