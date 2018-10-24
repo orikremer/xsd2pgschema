@@ -754,8 +754,8 @@ public class PgSchema implements Serializable {
 									foreign_field.foreign_schema = table.schema_name;
 									foreign_field.foreign_table_xname = table.xname;
 
-									table.has_nested_key_as_attr = true;
-									foreign_table.has_simple_attribute = true;
+									table.has_nested_key_as_attr = table.has_attrs = true;
+									foreign_table.has_simple_attribute = foreign_table.has_attrs = true;
 
 								});
 
@@ -1347,6 +1347,23 @@ public class PgSchema implements Serializable {
 
 		if (!option.rel_data_ext)
 			tables.parallelStream().filter(table -> table.writable && !(table.required && (option.rel_data_ext || !table.relational))).forEach(table -> table.writable = false);
+
+		// set XML start/end element tag template for document key
+
+		tables.parallelStream().filter(table -> table.writable).forEach(table -> table.fields.stream().filter(field -> field.document_key).forEach(field -> field.start_end_elem_tag = PgSchemaUtil.getBytes("<<" + (table.prefix.isEmpty() ? "" : table.prefix + ":") + field.xname + ">")));
+
+		// set XML start/end/empty element tag template for element
+
+		tables.parallelStream().filter(table -> table.writable && table.has_element).forEach(table -> table.fields.stream().filter(field -> field.element).forEach(field -> {
+
+			field.latin_1_encoded_elem = field.xs_type.isLatin1Encoded();
+
+			String prefix = field.is_xs_namespace ? table.prefix : field.prefix;
+
+			field.start_end_elem_tag = PgSchemaUtil.getBytes("<<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + ">\n");
+			field.empty_elem_tag = PgSchemaUtil.getBytes("<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + " " + PgSchemaUtil.xsi_prefix + ":nil=\"true\"/>\n");
+
+		}));
 
 		// decide primary table for questing document id
 
@@ -6811,8 +6828,6 @@ public class PgSchema implements Serializable {
 
 		PgTable table = path_expr.sql_subject.table;
 
-		String table_prefix = table.prefix;
-
 		map_big_integer = option.pg_map_big_integer;
 		fill_default_value = option.fill_default_value;
 
@@ -6864,7 +6879,7 @@ public class PgSchema implements Serializable {
 
 			// attribute, any_attribute
 
-			if (table.has_attribute || table.has_any_attribute || table.has_nested_key_as_attr) {
+			if (table.has_attrs) {
 
 				param_id = 1;
 
@@ -6936,7 +6951,7 @@ public class PgSchema implements Serializable {
 
 			// simple_content, element, any
 
-			if (table.has_simple_content || table.has_element || table.has_any || option.document_key) {
+			if (table.has_contents || option.document_key) {
 
 				param_id = 1;
 
@@ -6954,7 +6969,7 @@ public class PgSchema implements Serializable {
 
 						xml_writer.writeCharacters((nest_test.has_child_elem ? "" : line_feed_code) + nest_test.child_indent_space); // avoid xmlb.writeSimpleCharacters since corruption
 
-						xmlb.insertDocKey(table_prefix, field.xname, rset.getString(param_id));
+						xmlb.insertDocKey(field.start_end_elem_tag, rset.getString(param_id));
 						/*
 						if (field.is_xs_namespace)
 							xml_writer.writeStartElement(table_prefix, field.xname, table_ns);
@@ -7017,7 +7032,7 @@ public class PgSchema implements Serializable {
 
 							if (content != null) {
 
-								xmlb.writeSimpleElement(field.is_xs_namespace ? table_prefix : field.prefix, field.xname, content, field.xs_type.isLatin1Encodable());
+								xmlb.writeSimpleElement(field.start_end_elem_tag, field.latin_1_encoded_elem, content);
 								/*
 								if (field.is_xs_namespace)
 									xml_writer.writeStartElement(table_prefix, field.xname, table_ns);
@@ -7032,7 +7047,7 @@ public class PgSchema implements Serializable {
 
 							else {
 
-								xmlb.writeSimpleEmptyElement(field.is_xs_namespace ? table_prefix : field.prefix, field.xname);
+								xmlb.writeSimpleEmptyElement(field.empty_elem_tag);
 								/*
 								if (field.is_xs_namespace)
 									xml_writer.writeEmptyElement(table_prefix, field.xname, table_ns);
@@ -7185,8 +7200,6 @@ public class PgSchema implements Serializable {
 			XmlBuilderPendingElem elem;
 			XmlBuilderPendingAttr attr;
 
-			String table_prefix = table.prefix;
-
 			boolean not_virtual = !table.virtual;
 			boolean not_list_and_bridge = !table.list_holder && table.bridge;
 
@@ -7209,7 +7222,7 @@ public class PgSchema implements Serializable {
 
 				String sql = "SELECT * FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + " = ?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + " = ?" : "");
 
-				table.ps = ps = db_conn.prepareStatement(sql);
+				ps = table.ps = db_conn.prepareStatement(sql);
 				ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_doc_key_index);
 
 				if (use_doc_key_index)
@@ -7263,7 +7276,7 @@ public class PgSchema implements Serializable {
 
 				// attribute, simple attribute, any_attribute
 
-				if (table.has_attribute || table.has_simple_attribute || table.has_any_attribute || table.has_nested_key_as_attr) {
+				if (table.has_attrs) {
 
 					param_id = 1;
 
@@ -7356,7 +7369,7 @@ public class PgSchema implements Serializable {
 
 				// simple_content, element, any
 
-				if ((table.has_simple_content && !as_attr) || table.has_element || table.has_any) {
+				if (table.has_contents) {
 
 					param_id = 1;
 
@@ -7410,7 +7423,7 @@ public class PgSchema implements Serializable {
 
 								if (content != null) {
 
-									xmlb.writeSimpleElement(field.is_xs_namespace ? table_prefix : field.prefix, field.xname, content, field.xs_type.isLatin1Encodable());
+									xmlb.writeSimpleElement(field.start_end_elem_tag, field.latin_1_encoded_elem, content);
 									/*
 									if (field.is_xs_namespace)
 										xml_writer.writeStartElement(table_prefix, field.xname, table_ns);
@@ -7425,7 +7438,7 @@ public class PgSchema implements Serializable {
 
 								else {
 
-									xmlb.writeSimpleEmptyElement(field.is_xs_namespace ? table_prefix : field.prefix, field.xname);
+									xmlb.writeSimpleEmptyElement(field.empty_elem_tag);
 									/*
 									if (field.is_xs_namespace)
 										xml_writer.writeEmptyElement(table_prefix, field.xname, table_ns);
@@ -7900,7 +7913,7 @@ public class PgSchema implements Serializable {
 
 			// attribute, any_attribute
 
-			if (table.has_attribute || table.has_any_attribute || table.has_nested_key_as_attr) {
+			if (table.has_attrs) {
 
 				param_id = 1;
 
@@ -7972,7 +7985,7 @@ public class PgSchema implements Serializable {
 
 			// simple_content, element, any
 
-			if (table.has_simple_content || table.has_element || table.has_any || option.document_key) {
+			if (table.has_contents || option.document_key) {
 
 				param_id = 1;
 
@@ -8181,7 +8194,7 @@ public class PgSchema implements Serializable {
 
 				String sql = "SELECT * FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + " = ?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + " = ?" : "");
 
-				table.ps = ps = db_conn.prepareStatement(sql);
+				ps = table.ps = db_conn.prepareStatement(sql);
 				ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_doc_key_index);
 
 				if (use_doc_key_index)
@@ -8235,7 +8248,7 @@ public class PgSchema implements Serializable {
 
 				// attribute, simple attribute, any_attribute
 
-				if (table.has_attribute || table.has_simple_attribute || table.has_any_attribute || table.has_nested_key_as_attr) {
+				if (table.has_attrs) {
 
 					param_id = 1;
 
@@ -8342,7 +8355,7 @@ public class PgSchema implements Serializable {
 
 				// simple_content, element, any
 
-				if ((table.has_simple_content && !as_attr) || table.has_element || table.has_any) {
+				if (table.has_contents) {
 
 					param_id = 1;
 

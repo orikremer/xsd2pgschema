@@ -102,7 +102,7 @@ public class PgField implements Serializable {
 	public XsFieldType xs_type;
 
 	/** Whether target namespace equals URI of XML Schema 1.x. */
-	public boolean is_xs_namespace = true;
+	public boolean is_xs_namespace = false;
 
 	/** Whether xs:element. */
 	public boolean element = false;
@@ -267,7 +267,16 @@ public class PgField implements Serializable {
 	public boolean omissible = false;
 
 	/** Whether field is JSON convertible. */
-	public boolean jsonable = true;
+	public boolean jsonable = false;
+
+	/** Whether field is Latin-1 encoded element. */
+	public boolean latin_1_encoded_elem = false;
+
+	/** The XML start/end element tag. */
+	public byte[] start_end_elem_tag = null;
+
+	/** The XML empty element tag. */
+	public byte[] empty_elem_tag = null;
 
 	/** The content of xs:annotation/xs:documentation (as is). */
 	@Flat

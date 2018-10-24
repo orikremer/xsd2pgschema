@@ -1018,7 +1018,12 @@ public enum XsFieldType {
 
 	// XPath evaluation
 
-	public boolean isLatin1Encodable() {
+	/**
+	 * Return whether Latin-1 encoded.
+	 * 
+	 * @return boolean whether Latin-1 encoded
+	 */
+	public boolean isLatin1Encoded() {
 
 		switch (this) {
 		case xs_boolean:

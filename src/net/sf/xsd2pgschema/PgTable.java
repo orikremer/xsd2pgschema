@@ -136,6 +136,12 @@ public class PgTable implements Serializable {
 	/** Whether table has simple content as attribute. */
 	public boolean has_simple_attribute = false;
 
+	/** Whether table has attributes (has_attribute || has_simple_attribute || has_any_attribute || has_nested_key_as_attr). */
+	public boolean has_attrs = false;
+
+	/** Whether table has contents (has_simple_content || has_element || has_any). */
+	public boolean has_contents = false;
+
 	/** Whether table has nested key with parent/ancestor path restriction. */
 	public boolean has_path_restriction = false;
 
@@ -296,6 +302,14 @@ public class PgTable implements Serializable {
 		// whether table has any attribute
 
 		has_any_attribute = fields.stream().anyMatch(field -> field.any_attribute);
+
+		// whether table has attributes
+
+		has_attrs = has_attribute || has_any_attribute;
+
+		// whether table has contents
+
+		has_contents = has_simple_content || has_element || has_any;
 
 	}
 

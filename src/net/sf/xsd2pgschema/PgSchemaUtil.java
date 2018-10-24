@@ -653,6 +653,27 @@ public class PgSchemaUtil {
 	}
 
 	/**
+	 * Return byte array of string without consideration of charset.
+	 *
+	 * @param string string
+	 * @return byte[] byte array of the string
+	 */
+	public static byte[] getBytes(String string) {
+
+		int len = string.length();
+		char chars[] = new char[len];
+
+		string.getChars(0, len, chars, 0);
+
+		byte ret[] = new byte[len];
+
+		for (int j = 0; j < len; j++)
+			ret[j] = (byte) chars[j];
+
+		return ret;
+	}
+
+	/**
 	 * Suggest new name in PostgreSQL for a given name.
 	 *
 	 * @param name name

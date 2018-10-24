@@ -188,69 +188,60 @@ public class XmlBuilder extends CommonBuilder {
 	/**
 	 * Insert document key.
 	 *
-	 * @param prefix prefix
-	 * @param local_name local name
+	 * @param tag XML start/end element tag template
 	 * @param content content
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public void insertDocKey(String prefix, String local_name, String content) throws IOException, XMLStreamException {
+	public void insertDocKey(byte[] tag, String content) throws IOException, XMLStreamException {
 
-		String simple_elem_tab = "<<" + (prefix.isEmpty() ? "" : prefix + ":") + local_name + ">";
-
-		byte[] bytes = getBytes(simple_elem_tab);
-
-		out.write(bytes, 1, bytes.length - 1);
+		out.write(tag, 1, tag.length - 1);
 
 		writer.writeCharacters(content);
 
-		bytes[1] = '/';
+		tag[1] = '/';
 
-		out.write(bytes);
+		out.write(tag);
+
+		tag[1] = '<';
 
 	}
 
 	/**
 	 * Write simple element without consideration of charset.
 	 *
-	 * @param prefix prefix
-	 * @param local_name local name
+	 * @param tag XML start/end element tag template
+	 * @param latin_1_encoded whether content is encoded using Latin-1 charset
 	 * @param content content
-	 * @param latin_1 whether content is encoded using Latin-1 charset
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public void writeSimpleElement(String prefix, String local_name, String content, boolean latin_1) throws IOException, XMLStreamException {
+	public void writeSimpleElement(byte[] tag, boolean latin_1_encoded, String content) throws IOException, XMLStreamException {
 
-		String simple_elem_tab = "<<" + (prefix.isEmpty() ? "" : prefix + ":") + local_name + ">" + line_feed_code;
+		out.write(tag, 1, tag.length - (line_feed ? 2 : 1));
 
-		byte[] bytes = getBytes(simple_elem_tab);
-
-		out.write(bytes, 1, bytes.length - (line_feed ? 2 : 1));
-
-		if (latin_1)
-			out.write(getBytes(content));
+		if (latin_1_encoded)
+			out.write(PgSchemaUtil.getBytes(content));
 		else
 			writer.writeCharacters(content);
 
-		bytes[1] = '/';
+		tag[1] = '/';
 
-		out.write(bytes);
+		out.write(tag);
+
+		tag[1] = '<';
 
 	}
 
 	/**
 	 * Write simple empty element without consideration of charset.
 	 *
-	 * @param prefix prefix
-	 * @param local_name local name
+	 * @param empty_tag XML empty element tag
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public void writeSimpleEmptyElement(String prefix, String local_name) throws IOException {
+	public void writeSimpleEmptyElement(byte[] empty_tag) throws IOException {
 
-		String empty_elem_tab = "<" + (prefix.isEmpty() ? "" : prefix + ":") + local_name + " " + PgSchemaUtil.xsi_prefix + ":nil=\"true\"/>" + line_feed_code;
-
-		out.write(getBytes(empty_elem_tab));
+		out.write(empty_tag);
 
 	}
 
@@ -259,11 +250,10 @@ public class XmlBuilder extends CommonBuilder {
 	 *
 	 * @param string string.
 	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws XMLStreamException the XML stream exception
 	 */
-	public void writeSimpleCharacters(String string) throws IOException, XMLStreamException {
+	public void writeSimpleCharacters(String string) throws IOException {
 
-		out.write(getBytes(string));
+		out.write(PgSchemaUtil.getBytes(string));
 
 	}
 
@@ -277,27 +267,6 @@ public class XmlBuilder extends CommonBuilder {
 		if (line_feed)
 			writer.writeCharacters(line_feed_code);
 
-	}
-
-	/**
-	 * Return byte array of string without consideration of charset.
-	 *
-	 * @param string string
-	 * @return byte[] byte array of the string
-	 */
-	private byte[] getBytes(String string) {
-
-		int len = string.length();
-		char chars[] = new char[len];
-
-		string.getChars(0, len, chars, 0);
-
-		byte ret[] = new byte[len];
-
-		for (int j = 0; j < len; j++)
-			ret[j] = (byte) chars[j];
-
-		return ret;
 	}
 
 	/**
