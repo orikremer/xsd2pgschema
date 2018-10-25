@@ -52,7 +52,7 @@ public enum JsonSchemaVersion {
 	 */
 	public static JsonSchemaVersion getVersion(String name) {
 
-		name = name.toLowerCase().replace("-0", "_v").replace("-", "_");
+		name = name.toLowerCase().replace("-0", "_v").replace('-', '_');
 
 		for (JsonSchemaVersion schema_ver : values()) {
 

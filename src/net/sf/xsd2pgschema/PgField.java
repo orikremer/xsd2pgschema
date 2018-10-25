@@ -5634,15 +5634,15 @@ public class PgField implements Serializable {
 		case xs_base64Binary:
 			return DatatypeConverter.printBase64Binary((byte[]) obj);
 		case xs_float:
-			return String.valueOf((float) obj);
+			return BigDecimal.valueOf((float) obj).setScale(6, BigDecimal.ROUND_HALF_UP).stripTrailingZeros().toString();
 		case xs_double:
-			return String.valueOf((double) obj);
+			return BigDecimal.valueOf((double) obj).setScale(15, BigDecimal.ROUND_HALF_UP).stripTrailingZeros().toString();
 		case xs_decimal:
 			switch (pg_decimal) {
-			case double_precision_64:
-				return String.valueOf((double) obj);
-			default: // single precision
-				return String.valueOf((float) obj);
+			case single_precision_32:
+				return BigDecimal.valueOf((float) obj).setScale(6, BigDecimal.ROUND_HALF_UP).stripTrailingZeros().toString();
+			default: // double precision
+				return BigDecimal.valueOf((double) obj).setScale(15, BigDecimal.ROUND_HALF_UP).stripTrailingZeros().toString();
 			}
 		default: // xs_any, xs_anyAttribute
 		}

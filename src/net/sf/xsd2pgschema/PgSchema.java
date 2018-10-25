@@ -3587,7 +3587,7 @@ public class PgSchema implements Serializable {
 			sb.append("no namespace, ");
 
 		System.out.println("-- xmlns: " + sb.toString() + "schema location: " + table.schema_location);
-		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replace("_",  " ") + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (table.name_collision ? ", name collision: " + table.name_collision : ""));
+		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replace('_', ' ') + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (table.name_collision ? ", name collision: " + table.name_collision : ""));
 		System.out.println("--");
 
 		sb.setLength(0);
