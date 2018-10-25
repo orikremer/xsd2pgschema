@@ -12,7 +12,8 @@
   Added xsi:nil attributes in empty element if @nillable="true". Please use --xml-no-nil-elem option in xpath2xml main class to suppress the xsi:nil attribute.
   Fixed --xml-insert-doc-key option did not work in 3.0.5.
   Further performance improvements in XPath evaluation.
-  Revised comments in PostgreSQL DDL with regard to the mapping of integer numbers.
+  Added precision control to value of double or float column.
+  Revised comments in PostgreSQL DDL with regard to the mapping of integer/decimal numbers.
 
  Changes in xsd2pgschema 3.0.5 (release 2018-10-22)
 
