@@ -56,6 +56,7 @@ import net.sf.xsd2pgschema.docbuilder.JsonBuilder;
 import net.sf.xsd2pgschema.docbuilder.JsonSchemaVersion;
 import net.sf.xsd2pgschema.luceneutil.VecTextField;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
+import net.sf.xsd2pgschema.type.PgIntegerType;
 import net.sf.xsd2pgschema.type.XsFieldType;
 
 /**
@@ -100,6 +101,9 @@ public class PgField implements Serializable {
 
 	/** The field type. */
 	public XsFieldType xs_type;
+
+	/** The mapping of integer numbers in PostgreSQL. */
+	protected PgIntegerType pg_integer;
 
 	/** Whether target namespace equals URI of XML Schema 1.x. */
 	public boolean is_xs_namespace = false;
@@ -196,6 +200,9 @@ public class PgField implements Serializable {
 
 	/** The @default. */
 	public String default_value = null;
+
+	/** Whether to fill @default value. */
+	protected boolean fill_default_value = false;
 
 	/** Whether field has any restriction. */
 	protected boolean restriction = false;
@@ -490,6 +497,8 @@ public class PgField implements Serializable {
 			if (type == null)
 				return;
 
+			pg_integer = option.pg_integer;
+
 			type = xtype = type.trim();
 
 			if (!type.contains(" "))
@@ -518,7 +527,7 @@ public class PgField implements Serializable {
 
 				xs_type2 = XsFieldType.valueOf("xs_" + _type2[1]);
 
-				xs_type1 = xs_type1.leastCommonOf(xs_type2, option.pg_map_big_integer);
+				xs_type1 = xs_type1.leastCommonOf(xs_type2, pg_integer);
 
 			}
 
@@ -836,9 +845,10 @@ public class PgField implements Serializable {
 	/**
 	 * Extract @default of current node.
 	 *
+	 * @param option PostgreSQL data model option
 	 * @param node current node
 	 */
-	protected void extractDefaultValue(Node node) {
+	protected void extractDefaultValue(PgSchemaOption option, Node node) {
 
 		default_value = null;
 
@@ -846,8 +856,12 @@ public class PgField implements Serializable {
 
 			String _default = ((Element) node).getAttribute("default");
 
-			if (_default != null && !_default.isEmpty())
+			if (_default != null && !_default.isEmpty()) {
+
 				default_value = _default;
+				fill_default_value = option.fill_default_value;
+
+			}
 
 		}
 
@@ -1716,11 +1730,9 @@ public class PgField implements Serializable {
 	/**
 	 * Return PostgreSQL DDL type definition.
 	 *
-	 *
-	 * @param map_big_integer whether map xs:integer to BigInteger
 	 * @return String PostgreSQL DDL type definition
 	 */
-	public String getPgDataType(boolean map_big_integer) {
+	public String getPgDataType() {
 
 		String _name = PgSchemaUtil.avoidPgReservedWords(pname);
 
@@ -1735,10 +1747,6 @@ public class PgField implements Serializable {
 			case xs_hexBinary:
 			case xs_base64Binary:
 				return "BYTEA";
-				// case xs_bigserial:
-				//	return "BIGSERIAL";
-				// case xs_serial:
-				//	return "SERIAL";
 			case xs_float:
 				base = "REAL";
 
@@ -1932,7 +1940,7 @@ public class PgField implements Serializable {
 
 				return base;
 			case xs_integer:
-				base = map_big_integer ? "DECIMAL" : "INTEGER";
+				base = pg_integer.getPgDataType();
 
 				if (!restriction)
 					return base;
@@ -2074,7 +2082,6 @@ public class PgField implements Serializable {
 
 				return base;
 			case xs_long:
-			case xs_bigint:
 				base = "BIGINT";
 
 				if (!restriction)
@@ -2232,7 +2239,7 @@ public class PgField implements Serializable {
 
 				return base;
 			case xs_nonPositiveInteger:
-				base = map_big_integer ? "DECIMAL" : "INTEGER";
+				base = pg_integer.getPgDataType();
 
 				check = new StringBuilder();
 
@@ -2308,7 +2315,7 @@ public class PgField implements Serializable {
 
 				return base + " CHECK ( " + check.substring(0, check.length() - 4) + ")";
 			case xs_negativeInteger:
-				base = map_big_integer ? "DECIMAL" : "INTEGER";
+				base = pg_integer.getPgDataType();
 
 				check = new StringBuilder();
 
@@ -2384,7 +2391,7 @@ public class PgField implements Serializable {
 
 				return base + " CHECK ( " + check.substring(0, check.length() - 4) + ")";
 			case xs_nonNegativeInteger:
-				base = map_big_integer ? "DECIMAL" : "INTEGER";
+				base = pg_integer.getPgDataType();
 
 				check = new StringBuilder();
 
@@ -2474,7 +2481,7 @@ public class PgField implements Serializable {
 
 				return base + " CHECK ( " + check.substring(0, check.length() - 4) + ")";
 			case xs_positiveInteger:
-				base = map_big_integer ? "DECIMAL" : "INTEGER";
+				base = pg_integer.getPgDataType();
 
 				check = new StringBuilder();
 
@@ -2927,10 +2934,9 @@ public class PgField implements Serializable {
 	/**
 	 * Return java.sql.Types.
 	 *
-	 * @param map_big_integer whether map xs:integer to BigInteger
 	 * @return int java.sqlTypes
 	 */
-	public int getSqlDataType(boolean map_big_integer) {
+	public int getSqlDataType() {
 
 		if (enum_name != null)
 			return java.sql.Types.VARCHAR;
@@ -2941,12 +2947,9 @@ public class PgField implements Serializable {
 		case xs_hexBinary:
 		case xs_base64Binary:
 			return java.sql.Types.BINARY;
-			// case xs_bigserial:
 		case xs_long:
-		case xs_bigint:
 		case xs_unsignedLong:
 			return java.sql.Types.BIGINT;
-			// case xs_serial:
 		case xs_int:
 		case xs_unsignedInt:
 			return java.sql.Types.INTEGER;
@@ -2961,7 +2964,7 @@ public class PgField implements Serializable {
 		case xs_nonPositiveInteger:
 		case xs_positiveInteger:
 		case xs_negativeInteger:
-			return map_big_integer ? java.sql.Types.DECIMAL : java.sql.Types.INTEGER;
+			return pg_integer.getSqlDataType();
 		case xs_short:
 		case xs_byte:
 		case xs_unsignedShort:
@@ -3029,8 +3032,6 @@ public class PgField implements Serializable {
 		case xs_base64Binary:
 			return "decode('" + value + "','base64')";
 		case xs_boolean:
-			// case xs_bigserial:
-			// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
@@ -3040,7 +3041,6 @@ public class PgField implements Serializable {
 		case xs_positiveInteger:
 		case xs_negativeInteger:
 		case xs_long:
-		case xs_bigint:
 		case xs_unsignedLong:
 		case xs_int:
 		case xs_unsignedInt:
@@ -3114,8 +3114,6 @@ public class PgField implements Serializable {
 
 		switch (xs_type) {
 		case xs_boolean:
-			// case xs_bigserial:
-			// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
@@ -3125,7 +3123,6 @@ public class PgField implements Serializable {
 		case xs_positiveInteger:
 		case xs_negativeInteger:
 		case xs_long:
-		case xs_bigint:
 		case xs_unsignedLong:
 		case xs_int:
 		case xs_unsignedInt:
@@ -3186,8 +3183,6 @@ public class PgField implements Serializable {
 
 			switch (xs_type) {
 			case xs_boolean:
-				// case xs_bigserial:
-				// case xs_serial:
 			case xs_float:
 			case xs_double:
 			case xs_decimal:
@@ -3197,7 +3192,6 @@ public class PgField implements Serializable {
 			case xs_positiveInteger:
 			case xs_negativeInteger:
 			case xs_long:
-			case xs_bigint:
 			case xs_unsignedLong:
 			case xs_int:
 			case xs_unsignedInt:
@@ -3267,14 +3261,11 @@ public class PgField implements Serializable {
 		int i;
 
 		switch (xs_type) {
-		// case xs_bigserial:
-		// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
 		case xs_integer:
 		case xs_long:
-		case xs_bigint:
 		case xs_int:
 		case xs_short:
 		case xs_byte:
@@ -3593,14 +3584,11 @@ public class PgField implements Serializable {
 		final String exclusive_minimum = jsonb.concat_value_space + jsonb.getCanKeyDecl("exclusiveMinimum") + "true";
 
 		switch (xs_type) {
-		// case xs_bigserial:
-		// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
 		case xs_integer:
 		case xs_long:
-		case xs_bigint:
 		case xs_int:
 		case xs_short:
 		case xs_byte:
@@ -3881,14 +3869,11 @@ public class PgField implements Serializable {
 		int i;
 
 		switch (xs_type) {
-		// case xs_bigserial:
-		// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
 		case xs_integer:
 		case xs_long:
-		case xs_bigint:
 		case xs_int:
 		case xs_short:
 		case xs_byte:
@@ -4209,14 +4194,11 @@ public class PgField implements Serializable {
 		final String exclusive_minimum_zero = exclusive_minimum_ + "0";
 
 		switch (xs_type) {
-		// case xs_bigserial:
-		// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
 		case xs_integer:
 		case xs_long:
-		case xs_bigint:
 		case xs_int:
 		case xs_short:
 		case xs_byte:
@@ -4524,15 +4506,12 @@ public class PgField implements Serializable {
 				return null;
 			}
 			break;
-			// case xs_bigserial:
-			// case xs_serial:
 		case xs_integer:
 		case xs_nonNegativeInteger:
 		case xs_nonPositiveInteger:
 		case xs_positiveInteger:
 		case xs_negativeInteger:
 		case xs_long:
-		case xs_bigint:
 		case xs_int:
 		case xs_short:
 		case xs_byte:
@@ -4593,20 +4572,6 @@ public class PgField implements Serializable {
 			return false;
 
 		switch (xs_type) {
-		/*
-		case xs_bigserial:
-			try {
-				return Long.parseLong(value) > 0;
-			} catch (NumberFormatException e) {
-				return false;
-			}
-		case xs_serial:
-			try {
-				return Integer.parseInt(value) > 0;
-			} catch (NumberFormatException e) {
-				return false;
-			}
-		 */
 		case xs_hexBinary:
 			try {
 				DatatypeConverter.parseHexBinary(value);
@@ -4620,7 +4585,6 @@ public class PgField implements Serializable {
 				return false;
 			}
 		case xs_long:
-		case xs_bigint:
 			try {
 				Long.parseLong(value);
 			} catch (NumberFormatException e) {
@@ -4853,11 +4817,10 @@ public class PgField implements Serializable {
 	 * @param ps prepared statement
 	 * @param par_idx parameter index
 	 * @param ins_idx parameter index for upsert
-	 * @param map_big_integer whether map xs:integer to BigInteger
 	 * @param value content
 	 * @throws SQLException the SQL exception
 	 */
-	public void write(PreparedStatement ps, int par_idx, int ins_idx, boolean map_big_integer, String value) throws SQLException {
+	public void write(PreparedStatement ps, int par_idx, int ins_idx, String value) throws SQLException {
 
 		boolean upsert = ins_idx != -1;
 
@@ -4887,9 +4850,7 @@ public class PgField implements Serializable {
 			if (upsert)
 				ps.setBytes(ins_idx, base64bin_value);
 			break;
-			// case xs_bigserial:
 		case xs_long:
-		case xs_bigint:
 		case xs_unsignedLong:
 			try {
 				long long_value = Long.valueOf(value);
@@ -4900,7 +4861,6 @@ public class PgField implements Serializable {
 				e.printStackTrace();
 			}
 			break;
-			// case xs_serial:
 		case xs_int:
 		case xs_unsignedInt:
 		case xs_short:
@@ -4951,17 +4911,8 @@ public class PgField implements Serializable {
 		case xs_nonPositiveInteger:
 		case xs_positiveInteger:
 		case xs_negativeInteger:
-			if (map_big_integer) {
-				try {
-					BigDecimal bigdec_value = new BigDecimal(value);
-					ps.setBigDecimal(par_idx, bigdec_value);
-					if (upsert)
-						ps.setBigDecimal(ins_idx, bigdec_value);
-				} catch (NumberFormatException e) {
-					e.printStackTrace();
-				}
-			}
-			else {
+			switch (pg_integer) {
+			case signed_int_32:
 				try {
 					int int_value = Integer.valueOf(value);
 					ps.setInt(par_idx, int_value);
@@ -4970,6 +4921,27 @@ public class PgField implements Serializable {
 				} catch (NumberFormatException e) {
 					e.printStackTrace();
 				}
+				break;
+			case signed_long_64:
+				try {
+					long long_value = Long.valueOf(value);
+					ps.setLong(par_idx, long_value);
+					if (upsert)
+						ps.setLong(ins_idx, long_value);
+				} catch (NumberFormatException e) {
+					e.printStackTrace();
+				}
+				break;
+			case big_integer:
+				try {
+					BigDecimal bigdec_value = new BigDecimal(value);
+					ps.setBigDecimal(par_idx, bigdec_value);
+					if (upsert)
+						ps.setBigDecimal(ins_idx, bigdec_value);
+				} catch (NumberFormatException e) {
+					e.printStackTrace();
+				}
+				break;
 			}
 			break;
 		case xs_dateTime:
@@ -5121,15 +5093,12 @@ public class PgField implements Serializable {
 		if (attr_sel_rdy) {
 
 			switch (xs_type) {
-			// case xs_bigserial:
 			case xs_long:
-			case xs_bigint:
 			case xs_unsignedLong:
 				lucene_doc.add(new LongPoint(name, Long.valueOf(value)));
 				if (lucene_numeric_index)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 				break;
-				// case xs_serial:
 			case xs_integer:
 			case xs_nonNegativeInteger:
 			case xs_nonPositiveInteger:
@@ -5191,8 +5160,6 @@ public class PgField implements Serializable {
 		}
 
 		switch (xs_type) {
-		// case xs_bigserial:
-		// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
@@ -5202,7 +5169,6 @@ public class PgField implements Serializable {
 		case xs_positiveInteger:
 		case xs_negativeInteger:
 		case xs_long:
-		case xs_bigint:
 		case xs_unsignedLong:
 		case xs_int:
 		case xs_unsignedInt:
@@ -5240,8 +5206,6 @@ public class PgField implements Serializable {
 				buffw.write("<" + attr_name + ">");
 
 				switch (xs_type) {
-				// case xs_bigserial:
-				// case xs_serial:
 				case xs_float:
 				case xs_double:
 				case xs_decimal:
@@ -5251,7 +5215,6 @@ public class PgField implements Serializable {
 				case xs_positiveInteger:
 				case xs_negativeInteger:
 				case xs_long:
-				case xs_bigint:
 				case xs_unsignedLong:
 				case xs_int:
 				case xs_unsignedInt:
@@ -5281,8 +5244,6 @@ public class PgField implements Serializable {
 			}
 
 			switch (xs_type) {
-			// case xs_bigserial:
-			// case xs_serial:
 			case xs_float:
 			case xs_double:
 			case xs_decimal:
@@ -5292,7 +5253,6 @@ public class PgField implements Serializable {
 			case xs_positiveInteger:
 			case xs_negativeInteger:
 			case xs_long:
-			case xs_bigint:
 			case xs_unsignedLong:
 			case xs_int:
 			case xs_unsignedInt:
@@ -5345,8 +5305,6 @@ public class PgField implements Serializable {
 
 			switch (xs_type) {
 			case xs_boolean:
-				// case xs_bigserial:
-				// case xs_serial:
 			case xs_float:
 			case xs_double:
 			case xs_decimal:
@@ -5356,7 +5314,6 @@ public class PgField implements Serializable {
 			case xs_positiveInteger:
 			case xs_negativeInteger:
 			case xs_long:
-			case xs_bigint:
 			case xs_unsignedLong:
 			case xs_int:
 			case xs_unsignedInt:
@@ -5388,8 +5345,6 @@ public class PgField implements Serializable {
 
 		switch (xs_type) {
 		case xs_boolean:
-			// case xs_bigserial:
-			// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
@@ -5399,7 +5354,6 @@ public class PgField implements Serializable {
 		case xs_positiveInteger:
 		case xs_negativeInteger:
 		case xs_long:
-		case xs_bigint:
 		case xs_unsignedLong:
 		case xs_int:
 		case xs_unsignedInt:
@@ -5453,12 +5407,10 @@ public class PgField implements Serializable {
 	 *
 	 * @param rset result set
 	 * @param par_idx parameter index id
-	 * @param map_big_integer whether map xs:integer to BigInteger
-	 * @param fill_default_value whether to fill default value in case of empty
 	 * @return String retrieved content
 	 * @throws SQLException the SQL exception
 	 */
-	public String retrieve(ResultSet rset, int par_idx, boolean map_big_integer, boolean fill_default_value) throws SQLException {
+	public String retrieve(ResultSet rset, int par_idx) throws SQLException {
 
 		if (enum_name != null) {
 
@@ -5560,7 +5512,7 @@ public class PgField implements Serializable {
 		case xs_nonPositiveInteger:
 		case xs_positiveInteger:
 		case xs_negativeInteger:
-			if (map_big_integer) {
+			if (pg_integer.equals(PgIntegerType.big_integer)) {
 
 				BigDecimal _bd = rset.getBigDecimal(par_idx);
 
@@ -5568,10 +5520,7 @@ public class PgField implements Serializable {
 			}
 			// break through
 			// number
-			// case xs_bigserial:
-			// case xs_serial:
 		case xs_long:
-		case xs_bigint:
 		case xs_unsignedLong:
 		case xs_int:
 		case xs_unsignedInt:
@@ -5648,8 +5597,6 @@ public class PgField implements Serializable {
 
 			switch (xs_type) {
 			case xs_boolean:
-				// case xs_bigserial:
-				// case xs_serial:
 			case xs_float:
 			case xs_double:
 			case xs_decimal:
@@ -5659,7 +5606,6 @@ public class PgField implements Serializable {
 			case xs_positiveInteger:
 			case xs_negativeInteger:
 			case xs_long:
-			case xs_bigint:
 			case xs_unsignedLong:
 			case xs_int:
 			case xs_unsignedInt:
@@ -5676,8 +5622,6 @@ public class PgField implements Serializable {
 
 		switch (xs_type) {
 		case xs_boolean:
-			// case xs_bigserial:
-			// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
@@ -5687,7 +5631,6 @@ public class PgField implements Serializable {
 		case xs_positiveInteger:
 		case xs_negativeInteger:
 		case xs_long:
-		case xs_bigint:
 		case xs_unsignedLong:
 		case xs_int:
 		case xs_unsignedInt:

@@ -38,14 +38,6 @@ public enum XsFieldType {
 	/** The xs:base64Binary. */
 	xs_base64Binary,
 
-	// serial number - not built-in data types
-	/*
-	 ** The xs:bigserial. *
-	xs_bigserial,
-	 ** The xs:serial. *
-	xs_serial,
-	 */
-
 	// decimal - primitive types
 
 	/** The xs:decimal. */
@@ -59,8 +51,6 @@ public enum XsFieldType {
 
 	/** The xs:long. */
 	xs_long,
-	/** The xs:bigint. */
-	xs_bigint,
 	/** The xs:int. */
 	xs_int,
 	/** The xs:short. */
@@ -176,10 +166,10 @@ public enum XsFieldType {
 	 * Return least common type.
 	 *
 	 * @param xs_type compared type
-	 * @param map_big_integer whether map xs:integer to BigInteger
+	 * @param pg_integer mapping of integer numbers in PostgreSQL
 	 * @return XsDataType the least common type
 	 */
-	public XsFieldType leastCommonOf(XsFieldType xs_type, boolean map_big_integer) {
+	public XsFieldType leastCommonOf(XsFieldType xs_type, PgIntegerType pg_integer) {
 
 		if (xs_type == null)
 			return xs_anyType;
@@ -199,15 +189,12 @@ public enum XsFieldType {
 			default:
 				return xs_anyType;
 			}
-			// case xs_bigserial:
-			// case xs_serial:
 		case xs_integer:
 		case xs_nonNegativeInteger:
 		case xs_nonPositiveInteger:
 		case xs_positiveInteger:
 		case xs_negativeInteger:
 		case xs_long:
-		case xs_bigint:
 		case xs_unsignedLong:
 		case xs_int:
 		case xs_unsignedInt:
@@ -216,399 +203,19 @@ public enum XsFieldType {
 		case xs_byte:
 		case xs_unsignedByte:
 
-			// strict W3C rule (map xs:integer to BigInteger)
+			switch (pg_integer) {
+			case signed_int_32:
 
-			if (map_big_integer) {
-
-				switch (this) {
-				/*
-				case xs_bigserial:
-					switch (xs_type) {
-					case xs_integer:
-					case xs_nonNegativeInteger:
-					case xs_positiveInteger:
-					case xs_unsignedLong:
-						return xs_type;
-					case xs_nonPositiveInteger:
-					case xs_negativeInteger:
-						return xs_integer;
-					case xs_long:
-					case xs_bigint:
-					case xs_int:
-					case xs_short:
-					case xs_byte:
-						return xs_long;
-					case xs_unsignedInt:
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return xs_unsignedLong;
-					case xs_serial:
-						return this;
-					default:
-						return xs_anyType;
-					}
-				case xs_serial:
-					switch (xs_type) {
-					case xs_integer:
-					case xs_bigserial:
-					case xs_nonNegativeInteger:
-					case xs_positiveInteger:
-					case xs_unsignedLong:
-					case xs_unsignedInt:
-						return xs_type;
-					case xs_nonPositiveInteger:
-					case xs_negativeInteger:
-						return xs_integer;
-					case xs_long:
-					case xs_bigint:
-						return xs_long;
-					case xs_int:
-					case xs_short:
-					case xs_byte:
-						return xs_int;
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return xs_unsignedInt;
-					default:
-						return xs_anyType;
-					}
-				 */
-				case xs_long:
-				case xs_bigint:
-					switch (xs_type) {
-					case xs_integer:
-					case xs_nonNegativeInteger:
-					case xs_nonPositiveInteger:
-					case xs_positiveInteger:
-					case xs_negativeInteger:
-						return xs_integer;
-						// case xs_bigserial:
-						// case xs_serial:
-					case xs_long:
-					case xs_bigint:
-					case xs_unsignedLong:
-					case xs_int:
-					case xs_unsignedInt:
-					case xs_short:
-					case xs_byte:
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return xs_long;
-					default:
-						return xs_anyType;
-					}
-				case xs_int:
-					switch (xs_type) {
-					case xs_integer:
-						return xs_type;
-					case xs_nonNegativeInteger:
-					case xs_nonPositiveInteger:
-					case xs_positiveInteger:
-					case xs_negativeInteger:
-						return xs_integer;
-						// case xs_bigserial:
-					case xs_long:
-					case xs_bigint:
-					case xs_unsignedLong:
-						return xs_long;
-						// case xs_serial:
-					case xs_unsignedInt:
-					case xs_short:
-					case xs_byte:
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return this;
-					default:
-						return xs_anyType;
-					}
-				case xs_short:
-				case xs_byte:
-					switch (xs_type) {
-					case xs_integer:
-					case xs_nonNegativeInteger:
-					case xs_nonPositiveInteger:
-					case xs_positiveInteger:
-					case xs_negativeInteger:
-						return xs_integer;
-						// case xs_bigserial:
-					case xs_long:
-					case xs_bigint:
-					case xs_unsignedLong:
-						return xs_long;
-						// case xs_serial:
-					case xs_int:
-					case xs_unsignedInt:
-						return xs_int;
-					case xs_short:
-					case xs_byte:
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return xs_short;
-					default:
-						return xs_anyType;
-					}
-				case xs_unsignedLong:
-					switch (xs_type) {
-					case xs_integer:
-					case xs_nonNegativeInteger:
-						return xs_type;
-					case xs_nonPositiveInteger:
-					case xs_negativeInteger:
-						return xs_integer;
-					case xs_long:
-					case xs_bigint:
-					case xs_int:
-					case xs_short:
-					case xs_byte:
-						return xs_long;
-						// case xs_bigserial:
-						// case xs_serial:
-					case xs_unsignedInt:
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return this;
-					case xs_positiveInteger:
-						return xs_nonNegativeInteger;
-					default:
-						return xs_anyType;
-					}
-				case xs_unsignedInt:
-					switch (xs_type) {
-					case xs_integer:
-					case xs_nonNegativeInteger:
-					case xs_long:
-					case xs_bigint:
-					case xs_unsignedLong:
-						return xs_type;
-					case xs_nonPositiveInteger:
-					case xs_negativeInteger:
-						return xs_integer;
-						// case xs_bigserial:
-						// 	return xs_unsignedLong;
-						// case xs_serial:
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return this;
-					case xs_int:
-					case xs_short:
-					case xs_byte:
-						return xs_int;
-					case xs_positiveInteger:
-						return xs_nonNegativeInteger;
-					default:
-						return xs_anyType;
-					}
-				case xs_unsignedShort:
-				case xs_unsignedByte:
-					switch (xs_type) {
-					case xs_integer:
-					case xs_nonNegativeInteger:
-					case xs_nonPositiveInteger:
-					case xs_positiveInteger:
-					case xs_negativeInteger:
-						return xs_integer;
-						// case xs_bigserial:
-					case xs_long:
-					case xs_bigint:
-					case xs_unsignedLong:
-						return xs_long;
-						// case xs_serial:
-					case xs_int:
-					case xs_unsignedInt:
-						return xs_int;
-					case xs_short:
-					case xs_byte:
-						return xs_type;
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return xs_unsignedShort;
-					default:
-						return xs_anyType;
-					}
-				case xs_integer:
-					switch (xs_type) {
-					// case xs_bigserial:
-					// case xs_serial:
-					case xs_nonNegativeInteger:
-					case xs_nonPositiveInteger:
-					case xs_positiveInteger:
-					case xs_negativeInteger:
-					case xs_long:
-					case xs_bigint:
-					case xs_unsignedLong:
-					case xs_int:
-					case xs_unsignedInt:
-					case xs_short:
-					case xs_byte:
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return this;
-					default:
-						return xs_anyType;
-					}
-				case xs_nonNegativeInteger:
-					switch (xs_type) {
-					case xs_integer:
-					case xs_nonPositiveInteger:
-					case xs_negativeInteger:
-						// case xs_bigserial:
-						// case xs_serial:
-					case xs_long:
-					case xs_bigint:
-					case xs_unsignedLong:
-					case xs_int:
-					case xs_unsignedInt:
-					case xs_short:
-					case xs_byte:
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return xs_integer;
-					case xs_positiveInteger:
-						return this;
-					default:
-						return xs_anyType;
-					}
-				case xs_nonPositiveInteger:
-					switch (xs_type) {
-					case xs_integer:
-					case xs_nonNegativeInteger:
-					case xs_positiveInteger:
-						// case xs_bigserial:
-						// case xs_serial:
-					case xs_long:
-					case xs_bigint:
-					case xs_unsignedLong:
-					case xs_int:
-					case xs_unsignedInt:
-					case xs_short:
-					case xs_byte:
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return xs_integer;
-					case xs_negativeInteger:
-						return this;
-					default:
-						return xs_anyType;
-					}
-				case xs_positiveInteger:
-					switch (xs_type) {
-					case xs_integer:
-					case xs_nonPositiveInteger:
-					case xs_negativeInteger:
-						// case xs_bigserial:
-						// case xs_serial:
-					case xs_long:
-					case xs_bigint:
-					case xs_unsignedLong:
-					case xs_int:
-					case xs_unsignedInt:
-					case xs_short:
-					case xs_byte:
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return xs_integer;
-					case xs_nonNegativeInteger:
-						return xs_type;
-					default:
-						return xs_anyType;
-					}
-				case xs_negativeInteger:
-					switch (xs_type) {
-					case xs_integer:
-					case xs_nonNegativeInteger:
-					case xs_positiveInteger:
-						// case xs_bigserial:
-						// case xs_serial:
-					case xs_long:
-					case xs_bigint:
-					case xs_unsignedLong:
-					case xs_int:
-					case xs_unsignedInt:
-					case xs_short:
-					case xs_byte:
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return xs_integer;
-					case xs_nonPositiveInteger:
-						return xs_type;
-					default:
-						return xs_anyType;
-					}
-				default:
-					break;
-				}
-
-			}
-
-			// relaxed W3C rule (map xs:integer to xs:int)
-
-			else {
+				// relaxed W3C rule (map xs:integer to xs:int)
 
 				switch (this) {
-				/*
-				case xs_bigserial:
-					switch (xs_type) {
-					case xs_unsignedLong:
-						return xs_type;
-					case xs_integer:
-					case xs_nonPositiveInteger:
-					case xs_negativeInteger:
-					case xs_long:
-					case xs_bigint:
-					case xs_int:
-					case xs_short:
-					case xs_byte:
-						return xs_long;
-					case xs_nonNegativeInteger:
-					case xs_unsignedInt:
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return xs_unsignedLong;
-					case xs_positiveInteger:
-					case xs_serial:
-						return this;
-					default:
-						return xs_anyType;
-					}
-				case xs_serial:
-				case xs_positiveInteger:
-					switch (xs_type) {
-					case xs_bigserial:
-					case xs_unsignedLong:
-					case xs_unsignedInt:
-						return xs_type;
-					case xs_long:
-					case xs_bigint:
-						return xs_long;
-					case xs_integer:
-					case xs_nonPositiveInteger:
-					case xs_negativeInteger:
-					case xs_int:
-					case xs_short:
-					case xs_byte:
-						return xs_int;
-					case xs_nonNegativeInteger:
-					case xs_unsignedShort:
-					case xs_unsignedByte:
-						return xs_unsignedInt;
-					case xs_positiveInteger:
-						return xs_serial;
-					default:
-						return xs_anyType;
-					}
-				 */
 				case xs_long:
-				case xs_bigint:
 					switch (xs_type) {
 					case xs_integer:
 					case xs_nonNegativeInteger:
 					case xs_nonPositiveInteger:
 					case xs_positiveInteger:
 					case xs_negativeInteger:
-						// case xs_bigserial:
-						// case xs_serial:
-					case xs_long:
-					case xs_bigint:
 					case xs_unsignedLong:
 					case xs_int:
 					case xs_unsignedInt:
@@ -616,16 +223,14 @@ public enum XsFieldType {
 					case xs_byte:
 					case xs_unsignedShort:
 					case xs_unsignedByte:
-						return xs_long;
+						return this;
 					default:
 						return xs_anyType;
 					}
 				case xs_int:
 				case xs_integer:
 					switch (xs_type) {
-					// case xs_bigserial:
 					case xs_long:
-					case xs_bigint:
 					case xs_unsignedLong:
 						return xs_long;
 					case xs_integer:
@@ -633,7 +238,6 @@ public enum XsFieldType {
 					case xs_nonPositiveInteger:
 					case xs_positiveInteger:
 					case xs_negativeInteger:
-						// case xs_serial:
 					case xs_unsignedInt:
 					case xs_short:
 					case xs_byte:
@@ -646,9 +250,7 @@ public enum XsFieldType {
 				case xs_short:
 				case xs_byte:
 					switch (xs_type) {
-					// case xs_bigserial:
 					case xs_long:
-					case xs_bigint:
 					case xs_unsignedLong:
 						return xs_long;
 					case xs_integer:
@@ -656,7 +258,6 @@ public enum XsFieldType {
 					case xs_nonPositiveInteger:
 					case xs_positiveInteger:
 					case xs_negativeInteger:
-						// case xs_serial:
 					case xs_int:
 					case xs_unsignedInt:
 						return xs_int;
@@ -674,15 +275,12 @@ public enum XsFieldType {
 					case xs_nonPositiveInteger:
 					case xs_negativeInteger:
 					case xs_long:
-					case xs_bigint:
 					case xs_int:
 					case xs_short:
 					case xs_byte:
 						return xs_long;
 					case xs_nonNegativeInteger:
 					case xs_positiveInteger:
-						// case xs_bigserial:
-						// case xs_serial:
 					case xs_unsignedInt:
 					case xs_unsignedShort:
 					case xs_unsignedByte:
@@ -694,14 +292,10 @@ public enum XsFieldType {
 				case xs_nonNegativeInteger:
 					switch (xs_type) {
 					case xs_long:
-					case xs_bigint:
 					case xs_unsignedLong:
 						return xs_type;
-						// case xs_bigserial:
-						//	return xs_unsignedLong;
 					case xs_nonNegativeInteger:
 					case xs_positiveInteger:
-						// case xs_serial:
 					case xs_unsignedShort:
 					case xs_unsignedByte:
 						return xs_unsignedInt;
@@ -718,9 +312,7 @@ public enum XsFieldType {
 				case xs_unsignedShort:
 				case xs_unsignedByte:
 					switch (xs_type) {
-					// case xs_bigserial:
 					case xs_long:
-					case xs_bigint:
 					case xs_unsignedLong:
 						return xs_long;
 					case xs_integer:
@@ -728,7 +320,6 @@ public enum XsFieldType {
 					case xs_nonPositiveInteger:
 					case xs_positiveInteger:
 					case xs_negativeInteger:	
-						// case xs_serial:
 					case xs_int:
 					case xs_unsignedInt:
 						return xs_int;
@@ -743,15 +334,12 @@ public enum XsFieldType {
 					}
 				case xs_nonPositiveInteger:
 					switch (xs_type) {
-					// case xs_bigserial:
 					case xs_long:
-					case xs_bigint:
 					case xs_unsignedLong:
 						return xs_long;
 					case xs_integer:
 					case xs_nonNegativeInteger:
 					case xs_positiveInteger:
-						// case xs_serial:
 					case xs_int:
 					case xs_unsignedInt:
 					case xs_short:
@@ -766,15 +354,12 @@ public enum XsFieldType {
 					}
 				case xs_negativeInteger:
 					switch (xs_type) {
-					// case xs_bigserial:
 					case xs_long:
-					case xs_bigint:
 					case xs_unsignedLong:
 						return xs_long;
 					case xs_integer:
 					case xs_nonNegativeInteger:
 					case xs_positiveInteger:
-						// case xs_serial:
 					case xs_int:
 					case xs_unsignedInt:
 					case xs_short:
@@ -791,7 +376,420 @@ public enum XsFieldType {
 					break;
 				}
 
+				break;
+			case signed_long_64:
+
+				// relaxed W3C rule (map xs:integer to xs:long)
+
+				switch (this) {
+				case xs_long:
+				case xs_integer:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonNegativeInteger:
+					case xs_nonPositiveInteger:
+					case xs_positiveInteger:
+					case xs_negativeInteger:
+					case xs_unsignedLong:
+					case xs_int:
+					case xs_unsignedInt:
+					case xs_short:
+					case xs_byte:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return xs_long;
+					default:
+						return xs_anyType;
+					}
+				case xs_int:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonNegativeInteger:
+					case xs_nonPositiveInteger:
+					case xs_positiveInteger:
+					case xs_negativeInteger:
+					case xs_long:
+					case xs_unsignedLong:
+						return xs_long;
+					case xs_unsignedInt:
+					case xs_short:
+					case xs_byte:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return this;
+					default:
+						return xs_anyType;
+					}
+				case xs_short:
+				case xs_byte:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonNegativeInteger:
+					case xs_nonPositiveInteger:
+					case xs_positiveInteger:
+					case xs_negativeInteger:
+					case xs_long:
+					case xs_unsignedLong:
+						return xs_long;
+					case xs_int:
+					case xs_unsignedInt:
+						return xs_int;
+					case xs_short:
+					case xs_byte:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return xs_short;
+					default:
+						return xs_anyType;
+					}
+				case xs_unsignedLong:
+				case xs_nonNegativeInteger:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonPositiveInteger:
+					case xs_negativeInteger:
+					case xs_long:
+					case xs_int:
+					case xs_short:
+					case xs_byte:
+						return xs_long;
+					case xs_nonNegativeInteger:
+					case xs_positiveInteger:
+					case xs_unsignedInt:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return xs_unsignedLong;
+					default:
+						return xs_anyType;
+					}
+				case xs_unsignedInt:
+					switch (xs_type) {
+					case xs_long:
+					case xs_unsignedLong:
+						return xs_type;
+					case xs_integer:
+					case xs_nonPositiveInteger:
+					case xs_negativeInteger:
+						return xs_long;
+					case xs_nonNegativeInteger:
+					case xs_positiveInteger:
+						return xs_unsignedLong;
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return xs_unsignedInt;
+					case xs_int:
+					case xs_short:
+					case xs_byte:
+						return xs_int;
+					default:
+						return xs_anyType;
+					}
+				case xs_unsignedShort:
+				case xs_unsignedByte:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonNegativeInteger:
+					case xs_nonPositiveInteger:
+					case xs_positiveInteger:
+					case xs_negativeInteger:
+					case xs_long:
+					case xs_unsignedLong:
+						return xs_long;
+					case xs_int:
+					case xs_unsignedInt:
+						return xs_int;
+					case xs_short:
+					case xs_byte:
+						return xs_type;
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return xs_unsignedShort;
+					default:
+						return xs_anyType;
+					}
+				case xs_nonPositiveInteger:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonNegativeInteger:
+					case xs_positiveInteger:
+					case xs_long:
+					case xs_unsignedLong:
+						return xs_long;
+					case xs_int:
+					case xs_unsignedInt:
+					case xs_short:
+					case xs_byte:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return xs_int;
+					case xs_negativeInteger:
+						return this;
+					default:
+						return xs_anyType;
+					}
+				case xs_negativeInteger:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonNegativeInteger:
+					case xs_positiveInteger:
+					case xs_long:
+					case xs_unsignedLong:
+						return xs_long;
+					case xs_int:
+					case xs_unsignedInt:
+					case xs_short:
+					case xs_byte:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return xs_int;
+					case xs_nonPositiveInteger:
+						return xs_type;
+					default:
+						return xs_anyType;
+					}
+				default:
+					break;
+				}
+
+				break;
+			case big_integer:
+
+				// strict W3C rule (map xs:integer to BigInteger)
+
+				switch (this) {
+				case xs_long:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonNegativeInteger:
+					case xs_nonPositiveInteger:
+					case xs_positiveInteger:
+					case xs_negativeInteger:
+						return xs_integer;
+					case xs_long:
+					case xs_unsignedLong:
+					case xs_int:
+					case xs_unsignedInt:
+					case xs_short:
+					case xs_byte:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return this;
+					default:
+						return xs_anyType;
+					}
+				case xs_int:
+					switch (xs_type) {
+					case xs_integer:
+						return xs_type;
+					case xs_nonNegativeInteger:
+					case xs_nonPositiveInteger:
+					case xs_positiveInteger:
+					case xs_negativeInteger:
+						return xs_integer;
+					case xs_long:
+					case xs_unsignedLong:
+						return xs_long;
+					case xs_unsignedInt:
+					case xs_short:
+					case xs_byte:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return this;
+					default:
+						return xs_anyType;
+					}
+				case xs_short:
+				case xs_byte:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonNegativeInteger:
+					case xs_nonPositiveInteger:
+					case xs_positiveInteger:
+					case xs_negativeInteger:
+						return xs_integer;
+					case xs_long:
+					case xs_unsignedLong:
+						return xs_long;
+					case xs_int:
+					case xs_unsignedInt:
+						return xs_int;
+					case xs_short:
+					case xs_byte:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return xs_short;
+					default:
+						return xs_anyType;
+					}
+				case xs_unsignedLong:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonNegativeInteger:
+						return xs_type;
+					case xs_nonPositiveInteger:
+					case xs_negativeInteger:
+						return xs_integer;
+					case xs_long:
+					case xs_int:
+					case xs_short:
+					case xs_byte:
+						return xs_long;
+					case xs_unsignedInt:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return this;
+					case xs_positiveInteger:
+						return xs_nonNegativeInteger;
+					default:
+						return xs_anyType;
+					}
+				case xs_unsignedInt:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonNegativeInteger:
+					case xs_long:
+					case xs_unsignedLong:
+						return xs_type;
+					case xs_nonPositiveInteger:
+					case xs_negativeInteger:
+						return xs_integer;
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return this;
+					case xs_int:
+					case xs_short:
+					case xs_byte:
+						return xs_int;
+					case xs_positiveInteger:
+						return xs_nonNegativeInteger;
+					default:
+						return xs_anyType;
+					}
+				case xs_unsignedShort:
+				case xs_unsignedByte:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonNegativeInteger:
+					case xs_nonPositiveInteger:
+					case xs_positiveInteger:
+					case xs_negativeInteger:
+						return xs_integer;
+					case xs_long:
+					case xs_unsignedLong:
+						return xs_long;
+					case xs_int:
+					case xs_unsignedInt:
+						return xs_int;
+					case xs_short:
+					case xs_byte:
+						return xs_type;
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return xs_unsignedShort;
+					default:
+						return xs_anyType;
+					}
+				case xs_integer:
+					switch (xs_type) {
+					case xs_nonNegativeInteger:
+					case xs_nonPositiveInteger:
+					case xs_positiveInteger:
+					case xs_negativeInteger:
+					case xs_long:
+					case xs_unsignedLong:
+					case xs_int:
+					case xs_unsignedInt:
+					case xs_short:
+					case xs_byte:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return this;
+					default:
+						return xs_anyType;
+					}
+				case xs_nonNegativeInteger:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonPositiveInteger:
+					case xs_negativeInteger:
+					case xs_long:
+					case xs_unsignedLong:
+					case xs_int:
+					case xs_unsignedInt:
+					case xs_short:
+					case xs_byte:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return xs_integer;
+					case xs_positiveInteger:
+						return this;
+					default:
+						return xs_anyType;
+					}
+				case xs_nonPositiveInteger:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonNegativeInteger:
+					case xs_positiveInteger:
+					case xs_long:
+					case xs_unsignedLong:
+					case xs_int:
+					case xs_unsignedInt:
+					case xs_short:
+					case xs_byte:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return xs_integer;
+					case xs_negativeInteger:
+						return this;
+					default:
+						return xs_anyType;
+					}
+				case xs_positiveInteger:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonPositiveInteger:
+					case xs_negativeInteger:
+					case xs_long:
+					case xs_unsignedLong:
+					case xs_int:
+					case xs_unsignedInt:
+					case xs_short:
+					case xs_byte:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return xs_integer;
+					case xs_nonNegativeInteger:
+						return xs_type;
+					default:
+						return xs_anyType;
+					}
+				case xs_negativeInteger:
+					switch (xs_type) {
+					case xs_integer:
+					case xs_nonNegativeInteger:
+					case xs_positiveInteger:
+					case xs_long:
+					case xs_unsignedLong:
+					case xs_int:
+					case xs_unsignedInt:
+					case xs_short:
+					case xs_byte:
+					case xs_unsignedShort:
+					case xs_unsignedByte:
+						return xs_integer;
+					case xs_nonPositiveInteger:
+						return xs_type;
+					default:
+						return xs_anyType;
+					}
+				default:
+					break;
+				}
+
+				break;
 			}
+
 			break;
 		case xs_decimal:
 			switch (xs_type) {
@@ -939,8 +937,6 @@ public enum XsFieldType {
 		switch (this) {
 		case xs_boolean:
 			return "\"boolean\"";
-			// case xs_bigserial:
-			// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
@@ -950,7 +946,6 @@ public enum XsFieldType {
 		case xs_positiveInteger:
 		case xs_negativeInteger:
 		case xs_long:
-		case xs_bigint:
 		case xs_int:
 		case xs_short:
 		case xs_byte:
@@ -1020,7 +1015,7 @@ public enum XsFieldType {
 
 	/**
 	 * Return whether Latin-1 encoded.
-	 * 
+	 *
 	 * @return boolean whether Latin-1 encoded
 	 */
 	public boolean isLatin1Encoded() {
@@ -1029,8 +1024,6 @@ public enum XsFieldType {
 		case xs_boolean:
 		case xs_hexBinary:
 		case xs_base64Binary:
-			// case xs_bigserial:
-			// case xs_serial:
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
@@ -1040,7 +1033,6 @@ public enum XsFieldType {
 		case xs_positiveInteger:
 		case xs_negativeInteger:
 		case xs_long:
-		case xs_bigint:
 		case xs_int:
 		case xs_short:
 		case xs_byte:

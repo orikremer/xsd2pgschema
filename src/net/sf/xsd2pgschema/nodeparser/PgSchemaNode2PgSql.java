@@ -51,9 +51,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/** The prepared statement. */
 	private PreparedStatement ps = null;
 
-	/** Whether map xs:integer to BigInteger. */
-	private boolean map_big_integer;
-
 	/** Whether to upsert. */
 	private boolean upsert = false;
 
@@ -95,8 +92,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 				hash_size = schema.option.hash_size;
 
 			}
-
-			map_big_integer = schema.option.pg_map_big_integer;
 
 			try {
 
@@ -332,7 +327,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					else if (field.document_key) {
 
-						field.write(ps, par_idx, ins_idx, map_big_integer, document_id);
+						field.write(ps, par_idx, ins_idx, document_id);
 						occupied[f] = true;
 
 					}
@@ -370,7 +365,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 							if (!content.isEmpty()) {
 
-								field.write(ps, par_idx, ins_idx, map_big_integer, content);
+								field.write(ps, par_idx, ins_idx, content);
 								occupied[f] = true;
 
 							}
@@ -447,7 +442,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					else if (field.document_key) {
 
-						field.write(ps, par_idx, ins_idx, map_big_integer, document_id);
+						field.write(ps, par_idx, ins_idx, document_id);
 						occupied[f] = true;
 
 					}
@@ -460,7 +455,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 							if (!content.isEmpty()) {
 
-								field.write(ps, par_idx, ins_idx, map_big_integer, content);
+								field.write(ps, par_idx, ins_idx, content);
 								occupied[f] = true;
 
 							}
@@ -534,7 +529,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					continue;
 
 				if (!occupied[f])
-					ps.setNull(par_idx, field.getSqlDataType(map_big_integer));
+					ps.setNull(par_idx, field.getSqlDataType());
 
 				par_idx++;
 
@@ -552,7 +547,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 						continue;
 
 					if (!occupied[f])
-						ps.setNull(ins_idx, field.getSqlDataType(map_big_integer));
+						ps.setNull(ins_idx, field.getSqlDataType());
 
 					ins_idx++;
 

@@ -1980,7 +1980,7 @@ public class PgSchema implements Serializable {
 			field.extractTargetNamespace(this, node); // require type definition
 			field.extractRequired(node);
 			field.extractFixedValue(node);
-			field.extractDefaultValue(node);
+			field.extractDefaultValue(option, node);
 			field.extractBlockValue(node);
 			field.extractEnumeration(option, node);
 			field.extractRestriction(node);
@@ -2217,7 +2217,7 @@ public class PgSchema implements Serializable {
 						field.extractTargetNamespace(this, child); // require type definition
 						field.extractRequired(child);
 						field.extractFixedValue(child);
-						field.extractDefaultValue(child);
+						field.extractDefaultValue(option, child);
 						field.extractBlockValue(child);
 						field.extractEnumeration(option, child);
 						field.extractRestriction(child);
@@ -2491,7 +2491,7 @@ public class PgSchema implements Serializable {
 		field.extractTargetNamespace(this, node); // require type definition
 		field.extractRequired(node);
 		field.extractFixedValue(node);
-		field.extractDefaultValue(node);
+		field.extractDefaultValue(option, node);
 		field.extractBlockValue(node);
 		field.extractEnumeration(option, node);
 		field.extractRestriction(node);
@@ -3233,9 +3233,9 @@ public class PgSchema implements Serializable {
 		System.out.println("--  append document key: " + option.document_key);
 		System.out.println("--  append serial key: " + option.serial_key);
 		System.out.println("--  append xpath key: " + option.xpath_key);
-		System.out.println("--  map big integer: " + option.pg_map_big_integer);
 		System.out.println("--  retain constraint: " + option.pg_retain_key);
 		System.out.println("--  retrieve field annotation: " + !option.no_field_anno);
+		System.out.println("--  map integer numbers to: " + option.pg_integer.getName());
 		if (option.rel_model_ext || option.serial_key) {
 			if (!option.hash_algorithm.isEmpty() && !option.hash_size.equals(PgHashSize.debug_string))
 				System.out.println("--  hash algorithm: " + option.hash_algorithm);
@@ -3243,9 +3243,9 @@ public class PgSchema implements Serializable {
 				System.out.println("--  assumed hash algorithm: " + PgSchemaUtil.def_hash_algorithm);
 		}
 		if (option.rel_model_ext)
-			System.out.println("--  hash key type: " + option.hash_size.name().replace("_", " ") + " bits");
+			System.out.println("--  hash key type: " + option.hash_size.getName());
 		if (option.serial_key)
-			System.out.println("--  searial key type: " + option.ser_size.name().replace("_", " ") + " bits");
+			System.out.println("--  searial key type: " + option.ser_size.getName());
 		System.out.println("--");
 		System.out.println("-- Statistics of schema:");
 		System.out.print(def_stat_msg.toString());
@@ -3681,11 +3681,20 @@ public class PgSchema implements Serializable {
 
 			if (!field.system_key && !field.user_key) {
 
-				if (option.pg_map_big_integer && field.getSqlDataType(option.pg_map_big_integer) == java.sql.Types.DECIMAL && !field.xs_type.equals(XsFieldType.xs_decimal))
-					System.out.println("-- must be treated as a BigInteger outside of JDBC");
-
-				else if (!option.pg_map_big_integer && field.getSqlDataType(option.pg_map_big_integer) == java.sql.Types.INTEGER && !field.xs_type.equals(XsFieldType.xs_int) && !field.xs_type.equals(XsFieldType.xs_unsignedInt))
-					System.out.println("-- map mathematical concept of integer number (" + field.type + ") to int 32 bits");
+				switch (option.pg_integer) {
+				case signed_int_32:
+					if (field.getSqlDataType() == java.sql.Types.INTEGER && !field.xs_type.equals(XsFieldType.xs_int) && !field.xs_type.equals(XsFieldType.xs_unsignedInt))
+						System.out.println("-- map mathematical concept of integer number (" + field.type + ") to " + option.pg_integer.getName());
+					break;
+				case signed_long_64:
+					if (field.getSqlDataType() == java.sql.Types.BIGINT && !field.xs_type.equals(XsFieldType.xs_long) && !field.xs_type.equals(XsFieldType.xs_unsignedLong))
+						System.out.println("-- map mathematical concept of integer number (" + field.type + ") to " + option.pg_integer.getName());
+					break;
+				case big_integer:
+					if (field.getSqlDataType() == java.sql.Types.DECIMAL && !field.xs_type.equals(XsFieldType.xs_decimal))
+						System.out.println("-- must be treated as a BigInteger outside of JDBC");
+					break;
+				}
 
 			}
 
@@ -3710,7 +3719,7 @@ public class PgSchema implements Serializable {
 			}
 
 			if (field.enum_name == null || field.enum_name.isEmpty())
-				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.pname) + " " + field.getPgDataType(option.pg_map_big_integer));
+				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.pname) + " " + field.getPgDataType());
 			else
 				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.pname) + " " + table.schema_pgname + field.enum_name);
 
@@ -4472,15 +4481,12 @@ public class PgSchema implements Serializable {
 					throw new PgSchemaException(table_name + "." + field_name + " is administrative key.");
 
 				switch (field.xs_type) {
-				// case xs_bigserial:
-				// case xs_serial:
 				case xs_integer:
 				case xs_nonNegativeInteger:
 				case xs_nonPositiveInteger:
 				case xs_positiveInteger:
 				case xs_negativeInteger:
 				case xs_long:
-				case xs_bigint:
 				case xs_unsignedLong:
 				case xs_int:
 				case xs_unsignedInt:
@@ -5567,8 +5573,8 @@ public class PgSchema implements Serializable {
 							if (!field.pname.equals(db_column_name))
 								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.pname + " found in an incorrect order."); // found in an incorrect order
 
-							if (field.getSqlDataType(option.pg_map_big_integer) != db_column_type)
-								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.pname + " column type " + JDBCType.valueOf(db_column_type) + " is incorrect with " + JDBCType.valueOf(field.getSqlDataType(option.pg_map_big_integer)) + "."); // column type is incorrect
+							if (field.getSqlDataType() != db_column_type)
+								throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + field.pname + " column type " + JDBCType.valueOf(db_column_type) + " is incorrect with " + JDBCType.valueOf(field.getSqlDataType()) + "."); // column type is incorrect
 
 						}
 
@@ -5752,15 +5758,12 @@ public class PgSchema implements Serializable {
 					case xs_boolean:
 						attrs = " type=\"bool\"";
 						break;
-						// case xs_bigserial:
-						// case xs_serial:
 					case xs_integer:
 					case xs_nonNegativeInteger:
 					case xs_nonPositiveInteger:
 					case xs_positiveInteger:
 					case xs_negativeInteger:
 					case xs_long:
-					case xs_bigint:
 					case xs_unsignedLong:
 					case xs_int:
 					case xs_unsignedInt:
@@ -5854,15 +5857,12 @@ public class PgSchema implements Serializable {
 					case xs_boolean:
 						buffw.write("\txmlpipe_attr_bool       = " + attr_name + "\n");
 						break;
-						// case xs_bigserial:
-						// case xs_serial:
 					case xs_integer:
 					case xs_nonNegativeInteger:
 					case xs_nonPositiveInteger:
 					case xs_positiveInteger:
 					case xs_negativeInteger:
 					case xs_long:
-					case xs_bigint:
 					case xs_unsignedLong:
 					case xs_int:
 					case xs_unsignedInt:
@@ -6477,14 +6477,6 @@ public class PgSchema implements Serializable {
 
 	// XPath query evaluation over PostgreSQL
 
-	/** Whether map xs:integer to BigInteger. */
-	@Flat
-	private boolean map_big_integer;
-
-	/** Whether fill @default value. */
-	@Flat
-	private boolean fill_default_value;
-
 	// XML composer over PostgreSQL
 
 	/** The XML builder. */
@@ -6537,9 +6529,6 @@ public class PgSchema implements Serializable {
 		String field_ns = field.target_namespace;
 		String field_prefix = field.prefix;
 
-		map_big_integer = option.pg_map_big_integer;
-		fill_default_value = option.fill_default_value;
-
 		XMLStreamWriter xml_writer = xmlb.writer;
 		boolean append_xmlns = xmlb.append_xmlns;
 
@@ -6551,7 +6540,7 @@ public class PgSchema implements Serializable {
 
 				switch (terminus) {
 				case element:
-					content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
+					content = field.retrieve(rset, 1);
 
 					if (content != null) {
 
@@ -6612,7 +6601,7 @@ public class PgSchema implements Serializable {
 					}
 					break;
 				case simple_content:
-					content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
+					content = field.retrieve(rset, 1);
 
 					// simple content
 
@@ -6660,7 +6649,7 @@ public class PgSchema implements Serializable {
 					}
 					break;
 				case attribute:
-					content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
+					content = field.retrieve(rset, 1);
 
 					// attribute
 
@@ -6767,7 +6756,7 @@ public class PgSchema implements Serializable {
 						PgField _field = table.getField(column_name);
 
 						if (_field != null)
-							content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
+							content = field.retrieve(rset, 1);
 
 						xml_writer.writeCharacters(content);
 
@@ -6830,9 +6819,6 @@ public class PgSchema implements Serializable {
 
 		PgTable table = path_expr.sql_subject.table;
 
-		map_big_integer = option.pg_map_big_integer;
-		fill_default_value = option.fill_default_value;
-
 		boolean append_nil_elem = xmlb.append_nil_elem;
 
 		XMLStreamWriter xml_writer = xmlb.writer;
@@ -6889,7 +6875,7 @@ public class PgSchema implements Serializable {
 
 					if (field.attribute) {
 
-						content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
+						content = field.retrieve(rset, param_id);
 
 						if (content != null) {
 
@@ -6988,7 +6974,7 @@ public class PgSchema implements Serializable {
 
 					else if (field.simple_content && !field.simple_attribute) {
 
-						content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
+						content = field.retrieve(rset, param_id);
 
 						if (content != null) {
 
@@ -7021,7 +7007,7 @@ public class PgSchema implements Serializable {
 
 					else if (field.element) {
 
-						content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
+						content = field.retrieve(rset, param_id);
 
 						if (content != null || (field.nillable && append_nil_elem)) {
 
@@ -7286,7 +7272,7 @@ public class PgSchema implements Serializable {
 
 						if (field.attribute) {
 
-							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
+							content = field.retrieve(rset, param_id);
 
 							if (content != null) {
 
@@ -7308,7 +7294,7 @@ public class PgSchema implements Serializable {
 
 						else if ((field.simple_attribute || field.simple_attr_cond) && as_attr) {
 
-							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
+							content = field.retrieve(rset, param_id);
 
 							if (content != null) {
 
@@ -7379,7 +7365,7 @@ public class PgSchema implements Serializable {
 
 						if (field.simple_content && !field.simple_attribute && !as_attr) {
 
-							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
+							content = field.retrieve(rset, param_id);
 
 							if (content != null) {
 
@@ -7412,7 +7398,7 @@ public class PgSchema implements Serializable {
 
 						else if (field.element) {
 
-							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
+							content = field.retrieve(rset, param_id);
 
 							if (content != null || (field.nillable && append_nil_elem)) {
 
@@ -7719,9 +7705,6 @@ public class PgSchema implements Serializable {
 		PgTable table = path_expr.sql_subject.table;
 		PgField field = path_expr.sql_subject.field;
 
-		map_big_integer = option.pg_map_big_integer;
-		fill_default_value = option.fill_default_value;
-
 		boolean as_attr = false;
 
 		String concat_line_feed = jsonb.concat_line_feed;
@@ -7734,11 +7717,11 @@ public class PgSchema implements Serializable {
 
 				switch (terminus) {
 				case element:
-					content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
+					content = field.retrieve(rset, 1);
 					jsonb.writeFieldFrag(field, as_attr, content);
 					break;
 				case simple_content:
-					content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
+					content = field.retrieve(rset, 1);
 
 					// simple content
 
@@ -7755,7 +7738,7 @@ public class PgSchema implements Serializable {
 						jsonb.writeFieldFrag(field, as_attr = true, content);
 					break;
 				case attribute:
-					content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
+					content = field.retrieve(rset, 1);
 
 					// attribute
 
@@ -7805,7 +7788,7 @@ public class PgSchema implements Serializable {
 						PgField _field = table.getField(column_name);
 
 						if (_field != null)
-							content = field.retrieve(rset, 1, map_big_integer, fill_default_value);
+							content = field.retrieve(rset, 1);
 
 						jsonb.buffer.append(content + concat_line_feed);
 
@@ -7866,9 +7849,6 @@ public class PgSchema implements Serializable {
 
 		PgTable table = path_expr.sql_subject.table;
 
-		map_big_integer = option.pg_map_big_integer;
-		fill_default_value = option.fill_default_value;
-
 		LinkedList<JsonBuilderPendingElem> pending_elem = jsonb.pending_elem;
 
 		jsonb.writeStartDocument(false);
@@ -7923,7 +7903,7 @@ public class PgSchema implements Serializable {
 
 					if (field.attribute) {
 
-						content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
+						content = field.retrieve(rset, param_id);
 
 						if (content != null) {
 
@@ -8011,7 +7991,7 @@ public class PgSchema implements Serializable {
 
 					else if (field.simple_content && !field.simple_attribute) {
 
-						content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
+						content = field.retrieve(rset, param_id);
 
 						if (content != null) {
 
@@ -8030,7 +8010,7 @@ public class PgSchema implements Serializable {
 
 					else if (field.element) {
 
-						content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
+						content = field.retrieve(rset, param_id);
 
 						if (content != null) {
 
@@ -8258,7 +8238,7 @@ public class PgSchema implements Serializable {
 
 						if (field.attribute) {
 
-							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
+							content = field.retrieve(rset, param_id);
 
 							if (content != null) {
 
@@ -8287,7 +8267,7 @@ public class PgSchema implements Serializable {
 
 						else if ((field.simple_attribute || field.simple_attr_cond) && as_attr) {
 
-							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
+							content = field.retrieve(rset, param_id);
 
 							if (content != null) {
 
@@ -8365,7 +8345,7 @@ public class PgSchema implements Serializable {
 
 						if (field.simple_content && !field.simple_attribute && !as_attr) {
 
-							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
+							content = field.retrieve(rset, param_id);
 
 							if (content != null) {
 
@@ -8391,7 +8371,7 @@ public class PgSchema implements Serializable {
 
 						else if (field.element) {
 
-							content = field.retrieve(rset, param_id, map_big_integer, fill_default_value);
+							content = field.retrieve(rset, param_id);
 
 							if (content != null) {
 

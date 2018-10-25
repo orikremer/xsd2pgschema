@@ -158,15 +158,12 @@ public class IndexFilter {
 	public void appendAttrByType(PgTable table, PgField field) {
 
 		switch (field.xs_type) {
-		// case xs_bigserial:
-		// case xs_serial:
 		case xs_integer:
 		case xs_nonNegativeInteger:
 		case xs_nonPositiveInteger:
 		case xs_positiveInteger:
 		case xs_negativeInteger:
 		case xs_long:
-		case xs_bigint:
 		case xs_unsignedLong:
 		case xs_int:
 		case xs_unsignedInt:

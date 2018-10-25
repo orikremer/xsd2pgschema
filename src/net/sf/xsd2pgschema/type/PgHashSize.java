@@ -64,4 +64,20 @@ public enum PgHashSize {
 		return defaultSize();
 	}
 
+	/**
+	 * Return name of hash key size.
+	 *
+	 * @return String the name of hash key size
+	 */
+	public String getName() {
+
+		switch (this) {
+		case debug_string:
+			return this.name().replace('_', ' ');
+		default:
+			return this.name().replace('_', ' ') + " bits";
+		}
+
+	}
+
 }

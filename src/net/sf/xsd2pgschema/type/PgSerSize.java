@@ -60,4 +60,13 @@ public enum PgSerSize {
 		return defaultSize();
 	}
 
+	/**
+	 * Return name of serial key size.
+	 *
+	 * @return String the name of serial key size
+	 */
+	public String getName() {
+		return this.name().replace('_', ' ') + " bits";
+	}
+
 }

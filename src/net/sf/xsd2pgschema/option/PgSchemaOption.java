@@ -44,6 +44,7 @@ import net.sf.xsd2pgschema.serverutil.PgSchemaServerQuery;
 import net.sf.xsd2pgschema.serverutil.PgSchemaServerQueryType;
 import net.sf.xsd2pgschema.serverutil.PgSchemaServerReply;
 import net.sf.xsd2pgschema.type.PgHashSize;
+import net.sf.xsd2pgschema.type.PgIntegerType;
 import net.sf.xsd2pgschema.type.PgSerSize;
 
 /**
@@ -82,9 +83,6 @@ public class PgSchemaOption implements Serializable {
 
 	/** Whether to enable explicit named schema. */
 	public boolean pg_named_schema = false;
-
-	/** Whether to map xs:integer to BigInteger in Java, and DECIMAL in PostgreSQL DDL or not (int in Java, INTEGER in PostgreSQL). */
-	public boolean pg_map_big_integer = false;
 
 	/** Whether to retain primary key/foreign key/unique constraint in PostgreSQL DDL. */
 	public boolean pg_retain_key = true;
@@ -150,6 +148,9 @@ public class PgSchemaOption implements Serializable {
 
 	/** The list of in-place document key name. */
 	public HashSet<String> in_place_document_key_names = null;
+
+	/** The mapping of integer numbers in PostgreSQL. */
+	public PgIntegerType pg_integer = PgIntegerType.defaultType();
 
 	/** The name of hash algorithm. */
 	public String hash_algorithm = PgSchemaUtil.def_hash_algorithm;
@@ -651,9 +652,6 @@ public class PgSchemaOption implements Serializable {
 		if (pg_named_schema != option.pg_named_schema)
 			return false;
 
-		if (pg_map_big_integer != option.pg_map_big_integer)
-			return false;
-
 		if (pg_retain_key != option.pg_retain_key)
 			return false;
 
@@ -679,6 +677,9 @@ public class PgSchemaOption implements Serializable {
 			return false;
 
 		if (!xpath_key_name.equals(option.xpath_key_name))
+			return false;
+
+		if (!pg_integer.equals(option.pg_integer))
 			return false;
 
 		if (!hash_algorithm.equals(option.hash_algorithm))

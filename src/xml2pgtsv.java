@@ -217,7 +217,13 @@ public class xml2pgtsv {
 				option.pg_named_schema = true;
 
 			else if (args[i].equals("--pg-map-big-integer"))
-				option.pg_map_big_integer = true;
+				option.pg_integer = PgIntegerType.big_integer;
+
+			else if (args[i].equals("--pg-map-long-integer"))
+				option.pg_integer = PgIntegerType.signed_long_64;
+
+			else if (args[i].equals("--pg-map-integer"))
+				option.pg_integer = PgIntegerType.signed_int_32;
 
 			else if (args[i].equals("--pg-comma-delimiter"))
 				option.usePgCsv();
@@ -551,6 +557,8 @@ public class xml2pgtsv {
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
 		System.err.println("        --pg-map-big-integer (map xs:integer to BigInteger according to the W3C rules)");
+		System.err.println("        --pg-map-long-integer (map xs:integer to signed long 64 bits)");
+		System.err.println("        --pg-map-integer (map xs:integer to signed int 32 bits, default)");
 		System.err.println("        --pg-comma-delimiter (use comma separated file)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --sync CHECK_SUM_DIRECTORY (generate check sum files for differential udpate, select --create-doc-key-index option by default)");

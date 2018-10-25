@@ -188,7 +188,13 @@ public class xpath2json {
 				option.pg_named_schema = true;
 
 			else if (args[i].equals("--pg-map-big-integer"))
-				option.pg_map_big_integer = true;
+				option.pg_integer = PgIntegerType.big_integer;
+
+			else if (args[i].equals("--pg-map-long-integer"))
+				option.pg_integer = PgIntegerType.signed_long_64;
+
+			else if (args[i].equals("--pg-map-integer"))
+				option.pg_integer = PgIntegerType.signed_int_32;
 
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
@@ -337,6 +343,8 @@ public class xpath2json {
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
 		System.err.println("        --pg-map-big-integer (map xs:integer to BigInteger according to the W3C rules)");
+		System.err.println("        --pg-map-long-integer (map xs:integer to signed long 64 bits)");
+		System.err.println("        --pg-map-integer (map xs:integer to signed int 32 bits, default)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");

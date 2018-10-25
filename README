@@ -1,8 +1,10 @@
-﻿ Changes in xsd2pgschema 3.0.6 (release 2018-10-24)
+﻿ Changes in xsd2pgschema 3.0.6 (release 2018-10-25)
 
   Added support for xs:dateTimeStamp, xs:yearMonthDuration, xs:dayTimeDuration.
-  Dropped support for non-standard data types, bigserial, serial.
-  Allowed to map standard mathematical concept of integer numbers (xs:integer, xs:nonNegativeInteger, xs:nonPositiveInteger, xs:positiveInteger, xs:negativeInteger) to BigInteger in Java, DECIMAL in PostgreSQL. Please use to --pg-map-big-integer option. Otherwise, map to signed int 32 bits by default.
+  Dropped support for non-standard data types, bigserial, serial, and bigint.
+  Allowed to map standard mathematical concept of integer numbers (xs:integer, xs:nonNegativeInteger, xs:nonPositiveInteger, xs:positiveInteger, xs:negativeInteger) to BigInteger in Java, DECIMAL in PostgreSQL. (--pg-map-big-integer option)
+  Allowed to map the integer numbers to signed long 64 bits. (--pg-map-long-integer option)
+  Otherwise, map the integer numbers to signed int 32 bits by default (--pg-map-integer option).
   Added xsi:schemaLocation attribute in result of XPath evaluation.
   Added xsi:nil attributes in empty element if @nillable="true". Please use --xml-no-nil-elem option in xpath2xml main class to suppress the xsi:nil attribute.
   Fixed --xml-insert-doc-key option did not work in 3.0.5.
