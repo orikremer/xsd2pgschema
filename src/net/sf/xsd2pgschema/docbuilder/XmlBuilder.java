@@ -258,6 +258,18 @@ public class XmlBuilder extends CommonBuilder {
 	}
 
 	/**
+	 * Write simple characters without consideration of charset.
+	 *
+	 * @param bytes byte array.
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 */
+	public void writeSimpleCharacters(byte[] bytes) throws IOException {
+
+		out.write(bytes);
+
+	}
+
+	/**
 	 * Write line feed code.
 	 *
 	 * @throws XMLStreamException the XML stream exception

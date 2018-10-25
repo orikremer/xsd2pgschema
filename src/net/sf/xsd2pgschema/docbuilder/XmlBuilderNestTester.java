@@ -20,6 +20,7 @@ limitations under the License.
 package net.sf.xsd2pgschema.docbuilder;
 
 import net.sf.xsd2pgschema.PgSchemaException;
+import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
 
 /**
@@ -34,6 +35,12 @@ public class XmlBuilderNestTester extends CommonBuilderNestTester {
 
 	/** The child indent space. */
 	public String child_indent_space;
+
+	/** The current indent space as byte array. */
+	public byte[] current_indent_bytes;
+
+	/** The child indent space as byte array. */
+	public byte[] child_indent_bytes;
 
 	/** The unit of indent space. */
 	protected String indent_space;
@@ -65,6 +72,9 @@ public class XmlBuilderNestTester extends CommonBuilderNestTester {
 		current_indent_space = "";
 		child_indent_space = table.virtual ? current_indent_space : current_indent_space + indent_space;
 
+		current_indent_bytes = PgSchemaUtil.getBytes(current_indent_space);
+		child_indent_bytes = PgSchemaUtil.getBytes(child_indent_space);
+
 	}
 
 	/**
@@ -83,6 +93,9 @@ public class XmlBuilderNestTester extends CommonBuilderNestTester {
 
 		current_indent_space = parent_test.child_indent_space;
 		child_indent_space = table.virtual ? current_indent_space : current_indent_space + indent_space;
+
+		current_indent_bytes = PgSchemaUtil.getBytes(current_indent_space);
+		child_indent_bytes = PgSchemaUtil.getBytes(child_indent_space);
 
 	}
 

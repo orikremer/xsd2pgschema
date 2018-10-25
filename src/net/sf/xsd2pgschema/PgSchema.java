@@ -6955,7 +6955,10 @@ public class PgSchema implements Serializable {
 
 						xmlb.writePendingSimpleCont();
 
-						xml_writer.writeCharacters((nest_test.has_child_elem ? "" : line_feed_code) + nest_test.child_indent_space); // avoid xmlb.writeSimpleCharacters since corruption
+						if (!nest_test.has_child_elem)
+							xmlb.writeLineFeedCode();
+
+						xmlb.writeSimpleCharacters(nest_test.child_indent_bytes);
 
 						xmlb.insertDocKey(field.start_end_elem_tag, rset.getString(param_id));
 						/*
@@ -7016,7 +7019,10 @@ public class PgSchema implements Serializable {
 
 							xmlb.writePendingSimpleCont();
 
-							xml_writer.writeCharacters((nest_test.has_child_elem ? "" : line_feed_code) + nest_test.child_indent_space); // avoid xmlb.writeSimpleCharacters since corruption
+							if (!nest_test.has_child_elem)
+								xmlb.writeLineFeedCode();
+
+							xmlb.writeSimpleCharacters(nest_test.child_indent_bytes);
 
 							if (content != null) {
 
@@ -7134,7 +7140,7 @@ public class PgSchema implements Serializable {
 				xmlb.writePendingSimpleCont();
 
 				if (!nest_test.has_open_simple_content && !attr_only)
-					xmlb.writeSimpleCharacters(nest_test.current_indent_space);
+					xmlb.writeSimpleCharacters(nest_test.current_indent_bytes);
 				else if (nest_test.has_simple_content)
 					nest_test.has_open_simple_content = false;
 
@@ -7407,7 +7413,10 @@ public class PgSchema implements Serializable {
 
 								xmlb.writePendingSimpleCont();
 
-								xml_writer.writeCharacters((nest_test.has_child_elem ? "" : line_feed_code) + nest_test.child_indent_space); // avoid xmlb.writeSimpleCharacters since corruption
+								if (!nest_test.has_child_elem)
+									xmlb.writeLineFeedCode();
+
+								xmlb.writeSimpleCharacters(nest_test.child_indent_bytes);
 
 								if (content != null) {
 
@@ -7537,7 +7546,7 @@ public class PgSchema implements Serializable {
 						xmlb.writePendingSimpleCont();
 
 						if (!nest_test.has_open_simple_content && !attr_only)
-							xmlb.writeSimpleCharacters(nest_test.current_indent_space);
+							xmlb.writeSimpleCharacters(nest_test.current_indent_bytes);
 						else if (nest_test.has_simple_content)
 							nest_test.has_open_simple_content = false;
 
@@ -7571,7 +7580,7 @@ public class PgSchema implements Serializable {
 					xmlb.writePendingSimpleCont();
 
 					if (!nest_test.has_open_simple_content && !attr_only)
-						xmlb.writeSimpleCharacters(nest_test.current_indent_space);
+						xmlb.writeSimpleCharacters(nest_test.current_indent_bytes);
 					else if (nest_test.has_simple_content)
 						nest_test.has_open_simple_content = false;
 
@@ -7659,7 +7668,7 @@ public class PgSchema implements Serializable {
 					xmlb.writePendingSimpleCont();
 
 					if (!nest_test.has_open_simple_content && !attr_only)
-						xmlb.writeSimpleCharacters(nest_test.current_indent_space);
+						xmlb.writeSimpleCharacters(nest_test.current_indent_bytes);
 					else if (nest_test.has_simple_content)
 						nest_test.has_open_simple_content = false;
 

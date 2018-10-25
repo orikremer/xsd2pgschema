@@ -57,6 +57,9 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 	/** The current indent space. */
 	private String current_indent_space;
 
+	/** The current indent space as byte array. */
+	private byte[] current_indent_bytes;
+
 	/**
 	 * Instance of any retriever.
 	 *
@@ -76,6 +79,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 		this.xml_writer = xmlb.writer;
 
 		current_indent_space = nest_test.child_indent_space;
+		current_indent_bytes = nest_test.child_indent_bytes;
 
 	}
 
@@ -101,7 +105,10 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 
 					xmlb.writePendingSimpleCont();
 
-					xml_writer.writeCharacters((nest_test.has_child_elem ? "" : xmlb.line_feed_code) + current_indent_space);
+					if (!nest_test.has_child_elem)
+						xmlb.writeLineFeedCode();
+
+					xmlb.writeSimpleCharacters(current_indent_bytes);
 
 				} catch (XMLStreamException | IOException e) {
 					e.printStackTrace();
@@ -146,8 +153,12 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 
 				}
 
-				if (!has_simple_content && !first_node)
-					xml_writer.writeCharacters(xmlb.line_feed_code + current_indent_space);
+				if (!has_simple_content && !first_node) {
+
+					xmlb.writeLineFeedCode();
+					xmlb.writeSimpleCharacters(current_indent_bytes);
+
+				}
 
 				xml_writer.writeStartElement(prefix, qName, target_namespace);
 
@@ -161,6 +172,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 				first_node = false;
 
 				current_indent_space += nest_test.indent_space;
+				current_indent_bytes = PgSchemaUtil.getBytes(current_indent_space);
 
 				nest_test.has_child_elem = true;
 
@@ -185,7 +197,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 
 				}
 
-			} catch (XMLStreamException e) {
+			} catch (XMLStreamException | IOException e) {
 				e.printStackTrace();
 			}
 
@@ -210,6 +222,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 		if (cur_path.length() > cur_path_offset) {
 
 			current_indent_space = current_indent_space.substring(nest_test.indent_offset);
+			current_indent_bytes = PgSchemaUtil.getBytes(current_indent_space);
 
 			boolean has_simple_content = false;
 
@@ -236,14 +249,14 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 				}
 
 				if (!has_simple_content)
-					xml_writer.writeCharacters(current_indent_space);
+					xmlb.writeSimpleCharacters(current_indent_bytes);
 
 				xml_writer.writeEndElement();
 
 				if (len > cur_path_offset)
 					xmlb.writeLineFeedCode();
 
-			} catch (XMLStreamException e) {
+			} catch (XMLStreamException | IOException e) {
 				e.printStackTrace();
 			}
 
