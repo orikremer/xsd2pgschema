@@ -20,37 +20,37 @@ limitations under the License.
 package net.sf.xsd2pgschema.type;
 
 /**
- * Enumerator of mapping of integer numbers in PostgreSQL.
+ * Enumerator of mapping of decimal numbers in PostgreSQL.
  *
  * @author yokochi
  */
-public enum PgIntegerType {
+public enum PgDecimalType {
 
-	/** The signed long 64 bit. (PG data type: BIGINT) */
-	signed_long_64,
-	/** The signed int 32 bit. (PG data type: INTEGER) */
-	signed_int_32,
-	/** The BigInteger. (PG data type: DECIMAL with scale=0) */
-	big_integer;
+	/** The double precision 64 bit. (PG data type: DOUBLE PRECISION) */
+	double_precision_64,
+	/** The single precision 32 bit. (PG data type: REAL) */
+	single_precision_32,
+	/** The BigDecimal. (PG data type: DECIMAL) */
+	big_decimal;
 
 	/**
-	 * Return default mapping of integer numbers.
+	 * Return default mapping of decimal numbers.
 	 *
-	 * @return PgInteger the default mapping
+	 * @return PgDecimal the default mapping
 	 */
-	public static PgIntegerType defaultType() {
-		return signed_int_32;
+	public static PgDecimalType defaultType() {
+		return big_decimal;
 	}
 
 	/**
-	 * Return mapping name of integer numbers.
+	 * Return mapping name of decimal numbers.
 	 *
 	 * @return String the mapping name
 	 */
 	public String getName() {
 
 		switch (this) {
-		case big_integer:
+		case big_decimal:
 			return this.name().replace('_', ' ');
 		default:
 			return this.name().replace('_', ' ') + " bits";
@@ -59,18 +59,18 @@ public enum PgIntegerType {
 	}
 
 	/**
-	 * Return PostgreSQL data type of integer numbers.
+	 * Return PostgreSQL data type of decimal numbers.
 	 *
 	 * @return String the PostgreSQL data type
 	 */
 	public String getPgDataType() {
 
 		switch (this) {
-		case signed_long_64:
-			return "BIGINT";
-		case signed_int_32:
-			return "INTEGER";
-		case big_integer:
+		case double_precision_64:
+			return "DOUBLE PRECISION";
+		case single_precision_32:
+			return "REAL";
+		case big_decimal:
 			return "DECIMAL";
 		}
 
@@ -78,18 +78,18 @@ public enum PgIntegerType {
 	}
 
 	/**
-	 * Return SQL data type of integer numbers.
+	 * Return SQL data type of decimal numbers.
 	 *
 	 * @return int the SQL data type
 	 */
 	public int getSqlDataType() {
 
 		switch (this) {
-		case signed_long_64:
-			return java.sql.Types.BIGINT;
-		case signed_int_32:
-			return java.sql.Types.INTEGER;
-		case big_integer:
+		case double_precision_64:
+			return java.sql.Types.DOUBLE;
+		case single_precision_32:
+			return java.sql.Types.FLOAT;
+		case big_decimal:
 			return java.sql.Types.DECIMAL;
 		}
 

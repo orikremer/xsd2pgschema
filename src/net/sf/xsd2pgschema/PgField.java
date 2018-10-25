@@ -56,6 +56,7 @@ import net.sf.xsd2pgschema.docbuilder.JsonBuilder;
 import net.sf.xsd2pgschema.docbuilder.JsonSchemaVersion;
 import net.sf.xsd2pgschema.luceneutil.VecTextField;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
+import net.sf.xsd2pgschema.type.PgDecimalType;
 import net.sf.xsd2pgschema.type.PgIntegerType;
 import net.sf.xsd2pgschema.type.XsFieldType;
 
@@ -104,6 +105,9 @@ public class PgField implements Serializable {
 
 	/** The mapping of integer numbers in PostgreSQL. */
 	protected PgIntegerType pg_integer;
+
+	/** The mapping of decimal numbers in PostgreSQL. */
+	protected PgDecimalType pg_decimal;
 
 	/** Whether target namespace equals URI of XML Schema 1.x. */
 	public boolean is_xs_namespace = false;
@@ -498,6 +502,7 @@ public class PgField implements Serializable {
 				return;
 
 			pg_integer = option.pg_integer;
+			pg_decimal = option.pg_decimal;
 
 			type = xtype = type.trim();
 
@@ -527,7 +532,7 @@ public class PgField implements Serializable {
 
 				xs_type2 = XsFieldType.valueOf("xs_" + _type2[1]);
 
-				xs_type1 = xs_type1.leastCommonOf(xs_type2, pg_integer);
+				xs_type1 = xs_type1.leastCommonOf(xs_type2, pg_integer, pg_decimal);
 
 			}
 
@@ -1876,7 +1881,7 @@ public class PgField implements Serializable {
 
 				return base;
 			case xs_decimal:
-				base = "DECIMAL";
+				base = pg_decimal.getPgDataType();
 
 				if (!restriction)
 					return base;
@@ -2958,7 +2963,7 @@ public class PgField implements Serializable {
 		case xs_double:
 			return java.sql.Types.DOUBLE;
 		case xs_decimal:
-			return java.sql.Types.DECIMAL;
+			return pg_decimal.getSqlDataType();
 		case xs_integer:
 		case xs_nonNegativeInteger:
 		case xs_nonPositiveInteger:
@@ -4606,10 +4611,28 @@ public class PgField implements Serializable {
 			}
 			return true;
 		case xs_decimal:
-			try {
-				new BigDecimal(value);
-			} catch (NumberFormatException e) {
-				return false;
+			switch (pg_decimal) {
+			case big_decimal:
+				try {
+					new BigDecimal(value);
+				} catch (NumberFormatException e) {
+					return false;
+				}
+				break;
+			case double_precision_64:
+				try {
+					Double.parseDouble(value);
+				} catch (NumberFormatException e) {
+					return false;
+				}
+				break;
+			case single_precision_32:
+				try {
+					Float.parseFloat(value);
+				} catch (NumberFormatException e) {
+					return false;
+				}
+				break;
 			}
 			return true;
 		case xs_integer:
@@ -4897,15 +4920,38 @@ public class PgField implements Serializable {
 			}
 			break;
 		case xs_decimal:
-			try {
-				BigDecimal bigdec_value = new BigDecimal(value);
-				ps.setBigDecimal(par_idx, bigdec_value);
-				if (upsert)
-					ps.setBigDecimal(ins_idx, bigdec_value);
-			} catch (NumberFormatException e) {
-				e.printStackTrace();
+			switch (pg_decimal) {
+			case big_decimal:
+				try {
+					BigDecimal bigdec_value = new BigDecimal(value);
+					ps.setBigDecimal(par_idx, bigdec_value);
+					if (upsert)
+						ps.setBigDecimal(ins_idx, bigdec_value);
+				} catch (NumberFormatException e) {
+					e.printStackTrace();
+				}
+				break;
+			case double_precision_64:
+				try {
+					double double_value = Double.valueOf(value);
+					ps.setDouble(par_idx, double_value);
+					if (upsert)
+						ps.setDouble(ins_idx, double_value);
+				} catch (NumberFormatException e) {
+					e.printStackTrace();
+				}
+				break;
+			case single_precision_32:
+				try {
+					float float_value = Float.valueOf(value);
+					ps.setFloat(par_idx, float_value);
+					if (upsert)
+						ps.setFloat(ins_idx, float_value);
+				} catch (NumberFormatException e) {
+					e.printStackTrace();
+				}
+				break;
 			}
-			break;
 		case xs_integer:
 		case xs_nonNegativeInteger:
 		case xs_nonPositiveInteger:
@@ -5120,11 +5166,24 @@ public class PgField implements Serializable {
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 				break;
 			case xs_double:
-			case xs_decimal:
 				lucene_doc.add(new DoublePoint(name, Double.valueOf(value)));
 				if (lucene_numeric_index)
 					lucene_doc.add(new StringField(name, value, Field.Store.YES));
 				break;
+			case xs_decimal:
+				switch (pg_decimal) {
+				case big_decimal:
+				case double_precision_64:
+					lucene_doc.add(new DoublePoint(name, Double.valueOf(value)));
+					if (lucene_numeric_index)
+						lucene_doc.add(new StringField(name, value, Field.Store.YES));
+					break;
+				case single_precision_32:
+					lucene_doc.add(new FloatPoint(name, Float.valueOf(value)));
+					if (lucene_numeric_index)
+						lucene_doc.add(new StringField(name, value, Field.Store.YES));
+					break;
+				}
 			case xs_dateTime:
 			case xs_dateTimeStamp:
 				java.util.Date util_time = PgSchemaUtil.parseDate(value);
@@ -5504,9 +5563,13 @@ public class PgField implements Serializable {
 				return ret.substring(0, ret.indexOf('-'));
 			}
 		case xs_decimal:
-			BigDecimal bd = rset.getBigDecimal(par_idx);
+			if (pg_decimal.equals(PgDecimalType.big_decimal)) {
 
-			return bd != null ? bd.toString() : (fill_default_value ? default_value : null);
+				BigDecimal bd = rset.getBigDecimal(par_idx);
+
+				return bd != null ? bd.toString() : (fill_default_value ? default_value : null);
+			}
+			break;
 		case xs_integer:
 		case xs_nonNegativeInteger:
 		case xs_nonPositiveInteger:
@@ -5565,18 +5628,21 @@ public class PgField implements Serializable {
 
 		switch (xs_type) {
 		case xs_boolean:
-			return DatatypeConverter.printBoolean((boolean) obj); // rset.getBoolean(par_idx));
+			return DatatypeConverter.printBoolean((boolean) obj);
 		case xs_hexBinary:
-			return DatatypeConverter.printHexBinary((byte[]) obj); // rset.getBytes(par_idx));
+			return DatatypeConverter.printHexBinary((byte[]) obj);
 		case xs_base64Binary:
-			return DatatypeConverter.printBase64Binary((byte[]) obj); // rset.getBytes(par_idx));
+			return DatatypeConverter.printBase64Binary((byte[]) obj);
 		case xs_float:
+			return String.valueOf((float) obj);
 		case xs_double:
-			switch (xs_type) {
-			case xs_float:
-				return String.valueOf((float) obj); // rset.getFloat(par_idx));
-			default: // xs_double
-				return String.valueOf((double) obj); // rset.getDouble(par_idx));
+			return String.valueOf((double) obj);
+		case xs_decimal:
+			switch (pg_decimal) {
+			case double_precision_64:
+				return String.valueOf((double) obj);
+			default: // single precision
+				return String.valueOf((float) obj);
 			}
 		default: // xs_any, xs_anyAttribute
 		}

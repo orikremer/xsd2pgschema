@@ -101,6 +101,15 @@ public class xsd2pgschema {
 			else if (args[i].equals("--pg-map-integer"))
 				option.pg_integer = PgIntegerType.signed_int_32;
 
+			else if (args[i].equals("--pg-map-big-decimal"))
+				option.pg_decimal = PgDecimalType.big_decimal;
+
+			else if (args[i].equals("--pg-map-double-decimal"))
+				option.pg_decimal = PgDecimalType.double_precision_64;
+
+			else if (args[i].equals("--pg-map-float-decimal"))
+				option.pg_decimal = PgDecimalType.single_precision_32;
+
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
 
@@ -228,6 +237,9 @@ public class xsd2pgschema {
 		System.err.println("        --pg-map-big-integer (map xs:integer to BigInteger according to the W3C rules)");
 		System.err.println("        --pg-map-long-integer (map xs:integer to signed long 64 bits)");
 		System.err.println("        --pg-map-integer (map xs:integer to signed int 32 bits, default)");
+		System.err.println("        --pg-map-big-decimal (map xs:decimal to BigDecimal according to the W3C rules, default)");
+		System.err.println("        --pg-map-double-decimal (map xs:decimal to double precision 64 bits)");
+		System.err.println("        --pg-map-float-decimal (map xs:decimal to single precision 32 bits)");
 		System.err.println("        --field-annotation (retrieve field annotation)");
 		System.err.println("        --no-field-annotation (do not retrieve field annotation, default)");
 		System.err.println("        --max-uniq-touple-size MAX_UNIQ_TUPLE_SIZE (maximum tuple size of unique constraint derived from xs:key, ignore the limit if non-positive value, default=1)");

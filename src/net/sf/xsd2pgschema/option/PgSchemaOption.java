@@ -43,6 +43,7 @@ import net.sf.xsd2pgschema.docbuilder.JsonType;
 import net.sf.xsd2pgschema.serverutil.PgSchemaServerQuery;
 import net.sf.xsd2pgschema.serverutil.PgSchemaServerQueryType;
 import net.sf.xsd2pgschema.serverutil.PgSchemaServerReply;
+import net.sf.xsd2pgschema.type.PgDecimalType;
 import net.sf.xsd2pgschema.type.PgHashSize;
 import net.sf.xsd2pgschema.type.PgIntegerType;
 import net.sf.xsd2pgschema.type.PgSerSize;
@@ -151,6 +152,9 @@ public class PgSchemaOption implements Serializable {
 
 	/** The mapping of integer numbers in PostgreSQL. */
 	public PgIntegerType pg_integer = PgIntegerType.defaultType();
+
+	/** The mapping of decimal numbers in PostgreSQL. */
+	public PgDecimalType pg_decimal = PgDecimalType.defaultType();
 
 	/** The name of hash algorithm. */
 	public String hash_algorithm = PgSchemaUtil.def_hash_algorithm;
@@ -680,6 +684,9 @@ public class PgSchemaOption implements Serializable {
 			return false;
 
 		if (!pg_integer.equals(option.pg_integer))
+			return false;
+
+		if (!pg_decimal.equals(option.pg_decimal))
 			return false;
 
 		if (!hash_algorithm.equals(option.hash_algorithm))

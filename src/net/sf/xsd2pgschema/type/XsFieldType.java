@@ -167,9 +167,10 @@ public enum XsFieldType {
 	 *
 	 * @param xs_type compared type
 	 * @param pg_integer mapping of integer numbers in PostgreSQL
+	 * @param pg_decimal mapping of decimal numbers in PostgreSQL
 	 * @return XsDataType the least common type
 	 */
-	public XsFieldType leastCommonOf(XsFieldType xs_type, PgIntegerType pg_integer) {
+	public XsFieldType leastCommonOf(XsFieldType xs_type, PgIntegerType pg_integer, PgDecimalType pg_decimal) {
 
 		if (xs_type == null)
 			return xs_anyType;
@@ -373,7 +374,6 @@ public enum XsFieldType {
 						return xs_anyType;
 					}
 				default:
-					break;
 				}
 
 				break;
@@ -548,7 +548,6 @@ public enum XsFieldType {
 						return xs_anyType;
 					}
 				default:
-					break;
 				}
 
 				break;
@@ -784,7 +783,6 @@ public enum XsFieldType {
 						return xs_anyType;
 					}
 				default:
-					break;
 				}
 
 				break;
@@ -792,30 +790,114 @@ public enum XsFieldType {
 
 			break;
 		case xs_decimal:
-			switch (xs_type) {
-			case xs_float:
-			case xs_double:
-				return this;
-			default:
-				return xs_anyType;
-			}
 		case xs_double:
-			switch (xs_type) {
-			case xs_decimal:
-				return xs_type;
-			case xs_float:
-				return this;
-			default:
-				return xs_anyType;
-			}
 		case xs_float:
-			switch (xs_type) {
-			case xs_double:
-			case xs_decimal:
-				return xs_type;
-			default:
-				return xs_anyType;
+
+			switch (pg_decimal) {
+			case big_decimal:
+
+				// strict W3C rule (map xs:decimal to BigDecimal)
+
+				switch (this) {
+				case xs_decimal:
+					switch (xs_type) {
+					case xs_float:
+					case xs_double:
+						return this;
+					default:
+						return xs_anyType;
+					}
+				case xs_double:
+					switch (xs_type) {
+					case xs_decimal:
+						return xs_type;
+					case xs_float:
+						return this;
+					default:
+						return xs_anyType;
+					}
+				case xs_float:
+					switch (xs_type) {
+					case xs_double:
+					case xs_decimal:
+						return xs_type;
+					default:
+						return xs_anyType;
+					}
+				default:
+				}
+
+				break;
+			case double_precision_64:
+
+				// relaxed W3C rule (map xs:decimal to xs:double)
+
+				switch (this) {
+				case xs_decimal:
+					switch (xs_type) {
+					case xs_double:
+					case xs_float:
+						return xs_double;
+					default:
+						return xs_anyType;
+					}
+				case xs_double:
+					switch (xs_type) {
+					case xs_float:
+					case xs_decimal:
+						return xs_double;
+					default:
+						return xs_anyType;
+					}
+				case xs_float:
+					switch (xs_type) {
+					case xs_double:
+					case xs_decimal:
+						return xs_double;
+					default:
+						return xs_anyType;
+					}
+				default:
+				}
+
+				break;
+			case single_precision_32:
+
+				// relaxed W3C rule (map xs:decimal to xs:float)
+
+				switch (this) {
+				case xs_decimal:
+					switch (xs_type) {
+					case xs_double:
+					case xs_float:
+						return xs_type;
+					default:
+						return xs_anyType;
+					}
+				case xs_double:
+					switch (xs_type) {
+					case xs_float:
+					case xs_decimal:
+						return this;
+					default:
+						return xs_anyType;
+					}
+				case xs_float:
+					switch (xs_type) {
+					case xs_double:
+						return xs_type;
+					case xs_decimal:
+						return this;
+					default:
+						return xs_anyType;
+					}
+				default:
+				}
+
+				break;
+
 			}
+			break;
 		case xs_dateTime:
 			switch (xs_type) {
 			case xs_dateTimeStamp:

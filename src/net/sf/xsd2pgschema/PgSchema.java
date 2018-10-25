@@ -3236,6 +3236,7 @@ public class PgSchema implements Serializable {
 		System.out.println("--  retain constraint: " + option.pg_retain_key);
 		System.out.println("--  retrieve field annotation: " + !option.no_field_anno);
 		System.out.println("--  map integer numbers to: " + option.pg_integer.getName());
+		System.out.println("--  map decimal numbers to: " + option.pg_decimal.getName());
 		if (option.rel_model_ext || option.serial_key) {
 			if (!option.hash_algorithm.isEmpty() && !option.hash_size.equals(PgHashSize.debug_string))
 				System.out.println("--  hash algorithm: " + option.hash_algorithm);
@@ -3684,16 +3685,32 @@ public class PgSchema implements Serializable {
 				switch (option.pg_integer) {
 				case signed_int_32:
 					if (field.getSqlDataType() == java.sql.Types.INTEGER && !field.xs_type.equals(XsFieldType.xs_int) && !field.xs_type.equals(XsFieldType.xs_unsignedInt))
-						System.out.println("-- map mathematical concept of integer number (" + field.type + ") to " + option.pg_integer.getName());
+						System.out.println("-- map mathematical concept of integer numbers (" + field.type + ") to " + option.pg_integer.getName());
 					break;
 				case signed_long_64:
 					if (field.getSqlDataType() == java.sql.Types.BIGINT && !field.xs_type.equals(XsFieldType.xs_long) && !field.xs_type.equals(XsFieldType.xs_unsignedLong))
-						System.out.println("-- map mathematical concept of integer number (" + field.type + ") to " + option.pg_integer.getName());
+						System.out.println("-- map mathematical concept of integer numbers (" + field.type + ") to " + option.pg_integer.getName());
 					break;
 				case big_integer:
 					if (field.getSqlDataType() == java.sql.Types.DECIMAL && !field.xs_type.equals(XsFieldType.xs_decimal))
 						System.out.println("-- must be treated as a BigInteger outside of JDBC");
 					break;
+				}
+
+				if (field.xs_type.equals(XsFieldType.xs_decimal)) {
+
+					switch (option.pg_decimal) {
+					case double_precision_64:
+						if (field.getSqlDataType() == java.sql.Types.DOUBLE)
+							System.out.println("-- map mathematical concept of decimal numbers (" + field.type + ") to " + option.pg_decimal.getName());
+						break;
+					case single_precision_32:
+						if (field.getSqlDataType() == java.sql.Types.FLOAT)
+							System.out.println("-- map mathematical concept of decimal numbers (" + field.type + ") to " + option.pg_decimal.getName());
+						break;
+					default:
+					}
+
 				}
 
 			}
