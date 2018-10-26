@@ -3984,7 +3984,7 @@ public class XPathCompList {
 
 		if (attr) {
 
-			opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key_as_attr && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+			opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 			if (opt.isPresent())
 				return getAbsoluteXPathOfTable(opt.get(), ref_path, attr, true, sb);
@@ -7211,8 +7211,8 @@ public class XPathCompList {
 
 		boolean has_nested_key_as_attr = table.has_nested_key_as_attr;
 
-		if (!has_nested_key_as_attr)
-			has_nested_key_as_attr = table.fields.parallelStream().anyMatch(field -> field.nested_key_as_attr);
+		if (!has_nested_key_as_attr && table.total_nested_fields > 0)
+			has_nested_key_as_attr = table.nested_fields.parallelStream().anyMatch(field -> field.nested_key_as_attr);
 
 		if (!linking_tables.containsKey(table))
 			linking_tables.put(table, getAbsoluteXPathOfTable(table, ref_path));
@@ -7224,7 +7224,7 @@ public class XPathCompList {
 
 		Optional<PgTable> opt;
 
-		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key_as_attr && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		if (opt.isPresent())
 			testJoinClauseForSimpleTypeAttr(opt.get(), ref_path, linking_tables, linking_order);

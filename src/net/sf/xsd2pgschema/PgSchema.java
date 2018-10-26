@@ -1369,7 +1369,7 @@ public class PgSchema implements Serializable {
 
 		}));
 
-		// set list of nested fields and foreign table id
+		// set list of nested field and foreign table id
 
 		tables.parallelStream().filter(table -> table.total_nested_fields > 0).forEach(table -> {
 
@@ -6390,7 +6390,7 @@ public class PgSchema implements Serializable {
 			table.fields.stream().filter(field -> field.simple_attr_cond).forEach(field -> {
 
 				String cont_name = table.name + "." + field.name;
-				String attr_name = getForeignTable(field).fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.foreign_table_xname;
+				String attr_name = getForeignTable(field).nested_fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.foreign_table_xname;
 
 				System.err.println("[WARNING] Simple content \"" + (jsonb.case_sense ? cont_name : cont_name.toLowerCase()) + "\" may be confused with attribute \"" + (jsonb.case_sense ? attr_name : attr_name.toLowerCase()) + "\" in relational-oriented JSON format.");
 
@@ -6486,7 +6486,7 @@ public class PgSchema implements Serializable {
 			table.fields.stream().filter(field -> field.simple_attr_cond).forEach(field -> {
 
 				String cont_name = table.name + "." + field.name;
-				String attr_name = getForeignTable(field).fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.foreign_table_xname;
+				String attr_name = getForeignTable(field).nested_fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.foreign_table_xname;
 
 				System.err.println("[WARNING] Simple content \"" + (jsonb.case_sense ? cont_name : cont_name.toLowerCase()) + "\" may be confused with attribute \"" + (jsonb.case_sense ? attr_name : attr_name.toLowerCase()) + "\" in relational-oriented JSON format.");
 
