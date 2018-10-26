@@ -89,10 +89,10 @@ public class PgTable implements Serializable {
 	protected int order = 0;
 
 	/** The total number of field as nested key. */
-	public int nested_fields = 0;
+	public int total_nested_fields = 0;
 
 	/** The total number of field as foreign key. */
-	public int foreign_fields = 0;
+	public int total_foreign_fields = 0;
 
 	/** Whether content holder. */
 	public boolean content_holder = false;
@@ -150,6 +150,12 @@ public class PgTable implements Serializable {
 
 	/** Whether table could have writer. */
 	public boolean writable = false;
+
+	/** The field list of nested key. */
+	public List<PgField> nested_fields = null;
+
+	/** The list of foreign table id. */
+	public int[] ft_ids = null;
 
 	/** Whether name collision occurs. */
 	@Flat
@@ -281,7 +287,7 @@ public class PgTable implements Serializable {
 
 		// the number of foreign key constraint
 
-		foreign_fields = (int) fields.stream().filter(field -> field.foreign_key).count();
+		total_foreign_fields = (int) fields.stream().filter(field -> field.foreign_key).count();
 
 		// whether table has element
 
@@ -702,7 +708,7 @@ public class PgTable implements Serializable {
 	 */
 	protected void countNestedFields() {
 
-		if ((nested_fields = (int) fields.parallelStream().filter(field -> field.nested_key).count()) > 0)
+		if ((total_nested_fields = (int) fields.parallelStream().filter(field -> field.nested_key).count()) > 0)
 			required = true;
 
 	}

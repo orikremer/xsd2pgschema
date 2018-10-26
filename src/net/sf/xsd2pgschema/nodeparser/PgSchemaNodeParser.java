@@ -161,7 +161,7 @@ public abstract class PgSchemaNodeParser {
 		fields = table.fields;
 		fields_size = fields.size();
 
-		if (table.nested_fields > 0)
+		if (table.total_nested_fields > 0)
 			nested_keys = new ArrayList<PgSchemaNestedKey>();
 
 		virtual = table.virtual;

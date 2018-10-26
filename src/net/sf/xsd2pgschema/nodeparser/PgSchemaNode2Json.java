@@ -460,7 +460,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		if (!table.jsonable) {
 
 			if (nested_keys != null)
-				fields.stream().filter(field -> field.nested_key).forEach(field -> setNestedKey(proc_node, field));
+				table.nested_fields.forEach(field -> setNestedKey(proc_node, field));
 
 			return;
 		}

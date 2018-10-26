@@ -163,7 +163,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 		if (!table.indexable) {
 
 			if (nested_keys != null)
-				fields.stream().filter(field -> field.nested_key).forEach(field -> setNestedKey(proc_node, field));
+				table.nested_fields.forEach(field -> setNestedKey(proc_node, field));
 
 			return;
 		}

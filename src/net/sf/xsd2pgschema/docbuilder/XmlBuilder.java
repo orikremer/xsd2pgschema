@@ -234,18 +234,6 @@ public class XmlBuilder extends CommonBuilder {
 	}
 
 	/**
-	 * Write simple empty element without consideration of charset.
-	 *
-	 * @param empty_tag XML empty element tag
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	public void writeSimpleEmptyElement(byte[] empty_tag) throws IOException {
-
-		out.write(empty_tag);
-
-	}
-
-	/**
 	 * Write simple characters without consideration of charset.
 	 *
 	 * @param string string.

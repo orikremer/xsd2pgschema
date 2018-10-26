@@ -749,13 +749,11 @@ public class PgSchema implements Serializable {
 								foreign_table.fields.stream().filter(foreign_field -> foreign_field.simple_content).forEach(foreign_field -> {
 
 									foreign_field.simple_attribute = true;
-
 									foreign_field.foreign_table_id = tables.indexOf(table);
 									foreign_field.foreign_schema = table.schema_name;
 									foreign_field.foreign_table_xname = table.xname;
 
-									table.has_nested_key_as_attr = table.has_attrs = true;
-									foreign_table.has_simple_attribute = foreign_table.has_attrs = true;
+									table.has_nested_key_as_attr = foreign_table.has_simple_attribute = true;
 
 								});
 
@@ -774,11 +772,15 @@ public class PgSchema implements Serializable {
 
 		});
 
+		// update table has attributes
+
+		tables.parallelStream().filter(table -> !table.has_attrs && (table.has_simple_attribute || table.has_nested_key_as_attr)).forEach(table -> table.has_attrs = true);
+
 		// detect simple content as conditional attribute
 
 		tables.stream().filter(foreign_table -> foreign_table.has_simple_attribute).forEach(foreign_table -> {
 
-			if (tables.parallelStream().anyMatch(table -> table.nested_fields > 0 && table.fields.stream().anyMatch(field -> field.nested_key && !field.nested_key_as_attr && getForeignTable(field).equals(foreign_table)))) {
+			if (tables.parallelStream().anyMatch(table -> table.total_nested_fields > 0 && table.fields.stream().anyMatch(field -> field.nested_key && !field.nested_key_as_attr && getForeignTable(field).equals(foreign_table)))) {
 
 				foreign_table.fields.stream().filter(foreign_field -> foreign_field.simple_attribute).forEach(foreign_field -> {
 
@@ -899,7 +901,7 @@ public class PgSchema implements Serializable {
 
 		// decide parent node name constraint
 
-		tables.stream().filter(table -> table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> { // do not parallelize this stream which causes null pointer exception
+		tables.stream().filter(table -> table.total_nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> { // do not parallelize this stream which causes null pointer exception
 
 			// tolerate parent node name constraint due to name collision
 
@@ -970,7 +972,7 @@ public class PgSchema implements Serializable {
 
 						for (PgTable ancestor_table : tables) { // ancestor table
 
-							if (ancestor_table.nested_fields == 0)
+							if (ancestor_table.total_nested_fields == 0)
 								continue;
 
 							for (PgField ancestor_field : ancestor_table.fields) {
@@ -1008,7 +1010,7 @@ public class PgSchema implements Serializable {
 
 		// decide ancestor node name constraint
 
-		tables.parallelStream().filter(table -> table.foreign_fields > 0 && table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && !field.nested_key_as_attr && field.parent_node != null).forEach(field -> {
+		tables.parallelStream().filter(table -> table.total_foreign_fields > 0 && table.total_nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && !field.nested_key_as_attr && field.parent_node != null).forEach(field -> {
 
 			Optional<PgField> opt = table.fields.stream().filter(foreign_field -> foreign_field.foreign_key && foreign_field.foreign_table_xname.equals(field.parent_node)).findFirst();
 
@@ -1023,11 +1025,11 @@ public class PgSchema implements Serializable {
 
 		}));
 
-		tables.parallelStream().filter(table -> table.foreign_fields == 0 && table.nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null && field.ancestor_node == null).forEach(field -> {
+		tables.parallelStream().filter(table -> table.total_foreign_fields == 0 && table.total_nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null && field.ancestor_node == null).forEach(field -> {
 
 			StringBuilder sb = new StringBuilder();
 
-			tables.stream().filter(ancestor_table -> ancestor_table.nested_fields > 0).forEach(ancestor_table -> {
+			tables.stream().filter(ancestor_table -> ancestor_table.total_nested_fields > 0).forEach(ancestor_table -> {
 
 				Optional<PgField> opt = ancestor_table.fields.stream().filter(ancestor_field -> ancestor_field.nested_key && getForeignTable(ancestor_field).equals(table) && ancestor_field.xtype.equals(field.xtype) && ancestor_field.ancestor_node != null).findFirst();
 
@@ -1073,7 +1075,7 @@ public class PgSchema implements Serializable {
 
 		}));
 
-		tables.parallelStream().filter(table -> table.nested_fields > 0).forEach(table -> {
+		tables.parallelStream().filter(table -> table.total_nested_fields > 0).forEach(table -> {
 
 			// decide whether table has nested key with parent/ancestor path restriction
 
@@ -1128,7 +1130,7 @@ public class PgSchema implements Serializable {
 
 		if (!option.rel_model_ext) {
 
-			tables.parallelStream().filter(table -> table.writable && table.nested_fields > 0).forEach(table -> {
+			tables.parallelStream().filter(table -> table.writable && table.total_nested_fields > 0).forEach(table -> {
 
 				table.fields.removeIf(field -> field.nested_key);
 				table.countNestedFields();
@@ -1366,6 +1368,15 @@ public class PgSchema implements Serializable {
 			field.empty_elem_tag = PgSchemaUtil.getBytes("<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + " " + PgSchemaUtil.xsi_prefix + ":nil=\"true\"/>\n");
 
 		}));
+
+		// set list of nested fields and foreign table id
+
+		tables.parallelStream().filter(table -> table.total_nested_fields > 0).forEach(table -> {
+
+			table.nested_fields = table.fields.stream().filter(field -> field.nested_key).collect(Collectors.toList());
+			table.ft_ids = table.nested_fields.stream().map(field -> field.foreign_table_id).collect(Collectors.toList()).stream().mapToInt(Integer::intValue).toArray();
+
+		});
 
 		// decide primary table for questing document id
 
@@ -4090,12 +4101,9 @@ public class PgSchema implements Serializable {
 
 			for (PgTable _table : tables) {
 
-				if (_table.filt_out) {
+				if (_table.filt_out && _table.total_nested_fields > 0) {
 
-					for (PgField field : _table.fields) {
-
-						if (!field.nested_key)
-							continue;
+					for (PgField field : _table.nested_fields) {
 
 						nested_table = getForeignTable(field);
 
@@ -6116,13 +6124,12 @@ public class PgSchema implements Serializable {
 
 		int _json_indent_level = json_indent_level;
 
-		List<PgField> fields = root_table.fields;
-
-		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, false, true, false, _json_indent_level));
+		root_table.fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, false, true, false, _json_indent_level));
 
 		int[] list_id = { 0 };
 
-		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(root_table, getForeignTable(field), field.nested_key_as_attr, list_id[0]++, root_table.nested_fields, _json_indent_level));
+		if (root_table.total_nested_fields > 0)
+			root_table.nested_fields.forEach(field -> realizeObjJsonSchema(root_table, getForeignTable(field), field.nested_key_as_attr, list_id[0]++, root_table.total_nested_fields, _json_indent_level));
 
 		if (!root_table.virtual)
 			jsonb.writeEndSchemaTable(root_table, false);
@@ -6155,15 +6162,14 @@ public class PgSchema implements Serializable {
 
 		int _json_indent_level = json_indent_level;
 
-		List<PgField> fields = table.fields;
+		table.fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, as_attr, true, false, _json_indent_level));
 
-		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, as_attr, true, false, _json_indent_level));
-
-		if (table.nested_fields > 0) {
+		if (table.total_nested_fields > 0) {
 
 			int[] _list_id = { 0 };
 
-			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeObjJsonSchema(table, getForeignTable(field), field.nested_key_as_attr, _list_id[0]++, table.nested_fields, _json_indent_level));
+			if (table.total_nested_fields > 0)
+				table.nested_fields.forEach(field -> realizeObjJsonSchema(table, getForeignTable(field), field.nested_key_as_attr, _list_id[0]++, table.total_nested_fields, _json_indent_level));
 
 		}
 
@@ -6248,13 +6254,12 @@ public class PgSchema implements Serializable {
 
 		int _json_indent_level = json_indent_level;
 
-		List<PgField> fields = root_table.fields;
-
-		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, false, !field.list_holder, field.list_holder, _json_indent_level));
+		root_table.fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, false, !field.list_holder, field.list_holder, _json_indent_level));
 
 		int[] list_id = { 0 };
 
-		fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(root_table, getForeignTable(field), field.nested_key_as_attr, list_id[0]++, root_table.nested_fields, _json_indent_level));
+		if (root_table.total_nested_fields > 0)
+			root_table.nested_fields.forEach(field -> realizeColJsonSchema(root_table, getForeignTable(field), field.nested_key_as_attr, list_id[0]++, root_table.total_nested_fields, _json_indent_level));
 
 		if (!root_table.virtual)
 			jsonb.writeEndSchemaTable(root_table, false);
@@ -6289,15 +6294,14 @@ public class PgSchema implements Serializable {
 
 		int _json_indent_level = json_indent_level;
 
-		List<PgField> fields = table.fields;
+		table.fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, as_attr, obj_json && !field.list_holder, !table.virtual || field.list_holder, _json_indent_level));
 
-		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, as_attr, obj_json && !field.list_holder, !table.virtual || field.list_holder, _json_indent_level));
-
-		if (table.nested_fields > 0) {
+		if (table.total_nested_fields > 0) {
 
 			int[] _list_id = { 0 };
 
-			fields.stream().filter(field -> field.nested_key).forEach(field -> realizeColJsonSchema(table, getForeignTable(field), field.nested_key_as_attr, _list_id[0]++, table.nested_fields, _json_indent_level));
+			if (table.total_nested_fields > 0)
+				table.nested_fields.forEach(field -> realizeColJsonSchema(table, getForeignTable(field), field.nested_key_as_attr, _list_id[0]++, table.total_nested_fields, _json_indent_level));
 
 		}
 
@@ -7058,7 +7062,7 @@ public class PgSchema implements Serializable {
 
 							else {
 
-								xmlb.writeSimpleEmptyElement(field.empty_elem_tag);
+								xmlb.writeSimpleCharacters(field.empty_elem_tag);
 								/*
 								if (field.is_xs_namespace)
 									xml_writer.writeEmptyElement(table_prefix, field.xname, table_ns);
@@ -7119,7 +7123,7 @@ public class PgSchema implements Serializable {
 
 			// nested key
 
-			if (table.nested_fields > 0) {
+			if (table.total_nested_fields > 0) {
 
 				param_id = 1;
 				n = 0;
@@ -7224,7 +7228,7 @@ public class PgSchema implements Serializable {
 			}
 
 			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
-			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.foreign_fields > 1;
+			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1;
 			boolean attr_only;
 
 			PreparedStatement ps = table.ps;
@@ -7452,7 +7456,7 @@ public class PgSchema implements Serializable {
 
 								else {
 
-									xmlb.writeSimpleEmptyElement(field.empty_elem_tag);
+									xmlb.writeSimpleCharacters(field.empty_elem_tag);
 									/*
 									if (field.is_xs_namespace)
 										xml_writer.writeEmptyElement(table_prefix, field.xname, table_ns);
@@ -7513,7 +7517,7 @@ public class PgSchema implements Serializable {
 
 				// nested key
 
-				if (table.nested_fields > 0) {
+				if (table.total_nested_fields > 0) {
 
 					PgTable nested_table;
 
@@ -7655,9 +7659,9 @@ public class PgSchema implements Serializable {
 
 			int n = 0;
 
-			for (PgField field : table.fields) {
+			for (PgField field : table.nested_fields) {
 
-				if (field.nested_key && !field.nested_key_as_attr) {
+				if (!field.nested_key_as_attr) {
 
 					if (key != null) {
 
@@ -8095,7 +8099,7 @@ public class PgSchema implements Serializable {
 
 			// nested key
 
-			if (table.nested_fields > 0) {
+			if (table.total_nested_fields > 0) {
 
 				param_id = 1;
 				n = 0;
@@ -8181,7 +8185,7 @@ public class PgSchema implements Serializable {
 
 			boolean not_virtual = !table.virtual;
 			boolean not_list_and_bridge = !table.list_holder && table.bridge;
-			boolean array_field = not_virtual && !not_list_and_bridge && table.nested_fields == 0 && !as_attr && jsonb.type.equals(JsonType.column);
+			boolean array_field = not_virtual && !not_list_and_bridge && table.total_nested_fields == 0 && !as_attr && jsonb.type.equals(JsonType.column);
 
 			if (not_virtual && (not_list_and_bridge || array_field) && !as_attr) {
 
@@ -8193,7 +8197,7 @@ public class PgSchema implements Serializable {
 			}
 
 			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
-			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.foreign_fields > 1;
+			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1;
 			boolean attr_only;
 
 			PreparedStatement ps = table.ps;
@@ -8463,7 +8467,7 @@ public class PgSchema implements Serializable {
 
 				// nested key
 
-				if (table.nested_fields > 0) {
+				if (table.total_nested_fields > 0) {
 
 					PgTable nested_table;
 
@@ -8581,7 +8585,7 @@ public class PgSchema implements Serializable {
 
 		boolean not_virtual = !table.virtual;
 		boolean not_list_and_bridge = !table.list_holder && table.bridge;
-		boolean array_field = not_virtual && !not_list_and_bridge && table.nested_fields == 0 && jsonb.type.equals(JsonType.column);
+		boolean array_field = not_virtual && !not_list_and_bridge && table.total_nested_fields == 0 && jsonb.type.equals(JsonType.column);
 
 		if (not_virtual && (not_list_and_bridge || array_field)) {
 
@@ -8594,9 +8598,9 @@ public class PgSchema implements Serializable {
 
 		int n = 0;
 
-		for (PgField field : table.fields) {
+		for (PgField field : table.nested_fields) {
 
-			if (field.nested_key && !field.nested_key_as_attr) {
+			if (!field.nested_key_as_attr) {
 
 				if (key != null) {
 

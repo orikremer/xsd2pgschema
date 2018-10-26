@@ -4952,6 +4952,7 @@ public class PgField implements Serializable {
 				}
 				break;
 			}
+			break;
 		case xs_integer:
 		case xs_nonNegativeInteger:
 		case xs_nonPositiveInteger:
@@ -5184,6 +5185,7 @@ public class PgField implements Serializable {
 						lucene_doc.add(new StringField(name, value, Field.Store.YES));
 					break;
 				}
+				break;
 			case xs_dateTime:
 			case xs_dateTimeStamp:
 				java.util.Date util_time = PgSchemaUtil.parseDate(value);
@@ -5634,9 +5636,9 @@ public class PgField implements Serializable {
 		case xs_base64Binary:
 			return DatatypeConverter.printBase64Binary((byte[]) obj);
 		case xs_float:
-			return BigDecimal.valueOf((float) obj).setScale(6, BigDecimal.ROUND_HALF_UP).stripTrailingZeros().toString();
+			return String.valueOf((float) obj);
 		case xs_double:
-			return BigDecimal.valueOf((double) obj).setScale(15, BigDecimal.ROUND_HALF_UP).stripTrailingZeros().toString();
+			return String.valueOf((double) obj);
 		case xs_decimal:
 			switch (pg_decimal) {
 			case single_precision_32:

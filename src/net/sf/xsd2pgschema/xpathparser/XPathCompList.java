@@ -1265,8 +1265,8 @@ public class XPathCompList {
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-						Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-						Integer[] _ft_ids = null;
+						int[] ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] _ft_ids = null;
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
@@ -1322,7 +1322,7 @@ public class XPathCompList {
 
 								if (foreign_table.virtual || !abs_path) {
 
-									Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+									int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 									if (__ft_ids != null && __ft_ids.length > 0)
 										_ft_ids = __ft_ids;
@@ -1342,7 +1342,7 @@ public class XPathCompList {
 
 						if (has_any && _path_exprs_size == _list.path_exprs.size()) {
 
-							ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 							_ft_ids = null;
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -1374,7 +1374,7 @@ public class XPathCompList {
 
 									if (foreign_table.virtual || !abs_path) {
 
-										Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+										int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 										if (__ft_ids != null && __ft_ids.length > 0)
 											_ft_ids = __ft_ids;
@@ -1611,8 +1611,8 @@ public class XPathCompList {
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-						Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-						Integer[] _ft_ids = null;
+						int[] ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] _ft_ids = null;
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
@@ -1647,7 +1647,7 @@ public class XPathCompList {
 
 								if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
 
-									Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+									int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 									if (__ft_ids != null && __ft_ids.length > 0)
 										_ft_ids = __ft_ids;
@@ -1667,7 +1667,7 @@ public class XPathCompList {
 
 						if (has_any_attribute && _path_exprs_size == _list.path_exprs.size()) {
 
-							ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 							_ft_ids = null;
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -1699,7 +1699,7 @@ public class XPathCompList {
 
 									if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
 
-										Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+										int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 										if (__ft_ids != null && __ft_ids.length > 0)
 											_ft_ids = __ft_ids;
@@ -2172,8 +2172,8 @@ public class XPathCompList {
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-						Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-						Integer[] _ft_ids = null;
+						int[] ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] _ft_ids = null;
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
@@ -2233,7 +2233,7 @@ public class XPathCompList {
 
 								if (foreign_table.virtual || !abs_path) {
 
-									Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+									int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 									if (__ft_ids != null && __ft_ids.length > 0)
 										_ft_ids = __ft_ids;
@@ -2253,7 +2253,7 @@ public class XPathCompList {
 
 						if (has_any && (_path_exprs_size == _list.path_exprs.size())) {
 
-							ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 							_ft_ids = null;
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -2285,7 +2285,7 @@ public class XPathCompList {
 
 									if (foreign_table.virtual || !abs_path) {
 
-										Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+										int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 										if (__ft_ids != null && __ft_ids.length > 0)
 											_ft_ids = __ft_ids;
@@ -2504,8 +2504,8 @@ public class XPathCompList {
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-						Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-						Integer[] _ft_ids = null;
+						int[] ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] _ft_ids = null;
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
@@ -2543,7 +2543,7 @@ public class XPathCompList {
 
 								if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
 
-									Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+									int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 									if (__ft_ids != null && __ft_ids.length > 0)
 										_ft_ids = __ft_ids;
@@ -2563,7 +2563,7 @@ public class XPathCompList {
 
 						if (has_any_attribute && (_path_exprs_size == _list.path_exprs.size())) {
 
-							ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 							_ft_ids = null;
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -2593,7 +2593,7 @@ public class XPathCompList {
 
 									if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
 
-										Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+										int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 										if (__ft_ids != null && __ft_ids.length > 0)
 											_ft_ids = __ft_ids;
@@ -3070,8 +3070,8 @@ public class XPathCompList {
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-						Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-						Integer[] _ft_ids = null;
+						int[] ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] _ft_ids = null;
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
@@ -3127,7 +3127,7 @@ public class XPathCompList {
 
 								if (foreign_table.virtual || !abs_path) {
 
-									Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+									int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 									if (__ft_ids != null && __ft_ids.length > 0)
 										_ft_ids = __ft_ids;
@@ -3147,7 +3147,7 @@ public class XPathCompList {
 
 						if (has_any && _path_exprs_size == _list.path_exprs.size()) {
 
-							ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 							_ft_ids = null;
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -3179,7 +3179,7 @@ public class XPathCompList {
 
 									if (foreign_table.virtual || !abs_path) {
 
-										Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+										int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 										if (__ft_ids != null && __ft_ids.length > 0)
 											_ft_ids = __ft_ids;
@@ -3412,8 +3412,8 @@ public class XPathCompList {
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-						Integer[] ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-						Integer[] _ft_ids = null;
+						int[] ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] _ft_ids = null;
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
 
@@ -3451,7 +3451,7 @@ public class XPathCompList {
 
 								if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
 
-									Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+									int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 									if (__ft_ids != null && __ft_ids.length > 0)
 										_ft_ids = __ft_ids;
@@ -3471,7 +3471,7 @@ public class XPathCompList {
 
 						if (has_any_attribute && (_path_exprs_size == _list.path_exprs.size())) {
 
-							ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 							_ft_ids = null;
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -3505,7 +3505,7 @@ public class XPathCompList {
 
 									if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
 
-										Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+										int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 										if (__ft_ids != null && __ft_ids.length > 0)
 											_ft_ids = __ft_ids;
@@ -3725,8 +3725,8 @@ public class XPathCompList {
 
 				HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-				Integer[] ft_ids = table.fields.stream().filter(_field -> _field.nested_key).map(_field -> _field.foreign_table_id).toArray(Integer[]::new);
-				Integer[] _ft_ids = null;
+				int[] ft_ids = table.ft_ids; // .fields.stream().filter(_field -> _field.nested_key).map(_field -> _field.foreign_table_id).toArray(Integer[]::new);
+				int[] _ft_ids = null;
 
 				boolean found_field = false;
 
@@ -3759,7 +3759,7 @@ public class XPathCompList {
 
 						if (foreign_table.virtual && !found_field) {
 
-							Integer[] __ft_ids = foreign_table.fields.stream().filter(_field -> _field.nested_key).map(_field -> _field.foreign_table_id).toArray(Integer[]::new);
+							int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(_field -> _field.nested_key).map(_field -> _field.foreign_table_id).toArray(Integer[]::new);
 
 							if (__ft_ids != null && __ft_ids.length > 0)
 								_ft_ids = __ft_ids;
@@ -3984,14 +3984,14 @@ public class XPathCompList {
 
 		if (attr) {
 
-			opt = tables.parallelStream().filter(foreign_table -> foreign_table.nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key_as_attr && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+			opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key_as_attr && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 			if (opt.isPresent())
 				return getAbsoluteXPathOfTable(opt.get(), ref_path, attr, true, sb);
 
 		}
 
-		opt = tables.parallelStream().filter(foreign_table -> foreign_table.nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key && (as_attr ? !field.nested_key_as_attr : true) && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> (as_attr ? !field.nested_key_as_attr : true) && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		return opt.isPresent() ? getAbsoluteXPathOfTable(opt.get(), ref_path, attr, false, sb) : null;
 	}
@@ -7224,12 +7224,12 @@ public class XPathCompList {
 
 		Optional<PgTable> opt;
 
-		opt = tables.parallelStream().filter(foreign_table -> foreign_table.nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key_as_attr && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key_as_attr && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		if (opt.isPresent())
 			testJoinClauseForSimpleTypeAttr(opt.get(), ref_path, linking_tables, linking_order);
 
-		opt = tables.parallelStream().filter(foreign_table -> foreign_table.nested_fields > 0 && foreign_table.fields.stream().anyMatch(field -> field.nested_key && !field.nested_key_as_attr && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> !field.nested_key_as_attr && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		if (opt.isPresent())
 			testJoinClauseForSimpleTypeAttr(opt.get(), ref_path, linking_tables, linking_order);
@@ -7447,7 +7447,7 @@ public class XPathCompList {
 
 		if (src_table.bridge) {
 
-			src_table.fields.stream().filter(field -> field.nested_key).forEach(field -> {
+			src_table.nested_fields.forEach(field -> {
 
 				PgTable foreign_table = schema.getForeignTable(field);
 
@@ -7464,8 +7464,8 @@ public class XPathCompList {
 
 		HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-		Integer[] ft_ids = src_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-		Integer[] _ft_ids = null;
+		int[] ft_ids = src_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+		int[] _ft_ids = null;
 
 		boolean found_table = false;
 
@@ -7496,7 +7496,7 @@ public class XPathCompList {
 
 					touched_tables.add(foreign_table);
 
-					Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 					if (__ft_ids != null && __ft_ids.length > 0)
 						_ft_ids = __ft_ids;
@@ -7507,14 +7507,14 @@ public class XPathCompList {
 
 					PgTable _dst_table = dst_table;
 
-					if (foreign_table.fields.parallelStream().anyMatch(field -> field.nested_key && schema.getForeignTable(field).equals(_dst_table))) {
+					if (foreign_table.nested_fields.parallelStream().anyMatch(field -> schema.getForeignTable(field).equals(_dst_table))) {
 
 						if (!target_tables.containsKey(foreign_table))
 							target_tables.put(foreign_table, dst_path);
 
 						touched_tables.add(foreign_table);
 
-						Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 						if (__ft_ids != null && __ft_ids.length > 0)
 							_ft_ids = __ft_ids;
@@ -7621,7 +7621,7 @@ public class XPathCompList {
 
 				PgTable _dst_table = dst_table;
 
-				PgField nested_key = src_table.fields.stream().filter(field -> field.nested_key && schema.getTable(field.foreign_table_id).equals(_dst_table)).findFirst().get();
+				PgField nested_key = src_table.nested_fields.stream().filter(field -> schema.getTable(field.foreign_table_id).equals(_dst_table)).findFirst().get();
 
 				appendSqlColumnName(src_table, nested_key.pname, sb);
 
@@ -7781,8 +7781,8 @@ public class XPathCompList {
 
 		HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-		Integer[] ft_ids = src_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
-		Integer[] _ft_ids = null;
+		int[] ft_ids = src_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+		int[] _ft_ids = null;
 
 		boolean found_table = false;
 
@@ -7812,7 +7812,7 @@ public class XPathCompList {
 
 					touched_tables.add(foreign_table);
 
-					Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 					if (__ft_ids != null && __ft_ids.length > 0)
 						_ft_ids = __ft_ids;
@@ -7823,11 +7823,11 @@ public class XPathCompList {
 
 					PgTable _dst_table = dst_table;
 
-					if (foreign_table.fields.parallelStream().anyMatch(field -> field.nested_key && schema.getForeignTable(field).equals(_dst_table))) {
+					if (foreign_table.nested_fields.parallelStream().anyMatch(field -> schema.getForeignTable(field).equals(_dst_table))) {
 
 						touched_tables.add(foreign_table);
 
-						Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 						if (__ft_ids != null && __ft_ids.length > 0)
 							_ft_ids = __ft_ids;
@@ -7866,7 +7866,7 @@ public class XPathCompList {
 
 			PgTable _dst_table = dst_table;
 
-			PgField nested_key = src_table.fields.stream().filter(field -> field.nested_key && schema.getTable(field.foreign_table_id).equals(_dst_table)).findFirst().get();
+			PgField nested_key = src_table.nested_fields.stream().filter(field -> schema.getTable(field.foreign_table_id).equals(_dst_table)).findFirst().get();
 
 			appendSqlColumnName(src_table, nested_key.pname, sb);
 
@@ -7992,14 +7992,14 @@ public class XPathCompList {
 
 			HashSet<Integer> touched_ft_ids = null;
 
-			Integer[] ft_ids = null;
-			Integer[] _ft_ids = null;
+			int[] ft_ids = null;
+			int[] _ft_ids = null;
 
 			switch (terminus) {
 			case element:
 				touched_ft_ids = new HashSet<Integer>();
 
-				ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+				ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 				_ft_ids = null;
 
 				while (ft_ids != null && ft_ids.length > 0) {
@@ -8030,7 +8030,7 @@ public class XPathCompList {
 
 						if (foreign_table.virtual) {
 
-							Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 							if (__ft_ids != null && __ft_ids.length > 0)
 								_ft_ids = __ft_ids;
@@ -8051,7 +8051,7 @@ public class XPathCompList {
 			case simple_content:
 				touched_ft_ids = new HashSet<Integer>();
 
-				ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+				ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 				_ft_ids = null;
 
 				while (ft_ids != null && ft_ids.length > 0) {
@@ -8082,7 +8082,7 @@ public class XPathCompList {
 
 						if (foreign_table.virtual) {
 
-							Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 							if (__ft_ids != null && __ft_ids.length > 0)
 								_ft_ids = __ft_ids;
@@ -8103,7 +8103,7 @@ public class XPathCompList {
 			case attribute:
 				touched_ft_ids = new HashSet<Integer>();
 
-				ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+				ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 				_ft_ids = null;
 
 				while (ft_ids != null && ft_ids.length > 0) {
@@ -8141,7 +8141,7 @@ public class XPathCompList {
 
 						if (foreign_table.virtual || foreign_table.has_nested_key_as_attr) {
 
-							Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 							if (__ft_ids != null && __ft_ids.length > 0)
 								_ft_ids = __ft_ids;
@@ -8162,7 +8162,7 @@ public class XPathCompList {
 			case any_element:
 				touched_ft_ids = new HashSet<Integer>();
 
-				ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+				ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 				_ft_ids = null;
 
 				while (ft_ids != null && ft_ids.length > 0) {
@@ -8196,7 +8196,7 @@ public class XPathCompList {
 
 						if (foreign_table.virtual || foreign_table.bridge) {
 
-							Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 							if (__ft_ids != null && __ft_ids.length > 0)
 								_ft_ids = __ft_ids;
@@ -8217,7 +8217,7 @@ public class XPathCompList {
 			case any_attribute:
 				touched_ft_ids = new HashSet<Integer>();
 
-				ft_ids = table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+				ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 				_ft_ids = null;
 
 				while (ft_ids != null && ft_ids.length > 0) {
@@ -8251,7 +8251,7 @@ public class XPathCompList {
 
 						if (foreign_table.virtual || foreign_table.bridge) {
 
-							Integer[] __ft_ids = foreign_table.fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
 
 							if (__ft_ids != null && __ft_ids.length > 0)
 								_ft_ids = __ft_ids;
