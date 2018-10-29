@@ -7215,10 +7215,13 @@ public class PgSchema implements Serializable {
 			XmlBuilderPendingElem elem;
 			XmlBuilderPendingAttr attr;
 
-			boolean not_virtual = !table.virtual;
+			boolean not_virtual = !table.virtual && !as_attr;
 			boolean not_list_and_bridge = !table.list_holder && table.bridge;
 
-			if (not_virtual && not_list_and_bridge && !as_attr) {
+			boolean category = not_virtual && not_list_and_bridge;
+			boolean category_item = not_virtual && !not_list_and_bridge;
+
+			if (category) {
 
 				pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
 
@@ -7277,7 +7280,7 @@ public class PgSchema implements Serializable {
 
 			while (rset.next()) {
 
-				if (not_virtual && !not_list_and_bridge && !as_attr) {
+				if (category_item) {
 
 					pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
 
@@ -7555,7 +7558,7 @@ public class PgSchema implements Serializable {
 
 				}
 
-				if (not_virtual && !not_list_and_bridge && !as_attr) {
+				if (category_item) {
 
 					if (nest_test.has_content || nest_test.has_simple_content) {
 
@@ -7589,7 +7592,7 @@ public class PgSchema implements Serializable {
 
 			rset.close();
 
-			if (not_virtual && not_list_and_bridge && !as_attr) {
+			if (category) {
 
 				if (nest_test.has_content || nest_test.has_simple_content) {
 
@@ -7644,9 +7647,9 @@ public class PgSchema implements Serializable {
 
 			XmlBuilderNestTester nest_test = new XmlBuilderNestTester(table, parent_nest_test);
 
-			boolean not_virtual_and_not_list_and_bridge = !table.virtual && !table.list_holder && table.bridge;
+			boolean category = !table.virtual && !table.list_holder && table.bridge;
 
-			if (not_virtual_and_not_list_and_bridge) {
+			if (category) {
 
 				pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
 
@@ -7657,27 +7660,19 @@ public class PgSchema implements Serializable {
 
 			// nested key
 
-			int n = 0;
-
 			for (PgField field : table.nested_fields) {
 
 				if (!field.nested_key_as_attr) {
 
-					if (key != null) {
-
-						nest_test.has_child_elem |= n++ > 0;
-
+					if (key != null)
 						nest_test.merge(nestChildNode2Xml(getTable(field.foreign_table_id), key, false, nest_test));
 
-					}
-
 					break;
-
 				}
 
 			}
 
-			if (not_virtual_and_not_list_and_bridge) {
+			if (category) {
 
 				if (nest_test.has_content || nest_test.has_simple_content) {
 
@@ -8183,11 +8178,14 @@ public class PgSchema implements Serializable {
 			JsonBuilderPendingElem elem;
 			JsonBuilderPendingAttr attr;
 
-			boolean not_virtual = !table.virtual;
+			boolean not_virtual = !table.virtual && !as_attr;
 			boolean not_list_and_bridge = !table.list_holder && table.bridge;
-			boolean array_field = not_virtual && !not_list_and_bridge && table.total_nested_fields == 0 && !as_attr && jsonb.type.equals(JsonType.column);
+			boolean array_field = not_virtual && !not_list_and_bridge && table.total_nested_fields == 0 && jsonb.type.equals(JsonType.column);
 
-			if (not_virtual && (not_list_and_bridge || array_field) && !as_attr) {
+			boolean category = not_virtual && (not_list_and_bridge || array_field);
+			boolean category_item = not_virtual && !(not_list_and_bridge || array_field);
+
+			if (category) {
 
 				pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
 
@@ -8246,7 +8244,7 @@ public class PgSchema implements Serializable {
 
 			while (rset.next()) {
 
-				if (not_virtual && !(not_list_and_bridge || array_field) && !as_attr) {
+				if (category_item) {
 
 					pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
 
@@ -8505,7 +8503,7 @@ public class PgSchema implements Serializable {
 
 				}
 
-				if (not_virtual && !(not_list_and_bridge || array_field) && !as_attr) {
+				if (category_item) {
 
 					if (nest_test.has_content || nest_test.has_simple_content) {
 
@@ -8533,7 +8531,7 @@ public class PgSchema implements Serializable {
 
 			rset.close();
 
-			if (not_virtual && (not_list_and_bridge || array_field) && !as_attr) {
+			if (category) {
 
 				if (nest_test.has_content || nest_test.has_simple_content) {
 
@@ -8587,7 +8585,9 @@ public class PgSchema implements Serializable {
 		boolean not_list_and_bridge = !table.list_holder && table.bridge;
 		boolean array_field = not_virtual && !not_list_and_bridge && table.total_nested_fields == 0 && jsonb.type.equals(JsonType.column);
 
-		if (not_virtual && (not_list_and_bridge || array_field)) {
+		boolean category = not_virtual && (not_list_and_bridge || array_field);
+
+		if (category) {
 
 			pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
 
@@ -8596,27 +8596,19 @@ public class PgSchema implements Serializable {
 
 		}
 
-		int n = 0;
-
 		for (PgField field : table.nested_fields) {
 
 			if (!field.nested_key_as_attr) {
 
-				if (key != null) {
-
-					nest_test.has_child_elem |= n++ > 0;
-
+				if (key != null)
 					nest_test.merge(nestChildNode2Json(getTable(field.foreign_table_id), key, false, nest_test));
 
-				}
-
 				break;
-
 			}
 
 		}
 
-		if (not_virtual && (not_list_and_bridge || array_field)) {
+		if (category) {
 
 			if (nest_test.has_content || nest_test.has_simple_content) {
 

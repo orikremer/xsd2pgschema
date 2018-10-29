@@ -116,7 +116,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			jsonb.writeStartTable(table, true, indent_level);
 			jsonb.writeFields(table, false, indent_level + 1);
 
-			if (nested_keys != null) {
+			if (total_nested_fields > 0) {
 
 				switch (type) {
 				case column:
@@ -172,7 +172,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				visited = true;
 
-				if (nested_keys != null && nested_keys.size() > 0) {
+				if (total_nested_fields > 0 && nested_keys.size() > 0) {
 
 					Node proc_node = node_test.proc_node;
 
@@ -206,7 +206,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				visited = true;
 
-				if (nested_keys != null && nested_keys.size() > 0) {
+				if (total_nested_fields > 0 && nested_keys.size() > 0) {
 
 					Node proc_node = node_test.proc_node;
 
@@ -241,7 +241,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			if (written)
 				jsonb.writeFields(table, as_attr, indent_level + (virtual ? 0 : 1));
 
-			if (not_complete || nested_keys == null)
+			if (not_complete || total_nested_fields == 0)
 				return;
 
 			for (PgSchemaNestedKey nested_key : nested_keys) {
@@ -261,7 +261,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 			}
 
-			if (!not_complete && nested_keys != null) {
+			if (!not_complete && total_nested_fields > 0) {
 
 				for (PgSchemaNestedKey nested_key : nested_keys) {
 
@@ -459,7 +459,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		if (!table.jsonable) {
 
-			if (nested_keys != null)
+			if (total_nested_fields > 0)
 				table.nested_fields.forEach(field -> setNestedKey(proc_node, field));
 
 			return;
@@ -525,7 +525,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		}
 
-		if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
+		if (null_simple_list && (total_nested_fields == 0 || nested_keys.size() == 0))
 			return;
 
 		written = true;

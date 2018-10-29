@@ -293,7 +293,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		if (!table.writable) {
 
-			if (nested_keys != null)
+			if (total_nested_fields > 0)
 				table.nested_fields.forEach(field -> setNestedKey(proc_node, field));
 
 			return;
@@ -514,7 +514,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			}
 
-			if (null_simple_list && (nested_keys == null || nested_keys.size() == 0))
+			if (null_simple_list && (total_nested_fields == 0 || nested_keys.size() == 0))
 				return;
 
 			written = true;

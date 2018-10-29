@@ -838,8 +838,8 @@ public class PgField implements Serializable {
 
 			if (fixed != null && !fixed.isEmpty()) {
 
-				required = xrequired = true;
 				fixed_value = fixed;
+				required = xrequired = true;
 
 			}
 

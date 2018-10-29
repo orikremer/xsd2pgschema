@@ -85,6 +85,9 @@ public abstract class PgSchemaNodeParser {
 	/** The size of field list. */
 	protected int fields_size;
 
+	/** The total number of field as nested key. */
+	protected int total_nested_fields;
+
 	/** The array of nested key. */
 	protected List<PgSchemaNestedKey> nested_keys = null;
 
@@ -161,7 +164,7 @@ public abstract class PgSchemaNodeParser {
 		fields = table.fields;
 		fields_size = fields.size();
 
-		if (table.total_nested_fields > 0)
+		if ((total_nested_fields = table.total_nested_fields) > 0)
 			nested_keys = new ArrayList<PgSchemaNestedKey>();
 
 		virtual = table.virtual;
@@ -221,7 +224,7 @@ public abstract class PgSchemaNodeParser {
 
 		parse();
 
-		if (not_complete || nested_keys == null)
+		if (not_complete || total_nested_fields == 0)
 			return;
 
 		for (PgSchemaNestedKey nested_key : nested_keys)
@@ -244,7 +247,7 @@ public abstract class PgSchemaNodeParser {
 
 			visited = true;
 
-			if (nested_keys != null) {
+			if (total_nested_fields > 0) {
 
 				Node proc_node = node_test.proc_node;
 
@@ -270,7 +273,7 @@ public abstract class PgSchemaNodeParser {
 
 		parse();
 
-		if (not_complete || nested_keys == null)
+		if (not_complete || total_nested_fields == 0)
 			return;
 
 		for (PgSchemaNestedKey nested_key : nested_keys) {
@@ -509,7 +512,7 @@ public abstract class PgSchemaNodeParser {
 
 		} finally {
 
-			if (field.simple_primitive_list) {
+			if (field.simple_primitive_list && total_nested_fields > 0) {
 
 				if (content != null && table.nested_fields.parallelStream().anyMatch(_field -> _field.matchesParentNodeName(parent_node_name)))
 					content = null;

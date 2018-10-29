@@ -252,7 +252,7 @@ public class PgTable implements Serializable {
 		// whether bridge table having primary key and a nested key
 
 		boolean has_primary_key = false;
-		boolean has_nested_key = false;
+		boolean has_single_nested_key = false;
 
 		for (PgField field : fields) {
 
@@ -261,21 +261,21 @@ public class PgTable implements Serializable {
 
 			else if (field.nested_key) {
 
-				if (has_nested_key) {
+				if (has_single_nested_key) { // has multiple nested keys
 
-					has_nested_key = false;
+					has_single_nested_key = false;
 
 					break;
 				}
 
 				else
-					has_nested_key = true;
+					has_single_nested_key = true;
 
 			}
 
 		}
 
-		bridge = (has_primary_key && has_nested_key);
+		bridge = (has_primary_key && has_single_nested_key);
 
 		// whether virtual table equals administrative table (xs_admin_root)
 
