@@ -221,7 +221,7 @@ public class XmlBuilder extends CommonBuilder {
 		out.write(tag, 1, tag.length - (line_feed ? 2 : 1));
 
 		if (latin_1_encoded)
-			out.write(PgSchemaUtil.getBytes(content));
+			out.write(content.getBytes(PgSchemaUtil.latin_1_charset));
 		else
 			writer.writeCharacters(content);
 
@@ -241,7 +241,7 @@ public class XmlBuilder extends CommonBuilder {
 	 */
 	public void writeSimpleCharacters(String string) throws IOException {
 
-		out.write(PgSchemaUtil.getBytes(string));
+		out.write(string.getBytes(PgSchemaUtil.latin_1_charset));
 
 	}
 

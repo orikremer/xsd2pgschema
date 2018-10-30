@@ -1366,7 +1366,7 @@ public class JsonBuilder extends CommonBuilder {
 	public void write(OutputStream out) throws PgSchemaException {
 
 		try {
-			out.write(buffer.toString().getBytes());
+			out.write(buffer.toString().getBytes(PgSchemaUtil.def_charset));
 		} catch (IOException e) {
 			throw new PgSchemaException(e);
 		}

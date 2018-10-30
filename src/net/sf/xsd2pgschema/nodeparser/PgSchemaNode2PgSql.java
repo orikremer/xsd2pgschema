@@ -600,7 +600,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		try {
 
-			return md_hash_key.digest(PgSchemaUtil.getBytes(key_name));
+			return md_hash_key.digest(key_name.getBytes(PgSchemaUtil.def_charset));
 
 		} finally {
 			md_hash_key.reset();
@@ -618,7 +618,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		try {
 
-			byte[] hash = md_hash_key.digest(PgSchemaUtil.getBytes(key_name));
+			byte[] hash = md_hash_key.digest(key_name.getBytes(PgSchemaUtil.def_charset));
 
 			BigInteger bint = new BigInteger(hash);
 
@@ -640,7 +640,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		try {
 
-			byte[] hash = md_hash_key.digest(PgSchemaUtil.getBytes(key_name));
+			byte[] hash = md_hash_key.digest(key_name.getBytes(PgSchemaUtil.def_charset));
 
 			BigInteger bint = new BigInteger(hash);
 

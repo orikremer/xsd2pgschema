@@ -857,7 +857,7 @@ public abstract class PgSchemaNodeParser {
 
 		try {
 
-			byte[] bytes = md_hash_key.digest(PgSchemaUtil.getBytes(key_name));
+			byte[] bytes = md_hash_key.digest(key_name.getBytes(PgSchemaUtil.def_charset));
 
 			switch (hash_size) {
 			case native_default:

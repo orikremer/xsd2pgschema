@@ -1356,7 +1356,7 @@ public class PgSchema implements Serializable {
 
 		// set XML start/end element tag template for document key
 
-		tables.parallelStream().filter(table -> table.writable).forEach(table -> table.fields.stream().filter(field -> field.document_key).forEach(field -> field.start_end_elem_tag = PgSchemaUtil.getBytes("<<" + (table.prefix.isEmpty() ? "" : table.prefix + ":") + field.xname + ">")));
+		tables.parallelStream().filter(table -> table.writable).forEach(table -> table.fields.stream().filter(field -> field.document_key).forEach(field -> field.start_end_elem_tag = new String("<<" + (table.prefix.isEmpty() ? "" : table.prefix + ":") + field.xname + ">").getBytes(PgSchemaUtil.def_charset)));
 
 		// set XML start/end/empty element tag template for element
 
@@ -1364,8 +1364,8 @@ public class PgSchema implements Serializable {
 
 			String prefix = field.is_xs_namespace ? table.prefix : field.prefix;
 
-			field.start_end_elem_tag = PgSchemaUtil.getBytes("<<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + ">\n");
-			field.empty_elem_tag = PgSchemaUtil.getBytes("<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + " " + PgSchemaUtil.xsi_prefix + ":nil=\"true\"/>\n");
+			field.start_end_elem_tag = new String("<<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + ">\n").getBytes(PgSchemaUtil.def_charset);
+			field.empty_elem_tag = new String("<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + " " + PgSchemaUtil.xsi_prefix + ":nil=\"true\"/>\n").getBytes(PgSchemaUtil.def_charset);
 
 		}));
 
@@ -4645,7 +4645,7 @@ public class PgSchema implements Serializable {
 
 		try {
 
-			byte[] bytes = md_hash_key.digest(PgSchemaUtil.getBytes(key_name));
+			byte[] bytes = md_hash_key.digest(key_name.getBytes(PgSchemaUtil.def_charset));
 
 			switch (option.hash_size) {
 			case native_default:

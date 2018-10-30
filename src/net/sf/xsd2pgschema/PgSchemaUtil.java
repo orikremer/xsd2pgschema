@@ -27,6 +27,8 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -111,6 +113,12 @@ public class PgSchemaUtil {
 
 	/** The default encoding. */
 	public static final String def_encoding = "UTF-8";
+
+	/** The default charset. */
+	public static final Charset def_charset = StandardCharsets.UTF_8;
+
+	/** The ISO_Latin-1 charset. */
+	public static final Charset latin_1_charset = StandardCharsets.ISO_8859_1;
 
 	/** The default hash algorithm. */
 	public static final String def_hash_algorithm = "SHA-1";
@@ -650,27 +658,6 @@ public class PgSchemaUtil {
 		int last_pos = qname.indexOf(':');
 
 		return last_pos == -1 ? qname : qname.substring(last_pos + 1);
-	}
-
-	/**
-	 * Return byte array of string without consideration of charset.
-	 *
-	 * @param string string
-	 * @return byte[] byte array of the string
-	 */
-	public static byte[] getBytes(String string) {
-
-		int len = string.length();
-		char chars[] = new char[len];
-
-		string.getChars(0, len, chars, 0);
-
-		byte ret[] = new byte[len];
-
-		for (int j = 0; j < len; j++)
-			ret[j] = (byte) chars[j];
-
-		return ret;
 	}
 
 	/**
