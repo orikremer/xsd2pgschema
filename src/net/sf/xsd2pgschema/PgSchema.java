@@ -4825,9 +4825,9 @@ public class PgSchema implements Serializable {
 
 					if (Files.exists(data_path)) {
 
-						String sql = "COPY " + table.pgname + " FROM STDIN" + (option.pg_tab_delimiter ? "" : " CSV");
+						String sql = "COPY " + table.pgname + " FROM STDIN" + (option.pg_tab_delimiter ? "" : " WITH CSV");
 
-						copy_man.copyIn(sql, Files.newInputStream(data_path));
+						copy_man.copyIn(sql, Files.newInputStream(data_path), PgSchemaUtil.def_buffered_output_stream_buffer_size);
 
 					}
 
