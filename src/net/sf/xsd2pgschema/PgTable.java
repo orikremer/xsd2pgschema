@@ -139,8 +139,8 @@ public class PgTable implements Serializable {
 	/** Whether table has attributes (has_attribute || has_simple_attribute || has_any_attribute || has_nested_key_as_attr). */
 	public boolean has_attrs = false;
 
-	/** Whether table has contents (has_simple_content || has_element || has_any). */
-	public boolean has_contents = false;
+	/** Whether table has elements (has_simple_content || has_element || has_any). */
+	public boolean has_elems = false;
 
 	/** Whether table has nested key with parent/ancestor path restriction. */
 	public boolean has_path_restriction = false;
@@ -313,9 +313,9 @@ public class PgTable implements Serializable {
 
 		has_attrs = has_attribute || has_any_attribute;
 
-		// whether table has contents
+		// whether table has elements
 
-		has_contents = has_simple_content || has_element || has_any;
+		has_elems = has_simple_content || has_element || has_any;
 
 	}
 

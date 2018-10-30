@@ -115,7 +115,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				if (upsert) {
 
-					if (table.ps2 == null || table.ps2.isClosed()) {
+					if (table.ps2 == null) {
 
 						StringBuilder sql = new StringBuilder();
 
@@ -178,7 +178,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				else {
 
-					if (table.ps == null || table.ps.isClosed()) {
+					if (table.ps == null) {
 
 						StringBuilder sql = new StringBuilder();
 

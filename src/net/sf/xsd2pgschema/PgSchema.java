@@ -6960,7 +6960,7 @@ public class PgSchema implements Serializable {
 
 			// simple_content, element, any
 
-			if (table.has_contents || option.document_key) {
+			if (table.has_elems || option.document_key) {
 
 				param_id = 1;
 
@@ -7236,7 +7236,7 @@ public class PgSchema implements Serializable {
 
 			PreparedStatement ps = table.ps;
 
-			if (ps == null || ps.isClosed()) {
+			if (ps == null) {
 
 				String sql = "SELECT * FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + " = ?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + " = ?" : "");
 
@@ -7387,7 +7387,7 @@ public class PgSchema implements Serializable {
 
 				// simple_content, element, any
 
-				if (table.has_contents) {
+				if (table.has_elems) {
 
 					param_id = 1;
 
@@ -7664,8 +7664,7 @@ public class PgSchema implements Serializable {
 
 				if (!field.nested_key_as_attr) {
 
-					if (key != null)
-						nest_test.merge(nestChildNode2Xml(getTable(field.foreign_table_id), key, false, nest_test));
+					nest_test.merge(nestChildNode2Xml(getTable(field.foreign_table_id), key, false, nest_test));
 
 					break;
 				}
@@ -7992,7 +7991,7 @@ public class PgSchema implements Serializable {
 
 			// simple_content, element, any
 
-			if (table.has_contents || option.document_key) {
+			if (table.has_elems || option.document_key) {
 
 				param_id = 1;
 
@@ -8200,7 +8199,7 @@ public class PgSchema implements Serializable {
 
 			PreparedStatement ps = table.ps;
 
-			if (ps == null || ps.isClosed()) {
+			if (ps == null) {
 
 				String sql = "SELECT * FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + " = ?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + " = ?" : "");
 
@@ -8365,7 +8364,7 @@ public class PgSchema implements Serializable {
 
 				// simple_content, element, any
 
-				if (table.has_contents) {
+				if (table.has_elems) {
 
 					param_id = 1;
 
@@ -8600,8 +8599,7 @@ public class PgSchema implements Serializable {
 
 			if (!field.nested_key_as_attr) {
 
-				if (key != null)
-					nest_test.merge(nestChildNode2Json(getTable(field.foreign_table_id), key, false, nest_test));
+				nest_test.merge(nestChildNode2Json(getTable(field.foreign_table_id), key, false, nest_test));
 
 				break;
 			}
