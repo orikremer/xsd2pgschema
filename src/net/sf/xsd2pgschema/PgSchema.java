@@ -7125,6 +7125,8 @@ public class PgSchema implements Serializable {
 
 			if (table.total_nested_fields > 0) {
 
+				PgTable nested_table;
+
 				param_id = 1;
 				n = 0;
 
@@ -7138,7 +7140,18 @@ public class PgSchema implements Serializable {
 
 							nest_test.has_child_elem |= n++ > 0;
 
-							nest_test.merge(nestChildNode2Xml(getTable(field.foreign_table_id), key, false, nest_test));
+							nested_table = getTable(field.foreign_table_id);
+
+							if (nested_table.content_holder || !nested_table.bridge)
+								nest_test.merge(nestChildNode2Xml(nested_table, key, false, nest_test));
+
+							// skip bridge table for acceleration
+
+							else if (nested_table.list_holder)
+								nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
+
+							else
+								nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
 
 						}
 
@@ -7273,6 +7286,8 @@ public class PgSchema implements Serializable {
 			List<PgField> fields = table.fields;
 
 			String content;
+
+			PgTable nested_table;
 
 			Object key;
 
@@ -7522,8 +7537,6 @@ public class PgSchema implements Serializable {
 
 				if (table.total_nested_fields > 0) {
 
-					PgTable nested_table;
-
 					param_id = 1;
 					n = 0;
 
@@ -7539,10 +7552,13 @@ public class PgSchema implements Serializable {
 
 								nested_table = getTable(field.foreign_table_id);
 
-								if (nested_table.content_holder || nested_table.list_holder || !nested_table.bridge || as_attr)
+								if (nested_table.content_holder || !nested_table.bridge || as_attr)
 									nest_test.merge(nestChildNode2Xml(nested_table, key, false, nest_test));
 
 								// skip bridge table for acceleration
+
+								else if (nested_table.list_holder)
+									nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
 
 								else
 									nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
@@ -7629,6 +7645,141 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
+	 * Skip list holder and bridge node and continue to compose XML document.
+	 *
+	 * @param table bridge table
+	 * @param key parent_key
+	 * @param parent_nest_test nest test result of parent node
+	 * @return XmlBuilderNestTester nest test of this node
+	 * @throws PgSchemaException the pg schema exception
+	 */	
+	private XmlBuilderNestTester skipListAndBridgeNode2Xml(final PgTable table, final Object parent_key, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
+
+		XMLStreamWriter xml_writer = xmlb.writer;
+		LinkedList<XmlBuilderPendingElem> pending_elem = xmlb.pending_elem;
+		String line_feed_code = xmlb.line_feed_code;
+
+		try {
+
+			XmlBuilderNestTester nest_test = new XmlBuilderNestTester(table, parent_nest_test);
+
+			boolean category_item = !table.virtual;
+
+			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
+			boolean attr_only;
+
+			PreparedStatement ps = table.ps;
+
+			PgField nested_key = table.nested_fields.stream().filter(field -> !field.nested_key_as_attr).findFirst().get();
+			PgTable nested_table = getTable(nested_key.foreign_table_id);
+
+			if (ps == null) {
+
+				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + " = ?" : "") + (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + " = ?";
+
+				ps = table.ps = db_conn.prepareStatement(sql);
+				ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_doc_key_index);
+
+				if (use_doc_key_index)
+					ps.setString(1, document_id);
+
+			}
+
+			int param_id = use_doc_key_index ? 2 : 1;
+
+			switch (option.hash_size) {
+			case native_default:
+				ps.setBytes(param_id, (byte[]) parent_key);
+				break;
+			case unsigned_int_32:
+				ps.setInt(param_id, (int) (parent_key));
+				break;
+			case unsigned_long_64:
+				ps.setLong(param_id, (long) parent_key);
+				break;
+			default:
+				throw new PgSchemaException("Not allowed to use string hash key (debug mode) for XPath evaluation.");
+			}
+
+			ResultSet rset = ps.executeQuery();
+
+			Object key;
+
+			int list_id = 0;
+
+			while (rset.next()) {
+
+				if (category_item) {
+
+					pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
+
+					if (parent_nest_test.has_insert_doc_key)
+						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+
+				}
+
+				// nested key
+
+				key = rset.getObject(1);
+
+				if (key != null) {
+
+					if (nested_table.content_holder || !nested_table.bridge)
+						nest_test.merge(nestChildNode2Xml(nested_table, key, false, nest_test));
+
+					// skip bridge table for acceleration
+
+					else if (nested_table.list_holder)
+						nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
+
+					else
+						nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
+
+				}
+
+				if (category_item) {
+
+					if (nest_test.has_content || nest_test.has_simple_content) {
+
+						attr_only = false;
+
+						if (pending_elem.peek() != null)
+							xmlb.writePendingElems(attr_only = true);
+
+						xmlb.writePendingSimpleCont();
+
+						if (!nest_test.has_open_simple_content && !attr_only)
+							xmlb.writeSimpleCharacters(nest_test.current_indent_bytes);
+						else if (nest_test.has_simple_content)
+							nest_test.has_open_simple_content = false;
+
+						if (!attr_only)
+							xml_writer.writeEndElement();
+
+						xmlb.writeLineFeedCode();
+
+					}
+
+					else
+						pending_elem.poll();
+
+					list_id++;
+
+				}
+
+			}
+
+			rset.close();
+
+			return nest_test;
+
+		} catch (SQLException | XMLStreamException | IOException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
+	/**
 	 * Skip bridge node and continue to compose XML document.
 	 *
 	 * @param table bridge table
@@ -7647,7 +7798,7 @@ public class PgSchema implements Serializable {
 
 			XmlBuilderNestTester nest_test = new XmlBuilderNestTester(table, parent_nest_test);
 
-			boolean category = !table.virtual && !table.list_holder && table.bridge;
+			boolean category = !table.virtual;
 
 			if (category) {
 
@@ -7664,7 +7815,18 @@ public class PgSchema implements Serializable {
 
 				if (!field.nested_key_as_attr) {
 
-					nest_test.merge(nestChildNode2Xml(getTable(field.foreign_table_id), key, false, nest_test));
+					PgTable nested_table = getTable(field.foreign_table_id);
+
+					if (nested_table.content_holder || !nested_table.bridge)
+						nest_test.merge(nestChildNode2Xml(nested_table, key, false, nest_test));
+
+					// skip bridge table for acceleration
+
+					else if (nested_table.list_holder)
+						nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
+
+					else
+						nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
 
 					break;
 				}
@@ -8095,6 +8257,8 @@ public class PgSchema implements Serializable {
 
 			if (table.total_nested_fields > 0) {
 
+				PgTable nested_table;
+
 				param_id = 1;
 				n = 0;
 
@@ -8108,7 +8272,18 @@ public class PgSchema implements Serializable {
 
 							nest_test.has_child_elem |= n++ > 0;
 
-							nest_test.merge(nestChildNode2Json(getTable(field.foreign_table_id), key, false, nest_test));
+							nested_table = getTable(field.foreign_table_id);
+
+							if (nested_table.content_holder || !nested_table.bridge)
+								nest_test.merge(nestChildNode2Json(nested_table, key, false, nest_test));
+
+							// skip bridge table for acceleration
+
+							else if (nested_table.list_holder)
+								nest_test.merge(skipListAndBridgeNode2Json(nested_table, key, nest_test));
+
+							else
+								nest_test.merge(skipBridgeNode2Json(nested_table, key, nest_test));
 
 						}
 
@@ -8236,6 +8411,8 @@ public class PgSchema implements Serializable {
 			List<PgField> fields = table.fields;
 
 			String content;
+
+			PgTable nested_table;
 
 			Object key;
 
@@ -8466,8 +8643,6 @@ public class PgSchema implements Serializable {
 
 				if (table.total_nested_fields > 0) {
 
-					PgTable nested_table;
-
 					param_id = 1;
 					n = 0;
 
@@ -8483,10 +8658,13 @@ public class PgSchema implements Serializable {
 
 								nested_table = getTable(field.foreign_table_id);
 
-								if (nested_table.content_holder || nested_table.list_holder || !nested_table.bridge || as_attr)
+								if (nested_table.content_holder || !nested_table.bridge || as_attr)
 									nest_test.merge(nestChildNode2Json(nested_table, key, false, nest_test));
 
 								// skip bridge table for acceleration
+
+								else if (nested_table.list_holder)
+									nest_test.merge(skipListAndBridgeNode2Json(nested_table, key, nest_test));
 
 								else
 									nest_test.merge(skipBridgeNode2Json(nested_table, key, nest_test));
@@ -8566,6 +8744,134 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
+	 * Skip list holder and bridge node and continue to compose JSON document.
+	 *
+	 * @param table bridge table
+	 * @param key parent_key
+	 * @param parent_nest_test nest test result of parent node
+	 * @return JsonBuilderNestTester nest test of this node
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private JsonBuilderNestTester skipListAndBridgeNode2Json(final PgTable table, final Object parent_key, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
+
+		LinkedList<JsonBuilderPendingElem> pending_elem = jsonb.pending_elem;
+
+		try {
+
+			JsonBuilderNestTester nest_test = new JsonBuilderNestTester(table, parent_nest_test);
+
+			boolean category_item = !table.virtual;
+
+			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
+			boolean attr_only;
+
+			PreparedStatement ps = table.ps;
+
+			PgField nested_key = table.nested_fields.stream().filter(field -> !field.nested_key_as_attr).findFirst().get();
+			PgTable nested_table = getTable(nested_key.foreign_table_id);
+
+			if (ps == null) {
+
+				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + " = ?" : "") + (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + " = ?";
+
+				ps = table.ps = db_conn.prepareStatement(sql);
+				ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_doc_key_index);
+
+				if (use_doc_key_index)
+					ps.setString(1, document_id);
+
+			}
+
+			int param_id = use_doc_key_index ? 2 : 1;
+
+			switch (option.hash_size) {
+			case native_default:
+				ps.setBytes(param_id, (byte[]) parent_key);
+				break;
+			case unsigned_int_32:
+				ps.setInt(param_id, (int) (parent_key));
+				break;
+			case unsigned_long_64:
+				ps.setLong(param_id, (long) parent_key);
+				break;
+			default:
+				throw new PgSchemaException("Not allowed to use string hash key (debug mode) for XPath evaluation.");
+			}
+
+			ResultSet rset = ps.executeQuery();
+
+			Object key;
+
+			while (rset.next()) {
+
+				if (category_item) {
+
+					pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
+
+					if (parent_nest_test.has_insert_doc_key)
+						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+
+					if (!table.bridge)
+						nest_test.has_child_elem = false;
+
+				}
+
+				// nested key
+
+				key = rset.getObject(1);
+
+				if (key != null) {
+
+					if (nested_table.content_holder || !nested_table.bridge)
+						nest_test.merge(nestChildNode2Json(nested_table, key, false, nest_test));
+
+					// skip bridge table for acceleration
+
+					else if (nested_table.list_holder)
+						nest_test.merge(skipListAndBridgeNode2Json(nested_table, key, nest_test));
+
+					else
+						nest_test.merge(skipBridgeNode2Json(nested_table, key, nest_test));
+
+				}
+
+				if (category_item) {
+
+					if (nest_test.has_content || nest_test.has_simple_content) {
+
+						attr_only = false;
+
+						if (pending_elem.peek() != null)
+							jsonb.writePendingElems(attr_only = true);
+
+						jsonb.writePendingSimpleCont();
+
+						if (!nest_test.has_open_simple_content && !attr_only) { }
+						else if (nest_test.has_simple_content)
+							nest_test.has_open_simple_content = false;
+
+						jsonb.writeEndTable();
+
+					}
+
+					else
+						pending_elem.poll();
+
+				}
+
+			}
+
+			rset.close();
+
+			return nest_test;
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
+	/**
 	 * Skip bridge node and continue to compose JSON document.
 	 *
 	 * @param table bridge table
@@ -8580,11 +8886,7 @@ public class PgSchema implements Serializable {
 
 		JsonBuilderNestTester nest_test = new JsonBuilderNestTester(table, parent_nest_test);
 
-		boolean not_virtual = !table.virtual;
-		boolean not_list_and_bridge = !table.list_holder && table.bridge;
-		boolean array_field = not_virtual && !not_list_and_bridge && table.total_nested_fields == 0 && jsonb.type.equals(JsonType.column);
-
-		boolean category = not_virtual && (not_list_and_bridge || array_field);
+		boolean category = !table.virtual;
 
 		if (category) {
 
@@ -8599,7 +8901,18 @@ public class PgSchema implements Serializable {
 
 			if (!field.nested_key_as_attr) {
 
-				nest_test.merge(nestChildNode2Json(getTable(field.foreign_table_id), key, false, nest_test));
+				PgTable nested_table = getTable(field.foreign_table_id);
+
+				if (nested_table.content_holder || !nested_table.bridge)
+					nest_test.merge(nestChildNode2Json(nested_table, key, false, nest_test));
+
+				// skip bridge table for acceleration
+
+				else if (nested_table.list_holder)
+					nest_test.merge(skipListAndBridgeNode2Json(nested_table, key, nest_test));
+
+				else
+					nest_test.merge(skipBridgeNode2Json(nested_table, key, nest_test));
 
 				break;
 			}
@@ -8616,9 +8929,6 @@ public class PgSchema implements Serializable {
 					jsonb.writePendingElems(attr_only = true);
 
 				jsonb.writePendingSimpleCont();
-
-				if (array_field)
-					jsonb.writeFields(table, false, nest_test.child_indent_level);
 
 				if (!nest_test.has_open_simple_content && !attr_only) { }
 				else if (nest_test.has_simple_content)
