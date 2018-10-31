@@ -136,7 +136,7 @@ public class XPathEvaluatorImpl {
 
 		StringBuilder sb = new StringBuilder();
 
-		variables.entrySet().stream().forEach(arg -> sb.append(arg.getKey() + arg.getValue()));
+		variables.entrySet().forEach(arg -> sb.append(arg.getKey() + arg.getValue()));
 
 		String variables_ = sb.toString();
 
