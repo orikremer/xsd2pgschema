@@ -6840,11 +6840,7 @@ public class PgSchema implements Serializable {
 
 		PgTable table = path_expr.sql_subject.table;
 
-		boolean append_nil_elem = xmlb.append_nil_elem;
-
-		XMLStreamWriter xml_writer = xmlb.writer;
 		LinkedList<XmlBuilderPendingElem> pending_elem = xmlb.pending_elem;
-		String line_feed_code = xmlb.line_feed_code;
 
 		try {
 
@@ -6984,13 +6980,13 @@ public class PgSchema implements Serializable {
 						xmlb.insertDocKey(field.start_end_elem_tag, rset.getString(param_id));
 						/*
 						if (field.is_xs_namespace)
-							xml_writer.writeStartElement(table_prefix, field.xname, table_ns);
+							xmlb.writer.writeStartElement(table_prefix, field.xname, table_ns);
 						else
-							xml_writer.writeStartElement(field.prefix, field.xname, field.target_namespace);
+							xmlb.writer.writeStartElement(field.prefix, field.xname, field.target_namespace);
 
-						xml_writer.writeCharacters(rset.getString(param_id));
+						xmlb.writer.writeCharacters(rset.getString(param_id));
 
-						xml_writer.writeEndElement();
+						xmlb.writer.writeEndElement();
 						 */
 						nest_test.has_child_elem = nest_test.has_content = nest_test.has_insert_doc_key = true;
 
@@ -7011,9 +7007,9 @@ public class PgSchema implements Serializable {
 
 									xmlb.writePendingSimpleCont();
 
-									xml_writer.writeEndElement();
+									xmlb.writer.writeEndElement();
 
-									elem = new XmlBuilderPendingElem(table, (pending_elem.size() > 0 ? "" : line_feed_code) + nest_test.current_indent_space, false);
+									elem = new XmlBuilderPendingElem(table, (pending_elem.size() > 0 ? "" : xmlb.line_feed_code) + nest_test.current_indent_space, false);
 
 									elem.write(xmlb);
 
@@ -7033,7 +7029,7 @@ public class PgSchema implements Serializable {
 
 						content = field.retrieve(rset, param_id);
 
-						if (content != null || (field.nillable && append_nil_elem)) {
+						if (content != null || (field.nillable && xmlb.append_nil_elem)) {
 
 							if (pending_elem.peek() != null)
 								xmlb.writePendingElems(false);
@@ -7050,13 +7046,13 @@ public class PgSchema implements Serializable {
 								xmlb.writeSimpleElement(field.start_end_elem_tag, field.latin_1_encoded, content);
 								/*
 								if (field.is_xs_namespace)
-									xml_writer.writeStartElement(table_prefix, field.xname, table_ns);
+									xmlb.writer.writeStartElement(table_prefix, field.xname, table_ns);
 								else
-									xml_writer.writeStartElement(field.prefix, field.xname, field.target_namespace);
+									xmlb.writer.writeStartElement(field.prefix, field.xname, field.target_namespace);
 
-								xml_writer.writeCharacters(content);
+								xmlb.writer.writeCharacters(content);
 
-								xml_writer.writeEndElement();
+								xmlb.writer.writeEndElement();
 								 */
 							}
 
@@ -7065,11 +7061,11 @@ public class PgSchema implements Serializable {
 								xmlb.writeSimpleCharacters(field.empty_elem_tag);
 								/*
 								if (field.is_xs_namespace)
-									xml_writer.writeEmptyElement(table_prefix, field.xname, table_ns);
+									xmlb.writer.writeEmptyElement(table_prefix, field.xname, table_ns);
 								else
-									xml_writer.writeEmptyElement(field.prefix, field.xname, field.target_namespace);
+									xmlb.writer.writeEmptyElement(field.prefix, field.xname, field.target_namespace);
 
-								xml_writer.writeAttribute(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri, "nil", "true");
+								xmlb.writer.writeAttribute(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri, "nil", "true");
 								 */
 							}
 							/*
@@ -7179,7 +7175,7 @@ public class PgSchema implements Serializable {
 					nest_test.has_open_simple_content = false;
 
 				if (!attr_only)
-					xml_writer.writeEndElement();
+					xmlb.writer.writeEndElement();
 
 				xmlb.writeLineFeedCode();
 
@@ -7216,11 +7212,7 @@ public class PgSchema implements Serializable {
 	 */	
 	private XmlBuilderNestTester nestChildNode2Xml(final PgTable table, final Object parent_key, final boolean as_attr, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
-		boolean append_nil_elem = xmlb.append_nil_elem;
-
-		XMLStreamWriter xml_writer = xmlb.writer;
 		LinkedList<XmlBuilderPendingElem> pending_elem = xmlb.pending_elem;
-		String line_feed_code = xmlb.line_feed_code;
 
 		try {
 
@@ -7236,7 +7228,7 @@ public class PgSchema implements Serializable {
 
 			if (category) {
 
-				pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
+				pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? xmlb.line_feed_code : "") : xmlb.line_feed_code) + nest_test.current_indent_space, true));
 
 				if (parent_nest_test.has_insert_doc_key)
 					parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
@@ -7297,7 +7289,7 @@ public class PgSchema implements Serializable {
 
 				if (category_item) {
 
-					pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
+					pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? (parent_nest_test.has_insert_doc_key ? xmlb.line_feed_code : "") : xmlb.line_feed_code) + nest_test.current_indent_space, true));
 
 					if (parent_nest_test.has_insert_doc_key)
 						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
@@ -7423,9 +7415,9 @@ public class PgSchema implements Serializable {
 
 										xmlb.writePendingSimpleCont();
 
-										xml_writer.writeEndElement();
+										xmlb.writer.writeEndElement();
 
-										elem = new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? "" : line_feed_code) + nest_test.current_indent_space, false);
+										elem = new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? "" : xmlb.line_feed_code) + nest_test.current_indent_space, false);
 
 										elem.write(xmlb);
 
@@ -7445,7 +7437,7 @@ public class PgSchema implements Serializable {
 
 							content = field.retrieve(rset, param_id);
 
-							if (content != null || (field.nillable && append_nil_elem)) {
+							if (content != null || (field.nillable && xmlb.append_nil_elem)) {
 
 								if (pending_elem.peek() != null)
 									xmlb.writePendingElems(false);
@@ -7462,13 +7454,13 @@ public class PgSchema implements Serializable {
 									xmlb.writeSimpleElement(field.start_end_elem_tag, field.latin_1_encoded, content);
 									/*
 									if (field.is_xs_namespace)
-										xml_writer.writeStartElement(table_prefix, field.xname, table_ns);
+										xmlb.writer.writeStartElement(table_prefix, field.xname, table_ns);
 									else
-										xml_writer.writeStartElement(field.prefix, field.xname, field.target_namespace);
+										xmlb.writer.writeStartElement(field.prefix, field.xname, field.target_namespace);
 
-									xml_writer.writeCharacters(content);
+									xmlb.writer.writeCharacters(content);
 
-									xml_writer.writeEndElement();
+									xmlb.writer.writeEndElement();
 									 */
 								}
 
@@ -7477,11 +7469,11 @@ public class PgSchema implements Serializable {
 									xmlb.writeSimpleCharacters(field.empty_elem_tag);
 									/*
 									if (field.is_xs_namespace)
-										xml_writer.writeEmptyElement(table_prefix, field.xname, table_ns);
+										xmlb.writer.writeEmptyElement(table_prefix, field.xname, table_ns);
 									else
-										xml_writer.writeEmptyElement(field.prefix, field.xname, field.target_namespace);
+										xmlb.writer.writeEmptyElement(field.prefix, field.xname, field.target_namespace);
 
-									xml_writer.writeAttribute(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri, "nil", "true");
+									xmlb.writer.writeAttribute(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri, "nil", "true");
 									 */
 								}
 								/*
@@ -7591,7 +7583,7 @@ public class PgSchema implements Serializable {
 							nest_test.has_open_simple_content = false;
 
 						if (!attr_only)
-							xml_writer.writeEndElement();
+							xmlb.writer.writeEndElement();
 
 						xmlb.writeLineFeedCode();
 
@@ -7625,7 +7617,7 @@ public class PgSchema implements Serializable {
 						nest_test.has_open_simple_content = false;
 
 					if (!attr_only)
-						xml_writer.writeEndElement();
+						xmlb.writer.writeEndElement();
 
 					xmlb.writeLineFeedCode();
 
@@ -7655,9 +7647,7 @@ public class PgSchema implements Serializable {
 	 */	
 	private XmlBuilderNestTester skipListAndBridgeNode2Xml(final PgTable table, final Object parent_key, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
-		XMLStreamWriter xml_writer = xmlb.writer;
 		LinkedList<XmlBuilderPendingElem> pending_elem = xmlb.pending_elem;
-		String line_feed_code = xmlb.line_feed_code;
 
 		try {
 
@@ -7711,7 +7701,7 @@ public class PgSchema implements Serializable {
 
 				if (category_item) {
 
-					pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
+					pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? (parent_nest_test.has_insert_doc_key ? xmlb.line_feed_code : "") : xmlb.line_feed_code) + nest_test.current_indent_space, true));
 
 					if (parent_nest_test.has_insert_doc_key)
 						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
@@ -7754,7 +7744,7 @@ public class PgSchema implements Serializable {
 							nest_test.has_open_simple_content = false;
 
 						if (!attr_only)
-							xml_writer.writeEndElement();
+							xmlb.writer.writeEndElement();
 
 						xmlb.writeLineFeedCode();
 
@@ -7790,9 +7780,7 @@ public class PgSchema implements Serializable {
 	 */	
 	private XmlBuilderNestTester skipBridgeNode2Xml(final PgTable table, final Object key, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
-		XMLStreamWriter xml_writer = xmlb.writer;
 		LinkedList<XmlBuilderPendingElem> pending_elem = xmlb.pending_elem;
-		String line_feed_code = xmlb.line_feed_code;
 
 		try {
 
@@ -7802,7 +7790,7 @@ public class PgSchema implements Serializable {
 
 			if (category) {
 
-				pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
+				pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? xmlb.line_feed_code : "") : xmlb.line_feed_code) + nest_test.current_indent_space, true));
 
 				if (parent_nest_test.has_insert_doc_key)
 					parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
@@ -7850,7 +7838,7 @@ public class PgSchema implements Serializable {
 						nest_test.has_open_simple_content = false;
 
 					if (!attr_only)
-						xml_writer.writeEndElement();
+						xmlb.writer.writeEndElement();
 
 					xmlb.writeLineFeedCode();
 
@@ -8343,6 +8331,7 @@ public class PgSchema implements Serializable {
 	private JsonBuilderNestTester nestChildNode2Json(final PgTable table, final Object parent_key, final boolean as_attr, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		LinkedList<JsonBuilderPendingElem> pending_elem = jsonb.pending_elem;
+
 		JsonSchemaVersion schema_ver = jsonb.schema_ver;
 		String concat_value_space = jsonb.concat_value_space;
 
