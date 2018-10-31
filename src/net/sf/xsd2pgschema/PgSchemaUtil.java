@@ -111,13 +111,13 @@ public class PgSchemaUtil {
 	/** The default XML version. */
 	public static final String def_xml_version = "1.0";
 
-	/** The default encoding. */
+	/** The default UTF-8 encoding. */
 	public static final String def_encoding = "UTF-8";
 
-	/** The default charset. */
+	/** The default UTF-8 charset. */
 	public static final Charset def_charset = StandardCharsets.UTF_8;
 
-	/** The ISO_Latin-1 charset. */
+	/** The ISO-Latin-1 charset. */
 	public static final Charset latin_1_charset = StandardCharsets.ISO_8859_1;
 
 	/** The default hash algorithm. */
