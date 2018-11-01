@@ -22,20 +22,17 @@ package net.sf.xsd2pgschema;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
-import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.SQLXML;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,15 +40,12 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.lucene.document.Field;
@@ -62,21 +56,6 @@ import org.postgresql.core.BaseConnection;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
-import net.sf.xsd2pgschema.docbuilder.JsonBuilder;
-import net.sf.xsd2pgschema.docbuilder.JsonBuilderAnyAttrRetriever;
-import net.sf.xsd2pgschema.docbuilder.JsonBuilderAnyRetriever;
-import net.sf.xsd2pgschema.docbuilder.JsonBuilderNestTester;
-import net.sf.xsd2pgschema.docbuilder.JsonBuilderOption;
-import net.sf.xsd2pgschema.docbuilder.JsonBuilderPendingAttr;
-import net.sf.xsd2pgschema.docbuilder.JsonBuilderPendingElem;
-import net.sf.xsd2pgschema.docbuilder.JsonType;
-import net.sf.xsd2pgschema.docbuilder.XmlBuilder;
-import net.sf.xsd2pgschema.docbuilder.XmlBuilderAnyAttrRetriever;
-import net.sf.xsd2pgschema.docbuilder.XmlBuilderAnyRetriever;
-import net.sf.xsd2pgschema.docbuilder.XmlBuilderNestTester;
-import net.sf.xsd2pgschema.docbuilder.XmlBuilderPendingAttr;
-import net.sf.xsd2pgschema.docbuilder.XmlBuilderPendingElem;
-import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2Json;
 import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2LucIdx;
 import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2PgCsv;
 import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2PgSql;
@@ -88,9 +67,6 @@ import net.sf.xsd2pgschema.type.PgHashSize;
 import net.sf.xsd2pgschema.type.XsFieldType;
 import net.sf.xsd2pgschema.type.XsTableType;
 import net.sf.xsd2pgschema.xmlutil.XmlParser;
-import net.sf.xsd2pgschema.xpathparser.XPathCompList;
-import net.sf.xsd2pgschema.xpathparser.XPathCompType;
-import net.sf.xsd2pgschema.xpathparser.XPathExpr;
 
 /**
  * PostgreSQL data model.
@@ -108,7 +84,10 @@ public class PgSchema implements Serializable {
 	/** The default schema location. */
 	private String def_schema_location = null;
 
-	/** The default namespaces (key=prefix, value=namespace_uri). */
+	/** The default namespace. */
+	private String def_namespace = null;
+
+	/** The list of namespace (key=prefix, value=namespace_uri). */
 	private HashMap<String, String> def_namespaces = null;
 
 	/** The list of PostgreSQL table. */
@@ -298,6 +277,10 @@ public class PgSchema implements Serializable {
 
 		}
 
+		// set default namespace
+
+		def_namespace = def_namespaces.get("");
+
 		// retrieve top level schema annotation
 
 		def_anno = PgSchemaUtil.extractAnnotation(root_node, true);
@@ -467,7 +450,7 @@ public class PgSchema implements Serializable {
 				if (name == null || name.isEmpty())
 					continue;
 
-				PgKey key = new PgKey(getPgSchemaOf(def_namespaces.get("")), key_node, name, option.case_sense);
+				PgKey key = new PgKey(getPgSchemaOf(def_namespace), key_node, name, option.case_sense);
 
 				if (key.isEmpty())
 					continue;
@@ -497,7 +480,7 @@ public class PgSchema implements Serializable {
 				if (name == null || name.isEmpty())
 					continue;
 
-				PgKey key = new PgKey(getPgSchemaOf(def_namespaces.get("")), unq_node, name, option.case_sense);
+				PgKey key = new PgKey(getPgSchemaOf(def_namespace), unq_node, name, option.case_sense);
 
 				if (key.isEmpty())
 					continue;
@@ -1418,7 +1401,7 @@ public class PgSchema implements Serializable {
 	 */
 	private void extractRootElement(Node node, boolean root_element) throws PgSchemaException {
 
-		PgTable table = new PgTable(getPgSchemaOf(def_namespaces.get("")), def_namespaces.get(""), def_schema_location);
+		PgTable table = new PgTable(getPgSchemaOf(def_namespace), def_namespace, def_schema_location);
 
 		String name = ((Element) node).getAttribute("name");
 
@@ -1555,7 +1538,7 @@ public class PgSchema implements Serializable {
 	 */
 	private void extractAdminElement(Node node, boolean complex_type, boolean annotation) throws PgSchemaException {
 
-		PgTable table = new PgTable(getPgSchemaOf(def_namespaces.get("")), def_namespaces.get(""), def_schema_location);
+		PgTable table = new PgTable(getPgSchemaOf(def_namespace), def_namespace, def_schema_location);
 
 		String name = ((Element) node).getAttribute("name");
 
@@ -1636,7 +1619,7 @@ public class PgSchema implements Serializable {
 	 */
 	private void extractAdminAttributeGroup(Node node) throws PgSchemaException {
 
-		PgTable table = new PgTable(getPgSchemaOf(def_namespaces.get("")), def_namespaces.get(""), def_schema_location);
+		PgTable table = new PgTable(getPgSchemaOf(def_namespace), def_namespace, def_schema_location);
 
 		String name = ((Element) node).getAttribute("name");
 
@@ -1683,7 +1666,7 @@ public class PgSchema implements Serializable {
 	 */
 	private void extractAdminModelGroup(Node node) throws PgSchemaException {
 
-		PgTable table = new PgTable(getPgSchemaOf(def_namespaces.get("")), def_namespaces.get(""), def_schema_location);
+		PgTable table = new PgTable(getPgSchemaOf(def_namespace), def_namespace, def_schema_location);
 
 		String name = ((Element) node).getAttribute("name");
 
@@ -1844,7 +1827,7 @@ public class PgSchema implements Serializable {
 		if (name == null || name.isEmpty() || refer == null || refer.isEmpty())
 			return;
 
-		PgForeignKey foreign_key = new PgForeignKey(getPgSchemaOf(def_namespaces.get("")), key_nodes, node, name, PgSchemaUtil.getUnqualifiedName(refer), option.case_sense);
+		PgForeignKey foreign_key = new PgForeignKey(getPgSchemaOf(def_namespace), key_nodes, node, name, PgSchemaUtil.getUnqualifiedName(refer), option.case_sense);
 
 		if (foreign_key.isEmpty())
 			return;
@@ -2861,12 +2844,39 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
+	 * Return default namespace.
+	 *
+	 * @return String default namespace
+	 */
+	public String getDefaultNamespace() {
+		return def_namespace;
+	}
+
+	/**
 	 * Return default schema location.
 	 *
 	 * @return String default schema location
 	 */
 	public String getDefaultSchemaLocation() {
 		return def_schema_location;
+	}
+
+	/**
+	 * Return top level xs:annotation/xs:appinfo.
+	 *
+	 * @return String top level xs:annotation/xs:appinfo
+	 */
+	public String getDefaultAppinfo() {
+		return def_anno_appinfo;
+	}
+
+	/**
+	 * Return top level xs:annotation/xs:documentation.
+	 *
+	 * @return String top level xs:annotation/xs:documentation
+	 */
+	public String getDefaultDocumentation() {
+		return def_anno_doc;
 	}
 
 	/**
@@ -4669,7 +4679,7 @@ public class PgSchema implements Serializable {
 	 *
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void hasRootTable() throws PgSchemaException {
+	public void hasRootTable() throws PgSchemaException {
 
 		if (root_table == null)
 			throw new PgSchemaException("Not found root table in XML Schema: " + def_schema_location);
@@ -4687,7 +4697,7 @@ public class PgSchema implements Serializable {
 	 * @return Node root node of document
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private Node getRootNode(XmlParser xml_parser) throws PgSchemaException {
+	public Node getRootNode(XmlParser xml_parser) throws PgSchemaException {
 
 		hasRootTable();
 
@@ -4708,7 +4718,7 @@ public class PgSchema implements Serializable {
 	 *
 	 * @param primary whether to close the primary prepared statement only
 	 */
-	private void closePreparedStatement(boolean primary) {
+	public void closePreparedStatement(boolean primary) {
 
 		tables.parallelStream().filter(table -> table.ps != null).forEach(table -> {
 
@@ -6001,1660 +6011,6 @@ public class PgSchema implements Serializable {
 		tables.stream().filter(table -> table.indexable).forEach(table -> table.fields.stream().filter(field -> field.sph_mva).forEach(field -> sph_mvas.add(table.name + PgSchemaUtil.sph_member_op + field.name)));
 
 		return sph_mvas;
-	}
-
-	// JSON conversion
-
-	/** The JSON builder. */
-	@Flat
-	public JsonBuilder jsonb = null;
-
-	/**
-	 * Initialize JSON builder.
-	 *
-	 * @param option JSON builder option
-	 */
-	public void initJsonBuilder(JsonBuilderOption option) {
-
-		if (option.type.equals(JsonType.object) && tables.parallelStream().anyMatch(table -> !table.virtual && table.list_holder)) {
-
-			option.type = JsonType.column;
-			option.array_all = false;
-
-		}
-
-		if (option.array_all && option.type.equals(JsonType.object))
-			option.array_all = false;
-
-		jsonb = new JsonBuilder(option);
-
-		tables.parallelStream().filter(table -> table.required && table.content_holder).forEach(table -> {
-
-			table.jsonb_not_empty = false;
-
-			table.jsonable = table.fields.stream().anyMatch(field -> field.jsonable);
-
-			if (table.jsonable) {
-
-				table.fields.stream().filter(field -> field.jsonable).forEach(field -> {
-
-					field.jsonb_not_empty = false;
-
-					if (field.jsonb == null)
-						field.jsonb = new StringBuilder();
-
-					else
-						field.jsonb.setLength(0);
-
-					field.jsonb_col_size = field.jsonb_null_size = 0;
-
-				});
-
-			}
-
-		});
-
-	}
-
-	/**
-	 * Clear JSON builder.
-	 */
-	private void clearJsonBuilder() {
-
-		jsonb.clear(true);
-
-		tables.parallelStream().filter(table -> table.jsonable).forEach(table -> {
-
-			table.jsonb_not_empty = false;
-
-			table.fields.stream().filter(field -> field.jsonable).forEach(field -> {
-
-				field.jsonb_not_empty = false;
-
-				if (field.jsonb == null)
-					field.jsonb = new StringBuilder();
-
-				else
-					field.jsonb.setLength(0);
-
-				field.jsonb_col_size = field.jsonb_null_size = 0;
-
-			});
-
-		});
-
-	}
-
-	/**
-	 * Write JSON buffer
-	 *
-	 * @param out output stream
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void writeJsonBuilder(OutputStream out) throws PgSchemaException {
-
-		jsonb.write(out);
-
-	}
-
-	// Object-oriented JSON conversion
-
-	/**
-	 * Realize Object-oriented JSON Schema.
-	 *
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void realizeObjJsonSchema() throws PgSchemaException {
-
-		hasRootTable();
-
-		jsonb.writeStartDocument(true);
-		jsonb.writeStartSchema(def_namespaces, def_anno_appinfo, def_anno_doc);
-
-		int json_indent_level = 2;
-
-		if (!root_table.virtual) {
-
-			jsonb.writeStartSchemaTable(root_table, json_indent_level);
-			json_indent_level += 2;
-
-		}
-
-		int _json_indent_level = json_indent_level;
-
-		root_table.fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, false, true, false, _json_indent_level));
-
-		int[] list_id = { 0 };
-
-		if (root_table.total_nested_fields > 0)
-			root_table.nested_fields.forEach(field -> realizeObjJsonSchema(root_table, getForeignTable(field), field.nested_key_as_attr, list_id[0]++, root_table.total_nested_fields, _json_indent_level));
-
-		if (!root_table.virtual)
-			jsonb.writeEndSchemaTable(root_table, false);
-
-		jsonb.writeEndSchema();
-		jsonb.writeEndDocument();
-
-		jsonb.print();
-
-	}
-
-	/**
-	 * Realize Object-oriented JSON Schema (child).
-	 *
-	 * @param parent_table parent table
-	 * @param table current table
-	 * @param as_attr whether parent node as attribute
-	 * @param list_id the list id
-	 * @param list_size the list size
-	 * @param json_indent_level current indent level
-	 */
-	private void realizeObjJsonSchema(final PgTable parent_table, final PgTable table, final boolean as_attr, final int list_id, final int list_size, int json_indent_level) {
-
-		if (!table.virtual) {
-
-			jsonb.writeStartSchemaTable(table, json_indent_level);
-			json_indent_level += 2;
-
-		}
-
-		int _json_indent_level = json_indent_level;
-
-		table.fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, as_attr, true, false, _json_indent_level));
-
-		if (table.total_nested_fields > 0) {
-
-			int[] _list_id = { 0 };
-
-			if (table.total_nested_fields > 0)
-				table.nested_fields.forEach(field -> realizeObjJsonSchema(table, getForeignTable(field), field.nested_key_as_attr, _list_id[0]++, table.total_nested_fields, _json_indent_level));
-
-		}
-
-		if (!table.virtual)
-			jsonb.writeEndSchemaTable(table, as_attr);
-
-	}
-
-	/**
-	 * Object-oriented JSON conversion.
-	 *
-	 * @param xml_parser XML parser
-	 * @param md_hash_key instance of message digest
-	 * @param json_file_path JSON file path
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void xml2ObjJson(XmlParser xml_parser, MessageDigest md_hash_key, Path json_file_path) throws PgSchemaException {
-
-		Node node = getRootNode(xml_parser);
-
-		this.md_hash_key = md_hash_key;
-
-		clearJsonBuilder();
-
-		jsonb.writeStartDocument(true);
-
-		// parse root node and store to JSON buffer
-
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table, false);
-
-		node2json.parseRootNode(node, 1);
-
-		node2json.clear();
-
-		jsonb.writeEndDocument();
-
-		try {
-
-			OutputStream out = Files.newOutputStream(json_file_path);
-
-			jsonb.write(out);
-
-			out.close();
-
-		} catch (IOException e) {
-			throw new PgSchemaException(e);
-		}
-
-	}
-
-	/**
-	 * Close xml2Json.
-	 */
-	public void closeXml2Json() {
-
-		clearJsonBuilder();
-
-	}
-
-	// Column-oriented JSON conversion
-
-	/**
-	 * Realize Column-oriented JSON Schema.
-	 *
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void realizeColJsonSchema() throws PgSchemaException {
-
-		hasRootTable();
-
-		jsonb.writeStartDocument(true);
-		jsonb.writeStartSchema(def_namespaces, def_anno_appinfo, def_anno_doc);
-
-		int json_indent_level = 2;
-
-		if (!root_table.virtual) {
-
-			jsonb.writeStartSchemaTable(root_table, json_indent_level);
-			json_indent_level += 2;
-
-		}
-
-		int _json_indent_level = json_indent_level;
-
-		root_table.fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, false, !field.list_holder, field.list_holder, _json_indent_level));
-
-		int[] list_id = { 0 };
-
-		if (root_table.total_nested_fields > 0)
-			root_table.nested_fields.forEach(field -> realizeColJsonSchema(root_table, getForeignTable(field), field.nested_key_as_attr, list_id[0]++, root_table.total_nested_fields, _json_indent_level));
-
-		if (!root_table.virtual)
-			jsonb.writeEndSchemaTable(root_table, false);
-
-		jsonb.writeEndSchema();
-		jsonb.writeEndDocument();
-
-		jsonb.print();
-
-	}
-
-	/**
-	 * Realize Column-oriented JSON Schema (child).
-	 *
-	 * @param parent_table parent table
-	 * @param table current table
-	 * @param as_attr whether parent node as attribute
-	 * @param list_id the list id
-	 * @param list_size the list size
-	 * @param json_indent_level current indent level
-	 */
-	private void realizeColJsonSchema(final PgTable parent_table, final PgTable table, final boolean as_attr, final int list_id, final int list_size, int json_indent_level) {
-
-		boolean obj_json = table.virtual || !jsonb.array_all;
-
-		if (!table.virtual) {
-
-			jsonb.writeStartSchemaTable(table, json_indent_level);
-			json_indent_level += 2;
-
-		}
-
-		int _json_indent_level = json_indent_level;
-
-		table.fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, as_attr, obj_json && !field.list_holder, !table.virtual || field.list_holder, _json_indent_level));
-
-		if (table.total_nested_fields > 0) {
-
-			int[] _list_id = { 0 };
-
-			if (table.total_nested_fields > 0)
-				table.nested_fields.forEach(field -> realizeColJsonSchema(table, getForeignTable(field), field.nested_key_as_attr, _list_id[0]++, table.total_nested_fields, _json_indent_level));
-
-		}
-
-		if (!table.virtual)
-			jsonb.writeEndSchemaTable(table, as_attr);
-
-	}
-
-	/**
-	 * Column-oriented JSON conversion.
-	 *
-	 * @param xml_parser XML parser
-	 * @param md_hash_key instance of message digest
-	 * @param json_file_path JSON file path
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void xml2ColJson(XmlParser xml_parser, MessageDigest md_hash_key, Path json_file_path) throws PgSchemaException {
-
-		Node node = getRootNode(xml_parser);
-
-		this.md_hash_key = md_hash_key;
-
-		clearJsonBuilder();
-
-		jsonb.writeStartDocument(true);
-
-		// parse root node and store to JSON buffer
-
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table, false);
-
-		node2json.parseRootNode(node, 1);
-
-		node2json.clear();
-
-		jsonb.writeEndDocument();
-
-		try {
-
-			OutputStream out = Files.newOutputStream(json_file_path);
-
-			jsonb.write(out);
-
-			out.close();
-
-		} catch (IOException e) {
-			throw new PgSchemaException(e);
-		}
-
-	}
-
-	// Relational-oriented JSON conversion
-
-	/**
-	 * Realize Relational-oriented JSON Schema.
-	 *
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void realizeJsonSchema() throws PgSchemaException {
-
-		switch (jsonb.type) {
-		case object:
-			realizeObjJsonSchema();
-			return;
-		case column:
-			realizeColJsonSchema();
-			return;
-		default:
-		}
-
-		hasRootTable();
-
-		jsonb.writeStartDocument(true);
-		jsonb.writeStartSchema(def_namespaces, def_anno_appinfo, def_anno_doc);
-
-		tables.stream().filter(table -> table.jsonable).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> realizeJsonSchema(table, 2));
-
-		jsonb.writeEndSchema();
-		jsonb.writeEndDocument();
-
-		jsonb.print();
-
-		// no support on conditional attribute
-
-		tables.stream().filter(table -> table.jsonable).forEach(table -> {
-
-			table.fields.stream().filter(field -> field.simple_attr_cond).forEach(field -> {
-
-				String cont_name = table.name + "." + field.name;
-				String attr_name = getForeignTable(field).nested_fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.foreign_table_xname;
-
-				System.err.println("[WARNING] Simple content \"" + (jsonb.case_sense ? cont_name : cont_name.toLowerCase()) + "\" may be confused with attribute \"" + (jsonb.case_sense ? attr_name : attr_name.toLowerCase()) + "\" in relational-oriented JSON format.");
-
-			});
-
-		});
-
-	}
-
-	/**
-	 * Realize Relational-oriented JSON Schema (child).
-	 *
-	 * @param table current table
-	 * @param json_indent_level current indent level
-	 */
-	private void realizeJsonSchema(final PgTable table, int json_indent_level) {
-
-		jsonb.writeStartSchemaTable(table, json_indent_level);
-
-		int _json_indent_level = json_indent_level + 2;
-		boolean unique_table = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child);
-
-		List<PgField> fields = table.fields;
-
-		fields.stream().filter(field -> field.jsonable).forEach(field -> jsonb.writeSchemaField(field, false, !jsonb.array_all, jsonb.array_all || !unique_table, _json_indent_level));
-
-		jsonb.writeEndSchemaTable(table, false);
-
-	}
-
-	/**
-	 * Relational-oriented JSON conversion.
-	 *
-	 * @param xml_parser XML parser
-	 * @param md_hash_key instance of message digest
-	 * @param json_file_path JSON file path
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void xml2Json(XmlParser xml_parser, MessageDigest md_hash_key, Path json_file_path) throws PgSchemaException {
-
-		switch (jsonb.type) {
-		case object:
-			xml2ObjJson(xml_parser, md_hash_key, json_file_path);
-			return;
-		case column:
-			xml2ColJson(xml_parser, md_hash_key, json_file_path);
-			return;
-		default:
-		}
-
-		Node node = getRootNode(xml_parser);
-
-		this.md_hash_key = md_hash_key;
-
-		clearJsonBuilder();
-
-		jsonb.writeStartDocument(true);
-
-		// parse root node and store to JSON buffer
-
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table, false);
-
-		node2json.parseRootNode(node);
-
-		node2json.clear();
-
-		tables.stream().filter(_table -> _table.jsonable && _table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).forEach(_table -> {
-
-			jsonb.writeStartTable(_table, true, 1);
-			jsonb.writeFields(_table, 2);
-			jsonb.writeEndTable();
-
-		});
-
-		jsonb.writeEndDocument();
-
-		try {
-
-			OutputStream out = Files.newOutputStream(json_file_path);
-
-			jsonb.write(out);
-
-			out.close();
-
-		} catch (IOException e) {
-			throw new PgSchemaException(e);
-		}
-
-		// no support on conditional attribute
-
-		tables.stream().filter(table -> table.jsonable).forEach(table -> {
-
-			table.fields.stream().filter(field -> field.simple_attr_cond).forEach(field -> {
-
-				String cont_name = table.name + "." + field.name;
-				String attr_name = getForeignTable(field).nested_fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.foreign_table_xname;
-
-				System.err.println("[WARNING] Simple content \"" + (jsonb.case_sense ? cont_name : cont_name.toLowerCase()) + "\" may be confused with attribute \"" + (jsonb.case_sense ? attr_name : attr_name.toLowerCase()) + "\" in relational-oriented JSON format.");
-
-			});
-
-		});
-
-	}
-
-	// XPath query evaluation to XML over PostgreSQL
-
-	/** The XML builder. */
-	@Flat
-	protected XmlBuilder xmlb = null;
-
-	/**
-	 * Initialize XML builder.
-	 *
-	 * @param xmlb XML builder
-	 */
-	public void initXmlBuilder(XmlBuilder xmlb) {
-
-		if (this.xmlb == null) {
-
-			xmlb.xsi_schema_location = def_namespaces.get("") + " " + PgSchemaUtil.getSchemaFileName(option.root_schema_location);
-			xmlb.has_nillable_element = tables.parallelStream().anyMatch(table -> table.has_nillable_element);
-
-			this.xmlb = xmlb;
-			this.xmlb.clear();
-
-		}
-
-	}
-
-	/**
-	 * Compose XML fragment (field or text node)
-	 *
-	 * @param xpath_comp_list current XPath component list
-	 * @param path_expr current XPath expression
-	 * @param rset current result set
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void pgSql2XmlFrag(XPathCompList xpath_comp_list, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
-
-		XPathCompType terminus = path_expr.terminus;
-
-		if (terminus.equals(XPathCompType.table))
-			return;
-
-		PgTable table = path_expr.sql_subject.table;
-
-		String table_name = table.xname;
-		String table_ns = table.target_namespace;
-		String table_prefix = table.prefix;
-
-		PgField field = path_expr.sql_subject.field;
-
-		String field_name = field.xname;
-		String field_ns = field.target_namespace;
-		String field_prefix = field.prefix;
-
-		XMLStreamWriter xml_writer = xmlb.writer;
-		boolean append_xmlns = xmlb.append_xmlns;
-
-		try {
-
-			String content;
-
-			while (rset.next()) {
-
-				switch (terminus) {
-				case element:
-					content = field.retrieve(rset, 1);
-
-					if (content != null) {
-
-						if (field.is_xs_namespace) {
-
-							xml_writer.writeStartElement(table_prefix, field_name, table_ns);
-
-							if (append_xmlns)
-								xml_writer.writeNamespace(table_prefix, table_ns);
-
-						}
-
-						else {
-
-							xml_writer.writeStartElement(field_prefix, field_name, field_ns);
-
-							if (append_xmlns)
-								xml_writer.writeNamespace(field_prefix, field_ns);
-
-						}
-
-						xml_writer.writeCharacters(content);
-
-						xml_writer.writeEndElement();
-
-						xmlb.writeLineFeedCode();
-
-					}
-
-					else {
-
-						if (field.is_xs_namespace) {
-
-							xml_writer.writeEmptyElement(table_prefix, field_name, table_ns);
-
-							if (append_xmlns) {
-								xml_writer.writeNamespace(table_prefix, table_ns);
-								xml_writer.writeNamespace(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri);
-							}
-
-						}
-
-						else {
-
-							xml_writer.writeEmptyElement(field_prefix, field_name, field_ns);
-
-							if (append_xmlns) {
-								xml_writer.writeNamespace(field_prefix, field_ns);
-								xml_writer.writeNamespace(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri);
-							}
-
-						}
-
-						xml_writer.writeAttribute(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri, "nil", "true");
-
-						xmlb.writeLineFeedCode();
-
-					}
-					break;
-				case simple_content:
-					content = field.retrieve(rset, 1);
-
-					// simple content
-
-					if (!field.simple_attribute) {
-
-						if (content != null) {
-
-							xml_writer.writeStartElement(table_prefix, table_name, table_ns);
-
-							if (append_xmlns)
-								xml_writer.writeNamespace(table_prefix, table_ns);
-
-							xml_writer.writeCharacters(content);
-
-							xml_writer.writeEndElement();
-
-							xmlb.writeLineFeedCode();
-
-						}
-
-					}
-
-					// simple attribute
-
-					else {
-
-						PgTable parent_table = xpath_comp_list.getParentTable(path_expr);
-
-						if (content != null) {
-
-							xml_writer.writeEmptyElement(parent_table.prefix, parent_table.xname, parent_table.target_namespace);
-
-							if (append_xmlns)
-								xml_writer.writeNamespace(parent_table.prefix, parent_table.target_namespace);
-
-							if (field.is_xs_namespace)
-								xml_writer.writeAttribute(field.foreign_table_xname, content);
-							else	
-								xml_writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, content);
-
-							xmlb.writeLineFeedCode();
-
-						}
-
-					}
-					break;
-				case attribute:
-					content = field.retrieve(rset, 1);
-
-					// attribute
-
-					if (field.attribute) {
-
-						if (content != null) {
-
-							xml_writer.writeEmptyElement(table_prefix, table_name, table_ns);
-
-							if (append_xmlns)
-								xml_writer.writeNamespace(table_prefix, table_ns);
-
-							if (field_ns.equals(PgSchemaUtil.xs_namespace_uri))
-								xml_writer.writeAttribute(field_name, content);
-							else
-								xml_writer.writeAttribute(field_prefix, field_ns, field_name, content);
-
-							xmlb.writeLineFeedCode();
-
-						}
-
-					}
-
-					// simple attribute
-
-					else {
-
-						PgTable parent_table = xpath_comp_list.getParentTable(path_expr);
-
-						if (content != null) {
-
-							xml_writer.writeEmptyElement(parent_table.prefix, parent_table.xname, parent_table.target_namespace);
-
-							if (append_xmlns)
-								xml_writer.writeNamespace(parent_table.prefix, parent_table.target_namespace);
-
-							if (field.is_xs_namespace)
-								xml_writer.writeAttribute(field.foreign_table_xname, content);
-							else	
-								xml_writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, content);
-
-							xmlb.writeLineFeedCode();
-
-						}
-
-					}
-					break;
-				case any_attribute:
-				case any_element:
-					Array arrayed_cont = rset.getArray(1);
-
-					String[] contents = (String[]) arrayed_cont.getArray();
-
-					for (String _content : contents) {
-
-						if (_content != null) {
-
-							String path = path_expr.getReadablePath();
-
-							String target_path = xmlb.getLastNameOfPath(path);
-
-							if (terminus.equals(XPathCompType.any_attribute) || target_path.startsWith("@")) {
-
-								xml_writer.writeEmptyElement(field.prefix, xmlb.getLastNameOfPath(xmlb.getParentPath(path)), table_ns);
-
-								if (append_xmlns)
-									xml_writer.writeNamespace(field.prefix, field.namespace);
-
-								String attr_name = target_path.replace("@", "");
-
-								if (field.prefix.isEmpty() || field.namespace.isEmpty())
-									xml_writer.writeAttribute(attr_name, _content);
-								else
-									xml_writer.writeAttribute(field.prefix, field.namespace, attr_name, _content);
-
-							}
-
-							else {
-
-								xml_writer.writeStartElement(field.prefix, target_path, field.namespace);
-
-								if (append_xmlns)
-									xml_writer.writeNamespace(field.prefix, field.namespace);
-
-								xml_writer.writeCharacters(_content);
-
-								xml_writer.writeEndElement();
-
-							}
-
-							xmlb.writeLineFeedCode();
-
-						}
-
-					}
-					break;
-				case text:
-					content = rset.getString(1);
-
-					if (content != null) {
-
-						String column_name = rset.getMetaData().getColumnName(1);
-
-						PgField _field = table.getField(column_name);
-
-						if (_field != null)
-							content = field.retrieve(rset, 1);
-
-						xml_writer.writeCharacters(content);
-
-						xmlb.writeLineFeedCode();
-
-					}
-					break;
-				case comment:
-					content = rset.getString(1);
-
-					if (content != null) {
-
-						xml_writer.writeComment(content);
-
-						xmlb.writeLineFeedCode();
-
-					}
-					break;
-				case processing_instruction:
-					content = rset.getString(1);
-
-					if (content != null) {
-
-						xml_writer.writeProcessingInstruction(content);
-
-						xmlb.writeLineFeedCode();
-
-					}
-					break;
-				default:
-					continue;
-				}
-
-			}
-
-		} catch (SQLException | XMLStreamException e) {
-			throw new PgSchemaException(e);
-		}
-
-		xmlb.incFragment();
-
-	}
-
-	/**
-	 * Compose XML document (table node)
-	 *
-	 * @param db_conn database connection
-	 * @param path_expr current XPath expression
-	 * @param rset current result set
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void pgSql2Xml(Connection db_conn, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
-
-		XPathCompType terminus = path_expr.terminus;
-
-		if (!terminus.equals(XPathCompType.table))
-			return;
-
-		this.db_conn = db_conn;
-
-		PgTable table = path_expr.sql_subject.table;
-
-		LinkedList<XmlBuilderPendingElem> pending_elem = xmlb.pending_elem;
-
-		try {
-
-			XmlBuilderNestTester nest_test = new XmlBuilderNestTester(table, xmlb);
-			XmlBuilderPendingElem elem = new XmlBuilderPendingElem(table, nest_test.current_indent_space, true);
-			XmlBuilderPendingAttr attr;
-
-			pending_elem.push(elem);
-
-			List<PgField> fields = table.fields;
-
-			String content;
-			Object key;
-
-			boolean attr_only;
-			int param_id, n;
-
-			document_id = null;
-
-			// document key
-
-			if (table.doc_key_pname != null) {
-
-				param_id = 1;
-
-				for (PgField field : fields) {
-
-					if (field.pname.equals(table.doc_key_pname)) {
-
-						document_id = rset.getString(param_id);
-
-						break;
-					}
-
-					if (!field.omissible)
-						param_id++;
-
-				}
-
-			}
-
-			// attribute, any_attribute
-
-			if (table.has_attrs) {
-
-				param_id = 1;
-
-				for (PgField field : fields) {
-
-					if (field.attribute) {
-
-						content = field.retrieve(rset, param_id);
-
-						if (content != null) {
-
-							attr = new XmlBuilderPendingAttr(field, content);
-
-							elem = pending_elem.peek();
-
-							if (elem != null)
-								elem.appendPendingAttr(attr);
-							else
-								attr.write(xmlb, null);
-
-							if (!nest_test.has_content)
-								nest_test.has_content = true;
-
-						}
-
-					}
-
-					else if (field.any_attribute) {
-
-						SQLXML xml_object = rset.getSQLXML(param_id);
-
-						if (xml_object != null) {
-
-							InputStream in = xml_object.getBinaryStream();
-
-							if (in != null) {
-
-								XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table.pname, field, nest_test, xmlb);
-
-								nest_test.any_sax_parser.parse(in, any_attr);
-
-								nest_test.any_sax_parser.reset();
-
-								in.close();
-
-							}
-
-							xml_object.free();
-
-						}
-
-					}
-
-					else if (field.nested_key_as_attr) {
-
-						key = rset.getObject(param_id);
-
-						if (key != null)
-							nest_test.merge(xmlb.nestChildNode2Xml(this, getTable(field.foreign_table_id), key, true, nest_test));
-
-					}
-
-					if (!field.omissible)
-						param_id++;
-
-				}
-
-			}
-
-			// simple_content, element, any
-
-			if (table.has_elems || option.document_key) {
-
-				param_id = 1;
-
-				for (PgField field : fields) {
-
-					if (xmlb.insert_doc_key && field.document_key && !table.equals(root_table)) {
-						/*
-						if (table.equals(root_table))
-							throw new PgSchemaException("Not allowed to insert document key to root element.");
-						 */
-						if (pending_elem.peek() != null)
-							xmlb.writePendingElems(false);
-
-						xmlb.writePendingSimpleCont();
-
-						if (!nest_test.has_child_elem)
-							xmlb.writeLineFeedCode();
-
-						xmlb.writeSimpleCharacters(nest_test.child_indent_bytes);
-
-						xmlb.insertDocKey(field.start_end_elem_tag, rset.getString(param_id));
-						/*
-						if (field.is_xs_namespace)
-							xmlb.writer.writeStartElement(table_prefix, field.xname, table_ns);
-						else
-							xmlb.writer.writeStartElement(field.prefix, field.xname, field.target_namespace);
-
-						xmlb.writer.writeCharacters(rset.getString(param_id));
-
-						xmlb.writer.writeEndElement();
-						 */
-						nest_test.has_child_elem = nest_test.has_content = nest_test.has_insert_doc_key = true;
-
-					}
-
-					else if (field.simple_content && !field.simple_attribute) {
-
-						content = field.retrieve(rset, param_id);
-
-						if (content != null) {
-
-							if (pending_elem.peek() != null)
-								xmlb.writePendingElems(false);
-
-							if (field.simple_primitive_list) {
-
-								if (xmlb.pending_simple_cont.length() > 0) {
-
-									xmlb.writePendingSimpleCont();
-
-									xmlb.writer.writeEndElement();
-
-									elem = new XmlBuilderPendingElem(table, (pending_elem.size() > 0 ? "" : xmlb.line_feed_code) + nest_test.current_indent_space, false);
-
-									elem.write(xmlb);
-
-								}
-
-							}
-
-							xmlb.appendSimpleCont(content);
-
-							nest_test.has_simple_content = nest_test.has_open_simple_content = true;
-
-						}
-
-					}
-
-					else if (field.element) {
-
-						content = field.retrieve(rset, param_id);
-
-						if (content != null || (field.nillable && xmlb.append_nil_elem)) {
-
-							if (pending_elem.peek() != null)
-								xmlb.writePendingElems(false);
-
-							xmlb.writePendingSimpleCont();
-
-							if (!nest_test.has_child_elem)
-								xmlb.writeLineFeedCode();
-
-							xmlb.writeSimpleCharacters(nest_test.child_indent_bytes);
-
-							if (content != null) {
-
-								xmlb.writeSimpleElement(field.start_end_elem_tag, field.latin_1_encoded, content);
-								/*
-								if (field.is_xs_namespace)
-									xmlb.writer.writeStartElement(table_prefix, field.xname, table_ns);
-								else
-									xmlb.writer.writeStartElement(field.prefix, field.xname, field.target_namespace);
-
-								xmlb.writer.writeCharacters(content);
-
-								xmlb.writer.writeEndElement();
-								 */
-							}
-
-							else {
-
-								xmlb.writeSimpleCharacters(field.empty_elem_tag);
-								/*
-								if (field.is_xs_namespace)
-									xmlb.writer.writeEmptyElement(table_prefix, field.xname, table_ns);
-								else
-									xmlb.writer.writeEmptyElement(field.prefix, field.xname, field.target_namespace);
-
-								xmlb.writer.writeAttribute(PgSchemaUtil.xsi_prefix, PgSchemaUtil.xsi_namespace_uri, "nil", "true");
-								 */
-							}
-							/*
-							xmlb.writeLineFeedCode();
-							 */
-							if (!nest_test.has_child_elem || !nest_test.has_content)
-								nest_test.has_child_elem = nest_test.has_content = true;
-
-							if (nest_test.has_insert_doc_key)
-								nest_test.has_insert_doc_key = false;
-
-						}
-
-					}
-
-					else if (field.any) {
-
-						SQLXML xml_object = rset.getSQLXML(param_id);
-
-						if (xml_object != null) {
-
-							InputStream in = xml_object.getBinaryStream();
-
-							if (in != null) {
-
-								XmlBuilderAnyRetriever any = new XmlBuilderAnyRetriever(table.pname, field, nest_test, xmlb);
-
-								nest_test.any_sax_parser.parse(in, any);
-
-								nest_test.any_sax_parser.reset();
-
-								if (nest_test.has_insert_doc_key)
-									nest_test.has_insert_doc_key = false;
-
-								in.close();
-
-							}
-
-							xml_object.free();
-
-						}
-
-					}
-
-					if (!field.omissible)
-						param_id++;
-
-				}
-
-			}
-
-			// nested key
-
-			if (table.total_nested_fields > 0) {
-
-				PgTable nested_table;
-
-				param_id = 1;
-				n = 0;
-
-				for (PgField field : fields) {
-
-					if (field.nested_key && !field.nested_key_as_attr) {
-
-						key = rset.getObject(param_id);
-
-						if (key != null) {
-
-							nest_test.has_child_elem |= n++ > 0;
-
-							nested_table = getTable(field.foreign_table_id);
-
-							if (nested_table.content_holder || !nested_table.bridge)
-								nest_test.merge(xmlb.nestChildNode2Xml(this, nested_table, key, false, nest_test));
-
-							// skip bridge table for acceleration
-
-							else if (nested_table.list_holder)
-								nest_test.merge(xmlb.skipListAndBridgeNode2Xml(this, nested_table, key, nest_test));
-
-							else
-								nest_test.merge(xmlb.skipBridgeNode2Xml(this, nested_table, key, nest_test));
-
-						}
-
-					}
-
-					if (!field.omissible)
-						param_id++;
-
-				}
-
-			}
-
-			if (nest_test.has_content || nest_test.has_simple_content) {
-
-				attr_only = false;
-
-				if (pending_elem.peek() != null)
-					xmlb.writePendingElems(attr_only = true);
-
-				xmlb.writePendingSimpleCont();
-
-				if (!nest_test.has_open_simple_content && !attr_only)
-					xmlb.writeSimpleCharacters(nest_test.current_indent_bytes);
-				else if (nest_test.has_simple_content)
-					nest_test.has_open_simple_content = false;
-
-				if (!attr_only)
-					xmlb.writer.writeEndElement();
-
-				xmlb.writeLineFeedCode();
-
-			}
-
-			else
-				pending_elem.poll();
-
-		} catch (XMLStreamException e) {
-			if (xmlb.insert_doc_key)
-				System.err.println("Not allowed insert document key to element has any child element.");
-			throw new PgSchemaException(e);
-		} catch (SQLException | SAXException | IOException e) {
-			throw new PgSchemaException(e);
-		}
-
-		xmlb.clear();
-
-		xmlb.incRootCount();
-
-		closePreparedStatement(true);
-
-	}
-
-	// XPath query evaluation to JSON over PostgreSQL
-
-	/**
-	 * Compose JSON fragment (field or text node)
-	 *
-	 * @param xpath_comp_list current XPath component list
-	 * @param path_expr current XPath expression
-	 * @param rset current result set
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void pgSql2JsonFrag(XPathCompList xpath_comp_list, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
-
-		XPathCompType terminus = path_expr.terminus;
-
-		if (terminus.equals(XPathCompType.table))
-			return;
-
-		jsonb.writeStartDocument(false);
-
-		PgTable table = path_expr.sql_subject.table;
-		PgField field = path_expr.sql_subject.field;
-
-		boolean as_attr = false;
-
-		String concat_line_feed = jsonb.concat_line_feed;
-
-		try {
-
-			String content;
-
-			while (rset.next()) {
-
-				switch (terminus) {
-				case element:
-					content = field.retrieve(rset, 1);
-					jsonb.writeFieldFrag(field, as_attr, content);
-					break;
-				case simple_content:
-					content = field.retrieve(rset, 1);
-
-					// simple content
-
-					if (!field.simple_attribute) {
-
-						if (content != null)
-							jsonb.writeFieldFrag(field, as_attr, content);
-
-					}
-
-					// simple attribute
-
-					else if (content != null)
-						jsonb.writeFieldFrag(field, as_attr = true, content);
-					break;
-				case attribute:
-					content = field.retrieve(rset, 1);
-
-					// attribute
-
-					if (field.attribute) {
-
-						if (content != null)
-							jsonb.writeFieldFrag(field, as_attr, content);
-
-					}
-
-					// simple attribute
-
-					else if (content != null)
-						jsonb.writeFieldFrag(field, as_attr = true, content);
-					break;
-				case any_attribute:
-				case any_element:
-					Array arrayed_cont = rset.getArray(1);
-
-					String[] contents = (String[]) arrayed_cont.getArray();
-
-					for (String _content : contents) {
-
-						if (_content != null) {
-
-							String path = path_expr.getReadablePath();
-
-							String target_path = jsonb.getLastNameOfPath(path);
-
-							if (terminus.equals(XPathCompType.any_attribute) || target_path.startsWith("@"))
-								jsonb.writeAnyFieldFrag(field, target_path.replace("@", ""), true, _content, 1);
-
-							else
-								jsonb.writeAnyFieldFrag(field, target_path, false, _content, 1);
-
-						}
-
-					}
-					break;
-				case text:
-					content = rset.getString(1);
-
-					if (content != null) {
-
-						String column_name = rset.getMetaData().getColumnName(1);
-
-						PgField _field = table.getField(column_name);
-
-						if (_field != null)
-							content = field.retrieve(rset, 1);
-
-						jsonb.buffer.append(content + concat_line_feed);
-
-					}
-					break;
-				case comment:
-				case processing_instruction:
-					content = rset.getString(1);
-
-					if (content != null)
-						jsonb.buffer.append(content + concat_line_feed);
-					break;
-				default:
-					continue;
-				}
-
-			}
-
-			if (jsonb.array_all && terminus.isField()) {
-
-				switch (terminus) {
-				case any_attribute:
-				case any_element:
-					jsonb.writeAnyFieldFrag(field, path_expr.getReadablePath());
-					break;
-				default:
-					jsonb.writeFieldFrag(field, as_attr);
-				}
-
-			}
-
-			jsonb.writeEndDocument();
-
-		} catch (SQLException e) {
-			throw new PgSchemaException(e);
-		}
-
-		jsonb.incFragment();
-
-	}
-
-	/**
-	 * Compose JSON document (table node)
-	 *
-	 * @param db_conn database connection
-	 * @param path_expr current XPath expression
-	 * @param rset current result set
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void pgSql2Json(Connection db_conn, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
-
-		XPathCompType terminus = path_expr.terminus;
-
-		if (!terminus.equals(XPathCompType.table))
-			return;
-
-		this.db_conn = db_conn;
-
-		PgTable table = path_expr.sql_subject.table;
-
-		LinkedList<JsonBuilderPendingElem> pending_elem = jsonb.pending_elem;
-
-		jsonb.writeStartDocument(false);
-
-		try {
-
-			JsonBuilderNestTester nest_test = new JsonBuilderNestTester(table, jsonb);
-			JsonBuilderPendingElem elem = new JsonBuilderPendingElem(table, nest_test.current_indent_level);
-			JsonBuilderPendingAttr attr;
-
-			pending_elem.push(elem);
-
-			List<PgField> fields = table.fields;
-
-			String content;
-			Object key;
-
-			boolean attr_only;
-			int param_id, n;
-
-			document_id = null;
-
-			// document key
-
-			if (table.doc_key_pname != null) {
-
-				param_id = 1;
-
-				for (PgField field : fields) {
-
-					if (field.pname.equals(table.doc_key_pname)) {
-
-						document_id = rset.getString(param_id);
-
-						break;
-					}
-
-					if (!field.omissible)
-						param_id++;
-
-				}
-
-			}
-
-			// attribute, any_attribute
-
-			if (table.has_attrs) {
-
-				param_id = 1;
-
-				for (PgField field : fields) {
-
-					if (field.attribute) {
-
-						content = field.retrieve(rset, param_id);
-
-						if (content != null) {
-
-							attr = new JsonBuilderPendingAttr(field, content, nest_test.child_indent_level);
-
-							elem = pending_elem.peek();
-
-							if (elem != null)
-								elem.appendPendingAttr(attr);
-							else
-								attr.write(jsonb);
-
-							if (!nest_test.has_content)
-								nest_test.has_content = true;
-
-						}
-
-					}
-
-					else if (field.any_attribute) {
-
-						SQLXML xml_object = rset.getSQLXML(param_id);
-
-						if (xml_object != null) {
-
-							InputStream in = xml_object.getBinaryStream();
-
-							if (in != null) {
-
-								JsonBuilderAnyAttrRetriever any_attr = new JsonBuilderAnyAttrRetriever(table.pname, field, nest_test, false, jsonb);
-
-								nest_test.any_sax_parser.parse(in, any_attr);
-
-								nest_test.any_sax_parser.reset();
-
-								in.close();
-
-							}
-
-							xml_object.free();
-
-						}
-
-					}
-
-					else if (field.nested_key_as_attr) {
-
-						key = rset.getObject(param_id);
-
-						if (key != null)
-							nest_test.merge(jsonb.nestChildNode2Json(this, getTable(field.foreign_table_id), key, true, nest_test));
-
-					}
-
-					if (!field.omissible)
-						param_id++;
-
-				}
-
-			}
-
-			// simple_content, element, any
-
-			if (table.has_elems || option.document_key) {
-
-				param_id = 1;
-
-				for (PgField field : fields) {
-
-					if (jsonb.insert_doc_key && field.document_key && !table.equals(root_table)) {
-						/*
-						if (table.equals(root_table))
-							throw new PgSchemaException("Not allowed to insert document key to root element.");
-						 */
-						if (pending_elem.peek() != null)
-							jsonb.writePendingElems(false);
-
-						jsonb.writePendingSimpleCont();
-
-						jsonb.writeField(table, field, false, rset.getString(param_id), nest_test.child_indent_level);
-
-						nest_test.has_child_elem = nest_test.has_content = nest_test.has_insert_doc_key = true;
-
-					}
-
-					else if (field.simple_content && !field.simple_attribute) {
-
-						content = field.retrieve(rset, param_id);
-
-						if (content != null) {
-
-							if (pending_elem.peek() != null)
-								jsonb.writePendingElems(false);
-
-							jsonb.writePendingSimpleCont();
-
-							jsonb.writeField(table, field, false, content, nest_test.child_indent_level);
-
-							nest_test.has_simple_content = nest_test.has_open_simple_content = true;
-
-						}
-
-					}
-
-					else if (field.element) {
-
-						content = field.retrieve(rset, param_id);
-
-						if (content != null) {
-
-							if (pending_elem.peek() != null)
-								jsonb.writePendingElems(false);
-
-							jsonb.writePendingSimpleCont();
-
-							jsonb.writeField(table, field, false, content, nest_test.child_indent_level);
-
-							if (!nest_test.has_child_elem || !nest_test.has_content)
-								nest_test.has_child_elem = nest_test.has_content = true;
-
-							if (nest_test.has_insert_doc_key)
-								nest_test.has_insert_doc_key = false;
-
-						}
-
-					}
-
-					else if (field.any) {
-
-						SQLXML xml_object = rset.getSQLXML(param_id);
-
-						if (xml_object != null) {
-
-							InputStream in = xml_object.getBinaryStream();
-
-							if (in != null) {
-
-								JsonBuilderAnyRetriever any = new JsonBuilderAnyRetriever(table.pname, field, nest_test, false, jsonb);
-
-								nest_test.any_sax_parser.parse(in, any);
-
-								nest_test.any_sax_parser.reset();
-
-								if (nest_test.has_insert_doc_key)
-									nest_test.has_insert_doc_key = false;
-
-								in.close();
-
-							}
-
-							xml_object.free();
-
-						}
-
-					}
-
-					if (!field.omissible)
-						param_id++;
-
-				}
-
-			}
-
-			// nested key
-
-			if (table.total_nested_fields > 0) {
-
-				PgTable nested_table;
-
-				param_id = 1;
-				n = 0;
-
-				for (PgField field : fields) {
-
-					if (field.nested_key && !field.nested_key_as_attr) {
-
-						key = rset.getObject(param_id);
-
-						if (key != null) {
-
-							nest_test.has_child_elem |= n++ > 0;
-
-							nested_table = getTable(field.foreign_table_id);
-
-							if (nested_table.content_holder || !nested_table.bridge)
-								nest_test.merge(jsonb.nestChildNode2Json(this, nested_table, key, false, nest_test));
-
-							// skip bridge table for acceleration
-
-							else if (nested_table.list_holder)
-								nest_test.merge(jsonb.skipListAndBridgeNode2Json(this, nested_table, key, nest_test));
-
-							else
-								nest_test.merge(jsonb.skipBridgeNode2Json(this, nested_table, key, nest_test));
-
-						}
-
-					}
-
-					if (!field.omissible)
-						param_id++;
-
-				}
-
-			}
-
-			if (nest_test.has_content || nest_test.has_simple_content) {
-
-				attr_only = false;
-
-				if (pending_elem.peek() != null)
-					jsonb.writePendingElems(attr_only = true);
-
-				jsonb.writePendingSimpleCont();
-
-				if (!nest_test.has_open_simple_content && !attr_only) { }
-				else if (nest_test.has_simple_content)
-					nest_test.has_open_simple_content = false;
-
-				jsonb.writeEndTable();
-
-			}
-
-			else
-				pending_elem.poll();
-
-		} catch (SQLException | SAXException | IOException e) {
-			throw new PgSchemaException(e);
-		}
-
-		jsonb.writeEndDocument();
-
-		jsonb.clear(false);
-
-		jsonb.incRootCount();
-
-		closePreparedStatement(true);
-
 	}
 
 }

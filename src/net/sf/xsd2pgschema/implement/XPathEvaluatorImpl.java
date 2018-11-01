@@ -57,6 +57,7 @@ import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
 import net.sf.xsd2pgschema.serverutil.PgSchemaClientImpl;
+import net.sf.xsd2pgschema.docbuilder.JsonBuilder;
 import net.sf.xsd2pgschema.docbuilder.JsonBuilderOption;
 import net.sf.xsd2pgschema.docbuilder.XmlBuilder;
 import net.sf.xsd2pgschema.option.PgOption;
@@ -414,7 +415,7 @@ public class XPathEvaluatorImpl {
 
 			}
 
-			client.schema.initXmlBuilder(xmlb);
+			xmlb.init(client.schema);
 
 			xmlb.resetStatus();
 
@@ -437,14 +438,14 @@ public class XPathEvaluatorImpl {
 					if (terminus.equals(XPathCompType.table)) {
 
 						while (rset.next())
-							client.schema.pgSql2Xml(db_conn, path_expr, rset);
+							xmlb.pgSql2Xml(db_conn, path_expr, rset);
 
 					}
 
 					// field or text node
 
 					else
-						client.schema.pgSql2XmlFrag(xpath_comp_list, path_expr, rset);
+						xmlb.pgSql2XmlFrag(xpath_comp_list, path_expr, rset);
 
 					rset.close();
 
@@ -500,7 +501,7 @@ public class XPathEvaluatorImpl {
 		if (xpath_comp_list == null)
 			throw new PgSchemaException("Not parsed XPath expression ever.");
 
-		client.schema.initJsonBuilder(jsonb_option);
+		JsonBuilder jsonb = new JsonBuilder(client.schema, jsonb_option);
 
 		try {
 
@@ -530,7 +531,7 @@ public class XPathEvaluatorImpl {
 			else
 				out = new PrintStream(System.out);
 
-			client.schema.jsonb.resetStatus();
+			jsonb.resetStatus();
 
 			Statement stat = db_conn.createStatement();
 
@@ -551,14 +552,14 @@ public class XPathEvaluatorImpl {
 					if (terminus.equals(XPathCompType.table)) {
 
 						while (rset.next())
-							client.schema.pgSql2Json(db_conn, path_expr, rset);
+							jsonb.pgSql2Json(db_conn, path_expr, rset);
 
 					}
 
 					// field or text node
 
 					else
-						client.schema.pgSql2JsonFrag(xpath_comp_list, path_expr, rset);
+						jsonb.pgSql2JsonFrag(xpath_comp_list, path_expr, rset);
 
 					rset.close();
 
@@ -568,7 +569,7 @@ public class XPathEvaluatorImpl {
 
 			});
 
-			client.schema.writeJsonBuilder(out);
+			jsonb.write(out);
 
 			long end_time = System.currentTimeMillis();
 
@@ -590,9 +591,9 @@ public class XPathEvaluatorImpl {
 
 			}
 
-			if (client.schema.jsonb.getRootCount() > 1)
+			if (jsonb.getRootCount() > 1)
 				throw new PgSchemaException("[WARNING] The JSON document has multiple root nodes.");
-			if (client.schema.jsonb.getFragment() > 1)
+			if (jsonb.getFragment() > 1)
 				throw new PgSchemaException("[WARNING] The JSON document has multiple fragments.");
 
 		} catch (IOException | SQLException e) {

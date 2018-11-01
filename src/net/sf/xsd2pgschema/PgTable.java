@@ -86,7 +86,7 @@ public class PgTable implements Serializable {
 	public List<PgField> fields = null;
 
 	/** The generation order in PostgreSQL DDL. */
-	protected int order = 0;
+	public int order = 0;
 
 	/** The total number of field as nested key. */
 	public int total_nested_fields = 0;
@@ -146,7 +146,7 @@ public class PgTable implements Serializable {
 	public boolean has_path_restriction = false;
 
 	/** Whether table is referred from child table. */
-	protected boolean required = false;
+	public boolean required = false;
 
 	/** Whether table could have writer. */
 	public boolean writable = false;

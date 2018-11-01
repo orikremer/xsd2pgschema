@@ -28,7 +28,6 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import net.sf.xsd2pgschema.PgField;
-import net.sf.xsd2pgschema.PgSchema;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgTable;
 import net.sf.xsd2pgschema.docbuilder.JsonBuilder;
@@ -66,17 +65,17 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	/**
 	 * Node parser for JSON conversion.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param jsonb JSON builder
 	 * @param parent_table parent table (set null if current table is root table)
 	 * @param table current table
 	 * @param as_attr whether parent node as attribute
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2Json(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean as_attr) throws PgSchemaException {
+	public PgSchemaNode2Json(final JsonBuilder jsonb, final PgTable parent_table, final PgTable table, final boolean as_attr) throws PgSchemaException {
 
-		super(schema, parent_table, table, PgSchemaNodeParserType.json_conversion);
+		super(jsonb.schema, parent_table, table, PgSchemaNodeParserType.json_conversion);
 
-		jsonb = schema.jsonb;
+		this.jsonb = jsonb;
 		type = jsonb.type;
 
 		relational = table.relational;
@@ -290,7 +289,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, nested_key.table, nested_key.as_attr);
+		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(jsonb, table, nested_key.table, nested_key.as_attr);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepForTraversal(table, parent_node, nested_key);
@@ -333,7 +332,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		PgTable current_table = nested_key.table;
 
-		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, current_table, nested_key.as_attr);
+		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(jsonb, table, current_table, nested_key.as_attr);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepForTraversal(table, parent_node, nested_key);
@@ -390,7 +389,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		PgTable current_table = nested_key.table;
 
-		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(schema, table, current_table, nested_key.as_attr);
+		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(jsonb, table, current_table, nested_key.as_attr);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepForTraversal(table, parent_node, nested_key);

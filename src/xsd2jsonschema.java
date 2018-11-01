@@ -170,9 +170,9 @@ public class xsd2jsonschema {
 
 			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
 
-			schema.initJsonBuilder(jsonb_option);
+			JsonBuilder jsonb = new JsonBuilder(schema, jsonb_option);
 
-			schema.realizeJsonSchema();
+			jsonb.realizeJsonSchema();
 
 		} catch (ParserConfigurationException | SAXException | IOException | PgSchemaException e) {
 			e.printStackTrace();

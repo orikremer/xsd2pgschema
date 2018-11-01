@@ -39,6 +39,7 @@ import net.sf.xsd2pgschema.serverutil.PgSchemaClientImpl;
 import net.sf.xsd2pgschema.type.PgHashSize;
 import net.sf.xsd2pgschema.xmlutil.XmlParser;
 import net.sf.xsd2pgschema.xmlutil.XmlValidator;
+import net.sf.xsd2pgschema.docbuilder.JsonBuilder;
 import net.sf.xsd2pgschema.docbuilder.JsonBuilderOption;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
 import net.sf.xsd2pgschema.option.XmlFileFilter;
@@ -56,6 +57,9 @@ public class Xml2JsonThrd implements Runnable {
 
 	/** The PgSchema client. */
 	private PgSchemaClientImpl client;
+
+	/** The JSON builder. */
+	private JsonBuilder jsonb;
 
 	/** The XML validator. */
 	private XmlValidator validator;
@@ -152,7 +156,8 @@ public class Xml2JsonThrd implements Runnable {
 		PgSchemaOption option = client.option;
 
 		client.schema.applyXmlPostEditor(xml_post_editor);
-		client.schema.initJsonBuilder(jsonb_option);
+
+		jsonb = new JsonBuilder(client.schema, jsonb_option);
 
 		// prepare XML validator
 
@@ -210,7 +215,7 @@ public class Xml2JsonThrd implements Runnable {
 
 				json_file_path = Paths.get(json_dir_path.toString(), xml_parser.basename + ".json");
 
-				client.schema.xml2Json(xml_parser, md_hash_key, json_file_path);
+				jsonb.xml2Json(xml_parser, md_hash_key, json_file_path);
 
 			} catch (Exception e) {
 				System.err.println("Exception occurred while processing XML document: " + xml_file_path.toAbsolutePath().toString());
@@ -221,7 +226,7 @@ public class Xml2JsonThrd implements Runnable {
 
 		}
 
-		client.schema.closeXml2Json();
+		jsonb.clearAll();
 
 		if (thrd_id == 0)
 			System.out.println("\nDone.");
