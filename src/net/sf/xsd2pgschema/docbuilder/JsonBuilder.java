@@ -278,8 +278,6 @@ public class JsonBuilder extends CommonBuilder {
 
 	}
 
-	// indent white space
-
 	/**
 	 * Decide JSON indent white spaces.
 	 *
@@ -447,7 +445,7 @@ public class JsonBuilder extends CommonBuilder {
 		return getCanKeyDecl(canonical_key) + "[" + (inline ? "" : line_feed_code);
 	}
 
-	// JSON Schema
+	// JSON Schema document
 
 	/**
 	 * Write JSON Schema header.
@@ -1710,7 +1708,7 @@ public class JsonBuilder extends CommonBuilder {
 
 	}
 
-	// JSON Schema conversion
+	// JSON conversion
 
 	// Object-oriented JSON conversion
 
