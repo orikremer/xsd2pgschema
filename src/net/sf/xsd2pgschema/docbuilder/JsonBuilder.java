@@ -236,7 +236,7 @@ public class JsonBuilder extends CommonBuilder {
 	 *
 	 * @param clear_buffer whether to clear JSON buffer
 	 */
-	public void clear(boolean clear_buffer) {
+	private void clear(boolean clear_buffer) {
 
 		super.clear();
 
@@ -325,7 +325,7 @@ public class JsonBuilder extends CommonBuilder {
 	 *
 	 * @param clear_buffer whether to clear JSON buffer
 	 */
-	public void writeStartDocument(boolean clear_buffer) {
+	private void writeStartDocument(boolean clear_buffer) {
 
 		if (clear_buffer)
 			buffer.setLength(0);
@@ -350,7 +350,7 @@ public class JsonBuilder extends CommonBuilder {
 	/**
 	 * Write a end object.
 	 */
-	public void writeEndDocument() {
+	private void writeEndDocument() {
 
 		trimComma();
 
@@ -450,7 +450,7 @@ public class JsonBuilder extends CommonBuilder {
 	/**
 	 * Write JSON Schema header.
 	 */
-	public void writeStartSchema() {
+	private void writeStartSchema() {
 
 		String indent_spaces = getIndentSpaces(1);
 
@@ -502,7 +502,7 @@ public class JsonBuilder extends CommonBuilder {
 	/**
 	 * Write JSON Schema footer.
 	 */
-	public void writeEndSchema() {
+	private void writeEndSchema() {
 
 		trimComma();
 
@@ -516,7 +516,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param table current table
 	 * @param indent_level current indent level
 	 */
-	public void writeStartSchemaTable(PgTable table, final int indent_level) {
+	private void writeStartSchemaTable(PgTable table, final int indent_level) {
 
 		int header_start = buffer.length();
 
@@ -549,7 +549,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param table current table
 	 * @param as_attr whether parent node as attribute
 	 */
-	public void writeEndSchemaTable(PgTable table, boolean as_attr) {
+	private void writeEndSchemaTable(PgTable table, boolean as_attr) {
 
 		int len = buffer.length();
 
@@ -596,7 +596,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param indent_level current indent level
 	 */
 	@SuppressWarnings("deprecation")
-	public void writeSchemaField(PgField field, boolean as_attr, boolean object, boolean array, int indent_level) {
+	private void writeSchemaField(PgField field, boolean as_attr, boolean object, boolean array, int indent_level) {
 
 		if (!object && !array)
 			return;
@@ -930,7 +930,7 @@ public class JsonBuilder extends CommonBuilder {
 	/**
 	 * Print buffer.
 	 */
-	public void print() {
+	private void print() {
 
 		System.out.print(buffer.toString());
 
@@ -963,7 +963,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param local_name local name
 	 * @param indent_level current indent level
 	 */
-	public void writeStartAnyTable(String local_name, final int indent_level) {
+	protected void writeStartAnyTable(String local_name, final int indent_level) {
 
 		int header_start = buffer.length();
 
@@ -1257,7 +1257,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param table current table
 	 * @param indent_level current indent level
 	 */
-	public void writeFields(PgTable table, final int indent_level) {
+	private void writeFields(PgTable table, final int indent_level) {
 
 		boolean unique_table = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child);
 
@@ -1286,7 +1286,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param as_attr whether parent node as attribute
 	 * @param content content
 	 */
-	public void writeFieldFrag(PgField field, boolean as_attr, String content) {
+	private void writeFieldFrag(PgField field, boolean as_attr, String content) {
 
 		if (array_all)
 			field.write(schema_ver, content, false, concat_value_space);
@@ -1301,7 +1301,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param field current field
 	 * @param as_attr whether parent node as attribute
 	 */
-	public void writeFieldFrag(PgField field, boolean as_attr) {
+	private void writeFieldFrag(PgField field, boolean as_attr) {
 
 		if (field.jsonb == null)
 			return;
@@ -1332,7 +1332,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param content content
 	 * @param indent_level current indent level
 	 */
-	public void writeAnyFieldFrag(PgField field, String local_name, boolean as_attr, String content, final int indent_level) {
+	private void writeAnyFieldFrag(PgField field, String local_name, boolean as_attr, String content, final int indent_level) {
 
 		if (array_all)
 			field.write(schema_ver, content, true, concat_value_space);
@@ -1348,7 +1348,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param field current field
 	 * @param path current path
 	 */
-	public void writeAnyFieldFrag(PgField field, String path) {
+	private void writeAnyFieldFrag(PgField field, String path) {
 
 		if (field.jsonb == null)
 			return;
@@ -1377,7 +1377,7 @@ public class JsonBuilder extends CommonBuilder {
 	 *
 	 * @param attr_only whether element has attribute only
 	 */
-	public void writePendingElems(boolean attr_only) {
+	protected void writePendingElems(boolean attr_only) {
 
 		JsonBuilderPendingElem elem;
 
@@ -1389,7 +1389,7 @@ public class JsonBuilder extends CommonBuilder {
 	/**
 	 * Write pending simple content.
 	 */
-	public void writePendingSimpleCont() {
+	protected void writePendingSimpleCont() {
 
 		if (pending_simple_cont.length() == 0)
 			return;
@@ -1409,7 +1409,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param content content
 	 * @param indent_level current indent level
 	 */
-	public void writeField(PgTable table, PgField field, boolean as_attr, String content, final int indent_level) {
+	protected void writeField(PgTable table, PgField field, boolean as_attr, String content, final int indent_level) {
 
 		boolean array_field = table != null && !table.virtual && !table.list_holder && !table.bridge && array_all;
 
@@ -1425,7 +1425,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param content content
 	 * @param indent_level current indent level
 	 */
-	public void writeAnyField(String local_name, boolean as_attr, String content, final int indent_level) {
+	protected void writeAnyField(String local_name, boolean as_attr, String content, final int indent_level) {
 
 		buffer.append(getIndentSpaces(indent_level) + getKeyDecl(local_name, as_attr) + "\"" + StringEscapeUtils.escapeEcmaScript(content) + "\"" + concat_line_feed);
 
@@ -1436,7 +1436,7 @@ public class JsonBuilder extends CommonBuilder {
 	 *
 	 * @param any_attr pending any attribute
 	 */
-	public void writeAnyAttr(JsonBuilderPendingAttr any_attr) {
+	protected void writeAnyAttr(JsonBuilderPendingAttr any_attr) {
 
 		buffer.append(getIndentSpaces(any_attr.indent_level) + getKeyDecl(any_attr.local_name, true) + "\"" + StringEscapeUtils.escapeEcmaScript(any_attr.content) + "\"" + line_feed_code);
 
@@ -1447,7 +1447,7 @@ public class JsonBuilder extends CommonBuilder {
 	 *
 	 * @param any_attrs list of pending any attributes
 	 */
-	public void writeAnyAttrs(List<JsonBuilderPendingAttr> any_attrs) {
+	protected void writeAnyAttrs(List<JsonBuilderPendingAttr> any_attrs) {
 
 		JsonBuilderPendingAttr first = any_attrs.get(0);
 
@@ -2348,7 +2348,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @return JsonBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */	
-	public JsonBuilderNestTester nestChildNode2Json(final PgTable table, final Object parent_key, final boolean as_attr, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
+	private JsonBuilderNestTester nestChildNode2Json(final PgTable table, final Object parent_key, final boolean as_attr, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		try {
 
@@ -2756,7 +2756,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @return JsonBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public JsonBuilderNestTester skipListAndBridgeNode2Json(final PgTable table, final Object parent_key, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
+	private JsonBuilderNestTester skipListAndBridgeNode2Json(final PgTable table, final Object parent_key, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		try {
 
@@ -2882,7 +2882,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @return JsonBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */	
-	public JsonBuilderNestTester skipBridgeNode2Json(final PgTable table, final Object parent_key, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
+	private JsonBuilderNestTester skipBridgeNode2Json(final PgTable table, final Object parent_key, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		JsonBuilderNestTester nest_test = new JsonBuilderNestTester(table, parent_nest_test);
 

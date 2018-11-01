@@ -161,7 +161,7 @@ public class XmlBuilder extends CommonBuilder {
 	 * @throws XMLStreamException the XML stream exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public void writePendingElems(boolean attr_only) throws XMLStreamException, IOException {
+	protected void writePendingElems(boolean attr_only) throws XMLStreamException, IOException {
 
 		XmlBuilderPendingElem elem;
 
@@ -187,7 +187,7 @@ public class XmlBuilder extends CommonBuilder {
 	 *
 	 * @param content simple content
 	 */
-	public void appendSimpleCont(String content) {
+	private void appendSimpleCont(String content) {
 
 		pending_simple_cont.append(content);
 
@@ -198,7 +198,7 @@ public class XmlBuilder extends CommonBuilder {
 	 *
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public void writePendingSimpleCont() throws XMLStreamException {
+	protected void writePendingSimpleCont() throws XMLStreamException {
 
 		if (pending_simple_cont.length() == 0)
 			return;
@@ -220,7 +220,7 @@ public class XmlBuilder extends CommonBuilder {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public void insertDocKey(byte[] tag, String content) throws IOException, XMLStreamException {
+	private void insertDocKey(byte[] tag, String content) throws IOException, XMLStreamException {
 
 		out.write(tag, 1, tag.length - 1);
 
@@ -243,7 +243,7 @@ public class XmlBuilder extends CommonBuilder {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public void writeSimpleElement(byte[] tag, boolean latin_1_encoded, String content) throws IOException, XMLStreamException {
+	private void writeSimpleElement(byte[] tag, boolean latin_1_encoded, String content) throws IOException, XMLStreamException {
 
 		out.write(tag, 1, tag.length - (line_feed ? 2 : 1));
 
@@ -266,7 +266,7 @@ public class XmlBuilder extends CommonBuilder {
 	 * @param string string.
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public void writeSimpleCharacters(String string) throws IOException {
+	protected void writeSimpleCharacters(String string) throws IOException {
 
 		out.write(string.getBytes(PgSchemaUtil.latin_1_charset));
 
@@ -278,7 +278,7 @@ public class XmlBuilder extends CommonBuilder {
 	 * @param bytes byte array.
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public void writeSimpleCharacters(byte[] bytes) throws IOException {
+	protected void writeSimpleCharacters(byte[] bytes) throws IOException {
 
 		out.write(bytes);
 
@@ -1024,7 +1024,7 @@ public class XmlBuilder extends CommonBuilder {
 	 * @return XmlBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */	
-	public XmlBuilderNestTester nestChildNode2Xml(final PgTable table, final Object parent_key, final boolean as_attr, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
+	private XmlBuilderNestTester nestChildNode2Xml(final PgTable table, final Object parent_key, final boolean as_attr, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		try {
 
@@ -1457,7 +1457,7 @@ public class XmlBuilder extends CommonBuilder {
 	 * @return XmlBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */	
-	public XmlBuilderNestTester skipListAndBridgeNode2Xml(final PgTable table, final Object parent_key, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
+	private XmlBuilderNestTester skipListAndBridgeNode2Xml(final PgTable table, final Object parent_key, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		try {
 
@@ -1588,7 +1588,7 @@ public class XmlBuilder extends CommonBuilder {
 	 * @return XmlBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */	
-	public XmlBuilderNestTester skipBridgeNode2Xml(final PgTable table, final Object parent_key, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
+	private XmlBuilderNestTester skipBridgeNode2Xml(final PgTable table, final Object parent_key, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		try {
 
