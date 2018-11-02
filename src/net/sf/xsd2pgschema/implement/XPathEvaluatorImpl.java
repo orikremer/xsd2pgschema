@@ -58,7 +58,6 @@ import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
 import net.sf.xsd2pgschema.serverutil.PgSchemaClientImpl;
 import net.sf.xsd2pgschema.docbuilder.JsonBuilder;
-import net.sf.xsd2pgschema.docbuilder.JsonBuilderOption;
 import net.sf.xsd2pgschema.docbuilder.XmlBuilder;
 import net.sf.xsd2pgschema.option.PgOption;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
@@ -76,7 +75,7 @@ public class XPathEvaluatorImpl {
 	private PgSchemaOption option;
 
 	/** The PgSchema client. */
-	private PgSchemaClientImpl client;
+	public PgSchemaClientImpl client;
 
 	/** The database connection. */
 	private Connection db_conn = null;
@@ -486,15 +485,13 @@ public class XPathEvaluatorImpl {
 	 * @param total the total number of query
 	 * @param out_dir_name output directory name
 	 * @param out_file_name output file name or pattern
-	 * @param jsonb_option JSON builder option
+	 * @param jsonb JSON builder
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void composeJson(int id, int total, String out_dir_name, String out_file_name, JsonBuilderOption jsonb_option) throws PgSchemaException {
+	public void composeJson(int id, int total, String out_dir_name, String out_file_name, JsonBuilder jsonb) throws PgSchemaException {
 
 		if (xpath_comp_list == null)
 			throw new PgSchemaException("Not parsed XPath expression ever.");
-
-		JsonBuilder jsonb = new JsonBuilder(client.schema, jsonb_option);
 
 		try {
 

@@ -303,6 +303,8 @@ public class xpath2json {
 			if (!pg_option.name.isEmpty())
 				pg_option.clear();
 
+			JsonBuilder jsonb = new JsonBuilder(evaluator.client.schema, jsonb_option);
+
 			for (int id = 0; id < xpath_queries.size(); id++) {
 
 				String xpath_query = xpath_queries.get(id);
@@ -310,7 +312,7 @@ public class xpath2json {
 				evaluator.translate(xpath_query, variables);
 
 				if (!pg_option.name.isEmpty())
-					evaluator.composeJson(id, xpath_queries.size(), json_dir_name, out_file_name, jsonb_option);
+					evaluator.composeJson(id, xpath_queries.size(), json_dir_name, out_file_name, jsonb);
 
 			}
 

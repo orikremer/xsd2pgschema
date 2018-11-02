@@ -226,8 +226,6 @@ public class Xml2JsonThrd implements Runnable {
 
 		}
 
-		jsonb.clearAll();
-
 		if (thrd_id == 0)
 			System.out.println("\nDone.");
 

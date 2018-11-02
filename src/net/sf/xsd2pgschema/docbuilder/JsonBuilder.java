@@ -155,32 +155,6 @@ public class JsonBuilder extends CommonBuilder {
 		if (option.array_all && option.type.equals(JsonType.object))
 			option.array_all = false;
 
-		tables.parallelStream().filter(table -> table.required && table.content_holder).forEach(table -> {
-
-			table.jsonb_not_empty = false;
-
-			table.jsonable = table.fields.stream().anyMatch(field -> field.jsonable);
-
-			if (table.jsonable) {
-
-				table.fields.stream().filter(field -> field.jsonable).forEach(field -> {
-
-					field.jsonb_not_empty = false;
-
-					if (field.jsonb == null)
-						field.jsonb = new StringBuilder();
-
-					else
-						field.jsonb.setLength(0);
-
-					field.jsonb_col_size = field.jsonb_null_size = 0;
-
-				});
-
-			}
-
-		});
-
 		this.schema_ver = option.schema_ver;
 		this.type = option.type;
 		this.case_sense = option.case_sense;
@@ -229,6 +203,38 @@ public class JsonBuilder extends CommonBuilder {
 		if ((simple_content_name = option.simple_content_name) == null)
 			simple_content_name = PgSchemaUtil.simple_content_name;
 
+		tables.parallelStream().filter(table -> table.required).forEach(table -> {
+
+			table.jname = case_sense ? table.xname : table.xname.toLowerCase();
+
+			table.jsonb_not_empty = false;
+
+			table.jsonable = table.fields.stream().anyMatch(field -> field.jsonable);
+
+			if (table.jsonable) {
+
+				table.fields.stream().filter(field -> field.jsonable).forEach(field -> {
+
+					field.jname = field.simple_content ? (field.simple_attribute ? (case_sense ? field.foreign_table_xname : field.foreign_table_xname.toLowerCase()) : simple_content_name) : (case_sense ? field.xname : field.xname.toLowerCase());
+
+					if (field.simple_attr_cond)
+						field.jname += "|" + (case_sense ? field.foreign_table_xname : field.foreign_table_xname.toLowerCase());
+
+					field.jsonb_not_empty = false;
+
+					if (field.jsonb == null)
+						field.jsonb = new StringBuilder();
+					else if (field.jsonb.length() > 0)
+						field.jsonb.setLength(0);
+
+					field.jsonb_col_size = field.jsonb_null_size = 0;
+
+				});
+
+			}
+
+		});
+
 	}
 
 	/**
@@ -240,41 +246,12 @@ public class JsonBuilder extends CommonBuilder {
 
 		super.clear();
 
-		if (clear_buffer)
+		if (clear_buffer && buffer.length() > 0)
 			buffer.setLength(0);
 
 		pending_header.clear();
 
 		pending_elem.clear();
-
-	}
-
-	/**
-	 * Clear JSON builder and PostgreSQL data model.
-	 */
-	public void clearAll() {
-
-		clear(true);
-
-		tables.parallelStream().filter(table -> table.jsonable).forEach(table -> {
-
-			table.jsonb_not_empty = false;
-
-			table.fields.stream().filter(field -> field.jsonable).forEach(field -> {
-
-				field.jsonb_not_empty = false;
-
-				if (field.jsonb == null)
-					field.jsonb = new StringBuilder();
-
-				else
-					field.jsonb.setLength(0);
-
-				field.jsonb_col_size = field.jsonb_null_size = 0;
-
-			});
-
-		});
 
 	}
 
@@ -327,10 +304,9 @@ public class JsonBuilder extends CommonBuilder {
 	 */
 	private void writeStartDocument(boolean clear_buffer) {
 
-		if (clear_buffer)
-			buffer.setLength(0);
+		clear(clear_buffer);
 
-		else {
+		if (!clear_buffer) {
 
 			int position = buffer.length() - (line_feed ? 2 : 1);
 
@@ -344,6 +320,23 @@ public class JsonBuilder extends CommonBuilder {
 		}
 
 		buffer.append(start_object_code);
+
+		tables.parallelStream().filter(table -> table.jsonable).forEach(table -> {
+
+			table.jsonb_not_empty = false;
+
+			table.fields.stream().filter(field -> field.jsonable).forEach(field -> {
+
+				field.jsonb_not_empty = false;
+
+				if (field.jsonb != null && field.jsonb.length() > 0)
+					field.jsonb.setLength(0);
+
+				field.jsonb_col_size = field.jsonb_null_size = 0;
+
+			});
+
+		});
 
 	}
 
@@ -359,20 +352,6 @@ public class JsonBuilder extends CommonBuilder {
 	}
 
 	/**
-	 * Return JSON key of table.
-	 *
-	 * @param table current table
-	 * @return String JSON key of table
-	 */
-	private String getKey(PgTable table) {
-
-		if (table.jname == null)
-			table.jname = case_sense ? table.xname : table.xname.toLowerCase();
-
-		return table.jname;
-	}
-
-	/**
 	 * Return JSON key of field.
 	 *
 	 * @param field current field
@@ -380,11 +359,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @return String JSON key of field
 	 */
 	private String getKey(PgField field, boolean as_attr) {
-
-		if (field.jname == null || field.simple_attr_cond)
-			field.jname = field.simple_content ? (field.simple_attribute || (field.simple_attr_cond && as_attr) ? (case_sense ? field.foreign_table_xname : field.foreign_table_xname.toLowerCase()) : simple_content_name) : (case_sense ? field.xname : field.xname.toLowerCase());
-
-			return (field.attribute || field.simple_attribute || (field.simple_attr_cond && as_attr) ? attr_prefix : "") + field.jname;
+		return (field.attribute || field.simple_attribute || (field.simple_attr_cond && as_attr) ? attr_prefix : "") + (field.simple_attr_cond ? field.jname.split("\\|")[as_attr ? 1 : 0] : field.jname);
 	}
 
 	/**
@@ -394,7 +369,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @return String JSON key declaration of table
 	 */
 	private String getKeyDecl(PgTable table) {
-		return "\"" + getKey(table) + key_decl_suffix_code;
+		return "\"" + table.jname + key_decl_suffix_code;
 	}
 
 	/**
@@ -961,8 +936,6 @@ public class JsonBuilder extends CommonBuilder {
 
 		System.out.print(buffer.toString());
 
-		clear(true);
-
 	}
 
 	// JSON document
@@ -1317,6 +1290,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		if (array_all)
 			field.write(schema_ver, content, false, concat_value_space);
+
 		else
 			buffer.append(getIndentSpaces(1) + getKeyDecl(field, as_attr) + field.normalize(schema_ver, content) + line_feed_code + ",");
 
@@ -1499,8 +1473,6 @@ public class JsonBuilder extends CommonBuilder {
 		} catch (IOException e) {
 			throw new PgSchemaException(e);
 		}
-
-		clear(true);
 
 	}
 
@@ -1753,8 +1725,6 @@ public class JsonBuilder extends CommonBuilder {
 
 		schema.md_hash_key = md_hash_key;
 
-		clearAll();
-
 		writeStartDocument(true);
 
 		// parse root node and store to JSON buffer
@@ -1796,8 +1766,6 @@ public class JsonBuilder extends CommonBuilder {
 		Node node = schema.getRootNode(xml_parser);
 
 		schema.md_hash_key = md_hash_key;
-
-		clearAll();
 
 		writeStartDocument(true);
 
@@ -1850,8 +1818,6 @@ public class JsonBuilder extends CommonBuilder {
 		Node node = schema.getRootNode(xml_parser);
 
 		schema.md_hash_key = md_hash_key;
-
-		clearAll();
 
 		writeStartDocument(true);
 
@@ -2356,8 +2322,6 @@ public class JsonBuilder extends CommonBuilder {
 		}
 
 		writeEndDocument();
-
-		clear(false);
 
 		incRootCount();
 
