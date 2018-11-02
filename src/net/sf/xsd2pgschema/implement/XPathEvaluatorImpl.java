@@ -407,17 +407,11 @@ public class XPathEvaluatorImpl {
 
 			xmlb.setXmlWriter(xml_writer, out);
 
-			if (xmlb.append_declare) {
-
-				xml_writer.writeStartDocument(PgSchemaUtil.def_encoding, PgSchemaUtil.def_xml_version);
-
-				xmlb.writeLineFeedCode();
-
-			}
-
 			xmlb.init(client.schema);
 
 			xmlb.resetStatus();
+
+			xmlb.writeStartDocument();
 
 			Statement stat = db_conn.createStatement();
 
@@ -455,12 +449,11 @@ public class XPathEvaluatorImpl {
 
 			});
 
+			xmlb.writeEndDocument();
+
 			long end_time = System.currentTimeMillis();
 
 			stat.close();
-
-			if (xmlb.append_declare)
-				xml_writer.writeEndDocument();
 
 			if (out_file_path != null) {
 

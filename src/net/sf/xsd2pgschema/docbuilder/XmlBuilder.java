@@ -213,6 +213,35 @@ public class XmlBuilder extends CommonBuilder {
 	private OutputStream out;
 
 	/**
+	 * Write start document.
+	 *
+	 * @throws XMLStreamException the XML stream exception
+	 */
+	public void writeStartDocument() throws XMLStreamException {
+
+		if (append_declare) {
+
+			writer.writeStartDocument(PgSchemaUtil.def_encoding, PgSchemaUtil.def_xml_version);
+
+			writeLineFeedCode();
+
+		}
+
+	}
+
+	/**
+	 * Write end document.
+	 *
+	 * @throws XMLStreamException the XML stream exception
+	 */
+	public void writeEndDocument() throws XMLStreamException {
+
+		if (append_declare)
+			writer.writeEndDocument();
+
+	}
+
+	/**
 	 * Insert document key.
 	 *
 	 * @param tag XML start/end element tag template
@@ -289,7 +318,7 @@ public class XmlBuilder extends CommonBuilder {
 	 *
 	 * @throws XMLStreamException the XML stream exception
 	 */
-	public void writeLineFeedCode() throws XMLStreamException {
+	protected void writeLineFeedCode() throws XMLStreamException {
 
 		if (line_feed)
 			writer.writeCharacters(line_feed_code);
