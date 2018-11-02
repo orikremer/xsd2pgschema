@@ -88,6 +88,9 @@ public class PgField implements Serializable {
 	/** The field name. */
 	public String name = "";
 
+	/** The field name in JSON. */
+	public String jname = null;
+
 	/** The data type in XML document. */
 	protected String xtype = null;
 
@@ -5425,15 +5428,23 @@ public class PgField implements Serializable {
 			jsonb.append(value);
 			break;
 		case xs_date:
-			if (schema_ver.isLatest())
-				value = value.replaceFirst("Z$", "");
+			if (schema_ver.isLatest()) {
+				if (value.endsWith("Z"))
+					value = value.substring(0, value.length() - 1);
+			}
 			jsonb.append("\"" + value + "\"");
 			break;
 		case xs_any:
 		case xs_anyAttribute:
 			if (fragment) {
 
-				value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
+				value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value));
+
+				if (value.contains("\\/"))
+					value = value.replace("\\/", "/");
+
+				if (value.contains("\\'"))
+					value = value.replace("\\'", "'");
 
 				if (!value.startsWith("\""))
 					value = "\"" + value + "\"";
@@ -5447,7 +5458,13 @@ public class PgField implements Serializable {
 
 			return true;
 		default: // free text
-			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
+			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value));
+
+			if (value.contains("\\/"))
+				value = value.replace("\\/", "/");
+
+			if (value.contains("\\'"))
+				value = value.replace("\\'", "'");
 
 			if (!value.startsWith("\""))
 				value = "\"" + value + "\"";
@@ -5558,7 +5575,9 @@ public class PgField implements Serializable {
 
 			switch (xs_type) {
 			case xs_date:
-				return ret.replaceFirst("Z$", "");
+				if (ret.endsWith("Z"))
+					ret = ret.substring(0, ret.length() - 1);
+				return ret;
 			case xs_gYearMonth:
 				return ret.substring(0, ret.lastIndexOf('-'));
 			default: // xs_gYear
@@ -5708,11 +5727,19 @@ public class PgField implements Serializable {
 		case xs_unsignedByte:
 			return value;
 		case xs_date:
-			if (schema_ver.isLatest())
-				value = value.replaceFirst("Z$", "");
+			if (schema_ver.isLatest()) {
+				if (value.endsWith("Z"))
+					value = value.substring(0, value.length() - 1);
+			}
 			return "\"" + value + "\"";
 		default: // free text
-			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value).replace("\\/", "/").replace("\\'", "'"));
+			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value));
+
+			if (value.contains("\\/"))
+				value = value.replace("\\/", "/");
+
+			if (value.contains("\\'"))
+				value = value.replace("\\'", "'");
 
 			if (!value.startsWith("\""))
 				value = "\"" + value + "\"";

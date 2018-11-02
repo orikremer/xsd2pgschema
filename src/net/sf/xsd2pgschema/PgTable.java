@@ -64,6 +64,9 @@ public class PgTable implements Serializable {
 	/** The table name. */
 	public String name = "";
 
+	/** The table name in JSON. */
+	public String jname = null;
+
 	/** The table type classified by xs_root (root node), xs_root_child (children node of root node), xs_admin_root (administrative root node), xs_admin_child (children node of administrative node). */
 	public XsTableType xs_type;
 

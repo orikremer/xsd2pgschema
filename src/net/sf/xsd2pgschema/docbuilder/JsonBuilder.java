@@ -359,6 +359,20 @@ public class JsonBuilder extends CommonBuilder {
 	}
 
 	/**
+	 * Return JSON key of table.
+	 *
+	 * @param table current table
+	 * @return String JSON key of table
+	 */
+	private String getKey(PgTable table) {
+
+		if (table.jname == null)
+			table.jname = case_sense ? table.xname : table.xname.toLowerCase();
+
+		return table.jname;
+	}
+
+	/**
 	 * Return JSON key of field.
 	 *
 	 * @param field current field
@@ -366,8 +380,21 @@ public class JsonBuilder extends CommonBuilder {
 	 * @return String JSON key of field
 	 */
 	private String getKey(PgField field, boolean as_attr) {
-		return (field.attribute || field.simple_attribute || (field.simple_attr_cond && as_attr) ? attr_prefix : "")
-				+ (field.simple_content ? (field.simple_attribute || (field.simple_attr_cond && as_attr) ? (case_sense ? field.foreign_table_xname : field.foreign_table_xname.toLowerCase()) : simple_content_name) : (case_sense ? field.xname : field.xname.toLowerCase()));
+
+		if (field.jname == null || field.simple_attr_cond)
+			field.jname = field.simple_content ? (field.simple_attribute || (field.simple_attr_cond && as_attr) ? (case_sense ? field.foreign_table_xname : field.foreign_table_xname.toLowerCase()) : simple_content_name) : (case_sense ? field.xname : field.xname.toLowerCase());
+
+			return (field.attribute || field.simple_attribute || (field.simple_attr_cond && as_attr) ? attr_prefix : "") + field.jname;
+	}
+
+	/**
+	 * Return JSON key declaration of table.
+	 *
+	 * @param table current table
+	 * @return String JSON key declaration of table
+	 */
+	private String getKeyDecl(PgTable table) {
+		return "\"" + getKey(table) + key_decl_suffix_code;
 	}
 
 	/**
@@ -520,7 +547,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		int header_start = buffer.length();
 
-		buffer.append(getIndentSpaces(indent_level) + getKeyDecl(table.name, false) + start_object_code); // start table
+		buffer.append(getIndentSpaces(indent_level) + getKeyDecl(table) + start_object_code); // start table
 
 		String _indent_spaces = getIndentSpaces(indent_level + 1);
 
@@ -951,7 +978,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		int header_start = buffer.length();
 
-		buffer.append(getIndentSpaces(indent_level) + (object ? getKeyDecl(table.name, false) : "") + start_object_code);
+		buffer.append(getIndentSpaces(indent_level) + (object ? getKeyDecl(table) : "") + start_object_code);
 
 		pending_header.push(new JsonBuilderPendingHeader(header_start, buffer.length(), indent_level));
 

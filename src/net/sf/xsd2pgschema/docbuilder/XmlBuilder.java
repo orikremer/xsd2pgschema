@@ -94,6 +94,9 @@ public class XmlBuilder extends CommonBuilder {
 	/** The pending element. */
 	protected LinkedList<XmlBuilderPendingElem> pending_elem = new LinkedList<XmlBuilderPendingElem>();
 
+	/** The line feed code charactor. */
+	private final char[] line_feed_code_char = { '\n' };
+
 	/**
 	 * Set indent offset.
 	 *
@@ -216,8 +219,9 @@ public class XmlBuilder extends CommonBuilder {
 	 * Write start document.
 	 *
 	 * @throws XMLStreamException the XML stream exception
+	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public void writeStartDocument() throws XMLStreamException {
+	public void writeStartDocument() throws XMLStreamException, IOException {
 
 		if (append_declare) {
 
@@ -321,7 +325,7 @@ public class XmlBuilder extends CommonBuilder {
 	protected void writeLineFeedCode() throws XMLStreamException {
 
 		if (line_feed)
-			writer.writeCharacters(line_feed_code);
+			writer.writeCharacters(line_feed_code_char, 0, 1);
 
 	}
 
