@@ -1,4 +1,4 @@
-﻿ Changes in xsd2pgschema 3.0.6 (release 2018-11-05)
+﻿ Changes in xsd2pgschema 3.0.6 (release 2018-10-25)
 
   Added support for xs:dateTimeStamp, xs:yearMonthDuration, xs:dayTimeDuration.
   Dropped support for non-standard data types, bigserial, serial, and bigint.
@@ -14,7 +14,7 @@
   Further performance improvements in XPath evaluation.
   Added precision control to value of double or float column.
   Revised comments in PostgreSQL DDL with regard to the mapping of integer/decimal numbers.
-  Allowed to follow URL redirection of schema location. 
+  Allowed to follow URL defirection of schema location. 
 
  Changes in xsd2pgschema 3.0.5 (release 2018-10-22)
 
