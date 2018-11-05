@@ -24,9 +24,9 @@ import java.io.DataOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -307,7 +307,12 @@ public class PgSchemaUtil {
 			try {
 
 				URL url = new URL(schema_location);
-				URLConnection conn = url.openConnection();
+				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+				int status = conn.getResponseCode();
+
+				if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER)
+					return getSchemaInputStream(conn.getHeaderField("Location"), schema_parent, cache_xsd);
 
 				return conn.getInputStream();
 
@@ -345,6 +350,12 @@ public class PgSchemaUtil {
 			try {
 
 				URL url = new URL(schema_location);
+				HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+
+				int status = conn.getResponseCode();
+
+				if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER)
+					return getSchemaInputStream(conn.getHeaderField("Location"), schema_parent, cache_xsd);
 
 				SSLContext sc = SSLContext.getInstance("SSL");
 				sc.init(null, tm, new java.security.SecureRandom());
@@ -356,7 +367,6 @@ public class PgSchemaUtil {
 					}
 				});
 
-				HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
 				conn.setSSLSocketFactory(sc.getSocketFactory());
 
 				return conn.getInputStream();

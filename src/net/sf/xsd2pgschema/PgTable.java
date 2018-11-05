@@ -64,9 +64,6 @@ public class PgTable implements Serializable {
 	/** The table name. */
 	public String name = "";
 
-	/** The table name in JSON. */
-	public String jname = null;
-
 	/** The table type classified by xs_root (root node), xs_root_child (children node of root node), xs_admin_root (administrative root node), xs_admin_child (children node of administrative node). */
 	public XsTableType xs_type;
 
@@ -96,6 +93,9 @@ public class PgTable implements Serializable {
 
 	/** The total number of field as foreign key. */
 	public int total_foreign_fields = 0;
+
+	/** The total number of SQL parameter. */
+	public int total_sql_params = 0;
 
 	/** Whether content holder. */
 	public boolean content_holder = false;
@@ -191,6 +191,10 @@ public class PgTable implements Serializable {
 	/** The xs:annotation. */
 	@Flat
 	public String anno = null;
+
+	/** The table name in JSON. */
+	@Flat
+	public String jname = null;
 
 	/** Whether table is subset of database (internal use only). */
 	@Flat

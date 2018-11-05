@@ -361,6 +361,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 			sb.setLength(0);
 
 		} catch (IOException e) {
+			System.err.println("Exception occurred while processing table: " + table.xname);
 			throw new PgSchemaException(e);
 		}
 

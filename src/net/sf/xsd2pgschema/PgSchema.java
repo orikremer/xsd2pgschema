@@ -1350,6 +1350,38 @@ public class PgSchema implements Serializable {
 
 		}));
 
+		// set SQL parameter id
+
+		tables.parallelStream().filter(table -> table.writable).forEach(table -> {
+
+			int param_id = 1;
+
+			for (PgField field : table.fields) {
+
+				if (field.omissible)
+					continue;
+
+				field.sql_param_id = param_id++;
+
+			}
+
+			table.total_sql_params = param_id - 1;
+
+			for (PgField field : table.fields) {
+
+				if (field.omissible)
+					continue;
+
+				else if (field.primary_key)
+					field.sql_upsert_id = table.total_sql_params * 2;
+
+				else
+					field.sql_upsert_id = param_id++;
+
+			}
+
+		});
+
 		// set list of nested field and foreign table id
 
 		tables.parallelStream().filter(table -> table.total_nested_fields > 0).forEach(table -> {

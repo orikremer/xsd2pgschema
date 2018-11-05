@@ -289,6 +289,8 @@ public class xpath2xml {
 			if (!pg_option.name.isEmpty())
 				pg_option.clear();
 
+			xmlb.init(evaluator.client.schema);
+
 			for (int id = 0; id < xpath_queries.size(); id++) {
 
 				String xpath_query = xpath_queries.get(id);

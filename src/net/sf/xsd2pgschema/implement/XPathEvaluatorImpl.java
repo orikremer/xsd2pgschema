@@ -406,8 +406,6 @@ public class XPathEvaluatorImpl {
 
 			xmlb.setXmlWriter(xml_writer, out);
 
-			xmlb.init(client.schema);
-
 			xmlb.resetStatus();
 
 			xmlb.writeStartDocument();

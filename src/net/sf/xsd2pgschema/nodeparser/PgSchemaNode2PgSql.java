@@ -57,9 +57,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/** Whether any content was written. */
 	private boolean written = false;
 
-	/** The size of parameters. */
-	private int param_size = 1;
-
 	/** Whether default serial key size (unsigned int 32 bit). */
 	private boolean is_def_ser_size;
 
@@ -96,17 +93,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			try {
 
 				PgField field;
-
-				for (int f = 0; f < fields_size; f++) {
-
-					field = fields.get(f);
-
-					if (field.omissible)
-						continue;
-
-					param_size++;
-
-				}
 
 				if (update && rel_data_ext)
 					upsert = table.has_unique_primary_key;
@@ -267,12 +253,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 	}
 
-	/** The parameter index. */
-	private int par_idx;
-
-	/** The parameter index for upsert. */
-	private int ins_idx;
-
 	/**
 	 * Parse processing node.
 	 *
@@ -307,9 +287,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		}
 
-		par_idx = 1;
-		ins_idx = upsert ? param_size : -1;
-
 		try {
 
 			PgField field;
@@ -325,24 +302,24 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					// document_key
 
-					else if (field.document_key) {
-
-						field.write(ps, par_idx, ins_idx, document_id);
-						occupied[f] = true;
-
-					}
+					else if (field.document_key)
+						field.write(ps, upsert, document_id);
 
 					// primary_key
 
 					else if (field.primary_key)
-						writePriKey(f, node_test.primary_key);
+						writeHashKey(field, node_test.primary_key);
 
 					// foreign_key
 
 					else if (field.foreign_key) {
 
-						if (parent_table.xname.equals(field.foreign_table_xname))
-							writeHashKey(f, node_test.parent_key);
+						if (parent_table.xname.equals(field.foreign_table_xname)) {
+
+							writeHashKey(field, node_test.parent_key);
+							occupied[f] = true;
+
+						}
 
 					}
 
@@ -352,8 +329,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						String nested_key;
 
-						if ((nested_key = setNestedKey(proc_node, field)) != null)
-							writeHashKey(f, nested_key);
+						if ((nested_key = setNestedKey(proc_node, field)) != null) {
+
+							writeHashKey(field, nested_key);
+							occupied[f] = true;
+
+						}
 
 					}
 
@@ -365,7 +346,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 							if (!content.isEmpty()) {
 
-								field.write(ps, par_idx, ins_idx, content);
+								field.write(ps, upsert, content);
 								occupied[f] = true;
 
 							}
@@ -391,7 +372,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 								xml_object.setString(content);
 
-								field.write(ps, par_idx, ins_idx, xml_object);
+								field.write(ps, upsert, xml_object);
 
 								xml_object.free();
 
@@ -408,17 +389,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					// serial_key
 
 					else if (field.serial_key)
-						writeSerKey(f, node_test.node_ordinal);
+						writeSerKey(field, node_test.node_ordinal);
 
 					// xpath_key
 
 					else if (field.xpath_key)
-						writeHashKey(f, current_key.substring(document_id.length()));
-
-					par_idx++;
-
-					if (upsert && !field.primary_key)
-						ins_idx++;
+						writeHashKey(field, current_key.substring(document_id.length()));
 
 				}
 
@@ -440,12 +416,8 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					// document_key
 
-					else if (field.document_key) {
-
-						field.write(ps, par_idx, ins_idx, document_id);
-						occupied[f] = true;
-
-					}
+					else if (field.document_key)
+						field.write(ps, upsert, document_id);
 
 					// attribute, simple_content, element
 
@@ -455,7 +427,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 							if (!content.isEmpty()) {
 
-								field.write(ps, par_idx, ins_idx, content);
+								field.write(ps, upsert, content);
 								occupied[f] = true;
 
 							}
@@ -481,7 +453,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 								xml_object.setString(content);
 
-								field.write(ps, par_idx, ins_idx, xml_object);
+								field.write(ps, upsert, xml_object);
 
 								xml_object.free();
 
@@ -498,17 +470,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					// serial_key
 
 					else if (field.serial_key)
-						writeSerKey(f, node_test.node_ordinal);
+						writeSerKey(field, node_test.node_ordinal);
 
 					// xpath_key
 
 					else if (field.xpath_key)
-						writeHashKey(f, current_key.substring(document_id.length()));
-
-					par_idx++;
-
-					if (upsert && !field.primary_key)
-						ins_idx++;
+						writeHashKey(field, current_key.substring(document_id.length()));
 
 				}
 
@@ -519,37 +486,29 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			written = true;
 
-			par_idx = 1;
-
 			for (int f = 0; f < fields_size; f++) {
 
 				field = fields.get(f);
 
-				if (field.omissible)
+				if (field.omissible || field.primary_key || field.user_key)
 					continue;
 
 				if (!occupied[f])
-					ps.setNull(par_idx, field.getSqlDataType());
-
-				par_idx++;
+					ps.setNull(field.sql_param_id, field.getSqlDataType());
 
 			}
 
 			if (upsert) {
 
-				ins_idx = param_size;
-
 				for (int f = 0; f < fields_size; f++) {
 
 					field = fields.get(f);
 
-					if (field.omissible || field.primary_key)
+					if (field.omissible || field.primary_key || field.user_key)
 						continue;
 
 					if (!occupied[f])
-						ps.setNull(ins_idx, field.getSqlDataType());
-
-					ins_idx++;
+						ps.setNull(field.sql_upsert_id, field.getSqlDataType());
 
 				}
 
@@ -563,6 +522,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 			table.visited_key = current_key;
 
 		} catch (SQLException e) {
+			System.err.println("Exception occurred while processing table: " + table.xname);
 			throw new PgSchemaException(e);
 		}
 
@@ -655,103 +615,59 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/**
 	 * Write hash key via prepared statement.
 	 *
-	 * @param field_id field id
+	 * @param fieldd current field
 	 * @param current_key current key
 	 * @throws SQLException the SQL exception
 	 */
-	private void writeHashKey(int field_id, String current_key) throws SQLException {
+	private void writeHashKey(PgField field, String current_key) throws SQLException {
 
 		switch (hash_size) {
 		case native_default:
 			byte[] bytes = getHashKeyBytes(current_key);
-			ps.setBytes(par_idx, bytes);
+			ps.setBytes(field.sql_param_id, bytes);
 			if (upsert)
-				ps.setBytes(ins_idx, bytes);
+				ps.setBytes(field.sql_upsert_id, bytes);
 			break;
 		case unsigned_int_32:
 			int int_key = getHashKeyInt(current_key);
-			ps.setInt(par_idx, int_key);
+			ps.setInt(field.sql_param_id, int_key);
 			if (upsert)
-				ps.setInt(ins_idx, int_key);
+				ps.setInt(field.sql_upsert_id, int_key);
 			break;
 		case unsigned_long_64:
 			long long_key = getHashKeyLong(current_key);
-			ps.setLong(par_idx, long_key);
+			ps.setLong(field.sql_param_id, long_key);
 			if (upsert)
-				ps.setLong(ins_idx, long_key);
+				ps.setLong(field.sql_upsert_id, long_key);
 			break;
 		default:
-			ps.setString(par_idx, current_key);
+			ps.setString(field.sql_param_id, current_key);
 			if (upsert)
-				ps.setString(ins_idx, current_key);
+				ps.setString(field.sql_upsert_id, current_key);
 		}
-
-		occupied[field_id] = true;
-
-	}
-
-	/**
-	 * Write primary hash key via prepared statement.
-	 *
-	 * @param field_id field id
-	 * @param current_key current key
-	 * @throws SQLException the SQL exception
-	 */
-	private void writePriKey(int field_id, String current_key) throws SQLException {
-
-		int ins_idx = (param_size - 1) * 2;
-
-		switch (hash_size) {
-		case native_default:
-			byte[] bytes = getHashKeyBytes(current_key);
-			ps.setBytes(par_idx, bytes);
-			if (upsert)
-				ps.setBytes(ins_idx, bytes);
-			break;
-		case unsigned_int_32:
-			int int_key = getHashKeyInt(current_key);
-			ps.setInt(par_idx, int_key);
-			if (upsert)
-				ps.setInt(ins_idx, int_key);
-			break;
-		case unsigned_long_64:
-			long long_key = getHashKeyLong(current_key);
-			ps.setLong(par_idx, long_key);
-			if (upsert)
-				ps.setLong(ins_idx, long_key);
-			break;
-		default:
-			ps.setString(par_idx, current_key);
-			if (upsert)
-				ps.setString(ins_idx, current_key);
-		}
-
-		occupied[field_id] = true;
 
 	}
 
 	/**
 	 * Write serial key via prepared statement.
 	 *
-	 * @param field_id field id
+	 * @param field current field
 	 * @param ordinal serial id
 	 * @throws SQLException the SQL exception
 	 */
-	private void writeSerKey(int field_id, int ordinal) throws SQLException {
+	private void writeSerKey(PgField field, int ordinal) throws SQLException {
 
 		if (is_def_ser_size) {
-			ps.setInt(par_idx, ordinal);
+			ps.setInt(field.sql_param_id, ordinal);
 			if (upsert)
-				ps.setInt(ins_idx, ordinal);
+				ps.setInt(field.sql_upsert_id, ordinal);
 		}
 
 		else {
-			ps.setShort(par_idx, (short) ordinal);
+			ps.setShort(field.sql_param_id, (short) ordinal);
 			if (upsert)
-				ps.setInt(ins_idx, ordinal);
+				ps.setInt(field.sql_upsert_id, ordinal);
 		}
-
-		occupied[field_id] = true;
 
 	}
 

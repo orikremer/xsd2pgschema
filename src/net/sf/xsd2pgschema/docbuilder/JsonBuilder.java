@@ -203,33 +203,32 @@ public class JsonBuilder extends CommonBuilder {
 		if ((simple_content_name = option.simple_content_name) == null)
 			simple_content_name = PgSchemaUtil.simple_content_name;
 
-		tables.parallelStream().filter(table -> table.required).forEach(table -> {
+		tables.parallelStream().filter(table -> table.required && (table.content_holder || !table.virtual)).forEach(table -> {
 
 			table.jname = case_sense ? table.xname : table.xname.toLowerCase();
 
-			table.jsonb_not_empty = false;
+			if (table.content_holder) {
 
-			table.jsonable = table.fields.stream().anyMatch(field -> field.jsonable);
+				if (table.jsonable = table.fields.stream().anyMatch(field -> field.jsonable)) {
 
-			if (table.jsonable) {
+					table.jsonb_not_empty = false;
 
-				table.fields.stream().filter(field -> field.jsonable).forEach(field -> {
+					table.fields.stream().filter(field -> field.jsonable).forEach(field -> {
 
-					field.jname = field.simple_content ? (field.simple_attribute ? (case_sense ? field.foreign_table_xname : field.foreign_table_xname.toLowerCase()) : simple_content_name) : (case_sense ? field.xname : field.xname.toLowerCase());
+						field.jname = field.simple_content ? (field.simple_attribute || field.simple_attr_cond ? (case_sense ? field.foreign_table_xname : field.foreign_table_xname.toLowerCase()) : simple_content_name) : (case_sense ? field.xname : field.xname.toLowerCase());
 
-					if (field.simple_attr_cond)
-						field.jname += "|" + (case_sense ? field.foreign_table_xname : field.foreign_table_xname.toLowerCase());
+						field.jsonb_not_empty = false;
 
-					field.jsonb_not_empty = false;
+						if (field.jsonb == null)
+							field.jsonb = new StringBuilder();
+						else if (field.jsonb.length() > 0)
+							field.jsonb.setLength(0);
 
-					if (field.jsonb == null)
-						field.jsonb = new StringBuilder();
-					else if (field.jsonb.length() > 0)
-						field.jsonb.setLength(0);
+						field.jsonb_col_size = field.jsonb_null_size = 0;
 
-					field.jsonb_col_size = field.jsonb_null_size = 0;
+					});
 
-				});
+				}
 
 			}
 
@@ -359,7 +358,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @return String JSON key of field
 	 */
 	private String getKey(PgField field, boolean as_attr) {
-		return (field.attribute || field.simple_attribute || (field.simple_attr_cond && as_attr) ? attr_prefix : "") + (field.simple_attr_cond ? field.jname.split("\\|")[as_attr ? 1 : 0] : field.jname);
+		return (field.attribute || field.simple_attribute || (field.simple_attr_cond && as_attr) ? attr_prefix : "") + (field.simple_attr_cond ? (as_attr ? field.jname : simple_content_name) : field.jname);
 	}
 
 	/**
@@ -1900,11 +1899,11 @@ public class JsonBuilder extends CommonBuilder {
 
 				switch (terminus) {
 				case element:
-					content = field.retrieve(rset, 1);
+					content = field.retrieveFirst(rset);
 					writeFieldFrag(field, as_attr, content);
 					break;
 				case simple_content:
-					content = field.retrieve(rset, 1);
+					content = field.retrieveFirst(rset);
 
 					// simple content
 
@@ -1921,7 +1920,7 @@ public class JsonBuilder extends CommonBuilder {
 						writeFieldFrag(field, as_attr = true, content);
 					break;
 				case attribute:
-					content = field.retrieve(rset, 1);
+					content = field.retrieveFirst(rset);
 
 					// attribute
 
@@ -1971,7 +1970,7 @@ public class JsonBuilder extends CommonBuilder {
 						PgField _field = table.getField(column_name);
 
 						if (_field != null)
-							content = field.retrieve(rset, 1);
+							content = field.retrieveFirst(rset);
 
 						buffer.append(content + concat_line_feed);
 
@@ -2054,43 +2053,24 @@ public class JsonBuilder extends CommonBuilder {
 			Object key;
 
 			boolean attr_only;
-			int param_id, n;
+			int n;
 
 			document_id = null;
 
 			// document key
 
-			if (table.doc_key_pname != null) {
-
-				param_id = 1;
-
-				for (PgField field : fields) {
-
-					if (field.pname.equals(table.doc_key_pname)) {
-
-						document_id = rset.getString(param_id);
-
-						break;
-					}
-
-					if (!field.omissible)
-						param_id++;
-
-				}
-
-			}
+			if (table.doc_key_pname != null)
+				document_id = rset.getString(fields.stream().filter(field -> field.pname.equals(table.doc_key_pname)).findFirst().get().sql_param_id);
 
 			// attribute, any_attribute
 
 			if (table.has_attrs) {
 
-				param_id = 1;
-
 				for (PgField field : fields) {
 
 					if (field.attribute) {
 
-						content = field.retrieve(rset, param_id);
+						content = field.retrieve(rset);
 
 						if (content != null) {
 
@@ -2112,7 +2092,7 @@ public class JsonBuilder extends CommonBuilder {
 
 					else if (field.any_attribute) {
 
-						SQLXML xml_object = rset.getSQLXML(param_id);
+						SQLXML xml_object = rset.getSQLXML(field.sql_param_id);
 
 						if (xml_object != null) {
 
@@ -2138,15 +2118,12 @@ public class JsonBuilder extends CommonBuilder {
 
 					else if (field.nested_key_as_attr) {
 
-						key = rset.getObject(param_id);
+						key = rset.getObject(field.sql_param_id);
 
 						if (key != null)
 							nest_test.merge(nestChildNode2Json(tables.get(field.foreign_table_id), key, true, nest_test));
 
 					}
-
-					if (!field.omissible)
-						param_id++;
 
 				}
 
@@ -2155,8 +2132,6 @@ public class JsonBuilder extends CommonBuilder {
 			// simple_content, element, any
 
 			if (table.has_elems || schema.option.document_key) {
-
-				param_id = 1;
 
 				for (PgField field : fields) {
 
@@ -2170,7 +2145,7 @@ public class JsonBuilder extends CommonBuilder {
 
 						writePendingSimpleCont();
 
-						writeField(table, field, false, rset.getString(param_id), nest_test.child_indent_level);
+						writeField(table, field, false, rset.getString(field.sql_param_id), nest_test.child_indent_level);
 
 						nest_test.has_child_elem = nest_test.has_content = nest_test.has_insert_doc_key = true;
 
@@ -2178,7 +2153,7 @@ public class JsonBuilder extends CommonBuilder {
 
 					else if (field.simple_content && !field.simple_attribute) {
 
-						content = field.retrieve(rset, param_id);
+						content = field.retrieve(rset);
 
 						if (content != null) {
 
@@ -2197,7 +2172,7 @@ public class JsonBuilder extends CommonBuilder {
 
 					else if (field.element) {
 
-						content = field.retrieve(rset, param_id);
+						content = field.retrieve(rset);
 
 						if (content != null) {
 
@@ -2220,7 +2195,7 @@ public class JsonBuilder extends CommonBuilder {
 
 					else if (field.any) {
 
-						SQLXML xml_object = rset.getSQLXML(param_id);
+						SQLXML xml_object = rset.getSQLXML(field.sql_param_id);
 
 						if (xml_object != null) {
 
@@ -2247,9 +2222,6 @@ public class JsonBuilder extends CommonBuilder {
 
 					}
 
-					if (!field.omissible)
-						param_id++;
-
 				}
 
 			}
@@ -2260,14 +2232,13 @@ public class JsonBuilder extends CommonBuilder {
 
 				PgTable nested_table;
 
-				param_id = 1;
 				n = 0;
 
-				for (PgField field : fields) {
+				for (PgField field : table.nested_fields) {
 
-					if (field.nested_key && !field.nested_key_as_attr) {
+					if (!field.nested_key_as_attr) {
 
-						key = rset.getObject(param_id);
+						key = rset.getObject(field.sql_param_id);
 
 						if (key != null) {
 
@@ -2289,9 +2260,6 @@ public class JsonBuilder extends CommonBuilder {
 						}
 
 					}
-
-					if (!field.omissible)
-						param_id++;
 
 				}
 
@@ -2381,9 +2349,9 @@ public class JsonBuilder extends CommonBuilder {
 
 			}
 
-			int param_id = use_doc_key_index ? 2 : 1;
-
 			if (use_primary_key) {
+
+				int param_id = use_doc_key_index ? 2 : 1;
 
 				switch (hash_size) {
 				case native_default:
@@ -2431,13 +2399,11 @@ public class JsonBuilder extends CommonBuilder {
 
 				if (table.has_attrs) {
 
-					param_id = 1;
-
 					for (PgField field : fields) {
 
 						if (field.attribute) {
 
-							content = field.retrieve(rset, param_id);
+							content = field.retrieve(rset);
 
 							if (content != null) {
 
@@ -2466,7 +2432,7 @@ public class JsonBuilder extends CommonBuilder {
 
 						else if ((field.simple_attribute || field.simple_attr_cond) && as_attr) {
 
-							content = field.retrieve(rset, param_id);
+							content = field.retrieve(rset);
 
 							if (content != null) {
 
@@ -2494,7 +2460,7 @@ public class JsonBuilder extends CommonBuilder {
 
 						else if (field.any_attribute) {
 
-							SQLXML xml_object = rset.getSQLXML(param_id);
+							SQLXML xml_object = rset.getSQLXML(field.sql_param_id);
 
 							if (xml_object != null) {
 
@@ -2520,15 +2486,12 @@ public class JsonBuilder extends CommonBuilder {
 
 						else if (field.nested_key_as_attr) {
 
-							key = rset.getObject(param_id);
+							key = rset.getObject(field.sql_param_id);
 
 							if (key != null)
 								nest_test.merge(nestChildNode2Json(tables.get(field.foreign_table_id), key, true, nest_test));
 
 						}
-
-						if (!field.omissible)
-							param_id++;
 
 					}
 
@@ -2538,13 +2501,11 @@ public class JsonBuilder extends CommonBuilder {
 
 				if (table.has_elems) {
 
-					param_id = 1;
-
 					for (PgField field : fields) {
 
 						if (field.simple_content && !field.simple_attribute && !as_attr) {
 
-							content = field.retrieve(rset, param_id);
+							content = field.retrieve(rset);
 
 							if (content != null) {
 
@@ -2570,7 +2531,7 @@ public class JsonBuilder extends CommonBuilder {
 
 						else if (field.element) {
 
-							content = field.retrieve(rset, param_id);
+							content = field.retrieve(rset);
 
 							if (content != null) {
 
@@ -2600,7 +2561,7 @@ public class JsonBuilder extends CommonBuilder {
 
 						else if (field.any) {
 
-							SQLXML xml_object = rset.getSQLXML(param_id);
+							SQLXML xml_object = rset.getSQLXML(field.sql_param_id);
 
 							if (xml_object != null) {
 
@@ -2627,9 +2588,6 @@ public class JsonBuilder extends CommonBuilder {
 
 						}
 
-						if (!field.omissible)
-							param_id++;
-
 					}
 
 				}
@@ -2638,14 +2596,13 @@ public class JsonBuilder extends CommonBuilder {
 
 				if (table.total_nested_fields > 0) {
 
-					param_id = 1;
 					n = 0;
 
-					for (PgField field : fields) {
+					for (PgField field : table.nested_fields) {
 
-						if (field.nested_key && !field.nested_key_as_attr) {
+						if (!field.nested_key_as_attr) {
 
-							key = rset.getObject(param_id);
+							key = rset.getObject(field.sql_param_id);
 
 							if (key != null) {
 
@@ -2667,9 +2624,6 @@ public class JsonBuilder extends CommonBuilder {
 							}
 
 						}
-
-						if (!field.omissible)
-							param_id++;
 
 					}
 
@@ -2879,6 +2833,9 @@ public class JsonBuilder extends CommonBuilder {
 
 		boolean category = !table.virtual;
 
+		PgField nested_key = table.nested_fields.stream().filter(field -> !field.nested_key_as_attr).findFirst().get();
+		PgTable nested_table = tables.get(nested_key.foreign_table_id);
+
 		if (category) {
 
 			pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
@@ -2888,27 +2845,16 @@ public class JsonBuilder extends CommonBuilder {
 
 		}
 
-		for (PgField field : table.nested_fields) {
+		if (nested_table.content_holder || !nested_table.bridge)
+			nest_test.merge(nestChildNode2Json(nested_table, parent_key, false, nest_test));
 
-			if (!field.nested_key_as_attr) {
+		// skip bridge table for acceleration
 
-				PgTable nested_table = tables.get(field.foreign_table_id);
+		else if (nested_table.list_holder)
+			nest_test.merge(skipListAndBridgeNode2Json(nested_table, parent_key, nest_test));
 
-				if (nested_table.content_holder || !nested_table.bridge)
-					nest_test.merge(nestChildNode2Json(nested_table, parent_key, false, nest_test));
-
-				// skip bridge table for acceleration
-
-				else if (nested_table.list_holder)
-					nest_test.merge(skipListAndBridgeNode2Json(nested_table, parent_key, nest_test));
-
-				else
-					nest_test.merge(skipBridgeNode2Json(nested_table, parent_key, nest_test));
-
-				break;
-			}
-
-		}
+		else
+			nest_test.merge(skipBridgeNode2Json(nested_table, parent_key, nest_test));
 
 		if (category) {
 
