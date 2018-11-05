@@ -14,7 +14,7 @@
   Further performance improvements in XPath evaluation.
   Added precision control to value of double or float column.
   Revised comments in PostgreSQL DDL with regard to the mapping of integer/decimal numbers.
-  Allowed to follow URL defirection of schema location. 
+  Allowed to follow URL redirection of schema location. 
 
  Changes in xsd2pgschema 3.0.5 (release 2018-10-22)
 
