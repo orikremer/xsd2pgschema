@@ -1504,10 +1504,8 @@ public class JsonBuilder extends CommonBuilder {
 
 		root_table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(field, false, true, false, _json_indent_level));
 
-		int[] list_id = { 0 };
-
 		if (root_table.total_nested_fields > 0)
-			root_table.nested_fields.forEach(field -> realizeObjJsonSchema(root_table, tables.get(field.foreign_table_id), field.nested_key_as_attr, list_id[0]++, root_table.total_nested_fields, _json_indent_level));
+			root_table.nested_fields.forEach(field -> realizeObjJsonSchema(root_table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _json_indent_level));
 
 		if (!root_table.virtual)
 			writeEndSchemaTable(root_table, false);
@@ -1525,11 +1523,9 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param parent_table parent table
 	 * @param table current table
 	 * @param as_attr whether parent node as attribute
-	 * @param list_id the list id
-	 * @param list_size the list size
 	 * @param json_indent_level current indent level
 	 */
-	private void realizeObjJsonSchema(final PgTable parent_table, final PgTable table, final boolean as_attr, final int list_id, final int list_size, int json_indent_level) {
+	private void realizeObjJsonSchema(final PgTable parent_table, final PgTable table, final boolean as_attr, int json_indent_level) {
 
 		if (!table.virtual) {
 
@@ -1544,10 +1540,8 @@ public class JsonBuilder extends CommonBuilder {
 
 		if (table.total_nested_fields > 0) {
 
-			int[] _list_id = { 0 };
-
 			if (table.total_nested_fields > 0)
-				table.nested_fields.forEach(field -> realizeObjJsonSchema(table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _list_id[0]++, table.total_nested_fields, _json_indent_level));
+				table.nested_fields.forEach(field -> realizeObjJsonSchema(table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _json_indent_level));
 
 		}
 
@@ -1583,10 +1577,8 @@ public class JsonBuilder extends CommonBuilder {
 
 		root_table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(field, false, !field.list_holder, field.list_holder, _json_indent_level));
 
-		int[] list_id = { 0 };
-
 		if (root_table.total_nested_fields > 0)
-			root_table.nested_fields.forEach(field -> realizeColJsonSchema(root_table, tables.get(field.foreign_table_id), field.nested_key_as_attr, list_id[0]++, root_table.total_nested_fields, _json_indent_level));
+			root_table.nested_fields.forEach(field -> realizeColJsonSchema(root_table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _json_indent_level));
 
 		if (!root_table.virtual)
 			writeEndSchemaTable(root_table, false);
@@ -1604,11 +1596,9 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param parent_table parent table
 	 * @param table current table
 	 * @param as_attr whether parent node as attribute
-	 * @param list_id the list id
-	 * @param list_size the list size
 	 * @param json_indent_level current indent level
 	 */
-	private void realizeColJsonSchema(final PgTable parent_table, final PgTable table, final boolean as_attr, final int list_id, final int list_size, int json_indent_level) {
+	private void realizeColJsonSchema(final PgTable parent_table, final PgTable table, final boolean as_attr, int json_indent_level) {
 
 		boolean obj_json = table.virtual || !array_all;
 
@@ -1625,10 +1615,8 @@ public class JsonBuilder extends CommonBuilder {
 
 		if (table.total_nested_fields > 0) {
 
-			int[] _list_id = { 0 };
-
 			if (table.total_nested_fields > 0)
-				table.nested_fields.forEach(field -> realizeColJsonSchema(table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _list_id[0]++, table.total_nested_fields, _json_indent_level));
+				table.nested_fields.forEach(field -> realizeColJsonSchema(table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _json_indent_level));
 
 		}
 
