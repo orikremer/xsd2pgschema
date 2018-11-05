@@ -168,17 +168,17 @@ public class XmlBuilder extends CommonBuilder {
 
 		XmlBuilderPendingElem elem;
 
-		int size;
+		boolean has_pending_elem;
 
 		while ((elem = pending_elem.pollLast()) != null) {
 
-			size = pending_elem.size();
+			has_pending_elem = pending_elem.size() > 0;
 
-			elem.attr_only = size > 0 ? false : attr_only;
+			elem.attr_only = has_pending_elem ? false : attr_only;
 
 			elem.write(this);
 
-			if (size > 0)
+			if (has_pending_elem)
 				writeLineFeedCode();
 
 		}
@@ -222,6 +222,8 @@ public class XmlBuilder extends CommonBuilder {
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	public void writeStartDocument() throws XMLStreamException, IOException {
+
+		clear();
 
 		if (append_declare) {
 
@@ -360,8 +362,6 @@ public class XmlBuilder extends CommonBuilder {
 		this.hash_size = schema.option.hash_size;
 
 		xsi_schema_location = schema.getDefaultNamespace() + " " + PgSchemaUtil.getSchemaFileName(schema.option.root_schema_location);
-
-		clear();
 
 	}
 
@@ -970,8 +970,6 @@ public class XmlBuilder extends CommonBuilder {
 		} catch (SQLException | SAXException | IOException e) {
 			throw new PgSchemaException(e);
 		}
-
-		clear();
 
 		incRootCount();
 
