@@ -1486,8 +1486,6 @@ public class JsonBuilder extends CommonBuilder {
 	 */
 	public void realizeObjJsonSchema() throws PgSchemaException {
 
-		schema.hasRootTable();
-
 		writeStartDocument(true);
 		writeStartSchema();
 
@@ -1558,8 +1556,6 @@ public class JsonBuilder extends CommonBuilder {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void realizeColJsonSchema() throws PgSchemaException {
-
-		schema.hasRootTable();
 
 		writeStartDocument(true);
 		writeStartSchema();
@@ -1643,8 +1639,6 @@ public class JsonBuilder extends CommonBuilder {
 			return;
 		default:
 		}
-
-		schema.hasRootTable();
 
 		writeStartDocument(true);
 		writeStartSchema();

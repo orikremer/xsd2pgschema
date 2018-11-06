@@ -690,7 +690,7 @@ public class PgSchema implements Serializable {
 
 		tables.parallelStream().forEach(table -> table.fields.forEach(field -> {
 
-			field.setDTDDataHolder();
+			field.setDtdDataHolder();
 			field.setContentHolder();
 			field.setAnyContentHolder();
 
@@ -1324,48 +1324,61 @@ public class PgSchema implements Serializable {
 
 		// check root table exists
 
-		hasRootTable();
+		if (root_table == null)
+			throw new PgSchemaException("Not found root table in XML Schema: " + def_schema_location);
 
-		// reset whether writable table in case of relational data extension
+		// update writable table flags if relational data extension is disabled
 
 		if (!option.rel_data_ext)
 			tables.parallelStream().filter(table -> table.writable && !(table.required && (option.rel_data_ext || !table.relational))).forEach(table -> table.writable = false);
 
-		// decide Latin-1 encoded field
-
-		tables.parallelStream().filter(table -> table.writable).forEach(table -> table.fields.forEach(field -> field.latin_1_encoded = field.xs_type.isLatin1Encoded()));
-
-		// set XML start/end element tag template for document key
-
-		tables.parallelStream().filter(table -> table.writable).forEach(table -> table.fields.stream().filter(field -> field.document_key).forEach(field -> field.start_end_elem_tag = new String("<<" + (table.prefix.isEmpty() ? "" : table.prefix + ":") + field.xname + ">").getBytes(PgSchemaUtil.def_charset)));
-
-		// set XML start/end/empty element tag template for element
-
-		tables.parallelStream().filter(table -> table.writable && table.has_element).forEach(table -> table.fields.stream().filter(field -> field.element).forEach(field -> {
-
-			String prefix = field.is_xs_namespace ? table.prefix : field.prefix;
-
-			field.start_end_elem_tag = new String("<<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + ">\n").getBytes(PgSchemaUtil.def_charset);
-			field.empty_elem_tag = new String("<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + " " + PgSchemaUtil.xsi_prefix + ":nil=\"true\"/>\n").getBytes(PgSchemaUtil.def_charset);
-
-		}));
-
-		// set SQL parameter id
-
 		tables.parallelStream().filter(table -> table.writable).forEach(table -> {
 
-			int param_id = 1;
+			// preset Latin-1 encoded field
+
+			table.fields.forEach(field -> field.latin_1_encoded = field.xs_type.isLatin1Encoded());
+
+			// preset XML start/end element tag template for document key
+
+			if (option.document_key) {
+
+				PgField field = table.fields.stream().filter(_field -> _field.document_key).findFirst().get();
+
+				field.start_end_elem_tag = new String("<<" + (table.prefix.isEmpty() ? "" : table.prefix + ":") + field.xname + ">").getBytes(PgSchemaUtil.def_charset);
+
+			}
+
+			// preset XML start/end/empty element tag template for element
+
+			if (table.has_element) {
+
+				table.fields.stream().filter(field -> field.element).forEach(field -> {
+
+					String prefix = field.is_xs_namespace ? table.prefix : field.prefix;
+
+					field.start_end_elem_tag = new String("<<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + ">\n").getBytes(PgSchemaUtil.def_charset);
+					field.empty_elem_tag = new String("<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + " " + PgSchemaUtil.xsi_prefix + ":nil=\"true\"/>\n").getBytes(PgSchemaUtil.def_charset);
+
+				});
+
+			}
+
+			// preset SQL parameter id
+
+			int param_id = 0;
 
 			for (PgField field : table.fields) {
 
 				if (field.omissible)
 					continue;
 
-				field.sql_param_id = param_id++;
+				field.sql_param_id = ++param_id;
 
 			}
 
-			table.total_sql_params = param_id - 1;
+			// preset SQL upsert id
+
+			table.total_sql_params = param_id;
 
 			for (PgField field : table.fields) {
 
@@ -1376,18 +1389,32 @@ public class PgSchema implements Serializable {
 					field.sql_upsert_id = table.total_sql_params * 2;
 
 				else
-					field.sql_upsert_id = param_id++;
+					field.sql_upsert_id = ++param_id;
 
 			}
 
-		});
+			// preset list of nested fields and array of foreign table id
 
-		// set list of nested field and foreign table id
+			if (table.total_nested_fields > 0) {
 
-		tables.parallelStream().filter(table -> table.total_nested_fields > 0).forEach(table -> {
+				table.nested_fields = table.fields.stream().filter(field -> field.nested_key).collect(Collectors.toList());
+				table.ft_ids = table.nested_fields.stream().map(field -> field.foreign_table_id).collect(Collectors.toList()).stream().mapToInt(Integer::intValue).toArray();
 
-			table.nested_fields = table.fields.stream().filter(field -> field.nested_key).collect(Collectors.toList());
-			table.ft_ids = table.nested_fields.stream().map(field -> field.foreign_table_id).collect(Collectors.toList()).stream().mapToInt(Integer::intValue).toArray();
+			}
+
+			// check in-place document keys
+
+			if (option.document_key || option.in_place_document_key) {
+
+				try {
+
+					table.doc_key_pgname = PgSchemaUtil.avoidPgReservedWords(table.doc_key_pname = getDocKeyName(table));
+
+				} catch (PgSchemaException e) {
+					e.printStackTrace();
+				}
+
+			}
 
 		});
 
@@ -1401,24 +1428,6 @@ public class PgSchema implements Serializable {
 
 			if (opt.isPresent())
 				doc_id_table = opt.get();
-
-		}
-
-		// check in-place document keys
-
-		if (option.document_key || option.in_place_document_key) {
-
-			tables.parallelStream().filter(table -> table.writable).forEach(table -> {
-
-				try {
-
-					table.doc_key_pgname = PgSchemaUtil.avoidPgReservedWords(table.doc_key_pname = getDocKeyName(table));
-
-				} catch (PgSchemaException e) {
-					e.printStackTrace();
-				}
-
-			});
 
 		}
 
@@ -1548,7 +1557,7 @@ public class PgSchema implements Serializable {
 					if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
 						tables.add(child_table);
 
-					addChildItem(node, child_table);
+					extractChildElement(node, child_table);
 
 					level--;
 
@@ -1943,7 +1952,7 @@ public class PgSchema implements Serializable {
 	 */
 	private void extractAttribute(Node node, PgTable table) throws PgSchemaException {
 
-		extractInfoItem(node, table, true, false);
+		extractDtdInfoItem(node, table, true, false);
 
 	}
 
@@ -1957,12 +1966,12 @@ public class PgSchema implements Serializable {
 	 */
 	private void extractElement(Node node, PgTable table, boolean has_complex_parent) throws PgSchemaException {
 
-		extractInfoItem(node, table, false, has_complex_parent);
+		extractDtdInfoItem(node, table, false, has_complex_parent);
 
 	}
 
 	/**
-	 * Concrete extractor for both attribute and element.
+	 * Concrete extractor for both attribute and element (information item of DTD data holder).
 	 *
 	 * @param node current node
 	 * @param table current table
@@ -1970,7 +1979,7 @@ public class PgSchema implements Serializable {
 	 * @param has_complex_parent whether this node has parent node of complex type
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractInfoItem(Node node, PgTable table, boolean attribute, boolean has_complex_parent) throws PgSchemaException {
+	private void extractDtdInfoItem(Node node, PgTable table, boolean attribute, boolean has_complex_parent) throws PgSchemaException {
 
 		PgField field = new PgField();
 
@@ -2030,7 +2039,7 @@ public class PgSchema implements Serializable {
 
 				table.required = true;
 
-				addChildItem(node, table);
+				extractChildElement(node, table);
 
 				level--;
 
@@ -2100,7 +2109,7 @@ public class PgSchema implements Serializable {
 							if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
 								tables.add(child_table);
 
-							addChildItem(child, child_table);
+							extractChildElement(child, child_table);
 
 							level--;
 
@@ -2199,7 +2208,7 @@ public class PgSchema implements Serializable {
 					if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
 						tables.add(child_table);
 
-					addChildItem(node, child_table);
+					extractChildElement(node, child_table);
 
 					level--;
 
@@ -2267,7 +2276,7 @@ public class PgSchema implements Serializable {
 
 							table.required = true;
 
-							addChildItem(child, table);
+							extractChildElement(child, table);
 
 							level--;
 
@@ -2326,7 +2335,7 @@ public class PgSchema implements Serializable {
 								if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
 									tables.add(child_table);
 
-								addChildItem(child, child_table);
+								extractChildElement(child, child_table);
 
 								level--;
 
@@ -2346,13 +2355,13 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
-	 * Add arbitrary child item.
+	 * Extract child element.
 	 *
 	 * @param node current node
 	 * @param foreign_table foreign table
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void addChildItem(Node node, PgTable foreign_table) throws PgSchemaException {
+	private void extractChildElement(Node node, PgTable foreign_table) throws PgSchemaException {
 
 		PgTable table = new PgTable(getPgSchemaOf(foreign_table), foreign_table.target_namespace, def_schema_location);
 
@@ -4706,18 +4715,6 @@ public class PgSchema implements Serializable {
 
 	}
 
-	/**
-	 * Check whether schema has root table.
-	 *
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void hasRootTable() throws PgSchemaException {
-
-		if (root_table == null)
-			throw new PgSchemaException("Not found root table in XML Schema: " + def_schema_location);
-
-	}
-
 	/** The current document id. */
 	@Flat
 	public String document_id = null;
@@ -4731,7 +4728,8 @@ public class PgSchema implements Serializable {
 	 */
 	public Node getRootNode(XmlParser xml_parser) throws PgSchemaException {
 
-		hasRootTable();
+		if (root_table == null)
+			throw new PgSchemaException("Not found root table in XML Schema: " + def_schema_location);
 
 		Node node = xml_parser.document.getDocumentElement();
 

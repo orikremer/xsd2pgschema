@@ -1493,7 +1493,7 @@ public class PgField implements Serializable {
 	/**
 	 * Decide whether field is DTD data holder.
 	 */
-	protected void setDTDDataHolder() {
+	protected void setDtdDataHolder() {
 
 		dtd_data_holder = element || attribute;
 
