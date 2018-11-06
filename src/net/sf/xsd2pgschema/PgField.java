@@ -4575,6 +4575,169 @@ public class PgField implements Serializable {
 
 	// content writer functions
 
+	/** The instance of calendar. */
+	@Flat
+	private Calendar cal = null;
+
+	/** The instance of simple date format. */
+	@Flat
+	private SimpleDateFormat sdf = null;
+
+	/**
+	 * Normalize content as PostgreSQL value.
+	 *
+	 * @param value content
+	 * @return String normalized content
+	 */
+	public String normalize(String value) {
+
+		switch (xs_type) {
+		case xs_hexBinary:
+			return "E'\\\\x" + value + "'";
+		case xs_base64Binary:
+			return "decode('" + value + "','base64')";
+		case xs_date:
+		case xs_gYearMonth:
+		case xs_gYear:
+			if (cal == null)
+				cal = Calendar.getInstance();
+			else
+				cal.setTimeZone(PgSchemaUtil.tz_loc);
+
+			cal.setTime(PgSchemaUtil.parseDate(value));
+			cal.set(Calendar.HOUR_OF_DAY, 0);
+			cal.set(Calendar.MINUTE, 0);
+			cal.set(Calendar.SECOND, 0);
+			cal.set(Calendar.MILLISECOND, 0);
+			cal.setTimeZone(PgSchemaUtil.tz_utc);
+
+			if (sdf == null)
+				sdf = new SimpleDateFormat("yyyy-MM-dd");
+
+			return sdf.format(cal.getTime());
+		case xs_float:
+		case xs_double:
+		case xs_decimal:
+			if (!restriction)
+				return value;
+
+			// xs:fractionDigits
+
+			if (fraction_digits != null) {
+
+				Integer i = Integer.parseInt(fraction_digits);
+
+				if (i < 0)
+					return value;
+
+				BigDecimal b = new BigDecimal(value);
+				b.setScale(i);
+
+				return b.toString();
+			}
+
+			return value;
+		case xs_any:
+		case xs_anyAttribute:
+			return "'{" + value + "}'";
+		default: // free text
+			if (!restriction)
+				return value;
+
+			// xs:whiteSpace
+
+			if (white_space != null) {
+
+				if (white_space.equals("replace"))
+					value = PgSchemaUtil.replaceWhiteSpace(value);
+				else if (white_space.equals("collapse"))
+					value = PgSchemaUtil.collapseWhiteSpace(value);
+
+			}
+
+			return value;
+		}
+
+	}
+
+	/**
+	 * Normalize content as JSON value.
+	 *
+	 * @param schema_ver JSON schema version
+	 * @param value content
+	 * @return String normalized content
+	 */
+	public String normalize(JsonSchemaVersion schema_ver, String value) {
+
+		if (value == null || value.isEmpty()) {
+
+			switch (xs_type) {
+			case xs_boolean:
+			case xs_float:
+			case xs_double:
+			case xs_decimal:
+			case xs_integer:
+			case xs_nonNegativeInteger:
+			case xs_nonPositiveInteger:
+			case xs_positiveInteger:
+			case xs_negativeInteger:
+			case xs_long:
+			case xs_unsignedLong:
+			case xs_int:
+			case xs_unsignedInt:
+			case xs_short:
+			case xs_byte:
+			case xs_unsignedShort:
+			case xs_unsignedByte:
+				return "null";
+			default: // string
+				return "\"\"";
+			}
+
+		}
+
+		switch (xs_type) {
+		case xs_boolean:
+		case xs_float:
+		case xs_double:
+		case xs_decimal:
+		case xs_integer:
+		case xs_nonNegativeInteger:
+		case xs_nonPositiveInteger:
+		case xs_positiveInteger:
+		case xs_negativeInteger:
+		case xs_long:
+		case xs_unsignedLong:
+		case xs_int:
+		case xs_unsignedInt:
+		case xs_short:
+		case xs_byte:
+		case xs_unsignedShort:
+		case xs_unsignedByte:
+			return value;
+		case xs_date:
+			if (schema_ver.isLatest()) {
+				if (value.endsWith("Z"))
+					value = value.substring(0, value.length() - 1);
+			}
+			return "\"" + value + "\"";
+		default: // free text
+			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value));
+
+			if (value.contains("\\/"))
+				value = value.replace("\\/", "/");
+
+			if (value.contains("\\'"))
+				value = value.replace("\\'", "'");
+
+			if (!value.startsWith("\""))
+				value = "\"" + value + "\"";
+
+			return value;
+		}
+
+	}
+
 	/**
 	 * Validate content.
 	 *
@@ -4753,91 +4916,6 @@ public class PgField implements Serializable {
 			return true;
 		default: // free text
 			return true;
-		}
-
-	}
-
-	/** The instance of calendar. */
-	@Flat
-	private Calendar cal = null;
-
-	/** The instance of simple date format. */
-	@Flat
-	private SimpleDateFormat sdf = null;
-
-	/**
-	 * Normalize content as PostgreSQL value.
-	 *
-	 * @param value content
-	 * @return String normalized content
-	 */
-	public String normalize(String value) {
-
-		switch (xs_type) {
-		case xs_hexBinary:
-			return "E'\\\\x" + value + "'";
-		case xs_base64Binary:
-			return "decode('" + value + "','base64')";
-		case xs_date:
-		case xs_gYearMonth:
-		case xs_gYear:
-			if (cal == null)
-				cal = Calendar.getInstance();
-			else
-				cal.setTimeZone(PgSchemaUtil.tz_loc);
-
-			cal.setTime(PgSchemaUtil.parseDate(value));
-			cal.set(Calendar.HOUR_OF_DAY, 0);
-			cal.set(Calendar.MINUTE, 0);
-			cal.set(Calendar.SECOND, 0);
-			cal.set(Calendar.MILLISECOND, 0);
-			cal.setTimeZone(PgSchemaUtil.tz_utc);
-
-			if (sdf == null)
-				sdf = new SimpleDateFormat("yyyy-MM-dd");
-
-			return sdf.format(cal.getTime());
-		case xs_float:
-		case xs_double:
-		case xs_decimal:
-			if (!restriction)
-				return value;
-
-			// xs:fractionDigits
-
-			if (fraction_digits != null) {
-
-				Integer i = Integer.parseInt(fraction_digits);
-
-				if (i < 0)
-					return value;
-
-				BigDecimal b = new BigDecimal(value);
-				b.setScale(i);
-
-				return b.toString();
-			}
-
-			return value;
-		case xs_any:
-		case xs_anyAttribute:
-			return "'{" + value + "}'";
-		default: // free text
-			if (!restriction)
-				return value;
-
-			// xs:whiteSpace
-
-			if (white_space != null) {
-
-				if (white_space.equals("replace"))
-					value = PgSchemaUtil.replaceWhiteSpace(value);
-				else if (white_space.equals("collapse"))
-					value = PgSchemaUtil.collapseWhiteSpace(value);
-
-			}
-
-			return value;
 		}
 
 	}
@@ -5859,84 +5937,6 @@ public class PgField implements Serializable {
 		}
 
 		return null;
-	}
-
-	/**
-	 * Normalize content as JSON value.
-	 *
-	 * @param schema_ver JSON schema version
-	 * @param value content
-	 * @return String normalized content
-	 */
-	public String normalize(JsonSchemaVersion schema_ver, String value) {
-
-		if (value == null || value.isEmpty()) {
-
-			switch (xs_type) {
-			case xs_boolean:
-			case xs_float:
-			case xs_double:
-			case xs_decimal:
-			case xs_integer:
-			case xs_nonNegativeInteger:
-			case xs_nonPositiveInteger:
-			case xs_positiveInteger:
-			case xs_negativeInteger:
-			case xs_long:
-			case xs_unsignedLong:
-			case xs_int:
-			case xs_unsignedInt:
-			case xs_short:
-			case xs_byte:
-			case xs_unsignedShort:
-			case xs_unsignedByte:
-				return "null";
-			default: // string
-				return "\"\"";
-			}
-
-		}
-
-		switch (xs_type) {
-		case xs_boolean:
-		case xs_float:
-		case xs_double:
-		case xs_decimal:
-		case xs_integer:
-		case xs_nonNegativeInteger:
-		case xs_nonPositiveInteger:
-		case xs_positiveInteger:
-		case xs_negativeInteger:
-		case xs_long:
-		case xs_unsignedLong:
-		case xs_int:
-		case xs_unsignedInt:
-		case xs_short:
-		case xs_byte:
-		case xs_unsignedShort:
-		case xs_unsignedByte:
-			return value;
-		case xs_date:
-			if (schema_ver.isLatest()) {
-				if (value.endsWith("Z"))
-					value = value.substring(0, value.length() - 1);
-			}
-			return "\"" + value + "\"";
-		default: // free text
-			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value));
-
-			if (value.contains("\\/"))
-				value = value.replace("\\/", "/");
-
-			if (value.contains("\\'"))
-				value = value.replace("\\'", "'");
-
-			if (!value.startsWith("\""))
-				value = "\"" + value + "\"";
-
-			return value;
-		}
-
 	}
 
 }

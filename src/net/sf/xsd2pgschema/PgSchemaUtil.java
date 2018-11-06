@@ -311,8 +311,12 @@ public class PgSchemaUtil {
 
 				int status = conn.getResponseCode();
 
-				if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER)
+				if (status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_SEE_OTHER) {
+
+					System.err.print("[URL Redirect] ");
+
 					return getSchemaInputStream(conn.getHeaderField("Location"), schema_parent, cache_xsd);
+				}
 
 				return conn.getInputStream();
 
@@ -354,8 +358,12 @@ public class PgSchemaUtil {
 
 				int status = conn.getResponseCode();
 
-				if (status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER)
+				if (status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_SEE_OTHER) {
+
+					System.err.print("[URL Redirect] ");
+
 					return getSchemaInputStream(conn.getHeaderField("Location"), schema_parent, cache_xsd);
+				}
 
 				SSLContext sc = SSLContext.getInstance("SSL");
 				sc.init(null, tm, new java.security.SecureRandom());
