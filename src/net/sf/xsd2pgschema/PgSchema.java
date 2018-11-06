@@ -1393,15 +1393,6 @@ public class PgSchema implements Serializable {
 
 			}
 
-			// preset list of nested fields and array of foreign table id
-
-			if (table.total_nested_fields > 0) {
-
-				table.nested_fields = table.fields.stream().filter(field -> field.nested_key).collect(Collectors.toList());
-				table.ft_ids = table.nested_fields.stream().map(field -> field.foreign_table_id).collect(Collectors.toList()).stream().mapToInt(Integer::intValue).toArray();
-
-			}
-
 			// check in-place document keys
 
 			if (option.document_key || option.in_place_document_key) {
@@ -1415,6 +1406,15 @@ public class PgSchema implements Serializable {
 				}
 
 			}
+
+		});
+
+		// preset list of nested fields and array of foreign table id
+
+		tables.parallelStream().filter(table -> table.total_nested_fields > 0).forEach(table -> {
+
+			table.nested_fields = table.fields.stream().filter(field -> field.nested_key).collect(Collectors.toList());
+			table.ft_ids = table.nested_fields.stream().map(field -> field.foreign_table_id).collect(Collectors.toList()).stream().mapToInt(Integer::intValue).toArray();
 
 		});
 
