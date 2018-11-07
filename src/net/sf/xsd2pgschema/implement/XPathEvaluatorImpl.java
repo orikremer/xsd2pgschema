@@ -408,8 +408,13 @@ public class XPathEvaluatorImpl {
 
 			}
 
-			else
-				xml_writer = xmlb.out_factory.createXMLStreamWriter(out = System.out);
+			else {
+
+				out = new BufferedOutputStream(System.out, PgSchemaUtil.def_buffered_output_stream_buffer_size);
+
+				xml_writer = xmlb.out_factory.createXMLStreamWriter(out);
+
+			}
 
 			xmlb.setXmlWriter(xml_writer, out);
 

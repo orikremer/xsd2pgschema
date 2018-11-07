@@ -72,8 +72,8 @@ public class XmlBuilderNestTester extends CommonBuilderNestTester {
 		current_indent_space = "";
 		child_indent_space = table.virtual ? current_indent_space : current_indent_space + indent_space;
 
-		current_indent_bytes = current_indent_space.getBytes(PgSchemaUtil.latin_1_charset);
-		child_indent_bytes = child_indent_space.getBytes(PgSchemaUtil.latin_1_charset);
+		current_indent_bytes = xmlb.getSimpleBytes(current_indent_space); // .getBytes(PgSchemaUtil.latin_1_charset);
+		child_indent_bytes = xmlb.getSimpleBytes(child_indent_space); // .getBytes(PgSchemaUtil.latin_1_charset);
 
 	}
 

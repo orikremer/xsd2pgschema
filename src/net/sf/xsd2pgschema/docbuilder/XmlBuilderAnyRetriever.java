@@ -172,7 +172,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 				first_node = false;
 
 				current_indent_space += nest_test.indent_space;
-				current_indent_bytes = current_indent_space.getBytes(PgSchemaUtil.latin_1_charset);
+				current_indent_bytes = xmlb.getSimpleBytes(current_indent_space); // .getBytes(PgSchemaUtil.latin_1_charset);
 
 				nest_test.has_child_elem = true;
 
@@ -222,7 +222,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 		if (cur_path.length() > cur_path_offset) {
 
 			current_indent_space = current_indent_space.substring(nest_test.indent_offset);
-			current_indent_bytes = current_indent_space.getBytes(PgSchemaUtil.latin_1_charset);
+			current_indent_bytes = xmlb.getSimpleBytes(current_indent_space); // .getBytes(PgSchemaUtil.latin_1_charset);
 
 			boolean has_simple_content = false;
 

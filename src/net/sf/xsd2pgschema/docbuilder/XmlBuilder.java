@@ -283,7 +283,7 @@ public class XmlBuilder extends CommonBuilder {
 		out.write(tag, 1, tag.length - (line_feed ? 2 : 1));
 
 		if (latin_1_encoded)
-			out.write(content.getBytes(PgSchemaUtil.latin_1_charset));
+			out.write(getSimpleBytes(content)); // content.getBytes(PgSchemaUtil.latin_1_charset));
 		else
 			writer.writeCharacters(content);
 
@@ -296,19 +296,40 @@ public class XmlBuilder extends CommonBuilder {
 	}
 
 	/**
-	 * Write simple characters without consideration of charset.
+	 * Write simple characters assuming charset is ISO-Latin-1.
 	 *
 	 * @param string string.
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
 	protected void writeSimpleCharacters(String string) throws IOException {
 
-		out.write(string.getBytes(PgSchemaUtil.latin_1_charset));
+		out.write(getSimpleBytes(string)); // string.getBytes(PgSchemaUtil.latin_1_charset));
 
 	}
 
 	/**
-	 * Write simple characters without consideration of charset.
+	 * Return byte array of string assuming charset is ISO-Latin-1.
+	 *
+	 * @param string string
+	 * @return byte[] byte array of string
+	 */
+	public byte[] getSimpleBytes(String string) {
+
+		int len = string.length();
+
+		char chars[] = new char[len];
+		byte bytes[] = new byte[len];
+
+		string.getChars(0, len, chars, 0);
+
+		for (int j = 0; j < len; j++)
+			bytes[j] = (byte) chars[j];
+
+		return bytes;
+	}
+
+	/**
+	 * Write simple characters.
 	 *
 	 * @param bytes byte array.
 	 * @throws IOException Signals that an I/O exception has occurred.

@@ -1473,6 +1473,8 @@ public class JsonBuilder extends CommonBuilder {
 			throw new PgSchemaException(e);
 		}
 
+		buffer.setLength(0);
+
 	}
 
 	// JSON Schema conversion

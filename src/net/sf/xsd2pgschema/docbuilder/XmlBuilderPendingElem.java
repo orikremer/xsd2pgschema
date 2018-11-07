@@ -41,8 +41,8 @@ public class XmlBuilderPendingElem {
 	/** The table of element. */
 	protected PgTable table;
 
-	/** The header byte string. */
-	protected byte[] header_bytes;
+	/** The header string. */
+	protected String header;
 
 	/** Whether element has attribute only. */
 	protected boolean attr_only;
@@ -60,7 +60,7 @@ public class XmlBuilderPendingElem {
 	public XmlBuilderPendingElem(PgTable table, String header, boolean attr_only) {
 
 		this.table = table;
-		header_bytes = header.getBytes(PgSchemaUtil.latin_1_charset);
+		this.header = header;
 		this.attr_only = attr_only;
 
 	}
@@ -101,7 +101,7 @@ public class XmlBuilderPendingElem {
 		String table_ns = table.target_namespace;
 		String table_prefix = table.prefix;
 
-		xmlb.writeSimpleCharacters(header_bytes);
+		xmlb.writeSimpleCharacters(header);
 
 		if (attr_only)
 			xml_writer.writeEmptyElement(table_prefix, table.xname, table_ns);
