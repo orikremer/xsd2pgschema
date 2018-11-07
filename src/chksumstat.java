@@ -269,20 +269,26 @@ public class chksumstat {
 
 		}
 
-		System.out.println("# created docs: " + sync_new_doc_rows.size());
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("# created docs: " + sync_new_doc_rows.size() + "\n");
 
 		if (option.verbose)
-			sync_new_doc_rows.forEach(document_id -> System.out.println(document_id));
+			sync_new_doc_rows.forEach(document_id -> sb.append(document_id + "\n"));
 
-		System.out.println("\n# updated docs: " + sync_up_doc_rows.size());
-
-		if (option.verbose)
-			sync_up_doc_rows.forEach(document_id -> System.out.println(document_id));
-
-		System.out.println("\n# deleted docs: " + sync_del_doc_rows.size());
+		sb.append("\n# updated docs: " + sync_up_doc_rows.size() + "\n");
 
 		if (option.verbose)
-			sync_del_doc_rows.keySet().forEach(document_id -> System.out.println(document_id));
+			sync_up_doc_rows.forEach(document_id -> sb.append(document_id + "\n"));
+
+		sb.append("\n# deleted docs: " + sync_del_doc_rows.size() + "\n");
+
+		if (option.verbose)
+			sync_del_doc_rows.keySet().forEach(document_id -> sb.append(document_id + "\n"));
+
+		System.out.print(sb.toString());
+
+		sb.setLength(0);
 
 		sync_new_doc_rows.clear();
 		sync_up_doc_rows.clear();

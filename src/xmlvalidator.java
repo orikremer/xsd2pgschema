@@ -102,6 +102,9 @@ public class xmlvalidator {
 			else if (args[i].equals("--well-formed"))
 				option.full_check = false;
 
+			else if (args[i].equals("--remove-invalid-xml"))
+				option.remove_invalid_xml = true;
+
 			else if (args[i].equals("--verbose"))
 				option.verbose = true;
 
@@ -246,6 +249,7 @@ public class xmlvalidator {
 		System.err.println("Option: --sync CHECK_SUM_DIRECTORY (generate check sum files)");
 		System.err.println("        --checksum-by ALGORITHM [MD2 | MD5 (default) | SHA-1 | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --max-thrds MAX_THRDS (default is number of available processors)");
+		System.err.println("        --remove-invalid-xml (remove invalid XML documents)");
 		System.err.println("        --verbose");
 		System.exit(1);
 
