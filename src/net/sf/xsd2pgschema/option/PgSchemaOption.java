@@ -100,8 +100,8 @@ public class PgSchemaOption implements Serializable {
 	/** The current null code. */
 	public String pg_null = PgSchemaUtil.pg_tsv_null;
 
-	/** Whether to remove invalid XML. */
-	public boolean remove_invalid_xml = false;
+	/** Whether to delete invalid XML. */
+	public boolean del_invalid_xml = false;
 
 	/** The verbose mode. */
 	public boolean verbose = false;
@@ -674,7 +674,7 @@ public class PgSchemaOption implements Serializable {
 		if (!pg_null.equals(option.pg_null))
 			return false;
 
-		if (remove_invalid_xml != option.remove_invalid_xml)
+		if (del_invalid_xml != option.del_invalid_xml)
 			return false;
 
 		if (verbose != option.verbose)

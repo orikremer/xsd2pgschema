@@ -94,7 +94,7 @@ public class XmlParser {
 
 		init(xml_file_path, xml_file_filter);
 
-		validate(validator, option.isSynchronizable(false) ? getCheckSumFilePath(option) : null, option.remove_invalid_xml, option.verbose);
+		validate(validator, option.isSynchronizable(false) ? getCheckSumFilePath(option) : null, option.del_invalid_xml, option.verbose);
 
 	}
 
@@ -254,11 +254,11 @@ public class XmlParser {
 	 *
 	 * @param validator instance of XmlValidator
 	 * @param check_sum_file_path check sum file path to be deleted in case of validation error
-	 * @param remove_invalid_xml whether to remove invalid XML
+	 * @param del_invalid_xml whether to delete invalid XML
 	 * @param verbose verbose mode
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	private void validate(XmlValidator validator, Path check_sum_file_path, boolean remove_invalid_xml, boolean verbose) throws IOException {
+	private void validate(XmlValidator validator, Path check_sum_file_path, boolean del_invalid_xml, boolean verbose) throws IOException {
 
 		InputStream in = Files.newInputStream(xml_file_path);
 
@@ -268,7 +268,7 @@ public class XmlParser {
 
 			GZIPInputStream gzin = new GZIPInputStream(in);
 
-			validator.exec(gzin, xml_file_path, check_sum_file_path, remove_invalid_xml, verbose);
+			validator.exec(gzin, xml_file_path, check_sum_file_path, del_invalid_xml, verbose);
 
 			gzin.close();
 
@@ -278,7 +278,7 @@ public class XmlParser {
 
 			ZipInputStream zin = new ZipInputStream(in);
 
-			validator.exec(zin, xml_file_path, check_sum_file_path, remove_invalid_xml, verbose);
+			validator.exec(zin, xml_file_path, check_sum_file_path, del_invalid_xml, verbose);
 
 			zin.close();
 
@@ -287,7 +287,7 @@ public class XmlParser {
 		// xml file
 
 		else
-			validator.exec(in, xml_file_path, check_sum_file_path, remove_invalid_xml, verbose);
+			validator.exec(in, xml_file_path, check_sum_file_path, del_invalid_xml, verbose);
 
 		in.close();
 

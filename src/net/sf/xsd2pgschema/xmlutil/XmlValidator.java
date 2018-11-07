@@ -84,11 +84,11 @@ public class XmlValidator {
 	 * @param in InputStream of XML file
 	 * @param xml_file_path XML file path
 	 * @param chk_sum_file_path check sum file path to be deleted in case of invalid XML
-	 * @param remove_invalid_xml whether to remove invalid XML
+	 * @param del_invalid_xml whether to delete invalid XML
 	 * @param verbose verbose mode
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 */
-	public void exec(InputStream in, Path xml_file_path, Path chk_sum_file_path, boolean remove_invalid_xml, boolean verbose) throws IOException {
+	public void exec(InputStream in, Path xml_file_path, Path chk_sum_file_path, boolean del_invalid_xml, boolean verbose) throws IOException {
 
 		err_handler.init();
 
@@ -106,9 +106,9 @@ public class XmlValidator {
 
 		if (!err_handler.success) {
 
-			System.err.println(xml_file_name + " is invalid.");
+			System.err.println(xml_file_name + " is invalid" + (del_invalid_xml ? " and has been deleted." : "."));
 
-			if (remove_invalid_xml)
+			if (del_invalid_xml)
 				Files.delete(xml_file_path);
 
 			if (chk_sum_file_path != null)

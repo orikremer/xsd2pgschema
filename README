@@ -16,7 +16,7 @@
   Revised comments in PostgreSQL DDL with regard to the mapping of integer/decimal numbers.
   Allowed to follow URL redirection of schema location.
   Automatic redirect system message to stderr if redirect of result to stdout.
-  Added --remove-invalid-xml option in xmlvalidator main class.
+  Added --del-invalid-xml option in xmlvalidator main class.
 
  Changes in xsd2pgschema 3.0.5 (release 2018-10-22)
 
