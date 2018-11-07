@@ -4433,10 +4433,12 @@ public class XPathCompList {
 
 	/**
 	 * Show path expressions.
+	 *
+	 * @param sb string builder
 	 */
-	public void showPathExprs() {
+	public void showPathExprs(StringBuilder sb) {
 
-		path_exprs.forEach(path_expr -> System.out.println(path_expr.getReadablePath() + " (terminus type: " + path_expr.terminus.name() + ")"));
+		path_exprs.forEach(path_expr -> sb.append(path_expr.getReadablePath() + " (terminus type: " + path_expr.terminus.name() + ")\n"));
 
 	}
 
@@ -8280,10 +8282,12 @@ public class XPathCompList {
 
 	/**
 	 * Show SQL string expressions.
+	 *
+	 * @param sb string builder
 	 */
-	public void showSqlExpr() {
+	public void showSqlExpr(StringBuilder sb) {
 
-		path_exprs.forEach(path_expr -> System.out.println(path_expr.getReadablePath() + " (terminus type: " + path_expr.terminus.name() + ") -> " + path_expr.sql));
+		path_exprs.forEach(path_expr -> sb.append(path_expr.getReadablePath() + " (terminus type: " + path_expr.terminus.name() + ") -> " + path_expr.sql + "\n"));
 
 	}
 

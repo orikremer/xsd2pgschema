@@ -54,6 +54,9 @@ public class xpath2pgsql {
 	 */
 	public static void main(String[] args) {
 
+		/** Whether to output processing message to stdout or not (stderr). */
+		boolean stdout_message = false;
+
 		/** The output directory name. */
 		String out_dir_name = "sql_result";
 
@@ -231,6 +234,8 @@ public class xpath2pgsql {
 
 		if (!out_file_name.isEmpty() && !out_file_name.equals("stdout")) {
 
+			stdout_message = true;
+
 			Path out_dir_path = Paths.get(out_dir_name);
 
 			if (!Files.isDirectory(out_dir_path)) {
@@ -271,7 +276,7 @@ public class xpath2pgsql {
 
 				String xpath_query = xpath_queries.get(id);
 
-				evaluator.translate(xpath_query, variables);
+				evaluator.translate(xpath_query, variables, stdout_message);
 
 				if (!pg_option.name.isEmpty())
 					evaluator.execute(id, xpath_queries.size(), out_dir_name, out_file_name);

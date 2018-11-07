@@ -128,11 +128,12 @@ public class XPathEvaluatorImpl {
 	 *
 	 * @param xpath_query XPath query
 	 * @param variables XPath variable reference
+	 * @param stdout_message whether to output processing message to stdin or not (stderr)
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws xpathListenerException the xpath listener exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void translate(String xpath_query, HashMap<String, String> variables) throws IOException, xpathListenerException, PgSchemaException {
+	public void translate(String xpath_query, HashMap<String, String> variables, boolean stdout_message) throws IOException, xpathListenerException, PgSchemaException {
 
 		StringBuilder sb = new StringBuilder();
 
@@ -178,11 +179,9 @@ public class XPathEvaluatorImpl {
 		if (xpath_comp_list.path_exprs.size() == 0)
 			throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
 
-		System.out.println("Input XPath query:");
-		System.out.println(main_text);
+		sb.append("Input XPath query:\n" + main_text + "\n\nTarget path in XML Schema: " + option.root_schema_location + "\n");
 
-		System.out.println("\nTarget path in XML Schema: " + option.root_schema_location);
-		xpath_comp_list.showPathExprs();
+		xpath_comp_list.showPathExprs(sb);
 
 		// translate XPath to SQL
 
@@ -192,12 +191,18 @@ public class XPathEvaluatorImpl {
 
 		long end_time2 = System.currentTimeMillis();
 
-		System.out.println("\nSQL expression:");
-		xpath_comp_list.showSqlExpr();
+		sb.append("\nSQL expression:\n");
 
-		System.out.println("\nXPath parse time: " + (end_time - start_time) + " ms");
-		System.out.println("XPath validation time: " + (end_time_ - end_time) + " ms");
-		System.out.println("\nSQL translation time: " + (end_time2 - start_time2) + " ms\n");
+		xpath_comp_list.showSqlExpr(sb);
+
+		sb.append("\nXPath parse time: " + (end_time - start_time) + " ms\nXPath validation time: " + (end_time_ - end_time) + " ms\n\nSQL translation time: " + (end_time2 - start_time2) + " ms\n\n");
+
+		if (stdout_message)
+			System.out.print(sb.toString());
+		else
+			System.err.print(sb.toString());
+
+		sb.setLength(0);
 
 		_xpath_query = xpath_query;
 		_variables = variables_;
@@ -348,8 +353,9 @@ public class XPathEvaluatorImpl {
 
 			else {
 
-				bout.write(new String("\nSQL execution time: " + (end_time - start_time) + " ms\n").getBytes(PgSchemaUtil.latin_1_charset));
 				bout.flush();
+
+				System.err.println("SQL execution time: " + (end_time - start_time) + " ms");
 
 			}
 
@@ -457,13 +463,17 @@ public class XPathEvaluatorImpl {
 				out.close();
 
 				System.out.println("Generated XML document: " + out_file_path.toAbsolutePath().toString());
+				System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
 
 			}
 
-			else
+			else {
+
 				xml_writer.close();
 
-			System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
+				System.err.println("\nSQL execution time: " + (end_time - start_time) + " ms");
+
+			}
 
 			if (xmlb.getRootCount() > 1)
 				throw new PgSchemaException("[WARNING] The XML document has multiple root nodes.");
@@ -574,8 +584,9 @@ public class XPathEvaluatorImpl {
 
 			else {
 
-				out.write(new String("\nSQL execution time: " + (end_time - start_time) + " ms\n").getBytes(PgSchemaUtil.latin_1_charset));
 				out.flush();
+
+				System.err.println("\nSQL execution time: " + (end_time - start_time) + " ms");
 
 			}
 

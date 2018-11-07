@@ -55,6 +55,9 @@ public class xpath2xml {
 	 */
 	public static void main(String[] args) {
 
+		/** Whether to output processing message to stdout or not (stderr). */
+		boolean stdout_message = false;
+
 		/** The XML directory name. */
 		String xml_dir_name = "xml_result";
 
@@ -253,6 +256,8 @@ public class xpath2xml {
 
 		if (!out_file_name.isEmpty() && !out_file_name.equals("stdout")) {
 
+			stdout_message = true;
+
 			Path xml_dir_path = Paths.get(xml_dir_name);
 
 			if (!Files.isDirectory(xml_dir_path)) {
@@ -295,7 +300,7 @@ public class xpath2xml {
 
 				String xpath_query = xpath_queries.get(id);
 
-				evaluator.translate(xpath_query, variables);
+				evaluator.translate(xpath_query, variables, stdout_message);
 
 				if (!pg_option.name.isEmpty())
 					evaluator.composeXml(id, xpath_queries.size(), xml_dir_name, out_file_name, xmlb);

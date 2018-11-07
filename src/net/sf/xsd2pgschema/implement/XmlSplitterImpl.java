@@ -217,15 +217,23 @@ public class XmlSplitterImpl {
 
 		doc_unit.removeDuplicatePath();
 
-		System.out.println("Path for document unit:");
-		doc_unit.showPathExprs();
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("Path for document unit:\n");
+
+		doc_unit.showPathExprs(sb);
 
 		// decide path of document key
 
 		doc_key.removeOrphanPath(doc_unit.path_exprs);
 
-		System.out.println("Path for document key:");
-		doc_key.showPathExprs();
+		sb.append("Path for document key:\n");
+
+		doc_key.showPathExprs(sb);
+
+		System.out.print(sb.toString());
+
+		sb.setLength(0);
 
 		switch (doc_key.path_exprs.size()) {
 		case 1:

@@ -227,13 +227,17 @@ public class xpathparser {
 			if (xpath_comp_list.path_exprs.size() == 0)
 				throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-			System.out.println("Input XPath query:");
-			System.out.println(" " + main_text);
+			StringBuilder sb = new StringBuilder();
 
-			System.out.println("\nTarget path in XML Schema: " + option.root_schema_location);
-			xpath_comp_list.showPathExprs();
+			sb.append("Input XPath query:\n " + main_text + "\n\nTarget path in XML Schema: " + option.root_schema_location + "\n");
 
-			System.out.println("\nThe XPath query is valid.");
+			xpath_comp_list.showPathExprs(sb);
+
+			sb.append("\nThe XPath query is valid.\n");
+
+			System.out.print(sb.toString());
+
+			sb.setLength(0);
 
 		} catch (IOException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException e) {
 			e.printStackTrace();
