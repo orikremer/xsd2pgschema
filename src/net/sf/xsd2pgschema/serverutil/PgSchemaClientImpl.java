@@ -102,6 +102,7 @@ public class PgSchemaClientImpl {
 					if (reply.schema_bytes != null) {
 
 						schema = (PgSchema) fst_conf.asObject(reply.schema_bytes);
+
 						System.out.print(reply.message);
 
 					}
@@ -146,6 +147,119 @@ public class PgSchemaClientImpl {
 						PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 
 						System.out.print(reply.message);
+						/*
+						in.close();
+						out.close();
+						 */
+					}
+
+				} catch (ClassNotFoundException | ConnectException e) {
+					e.printStackTrace();
+				}
+
+			}
+
+		}
+
+		if (is != null)
+			is.close();
+
+	}
+
+	/**
+	 * Instance of PgSchemaClientImpl.
+	 *
+	 * @param is InputStream of XML Schema
+	 * @param option PostgreSQL data model option
+	 * @param fst_conf FST configuration
+	 * @param original_caller original caller class name (optional)
+	 * @param stdout_msg whether to output processing message to stdin or not (stderr)
+	 * @throws UnknownHostException the unknown host exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws SAXException the SAX exception
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public PgSchemaClientImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final String original_caller, final boolean stdout_msg) throws UnknownHostException, IOException, ParserConfigurationException, SAXException, PgSchemaException {
+
+		boolean server_alive = false;
+
+		this.option = option;
+
+		doc_builder_fac = DocumentBuilderFactory.newInstance();
+		doc_builder_fac.setValidating(false);
+		doc_builder_fac.setNamespaceAware(true);
+		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		doc_builder = doc_builder_fac.newDocumentBuilder();
+
+		if (option.pg_schema_server) {
+
+			try {
+
+				try (Socket socket = new Socket(InetAddress.getByName(option.pg_schema_server_host), option.pg_schema_server_port)) {
+
+					DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+					DataInputStream in = new DataInputStream(socket.getInputStream());
+
+					PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.GET, option));
+
+					PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
+
+					if (reply.schema_bytes != null) {
+
+						schema = (PgSchema) fst_conf.asObject(reply.schema_bytes);
+
+						if (stdout_msg)
+							System.out.print(reply.message);
+						else
+							System.err.print(reply.message);
+
+					}
+					/*
+					in.close();
+					out.close();
+					 */
+					server_alive = true;
+
+				}
+
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			} catch (ConnectException e) {
+			}
+
+		}
+
+		if (schema == null && is != null) {
+
+			// parse XSD document
+
+			Document xsd_doc = doc_builder.parse(is);
+
+			doc_builder.reset();
+
+			// XSD analysis
+
+			schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
+
+			if (server_alive && fst_conf != null) {
+
+				try {
+
+					try (Socket socket = new Socket(InetAddress.getByName(option.pg_schema_server_host), option.pg_schema_server_port)) {
+
+						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+						DataInputStream in = new DataInputStream(socket.getInputStream());
+
+						PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(fst_conf, schema, original_caller));
+
+						PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
+
+						if (stdout_msg)
+							System.out.print(reply.message);
+						else
+							System.err.print(reply.message);
 						/*
 						in.close();
 						out.close();

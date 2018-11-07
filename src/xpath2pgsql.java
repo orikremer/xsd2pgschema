@@ -55,7 +55,7 @@ public class xpath2pgsql {
 	public static void main(String[] args) {
 
 		/** Whether to output processing message to stdout or not (stderr). */
-		boolean stdout_message = false;
+		boolean stdout_msg = false;
 
 		/** The output directory name. */
 		String out_dir_name = "sql_result";
@@ -234,7 +234,7 @@ public class xpath2pgsql {
 
 		if (!out_file_name.isEmpty() && !out_file_name.equals("stdout")) {
 
-			stdout_message = true;
+			stdout_msg = true;
 
 			Path out_dir_path = Paths.get(out_dir_name);
 
@@ -267,7 +267,7 @@ public class xpath2pgsql {
 
 		try {
 
-			XPathEvaluatorImpl evaluator = new XPathEvaluatorImpl(is, option, fst_conf, pg_option); // reuse the instance for repetition
+			XPathEvaluatorImpl evaluator = new XPathEvaluatorImpl(is, option, fst_conf, pg_option, stdout_msg); // reuse the instance for repetition
 
 			if (!pg_option.name.isEmpty())
 				pg_option.clear();
@@ -276,7 +276,7 @@ public class xpath2pgsql {
 
 				String xpath_query = xpath_queries.get(id);
 
-				evaluator.translate(xpath_query, variables, stdout_message);
+				evaluator.translate(xpath_query, variables, stdout_msg);
 
 				if (!pg_option.name.isEmpty())
 					evaluator.execute(id, xpath_queries.size(), out_dir_name, out_file_name);

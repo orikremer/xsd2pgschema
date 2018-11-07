@@ -93,6 +93,7 @@ public class XPathEvaluatorImpl {
 	 * @param option PostgreSQL data model option
 	 * @param fst_conf FST configuration
 	 * @param pg_option PostgreSQL option
+	 * @param stdout_msg whether to output processing message to stdin or not (stderr)
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
 	 * @throws IOException Signals that an I/O exception has occurred.
@@ -100,9 +101,9 @@ public class XPathEvaluatorImpl {
 	 * @throws SQLException the SQL exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public XPathEvaluatorImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
+	public XPathEvaluatorImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgOption pg_option, final boolean stdout_msg) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
-		client = new PgSchemaClientImpl(is, this.option = option, fst_conf, Thread.currentThread().getStackTrace()[2].getClassName());
+		client = new PgSchemaClientImpl(is, this.option = option, fst_conf, Thread.currentThread().getStackTrace()[2].getClassName(), stdout_msg);
 
 		if (!pg_option.name.isEmpty()) {
 
@@ -128,12 +129,12 @@ public class XPathEvaluatorImpl {
 	 *
 	 * @param xpath_query XPath query
 	 * @param variables XPath variable reference
-	 * @param stdout_message whether to output processing message to stdin or not (stderr)
+	 * @param stdout_msg whether to output processing message to stdin or not (stderr)
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws xpathListenerException the xpath listener exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void translate(String xpath_query, HashMap<String, String> variables, boolean stdout_message) throws IOException, xpathListenerException, PgSchemaException {
+	public void translate(String xpath_query, HashMap<String, String> variables, boolean stdout_msg) throws IOException, xpathListenerException, PgSchemaException {
 
 		StringBuilder sb = new StringBuilder();
 
@@ -197,7 +198,7 @@ public class XPathEvaluatorImpl {
 
 		sb.append("\nXPath parse time: " + (end_time - start_time) + " ms\nXPath validation time: " + (end_time_ - end_time) + " ms\n\nSQL translation time: " + (end_time2 - start_time2) + " ms\n\n");
 
-		if (stdout_message)
+		if (stdout_msg)
 			System.out.print(sb.toString());
 		else
 			System.err.print(sb.toString());

@@ -56,7 +56,7 @@ public class xpath2json {
 	public static void main(String[] args) {
 
 		/** Whether to output processing message to stdout or not (stderr). */
-		boolean stdout_message = false;
+		boolean stdout_msg = false;
 
 		/** The JSON directory name. */
 		String json_dir_name = "json_result";
@@ -270,7 +270,7 @@ public class xpath2json {
 
 		if (!out_file_name.isEmpty() && !out_file_name.equals("stdout")) {
 
-			stdout_message = true;
+			stdout_msg = true;
 
 			Path json_dir_path = Paths.get(json_dir_name);
 
@@ -303,7 +303,7 @@ public class xpath2json {
 
 		try {
 
-			XPathEvaluatorImpl evaluator = new XPathEvaluatorImpl(is, option, fst_conf, pg_option); // reuse the instance for repetition
+			XPathEvaluatorImpl evaluator = new XPathEvaluatorImpl(is, option, fst_conf, pg_option, stdout_msg); // reuse the instance for repetition
 
 			if (!pg_option.name.isEmpty())
 				pg_option.clear();
@@ -314,7 +314,7 @@ public class xpath2json {
 
 				String xpath_query = xpath_queries.get(id);
 
-				evaluator.translate(xpath_query, variables, stdout_message);
+				evaluator.translate(xpath_query, variables, stdout_msg);
 
 				if (!pg_option.name.isEmpty())
 					evaluator.composeJson(id, xpath_queries.size(), json_dir_name, out_file_name, jsonb);
