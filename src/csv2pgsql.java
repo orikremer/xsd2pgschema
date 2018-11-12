@@ -300,8 +300,8 @@ public class csv2pgsql {
 		System.err.println("        --no-create-doc-key-index (do not create PostgreSQL index on document key, default if no --sync option)");
 		System.err.println("        --drop-doc-key-index (drop PostgreSQL index on document key if exists)");
 		System.err.println("        --min-rows-for-doc-key-index MIN_ROWS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_min_rows_for_doc_key_index + "\")");
-		System.err.println("        --create-attr-index (create PostgreSQL index on attribute if not exists)");
-		System.err.println("        --no-create-attr-index (do not create PostgreSQL index on attribute, default)");
+		System.err.println("        --create-attr-index (create PostgreSQL index on attribute if not exists, default)");
+		System.err.println("        --no-create-attr-index (do not create PostgreSQL index on attribute)");
 		System.err.println("        --drop-attr-index (drop PostgreSQL index on attribute if exists)");
 		System.err.println("        --max-attr-cols-for-index MAX_ATTR_COLS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_max_attr_cols_for_index + "\")");
 		System.err.println("        --no-rel (turn off relational model extension)");

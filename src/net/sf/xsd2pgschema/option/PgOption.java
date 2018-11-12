@@ -53,7 +53,7 @@ public class PgOption {
 	public boolean drop_doc_key_index = false;
 
 	/** Whether to create PostgreSQL index on attribute. */
-	public boolean create_attr_index = false;
+	public boolean create_attr_index = true;
 
 	/** Whether to drop PostgreSQL index on attribute. */
 	public boolean drop_attr_index = false;
