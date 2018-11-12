@@ -86,7 +86,7 @@ public class PgSchemaNodeTester {
 	 * @param root_node root node
 	 * @param root_key root key
 	 */
-	public void setRootNode(Node root_node, String root_key) {
+	protected void setRootNode(Node root_node, String root_key) {
 
 		proc_node = root_node;
 
@@ -101,7 +101,7 @@ public class PgSchemaNodeTester {
 	 * @param parent_node parent node
 	 * @param nested_key nested_key
 	 */
-	public void prepForTraversal(final PgTable parent_table, final Node parent_node, final PgSchemaNestedKey nested_key) {
+	protected void prepForTraversal(final PgTable parent_table, final Node parent_node, final PgSchemaNestedKey nested_key) {
 
 		this.parent_table = parent_table;
 		this.parent_node = parent_node;
@@ -127,7 +127,7 @@ public class PgSchemaNodeTester {
 	 * @param node current node
 	 * @return boolean whether current node is omissible
 	 */
-	public boolean isOmissibleNode(final Node node) {
+	protected boolean isOmissibleNode(final Node node) {
 
 		String qname = node.getNodeName();
 		String xname = PgSchemaUtil.getUnqualifiedName(qname);
@@ -203,7 +203,7 @@ public class PgSchemaNodeTester {
 	 *
 	 * @return boolean whether current node is the last one
 	 */
-	public boolean isLastNode() {
+	protected boolean isLastNode() {
 
 		try {
 			return last_node == null || proc_node.equals(last_node) || (indirect && node_ordinal == target_ordinal);
@@ -219,7 +219,7 @@ public class PgSchemaNodeTester {
 	 *
 	 * @param node current node
 	 */
-	public void setProcNode(Node node) {
+	protected void setProcNode(Node node) {
 
 		proc_node = node;
 

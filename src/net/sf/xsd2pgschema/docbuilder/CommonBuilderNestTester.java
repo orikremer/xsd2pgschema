@@ -19,12 +19,6 @@ limitations under the License.
 
 package net.sf.xsd2pgschema.docbuilder;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
-import org.xml.sax.SAXException;
-
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgTable;
 
@@ -53,12 +47,6 @@ public abstract class CommonBuilderNestTester {
 	/** Whether this node has opened simple content. */
 	public boolean has_open_simple_content = false;
 
-	/** Whether this node has inserted document key. */
-	public boolean has_insert_doc_key = false;
-
-	/** SAX parser for any content. */
-	public SAXParser any_sax_parser = null;
-
 	/**
 	 * Instance of nest tester from root node.
 	 *
@@ -74,22 +62,6 @@ public abstract class CommonBuilderNestTester {
 
 			ancestor_node = parent_node;
 			parent_node = table.xname;
-
-		}
-
-		if (table.has_any || table.has_any_attribute) {
-
-			try {
-
-				SAXParserFactory spf = SAXParserFactory.newInstance();
-				spf.setValidating(false);
-				spf.setNamespaceAware(false);
-
-				any_sax_parser = spf.newSAXParser();
-
-			} catch (ParserConfigurationException | SAXException e) {
-				throw new PgSchemaException(e);
-			}
 
 		}
 
@@ -111,24 +83,6 @@ public abstract class CommonBuilderNestTester {
 
 			ancestor_node = parent_node;
 			parent_node = table.xname;
-
-		}
-
-		has_insert_doc_key = parent_test.has_insert_doc_key;
-
-		if (table.has_any || table.has_any_attribute) {
-
-			try {
-
-				SAXParserFactory spf = SAXParserFactory.newInstance();
-				spf.setValidating(false);
-				spf.setNamespaceAware(false);
-
-				any_sax_parser = spf.newSAXParser();
-
-			} catch (ParserConfigurationException | SAXException e) {
-				throw new PgSchemaException(e);
-			}
 
 		}
 

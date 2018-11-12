@@ -32,6 +32,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -313,7 +316,7 @@ public class XmlBuilder extends CommonBuilder {
 	 * @param string string
 	 * @return byte[] byte array of string
 	 */
-	public byte[] getSimpleBytes(String string) {
+	protected byte[] getSimpleBytes(String string) {
 
 		int len = string.length();
 
@@ -687,6 +690,12 @@ public class XmlBuilder extends CommonBuilder {
 	/** The current document id. */
 	private String document_id;
 
+	/** Whether this node has inserted document key. */
+	private boolean has_insert_doc_key;
+
+	/** SAX parser for any content. */
+	private SAXParser any_sax_parser = null;
+
 	/**
 	 * Compose XML document (table node)
 	 *
@@ -714,6 +723,16 @@ public class XmlBuilder extends CommonBuilder {
 
 			pending_elem.push(elem);
 
+			if ((table.has_any || table.has_any_attribute) && any_sax_parser == null) {
+
+				SAXParserFactory spf = SAXParserFactory.newInstance();
+				spf.setValidating(false);
+				spf.setNamespaceAware(false);
+
+				any_sax_parser = spf.newSAXParser();
+
+			}
+
 			List<PgField> fields = table.fields;
 
 			String content;
@@ -723,6 +742,8 @@ public class XmlBuilder extends CommonBuilder {
 			int n;
 
 			document_id = null;
+
+			has_insert_doc_key = false;
 
 			// document key
 
@@ -769,9 +790,9 @@ public class XmlBuilder extends CommonBuilder {
 
 								XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table.pname, field, nest_test, this);
 
-								nest_test.any_sax_parser.parse(in, any_attr);
+								any_sax_parser.parse(in, any_attr);
 
-								nest_test.any_sax_parser.reset();
+								any_sax_parser.reset();
 
 								in.close();
 
@@ -819,7 +840,7 @@ public class XmlBuilder extends CommonBuilder {
 
 						insertDocKey(field.start_end_elem_tag, rset.getString(field.sql_param_id));
 
-						nest_test.has_child_elem = nest_test.has_content = nest_test.has_insert_doc_key = true;
+						nest_test.has_child_elem = nest_test.has_content = has_insert_doc_key = true;
 
 					}
 
@@ -881,8 +902,8 @@ public class XmlBuilder extends CommonBuilder {
 							if (!nest_test.has_child_elem || !nest_test.has_content)
 								nest_test.has_child_elem = nest_test.has_content = true;
 
-							if (nest_test.has_insert_doc_key)
-								nest_test.has_insert_doc_key = false;
+							if (has_insert_doc_key)
+								has_insert_doc_key = false;
 
 						}
 
@@ -900,12 +921,12 @@ public class XmlBuilder extends CommonBuilder {
 
 								XmlBuilderAnyRetriever any = new XmlBuilderAnyRetriever(table.pname, field, nest_test, this);
 
-								nest_test.any_sax_parser.parse(in, any);
+								any_sax_parser.parse(in, any);
 
-								nest_test.any_sax_parser.reset();
+								any_sax_parser.reset();
 
-								if (nest_test.has_insert_doc_key)
-									nest_test.has_insert_doc_key = false;
+								if (has_insert_doc_key)
+									has_insert_doc_key = false;
 
 								in.close();
 
@@ -988,7 +1009,7 @@ public class XmlBuilder extends CommonBuilder {
 			if (insert_doc_key)
 				System.err.println("Not allowed insert document key to element has any child element.");
 			throw new PgSchemaException(e);
-		} catch (SQLException | SAXException | IOException e) {
+		} catch (SQLException | SAXException | IOException | ParserConfigurationException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -1024,10 +1045,10 @@ public class XmlBuilder extends CommonBuilder {
 
 			if (category) {
 
-				pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
+				pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 ? (has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
 
-				if (parent_nest_test.has_insert_doc_key)
-					parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+				if (has_insert_doc_key)
+					has_insert_doc_key = false;
 
 			}
 
@@ -1069,6 +1090,16 @@ public class XmlBuilder extends CommonBuilder {
 
 			}
 
+			if ((table.has_any || table.has_any_attribute) && any_sax_parser == null) {
+
+				SAXParserFactory spf = SAXParserFactory.newInstance();
+				spf.setValidating(false);
+				spf.setNamespaceAware(false);
+
+				any_sax_parser = spf.newSAXParser();
+
+			}
+
 			ResultSet rset = ps.executeQuery();
 
 			List<PgField> fields = table.fields;
@@ -1085,10 +1116,10 @@ public class XmlBuilder extends CommonBuilder {
 
 				if (category_item) {
 
-					pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
+					pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? (has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
 
-					if (parent_nest_test.has_insert_doc_key)
-						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+					if (has_insert_doc_key)
+						has_insert_doc_key = false;
 
 					if (!table.bridge)
 						nest_test.has_child_elem = false;
@@ -1156,9 +1187,9 @@ public class XmlBuilder extends CommonBuilder {
 
 									XmlBuilderAnyAttrRetriever any_attr = new XmlBuilderAnyAttrRetriever(table.pname, field, nest_test, this);
 
-									nest_test.any_sax_parser.parse(in, any_attr);
+									any_sax_parser.parse(in, any_attr);
 
-									nest_test.any_sax_parser.reset();
+									any_sax_parser.reset();
 
 									in.close();
 
@@ -1247,8 +1278,8 @@ public class XmlBuilder extends CommonBuilder {
 								if (!nest_test.has_child_elem || !nest_test.has_content)
 									nest_test.has_child_elem = nest_test.has_content = true;
 
-								if (parent_nest_test.has_insert_doc_key)
-									parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+								if (has_insert_doc_key)
+									has_insert_doc_key = false;
 
 							}
 
@@ -1266,12 +1297,12 @@ public class XmlBuilder extends CommonBuilder {
 
 									XmlBuilderAnyRetriever any = new XmlBuilderAnyRetriever(table.pname, field, nest_test, this);
 
-									nest_test.any_sax_parser.parse(in, any);
+									any_sax_parser.parse(in, any);
 
-									nest_test.any_sax_parser.reset();
+									any_sax_parser.reset();
 
-									if (parent_nest_test.has_insert_doc_key)
-										parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+									if (has_insert_doc_key)
+										has_insert_doc_key = false;
 
 									in.close();
 
@@ -1388,7 +1419,7 @@ public class XmlBuilder extends CommonBuilder {
 
 			return nest_test;
 
-		} catch (SQLException | XMLStreamException | SAXException | IOException e) {
+		} catch (SQLException | XMLStreamException | SAXException | IOException | ParserConfigurationException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -1457,10 +1488,10 @@ public class XmlBuilder extends CommonBuilder {
 
 				if (category_item) {
 
-					pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
+					pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? (has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
 
-					if (parent_nest_test.has_insert_doc_key)
-						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+					if (has_insert_doc_key)
+						has_insert_doc_key = false;
 
 				}
 
@@ -1547,10 +1578,10 @@ public class XmlBuilder extends CommonBuilder {
 
 			if (category) {
 
-				pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 ? (parent_nest_test.has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
+				pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 ? (has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
 
-				if (parent_nest_test.has_insert_doc_key)
-					parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+				if (has_insert_doc_key)
+					has_insert_doc_key = false;
 
 			}
 

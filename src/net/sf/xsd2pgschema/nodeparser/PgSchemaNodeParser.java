@@ -19,43 +19,16 @@ limitations under the License.
 
 package net.sf.xsd2pgschema.nodeparser;
 
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.math.BigInteger;
-import java.security.MessageDigest;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 
-import javax.xml.bind.DatatypeConverter;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
-import org.apache.commons.text.StringEscapeUtils;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 import net.sf.xsd2pgschema.PgField;
-import net.sf.xsd2pgschema.PgSchema;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
-import net.sf.xsd2pgschema.type.PgHashSize;
 
 /**
  * Abstract node parser.
@@ -64,20 +37,14 @@ import net.sf.xsd2pgschema.type.PgHashSize;
  */
 public abstract class PgSchemaNodeParser {
 
-	/** The PostgreSQL data model. */
-	protected PgSchema schema;
-
-	/** The relational data extension. */
-	protected boolean rel_data_ext;
+	/** The node parser builder. */
+	protected PgSchemaNodeParserBuilder npb;
 
 	/** The parent table. */
 	protected PgTable parent_table;
 
 	/** The current table. */
 	protected PgTable table;
-
-	/** The node parser type. */
-	private PgSchemaNodeParserType parser_type;
 
 	/** The field list. */
 	protected List<PgField> fields;
@@ -118,48 +85,22 @@ public abstract class PgSchemaNodeParser {
 	/** The ancestor node name. */
 	protected String ancestor_node_name;
 
-	/** The document id. */
-	protected String document_id;
-
 	/** The common content holder for element, simple_content and attribute. */
 	protected String content;
-
-	/** The size of hash key. */
-	protected PgHashSize hash_size;
-
-	/** The common content holder for xs:any and xs:anyAttribute. */
-	protected StringBuilder any_content = null;
-
-	/** The instance of message digest. */
-	protected MessageDigest md_hash_key = null;
-
-	/** The document builder for any content. */
-	private DocumentBuilder any_doc_builder = null;
-
-	/** The instance of transformer for any content. */
-	private Transformer any_transformer = null;
-
-	/** SAX parser for any content. */
-	private SAXParser any_sax_parser = null;
 
 	/**
 	 * Node parser.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param npb node parser builder
 	 * @param parent_table parent table
 	 * @param table current table
-	 * @param parser_type node parser type
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNodeParser(final PgSchema schema, final PgTable parent_table, final PgTable table, final PgSchemaNodeParserType parser_type) throws PgSchemaException {
+	public PgSchemaNodeParser(final PgSchemaNodeParserBuilder npb, final PgTable parent_table, final PgTable table) throws PgSchemaException {
 
-		this.schema = schema;
+		this.npb = npb;
 		this.parent_table = parent_table;
 		this.table = table;
-		this.parser_type = parser_type;
-
-		document_id = schema.document_id;
-		rel_data_ext = schema.option.rel_data_ext;
 
 		fields = table.fields;
 		fields_size = fields.size();
@@ -170,46 +111,6 @@ public abstract class PgSchemaNodeParser {
 		virtual = table.virtual;
 		visited = !virtual;
 
-		if (table.has_any || table.has_any_attribute) {
-
-			try {
-
-				DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
-				doc_builder_fac.setValidating(false);
-				doc_builder_fac.setNamespaceAware(true);
-				doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-				doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-				any_doc_builder = doc_builder_fac.newDocumentBuilder();
-
-				TransformerFactory tf_factory = TransformerFactory.newInstance();
-				any_transformer = tf_factory.newTransformer();
-				any_transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-				any_transformer.setOutputProperty(OutputKeys.INDENT, "no");
-
-				if (table.has_any) {
-
-					SAXParserFactory spf = SAXParserFactory.newInstance();
-					spf.setValidating(false);
-					spf.setNamespaceAware(false);
-
-					any_sax_parser = spf.newSAXParser();
-
-				}
-
-			} catch (ParserConfigurationException | TransformerConfigurationException | SAXException e) {
-				throw new PgSchemaException(e);
-			}
-
-			switch (parser_type) {
-			case full_text_indexing:
-			case json_conversion:
-				any_content = new StringBuilder();
-				break;
-			default:
-			}
-
-		}
-
 	}
 
 	/**
@@ -218,9 +119,9 @@ public abstract class PgSchemaNodeParser {
 	 * @param root_node root node
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void parseRootNode(final Node root_node) throws PgSchemaException {
+	protected void parseRootNode(final Node root_node) throws PgSchemaException {
 
-		node_test.setRootNode(root_node, document_id + "/" + table.xname);
+		node_test.setRootNode(root_node, npb.document_id + "/" + table.xname);
 
 		parse();
 
@@ -306,7 +207,7 @@ public abstract class PgSchemaNodeParser {
 	 *
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void clear() throws PgSchemaException {
+	protected void clear() throws PgSchemaException {
 
 		if (visited && nested_keys != null && nested_keys.size() > 0)
 			nested_keys.clear();
@@ -342,7 +243,7 @@ public abstract class PgSchemaNodeParser {
 		else if (table.has_nested_key_as_attr && current_key.contains("@"))
 			return null;
 
-		PgTable nested_table = schema.getTable(field.foreign_table_id);
+		PgTable nested_table = npb.schema.getTable(field.foreign_table_id);
 
 		if (!nested_table.virtual && !field.nested_key_as_attr && !existsNestedNode(node, nested_table))
 			return null;
@@ -436,23 +337,6 @@ public abstract class PgSchemaNodeParser {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Set any content.
-	 *
-	 * @param node current node
-	 * @param field current field
-	 * @return boolean whether content has value
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred
-	 * @throws SAXException the SAX exception
-	 */
-	protected boolean setAnyContent(final Node node, final PgField field) throws TransformerException, IOException, SAXException {
-
-		content = null;
-
-		return (field.any ? setAny(node) : setAnyAttribute(node));
 	}
 
 	/**
@@ -561,7 +445,7 @@ public abstract class PgSchemaNodeParser {
 	 */
 	private boolean applyContentFilter(final PgField field, boolean pg_enum_limit) {
 
-		if (field.default_value != null && (content == null || content.isEmpty()) && schema.option.fill_default_value)
+		if (field.default_value != null && (content == null || content.isEmpty()) && npb.fill_default_value)
 			content = field.default_value;
 
 		if (field.fill_this)
@@ -594,288 +478,6 @@ public abstract class PgSchemaNodeParser {
 		}
 
 		return true;
-	}
-
-	/**
-	 * Set any.
-	 *
-	 * @param node current node
-	 * @return boolean whether any element exists
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 * @throws SAXException the SAX exception
-	 */
-	private boolean setAny(Node node) throws TransformerException, IOException, SAXException {
-
-		boolean has_any = false;
-
-		Document doc = null;
-		Element doc_root = null;
-		Node _child;
-
-		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-			if (child.getNodeType() != Node.ELEMENT_NODE)
-				continue;
-
-			String child_name = ((Element) child).getLocalName();
-
-			if (table.has_element && fields.parallelStream().filter(field -> field.element).anyMatch(field -> child_name.equals(field.xname)))
-				continue;
-
-			if (!has_any) { // initial instance of new document
-
-				doc = any_doc_builder.newDocument();
-				doc_root = doc.createElementNS(schema.getNamespaceUriForPrefix(""), table.pname);
-
-				any_doc_builder.reset();
-
-			}
-
-			_child = doc.importNode(child, true);
-
-			removeWhiteSpace(_child);
-			removePrefixOfElement(_child);
-
-			doc_root.appendChild(_child);
-
-			has_any = true;
-
-		}
-
-		if (has_any) {
-
-			doc.appendChild(doc_root);
-
-			DOMSource source = new DOMSource(doc);
-			StringWriter writer = new StringWriter();
-			StreamResult result = new StreamResult(writer);
-
-			any_transformer.transform(source, result);
-
-			content = writer.toString().replace(" xmlns=\"\"", "");
-
-			writer.close();
-
-			any_transformer.reset();
-
-			switch (parser_type) {
-			case full_text_indexing:
-			case json_conversion:
-				PgSchemaNodeAnyExtractor any = new PgSchemaNodeAnyExtractor(parser_type, table.pname, any_content);
-
-				any_sax_parser.parse(new InputSource(new StringReader(content)), any);
-
-				any_sax_parser.reset();
-				break;
-			default:
-			}
-
-		}
-
-		return has_any;
-	}
-
-	/**
-	 * Remove white space.
-	 *
-	 * @param node current node
-	 */
-	private void removeWhiteSpace(Node node) {
-
-		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-			if (child.getNodeType() == Node.TEXT_NODE) {
-
-				if (PgSchemaUtil.null_simple_cont_pattern.matcher(child.getNodeValue()).matches()) {
-
-					node.removeChild(child);
-					child = node.getFirstChild();
-
-				}
-
-			}
-
-			if (child.hasChildNodes())
-				removeWhiteSpace(child);
-
-		}
-
-	}
-
-	/**
-	 * Remove prefix of element.
-	 *
-	 * @param node current node
-	 */
-	private void removePrefixOfElement(Node node) {
-
-		if (node.getNodeType() == Node.ELEMENT_NODE) {
-
-			Document owner_doc = node.getOwnerDocument();
-			owner_doc.renameNode(node, null, node.getLocalName());
-
-		}
-
-		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-			if (child.getNodeType() == Node.ELEMENT_NODE)
-				removePrefixOfElement(child);
-
-		}
-
-	}
-
-	/**
-	 * Set any attribute.
-	 *
-	 * @param node current node
-	 * @return boolean whether any attribute exists
-	 * @throws TransformerException the transformer exception
-	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
-	private boolean setAnyAttribute(Node node) throws TransformerException, IOException {
-
-		boolean has_any_attr = false;
-
-		Document doc = null;
-		Element doc_root = null;
-
-		if (node.hasAttributes()) {
-
-			NamedNodeMap attrs = node.getAttributes();
-
-			HashSet<String> prefixes = new HashSet<String>();
-
-			Node attr;
-
-			for (int i = 0; i < attrs.getLength(); i++) {
-
-				attr = attrs.item(i);
-
-				if (attr != null) {
-
-					String attr_name = attr.getNodeName();
-
-					if (attr_name.startsWith("xmlns:"))
-						prefixes.add(attr_name.substring(6));
-
-				}
-
-			}
-
-			for (int i = 0; i < attrs.getLength(); i++) {
-
-				attr = attrs.item(i);
-
-				if (attr != null) {
-
-					String attr_name = attr.getNodeName();
-
-					if (attr_name.startsWith("xmlns"))
-						continue;
-
-					if (prefixes.size() > 0 && attr_name.contains(":") && prefixes.contains(attr_name.substring(0, attr_name.indexOf(':'))))
-						continue;
-
-					if (table.has_attribute && fields.parallelStream().filter(field -> field.attribute).anyMatch(field -> attr_name.equals(field.xname)))
-						continue;
-
-					String attr_value = attr.getNodeValue();
-
-					if (attr_value != null && !attr_value.isEmpty()) {
-
-						switch (parser_type) {
-						case pg_data_migration:
-							if (!has_any_attr) { // initial instance of new document
-
-								doc = any_doc_builder.newDocument();
-								doc_root = doc.createElementNS(schema.getNamespaceUriForPrefix(""), table.pname);
-
-								any_doc_builder.reset();
-
-							}
-
-							doc_root.setAttribute(attr_name, attr_value);
-							break;
-						case full_text_indexing:
-							any_content.append(attr_value + " ");
-							break;
-						case json_conversion:
-							attr_value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(attr_value));
-
-							if (!attr_value.startsWith("\""))
-								attr_value = "\"" + attr_value + "\"";
-
-							any_content.append("/@" + attr_name + ":" + attr_value + "\n");
-							break;
-						}
-
-						has_any_attr = true;
-
-					}
-
-				}
-
-			}
-
-			prefixes.clear();
-
-		}
-
-		if (has_any_attr && parser_type.equals(PgSchemaNodeParserType.pg_data_migration)) {
-
-			doc.appendChild(doc_root);
-
-			DOMSource source = new DOMSource(doc);
-			StringWriter writer = new StringWriter();
-			StreamResult result = new StreamResult(writer);
-
-			any_transformer.transform(source, result);
-
-			content = writer.toString();
-
-			writer.close();
-
-			any_transformer.reset();
-
-		}
-
-		return has_any_attr;
-	}
-
-	/**
-	 * Determine hash key of source string.
-	 *
-	 * @param key_name source string
-	 * @return String hash key
-	 */
-	protected String getHashKeyString(String key_name) {
-
-		if (md_hash_key == null) // debug mode
-			return key_name;
-
-		try {
-
-			byte[] bytes = md_hash_key.digest(key_name.getBytes(PgSchemaUtil.def_charset));
-
-			switch (hash_size) {
-			case native_default:
-				return "E'\\\\x" + DatatypeConverter.printHexBinary(bytes) + "'"; // PostgreSQL hex format
-			case unsigned_long_64:
-				BigInteger blong = new BigInteger(bytes);
-				return Long.toString(Math.abs(blong.longValue())); // use lower order 64bit
-			case unsigned_int_32:
-				BigInteger bint = new BigInteger(bytes);
-				return Integer.toString(Math.abs(bint.intValue())); // use lower order 32bit
-			default:
-				return key_name;
-			}
-
-		} finally {
-			md_hash_key.reset();
-		}
-
 	}
 
 }

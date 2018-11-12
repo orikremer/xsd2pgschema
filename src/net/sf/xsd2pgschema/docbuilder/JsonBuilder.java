@@ -36,6 +36,10 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
 import org.apache.commons.text.StringEscapeUtils;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -46,6 +50,7 @@ import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
 import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2Json;
+import net.sf.xsd2pgschema.nodeparser.PgSchemaNodeParserBuilder;
 import net.sf.xsd2pgschema.type.PgHashSize;
 import net.sf.xsd2pgschema.type.XsTableType;
 import net.sf.xsd2pgschema.xmlutil.XmlParser;
@@ -935,6 +940,8 @@ public class JsonBuilder extends CommonBuilder {
 
 		System.out.print(buffer.toString());
 
+		buffer.setLength(0);
+
 	}
 
 	// JSON document
@@ -1712,11 +1719,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		// parse root node and store to JSON buffer
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table, false);
-
-		node2json.parseRootNode(node, 1);
-
-		node2json.clear();
+		new PgSchemaNode2Json(new PgSchemaNodeParserBuilder(this), root_table, node, 1);
 
 		writeEndDocument();
 
@@ -1754,11 +1757,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		// parse root node and store to JSON buffer
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table, false);
-
-		node2json.parseRootNode(node, 1);
-
-		node2json.clear();
+		new PgSchemaNode2Json(new PgSchemaNodeParserBuilder(this), root_table, node, 1);
 
 		writeEndDocument();
 
@@ -1806,11 +1805,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		// parse root node and store to JSON buffer
 
-		PgSchemaNode2Json node2json = new PgSchemaNode2Json(this, null, root_table, false);
-
-		node2json.parseRootNode(node);
-
-		node2json.clear();
+		new PgSchemaNode2Json(new PgSchemaNodeParserBuilder(this), root_table, node);
 
 		tables.stream().filter(_table -> _table.jsonable && _table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).forEach(_table -> {
 
@@ -2002,6 +1997,9 @@ public class JsonBuilder extends CommonBuilder {
 	/** The current document id. */
 	private String document_id;
 
+	/** SAX parser for any content. */
+	private SAXParser any_sax_parser = null;
+
 	/**
 	 * Compose JSON document (table node)
 	 *
@@ -2030,6 +2028,16 @@ public class JsonBuilder extends CommonBuilder {
 			JsonBuilderPendingAttr attr;
 
 			pending_elem.push(elem);
+
+			if ((table.has_any || table.has_any_attribute) && any_sax_parser == null) {
+
+				SAXParserFactory spf = SAXParserFactory.newInstance();
+				spf.setValidating(false);
+				spf.setNamespaceAware(false);
+
+				any_sax_parser = spf.newSAXParser();
+
+			}
 
 			List<PgField> fields = table.fields;
 
@@ -2086,9 +2094,9 @@ public class JsonBuilder extends CommonBuilder {
 
 								JsonBuilderAnyAttrRetriever any_attr = new JsonBuilderAnyAttrRetriever(table.pname, field, nest_test, false, this);
 
-								nest_test.any_sax_parser.parse(in, any_attr);
+								any_sax_parser.parse(in, any_attr);
 
-								nest_test.any_sax_parser.reset();
+								any_sax_parser.reset();
 
 								in.close();
 
@@ -2131,7 +2139,7 @@ public class JsonBuilder extends CommonBuilder {
 
 						writeField(table, field, false, rset.getString(field.sql_param_id), nest_test.child_indent_level);
 
-						nest_test.has_child_elem = nest_test.has_content = nest_test.has_insert_doc_key = true;
+						nest_test.has_child_elem = nest_test.has_content = true;
 
 					}
 
@@ -2170,9 +2178,6 @@ public class JsonBuilder extends CommonBuilder {
 							if (!nest_test.has_child_elem || !nest_test.has_content)
 								nest_test.has_child_elem = nest_test.has_content = true;
 
-							if (nest_test.has_insert_doc_key)
-								nest_test.has_insert_doc_key = false;
-
 						}
 
 					}
@@ -2189,12 +2194,9 @@ public class JsonBuilder extends CommonBuilder {
 
 								JsonBuilderAnyRetriever any = new JsonBuilderAnyRetriever(table.pname, field, nest_test, false, this);
 
-								nest_test.any_sax_parser.parse(in, any);
+								any_sax_parser.parse(in, any);
 
-								nest_test.any_sax_parser.reset();
-
-								if (nest_test.has_insert_doc_key)
-									nest_test.has_insert_doc_key = false;
+								any_sax_parser.reset();
 
 								in.close();
 
@@ -2269,7 +2271,7 @@ public class JsonBuilder extends CommonBuilder {
 			else
 				pending_elem.poll();
 
-		} catch (SQLException | SAXException | IOException e) {
+		} catch (SQLException | SAXException | IOException | ParserConfigurationException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -2306,14 +2308,8 @@ public class JsonBuilder extends CommonBuilder {
 			boolean category = not_virtual && (not_list_and_bridge || array_field);
 			boolean category_item = not_virtual && !(not_list_and_bridge || array_field);
 
-			if (category) {
-
+			if (category)
 				pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
-
-				if (parent_nest_test.has_insert_doc_key)
-					parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
-
-			}
 
 			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
 			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1;
@@ -2353,6 +2349,16 @@ public class JsonBuilder extends CommonBuilder {
 
 			}
 
+			if ((table.has_any || table.has_any_attribute) && any_sax_parser == null) {
+
+				SAXParserFactory spf = SAXParserFactory.newInstance();
+				spf.setValidating(false);
+				spf.setNamespaceAware(false);
+
+				any_sax_parser = spf.newSAXParser();
+
+			}
+
 			ResultSet rset = ps.executeQuery();
 
 			List<PgField> fields = table.fields;
@@ -2370,9 +2376,6 @@ public class JsonBuilder extends CommonBuilder {
 				if (category_item) {
 
 					pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
-
-					if (parent_nest_test.has_insert_doc_key)
-						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
 
 					if (!table.bridge)
 						nest_test.has_child_elem = false;
@@ -2454,9 +2457,9 @@ public class JsonBuilder extends CommonBuilder {
 
 									JsonBuilderAnyAttrRetriever any_attr = new JsonBuilderAnyAttrRetriever(table.pname, field, nest_test, array_field, this);
 
-									nest_test.any_sax_parser.parse(in, any_attr);
+									any_sax_parser.parse(in, any_attr);
 
-									nest_test.any_sax_parser.reset();
+									any_sax_parser.reset();
 
 									in.close();
 
@@ -2536,9 +2539,6 @@ public class JsonBuilder extends CommonBuilder {
 								if (!nest_test.has_child_elem || !nest_test.has_content)
 									nest_test.has_child_elem = nest_test.has_content = true;
 
-								if (parent_nest_test.has_insert_doc_key)
-									parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
-
 							}
 
 						}
@@ -2555,12 +2555,9 @@ public class JsonBuilder extends CommonBuilder {
 
 									JsonBuilderAnyRetriever any = new JsonBuilderAnyRetriever(table.pname, field, nest_test, array_field, this);
 
-									nest_test.any_sax_parser.parse(in, any);
+									any_sax_parser.parse(in, any);
 
-									nest_test.any_sax_parser.reset();
-
-									if (parent_nest_test.has_insert_doc_key)
-										parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
+									any_sax_parser.reset();
 
 									in.close();
 
@@ -2670,7 +2667,7 @@ public class JsonBuilder extends CommonBuilder {
 
 			return nest_test;
 
-		} catch (SQLException | SAXException | IOException e) {
+		} catch (SQLException | SAXException | IOException | ParserConfigurationException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -2738,9 +2735,6 @@ public class JsonBuilder extends CommonBuilder {
 				if (category_item) {
 
 					pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
-
-					if (parent_nest_test.has_insert_doc_key)
-						parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
 
 					if (!table.bridge)
 						nest_test.has_child_elem = false;
@@ -2820,14 +2814,8 @@ public class JsonBuilder extends CommonBuilder {
 		PgField nested_key = table.nested_fields.stream().filter(field -> !field.nested_key_as_attr).findFirst().get();
 		PgTable nested_table = tables.get(nested_key.foreign_table_id);
 
-		if (category) {
-
+		if (category)
 			pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
-
-			if (parent_nest_test.has_insert_doc_key)
-				parent_nest_test.has_insert_doc_key = nest_test.has_insert_doc_key = false;
-
-		}
 
 		if (nested_table.content_holder || !nested_table.bridge)
 			nest_test.merge(nestChildNode2Json(nested_table, parent_key, false, nest_test));

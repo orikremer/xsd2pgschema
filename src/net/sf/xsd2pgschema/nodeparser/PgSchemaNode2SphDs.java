@@ -29,7 +29,6 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import net.sf.xsd2pgschema.PgField;
-import net.sf.xsd2pgschema.PgSchema;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
@@ -54,18 +53,51 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	private String[] values;
 
 	/**
+	 * Parse root node and write to Sphinx xmlpipe2 file.
+	 *
+	 * @param npb node parser builder
+	 * @param table current table
+	 * @param root_node root node
+	 * @param min_word_len minimum word length for indexing
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public PgSchemaNode2SphDs(final PgSchemaNodeParserBuilder npb, final PgTable table, final Node root_node, final int min_word_len) throws PgSchemaException {
+
+		super(npb, null, table);
+
+		this.min_word_len = min_word_len;
+
+		if (table.indexable) {
+
+			as_attr = false;
+
+			sph_ds_buffw = npb.schema.sph_ds_buffw;
+
+			field_prefix = table.name + PgSchemaUtil.sph_member_op;
+
+			values = new String[fields_size];
+
+		}
+
+		parseRootNode(root_node);
+
+		clear();
+
+	}
+
+	/**
 	 * Node parser for Sphinx xmlpipe2 conversion.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param npb node parser builder
 	 * @param parent_table parent table (set null if current table is root table)
 	 * @param table current table
 	 * @param as_attr whether parent node as attribute
 	 * @param min_word_len minimum word length for indexing
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2SphDs(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean as_attr, final int min_word_len) throws PgSchemaException {
+	protected PgSchemaNode2SphDs(final PgSchemaNodeParserBuilder npb, final PgTable parent_table, final PgTable table, final boolean as_attr, final int min_word_len) throws PgSchemaException {
 
-		super(schema, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
+		super(npb, parent_table, table);
 
 		this.min_word_len = min_word_len;
 
@@ -73,7 +105,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 			this.as_attr = as_attr;
 
-			sph_ds_buffw = schema.sph_ds_buffw;
+			sph_ds_buffw = npb.schema.sph_ds_buffw;
 
 			field_prefix = table.name + PgSchemaUtil.sph_member_op;
 
@@ -93,7 +125,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2SphDs node_parser = new PgSchemaNode2SphDs(schema, table, nested_key.table, nested_key.as_attr, min_word_len);
+		PgSchemaNode2SphDs node_parser = new PgSchemaNode2SphDs(npb, table, nested_key.table, nested_key.as_attr, min_word_len);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepForTraversal(table, parent_node, nested_key);
@@ -199,10 +231,10 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 					try {
 
-						if (setAnyContent(proc_node, field)) {
+						if (npb.setAnyContent(proc_node, table, field)) {
 
-							values[f] = any_content.toString().trim();
-							any_content.setLength(0);
+							values[f] = npb.any_content.toString().trim();
+							npb.any_content.setLength(0);
 
 						}
 

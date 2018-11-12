@@ -60,6 +60,8 @@ import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2LucIdx;
 import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2PgCsv;
 import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2PgSql;
 import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2SphDs;
+import net.sf.xsd2pgschema.nodeparser.PgSchemaNodeParserBuilder;
+import net.sf.xsd2pgschema.nodeparser.PgSchemaNodeParserType;
 import net.sf.xsd2pgschema.option.IndexFilter;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
 import net.sf.xsd2pgschema.option.XmlPostEditor;
@@ -4810,11 +4812,7 @@ public class PgSchema implements Serializable {
 
 		// parse root node and write to data (CSV/TSV) file
 
-		PgSchemaNode2PgCsv node2pgcsv = new PgSchemaNode2PgCsv(this, null, root_table, false);
-
-		node2pgcsv.parseRootNode(node);
-
-		node2pgcsv.clear();
+		new PgSchemaNode2PgCsv(new PgSchemaNodeParserBuilder(this, PgSchemaNodeParserType.pg_data_migration), root_table, node);
 
 	}
 
@@ -4939,11 +4937,7 @@ public class PgSchema implements Serializable {
 
 		}
 
-		PgSchemaNode2PgSql node2pgsql = new PgSchemaNode2PgSql(this, null, root_table, false, update);
-
-		node2pgsql.parseRootNode(node);
-
-		node2pgsql.clear();
+		new PgSchemaNode2PgSql(new PgSchemaNodeParserBuilder(this, PgSchemaNodeParserType.pg_data_migration), root_table, node, update);
 
 		try {
 			db_conn.commit(); // transaction ends
@@ -5696,15 +5690,11 @@ public class PgSchema implements Serializable {
 
 		resetAttrSelRdy();
 
-		// parse root node and store into Lucene document
+		// parse root node and store to Lucene document
 
 		lucene_doc.add(new StringField(option.document_key_name, document_id, Field.Store.YES));
 
-		PgSchemaNode2LucIdx node2lucidx = new PgSchemaNode2LucIdx(this, null, root_table, false, index_filter.min_word_len, index_filter.lucene_numeric_index);
-
-		node2lucidx.parseRootNode(node);
-
-		node2lucidx.clear();
+		new PgSchemaNode2LucIdx(new PgSchemaNodeParserBuilder(this, PgSchemaNodeParserType.full_text_indexing), root_table, node, index_filter.min_word_len, index_filter.lucene_numeric_index);
 
 	}
 
@@ -6001,11 +5991,7 @@ public class PgSchema implements Serializable {
 			sph_ds_buffw.write("<sphinx:document id=\"" + getHashKeyString(document_id) + "\" xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
 			sph_ds_buffw.write("<" + option.document_key_name + ">" + StringEscapeUtils.escapeXml10(document_id) + "</" + option.document_key_name + ">\n");
 
-			PgSchemaNode2SphDs node2sphds = new PgSchemaNode2SphDs(this, null, root_table, false, index_filter.min_word_len);
-
-			node2sphds.parseRootNode(node);
-
-			node2sphds.clear();
+			new PgSchemaNode2SphDs(new PgSchemaNodeParserBuilder(this, PgSchemaNodeParserType.full_text_indexing), root_table, node, index_filter.min_word_len);
 
 			sph_ds_buffw.write("</sphinx:document>\n");
 

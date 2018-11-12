@@ -20,7 +20,6 @@ limitations under the License.
 package net.sf.xsd2pgschema.nodeparser;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLXML;
@@ -32,11 +31,9 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import net.sf.xsd2pgschema.PgField;
-import net.sf.xsd2pgschema.PgSchema;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
-import net.sf.xsd2pgschema.type.PgSerSize;
 
 /**
  * Node parser for PostgreSQL data migration.
@@ -57,44 +54,33 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/** Whether any content was written. */
 	private boolean written = false;
 
-	/** Whether default serial key size (unsigned int 32 bit). */
-	private boolean is_def_ser_size;
-
 	/** Whether field is occupied. */
 	private boolean[] occupied;
 
 	/**
-	 * Node parser for PostgreSQL data migration.
+	 * Parse root node and send to PostgreSQL.
 	 *
-	 * @param schema PostgreSQL data model
-	 * @param parent_table parent table (set null if current table is root table)
+	 * @param npb node parser builder
 	 * @param table current table
-	 * @param as_attr whether parent node as attribute
+	 * @param root_node root node
 	 * @param update whether update or insertion
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2PgSql(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean as_attr, final boolean update) throws PgSchemaException {
+	public PgSchemaNode2PgSql(final PgSchemaNodeParserBuilder npb, final PgTable table, final Node root_node, final boolean update) throws PgSchemaException {
 
-		super(schema, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
+		super(npb, null, table);
 
 		this.update = update;
 
 		if (table.writable) {
 
-			this.as_attr = as_attr;
-
-			if (rel_data_ext || schema.option.xpath_key) {
-
-				md_hash_key = schema.md_hash_key;
-				hash_size = schema.option.hash_size;
-
-			}
+			as_attr = false;
 
 			try {
 
 				PgField field;
 
-				if (update && rel_data_ext)
+				if (update && npb.rel_data_ext)
 					upsert = table.has_unique_primary_key;
 
 				// upsert
@@ -150,7 +136,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						sql.append(" WHERE EXCLUDED." + table.primary_key_pgname + " = ?");
 
-						table.ps2 = schema.db_conn.prepareStatement(sql.toString());
+						table.ps2 = npb.db_conn.prepareStatement(sql.toString());
 
 						sql.setLength(0);
 
@@ -189,7 +175,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 						sql.setLength(sql.length() - 2);
 						sql.append(" )");
 
-						table.ps = schema.db_conn.prepareStatement(sql.toString());
+						table.ps = npb.db_conn.prepareStatement(sql.toString());
 
 						sql.setLength(0);
 
@@ -199,8 +185,148 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				}
 
-				if (schema.option.serial_key)
-					is_def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
+				occupied = new boolean[fields_size];
+
+			} catch (SQLException e) {
+				throw new PgSchemaException(e);
+			}
+
+		}
+
+		parseRootNode(root_node);
+
+		clear();
+
+	}
+
+	/**
+	 * Node parser for PostgreSQL data migration.
+	 *
+	 * @param npb node parser builder
+	 * @param parent_table parent table (set null if current table is root table)
+	 * @param table current table
+	 * @param as_attr whether parent node as attribute
+	 * @param update whether update or insertion
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	protected PgSchemaNode2PgSql(final PgSchemaNodeParserBuilder npb, final PgTable parent_table, final PgTable table, final boolean as_attr, final boolean update) throws PgSchemaException {
+
+		super(npb, parent_table, table);
+
+		this.update = update;
+
+		if (table.writable) {
+
+			this.as_attr = as_attr;
+
+			try {
+
+				PgField field;
+
+				if (update && npb.rel_data_ext)
+					upsert = table.has_unique_primary_key;
+
+				// upsert
+
+				if (upsert) {
+
+					if (table.ps2 == null) {
+
+						StringBuilder sql = new StringBuilder();
+
+						sql.append("INSERT INTO " + table.pgname + " VALUES ( ");
+
+						for (int f = 0; f < fields_size; f++) {
+
+							field = fields.get(f);
+
+							if (field.omissible)
+								continue;
+
+							if (field.enum_name == null)
+								sql.append("?");
+							else
+								sql.append("?::" + table.schema_pgname + field.enum_name);
+
+							sql.append(", ");
+
+						}
+
+						sql.setLength(sql.length() - 2);
+						sql.append(" )");
+
+						sql.append(" ON CONFLICT ( " + table.primary_key_pgname + " ) DO UPDATE SET ");
+
+						for (int f = 0; f < fields_size; f++) {
+
+							field = fields.get(f);
+
+							if (field.omissible || field.primary_key)
+								continue;
+
+							sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + " = ");
+
+							if (field.enum_name == null)
+								sql.append("?");
+							else
+								sql.append("?::" + table.schema_pgname + field.enum_name);
+
+							sql.append(", ");
+
+						}
+
+						sql.setLength(sql.length() - 2);
+
+						sql.append(" WHERE EXCLUDED." + table.primary_key_pgname + " = ?");
+
+						table.ps2 = npb.db_conn.prepareStatement(sql.toString());
+
+						sql.setLength(0);
+
+					}
+
+					ps = table.ps2;
+
+				}
+
+				// insert
+
+				else {
+
+					if (table.ps == null) {
+
+						StringBuilder sql = new StringBuilder();
+
+						sql.append("INSERT INTO " + table.pgname + " VALUES ( ");
+
+						for (int f = 0; f < fields_size; f++) {
+
+							field = fields.get(f);
+
+							if (field.omissible)
+								continue;
+
+							if (field.enum_name == null)
+								sql.append("?");
+							else
+								sql.append("?::" + table.schema_pgname + field.enum_name);
+
+							sql.append(", ");
+
+						}
+
+						sql.setLength(sql.length() - 2);
+						sql.append(" )");
+
+						table.ps = npb.db_conn.prepareStatement(sql.toString());
+
+						sql.setLength(0);
+
+					}
+
+					ps = table.ps;
+
+				}
 
 				occupied = new boolean[fields_size];
 
@@ -222,7 +348,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2PgSql node_parser = new PgSchemaNode2PgSql(schema, table, nested_key.table, nested_key.as_attr, update);
+		PgSchemaNode2PgSql node_parser = new PgSchemaNode2PgSql(npb, table, nested_key.table, nested_key.as_attr, update);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepForTraversal(table, parent_node, nested_key);
@@ -291,7 +417,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			PgField field;
 
-			if (rel_data_ext) {
+			if (npb.rel_data_ext) {
 
 				for (int f = 0; f < fields_size; f++) {
 
@@ -303,12 +429,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					// document_key
 
 					else if (field.document_key)
-						field.write(ps, upsert, document_id);
+						field.write(ps, upsert, npb.document_id);
 
 					// primary_key
 
 					else if (field.primary_key)
-						writeHashKey(field, node_test.primary_key);
+						npb.writeHashKey(ps, upsert, field, node_test.primary_key);
 
 					// foreign_key
 
@@ -316,7 +442,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						if (parent_table.xname.equals(field.foreign_table_xname)) {
 
-							writeHashKey(field, node_test.parent_key);
+							npb.writeHashKey(ps, upsert, field, node_test.parent_key);
 							occupied[f] = true;
 
 						}
@@ -331,7 +457,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						if ((nested_key = setNestedKey(proc_node, field)) != null) {
 
-							writeHashKey(field, nested_key);
+							npb.writeHashKey(ps, upsert, field, nested_key);
 							occupied[f] = true;
 
 						}
@@ -366,11 +492,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						try {
 
-							if (setAnyContent(proc_node, field) && !content.isEmpty()) {
+							if (npb.setAnyContent(proc_node, table, field)) {
 
-								SQLXML xml_object = schema.db_conn.createSQLXML();
+								SQLXML xml_object = npb.db_conn.createSQLXML();
 
-								xml_object.setString(content);
+								xml_object.setString(npb.content);
 
 								field.write(ps, upsert, xml_object);
 
@@ -389,12 +515,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					// serial_key
 
 					else if (field.serial_key)
-						writeSerKey(field, node_test.node_ordinal);
+						npb.writeSerKey(ps, upsert, field, node_test.node_ordinal);
 
 					// xpath_key
 
 					else if (field.xpath_key)
-						writeHashKey(field, current_key.substring(document_id.length()));
+						npb.writeHashKey(ps, upsert, field, current_key.substring(npb.document_id_len));
 
 				}
 
@@ -417,7 +543,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					// document_key
 
 					else if (field.document_key)
-						field.write(ps, upsert, document_id);
+						field.write(ps, upsert, npb.document_id);
 
 					// attribute, simple_content, element
 
@@ -447,11 +573,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 						try {
 
-							if (setAnyContent(proc_node, field) && !content.isEmpty()) {
+							if (npb.setAnyContent(proc_node, table, field)) {
 
-								SQLXML xml_object = schema.db_conn.createSQLXML();
+								SQLXML xml_object = npb.db_conn.createSQLXML();
 
-								xml_object.setString(content);
+								xml_object.setString(npb.content);
 
 								field.write(ps, upsert, xml_object);
 
@@ -470,12 +596,12 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					// serial_key
 
 					else if (field.serial_key)
-						writeSerKey(field, node_test.node_ordinal);
+						npb.writeSerKey(ps, upsert, field, node_test.node_ordinal);
 
 					// xpath_key
 
 					else if (field.xpath_key)
-						writeHashKey(field, current_key.substring(document_id.length()));
+						npb.writeHashKey(ps, upsert, field, current_key.substring(npb.document_id_len));
 
 				}
 
@@ -516,7 +642,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			ps.addBatch();
 
-			if (rel_data_ext)
+			if (npb.rel_data_ext)
 				ps.executeBatch();
 
 			table.visited_key = current_key;
@@ -534,9 +660,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	@Override
-	public void clear() throws PgSchemaException {
+	protected void clear() throws PgSchemaException {
 
-		if (written && !rel_data_ext) {
+		if (written && !npb.rel_data_ext) {
 
 			try {
 				ps.executeBatch();
@@ -547,127 +673,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		}
 
 		super.clear();
-
-	}
-
-	/**
-	 * Determine hash key of source string.
-	 *
-	 * @param key_name source string
-	 * @return bytes[] hash key
-	 */
-	private byte[] getHashKeyBytes(String key_name) {
-
-		try {
-
-			return md_hash_key.digest(key_name.getBytes(PgSchemaUtil.def_charset));
-
-		} finally {
-			md_hash_key.reset();
-		}
-
-	}
-
-	/**
-	 * Determine hash key of source string.
-	 *
-	 * @param key_name source string
-	 * @return int the hash key
-	 */
-	private int getHashKeyInt(String key_name) {
-
-		try {
-
-			byte[] hash = md_hash_key.digest(key_name.getBytes(PgSchemaUtil.def_charset));
-
-			BigInteger bint = new BigInteger(hash);
-
-			return Math.abs(bint.intValue()); // use lower order 32bit
-
-		} finally {
-			md_hash_key.reset();
-		}
-
-	}
-
-	/**
-	 * Determine hash key of source string.
-	 *
-	 * @param key_name source string
-	 * @return long hash key
-	 */
-	private long getHashKeyLong(String key_name) {
-
-		try {
-
-			byte[] hash = md_hash_key.digest(key_name.getBytes(PgSchemaUtil.def_charset));
-
-			BigInteger bint = new BigInteger(hash);
-
-			return Math.abs(bint.longValue()); // use lower order 64bit
-
-		} finally {
-			md_hash_key.reset();
-		}
-
-	}
-
-	/**
-	 * Write hash key via prepared statement.
-	 *
-	 * @param fieldd current field
-	 * @param current_key current key
-	 * @throws SQLException the SQL exception
-	 */
-	private void writeHashKey(PgField field, String current_key) throws SQLException {
-
-		switch (hash_size) {
-		case native_default:
-			byte[] bytes = getHashKeyBytes(current_key);
-			ps.setBytes(field.sql_param_id, bytes);
-			if (upsert)
-				ps.setBytes(field.sql_upsert_id, bytes);
-			break;
-		case unsigned_int_32:
-			int int_key = getHashKeyInt(current_key);
-			ps.setInt(field.sql_param_id, int_key);
-			if (upsert)
-				ps.setInt(field.sql_upsert_id, int_key);
-			break;
-		case unsigned_long_64:
-			long long_key = getHashKeyLong(current_key);
-			ps.setLong(field.sql_param_id, long_key);
-			if (upsert)
-				ps.setLong(field.sql_upsert_id, long_key);
-			break;
-		default:
-			ps.setString(field.sql_param_id, current_key);
-			if (upsert)
-				ps.setString(field.sql_upsert_id, current_key);
-		}
-
-	}
-
-	/**
-	 * Write serial key via prepared statement.
-	 *
-	 * @param field current field
-	 * @param ordinal serial id
-	 * @throws SQLException the SQL exception
-	 */
-	private void writeSerKey(PgField field, int ordinal) throws SQLException {
-
-		if (is_def_ser_size) {
-			ps.setInt(field.sql_param_id, ordinal);
-			if (upsert)
-				ps.setInt(field.sql_upsert_id, ordinal);
-		}
-
-		else {
-			ps.setShort(field.sql_param_id, (short) ordinal);
-			if (upsert)
-				ps.setInt(field.sql_upsert_id, ordinal);
-		}
 
 	}
 

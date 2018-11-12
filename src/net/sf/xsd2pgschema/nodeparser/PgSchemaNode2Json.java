@@ -48,7 +48,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	private JsonType type;
 
 	/** Whether bridge table | virtual table | !content_holder. */
-	public boolean relational;
+	private boolean relational;
 
 	/** Whether any content was written. */
 	private boolean written = false;
@@ -63,19 +63,88 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	private String[] values;
 
 	/**
+	 * Parse root node and store to JSON buffer: Relational-oriented JSON format
+	 *
+	 * @param npb node parser builder
+	 * @param table current table
+	 * @param root_node root node
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public PgSchemaNode2Json(final PgSchemaNodeParserBuilder npb, final PgTable table, final Node root_node) throws PgSchemaException {
+
+		super(npb, null, table);
+
+		jsonb = npb.jsonb;
+		type = jsonb.type;
+
+		relational = table.relational;
+
+		if (table.jsonable) {
+
+			as_attr = false;
+
+			schema_ver = jsonb.schema_ver;
+			concat_value_space = jsonb.concat_value_space;
+
+			values = new String[fields_size];
+
+		}
+
+		parseRootNode(root_node);
+
+		clear();
+
+	}
+
+	/**
+	 * Parse root node and store to JSON buffer: Column- or Object-oriented JSON format
+	 *
+	 * @param npb node parser builder
+	 * @param table current table
+	 * @param root_node root node
+	 * @param indent_level current indent level
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public PgSchemaNode2Json(final PgSchemaNodeParserBuilder npb, final PgTable table, final Node root_node, final int indent_level) throws PgSchemaException {
+
+		super(npb, null, table);
+
+		jsonb = npb.jsonb;
+		type = jsonb.type;
+
+		relational = table.relational;
+
+		if (table.jsonable) {
+
+			as_attr = false;
+
+			schema_ver = jsonb.schema_ver;
+			concat_value_space = jsonb.concat_value_space;
+
+			values = new String[fields_size];
+
+		}
+
+		parseRootNode(root_node, indent_level);
+
+		clear();
+
+	}
+
+	/**
 	 * Node parser for JSON conversion.
 	 *
-	 * @param jsonb JSON builder
+	 * @param npb node parser builder
 	 * @param parent_table parent table (set null if current table is root table)
 	 * @param table current table
 	 * @param as_attr whether parent node as attribute
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2Json(final JsonBuilder jsonb, final PgTable parent_table, final PgTable table, final boolean as_attr) throws PgSchemaException {
+	protected PgSchemaNode2Json(final PgSchemaNodeParserBuilder npb, final PgTable parent_table, final PgTable table, final boolean as_attr) throws PgSchemaException {
 
-		super(jsonb.schema, parent_table, table, PgSchemaNodeParserType.json_conversion);
+		super(npb, parent_table, table);
 
-		this.jsonb = jsonb;
+		jsonb = npb.jsonb;
 		type = jsonb.type;
 
 		relational = table.relational;
@@ -100,9 +169,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 * @param indent_level current indent level
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void parseRootNode(final Node root_node, int indent_level) throws PgSchemaException {
+	private void parseRootNode(final Node root_node, int indent_level) throws PgSchemaException {
 
-		node_test.setRootNode(root_node, document_id + "/" + table.xname);
+		node_test.setRootNode(root_node, npb.document_id + "/" + table.xname);
 
 		parse();
 
@@ -289,7 +358,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(jsonb, table, nested_key.table, nested_key.as_attr);
+		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(npb, table, nested_key.table, nested_key.as_attr);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepForTraversal(table, parent_node, nested_key);
@@ -332,7 +401,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		PgTable current_table = nested_key.table;
 
-		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(jsonb, table, current_table, nested_key.as_attr);
+		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(npb, table, current_table, nested_key.as_attr);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepForTraversal(table, parent_node, nested_key);
@@ -389,7 +458,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		PgTable current_table = nested_key.table;
 
-		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(jsonb, table, current_table, nested_key.as_attr);
+		PgSchemaNode2Json node_parser = new PgSchemaNode2Json(npb, table, current_table, nested_key.as_attr);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepForTraversal(table, parent_node, nested_key);
@@ -507,10 +576,10 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 					try {
 
-						if (setAnyContent(proc_node, field)) {
+						if (npb.setAnyContent(proc_node, table, field)) {
 
-							values[f] = any_content.toString().trim();
-							any_content.setLength(0);
+							values[f] = npb.any_content.toString().trim();
+							npb.any_content.setLength(0);
 
 						}
 

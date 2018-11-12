@@ -29,7 +29,6 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import net.sf.xsd2pgschema.PgField;
-import net.sf.xsd2pgschema.PgSchema;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgTable;
 import net.sf.xsd2pgschema.luceneutil.NoIdxStringField;
@@ -57,9 +56,44 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	private String[] values;
 
 	/**
+	 * Parse root node and store to Lucene document.
+	 *
+	 * @param npb node parser builder
+	 * @param table current table
+	 * @param root_node root node
+	 * @param min_word_len minimum word length for indexing
+	 * @param numeric_index whether numeric values are stored in Lucene index
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public PgSchemaNode2LucIdx(final PgSchemaNodeParserBuilder npb, final PgTable table, final Node root_node, final int min_word_len, boolean numeric_index) throws PgSchemaException {
+
+		super(npb, null, table);
+
+		this.min_word_len = min_word_len;
+		this.numeric_index = numeric_index;
+
+		if (table.indexable) {
+
+			as_attr = false;
+
+			lucene_doc = npb.schema.lucene_doc;
+
+			field_prefix = table.name + ".";
+
+			values = new String[fields_size];
+
+		}
+
+		parseRootNode(root_node);
+
+		clear();
+
+	}
+
+	/**
 	 * Node parser for Lucene document conversion.
 	 *
-	 * @param schema PostgreSQL data model
+	 * @param npb node parser builder
 	 * @param parent_table parent table (set null if current table is root table)
 	 * @param table current table
 	 * @param as_attr whether parent node as attribute
@@ -67,9 +101,9 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	 * @param numeric_index whether numeric values are stored in Lucene index
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2LucIdx(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean as_attr, final int min_word_len, boolean numeric_index) throws PgSchemaException {
+	protected PgSchemaNode2LucIdx(final PgSchemaNodeParserBuilder npb, final PgTable parent_table, final PgTable table, final boolean as_attr, final int min_word_len, boolean numeric_index) throws PgSchemaException {
 
-		super(schema, parent_table, table, PgSchemaNodeParserType.full_text_indexing);
+		super(npb, parent_table, table);
 
 		this.min_word_len = min_word_len;
 		this.numeric_index = numeric_index;
@@ -78,14 +112,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 			this.as_attr = as_attr;
 
-			if (rel_data_ext) {
-
-				md_hash_key = schema.md_hash_key;
-				hash_size = schema.option.hash_size;
-
-			}
-
-			lucene_doc = schema.lucene_doc;
+			lucene_doc = npb.schema.lucene_doc;
 
 			field_prefix = table.name + ".";
 
@@ -105,7 +132,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2LucIdx node_parser = new PgSchemaNode2LucIdx(schema, table, nested_key.table, nested_key.as_attr, min_word_len, numeric_index);
+		PgSchemaNode2LucIdx node_parser = new PgSchemaNode2LucIdx(npb, table, nested_key.table, nested_key.as_attr, min_word_len, numeric_index);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepForTraversal(table, parent_node, nested_key);
@@ -178,7 +205,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		PgField field;
 
-		if (rel_data_ext) {
+		if (npb.rel_data_ext) {
 
 			for (int f = 0; f < fields_size; f++) {
 
@@ -187,14 +214,14 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				// primary_key
 
 				if (field.primary_key)
-					values[f] = getHashKeyString(node_test.primary_key);
+					values[f] = npb.getHashKeyString(node_test.primary_key);
 
 				// foreign_key
 
 				else if (field.foreign_key) {
 
 					if (parent_table.xname.equals(field.foreign_table_xname))
-						values[f] = getHashKeyString(node_test.parent_key);
+						values[f] = npb.getHashKeyString(node_test.parent_key);
 
 				}
 
@@ -205,7 +232,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 					String nested_key;
 
 					if ((nested_key = setNestedKey(proc_node, field)) != null)
-						values[f] = getHashKeyString(nested_key);
+						values[f] = npb.getHashKeyString(nested_key);
 
 				}
 
@@ -233,10 +260,10 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 						try {
 
-							if (setAnyContent(proc_node, field)) {
+							if (npb.setAnyContent(proc_node, table, field)) {
 
-								values[f] = any_content.toString().trim();
-								any_content.setLength(0);
+								values[f] = npb.any_content.toString().trim();
+								npb.any_content.setLength(0);
 
 							}
 
@@ -314,10 +341,10 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 						try {
 
-							if (setAnyContent(proc_node, field)) {
+							if (npb.setAnyContent(proc_node, table, field)) {
 
-								values[f] = any_content.toString().trim();
-								any_content.setLength(0);
+								values[f] = npb.any_content.toString().trim();
+								npb.any_content.setLength(0);
 
 							}
 

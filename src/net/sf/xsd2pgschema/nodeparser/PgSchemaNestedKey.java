@@ -77,7 +77,7 @@ public class PgSchemaNestedKey {
 	 * @param node_parser node parser
 	 * @return PgSchemaNestedKey nested key
 	 */
-	public PgSchemaNestedKey asIs(PgSchemaNodeParser node_parser) {
+	protected PgSchemaNestedKey asIs(PgSchemaNodeParser node_parser) {
 
 		parent_key = node_parser.current_key;
 		indirect = false;
@@ -91,7 +91,7 @@ public class PgSchemaNestedKey {
 	 * @param node_parser node parser
 	 * @return PgSchemaNestedKey nested key
 	 */
-	public PgSchemaNestedKey asOfChild(PgSchemaNodeParser node_parser) {
+	protected PgSchemaNestedKey asOfChild(PgSchemaNodeParser node_parser) {
 
 		PgSchemaNodeTester node_test = node_parser.node_test;
 

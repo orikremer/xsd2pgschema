@@ -31,11 +31,9 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import net.sf.xsd2pgschema.PgField;
-import net.sf.xsd2pgschema.PgSchema;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
-import net.sf.xsd2pgschema.type.PgSerSize;
 
 /**
  * Node parser for data (CSV/TSV) conversion.
@@ -59,46 +57,69 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	/** The current null code. */
 	private String pg_null;
 
-	/** Whether default serial key size (unsigned int 32 bit). */
-	private boolean is_def_ser_size;
-
 	/** The content of fields. */
 	private String[] values;
 
 	/**
-	 * Node parser for CSV conversion.
+	 * Parse root node and write to data (CSV/TSV) file.
 	 *
-	 * @param schema PostgreSQL data model
-	 * @param parent_table parent table (set null if current table is root table)
+	 * @param npb node parser builder
 	 * @param table current table
-	 * @param as_attr whether parent node as attribute
+	 * @param root_node root node
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaNode2PgCsv(final PgSchema schema, final PgTable parent_table, final PgTable table, final boolean as_attr) throws PgSchemaException {
+	public PgSchemaNode2PgCsv(final PgSchemaNodeParserBuilder npb, final PgTable table, final Node root_node) throws PgSchemaException {
 
-		super(schema, parent_table, table, PgSchemaNodeParserType.pg_data_migration);
+		super(npb, null, table);
 
 		if (table.writable) {
 
-			this.as_attr = as_attr;
-
-			if (rel_data_ext || schema.option.xpath_key) {
-
-				md_hash_key = schema.md_hash_key;
-				hash_size = schema.option.hash_size;
-
-			}
+			as_attr = false;
 
 			sb = new StringBuilder();
 
 			buffw = table.buffw;
 
-			pg_tab_delimiter = schema.option.pg_tab_delimiter;
-			pg_delimiter = schema.option.pg_delimiter;
-			pg_null = schema.option.pg_null;
+			pg_tab_delimiter = npb.schema.option.pg_tab_delimiter;
+			pg_delimiter = npb.schema.option.pg_delimiter;
+			pg_null = npb.schema.option.pg_null;
 
-			if (schema.option.serial_key)
-				is_def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
+			values = new String[fields_size];
+
+			Arrays.fill(values, pg_null);
+
+		}
+
+		parseRootNode(root_node);
+
+		clear();
+
+	}
+
+	/**
+	 * Node parser for CSV/TSV conversion.
+	 *
+	 * @param npb node parser builder
+	 * @param parent_table parent table (set null if current table is root table)
+	 * @param table current table
+	 * @param as_attr whether parent node as attribute
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	protected PgSchemaNode2PgCsv(final PgSchemaNodeParserBuilder npb, final PgTable parent_table, final PgTable table, final boolean as_attr) throws PgSchemaException {
+
+		super(npb, parent_table, table);
+
+		if (table.writable) {
+
+			this.as_attr = as_attr;
+
+			sb = new StringBuilder();
+
+			buffw = table.buffw;
+
+			pg_tab_delimiter = npb.schema.option.pg_tab_delimiter;
+			pg_delimiter = npb.schema.option.pg_delimiter;
+			pg_null = npb.schema.option.pg_null;
 
 			values = new String[fields_size];
 
@@ -118,7 +139,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	@Override
 	protected void traverseNestedNode(final Node parent_node, final PgSchemaNestedKey nested_key) throws PgSchemaException {
 
-		PgSchemaNode2PgCsv node_parser = new PgSchemaNode2PgCsv(schema, table, nested_key.table, nested_key.as_attr);
+		PgSchemaNode2PgCsv node_parser = new PgSchemaNode2PgCsv(npb, table, nested_key.table, nested_key.as_attr);
 		PgSchemaNodeTester node_test = node_parser.node_test;
 
 		node_test.prepForTraversal(table, parent_node, nested_key);
@@ -185,7 +206,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		PgField field;
 
-		if (rel_data_ext) {
+		if (npb.rel_data_ext) {
 
 			for (int f = 0; f < fields_size; f++) {
 
@@ -197,19 +218,19 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				// document_key
 
 				else if (field.document_key)
-					values[f] = document_id;
+					values[f] = npb.document_id;
 
 				// primary_key
 
 				else if (field.primary_key)
-					values[f] = getHashKeyString(node_test.primary_key);
+					values[f] = npb.getHashKeyString(node_test.primary_key);
 
 				// foreign_key
 
 				else if (field.foreign_key) {
 
 					if (parent_table.xname.equals(field.foreign_table_xname))
-						values[f] = getHashKeyString(node_test.parent_key);
+						values[f] = npb.getHashKeyString(node_test.parent_key);
 
 				}
 
@@ -220,7 +241,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 					String nested_key;
 
 					if ((nested_key = setNestedKey(proc_node, field)) != null)
-						values[f] = getHashKeyString(nested_key);
+						values[f] = npb.getHashKeyString(nested_key);
 
 				}
 
@@ -248,8 +269,8 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 					try {
 
-						if (setAnyContent(proc_node, field) && !content.isEmpty())
-							values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
+						if (npb.setAnyContent(proc_node, table, field))
+							values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(npb.content) : StringEscapeUtils.escapeCsv(npb.content);
 
 					} catch (TransformerException | IOException | SAXException e) {
 						throw new PgSchemaException(e);
@@ -260,13 +281,13 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				// serial_key
 
 				else if (field.serial_key) {
-					values[f] = is_def_ser_size ? Integer.toString(node_test.node_ordinal) : Short.toString((short) node_test.node_ordinal);
+					values[f] = npb.is_def_ser_size ? Integer.toString(node_test.node_ordinal) : Short.toString((short) node_test.node_ordinal);
 				}
 
 				// xpath_key
 
 				else if (field.xpath_key)
-					values[f] = getHashKeyString(current_key.substring(document_id.length()));
+					values[f] = npb.getHashKeyString(current_key.substring(npb.document_id_len));
 
 			}
 
@@ -289,7 +310,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				// document_key
 
 				else if (field.document_key)
-					values[f] = document_id;
+					values[f] = npb.document_id;
 
 				// attribute, simple_content, element
 
@@ -315,8 +336,8 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 					try {
 
-						if (setAnyContent(proc_node, field) && !content.isEmpty())
-							values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
+						if (npb.setAnyContent(proc_node, table, field))
+							values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(npb.content) : StringEscapeUtils.escapeCsv(npb.content);
 
 					} catch (TransformerException | IOException | SAXException e) {
 						throw new PgSchemaException(e);
@@ -327,13 +348,13 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				// serial_key
 
 				else if (field.serial_key) {
-					values[f] = is_def_ser_size ? Integer.toString(node_test.node_ordinal) : Short.toString((short) node_test.node_ordinal);
+					values[f] = npb.is_def_ser_size ? Integer.toString(node_test.node_ordinal) : Short.toString((short) node_test.node_ordinal);
 				}
 
 				// xpath_key
 
 				else if (field.xpath_key)
-					values[f] = getHashKeyString(current_key.substring(document_id.length()));
+					values[f] = npb.getHashKeyString(current_key.substring(npb.document_id_len));
 
 			}
 
