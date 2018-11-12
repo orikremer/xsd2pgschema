@@ -733,8 +733,6 @@ public class XmlBuilder extends CommonBuilder {
 
 			}
 
-			List<PgField> fields = table.fields;
-
 			String content;
 			Object key;
 
@@ -748,13 +746,13 @@ public class XmlBuilder extends CommonBuilder {
 			// document key
 
 			if (table.doc_key_pname != null)
-				document_id = rset.getString(fields.stream().filter(field -> field.pname.equals(table.doc_key_pname)).findFirst().get().sql_param_id);
+				document_id = rset.getString(table.fields.stream().filter(field -> field.pname.equals(table.doc_key_pname)).findFirst().get().sql_param_id);
 
 			// attribute, any_attribute
 
 			if (table.has_attrs) {
 
-				for (PgField field : fields) {
+				for (PgField field : table.fields) {
 
 					if (field.attribute) {
 
@@ -821,7 +819,7 @@ public class XmlBuilder extends CommonBuilder {
 
 			if (table.has_elems || schema.option.document_key) {
 
-				for (PgField field : fields) {
+				for (PgField field : table.fields) {
 
 					if (insert_doc_key && field.document_key && !table.equals(root_table)) {
 						/*
@@ -1092,8 +1090,6 @@ public class XmlBuilder extends CommonBuilder {
 
 			ResultSet rset = ps.executeQuery();
 
-			List<PgField> fields = table.fields;
-
 			String content;
 
 			PgTable nested_table;
@@ -1120,7 +1116,7 @@ public class XmlBuilder extends CommonBuilder {
 
 				if (table.has_attrs) {
 
-					for (PgField field : fields) {
+					for (PgField field : table.fields) {
 
 						if (field.attribute) {
 
@@ -1208,7 +1204,7 @@ public class XmlBuilder extends CommonBuilder {
 
 				if (table.has_elems) {
 
-					for (PgField field : fields) {
+					for (PgField field : table.fields) {
 
 						if (field.simple_content && !field.simple_attribute && !as_attr) {
 

@@ -1689,9 +1689,7 @@ public class JsonBuilder extends CommonBuilder {
 		int _json_indent_level = json_indent_level + 2;
 		boolean unique_table = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child);
 
-		List<PgField> fields = table.fields;
-
-		fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(field, false, !array_all, array_all || !unique_table, _json_indent_level));
+		table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(field, false, !array_all, array_all || !unique_table, _json_indent_level));
 
 		writeEndSchemaTable(table, false);
 
@@ -2039,8 +2037,6 @@ public class JsonBuilder extends CommonBuilder {
 
 			}
 
-			List<PgField> fields = table.fields;
-
 			String content;
 			Object key;
 
@@ -2052,13 +2048,13 @@ public class JsonBuilder extends CommonBuilder {
 			// document key
 
 			if (table.doc_key_pname != null)
-				document_id = rset.getString(fields.stream().filter(field -> field.pname.equals(table.doc_key_pname)).findFirst().get().sql_param_id);
+				document_id = rset.getString(table.fields.stream().filter(field -> field.pname.equals(table.doc_key_pname)).findFirst().get().sql_param_id);
 
 			// attribute, any_attribute
 
 			if (table.has_attrs) {
 
-				for (PgField field : fields) {
+				for (PgField field : table.fields) {
 
 					if (field.attribute) {
 
@@ -2125,7 +2121,7 @@ public class JsonBuilder extends CommonBuilder {
 
 			if (table.has_elems || schema.option.document_key) {
 
-				for (PgField field : fields) {
+				for (PgField field : table.fields) {
 
 					if (insert_doc_key && field.document_key && !table.equals(root_table)) {
 						/*
@@ -2351,8 +2347,6 @@ public class JsonBuilder extends CommonBuilder {
 
 			ResultSet rset = ps.executeQuery();
 
-			List<PgField> fields = table.fields;
-
 			String content;
 
 			PgTable nested_table;
@@ -2376,7 +2370,7 @@ public class JsonBuilder extends CommonBuilder {
 
 				if (table.has_attrs) {
 
-					for (PgField field : fields) {
+					for (PgField field : table.fields) {
 
 						if (field.attribute) {
 
@@ -2478,7 +2472,7 @@ public class JsonBuilder extends CommonBuilder {
 
 				if (table.has_elems) {
 
-					for (PgField field : fields) {
+					for (PgField field : table.fields) {
 
 						if (field.simple_content && !field.simple_attribute && !as_attr) {
 
