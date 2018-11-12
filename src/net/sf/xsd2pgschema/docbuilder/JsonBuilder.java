@@ -2029,7 +2029,7 @@ public class JsonBuilder extends CommonBuilder {
 
 			pending_elem.push(elem);
 
-			if ((table.has_any || table.has_any_attribute) && any_sax_parser == null) {
+			if ((schema.hasAny() || schema.hasAnyAttribute()) && any_sax_parser == null) {
 
 				SAXParserFactory spf = SAXParserFactory.newInstance();
 				spf.setValidating(false);
@@ -2279,7 +2279,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		incRootCount();
 
-		schema.closePreparedStatement(true);
+		// schema.closePreparedStatement(true);
 
 	}
 
@@ -2324,10 +2324,10 @@ public class JsonBuilder extends CommonBuilder {
 				ps = table.ps = db_conn.prepareStatement(sql);
 				ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_doc_key_index);
 
-				if (use_doc_key_index)
-					ps.setString(1, document_id);
-
 			}
+
+			if (use_doc_key_index)
+				ps.setString(1, document_id);
 
 			if (use_primary_key) {
 
@@ -2346,16 +2346,6 @@ public class JsonBuilder extends CommonBuilder {
 				default:
 					throw new PgSchemaException("Not allowed to use string hash key (debug mode) for XPath evaluation.");
 				}
-
-			}
-
-			if ((table.has_any || table.has_any_attribute) && any_sax_parser == null) {
-
-				SAXParserFactory spf = SAXParserFactory.newInstance();
-				spf.setValidating(false);
-				spf.setNamespaceAware(false);
-
-				any_sax_parser = spf.newSAXParser();
 
 			}
 
@@ -2667,7 +2657,7 @@ public class JsonBuilder extends CommonBuilder {
 
 			return nest_test;
 
-		} catch (SQLException | SAXException | IOException | ParserConfigurationException e) {
+		} catch (SQLException | SAXException | IOException e) {
 			throw new PgSchemaException(e);
 		}
 
@@ -2705,10 +2695,10 @@ public class JsonBuilder extends CommonBuilder {
 				ps = table.ps = db_conn.prepareStatement(sql);
 				ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_doc_key_index);
 
-				if (use_doc_key_index)
-					ps.setString(1, document_id);
-
 			}
+
+			if (use_doc_key_index)
+				ps.setString(1, document_id);
 
 			int param_id = use_doc_key_index ? 2 : 1;
 

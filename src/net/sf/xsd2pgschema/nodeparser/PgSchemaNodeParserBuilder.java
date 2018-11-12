@@ -141,48 +141,41 @@ public class PgSchemaNodeParserBuilder {
 
 		document_id_len = document_id.length();
 
-		if (schema.option.wild_card) {
+		if (schema.hasAny() || schema.hasAnyAttribute()) {
 
-			boolean has_any = schema.getTableList().parallelStream().anyMatch(table -> table.has_any);
-			boolean has_any_attribute = schema.getTableList().parallelStream().anyMatch(table -> table.has_any_attribute);
+			try {
 
-			if (has_any || has_any_attribute) {
+				DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
+				doc_builder_fac.setValidating(false);
+				doc_builder_fac.setNamespaceAware(true);
+				doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+				doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+				any_doc_builder = doc_builder_fac.newDocumentBuilder();
 
-				try {
+				TransformerFactory tf_factory = TransformerFactory.newInstance();
+				any_transformer = tf_factory.newTransformer();
+				any_transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+				any_transformer.setOutputProperty(OutputKeys.INDENT, "no");
 
-					DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
-					doc_builder_fac.setValidating(false);
-					doc_builder_fac.setNamespaceAware(true);
-					doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-					doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-					any_doc_builder = doc_builder_fac.newDocumentBuilder();
+				if (schema.hasAny()) {
 
-					TransformerFactory tf_factory = TransformerFactory.newInstance();
-					any_transformer = tf_factory.newTransformer();
-					any_transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-					any_transformer.setOutputProperty(OutputKeys.INDENT, "no");
+					SAXParserFactory spf = SAXParserFactory.newInstance();
+					spf.setValidating(false);
+					spf.setNamespaceAware(false);
 
-					if (has_any) {
+					any_sax_parser = spf.newSAXParser();
 
-						SAXParserFactory spf = SAXParserFactory.newInstance();
-						spf.setValidating(false);
-						spf.setNamespaceAware(false);
-
-						any_sax_parser = spf.newSAXParser();
-
-					}
-
-				} catch (ParserConfigurationException | TransformerConfigurationException | SAXException e) {
-					throw new PgSchemaException(e);
 				}
 
-				switch (parser_type) {
-				case full_text_indexing:
-					any_content = new StringBuilder();
-					break;
-				default:
-				}
+			} catch (ParserConfigurationException | TransformerConfigurationException | SAXException e) {
+				throw new PgSchemaException(e);
+			}
 
+			switch (parser_type) {
+			case full_text_indexing:
+				any_content = new StringBuilder();
+				break;
+			default:
 			}
 
 		}
@@ -216,44 +209,37 @@ public class PgSchemaNodeParserBuilder {
 
 		document_id_len = document_id.length();
 
-		if (schema.option.wild_card) {
+		if (schema.hasAny() || schema.hasAnyAttribute()) {
 
-			boolean has_any = schema.getTableList().parallelStream().anyMatch(table -> table.has_any);
-			boolean has_any_attribute = schema.getTableList().parallelStream().anyMatch(table -> table.has_any_attribute);
+			try {
 
-			if (has_any || has_any_attribute) {
+				DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
+				doc_builder_fac.setValidating(false);
+				doc_builder_fac.setNamespaceAware(true);
+				doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+				doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+				any_doc_builder = doc_builder_fac.newDocumentBuilder();
 
-				try {
+				TransformerFactory tf_factory = TransformerFactory.newInstance();
+				any_transformer = tf_factory.newTransformer();
+				any_transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+				any_transformer.setOutputProperty(OutputKeys.INDENT, "no");
 
-					DocumentBuilderFactory doc_builder_fac = DocumentBuilderFactory.newInstance();
-					doc_builder_fac.setValidating(false);
-					doc_builder_fac.setNamespaceAware(true);
-					doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-					doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-					any_doc_builder = doc_builder_fac.newDocumentBuilder();
+				if (schema.hasAny()) {
 
-					TransformerFactory tf_factory = TransformerFactory.newInstance();
-					any_transformer = tf_factory.newTransformer();
-					any_transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-					any_transformer.setOutputProperty(OutputKeys.INDENT, "no");
+					SAXParserFactory spf = SAXParserFactory.newInstance();
+					spf.setValidating(false);
+					spf.setNamespaceAware(false);
 
-					if (has_any) {
+					any_sax_parser = spf.newSAXParser();
 
-						SAXParserFactory spf = SAXParserFactory.newInstance();
-						spf.setValidating(false);
-						spf.setNamespaceAware(false);
-
-						any_sax_parser = spf.newSAXParser();
-
-					}
-
-				} catch (ParserConfigurationException | TransformerConfigurationException | SAXException e) {
-					throw new PgSchemaException(e);
 				}
 
-				any_content = new StringBuilder();
-
+			} catch (ParserConfigurationException | TransformerConfigurationException | SAXException e) {
+				throw new PgSchemaException(e);
 			}
+
+			any_content = new StringBuilder();
 
 		}
 

@@ -101,6 +101,12 @@ public class PgSchema implements Serializable {
 	/** The PostgreSQL table for questing document id. */
 	private PgTable doc_id_table = null;
 
+	/** Whether arbitrary table has any element. */
+	private boolean has_any = false;
+
+	/** Whether arbitrary table has any attribute. */
+	private boolean has_any_attribute = false;
+
 	/** The root schema (temporary). */
 	@Flat
 	private PgSchema root_schema = null;
@@ -754,6 +760,15 @@ public class PgSchema implements Serializable {
 			}
 
 		});
+
+		// detect wild card contents
+
+		if (option.wild_card) {
+
+			has_any = tables.parallelStream().anyMatch(table -> table.has_any);
+			has_any_attribute = tables.parallelStream().anyMatch(table -> table.has_any_attribute);
+
+		}
 
 		// update table has attributes
 
@@ -2884,6 +2899,24 @@ public class PgSchema implements Serializable {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Return whether arbitrary table has any element.
+	 * 
+	 * @return boolean whether arbitrary table has any element
+	 */
+	public boolean hasAny() {
+		return has_any;
+	}
+
+	/**
+	 * Return whether arbitrary table has any attribute.
+	 * 
+	 * @return boolean whether arbitrary table has any attribute
+	 */
+	public boolean hasAnyAttribute() {
+		return has_any_attribute;
 	}
 
 	/**
