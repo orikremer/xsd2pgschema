@@ -1,4 +1,11 @@
-﻿ Changes in xsd2pgschema 3.0.6 (release 2018-10-25)
+﻿ Changes in xsd2pgschema 3.0.7 (release 2018-11-13)
+
+  Allowed to follow URL redirection of schema location.
+  Automatic redirect system message to stderr if redirect of result to stdout.
+  Added --del-invalid-xml option in xmlvalidator main class.
+  Set --create-attr-index option by default.
+
+ Changes in xsd2pgschema 3.0.6 (release 2018-10-25)
 
   Added support for xs:dateTimeStamp, xs:yearMonthDuration, xs:dayTimeDuration.
   Dropped support for non-standard data types, bigserial, serial, and bigint.
@@ -14,9 +21,6 @@
   Further performance improvements in XPath evaluation.
   Added precision control to value of double or float column.
   Revised comments in PostgreSQL DDL with regard to the mapping of integer/decimal numbers.
-  Allowed to follow URL redirection of schema location.
-  Automatic redirect system message to stderr if redirect of result to stdout.
-  Added --del-invalid-xml option in xmlvalidator main class.
 
  Changes in xsd2pgschema 3.0.5 (release 2018-10-22)
 
