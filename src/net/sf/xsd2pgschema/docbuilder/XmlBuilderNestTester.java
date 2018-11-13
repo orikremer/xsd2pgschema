@@ -30,6 +30,12 @@ import net.sf.xsd2pgschema.PgTable;
  */
 public class XmlBuilderNestTester extends CommonBuilderNestTester {
 
+	/** Whether this node has child element. */
+	public boolean has_child_elem = false;
+
+	/** Whether this node has opened simple content. */
+	public boolean has_open_simple_content = false;
+
 	/** The current indent space. */
 	public String current_indent_space;
 
@@ -96,6 +102,20 @@ public class XmlBuilderNestTester extends CommonBuilderNestTester {
 
 		current_indent_bytes = parent_test.child_indent_bytes;
 		child_indent_bytes = child_indent_space.getBytes(PgSchemaUtil.latin_1_charset);
+
+	}
+
+	/**
+	 * Merge test result.
+	 *
+	 * @param test nest test of child node
+	 */
+	public void merge(XmlBuilderNestTester test) {
+
+		has_content |= test.has_content;
+		has_simple_content |= test.has_simple_content;
+		has_child_elem |= test.has_child_elem;
+		has_open_simple_content |= test.has_open_simple_content;
 
 	}
 

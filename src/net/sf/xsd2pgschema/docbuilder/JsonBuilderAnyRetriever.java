@@ -154,8 +154,6 @@ public class JsonBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 
 			}
 
-			nest_test.has_child_elem = true;
-
 			String attr_name, content;
 
 			for (int i = 0; i < atts.getLength(); i++) {

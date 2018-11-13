@@ -381,9 +381,10 @@ public class XmlBuilder extends CommonBuilder {
 	public void init(PgSchema schema) {
 
 		this.schema = schema;
-		this.root_table = schema.getRootTable();
-		this.tables = schema.getTableList();
-		this.hash_size = schema.option.hash_size;
+
+		root_table = schema.getRootTable();
+		tables = schema.getTableList();
+		hash_size = schema.option.hash_size;
 
 		xsi_schema_location = schema.getDefaultNamespace() + " " + PgSchemaUtil.getSchemaFileName(schema.option.root_schema_location);
 
@@ -897,8 +898,11 @@ public class XmlBuilder extends CommonBuilder {
 							else
 								writeSimpleCharacters(field.empty_elem_tag);
 
-							if (!nest_test.has_child_elem || !nest_test.has_content)
-								nest_test.has_child_elem = nest_test.has_content = true;
+							if (!nest_test.has_child_elem)
+								nest_test.has_child_elem = true;
+
+							if (!nest_test.has_content)
+								nest_test.has_content = true;
 
 							if (has_insert_doc_key)
 								has_insert_doc_key = false;
@@ -1259,8 +1263,11 @@ public class XmlBuilder extends CommonBuilder {
 								else
 									writeSimpleCharacters(field.empty_elem_tag);
 
-								if (!nest_test.has_child_elem || !nest_test.has_content)
-									nest_test.has_child_elem = nest_test.has_content = true;
+								if (!nest_test.has_child_elem)
+									nest_test.has_child_elem = true;
+
+								if (!nest_test.has_content)
+									nest_test.has_content = true;
 
 								if (has_insert_doc_key)
 									has_insert_doc_key = false;

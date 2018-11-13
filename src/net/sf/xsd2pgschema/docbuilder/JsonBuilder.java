@@ -2040,9 +2040,6 @@ public class JsonBuilder extends CommonBuilder {
 			String content;
 			Object key;
 
-			boolean attr_only;
-			int n;
-
 			document_id = null;
 
 			// document key
@@ -2135,7 +2132,7 @@ public class JsonBuilder extends CommonBuilder {
 
 						writeField(table, field, false, rset.getString(field.sql_param_id), nest_test.child_indent_level);
 
-						nest_test.has_child_elem = nest_test.has_content = true;
+						nest_test.has_content = true;
 
 					}
 
@@ -2152,7 +2149,7 @@ public class JsonBuilder extends CommonBuilder {
 
 							writeField(table, field, false, content, nest_test.child_indent_level);
 
-							nest_test.has_simple_content = nest_test.has_open_simple_content = true;
+							nest_test.has_simple_content = true;
 
 						}
 
@@ -2171,8 +2168,8 @@ public class JsonBuilder extends CommonBuilder {
 
 							writeField(table, field, false, content, nest_test.child_indent_level);
 
-							if (!nest_test.has_child_elem || !nest_test.has_content)
-								nest_test.has_child_elem = nest_test.has_content = true;
+							if (!nest_test.has_content)
+								nest_test.has_content = true;
 
 						}
 
@@ -2214,8 +2211,6 @@ public class JsonBuilder extends CommonBuilder {
 
 				PgTable nested_table;
 
-				n = 0;
-
 				for (PgField field : table.nested_fields) {
 
 					if (!field.nested_key_as_attr) {
@@ -2223,8 +2218,6 @@ public class JsonBuilder extends CommonBuilder {
 						key = rset.getObject(field.sql_param_id);
 
 						if (key != null) {
-
-							nest_test.has_child_elem |= n++ > 0;
 
 							nested_table = tables.get(field.foreign_table_id);
 
@@ -2249,16 +2242,10 @@ public class JsonBuilder extends CommonBuilder {
 
 			if (nest_test.has_content || nest_test.has_simple_content) {
 
-				attr_only = false;
-
 				if (pending_elem.peek() != null)
-					writePendingElems(attr_only = true);
+					writePendingElems(true);
 
 				writePendingSimpleCont();
-
-				if (!nest_test.has_open_simple_content && !attr_only) { }
-				else if (nest_test.has_simple_content)
-					nest_test.has_open_simple_content = false;
 
 				writeEndTable();
 
@@ -2307,7 +2294,6 @@ public class JsonBuilder extends CommonBuilder {
 
 			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
 			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1;
-			boolean attr_only;
 
 			PreparedStatement ps = table.ps;
 
@@ -2351,18 +2337,10 @@ public class JsonBuilder extends CommonBuilder {
 
 			Object key;
 
-			int n;
-
 			while (rset.next()) {
 
-				if (category_item) {
-
+				if (category_item)
 					pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
-
-					if (!table.bridge)
-						nest_test.has_child_elem = false;
-
-				}
 
 				// attribute, simple attribute, any_attribute
 
@@ -2492,7 +2470,7 @@ public class JsonBuilder extends CommonBuilder {
 
 								}
 
-								nest_test.has_simple_content = nest_test.has_open_simple_content = true;
+								nest_test.has_simple_content = true;
 
 							}
 
@@ -2518,8 +2496,8 @@ public class JsonBuilder extends CommonBuilder {
 
 								}
 
-								if (!nest_test.has_child_elem || !nest_test.has_content)
-									nest_test.has_child_elem = nest_test.has_content = true;
+								if (!nest_test.has_content)
+									nest_test.has_content = true;
 
 							}
 
@@ -2559,8 +2537,6 @@ public class JsonBuilder extends CommonBuilder {
 
 				if (table.total_nested_fields > 0) {
 
-					n = 0;
-
 					for (PgField field : table.nested_fields) {
 
 						if (!field.nested_key_as_attr) {
@@ -2568,8 +2544,6 @@ public class JsonBuilder extends CommonBuilder {
 							key = rset.getObject(field.sql_param_id);
 
 							if (key != null) {
-
-								nest_test.has_child_elem |= n++ > 0;
 
 								nested_table = tables.get(field.foreign_table_id);
 
@@ -2596,16 +2570,10 @@ public class JsonBuilder extends CommonBuilder {
 
 					if (nest_test.has_content || nest_test.has_simple_content) {
 
-						attr_only = false;
-
 						if (pending_elem.peek() != null)
-							writePendingElems(attr_only = true);
+							writePendingElems(true);
 
 						writePendingSimpleCont();
-
-						if (!nest_test.has_open_simple_content && !attr_only) { }
-						else if (nest_test.has_simple_content)
-							nest_test.has_open_simple_content = false;
 
 						writeEndTable();
 
@@ -2624,19 +2592,13 @@ public class JsonBuilder extends CommonBuilder {
 
 				if (nest_test.has_content || nest_test.has_simple_content) {
 
-					attr_only = false;
-
 					if (pending_elem.peek() != null)
-						writePendingElems(attr_only = true);
+						writePendingElems(true);
 
 					writePendingSimpleCont();
 
 					if (array_field)
 						writeFields(table, false, nest_test.child_indent_level);
-
-					if (!nest_test.has_open_simple_content && !attr_only) { }
-					else if (nest_test.has_simple_content)
-						nest_test.has_open_simple_content = false;
 
 					writeEndTable();
 
@@ -2673,7 +2635,6 @@ public class JsonBuilder extends CommonBuilder {
 			boolean category_item = !table.virtual;
 
 			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
-			boolean attr_only;
 
 			PreparedStatement ps = table.ps;
 
@@ -2714,14 +2675,8 @@ public class JsonBuilder extends CommonBuilder {
 
 			while (rset.next()) {
 
-				if (category_item) {
-
+				if (category_item)
 					pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
-
-					if (!table.bridge)
-						nest_test.has_child_elem = false;
-
-				}
 
 				// nested key
 
@@ -2746,16 +2701,10 @@ public class JsonBuilder extends CommonBuilder {
 
 					if (nest_test.has_content || nest_test.has_simple_content) {
 
-						attr_only = false;
-
 						if (pending_elem.peek() != null)
-							writePendingElems(attr_only = true);
+							writePendingElems(true);
 
 						writePendingSimpleCont();
-
-						if (!nest_test.has_open_simple_content && !attr_only) { }
-						else if (nest_test.has_simple_content)
-							nest_test.has_open_simple_content = false;
 
 						writeEndTable();
 
@@ -2814,16 +2763,10 @@ public class JsonBuilder extends CommonBuilder {
 
 			if (nest_test.has_content || nest_test.has_simple_content) {
 
-				boolean attr_only = false;
-
 				if (pending_elem.peek() != null)
-					writePendingElems(attr_only = true);
+					writePendingElems(true);
 
 				writePendingSimpleCont();
-
-				if (!nest_test.has_open_simple_content && !attr_only) { }
-				else if (nest_test.has_simple_content)
-					nest_test.has_open_simple_content = false;
 
 				writeEndTable();
 

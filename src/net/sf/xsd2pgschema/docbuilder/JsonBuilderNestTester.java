@@ -67,4 +67,16 @@ public class JsonBuilderNestTester extends CommonBuilderNestTester {
 
 	}
 
+	/**
+	 * Merge test result.
+	 *
+	 * @param test nest test of child node
+	 */
+	public void merge(CommonBuilderNestTester test) {
+
+		has_content |= test.has_content;
+		has_simple_content |= test.has_simple_content;
+
+	}
+
 }

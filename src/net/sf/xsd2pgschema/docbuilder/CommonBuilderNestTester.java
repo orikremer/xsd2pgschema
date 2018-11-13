@@ -35,17 +35,11 @@ public abstract class CommonBuilderNestTester {
 	/** The parent node name. */
 	protected String parent_node;
 
-	/** Whether this node has child element. */
-	public boolean has_child_elem = false;
-
 	/** Whether this node has content. */
 	public boolean has_content = false;
 
 	/** Whether this node has simple content. */
 	public boolean has_simple_content = false;
-
-	/** Whether this node has opened simple content. */
-	public boolean has_open_simple_content = false;
 
 	/**
 	 * Instance of nest tester from root node.
@@ -85,20 +79,6 @@ public abstract class CommonBuilderNestTester {
 			parent_node = table.xname;
 
 		}
-
-	}
-
-	/**
-	 * Merge test result.
-	 *
-	 * @param test nest test of child node
-	 */
-	public void merge(CommonBuilderNestTester test) {
-
-		has_child_elem |= test.has_child_elem;
-		has_content |= test.has_content;
-		has_simple_content |= test.has_simple_content;
-		has_open_simple_content |= test.has_open_simple_content;
 
 	}
 
