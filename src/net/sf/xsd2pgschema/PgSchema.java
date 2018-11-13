@@ -2857,7 +2857,7 @@ public class PgSchema implements Serializable {
 
 		if (fields.size() > 0) {
 
-			if (fields.parallelStream().anyMatch(field -> !field.primary_key && field.required)) {
+			if (fields.stream().anyMatch(field -> !field.primary_key && field.required)) {
 
 				for (PgField _known_field : known_fields) {
 
@@ -4326,7 +4326,7 @@ public class PgSchema implements Serializable {
 
 			else {
 
-				table.fields.parallelStream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
+				table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
 
 					field.filt_out = true;
 					field.filter_pattern = rex_pattern;
@@ -4542,7 +4542,7 @@ public class PgSchema implements Serializable {
 			}
 
 			else
-				table.fields.parallelStream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true);
+				table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> field.attr_sel = true);
 
 		}
 
@@ -4713,7 +4713,7 @@ public class PgSchema implements Serializable {
 			}
 
 			else
-				table.fields.parallelStream().filter(_field -> !_field.system_key && !_field.user_key).forEach(_field -> _field.field_sel = true);
+				table.fields.stream().filter(_field -> !_field.system_key && !_field.user_key).forEach(_field -> _field.field_sel = true);
 
 		}
 
@@ -5048,10 +5048,10 @@ public class PgSchema implements Serializable {
 
 		List<PgField> fields = table.fields;
 
-		if (fields.parallelStream().anyMatch(field -> field.document_key))
+		if (fields.stream().anyMatch(field -> field.document_key))
 			return option.document_key_name;
 
-		if (!fields.parallelStream().anyMatch(field -> field.dtd_data_holder && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))) {
+		if (!fields.stream().anyMatch(field -> field.dtd_data_holder && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))) {
 
 			if (option.document_key_if_no_in_place)
 				return option.document_key_name;
@@ -5059,7 +5059,7 @@ public class PgSchema implements Serializable {
 			throw new PgSchemaException("Not found in-place document key in " + table.pname + ", or select --doc-key-if-no-inplace option.");
 		}
 
-		return fields.parallelStream().filter(field -> field.dtd_data_holder && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name))).findFirst().get().pname;
+		return fields.stream().filter(field -> field.dtd_data_holder && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name))).findFirst().get().pname;
 	}
 
 	/**
@@ -5628,7 +5628,7 @@ public class PgSchema implements Serializable {
 
 						String db_column_name = rset_col.getString("COLUMN_NAME");
 
-						if (!table.fields.parallelStream().filter(field -> !field.omissible).anyMatch(field -> field.pname.equals(db_column_name)))
+						if (!table.fields.stream().filter(field -> !field.omissible).anyMatch(field -> field.pname.equals(db_column_name)))
 							throw new PgSchemaException(db_conn.toString() + " : " + table_name + "." + db_column_name + " found without declaration in the data model."); // found without declaration in the data model
 
 					}

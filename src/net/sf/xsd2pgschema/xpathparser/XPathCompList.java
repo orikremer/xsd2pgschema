@@ -255,7 +255,6 @@ public class XPathCompList {
 		ParseTree child;
 
 		Class<?> anyClass;
-		String text;
 
 		boolean union_expr;
 
@@ -264,9 +263,10 @@ public class XPathCompList {
 			child = tree.getChild(i);
 
 			anyClass = child.getClass();
-			text = child.getText();
 
 			if (anyClass.equals(TerminalNodeImpl.class)) {
+
+				String text = child.getText();
 
 				if (text.equals("*") && tree.getClass().equals(MultiplicativeExprContext.class))
 					continue;
@@ -322,7 +322,7 @@ public class XPathCompList {
 			else if (anyClass.equals(StepContext.class)) {
 
 				if (verbose)
-					System.out.println(union_counter + "." + step_counter + " - '" + text + "' ->");
+					System.out.println(union_counter + "." + step_counter + " - '" + child.getText() + "' ->");
 
 				traceChildOfStepContext(child);
 
@@ -351,21 +351,19 @@ public class XPathCompList {
 		ParseTree child;
 
 		Class<?> anyClass;
-		String text;
 
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
 			child = tree.getChild(i);
 
 			anyClass = child.getClass();
-			text = child.getText();
 
 			if (hasEffectiveChildOfQNameContext(child)) {
 
 				comps.add(new XPathComp(union_counter, step_counter, child));
 
 				if (verbose)
-					System.out.print(" " + anyClass.getSimpleName() + " '" + text + "'");
+					System.out.print(" " + anyClass.getSimpleName() + " '" + child.getText() + "'");
 
 				// no need to trace more
 
@@ -377,7 +375,7 @@ public class XPathCompList {
 				comps.add(new XPathComp(union_counter, step_counter, child));
 
 				if (verbose)
-					System.out.print(" " + anyClass.getSimpleName() + " '" + text + "'");
+					System.out.print(" " + anyClass.getSimpleName() + " '" + child.getText() + "'");
 
 				// no need to trace prefix
 
@@ -546,7 +544,7 @@ public class XPathCompList {
 	 */
 	private int getLastStepId(int union_id) {
 
-		if (comps.parallelStream().filter(comp -> comp.union_id == union_id).count() == 0)
+		if (!comps.parallelStream().anyMatch(comp -> comp.union_id == union_id))
 			return -1;
 
 		return comps.parallelStream().filter(comp -> comp.union_id == union_id).max(Comparator.comparingInt(comp -> comp.step_id)).get().step_id;
@@ -1063,7 +1061,7 @@ public class XPathCompList {
 					if (table_xpath != null && inc_self)
 						add(new XPathExpr(table_xpath, XPathCompType.table));
 
-					if (table.has_simple_content && table.fields.parallelStream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+					if (table.has_simple_content && table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 						String simple_content_xpath = getAbsoluteXPathOfTable(table, null);
 
@@ -1156,7 +1154,7 @@ public class XPathCompList {
 								if (table_xpath != null && inc_self)
 									_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
-								if (table.has_simple_content && table.fields.parallelStream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+								if (table.has_simple_content && table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 									String simple_content_xpath = getAbsoluteXPathOfTable(table, ref_path);
 
@@ -1289,7 +1287,7 @@ public class XPathCompList {
 									if (table_xpath != null && (inc_self || first_nest))
 										_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
-									if (foreign_table.has_simple_content && foreign_table.fields.parallelStream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+									if (foreign_table.has_simple_content && foreign_table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 										String simple_content_xpath = getAbsoluteXPathOfTable(foreign_table, ref_path);
 
@@ -1966,7 +1964,7 @@ public class XPathCompList {
 					if (table_xpath != null && inc_self)
 						add(new XPathExpr(table_xpath, XPathCompType.table));
 
-					if (table.has_simple_content && table.fields.parallelStream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+					if (table.has_simple_content && table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 						String simple_content_xpath = getAbsoluteXPathOfTable(table, null);
 
@@ -2198,7 +2196,7 @@ public class XPathCompList {
 
 									if (foreign_table.has_simple_content) {
 
-										if (foreign_table.fields.parallelStream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+										if (foreign_table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 											String simple_content_xpath = getAbsoluteXPathOfTable(foreign_table, ref_path);
 
@@ -2866,7 +2864,7 @@ public class XPathCompList {
 					if (table_xpath != null && inc_self)
 						add(new XPathExpr(table_xpath, XPathCompType.table));
 
-					if (table.has_simple_content && table.fields.parallelStream().anyMatch(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card))) {
+					if (table.has_simple_content && table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card))) {
 
 						String simple_content_xpath = getAbsoluteXPathOfTable(table, null);
 
@@ -3094,7 +3092,7 @@ public class XPathCompList {
 									if (table_xpath != null && (inc_self || _ft_ids == null))
 										_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
-									if (foreign_table.has_simple_content && foreign_table.has_simple_content && foreign_table.fields.parallelStream().anyMatch(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card))) {
+									if (foreign_table.has_simple_content && foreign_table.has_simple_content && foreign_table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card))) {
 
 										String simple_content_xpath = getAbsoluteXPathOfTable(foreign_table, ref_path);
 
@@ -3948,9 +3946,6 @@ public class XPathCompList {
 	 */
 	private String getAbsoluteXPathOfTable(PgTable table, String ref_path, boolean attr, boolean as_attr, StringBuilder sb) {
 
-		if (table.abs_xpath_expr == null)
-			table.abs_xpath_expr = new HashMap<String, String>();
-
 		if (sb == null)
 			sb = new StringBuilder();
 
@@ -4030,6 +4025,18 @@ public class XPathCompList {
 		return getAbsoluteXPathOfTable(table, ref_path, false, false, sb);
 	}
 
+	/** Unmatched table. */
+	private HashSet<String> unmatched_tables = null;
+
+	/** Unmatched path. */
+	private HashSet<String> unmatched_paths = null;
+
+	/** Single matched table. */
+	private HashMap<String, PgTable> single_matched_tables = null;
+
+	/** Uniquely matched table. */
+	private HashMap<String, PgTable> unique_matched_tables = null;
+
 	/**
 	 * Return table of XPath expression.
 	 *
@@ -4038,22 +4045,70 @@ public class XPathCompList {
 	 */
 	protected PgTable getTable(XPathExpr path_expr) {
 
+		if (unmatched_tables == null)
+			unmatched_tables = new HashSet<String>();
+
 		String table_xname = path_expr.getLastPathName();
 
-		PgTable[] hits = tables.parallelStream().filter(table -> table.xname.equals(table_xname)).toArray(PgTable[]::new);
-
-		switch (hits.length) {
-		case 0:
+		if (unmatched_tables.contains(table_xname))
 			return null;
-		case 1:
-			return hits[0];
+
+		Optional<PgTable> opt = tables.parallelStream().filter(table -> table.xname.equals(table_xname)).findFirst();
+
+		if (!opt.isPresent()) {
+
+			unmatched_tables.add(table_xname);
+
+			return null;
 		}
+
+		if (single_matched_tables == null)
+			single_matched_tables = new HashMap<String, PgTable>();
+
+		PgTable hit_table = single_matched_tables.get(table_xname);
+
+		if (hit_table != null)
+			return hit_table;
+
+		if (tables.parallelStream().filter(table -> table.xname.equals(table_xname)).count() == 1) {
+
+			hit_table = opt.get();
+
+			single_matched_tables.put(table_xname, hit_table);
+
+			return hit_table;
+		}
+
+		if (unique_matched_tables == null)
+			unique_matched_tables = new HashMap<String, PgTable>();
 
 		String path = path_expr.getReadablePath();
 
-		Optional<PgTable> opt = tables.parallelStream().filter(table -> table.xname.equals(table_xname) && getAbsoluteXPathOfTable(table, null).endsWith(path)).findFirst();
+		hit_table = unique_matched_tables.get(path);
 
-		return opt != null ? opt.get() : null;
+		if (hit_table != null)
+			return hit_table;
+
+		if (unmatched_paths == null)
+			unmatched_paths = new HashSet<String>();
+
+		if (unmatched_paths.contains(path))
+			return null;
+
+		opt = tables.parallelStream().filter(table -> table.xname.equals(table_xname) && getAbsoluteXPathOfTable(table, null).endsWith(path)).findFirst();
+
+		if (opt.isPresent()) {
+
+			hit_table = opt.get();
+
+			unique_matched_tables.put(path, hit_table);
+
+			return hit_table;
+		}
+
+		unmatched_paths.add(path);
+
+		return null;
 	}
 
 	/**
@@ -7214,7 +7269,7 @@ public class XPathCompList {
 		boolean has_nested_key_as_attr = table.has_nested_key_as_attr;
 
 		if (!has_nested_key_as_attr && table.total_nested_fields > 0)
-			has_nested_key_as_attr = table.nested_fields.parallelStream().anyMatch(field -> field.nested_key_as_attr);
+			has_nested_key_as_attr = table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr);
 
 		if (!linking_tables.containsKey(table))
 			linking_tables.put(table, getAbsoluteXPathOfTable(table, ref_path));
@@ -7509,7 +7564,7 @@ public class XPathCompList {
 
 					PgTable _dst_table = dst_table;
 
-					if (foreign_table.nested_fields.parallelStream().anyMatch(field -> schema.getForeignTable(field).equals(_dst_table))) {
+					if (foreign_table.nested_fields.stream().anyMatch(field -> schema.getForeignTable(field).equals(_dst_table))) {
 
 						if (!target_tables.containsKey(foreign_table))
 							target_tables.put(foreign_table, dst_path);
@@ -7825,7 +7880,7 @@ public class XPathCompList {
 
 					PgTable _dst_table = dst_table;
 
-					if (foreign_table.nested_fields.parallelStream().anyMatch(field -> schema.getForeignTable(field).equals(_dst_table))) {
+					if (foreign_table.nested_fields.stream().anyMatch(field -> schema.getForeignTable(field).equals(_dst_table))) {
 
 						touched_tables.add(foreign_table);
 
@@ -8019,7 +8074,7 @@ public class XPathCompList {
 
 						// check foreign element
 
-						if (foreign_table.has_element && foreign_table.fields.parallelStream().anyMatch(field -> field.element && field.xname.equals(_field_xname))) {
+						if (foreign_table.has_element && foreign_table.fields.stream().anyMatch(field -> field.element && field.xname.equals(_field_xname))) {
 
 							try {
 								return new XPathSqlExpr(schema, path, foreign_table, _field_xname, null, null, terminus);
@@ -8071,7 +8126,7 @@ public class XPathCompList {
 
 						// check foreign simple_cont
 
-						if (foreign_table.has_simple_content && foreign_table.fields.parallelStream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+						if (foreign_table.has_simple_content && foreign_table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 							try {
 								return new XPathSqlExpr(schema, path, foreign_table, _field_xname, null, null, terminus);
@@ -8182,7 +8237,7 @@ public class XPathCompList {
 
 						// check foreign attribute
 
-						if (foreign_table.fields.parallelStream().anyMatch(field -> field.any)) {
+						if (foreign_table.fields.stream().anyMatch(field -> field.any)) {
 
 							pg_xpath_code = "xpath('/" + (has_prefix ? pg_xpath_prefix_ : "") + foreign_table.pname + "/" + (has_prefix ? pg_xpath_prefix_ : "") + _path[position].replace(" @", "/@").replace(" ", "/" + (has_prefix ? pg_xpath_prefix_: "")) + (attr_in_any ? "" : "/text()") + "', "
 									+ foreign_table.pgname + "." + PgSchemaUtil.avoidPgReservedWords(_field_xname) + (has_prefix ? ", ARRAY[ARRAY['" + pg_xpath_prefix + "', '" + schema.getNamespaceUriForPrefix("")+ "']]" : "") + ")::text[]";
@@ -8237,7 +8292,7 @@ public class XPathCompList {
 
 						// check foreign attribute
 
-						if (foreign_table.fields.parallelStream().anyMatch(field -> field.any_attribute)) {
+						if (foreign_table.fields.stream().anyMatch(field -> field.any_attribute)) {
 
 							pg_xpath_code = "xpath('/" + (has_prefix ? pg_xpath_prefix_ : "") + foreign_table.pname + "/" + _path[position].replace(" ", "/" + (has_prefix ? pg_xpath_prefix_: "")) + "', "
 									+ foreign_table.pgname + "." + PgSchemaUtil.avoidPgReservedWords(_field_xname) + (has_prefix ? ", ARRAY[ARRAY['" + pg_xpath_prefix + "', '" + schema.getNamespaceUriForPrefix("")+ "']]" : "") + ")::text[]";

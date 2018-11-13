@@ -622,7 +622,7 @@ public class PgTable implements Serializable {
 	 */
 	public PgField getField(String field_name) {
 
-		Optional<PgField> opt = fields.parallelStream().filter(field -> field.name.equals(field_name)).findFirst();
+		Optional<PgField> opt = fields.stream().filter(field -> field.name.equals(field_name)).findFirst();
 
 		return opt.isPresent() ? opt.get() : null;
 	}
@@ -635,7 +635,7 @@ public class PgTable implements Serializable {
 	 */
 	public PgField getCanField(String field_xname) {
 
-		Optional<PgField> opt = fields.parallelStream().filter(field -> field.xname.equals(field_xname)).findFirst();
+		Optional<PgField> opt = fields.stream().filter(field -> field.xname.equals(field_xname)).findFirst();
 
 		return opt.isPresent() ? opt.get() : null;
 	}
@@ -648,7 +648,7 @@ public class PgTable implements Serializable {
 	 */
 	public PgField getPgField(String field_pname) {
 
-		Optional<PgField> opt = fields.parallelStream().filter(field -> field.pname.equals(field_pname)).findFirst();
+		Optional<PgField> opt = fields.stream().filter(field -> field.pname.equals(field_pname)).findFirst();
 
 		return opt.isPresent() ? opt.get() : null;
 	}
@@ -697,7 +697,7 @@ public class PgTable implements Serializable {
 	 */
 	protected void removeBlockedSubstitutionGroups() {
 
-		fields.parallelStream().filter(field -> field.rep_substitution_group && field.block_value != null && field.block_value.equals("substitution")).map(field -> field.xname).collect(Collectors.toList()).forEach(xname -> fields.removeIf(field -> field.substitution_group != null && field.substitution_group.equals(xname)));
+		fields.stream().filter(field -> field.rep_substitution_group && field.block_value != null && field.block_value.equals("substitution")).map(field -> field.xname).collect(Collectors.toList()).forEach(xname -> fields.removeIf(field -> field.substitution_group != null && field.substitution_group.equals(xname)));
 
 	}
 
@@ -706,7 +706,7 @@ public class PgTable implements Serializable {
 	 */
 	protected void cancelUniqueKey() {
 
-		fields.parallelStream().filter(field -> field.primary_key).forEach(field -> field.unique_key = false);
+		fields.stream().filter(field -> field.primary_key).forEach(field -> field.unique_key = false);
 
 	}
 
@@ -715,7 +715,7 @@ public class PgTable implements Serializable {
 	 */
 	protected void countNestedFields() {
 
-		if ((total_nested_fields = (int) fields.parallelStream().filter(field -> field.nested_key).count()) > 0)
+		if ((total_nested_fields = (int) fields.stream().filter(field -> field.nested_key).count()) > 0)
 			required = true;
 
 	}

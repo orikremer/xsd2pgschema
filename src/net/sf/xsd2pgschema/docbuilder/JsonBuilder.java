@@ -570,7 +570,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		trimComma();
 
-		boolean has_required = table.fields.parallelStream().anyMatch(field -> field.required && field.jsonable);
+		boolean has_required = table.fields.stream().anyMatch(field -> field.required && field.jsonable);
 
 		String _indent_spaces = getIndentSpaces(header.indent_level + 1);
 
