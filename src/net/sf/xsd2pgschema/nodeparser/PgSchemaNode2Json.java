@@ -32,7 +32,6 @@ import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgTable;
 import net.sf.xsd2pgschema.docbuilder.JsonBuilder;
 import net.sf.xsd2pgschema.docbuilder.JsonSchemaVersion;
-import net.sf.xsd2pgschema.docbuilder.JsonType;
 
 /**
  * Node parser for JSON conversion.
@@ -43,9 +42,6 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 	/** The JSON builder. */
 	private JsonBuilder jsonb;
-
-	/** The JSON type. */
-	private JsonType type;
 
 	/** Whether any content was written. */
 	private boolean written = false;
@@ -72,7 +68,6 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		super(npb, null, table);
 
 		jsonb = npb.jsonb;
-		type = jsonb.type;
 
 		if (table.jsonable) {
 
@@ -105,7 +100,6 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		super(npb, null, table);
 
 		jsonb = npb.jsonb;
-		type = jsonb.type;
 
 		if (table.jsonable)
 			init(false);
@@ -130,7 +124,6 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		super(npb, parent_table, table);
 
 		jsonb = npb.jsonb;
-		type = jsonb.type;
 
 		if (table.jsonable)
 			init(as_attr);
@@ -170,25 +163,30 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		if (not_complete)
 			return;
 
-		switch (type) {
+		switch (jsonb.type) {
 		case column:
+			jsonb.writeStartTable(table, true, indent_level);
+			jsonb.writeFields(table, false, indent_level + 1);
+
+			if (total_nested_fields > 0) {
+
+				for (PgSchemaNestedKey nested_key : nested_keys)
+					traverseNestedNodeCol(root_node, nested_key.asIs(this), indent_level + (virtual ? 0 : 1));
+
+			}
+
+			jsonb.writeEndTable();
+			break;
 		case object:
 			jsonb.writeStartTable(table, true, indent_level);
 			jsonb.writeFields(table, false, indent_level + 1);
 
 			if (total_nested_fields > 0) {
 
-				switch (type) {
-				case column:
-					for (PgSchemaNestedKey nested_key : nested_keys)
-						traverseNestedNodeCol(root_node, nested_key.asIs(this), indent_level + (virtual ? 0 : 1));
-					break;
-				default: // object
-					boolean relational = table.relational;
+				boolean relational = table.relational;
 
-					for (PgSchemaNestedKey nested_key : nested_keys)
-						traverseNestedNodeObj(root_node, nested_key.asIs(this), indent_level + (relational ? 0 : 1));
-				}
+				for (PgSchemaNestedKey nested_key : nested_keys)
+					traverseNestedNodeObj(root_node, nested_key.asIs(this), indent_level + (relational ? 0 : 1));
 
 			}
 
@@ -212,7 +210,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		boolean last_node = node_test.isLastNode();
 
-		switch (type) {
+		switch (jsonb.type) {
 		case column:
 			boolean start_table = !virtual && table.list_holder && table.bridge;
 
@@ -299,7 +297,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		parse();
 
-		switch (type) {
+		switch (jsonb.type) {
 		case column:
 			if (written)
 				jsonb.writeFields(table, as_attr, indent_level + (virtual ? 0 : 1));

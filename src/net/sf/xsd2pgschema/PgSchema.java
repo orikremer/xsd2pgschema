@@ -2903,7 +2903,7 @@ public class PgSchema implements Serializable {
 
 	/**
 	 * Return whether arbitrary table has any element.
-	 * 
+	 *
 	 * @return boolean whether arbitrary table has any element
 	 */
 	public boolean hasAny() {
@@ -2912,7 +2912,7 @@ public class PgSchema implements Serializable {
 
 	/**
 	 * Return whether arbitrary table has any attribute.
-	 * 
+	 *
 	 * @return boolean whether arbitrary table has any attribute
 	 */
 	public boolean hasAnyAttribute() {
@@ -2921,7 +2921,7 @@ public class PgSchema implements Serializable {
 
 	/**
 	 * Return whether arbitrary table has any wild card.
-	 * 
+	 *
 	 * @return boolean whether arbitrary table has any wild card
 	 */
 	public boolean hasWildCard() {
