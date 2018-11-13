@@ -1013,8 +1013,6 @@ public class XmlBuilder extends CommonBuilder {
 
 		incRootCount();
 
-		// schema.closePreparedStatement(true);
-
 	}
 
 	/**

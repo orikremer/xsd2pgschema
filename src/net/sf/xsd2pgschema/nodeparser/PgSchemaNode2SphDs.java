@@ -67,17 +67,8 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 		this.min_word_len = min_word_len;
 
-		if (table.indexable) {
-
-			as_attr = false;
-
-			sph_ds_buffw = npb.schema.sph_ds_buffw;
-
-			field_prefix = table.name + PgSchemaUtil.sph_member_op;
-
-			values = new String[fields_size];
-
-		}
+		if (table.indexable)
+			init(false);
 
 		parseRootNode(root_node);
 
@@ -101,17 +92,27 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 		this.min_word_len = min_word_len;
 
-		if (table.indexable) {
+		if (table.indexable)
+			init(as_attr);
 
-			this.as_attr = as_attr;
+	}
 
-			sph_ds_buffw = npb.schema.sph_ds_buffw;
+	/**
+	 * Initialize node parser.
+	 *
+	 * @param as_attr whether parent node as attribute
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	@Override
+	protected void init(boolean as_attr) throws PgSchemaException {
 
-			field_prefix = table.name + PgSchemaUtil.sph_member_op;
+		this.as_attr = as_attr;
 
-			values = new String[fields_size];
+		sph_ds_buffw = npb.schema.sph_ds_buffw;
 
-		}
+		field_prefix = table.name + PgSchemaUtil.sph_member_op;
+
+		values = new String[fields_size];
 
 	}
 
@@ -259,7 +260,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 				value = values[f];
 
-				if ((value_len = (value == null ? 0 : value.length())) == 0)
+				if (value == null || (value_len = value.length()) == 0)
 					continue;
 
 				field.write(sph_ds_buffw, field_prefix + field.name, value, value_len >= min_word_len);

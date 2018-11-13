@@ -321,6 +321,8 @@ public class xpath2json {
 
 			}
 
+			evaluator.client.schema.closePreparedStatement(true);
+
 		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException | SQLException e) {
 			e.printStackTrace();
 			System.exit(1);

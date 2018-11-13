@@ -2275,8 +2275,6 @@ public class JsonBuilder extends CommonBuilder {
 
 		incRootCount();
 
-		// schema.closePreparedStatement(true);
-
 	}
 
 	/**

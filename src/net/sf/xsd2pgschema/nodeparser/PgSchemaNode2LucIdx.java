@@ -72,17 +72,8 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 		this.min_word_len = min_word_len;
 		this.numeric_index = numeric_index;
 
-		if (table.indexable) {
-
-			as_attr = false;
-
-			lucene_doc = npb.schema.lucene_doc;
-
-			field_prefix = table.name + ".";
-
-			values = new String[fields_size];
-
-		}
+		if (table.indexable)
+			init(false);
 
 		parseRootNode(root_node);
 
@@ -108,17 +99,26 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 		this.min_word_len = min_word_len;
 		this.numeric_index = numeric_index;
 
-		if (table.indexable) {
+		if (table.indexable)
+			init(as_attr);
 
-			this.as_attr = as_attr;
+	}
 
-			lucene_doc = npb.schema.lucene_doc;
+	/**
+	 * Initialize node parser.
+	 *
+	 * @param as_attr whether parent node as attribute
+	 */
+	@Override
+	protected void init(boolean as_attr) {
 
-			field_prefix = table.name + ".";
+		this.as_attr = as_attr;
 
-			values = new String[fields_size];
+		lucene_doc = npb.schema.lucene_doc;
 
-		}
+		field_prefix = table.name + ".";
+
+		values = new String[fields_size];
 
 	}
 
@@ -295,7 +295,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 					value = values[f];
 
-					if ((value_len = (value == null ? 0 : value.length())) == 0)
+					if (value == null || (value_len = value.length()) == 0)
 						continue;
 
 					field.write(lucene_doc, field_prefix + field.name, value, value_len >= min_word_len, numeric_index);
@@ -369,7 +369,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 					value = values[f];
 
-					if ((value_len = (value == null ? 0 : value.length())) == 0)
+					if (value == null || (value_len = value.length()) == 0)
 						continue;
 
 					field.write(lucene_doc, field_prefix + field.name, value, value_len >= min_word_len, numeric_index);

@@ -61,6 +61,9 @@ public abstract class PgSchemaNodeParser {
 	/** The node tester. */
 	protected PgSchemaNodeTester node_test = new PgSchemaNodeTester();
 
+	/** Whether bridge table | virtual table | !content_holder. */
+	protected boolean relational;
+
 	/** Whether virtual table. */
 	protected boolean virtual;
 
@@ -108,10 +111,20 @@ public abstract class PgSchemaNodeParser {
 		if ((total_nested_fields = table.total_nested_fields) > 0)
 			nested_keys = new ArrayList<PgSchemaNestedKey>();
 
+		relational = table.relational;
+
 		virtual = table.virtual;
 		visited = !virtual;
 
 	}
+
+	/**
+	 * Abstract initializer of nested node.
+	 *
+	 * @param as_attr whether parent node as attribute
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	abstract protected void init(boolean as_attr) throws PgSchemaException;
 
 	/**
 	 * Parse root node.

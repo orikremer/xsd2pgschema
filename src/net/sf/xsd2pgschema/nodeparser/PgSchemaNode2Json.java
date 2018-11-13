@@ -47,9 +47,6 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	/** The JSON type. */
 	private JsonType type;
 
-	/** Whether bridge table | virtual table | !content_holder. */
-	private boolean relational;
-
 	/** Whether any content was written. */
 	private boolean written = false;
 
@@ -76,8 +73,6 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		jsonb = npb.jsonb;
 		type = jsonb.type;
-
-		relational = table.relational;
 
 		if (table.jsonable) {
 
@@ -112,18 +107,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		jsonb = npb.jsonb;
 		type = jsonb.type;
 
-		relational = table.relational;
-
-		if (table.jsonable) {
-
-			as_attr = false;
-
-			schema_ver = jsonb.schema_ver;
-			concat_value_space = jsonb.concat_value_space;
-
-			values = new String[fields_size];
-
-		}
+		if (table.jsonable)
+			init(false);
 
 		parseRootNode(root_node, indent_level);
 
@@ -147,18 +132,25 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		jsonb = npb.jsonb;
 		type = jsonb.type;
 
-		relational = table.relational;
+		if (table.jsonable)
+			init(as_attr);
 
-		if (table.jsonable) {
+	}
 
-			this.as_attr = as_attr;
+	/**
+	 * Initialize node parser.
+	 *
+	 * @param as_attr whether parent node as attribute
+	 */
+	@Override
+	protected void init(boolean as_attr) {
 
-			schema_ver = jsonb.schema_ver;
-			concat_value_space = jsonb.concat_value_space;
+		this.as_attr = as_attr;
 
-			values = new String[fields_size];
+		schema_ver = jsonb.schema_ver;
+		concat_value_space = jsonb.concat_value_space;
 
-		}
+		values = new String[fields_size];
 
 	}
 

@@ -72,23 +72,8 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		super(npb, null, table);
 
-		if (table.writable) {
-
-			as_attr = false;
-
-			sb = new StringBuilder();
-
-			buffw = table.buffw;
-
-			pg_tab_delimiter = npb.schema.option.pg_tab_delimiter;
-			pg_delimiter = npb.schema.option.pg_delimiter;
-			pg_null = npb.schema.option.pg_null;
-
-			values = new String[fields_size];
-
-			Arrays.fill(values, pg_null);
-
-		}
+		if (table.writable)
+			init(false);
 
 		parseRootNode(root_node);
 
@@ -109,23 +94,32 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		super(npb, parent_table, table);
 
-		if (table.writable) {
+		if (table.writable)
+			init(as_attr);
 
-			this.as_attr = as_attr;
+	}
 
-			sb = new StringBuilder();
+	/**
+	 * Initialize node parser.
+	 *
+	 * @param as_attr whether parent node as attribute
+	 */
+	@Override
+	protected void init(boolean as_attr) {
 
-			buffw = table.buffw;
+		this.as_attr = as_attr;
 
-			pg_tab_delimiter = npb.schema.option.pg_tab_delimiter;
-			pg_delimiter = npb.schema.option.pg_delimiter;
-			pg_null = npb.schema.option.pg_null;
+		sb = new StringBuilder();
 
-			values = new String[fields_size];
+		buffw = table.buffw;
 
-			Arrays.fill(values, pg_null);
+		pg_tab_delimiter = npb.schema.option.pg_tab_delimiter;
+		pg_delimiter = npb.schema.option.pg_delimiter;
+		pg_null = npb.schema.option.pg_null;
 
-		}
+		values = new String[fields_size];
+
+		Arrays.fill(values, pg_null);
 
 	}
 
