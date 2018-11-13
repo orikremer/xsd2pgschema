@@ -93,7 +93,7 @@ public class JsonBuilderPendingElem {
 
 			// any attribute
 
-			if (pending_attrs.values().parallelStream().anyMatch(pending_attr -> pending_attr.field == null)) {
+			if (pending_attrs.values().stream().anyMatch(pending_attr -> pending_attr.field == null)) {
 
 				List<JsonBuilderPendingAttr> any_attrs = new ArrayList<JsonBuilderPendingAttr>();
 

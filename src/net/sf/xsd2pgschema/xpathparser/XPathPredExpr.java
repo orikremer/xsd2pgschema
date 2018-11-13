@@ -88,7 +88,7 @@ public class XPathPredExpr {
 
 		for (XPathExpr path_expr : dst_path_exprs) {
 
-			if (!(matched = predicate.dst_path_exprs.parallelStream().anyMatch(_path_expr -> _path_expr.equals(path_expr))))
+			if (!(matched = predicate.dst_path_exprs.stream().anyMatch(_path_expr -> _path_expr.equals(path_expr))))
 				break;
 
 		}

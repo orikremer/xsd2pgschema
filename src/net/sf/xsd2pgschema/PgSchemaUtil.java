@@ -527,7 +527,7 @@ public class PgSchemaUtil {
 
 		LinkedBlockingQueue<Path> queue = new LinkedBlockingQueue<Path>();
 
-		boolean has_regex_path = file_names.parallelStream().anyMatch(file_name -> !Files.exists(Paths.get(file_name)));
+		boolean has_regex_path = file_names.stream().anyMatch(file_name -> !Files.exists(Paths.get(file_name)));
 
 		file_names.forEach(file_name -> {
 

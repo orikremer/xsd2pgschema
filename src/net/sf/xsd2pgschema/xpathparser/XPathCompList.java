@@ -544,10 +544,10 @@ public class XPathCompList {
 	 */
 	private int getLastStepId(int union_id) {
 
-		if (!comps.parallelStream().anyMatch(comp -> comp.union_id == union_id))
+		if (!comps.stream().anyMatch(comp -> comp.union_id == union_id))
 			return -1;
 
-		return comps.parallelStream().filter(comp -> comp.union_id == union_id).max(Comparator.comparingInt(comp -> comp.step_id)).get().step_id;
+		return comps.stream().filter(comp -> comp.union_id == union_id).max(Comparator.comparingInt(comp -> comp.step_id)).get().step_id;
 	}
 
 	/**
@@ -588,7 +588,7 @@ public class XPathCompList {
 	 * @return int the size of path expression in XPath component list
 	 */
 	private int sizeOfPathExpr() {
-		return getLastUnionId() + 1 - (int) comps.parallelStream().filter(comp -> comp.tree.getClass().equals(TerminalNodeImpl.class) && comp.tree.getText().equals("|")).count();
+		return getLastUnionId() + 1 - (int) comps.stream().filter(comp -> comp.tree.getClass().equals(TerminalNodeImpl.class) && comp.tree.getText().equals("|")).count();
 	}
 
 	/**
@@ -4137,7 +4137,7 @@ public class XPathCompList {
 	 * @return boolean whether any path ends with table node
 	 */
 	public boolean hasPathEndsWithTableNode() {
-		return path_exprs.parallelStream().anyMatch(path_expr -> path_expr.terminus.equals(XPathCompType.table));
+		return path_exprs.stream().anyMatch(path_expr -> path_expr.terminus.equals(XPathCompType.table));
 	}
 
 	/**
@@ -4146,7 +4146,7 @@ public class XPathCompList {
 	 * @return boolean whether any path ends with text node
 	 */
 	public boolean hasPathEndsWithTextNode() {
-		return path_exprs.parallelStream().anyMatch(path_expr -> path_expr.terminus.isText());
+		return path_exprs.stream().anyMatch(path_expr -> path_expr.terminus.isText());
 	}
 
 	/**
@@ -4155,7 +4155,7 @@ public class XPathCompList {
 	 * @return boolean whether any path ends without text node
 	 */
 	private boolean hasPathEndsWithoutTextNode() {
-		return path_exprs.parallelStream().anyMatch(path_expr -> !path_expr.terminus.isText());
+		return path_exprs.stream().anyMatch(path_expr -> !path_expr.terminus.isText());
 	}
 
 	/**
@@ -4244,7 +4244,7 @@ public class XPathCompList {
 
 			XPathExpr path_expr = iter.next();
 
-			if (!parent_path_exprs.parallelStream().anyMatch(src_path_expr -> path_expr.path.startsWith(src_path_expr.path)))
+			if (!parent_path_exprs.stream().anyMatch(src_path_expr -> path_expr.path.startsWith(src_path_expr.path)))
 				iter.remove();
 
 		}
@@ -4270,7 +4270,7 @@ public class XPathCompList {
 
 			XPathExpr _path_expr = iter.next();
 
-			if (path_exprs.parallelStream().filter(path_expr -> path_expr.path.equals(_path_expr.path)).count() > 1) {
+			if (path_exprs.stream().filter(path_expr -> path_expr.path.equals(_path_expr.path)).count() > 1) {
 
 				iter.remove();
 
@@ -4297,7 +4297,7 @@ public class XPathCompList {
 
 		if (path_exprs.isEmpty()) {
 
-			XPathComp first_comp = comps.parallelStream().filter(comp -> comp.union_id == union_id && comp.step_id == 0).findFirst().get();
+			XPathComp first_comp = comps.stream().filter(comp -> comp.union_id == union_id && comp.step_id == 0).findFirst().get();
 
 			return first_comp.tree.getClass().equals(TerminalNodeImpl.class) && first_comp.tree.getText().equals("/");
 		}
@@ -4946,7 +4946,7 @@ public class XPathCompList {
 	 */
 	private void testPathContext(XPathComp src_comp, XPathExpr src_path_expr, ParseTree parent, ParseTree tree) throws PgSchemaException {
 
-		int pred_path_size = (int) pred_exprs.parallelStream().filter(predicate -> predicate.src_comp.equals(src_comp)).count();
+		int pred_path_size = (int) pred_exprs.stream().filter(predicate -> predicate.src_comp.equals(src_comp)).count();
 
 		if (path_expr_counter >= pred_path_size)
 			throw new PgSchemaException(tree);
@@ -5468,7 +5468,7 @@ public class XPathCompList {
 
 		List<XPathSqlExpr> sql_predicates = null;
 
-		if (src_path_expr.sql_predicates != null && src_path_expr.sql_predicates.parallelStream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).count() > 0)
+		if (src_path_expr.sql_predicates != null && src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).count() > 0)
 			sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
 
 		String func_name = null;
@@ -5587,7 +5587,7 @@ public class XPathCompList {
 
 				sb.append(src_table.pgname + " as " + alias_name);
 
-				sb.append(" WHERE " + alias_name + "." + src_table.doc_key_pgname + " = t1." + main_aliases.entrySet().parallelStream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey().doc_key_pgname);
+				sb.append(" WHERE " + alias_name + "." + src_table.doc_key_pgname + " = t1." + main_aliases.entrySet().stream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey().doc_key_pgname);
 
 				sb.append(" )");
 
@@ -5630,7 +5630,7 @@ public class XPathCompList {
 
 				sb.append(src_table.pgname + " as " + alias_name);
 
-				sb.append(" WHERE " + alias_name + "." + sql_expr.table.doc_key_pgname + " = t1." + main_aliases.entrySet().parallelStream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey().doc_key_pgname);
+				sb.append(" WHERE " + alias_name + "." + sql_expr.table.doc_key_pgname + " = t1." + main_aliases.entrySet().stream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey().doc_key_pgname);
 
 				sb.append(" )");
 				break;
@@ -6532,7 +6532,7 @@ public class XPathCompList {
 
 				sb.append(sql_expr_str.table.pgname + " as " + alias_name);
 
-				sb.append(" WHERE " + alias_name + "." + sql_expr_str.table.doc_key_pgname + " = t1." + main_aliases.entrySet().parallelStream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey().doc_key_pgname);
+				sb.append(" WHERE " + alias_name + "." + sql_expr_str.table.doc_key_pgname + " = t1." + main_aliases.entrySet().stream().filter(entry -> entry.getValue().equals("t1")).findFirst().get().getKey().doc_key_pgname);
 
 				sb.append(" )");
 				break;
@@ -6620,7 +6620,7 @@ public class XPathCompList {
 	 * @return int the total number of predicates in the list
 	 */
 	private int sizeOfPredicate(List<XPathSqlExpr> sql_predicates) {
-		return (int) sql_predicates.parallelStream().filter(sql_expr -> sql_expr.predicate != null).count();
+		return (int) sql_predicates.stream().filter(sql_expr -> sql_expr.predicate != null).count();
 	}
 
 	/**
@@ -6631,7 +6631,7 @@ public class XPathCompList {
 	 */
 	private void trimAnySqlPredicate(XPathExpr src_path_expr, List<XPathSqlExpr> sql_predicates) {
 
-		if (!option.wild_card || !sql_predicates.parallelStream().anyMatch(sql_predicate -> sql_predicate.terminus.equals(XPathCompType.any_element)))
+		if (!option.wild_card || !sql_predicates.stream().anyMatch(sql_predicate -> sql_predicate.terminus.equals(XPathCompType.any_element)))
 			return;
 
 		List<XPathSqlExpr> any_sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_predicate -> sql_predicate.terminus.equals(XPathCompType.any_element)).collect(Collectors.toList());

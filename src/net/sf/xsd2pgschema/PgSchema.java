@@ -463,7 +463,7 @@ public class PgSchema implements Serializable {
 				if (key.isEmpty())
 					continue;
 
-				if (root_schema.keys.parallelStream().anyMatch(_key -> _key.equals(key)))
+				if (root_schema.keys.stream().anyMatch(_key -> _key.equals(key)))
 					continue;
 
 				root_schema.keys.add(key);
@@ -493,7 +493,7 @@ public class PgSchema implements Serializable {
 				if (key.isEmpty())
 					continue;
 
-				if (root_schema.unq_keys.parallelStream().anyMatch(_key -> _key.equals(key)))
+				if (root_schema.unq_keys.stream().anyMatch(_key -> _key.equals(key)))
 					continue;
 
 				root_schema.unq_keys.add(key);
@@ -618,7 +618,7 @@ public class PgSchema implements Serializable {
 
 			pg_named_schemata = new HashSet<String>();
 
-			tables.stream().filter(table -> table.writable).filter(table -> !table.schema_name.equals(PgSchemaUtil.pg_public_schema_name)).forEach(table -> pg_named_schemata.add(table.schema_name));
+			tables.parallelStream().filter(table -> table.writable).filter(table -> !table.schema_name.equals(PgSchemaUtil.pg_public_schema_name)).forEach(table -> pg_named_schemata.add(table.schema_name));
 
 		}
 
@@ -1293,8 +1293,8 @@ public class PgSchema implements Serializable {
 		// update schema locations to unique ones
 
 		tables.parallelStream().forEach(table -> table.schema_location = getUniqueSchemaLocations(table.schema_location));
-		attr_groups.parallelStream().forEach(attr_group -> attr_group.schema_location = getUniqueSchemaLocations(attr_group.schema_location));
-		model_groups.parallelStream().forEach(model_group -> model_group.schema_location = getUniqueSchemaLocations(model_group.schema_location));
+		attr_groups.stream().forEach(attr_group -> attr_group.schema_location = getUniqueSchemaLocations(attr_group.schema_location));
+		model_groups.stream().forEach(model_group -> model_group.schema_location = getUniqueSchemaLocations(model_group.schema_location));
 
 		// realize PostgreSQL DDL
 
@@ -1890,7 +1890,7 @@ public class PgSchema implements Serializable {
 		if (foreign_key.isEmpty())
 			return;
 
-		if (root_schema.foreign_keys.parallelStream().anyMatch(_foreign_key -> _foreign_key.equals(foreign_key)))
+		if (root_schema.foreign_keys.stream().anyMatch(_foreign_key -> _foreign_key.equals(foreign_key)))
 			return;
 
 		root_schema.foreign_keys.add(foreign_key);
@@ -3024,7 +3024,7 @@ public class PgSchema implements Serializable {
 	 * @return String prefix of namespace URI
 	 */
 	private String getPrefixOf(String namespace_uri, String def_prefix) {
-		return def_namespaces.entrySet().parallelStream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()) ? def_namespaces.entrySet().parallelStream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey() : def_prefix;
+		return def_namespaces.entrySet().stream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()) ? def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey() : def_prefix;
 	}
 
 	/**
@@ -3034,7 +3034,7 @@ public class PgSchema implements Serializable {
 	 * @return String PostgreSQL schema name of namespace URI
 	 */
 	private String getPgSchemaOf(String namespace_uri) {
-		return option.pg_named_schema ? (def_namespaces.entrySet().parallelStream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()) ? def_namespaces.entrySet().parallelStream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey() : PgSchemaUtil.pg_public_schema_name) : PgSchemaUtil.pg_public_schema_name;
+		return option.pg_named_schema ? (def_namespaces.entrySet().stream().anyMatch(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()) ? def_namespaces.entrySet().stream().filter(arg -> arg.getValue().equals(namespace_uri) && !arg.getKey().isEmpty()).findFirst().get().getKey() : PgSchemaUtil.pg_public_schema_name) : PgSchemaUtil.pg_public_schema_name;
 	}
 
 	/**
@@ -3241,7 +3241,7 @@ public class PgSchema implements Serializable {
 	 */
 	private PgTable getAttributeGroup(String attr_group_name, boolean throwable) throws PgSchemaException {
 
-		Optional<PgTable> opt = root_schema.attr_groups.parallelStream().filter(attr_group -> attr_group.xname.equals(attr_group_name)).findFirst();
+		Optional<PgTable> opt = root_schema.attr_groups.stream().filter(attr_group -> attr_group.xname.equals(attr_group_name)).findFirst();
 
 		if (opt.isPresent())
 			return opt.get();
@@ -3262,7 +3262,7 @@ public class PgSchema implements Serializable {
 	 */
 	private PgTable getModelGroup(String model_group_name, boolean throwable) throws PgSchemaException {
 
-		Optional<PgTable> opt = root_schema.model_groups.parallelStream().filter(model_group -> model_group.xname.equals(model_group_name)).findFirst();
+		Optional<PgTable> opt = root_schema.model_groups.stream().filter(model_group -> model_group.xname.equals(model_group_name)).findFirst();
 
 		if (opt.isPresent())
 			return opt.get();
