@@ -184,6 +184,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 						traverseNestedNodeCol(root_node, nested_key.asIs(this), indent_level + (virtual ? 0 : 1));
 					break;
 				default: // object
+					boolean relational = table.relational;
+
 					for (PgSchemaNestedKey nested_key : nested_keys)
 						traverseNestedNodeObj(root_node, nested_key.asIs(this), indent_level + (relational ? 0 : 1));
 				}
@@ -269,6 +271,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (total_nested_fields > 0 && nested_keys.size() > 0) {
 
 					Node proc_node = node_test.proc_node;
+					boolean relational = table.relational;
 
 					for (PgSchemaNestedKey nested_key : nested_keys)
 						traverseNestedNodeObj(proc_node, nested_key.asOfChild(this), indent_level + (relational ? 0 : 1));
@@ -322,6 +325,8 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			}
 
 			if (!not_complete && total_nested_fields > 0) {
+
+				boolean relational = table.relational;
 
 				for (PgSchemaNestedKey nested_key : nested_keys) {
 

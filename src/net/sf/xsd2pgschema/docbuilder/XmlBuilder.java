@@ -723,7 +723,7 @@ public class XmlBuilder extends CommonBuilder {
 
 			pending_elem.push(elem);
 
-			if ((schema.hasAny() || schema.hasAnyAttribute()) && any_sax_parser == null) {
+			if (schema.hasWildCard() && any_sax_parser == null) {
 
 				SAXParserFactory spf = SAXParserFactory.newInstance();
 				spf.setValidating(false);

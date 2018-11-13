@@ -61,9 +61,6 @@ public abstract class PgSchemaNodeParser {
 	/** The node tester. */
 	protected PgSchemaNodeTester node_test = new PgSchemaNodeTester();
 
-	/** Whether bridge table | virtual table | !content_holder. */
-	protected boolean relational;
-
 	/** Whether virtual table. */
 	protected boolean virtual;
 
@@ -110,8 +107,6 @@ public abstract class PgSchemaNodeParser {
 
 		if ((total_nested_fields = table.total_nested_fields) > 0)
 			nested_keys = new ArrayList<PgSchemaNestedKey>();
-
-		relational = table.relational;
 
 		virtual = table.virtual;
 		visited = !virtual;

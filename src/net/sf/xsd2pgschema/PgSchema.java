@@ -2920,6 +2920,15 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
+	 * Return whether arbitrary table has any wild card.
+	 * 
+	 * @return boolean whether arbitrary table has any wild card
+	 */
+	public boolean hasWildCard() {
+		return has_any | has_any_attribute;
+	}
+
+	/**
 	 * Return default namespace.
 	 *
 	 * @return String default namespace

@@ -130,18 +130,24 @@ public class PgSchemaNodeParserBuilder {
 		rel_data_ext = schema.option.rel_data_ext;
 		fill_default_value = schema.option.fill_default_value;
 
-		if (schema.option.serial_key)
-			is_def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
-
-		hash_size = schema.option.hash_size;
-
-		db_conn = schema.db_conn;
-		md_hash_key = schema.md_hash_key;
 		document_id = schema.document_id;
 
-		document_id_len = document_id.length();
+		switch (parser_type) {
+		case pg_data_migration:
+			db_conn = schema.db_conn;
+			if (schema.option.serial_key)
+				is_def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
+			if (schema.option.xpath_key)
+				document_id_len = document_id.length();
+		case full_text_indexing:
+			hash_size = schema.option.hash_size;
+			md_hash_key = schema.md_hash_key;
+			break;
+		case json_conversion:
+			throw new PgSchemaException("Use another instance for JSON conversion: PgSchemaNodeParserBuilder(JsonBuilder)");
+		}
 
-		if (schema.hasAny() || schema.hasAnyAttribute()) {
+		if (schema.hasWildCard()) {
 
 			try {
 
@@ -171,19 +177,15 @@ public class PgSchemaNodeParserBuilder {
 				throw new PgSchemaException(e);
 			}
 
-			switch (parser_type) {
-			case full_text_indexing:
+			if (parser_type.equals(PgSchemaNodeParserType.full_text_indexing))
 				any_content = new StringBuilder();
-				break;
-			default:
-			}
 
 		}
 
 	}
 
 	/**
-	 * Node parser builder.
+	 * Node parser builder for JSON conversion.
 	 *
 	 * @param jsonb JSON builder
 	 * @throws PgSchemaException the pg schema exception
@@ -195,21 +197,11 @@ public class PgSchemaNodeParserBuilder {
 		this.jsonb = jsonb;
 		schema = jsonb.schema;
 
-		rel_data_ext = schema.option.rel_data_ext;
 		fill_default_value = schema.option.fill_default_value;
 
-		if (schema.option.serial_key)
-			is_def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
-
-		hash_size = schema.option.hash_size;
-
-		db_conn = schema.db_conn;
-		md_hash_key = schema.md_hash_key;
 		document_id = schema.document_id;
 
-		document_id_len = document_id.length();
-
-		if (schema.hasAny() || schema.hasAnyAttribute()) {
+		if (schema.hasWildCard()) {
 
 			try {
 
