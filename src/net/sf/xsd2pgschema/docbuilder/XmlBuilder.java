@@ -753,7 +753,7 @@ public class XmlBuilder extends CommonBuilder {
 
 			if (table.has_attrs) {
 
-				for (PgField field : table.fields) {
+				for (PgField field : table.attr_fields) {
 
 					if (field.attribute) {
 
@@ -820,7 +820,7 @@ public class XmlBuilder extends CommonBuilder {
 
 			if (table.has_elems || schema.option.document_key) {
 
-				for (PgField field : table.fields) {
+				for (PgField field : table.fields) { // include document key
 
 					if (insert_doc_key && field.document_key && !table.equals(root_table)) {
 						/*
@@ -1118,7 +1118,7 @@ public class XmlBuilder extends CommonBuilder {
 
 				if (table.has_attrs) {
 
-					for (PgField field : table.fields) {
+					for (PgField field : table.attr_fields) {
 
 						if (field.attribute) {
 
@@ -1206,7 +1206,7 @@ public class XmlBuilder extends CommonBuilder {
 
 				if (table.has_elems) {
 
-					for (PgField field : table.fields) {
+					for (PgField field : table.elem_fields) {
 
 						if (field.simple_content && !field.simple_attribute && !as_attr) {
 

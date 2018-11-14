@@ -229,7 +229,7 @@ public class XPathSqlExpr {
 		switch (terminus) {
 		case element:
 			if (table.has_element) {
-				opt = table.fields.stream().filter(field -> field.element && field.xname.equals(xname)).findFirst();
+				opt = table.elem_fields.stream().filter(field -> field.element && field.xname.equals(xname)).findFirst();
 				if (opt.isPresent()) {
 					field = opt.get();
 					break;
@@ -240,7 +240,7 @@ public class XPathSqlExpr {
 			else throw new PgSchemaException();
 		case simple_content:
 			if (table.has_simple_content) {
-				opt = table.fields.stream().filter(field -> field.simple_content && !field.simple_attribute && field.xname.equals(xname)).findFirst();
+				opt = table.elem_fields.stream().filter(field -> field.simple_content && !field.simple_attribute && field.xname.equals(xname)).findFirst();
 				if (opt.isPresent()) {
 					field = opt.get();
 					break;
@@ -251,7 +251,7 @@ public class XPathSqlExpr {
 			else throw new PgSchemaException();
 		case attribute:
 			if (table.has_attribute || table.has_simple_attribute) {
-				opt = table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && (field.attribute ? field.xname.equals(xname) : field.foreign_table_xname.equals(xname))).findFirst();
+				opt = table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && (field.attribute ? field.xname.equals(xname) : field.foreign_table_xname.equals(xname))).findFirst();
 				if (opt.isPresent()) {
 					field = opt.get();
 					break;
@@ -262,7 +262,7 @@ public class XPathSqlExpr {
 			else throw new PgSchemaException();
 		case any_element:
 			if (table.has_any) {
-				opt = table.fields.stream().filter(field -> field.any && field.xname.equals(xname)).findFirst();
+				opt = table.elem_fields.stream().filter(field -> field.any && field.xname.equals(xname)).findFirst();
 				if (opt.isPresent()) {
 					field = opt.get();
 					break;
@@ -273,7 +273,7 @@ public class XPathSqlExpr {
 			else throw new PgSchemaException();
 		case any_attribute:
 			if (table.has_any_attribute) {
-				opt = table.fields.stream().filter(field -> field.any_attribute && field.xname.equals(xname)).findFirst();
+				opt = table.attr_fields.stream().filter(field -> field.any_attribute && field.xname.equals(xname)).findFirst();
 				if (opt.isPresent()) {
 					field = opt.get();
 					break;

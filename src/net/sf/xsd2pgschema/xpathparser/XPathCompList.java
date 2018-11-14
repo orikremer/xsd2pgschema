@@ -1061,7 +1061,7 @@ public class XPathCompList {
 					if (table_xpath != null && inc_self)
 						add(new XPathExpr(table_xpath, XPathCompType.table));
 
-					if (table.has_simple_content && table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+					if (table.has_simple_content && table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 						String simple_content_xpath = getAbsoluteXPathOfTable(table, null);
 
@@ -1080,7 +1080,7 @@ public class XPathCompList {
 
 					if (table.has_element) {
 
-						table.fields.stream().filter(field -> field.element && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
+						table.elem_fields.stream().filter(field -> field.element && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
 
 							String element_xpath = getAbsoluteXPathOfElement(table, field.xname, null);
 
@@ -1093,7 +1093,7 @@ public class XPathCompList {
 
 					if (table.has_any && (wild_card || _path_exprs_size == path_exprs.size())) {
 
-						table.fields.stream().filter(field -> field.any).forEach(field -> {
+						table.elem_fields.stream().filter(field -> field.any).forEach(field -> {
 
 							String element_xpath = getAbsoluteXPathOfElement(table, text, null);
 
@@ -1154,7 +1154,7 @@ public class XPathCompList {
 								if (table_xpath != null && inc_self)
 									_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
-								if (table.has_simple_content && table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+								if (table.has_simple_content && table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 									String simple_content_xpath = getAbsoluteXPathOfTable(table, ref_path);
 
@@ -1173,7 +1173,7 @@ public class XPathCompList {
 
 								if (table.has_element) {
 
-									table.fields.stream().filter(field -> field.element && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
+									table.elem_fields.stream().filter(field -> field.element && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
 
 										String element_xpath = getAbsoluteXPathOfElement(table, ref_path, field.xname);
 
@@ -1186,7 +1186,7 @@ public class XPathCompList {
 
 								if (table.has_any && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
 
-									table.fields.stream().filter(field -> field.any).forEach(field -> {
+									table.elem_fields.stream().filter(field -> field.any).forEach(field -> {
 
 										String element_xpath = getAbsoluteXPathOfElement(table, ref_path, text);
 
@@ -1232,7 +1232,7 @@ public class XPathCompList {
 
 						if (table.has_element) {
 
-							table.fields.stream().filter(field -> field.element && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
+							table.elem_fields.stream().filter(field -> field.element && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
 
 								String element_xpath = field.xname;
 
@@ -1245,7 +1245,7 @@ public class XPathCompList {
 
 						if (table.has_any && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
 
-							table.fields.stream().filter(field -> field.any).forEach(field -> {
+							table.elem_fields.stream().filter(field -> field.any).forEach(field -> {
 
 								String element_xpath = text;
 
@@ -1263,7 +1263,7 @@ public class XPathCompList {
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-						int[] ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] ft_ids = table.ft_ids;
 						int[] _ft_ids = null;
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -1287,7 +1287,7 @@ public class XPathCompList {
 									if (table_xpath != null && (inc_self || first_nest))
 										_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
-									if (foreign_table.has_simple_content && foreign_table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+									if (foreign_table.has_simple_content && foreign_table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 										String simple_content_xpath = getAbsoluteXPathOfTable(foreign_table, ref_path);
 
@@ -1302,7 +1302,7 @@ public class XPathCompList {
 
 								if (foreign_table.has_element) {
 
-									foreign_table.fields.stream().filter(field -> field.element && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
+									foreign_table.elem_fields.stream().filter(field -> field.element && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
 
 										String element_xpath = getAbsoluteXPathOfElement(foreign_table, ref_path, field.xname);
 
@@ -1320,7 +1320,7 @@ public class XPathCompList {
 
 								if (foreign_table.virtual || !abs_path) {
 
-									int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+									int[] __ft_ids = foreign_table.ft_ids;
 
 									if (__ft_ids != null && __ft_ids.length > 0)
 										_ft_ids = __ft_ids;
@@ -1340,7 +1340,7 @@ public class XPathCompList {
 
 						if (has_any && _path_exprs_size == _list.path_exprs.size()) {
 
-							ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							ft_ids = table.ft_ids;
 							_ft_ids = null;
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -1357,7 +1357,7 @@ public class XPathCompList {
 
 									if (foreign_table.has_any && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
 
-										foreign_table.fields.stream().filter(field -> field.any).forEach(field -> {
+										foreign_table.elem_fields.stream().filter(field -> field.any).forEach(field -> {
 
 											String element_xpath = getAbsoluteXPathOfElement(foreign_table, ref_path, text);
 
@@ -1372,7 +1372,7 @@ public class XPathCompList {
 
 									if (foreign_table.virtual || !abs_path) {
 
-										int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+										int[] __ft_ids = foreign_table.ft_ids;
 
 										if (__ft_ids != null && __ft_ids.length > 0)
 											_ft_ids = __ft_ids;
@@ -1445,7 +1445,7 @@ public class XPathCompList {
 
 					if (table.has_attribute || table.has_simple_attribute) {
 
-						table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
+						table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
 
 							String attribute_xpath = getAbsoluteXPathOfAttribute(table, field.attribute ? field.xname : field.foreign_table_xname, null);
 
@@ -1458,7 +1458,7 @@ public class XPathCompList {
 
 					if (table.has_any_attribute && (wild_card || _path_exprs_size == path_exprs.size())) {
 
-						table.fields.stream().filter(field -> field.any_attribute).forEach(field -> {
+						table.attr_fields.stream().filter(field -> field.any_attribute).forEach(field -> {
 
 							String attribute_xpath = getAbsoluteXPathOfAttribute(table, text, null);
 
@@ -1517,7 +1517,7 @@ public class XPathCompList {
 
 									if (table.has_attribute || table.has_simple_attribute) {
 
-										table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
+										table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
 
 											String attribute_xpath = getAbsoluteXPathOfAttribute(table, ref_path, field.attribute ? field.xname : field.foreign_table_xname);
 
@@ -1530,7 +1530,7 @@ public class XPathCompList {
 
 									if (table.has_any_attribute && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
 
-										table.fields.stream().filter(field -> field.any_attribute).forEach(field -> {
+										table.attr_fields.stream().filter(field -> field.any_attribute).forEach(field -> {
 
 											String attribute_xpath = getAbsoluteXPathOfAttribute(table, ref_path, text);
 
@@ -1578,7 +1578,7 @@ public class XPathCompList {
 
 						if (table.has_attribute || table.has_simple_attribute) {
 
-							table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
+							table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
 
 								String attribute_xpath = "@" + (field.attribute ? field.xname : field.foreign_table_xname);
 
@@ -1591,7 +1591,7 @@ public class XPathCompList {
 
 						if (table.has_any_attribute && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
 
-							table.fields.stream().filter(field -> field.any_attribute).forEach(field -> {
+							table.attr_fields.stream().filter(field -> field.any_attribute).forEach(field -> {
 
 								String attribute_xpath = "@" + text;
 
@@ -1609,7 +1609,7 @@ public class XPathCompList {
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-						int[] ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] ft_ids = table.ft_ids;
 						int[] _ft_ids = null;
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -1627,7 +1627,7 @@ public class XPathCompList {
 
 								if (foreign_table.has_attribute || foreign_table.has_simple_attribute) {
 
-									foreign_table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
+									foreign_table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
 
 										String attribute_xpath = getAbsoluteXPathOfAttribute(foreign_table, ref_path, field.attribute ? field.xname : field.foreign_table_xname);
 
@@ -1645,7 +1645,7 @@ public class XPathCompList {
 
 								if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
 
-									int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+									int[] __ft_ids = foreign_table.ft_ids;
 
 									if (__ft_ids != null && __ft_ids.length > 0)
 										_ft_ids = __ft_ids;
@@ -1665,7 +1665,7 @@ public class XPathCompList {
 
 						if (has_any_attribute && _path_exprs_size == _list.path_exprs.size()) {
 
-							ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							ft_ids = table.ft_ids;
 							_ft_ids = null;
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -1697,7 +1697,7 @@ public class XPathCompList {
 
 									if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
 
-										int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+										int[] __ft_ids = foreign_table.ft_ids;
 
 										if (__ft_ids != null && __ft_ids.length > 0)
 											_ft_ids = __ft_ids;
@@ -1964,7 +1964,7 @@ public class XPathCompList {
 					if (table_xpath != null && inc_self)
 						add(new XPathExpr(table_xpath, XPathCompType.table));
 
-					if (table.has_simple_content && table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+					if (table.has_simple_content && table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 						String simple_content_xpath = getAbsoluteXPathOfTable(table, null);
 
@@ -1983,7 +1983,7 @@ public class XPathCompList {
 
 					if (table.has_element) {
 
-						table.fields.stream().filter(field -> field.element).forEach(field -> {
+						table.elem_fields.stream().filter(field -> field.element).forEach(field -> {
 
 							String element_xpath = getAbsoluteXPathOfElement(table, field.xname, null);
 
@@ -1996,7 +1996,7 @@ public class XPathCompList {
 
 					if (table.has_any && _path_exprs_size == path_exprs.size()) {
 
-						table.fields.stream().filter(field -> field.any).forEach(field -> {
+						table.elem_fields.stream().filter(field -> field.any).forEach(field -> {
 
 							String element_xpath = getAbsoluteXPathOfElement(table, "*", null);
 
@@ -2059,7 +2059,7 @@ public class XPathCompList {
 
 								if (table.has_simple_content) {
 
-									table.fields.stream().filter(field -> field.simple_content && !field.simple_attribute).forEach(field -> {
+									table.elem_fields.stream().filter(field -> field.simple_content && !field.simple_attribute).forEach(field -> {
 
 										String simple_content_xpath = getAbsoluteXPathOfTable(table, ref_path);
 
@@ -2080,7 +2080,7 @@ public class XPathCompList {
 
 								if (table.has_element) {
 
-									table.fields.stream().filter(field -> field.element).forEach(field -> {
+									table.elem_fields.stream().filter(field -> field.element).forEach(field -> {
 
 										String element_xpath = getAbsoluteXPathOfElement(table, ref_path, field.xname);
 
@@ -2093,7 +2093,7 @@ public class XPathCompList {
 
 								if (table.has_any && (_path_exprs_size == _list.path_exprs.size())) {
 
-									table.fields.stream().filter(field -> field.any).forEach(field -> {
+									table.elem_fields.stream().filter(field -> field.any).forEach(field -> {
 
 										String element_xpath = getAbsoluteXPathOfElement(table, ref_path, "*");
 
@@ -2139,7 +2139,7 @@ public class XPathCompList {
 
 						if (table.has_element) {
 
-							table.fields.stream().filter(field -> field.element).forEach(field -> {
+							table.elem_fields.stream().filter(field -> field.element).forEach(field -> {
 
 								String element_xpath = field.xname;
 
@@ -2152,7 +2152,7 @@ public class XPathCompList {
 
 						if (table.has_any && _path_exprs_size == _list.path_exprs.size()) {
 
-							table.fields.stream().filter(field -> field.any).forEach(field -> {
+							table.elem_fields.stream().filter(field -> field.any).forEach(field -> {
 
 								String element_xpath = "*";
 
@@ -2170,7 +2170,7 @@ public class XPathCompList {
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-						int[] ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] ft_ids = table.ft_ids;
 						int[] _ft_ids = null;
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -2196,7 +2196,7 @@ public class XPathCompList {
 
 									if (foreign_table.has_simple_content) {
 
-										if (foreign_table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+										if (foreign_table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 											String simple_content_xpath = getAbsoluteXPathOfTable(foreign_table, ref_path);
 
@@ -2213,7 +2213,7 @@ public class XPathCompList {
 
 								if (foreign_table.has_element) {
 
-									foreign_table.fields.stream().filter(field -> field.element).forEach(field -> {
+									foreign_table.elem_fields.stream().filter(field -> field.element).forEach(field -> {
 
 										String element_xpath = getAbsoluteXPathOfElement(foreign_table, ref_path, field.xname);
 
@@ -2231,7 +2231,7 @@ public class XPathCompList {
 
 								if (foreign_table.virtual || !abs_path) {
 
-									int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+									int[] __ft_ids = foreign_table.ft_ids;
 
 									if (__ft_ids != null && __ft_ids.length > 0)
 										_ft_ids = __ft_ids;
@@ -2251,7 +2251,7 @@ public class XPathCompList {
 
 						if (has_any && (_path_exprs_size == _list.path_exprs.size())) {
 
-							ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							ft_ids = table.ft_ids;
 							_ft_ids = null;
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -2268,7 +2268,7 @@ public class XPathCompList {
 
 									if (foreign_table.has_any && _path_exprs_size == _list.path_exprs.size()) {
 
-										foreign_table.fields.stream().filter(field -> field.any).forEach(field -> {
+										foreign_table.elem_fields.stream().filter(field -> field.any).forEach(field -> {
 
 											String element_xpath = getAbsoluteXPathOfElement(foreign_table, ref_path, "*");
 
@@ -2283,7 +2283,7 @@ public class XPathCompList {
 
 									if (foreign_table.virtual || !abs_path) {
 
-										int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+										int[] __ft_ids = foreign_table.ft_ids;
 
 										if (__ft_ids != null && __ft_ids.length > 0)
 											_ft_ids = __ft_ids;
@@ -2352,7 +2352,7 @@ public class XPathCompList {
 
 					if (table.has_attribute || table.has_simple_attribute) {
 
-						table.fields.stream().filter(field -> field.attribute || field.simple_attribute || field.simple_attr_cond).forEach(field -> {
+						table.attr_fields.stream().filter(field -> field.attribute || field.simple_attribute || field.simple_attr_cond).forEach(field -> {
 
 							String attribute_xpath = getAbsoluteXPathOfAttribute(table, field.attribute ? field.xname : field.foreign_table_xname, null);
 
@@ -2418,7 +2418,7 @@ public class XPathCompList {
 
 									if (table.has_attribute || table.has_simple_attribute) {
 
-										table.fields.stream().filter(field -> field.attribute || field.simple_attribute || field.simple_attr_cond).forEach(field -> {
+										table.attr_fields.stream().filter(field -> field.attribute || field.simple_attribute || field.simple_attr_cond).forEach(field -> {
 
 											String attribute_xpath = getAbsoluteXPathOfAttribute(table, ref_path, field.attribute ? field.xname : field.foreign_table_xname);
 
@@ -2475,7 +2475,7 @@ public class XPathCompList {
 
 						if (table.has_attribute || table.has_simple_attribute) {
 
-							table.fields.stream().filter(field -> field.attribute || field.simple_attribute || field.simple_attr_cond).forEach(field -> {
+							table.attr_fields.stream().filter(field -> field.attribute || field.simple_attribute || field.simple_attr_cond).forEach(field -> {
 
 								String attribute_xpath = "@" + (field.attribute ? field.xname : field.foreign_table_xname);
 
@@ -2502,7 +2502,7 @@ public class XPathCompList {
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-						int[] ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] ft_ids = table.ft_ids;
 						int[] _ft_ids = null;
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -2523,7 +2523,7 @@ public class XPathCompList {
 
 								if (foreign_table.has_attribute || foreign_table.has_simple_attribute) {
 
-									foreign_table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond)).forEach(field -> {
+									foreign_table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond)).forEach(field -> {
 
 										String attribute_xpath = getAbsoluteXPathOfAttribute(foreign_table, ref_path, field.attribute ? field.xname : field.foreign_table_xname);
 
@@ -2541,7 +2541,7 @@ public class XPathCompList {
 
 								if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
 
-									int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+									int[] __ft_ids = foreign_table.ft_ids;
 
 									if (__ft_ids != null && __ft_ids.length > 0)
 										_ft_ids = __ft_ids;
@@ -2561,7 +2561,7 @@ public class XPathCompList {
 
 						if (has_any_attribute && (_path_exprs_size == _list.path_exprs.size())) {
 
-							ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							ft_ids = table.ft_ids;
 							_ft_ids = null;
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -2591,7 +2591,7 @@ public class XPathCompList {
 
 									if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
 
-										int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+										int[] __ft_ids = foreign_table.ft_ids;
 
 										if (__ft_ids != null && __ft_ids.length > 0)
 											_ft_ids = __ft_ids;
@@ -2864,7 +2864,7 @@ public class XPathCompList {
 					if (table_xpath != null && inc_self)
 						add(new XPathExpr(table_xpath, XPathCompType.table));
 
-					if (table.has_simple_content && table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card))) {
+					if (table.has_simple_content && table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card))) {
 
 						String simple_content_xpath = getAbsoluteXPathOfTable(table, null);
 
@@ -2883,7 +2883,7 @@ public class XPathCompList {
 
 					if (table.has_element) {
 
-						table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
+						table.elem_fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
 
 							String element_xpath = getAbsoluteXPathOfElement(table, field.xname, null);
 
@@ -2896,7 +2896,7 @@ public class XPathCompList {
 
 					if (table.has_any && (wild_card || _path_exprs_size == path_exprs.size())) {
 
-						table.fields.stream().filter(field -> field.any && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+						table.elem_fields.stream().filter(field -> field.any && field.target_namespace.contains(namespace_uri)).forEach(field -> {
 
 							String element_xpath = getAbsoluteXPathOfElement(table, text, null);
 
@@ -2957,7 +2957,7 @@ public class XPathCompList {
 
 								if (table.has_simple_content) {
 
-									table.fields.stream().filter(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
+									table.elem_fields.stream().filter(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
 
 										String simple_content_xpath = getAbsoluteXPathOfTable(table, ref_path);
 
@@ -2978,7 +2978,7 @@ public class XPathCompList {
 
 								if (table.has_element) {
 
-									table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
+									table.elem_fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
 
 										String element_xpath = getAbsoluteXPathOfElement(table, ref_path, field.xname);
 
@@ -2991,7 +2991,7 @@ public class XPathCompList {
 
 								if (table.has_any && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
 
-									table.fields.stream().filter(field -> field.any && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+									table.elem_fields.stream().filter(field -> field.any && field.target_namespace.contains(namespace_uri)).forEach(field -> {
 
 										String element_xpath = getAbsoluteXPathOfElement(table, ref_path, text);
 
@@ -3037,7 +3037,7 @@ public class XPathCompList {
 
 						if (table.has_element) {
 
-							table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
+							table.elem_fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
 
 								String element_xpath = field.xname;
 
@@ -3050,7 +3050,7 @@ public class XPathCompList {
 
 						if (table.has_any && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
 
-							table.fields.stream().filter(field -> field.any && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+							table.elem_fields.stream().filter(field -> field.any && field.target_namespace.contains(namespace_uri)).forEach(field -> {
 
 								String element_xpath = text;
 
@@ -3068,7 +3068,7 @@ public class XPathCompList {
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-						int[] ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] ft_ids = table.ft_ids;
 						int[] _ft_ids = null;
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -3092,7 +3092,7 @@ public class XPathCompList {
 									if (table_xpath != null && (inc_self || _ft_ids == null))
 										_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
-									if (foreign_table.has_simple_content && foreign_table.has_simple_content && foreign_table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card))) {
+									if (foreign_table.has_simple_content && foreign_table.has_simple_content && foreign_table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card))) {
 
 										String simple_content_xpath = getAbsoluteXPathOfTable(foreign_table, ref_path);
 
@@ -3107,7 +3107,7 @@ public class XPathCompList {
 
 								if (foreign_table.has_element) {
 
-									foreign_table.fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
+									foreign_table.elem_fields.stream().filter(field -> field.element && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
 
 										String element_xpath = getAbsoluteXPathOfElement(foreign_table, ref_path, field.xname);
 
@@ -3125,7 +3125,7 @@ public class XPathCompList {
 
 								if (foreign_table.virtual || !abs_path) {
 
-									int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+									int[] __ft_ids = foreign_table.ft_ids;
 
 									if (__ft_ids != null && __ft_ids.length > 0)
 										_ft_ids = __ft_ids;
@@ -3145,7 +3145,7 @@ public class XPathCompList {
 
 						if (has_any && _path_exprs_size == _list.path_exprs.size()) {
 
-							ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							ft_ids = table.ft_ids;
 							_ft_ids = null;
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -3162,7 +3162,7 @@ public class XPathCompList {
 
 									if (foreign_table.has_any && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
 
-										foreign_table.fields.stream().filter(field -> field.any && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+										foreign_table.elem_fields.stream().filter(field -> field.any && field.target_namespace.contains(namespace_uri)).forEach(field -> {
 
 											String element_xpath = getAbsoluteXPathOfElement(foreign_table, ref_path, text);
 
@@ -3177,7 +3177,7 @@ public class XPathCompList {
 
 									if (foreign_table.virtual || !abs_path) {
 
-										int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+										int[] __ft_ids = foreign_table.ft_ids;
 
 										if (__ft_ids != null && __ft_ids.length > 0)
 											_ft_ids = __ft_ids;
@@ -3252,7 +3252,7 @@ public class XPathCompList {
 
 					if (table.has_attribute || table.has_simple_attribute) {
 
-						table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
+						table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
 
 							String attribute_xpath = getAbsoluteXPathOfAttribute(table, field.attribute ? field.xname : field.foreign_table_xname, null);
 
@@ -3265,7 +3265,7 @@ public class XPathCompList {
 
 					if (table.has_any_attribute && (wild_card || _path_exprs_size == path_exprs.size())) {
 
-						table.fields.stream().filter(field -> field.any_attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+						table.attr_fields.stream().filter(field -> field.any_attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
 
 							String attribute_xpath = getAbsoluteXPathOfAttribute(table, text, null);
 
@@ -3320,7 +3320,7 @@ public class XPathCompList {
 
 								if (table.has_attribute || table.has_simple_attribute) {
 
-									table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
+									table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
 
 										String attribute_xpath = getAbsoluteXPathOfAttribute(table, ref_path, field.attribute ? field.xname : field.foreign_table_xname);
 
@@ -3333,7 +3333,7 @@ public class XPathCompList {
 
 								if (table.has_any_attribute && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
 
-									table.fields.stream().filter(field -> field.any_attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+									table.attr_fields.stream().filter(field -> field.any_attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
 
 										String attribute_xpath = getAbsoluteXPathOfAttribute(table, ref_path, text);
 
@@ -3379,7 +3379,7 @@ public class XPathCompList {
 
 						if (table.has_attribute || table.has_simple_attribute) {
 
-							table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
+							table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
 
 								String attribute_xpath = "@" + (field.attribute ? field.xname : field.foreign_table_xname);
 
@@ -3392,7 +3392,7 @@ public class XPathCompList {
 
 						if (table.has_any_attribute && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
 
-							table.fields.stream().filter(field -> field.any_attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+							table.attr_fields.stream().filter(field -> field.any_attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
 
 								String attribute_xpath = "@" + text;
 
@@ -3410,7 +3410,7 @@ public class XPathCompList {
 
 						HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-						int[] ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] ft_ids = table.ft_ids;
 						int[] _ft_ids = null;
 
 						while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -3431,7 +3431,7 @@ public class XPathCompList {
 
 								if (foreign_table.has_attribute || foreign_table.has_simple_attribute) {
 
-									foreign_table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
+									foreign_table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && field.target_namespace.contains(namespace_uri) && field.matchesNodeName(option, text, true, wild_card)).forEach(field -> {
 
 										String attribute_xpath = getAbsoluteXPathOfAttribute(foreign_table, ref_path, field.attribute ? field.xname : field.foreign_table_xname);
 
@@ -3449,7 +3449,7 @@ public class XPathCompList {
 
 								if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
 
-									int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+									int[] __ft_ids = foreign_table.ft_ids;
 
 									if (__ft_ids != null && __ft_ids.length > 0)
 										_ft_ids = __ft_ids;
@@ -3469,7 +3469,7 @@ public class XPathCompList {
 
 						if (has_any_attribute && (_path_exprs_size == _list.path_exprs.size())) {
 
-							ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							ft_ids = table.ft_ids;
 							_ft_ids = null;
 
 							while (ft_ids != null && ft_ids.length > 0 && _list.path_exprs.size() == 0) {
@@ -3488,7 +3488,7 @@ public class XPathCompList {
 
 									if (foreign_table.has_any_attribute && (wild_card || _path_exprs_size == _list.path_exprs.size())) {
 
-										foreign_table.fields.stream().filter(field -> field.any_attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
+										foreign_table.attr_fields.stream().filter(field -> field.any_attribute && field.target_namespace.contains(namespace_uri)).forEach(field -> {
 
 											String attribute_xpath = getAbsoluteXPathOfAttribute(foreign_table, ref_path, text);
 
@@ -3503,7 +3503,7 @@ public class XPathCompList {
 
 									if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
 
-										int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+										int[] __ft_ids = foreign_table.ft_ids;
 
 										if (__ft_ids != null && __ft_ids.length > 0)
 											_ft_ids = __ft_ids;
@@ -3723,7 +3723,7 @@ public class XPathCompList {
 
 				HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-				int[] ft_ids = table.ft_ids; // .fields.stream().filter(_field -> _field.nested_key).map(_field -> _field.foreign_table_id).toArray(Integer[]::new);
+				int[] ft_ids = table.ft_ids;
 				int[] _ft_ids = null;
 
 				boolean found_field = false;
@@ -3757,7 +3757,7 @@ public class XPathCompList {
 
 						if (foreign_table.virtual && !found_field) {
 
-							int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(_field -> _field.nested_key).map(_field -> _field.foreign_table_id).toArray(Integer[]::new);
+							int[] __ft_ids = foreign_table.ft_ids;
 
 							if (__ft_ids != null && __ft_ids.length > 0)
 								_ft_ids = __ft_ids;
@@ -7521,7 +7521,7 @@ public class XPathCompList {
 
 		HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-		int[] ft_ids = src_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+		int[] ft_ids = src_table.ft_ids;
 		int[] _ft_ids = null;
 
 		boolean found_table = false;
@@ -7553,7 +7553,7 @@ public class XPathCompList {
 
 					touched_tables.add(foreign_table);
 
-					int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					int[] __ft_ids = foreign_table.ft_ids;
 
 					if (__ft_ids != null && __ft_ids.length > 0)
 						_ft_ids = __ft_ids;
@@ -7571,7 +7571,7 @@ public class XPathCompList {
 
 						touched_tables.add(foreign_table);
 
-						int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] __ft_ids = foreign_table.ft_ids;
 
 						if (__ft_ids != null && __ft_ids.length > 0)
 							_ft_ids = __ft_ids;
@@ -7838,7 +7838,7 @@ public class XPathCompList {
 
 		HashSet<Integer> touched_ft_ids = new HashSet<Integer>();
 
-		int[] ft_ids = src_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+		int[] ft_ids = src_table.ft_ids;
 		int[] _ft_ids = null;
 
 		boolean found_table = false;
@@ -7869,7 +7869,7 @@ public class XPathCompList {
 
 					touched_tables.add(foreign_table);
 
-					int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+					int[] __ft_ids = foreign_table.ft_ids;
 
 					if (__ft_ids != null && __ft_ids.length > 0)
 						_ft_ids = __ft_ids;
@@ -7884,7 +7884,7 @@ public class XPathCompList {
 
 						touched_tables.add(foreign_table);
 
-						int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+						int[] __ft_ids = foreign_table.ft_ids;
 
 						if (__ft_ids != null && __ft_ids.length > 0)
 							_ft_ids = __ft_ids;
@@ -8056,7 +8056,7 @@ public class XPathCompList {
 			case element:
 				touched_ft_ids = new HashSet<Integer>();
 
-				ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+				ft_ids = table.ft_ids;
 				_ft_ids = null;
 
 				while (ft_ids != null && ft_ids.length > 0) {
@@ -8074,7 +8074,7 @@ public class XPathCompList {
 
 						// check foreign element
 
-						if (foreign_table.has_element && foreign_table.fields.stream().anyMatch(field -> field.element && field.xname.equals(_field_xname))) {
+						if (foreign_table.has_element && foreign_table.elem_fields.stream().anyMatch(field -> field.element && field.xname.equals(_field_xname))) {
 
 							try {
 								return new XPathSqlExpr(schema, path, foreign_table, _field_xname, null, null, terminus);
@@ -8087,7 +8087,7 @@ public class XPathCompList {
 
 						if (foreign_table.virtual) {
 
-							int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							int[] __ft_ids = foreign_table.ft_ids;
 
 							if (__ft_ids != null && __ft_ids.length > 0)
 								_ft_ids = __ft_ids;
@@ -8108,7 +8108,7 @@ public class XPathCompList {
 			case simple_content:
 				touched_ft_ids = new HashSet<Integer>();
 
-				ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+				ft_ids = table.ft_ids;
 				_ft_ids = null;
 
 				while (ft_ids != null && ft_ids.length > 0) {
@@ -8126,7 +8126,7 @@ public class XPathCompList {
 
 						// check foreign simple_cont
 
-						if (foreign_table.has_simple_content && foreign_table.fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+						if (foreign_table.has_simple_content && foreign_table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 							try {
 								return new XPathSqlExpr(schema, path, foreign_table, _field_xname, null, null, terminus);
@@ -8139,7 +8139,7 @@ public class XPathCompList {
 
 						if (foreign_table.virtual) {
 
-							int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							int[] __ft_ids = foreign_table.ft_ids;
 
 							if (__ft_ids != null && __ft_ids.length > 0)
 								_ft_ids = __ft_ids;
@@ -8160,7 +8160,7 @@ public class XPathCompList {
 			case attribute:
 				touched_ft_ids = new HashSet<Integer>();
 
-				ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+				ft_ids = table.ft_ids;
 				_ft_ids = null;
 
 				while (ft_ids != null && ft_ids.length > 0) {
@@ -8181,7 +8181,7 @@ public class XPathCompList {
 
 						if (foreign_table.has_attribute || foreign_table.has_simple_attribute) {
 
-							opt = foreign_table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && (field.attribute ? field.xname.equals(_field_xname) : field.foreign_table_xname.equals(_field_xname))).findFirst();
+							opt = foreign_table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && (field.attribute ? field.xname.equals(_field_xname) : field.foreign_table_xname.equals(_field_xname))).findFirst();
 
 							if (opt.isPresent()) {
 
@@ -8198,7 +8198,7 @@ public class XPathCompList {
 
 						if (foreign_table.virtual || foreign_table.has_nested_key_as_attr) {
 
-							int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							int[] __ft_ids = foreign_table.ft_ids;
 
 							if (__ft_ids != null && __ft_ids.length > 0)
 								_ft_ids = __ft_ids;
@@ -8219,7 +8219,7 @@ public class XPathCompList {
 			case any_element:
 				touched_ft_ids = new HashSet<Integer>();
 
-				ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+				ft_ids = table.ft_ids;
 				_ft_ids = null;
 
 				while (ft_ids != null && ft_ids.length > 0) {
@@ -8237,7 +8237,7 @@ public class XPathCompList {
 
 						// check foreign attribute
 
-						if (foreign_table.fields.stream().anyMatch(field -> field.any)) {
+						if (foreign_table.has_any && foreign_table.elem_fields.stream().anyMatch(field -> field.any)) {
 
 							pg_xpath_code = "xpath('/" + (has_prefix ? pg_xpath_prefix_ : "") + foreign_table.pname + "/" + (has_prefix ? pg_xpath_prefix_ : "") + _path[position].replace(" @", "/@").replace(" ", "/" + (has_prefix ? pg_xpath_prefix_: "")) + (attr_in_any ? "" : "/text()") + "', "
 									+ foreign_table.pgname + "." + PgSchemaUtil.avoidPgReservedWords(_field_xname) + (has_prefix ? ", ARRAY[ARRAY['" + pg_xpath_prefix + "', '" + schema.getNamespaceUriForPrefix("")+ "']]" : "") + ")::text[]";
@@ -8253,7 +8253,7 @@ public class XPathCompList {
 
 						if (foreign_table.virtual || foreign_table.bridge) {
 
-							int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							int[] __ft_ids = foreign_table.ft_ids;
 
 							if (__ft_ids != null && __ft_ids.length > 0)
 								_ft_ids = __ft_ids;
@@ -8274,7 +8274,7 @@ public class XPathCompList {
 			case any_attribute:
 				touched_ft_ids = new HashSet<Integer>();
 
-				ft_ids = table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+				ft_ids = table.ft_ids;
 				_ft_ids = null;
 
 				while (ft_ids != null && ft_ids.length > 0) {
@@ -8292,7 +8292,7 @@ public class XPathCompList {
 
 						// check foreign attribute
 
-						if (foreign_table.fields.stream().anyMatch(field -> field.any_attribute)) {
+						if (foreign_table.attr_fields.stream().anyMatch(field -> field.any_attribute)) {
 
 							pg_xpath_code = "xpath('/" + (has_prefix ? pg_xpath_prefix_ : "") + foreign_table.pname + "/" + _path[position].replace(" ", "/" + (has_prefix ? pg_xpath_prefix_: "")) + "', "
 									+ foreign_table.pgname + "." + PgSchemaUtil.avoidPgReservedWords(_field_xname) + (has_prefix ? ", ARRAY[ARRAY['" + pg_xpath_prefix + "', '" + schema.getNamespaceUriForPrefix("")+ "']]" : "") + ")::text[]";
@@ -8308,7 +8308,7 @@ public class XPathCompList {
 
 						if (foreign_table.virtual || foreign_table.bridge) {
 
-							int[] __ft_ids = foreign_table.ft_ids; // .fields.stream().filter(field -> field.nested_key).map(field -> field.foreign_table_id).toArray(Integer[]::new);
+							int[] __ft_ids = foreign_table.ft_ids;
 
 							if (__ft_ids != null && __ft_ids.length > 0)
 								_ft_ids = __ft_ids;

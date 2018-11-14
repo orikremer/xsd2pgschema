@@ -279,7 +279,7 @@ public class PgSchemaNodeParserBuilder {
 
 			String child_name = ((Element) child).getLocalName();
 
-			if (table.has_element && table.fields.stream().filter(field -> field.element).anyMatch(field -> child_name.equals(field.xname)))
+			if (table.has_element && table.elem_fields.stream().filter(field -> field.element).anyMatch(field -> child_name.equals(field.xname)))
 				continue;
 
 			if (!has_any) { // initial instance of new document
@@ -438,7 +438,7 @@ public class PgSchemaNodeParserBuilder {
 					if (prefixes.size() > 0 && attr_name.contains(":") && prefixes.contains(attr_name.substring(0, attr_name.indexOf(':'))))
 						continue;
 
-					if (table.has_attribute && table.fields.stream().filter(field -> field.attribute).anyMatch(field -> attr_name.equals(field.xname)))
+					if (table.has_attribute && table.attr_fields.stream().filter(field -> field.attribute).anyMatch(field -> attr_name.equals(field.xname)))
 						continue;
 
 					String attr_value = attr.getNodeValue();

@@ -1422,6 +1422,14 @@ public class PgSchema implements Serializable {
 
 		});
 
+		// preset list of attribute fields
+
+		tables.parallelStream().filter(table -> table.has_attrs).forEach(table -> table.attr_fields = table.fields.stream().filter(field -> field.attribute || field.simple_attribute || field.simple_attr_cond || field.any_attribute || field.nested_key_as_attr).collect(Collectors.toList()));
+
+		// preset list of element fields
+
+		tables.parallelStream().filter(table -> table.has_elems).forEach(table -> table.elem_fields = table.fields.stream().filter(field -> (field.simple_content && !field.simple_attribute) || field.element || field.any).collect(Collectors.toList()));
+
 		// preset list of nested fields and array of foreign table id
 
 		tables.parallelStream().filter(table -> table.total_nested_fields > 0).forEach(table -> {
@@ -5331,7 +5339,7 @@ public class PgSchema implements Serializable {
 
 				if (table.has_attribute) {
 
-					List<PgField> attrs = table.fields.stream().filter(field -> field.attribute &&
+					List<PgField> attrs = table.attr_fields.stream().filter(field -> field.attribute &&
 							!option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) &&
 							(option.document_key || !option.in_place_document_key || (!option.in_place_document_key_names.contains(field.name) && !option.in_place_document_key_names.contains(table.name + "." + field.name)))).collect(Collectors.toList());
 
@@ -5442,7 +5450,7 @@ public class PgSchema implements Serializable {
 
 				if (table.has_attribute) {
 
-					List<PgField> attrs = table.fields.stream().filter(field -> field.attribute &&
+					List<PgField> attrs = table.attr_fields.stream().filter(field -> field.attribute &&
 							!option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) &&
 							(option.document_key || !option.in_place_document_key || (!option.in_place_document_key_names.contains(field.name) && !option.in_place_document_key_names.contains(table.name + "." + field.name)))).collect(Collectors.toList());
 

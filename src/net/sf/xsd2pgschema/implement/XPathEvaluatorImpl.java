@@ -148,7 +148,7 @@ public class XPathEvaluatorImpl {
 			return;
 
 		long start_time = System.currentTimeMillis();
-		
+
 		xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_query));
 
 		CommonTokenStream tokens = new CommonTokenStream(lexer);

@@ -154,6 +154,12 @@ public class PgTable implements Serializable {
 	/** Whether table could have writer. */
 	public boolean writable = false;
 
+	/** The field list of attribute. */
+	public List<PgField> attr_fields = null;
+
+	/** The field list of element. */
+	public List<PgField> elem_fields = null;
+
 	/** The field list of nested key. */
 	public List<PgField> nested_fields = null;
 
