@@ -56,10 +56,6 @@ import org.postgresql.core.BaseConnection;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
-import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2LucIdx;
-import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2PgCsv;
-import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2PgSql;
-import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2SphDs;
 import net.sf.xsd2pgschema.nodeparser.PgSchemaNodeParserBuilder;
 import net.sf.xsd2pgschema.nodeparser.PgSchemaNodeParserType;
 import net.sf.xsd2pgschema.option.IndexFilter;
@@ -618,7 +614,7 @@ public class PgSchema implements Serializable {
 
 			pg_named_schemata = new HashSet<String>();
 
-			tables.parallelStream().filter(table -> table.writable).filter(table -> !table.schema_name.equals(PgSchemaUtil.pg_public_schema_name)).forEach(table -> pg_named_schemata.add(table.schema_name));
+			tables.stream().filter(table -> table.writable).filter(table -> !table.schema_name.equals(PgSchemaUtil.pg_public_schema_name)).forEach(table -> pg_named_schemata.add(table.schema_name)); // do not parallelize this because of order change
 
 		}
 
@@ -4854,7 +4850,9 @@ public class PgSchema implements Serializable {
 
 		// parse root node and write to data (CSV/TSV) file
 
-		new PgSchemaNode2PgCsv(new PgSchemaNodeParserBuilder(this, PgSchemaNodeParserType.pg_data_migration), root_table, node);
+		PgSchemaNodeParserBuilder npb = new PgSchemaNodeParserBuilder(this, PgSchemaNodeParserType.pg_data_migration);
+
+		npb.xml2PgCsv(root_table, node);
 
 	}
 
@@ -4968,8 +4966,6 @@ public class PgSchema implements Serializable {
 
 		}
 
-		// parse root node and send to PostgreSQL
-
 		if (update || sync_rescue) {
 
 			deleteBeforeUpdate(option.rel_data_ext && option.pg_retain_key);
@@ -4979,7 +4975,11 @@ public class PgSchema implements Serializable {
 
 		}
 
-		new PgSchemaNode2PgSql(new PgSchemaNodeParserBuilder(this, PgSchemaNodeParserType.pg_data_migration), root_table, node, update);
+		// parse root node and send to PostgreSQL
+
+		PgSchemaNodeParserBuilder npb = new PgSchemaNodeParserBuilder(this, PgSchemaNodeParserType.pg_data_migration);
+
+		npb.xml2PgSql(root_table, node, update);
 
 		try {
 			db_conn.commit(); // transaction ends
@@ -5736,7 +5736,9 @@ public class PgSchema implements Serializable {
 
 		lucene_doc.add(new StringField(option.document_key_name, document_id, Field.Store.YES));
 
-		new PgSchemaNode2LucIdx(new PgSchemaNodeParserBuilder(this, PgSchemaNodeParserType.full_text_indexing), root_table, node, index_filter.min_word_len, index_filter.lucene_numeric_index);
+		PgSchemaNodeParserBuilder npb = new PgSchemaNodeParserBuilder(this, PgSchemaNodeParserType.full_text_indexing);
+
+		npb.xml2LucIdx(root_table, node, index_filter);
 
 	}
 
@@ -6025,15 +6027,17 @@ public class PgSchema implements Serializable {
 
 		resetAttrSelRdy();
 
-		// parse root node and write to Sphinx xmlpipe2 file
-
 		try {
 
 			sph_ds_buffw.write("<?xml version=\"" + PgSchemaUtil.def_xml_version + "\" encoding=\"" + PgSchemaUtil.def_encoding + "\"?>\n");
 			sph_ds_buffw.write("<sphinx:document id=\"" + getHashKeyString(document_id) + "\" xmlns:sphinx=\"" + PgSchemaUtil.sph_namespace_uri + "\">\n");
 			sph_ds_buffw.write("<" + option.document_key_name + ">" + StringEscapeUtils.escapeXml10(document_id) + "</" + option.document_key_name + ">\n");
 
-			new PgSchemaNode2SphDs(new PgSchemaNodeParserBuilder(this, PgSchemaNodeParserType.full_text_indexing), root_table, node, index_filter.min_word_len);
+			// parse root node and write to Sphinx xmlpipe2 file
+
+			PgSchemaNodeParserBuilder npb = new PgSchemaNodeParserBuilder(this, PgSchemaNodeParserType.full_text_indexing);
+
+			npb.xml2SphDs(root_table, node, index_filter);
 
 			sph_ds_buffw.write("</sphinx:document>\n");
 

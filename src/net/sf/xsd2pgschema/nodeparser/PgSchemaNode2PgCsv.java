@@ -61,27 +61,6 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	private String[] values;
 
 	/**
-	 * Parse root node and write to data (CSV/TSV) file.
-	 *
-	 * @param npb node parser builder
-	 * @param table current table
-	 * @param root_node root node
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public PgSchemaNode2PgCsv(final PgSchemaNodeParserBuilder npb, final PgTable table, final Node root_node) throws PgSchemaException {
-
-		super(npb, null, table);
-
-		if (table.writable)
-			init(false);
-
-		parseRootNode(root_node);
-
-		clear();
-
-	}
-
-	/**
 	 * Node parser for CSV/TSV conversion.
 	 *
 	 * @param npb node parser builder

@@ -53,30 +53,6 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	private String[] values;
 
 	/**
-	 * Parse root node and write to Sphinx xmlpipe2 file.
-	 *
-	 * @param npb node parser builder
-	 * @param table current table
-	 * @param root_node root node
-	 * @param min_word_len minimum word length for indexing
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public PgSchemaNode2SphDs(final PgSchemaNodeParserBuilder npb, final PgTable table, final Node root_node, final int min_word_len) throws PgSchemaException {
-
-		super(npb, null, table);
-
-		this.min_word_len = min_word_len;
-
-		if (table.indexable)
-			init(false);
-
-		parseRootNode(root_node);
-
-		clear();
-
-	}
-
-	/**
 	 * Node parser for Sphinx xmlpipe2 conversion.
 	 *
 	 * @param npb node parser builder

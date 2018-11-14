@@ -148,7 +148,7 @@ public class XPathEvaluatorImpl {
 			return;
 
 		long start_time = System.currentTimeMillis();
-
+		
 		xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_query));
 
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
@@ -166,16 +166,18 @@ public class XPathEvaluatorImpl {
 		if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
 			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
+		long end_time = System.currentTimeMillis();
+
 		xpath_comp_list = new XPathCompList(client.schema, tree, variables);
 
 		if (xpath_comp_list.comps.size() == 0)
 			throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
 
-		long end_time = System.currentTimeMillis();
+		long end_time_ = System.currentTimeMillis();
 
 		xpath_comp_list.validate(false);
 
-		long end_time_ = System.currentTimeMillis();
+		long end_time__ = System.currentTimeMillis();
 
 		if (xpath_comp_list.path_exprs.size() == 0)
 			throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
@@ -196,7 +198,7 @@ public class XPathEvaluatorImpl {
 
 		xpath_comp_list.showSqlExpr(sb);
 
-		sb.append("\nXPath parse time: " + (end_time - start_time) + " ms\nXPath validation time: " + (end_time_ - end_time) + " ms\n\nSQL translation time: " + (end_time2 - start_time2) + " ms\n\n");
+		sb.append("\nXPath parser (ANTLR 4): " + (end_time - start_time) + " ms\nXPath serialization: " + (end_time_ - end_time) + "ms\nXPath validation: " + (end_time__ - end_time_) + " ms\n\nSQL translation: " + (end_time2 - start_time2) + " ms\n\n");
 
 		if (stdout_msg)
 			System.out.print(sb.toString());
@@ -348,7 +350,7 @@ public class XPathEvaluatorImpl {
 				bout.close();
 
 				System.out.println("Generated " + (option.pg_delimiter == '\t' ? "TSV" : "CSV") + " document: " + out_file_path.toAbsolutePath().toString());
-				System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
+				System.out.println("\nSQL execution: " + (end_time - start_time) + " ms");
 
 			}
 
@@ -356,7 +358,7 @@ public class XPathEvaluatorImpl {
 
 				bout.flush();
 
-				System.err.println("SQL execution time: " + (end_time - start_time) + " ms");
+				System.err.println("SQL execution: " + (end_time - start_time) + " ms");
 
 			}
 
@@ -469,7 +471,7 @@ public class XPathEvaluatorImpl {
 				out.close();
 
 				System.out.println("Generated XML document: " + out_file_path.toAbsolutePath().toString());
-				System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
+				System.out.println("\nSQL execution: " + (end_time - start_time) + " ms");
 
 			}
 
@@ -477,7 +479,7 @@ public class XPathEvaluatorImpl {
 
 				xml_writer.close();
 
-				System.err.println("\nSQL execution time: " + (end_time - start_time) + " ms");
+				System.err.println("\nSQL execution: " + (end_time - start_time) + " ms");
 
 			}
 
@@ -584,7 +586,7 @@ public class XPathEvaluatorImpl {
 				out.close();
 
 				System.out.println("Generated JSON document: " + out_file_path.toAbsolutePath().toString());
-				System.out.println("\nSQL execution time: " + (end_time - start_time) + " ms");
+				System.out.println("\nSQL execution: " + (end_time - start_time) + " ms");
 
 			}
 
@@ -592,7 +594,7 @@ public class XPathEvaluatorImpl {
 
 				out.flush();
 
-				System.err.println("\nSQL execution time: " + (end_time - start_time) + " ms");
+				System.err.println("\nSQL execution: " + (end_time - start_time) + " ms");
 
 			}
 

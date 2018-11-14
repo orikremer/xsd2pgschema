@@ -56,32 +56,6 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	private String[] values;
 
 	/**
-	 * Parse root node and store to Lucene document.
-	 *
-	 * @param npb node parser builder
-	 * @param table current table
-	 * @param root_node root node
-	 * @param min_word_len minimum word length for indexing
-	 * @param numeric_index whether numeric values are stored in Lucene index
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public PgSchemaNode2LucIdx(final PgSchemaNodeParserBuilder npb, final PgTable table, final Node root_node, final int min_word_len, boolean numeric_index) throws PgSchemaException {
-
-		super(npb, null, table);
-
-		this.min_word_len = min_word_len;
-		this.numeric_index = numeric_index;
-
-		if (table.indexable)
-			init(false);
-
-		parseRootNode(root_node);
-
-		clear();
-
-	}
-
-	/**
 	 * Node parser for Lucene document conversion.
 	 *
 	 * @param npb node parser builder

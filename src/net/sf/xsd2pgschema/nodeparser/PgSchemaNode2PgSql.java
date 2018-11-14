@@ -58,30 +58,6 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	private boolean[] occupied;
 
 	/**
-	 * Parse root node and send to PostgreSQL.
-	 *
-	 * @param npb node parser builder
-	 * @param table current table
-	 * @param root_node root node
-	 * @param update whether update or insertion
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public PgSchemaNode2PgSql(final PgSchemaNodeParserBuilder npb, final PgTable table, final Node root_node, final boolean update) throws PgSchemaException {
-
-		super(npb, null, table);
-
-		this.update = update;
-
-		if (table.writable)
-			init(false);
-
-		parseRootNode(root_node);
-
-		clear();
-
-	}
-
-	/**
 	 * Node parser for PostgreSQL data migration.
 	 *
 	 * @param npb node parser builder

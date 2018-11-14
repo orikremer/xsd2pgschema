@@ -49,7 +49,6 @@ import net.sf.xsd2pgschema.PgSchema;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
-import net.sf.xsd2pgschema.nodeparser.PgSchemaNode2Json;
 import net.sf.xsd2pgschema.nodeparser.PgSchemaNodeParserBuilder;
 import net.sf.xsd2pgschema.type.PgHashSize;
 import net.sf.xsd2pgschema.type.XsTableType;
@@ -1697,86 +1696,8 @@ public class JsonBuilder extends CommonBuilder {
 
 	// JSON conversion
 
-	// Object-oriented JSON conversion
-
 	/**
-	 * Object-oriented JSON conversion.
-	 *
-	 * @param xml_parser XML parser
-	 * @param md_hash_key instance of message digest
-	 * @param json_file_path JSON file path
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void xml2ObjJson(XmlParser xml_parser, MessageDigest md_hash_key, Path json_file_path) throws PgSchemaException {
-
-		Node node = schema.getRootNode(xml_parser);
-
-		schema.md_hash_key = md_hash_key;
-
-		writeStartDocument(true);
-
-		// parse root node and store to JSON buffer
-
-		new PgSchemaNode2Json(new PgSchemaNodeParserBuilder(this), root_table, node, 1);
-
-		writeEndDocument();
-
-		try {
-
-			OutputStream out = Files.newOutputStream(json_file_path);
-
-			write(out);
-
-			out.close();
-
-		} catch (IOException e) {
-			throw new PgSchemaException(e);
-		}
-
-	}
-
-	// Column-oriented JSON conversion
-
-	/**
-	 * Column-oriented JSON conversion.
-	 *
-	 * @param xml_parser XML parser
-	 * @param md_hash_key instance of message digest
-	 * @param json_file_path JSON file path
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public void xml2ColJson(XmlParser xml_parser, MessageDigest md_hash_key, Path json_file_path) throws PgSchemaException {
-
-		Node node = schema.getRootNode(xml_parser);
-
-		schema.md_hash_key = md_hash_key;
-
-		writeStartDocument(true);
-
-		// parse root node and store to JSON buffer
-
-		new PgSchemaNode2Json(new PgSchemaNodeParserBuilder(this), root_table, node, 1);
-
-		writeEndDocument();
-
-		try {
-
-			OutputStream out = Files.newOutputStream(json_file_path);
-
-			write(out);
-
-			out.close();
-
-		} catch (IOException e) {
-			throw new PgSchemaException(e);
-		}
-
-	}
-
-	// Relational-oriented JSON conversion
-
-	/**
-	 * Relational-oriented JSON conversion.
+	 * JSON conversion.
 	 *
 	 * @param xml_parser XML parser
 	 * @param md_hash_key instance of message digest
@@ -1785,16 +1706,6 @@ public class JsonBuilder extends CommonBuilder {
 	 */
 	public void xml2Json(XmlParser xml_parser, MessageDigest md_hash_key, Path json_file_path) throws PgSchemaException {
 
-		switch (type) {
-		case object:
-			xml2ObjJson(xml_parser, md_hash_key, json_file_path);
-			return;
-		case column:
-			xml2ColJson(xml_parser, md_hash_key, json_file_path);
-			return;
-		default:
-		}
-
 		Node node = schema.getRootNode(xml_parser);
 
 		schema.md_hash_key = md_hash_key;
@@ -1803,15 +1714,23 @@ public class JsonBuilder extends CommonBuilder {
 
 		// parse root node and store to JSON buffer
 
-		new PgSchemaNode2Json(new PgSchemaNodeParserBuilder(this), root_table, node);
+		PgSchemaNodeParserBuilder npb = new PgSchemaNodeParserBuilder(this);
 
-		tables.stream().filter(_table -> _table.jsonable && _table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).forEach(_table -> {
+		npb.xml2Json(root_table, node);
 
-			writeStartTable(_table, true, 1);
-			writeFields(_table, 2);
-			writeEndTable();
+		boolean relational = type.equals(JsonType.relational);
 
-		});
+		if (relational) {
+
+			tables.stream().filter(table -> table.jsonable && table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+
+				writeStartTable(table, true, 1);
+				writeFields(table, 2);
+				writeEndTable();
+
+			});
+
+		}
 
 		writeEndDocument();
 
@@ -1827,20 +1746,24 @@ public class JsonBuilder extends CommonBuilder {
 			throw new PgSchemaException(e);
 		}
 
-		// no support on conditional attribute
+		if (relational) {
 
-		tables.stream().filter(table -> table.jsonable).forEach(table -> {
+			// no support on conditional attribute
 
-			table.fields.stream().filter(field -> field.simple_attr_cond).forEach(field -> {
+			tables.stream().filter(table -> table.jsonable).forEach(table -> {
 
-				String cont_name = table.name + "." + field.name;
-				String attr_name = schema.getForeignTable(field).nested_fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.foreign_table_xname;
+				table.fields.stream().filter(field -> field.simple_attr_cond).forEach(field -> {
 
-				System.err.println("[WARNING] Simple content \"" + (case_sense ? cont_name : cont_name.toLowerCase()) + "\" may be confused with attribute \"" + (case_sense ? attr_name : attr_name.toLowerCase()) + "\" in relational-oriented JSON format.");
+					String cont_name = table.name + "." + field.name;
+					String attr_name = schema.getForeignTable(field).nested_fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.foreign_table_xname;
+
+					System.err.println("[WARNING] Simple content \"" + (case_sense ? cont_name : cont_name.toLowerCase()) + "\" may be confused with attribute \"" + (case_sense ? attr_name : attr_name.toLowerCase()) + "\" in relational-oriented JSON format.");
+
+				});
 
 			});
 
-		});
+		}
 
 	}
 

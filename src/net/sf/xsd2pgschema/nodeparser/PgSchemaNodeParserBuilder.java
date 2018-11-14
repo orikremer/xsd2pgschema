@@ -57,6 +57,7 @@ import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
 import net.sf.xsd2pgschema.docbuilder.JsonBuilder;
+import net.sf.xsd2pgschema.option.IndexFilter;
 import net.sf.xsd2pgschema.type.PgHashSize;
 import net.sf.xsd2pgschema.type.PgSerSize;
 
@@ -195,6 +196,7 @@ public class PgSchemaNodeParserBuilder {
 		parser_type = PgSchemaNodeParserType.json_conversion;
 
 		this.jsonb = jsonb;
+
 		schema = jsonb.schema;
 
 		fill_default_value = schema.option.fill_default_value;
@@ -658,6 +660,102 @@ public class PgSchemaNodeParserBuilder {
 			if (upsert)
 				ps.setInt(field.sql_upsert_id, ordinal);
 		}
+
+	}
+
+	/**
+	 * Parse root node and write to data (CSV/TSV) file.
+	 *
+	 * @param root_table root table
+	 * @param root_node root node
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void xml2PgCsv(PgTable root_table, Node root_node) throws PgSchemaException {
+
+		PgSchemaNode2PgCsv np = new PgSchemaNode2PgCsv(this, null, root_table, false);
+
+		np.parseRootNode(root_node);
+
+		np.clear();
+
+	}
+
+	/**
+	 * Parse root node and send to PostgreSQL.
+	 *
+	 * @param root_table root table
+	 * @param root_node root node
+	 * @param update whether update or insertion
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void xml2PgSql(PgTable root_table, Node root_node, boolean update) throws PgSchemaException {
+
+		PgSchemaNode2PgSql np = new PgSchemaNode2PgSql(this, null, root_table, false, update);
+
+		np.parseRootNode(root_node);
+
+		np.clear();
+
+	}
+
+	/**
+	 * Parse root node and store to Lucene document.
+	 *
+	 * @param root_table root table
+	 * @param root_node root node
+	 * @param index_filter index filter
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void xml2LucIdx(PgTable root_table, Node root_node, IndexFilter index_filter) throws PgSchemaException {
+
+		PgSchemaNode2LucIdx np = new PgSchemaNode2LucIdx(this, null, root_table, false, index_filter.min_word_len, index_filter.lucene_numeric_index);
+
+		np.parseRootNode(root_node);
+
+		np.clear();
+
+	}
+
+	/**
+	 * Parse root node and write to Sphinx xmlpipe2 file.
+	 *
+	 * @param root_table root table
+	 * @param root_node root node
+	 * @param index_filter index filter
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void xml2SphDs(PgTable root_table, Node root_node, IndexFilter index_filter) throws PgSchemaException {
+
+		PgSchemaNode2SphDs np = new PgSchemaNode2SphDs(this, null, root_table, false, index_filter.min_word_len);
+
+		np.parseRootNode(root_node);
+
+		np.clear();
+
+	}
+
+	/**
+	 * Parser root node and store to JSON buffer.
+	 *
+	 * @param root_table root table
+	 * @param root_node root node
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void xml2Json(PgTable root_table, Node root_node) throws PgSchemaException {
+
+		PgSchemaNode2Json np = new PgSchemaNode2Json(this, null, root_table, false);
+
+		switch (jsonb.type) {
+		case column:
+		case object:
+			np.parseRootNode(root_node, 1);
+			break;
+		case relational:
+			np.parseRootNode(root_node);
+			break;
+		}
+
+		np.clear();
 
 	}
 

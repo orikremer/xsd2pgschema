@@ -56,61 +56,6 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	private String[] values;
 
 	/**
-	 * Parse root node and store to JSON buffer: Relational-oriented JSON format
-	 *
-	 * @param npb node parser builder
-	 * @param table current table
-	 * @param root_node root node
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public PgSchemaNode2Json(final PgSchemaNodeParserBuilder npb, final PgTable table, final Node root_node) throws PgSchemaException {
-
-		super(npb, null, table);
-
-		jsonb = npb.jsonb;
-
-		if (table.jsonable) {
-
-			as_attr = false;
-
-			schema_ver = jsonb.schema_ver;
-			concat_value_space = jsonb.concat_value_space;
-
-			values = new String[fields_size];
-
-		}
-
-		parseRootNode(root_node);
-
-		clear();
-
-	}
-
-	/**
-	 * Parse root node and store to JSON buffer: Column- or Object-oriented JSON format
-	 *
-	 * @param npb node parser builder
-	 * @param table current table
-	 * @param root_node root node
-	 * @param indent_level current indent level
-	 * @throws PgSchemaException the pg schema exception
-	 */
-	public PgSchemaNode2Json(final PgSchemaNodeParserBuilder npb, final PgTable table, final Node root_node, final int indent_level) throws PgSchemaException {
-
-		super(npb, null, table);
-
-		jsonb = npb.jsonb;
-
-		if (table.jsonable)
-			init(false);
-
-		parseRootNode(root_node, indent_level);
-
-		clear();
-
-	}
-
-	/**
 	 * Node parser for JSON conversion.
 	 *
 	 * @param npb node parser builder
@@ -154,7 +99,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	 * @param indent_level current indent level
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void parseRootNode(final Node root_node, int indent_level) throws PgSchemaException {
+	protected void parseRootNode(final Node root_node, int indent_level) throws PgSchemaException {
 
 		node_test.setRootNode(root_node, npb.document_id + "/" + table.xname);
 
