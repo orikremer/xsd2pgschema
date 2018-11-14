@@ -1,9 +1,12 @@
-﻿ Changes in xsd2pgschema 3.0.7 (release 2018-11-13)
+﻿ Changes in xsd2pgschema 3.0.7 (release 2018-11-14)
 
   Allowed to follow URL redirection of schema location.
   Automatic redirect system message to stderr if redirect of result to stdout.
   Added --del-invalid-xml option in xmlvalidator main class.
-  Set --create-attr-index option by default.
+  Added support for CREATE/DROP of PostgreSQL index on element. (--create-elem-index, --no-create-elem-index (default), --drop-elem-index, and --max-elem-cols-for-index options)
+  Added support for CREATE/DROP of PostgreSQL index on simple content. (--create-simple-cont-index (default), --no-create-simple-cont-index, and --drop-simple-cont-index options)
+  Set --create-attr-index and --create-simple-cont-index option by default.
+  Performance improvements of XPath serializer, XPath translation, and XPath evaluation.
 
  Changes in xsd2pgschema 3.0.6 (release 2018-10-25)
 
@@ -18,7 +21,7 @@
   Added xsi:schemaLocation attribute in result of XPath evaluation.
   Added xsi:nil attributes in empty element if @nillable="true". Please use --xml-no-nil-elem option in xpath2xml main class to suppress the xsi:nil attribute.
   Fixed --xml-insert-doc-key option did not work in 3.0.5.
-  Further performance improvements in XPath evaluation.
+  Further performance improvements of XPath evaluation.
   Added precision control to value of double or float column.
   Revised comments in PostgreSQL DDL with regard to the mapping of integer/decimal numbers.
 

@@ -337,6 +337,16 @@ public class Xml2PgCsvThrd implements Runnable {
 					client.schema.createAttrIndex(db_conn, pg_option.max_attr_cols_for_index, pg_option.min_rows_for_doc_key_index);
 				else if (pg_option.drop_attr_index)
 					client.schema.dropAttrIndex(db_conn);
+				
+				if (pg_option.create_elem_index)
+					client.schema.createElemIndex(db_conn, pg_option.max_elem_cols_for_index, pg_option.min_rows_for_doc_key_index);
+				else if (pg_option.drop_elem_index)
+					client.schema.dropElemIndex(db_conn);
+				
+				if (pg_option.create_simple_cont_index)
+					client.schema.createSimpleContIndex(db_conn, pg_option.min_rows_for_doc_key_index);
+				else if (pg_option.drop_simple_cont_index)
+					client.schema.dropSimpleContIndex(db_conn);
 
 			}
 

@@ -118,6 +118,27 @@ public class csv2pgsql {
 			else if (args[i].equals("--max-attr-cols-for-index") && i + 1 < args.length)
 				pg_option.setMaxAttrColsForIndex(args[++i]);
 
+			else if (args[i].equals("--create-elem-index"))
+				pg_option.setCreateElemIndex(true);
+
+			else if (args[i].equals("--no-create-elem-index"))
+				pg_option.setCreateElemIndex(false);
+
+			else if (args[i].equals("--drop-elem-index"))
+				pg_option.setDropElemIndex();
+
+			else if (args[i].equals("--max-elem-cols-for-index") && i + 1 < args.length)
+				pg_option.setMaxElemColsForIndex(args[++i]);
+
+			else if (args[i].equals("--create-simple-cont-index"))
+				pg_option.setCreateSimpleContIndex(true);
+
+			else if (args[i].equals("--no-create-simple-cont-index"))
+				pg_option.setCreateSimpleContIndex(false);
+
+			else if (args[i].equals("--drop-simple-cont-index"))
+				pg_option.setDropSimpleContIndex();
+
 			else if (args[i].equals("--doc-key"))
 				option.setDocKeyOption(true);
 
@@ -304,6 +325,13 @@ public class csv2pgsql {
 		System.err.println("        --no-create-attr-index (do not create PostgreSQL index on attribute)");
 		System.err.println("        --drop-attr-index (drop PostgreSQL index on attribute if exists)");
 		System.err.println("        --max-attr-cols-for-index MAX_ATTR_COLS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_max_attr_cols_for_index + "\")");
+		System.err.println("        --create-elem-index (create PostgreSQL index on element if not exists)");
+		System.err.println("        --no-create-elem-index (do not create PostgreSQL index on element, default)");
+		System.err.println("        --drop-elem-index (drop PostgreSQL index on element if exists)");
+		System.err.println("        --max-elem-cols-for-index MAX_ATTR_COLS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_max_elem_cols_for_index + "\")");
+		System.err.println("        --create-simple-cont-index (create PostgreSQL index on simple content if not exists, default)");
+		System.err.println("        --no-create-simple-cont-index (do not create PostgreSQL index on simple content)");
+		System.err.println("        --drop-simple-cont-index (drop PostgreSQL index on simple content if exists)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");

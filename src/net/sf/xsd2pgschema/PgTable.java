@@ -166,6 +166,9 @@ public class PgTable implements Serializable {
 	/** The list of foreign table id. */
 	public int[] ft_ids = null;
 
+	/** The absolute XPath expression (internal use only). */
+	public HashMap<String, String> abs_xpath_expr = new HashMap<String, String>();
+
 	/** Whether name collision occurs. */
 	@Flat
 	protected boolean name_collision = false;
@@ -229,10 +232,6 @@ public class PgTable implements Serializable {
 	/** The secondary prepared statement (internal use only). */
 	@Flat
 	public PreparedStatement ps2 = null;
-
-	/** The absolute XPath expression (internal use only). */
-	@Flat
-	public HashMap<String, String> abs_xpath_expr = null;
 
 	/**
 	 * Instance of PostgreSQL table.

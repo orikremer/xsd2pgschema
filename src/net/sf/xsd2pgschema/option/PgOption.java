@@ -58,11 +58,26 @@ public class PgOption {
 	/** Whether to drop PostgreSQL index on attribute. */
 	public boolean drop_attr_index = false;
 
+	/** Whether to create PostgreSQL index on element. */
+	public boolean create_elem_index = false;
+
+	/** Whether to drop PostgreSQL index on element. */
+	public boolean drop_elem_index = false;
+
+	/** Whether to create PostgreSQL index on simple content. */
+	public boolean create_simple_cont_index = true;
+
+	/** Whether to drop PostgreSQL index on simple content. */
+	public boolean drop_simple_cont_index = false;
+
 	/** The minimum rows for creation of PostgreSQL index on document key. */
 	public int min_rows_for_doc_key_index = PgSchemaUtil.pg_min_rows_for_doc_key_index;
 
 	/** The maximum attribute columns for creation of PostgreSQL index on the attributes (except for in-place document key). */
 	public int max_attr_cols_for_index = PgSchemaUtil.pg_max_attr_cols_for_index;
+
+	/** The maximum element columns for creation of PostgreSQL index on the elements (except for in-place document key). */
+	public int max_elem_cols_for_index = PgSchemaUtil.pg_max_elem_cols_for_index;
 
 	/** The internal status corresponding to --create-doc-key-index option. */
 	private boolean _create_doc_key_index = false;
@@ -81,6 +96,24 @@ public class PgOption {
 
 	/** The internal status corresponding to --drop-attr-index option. */
 	private boolean _drop_attr_index = false;
+
+	/** The internal status corresponding to --create-elem-index option. */
+	private boolean _create_elem_index = false;
+
+	/** The internal status corresponding to --no-create-elem-index option. */
+	private boolean _no_create_elem_index = false;
+
+	/** The internal status corresponding to --drop-elem-index option. */
+	private boolean _drop_elem_index = false;
+
+	/** The internal status corresponding to --create-simple-cont-index option. */
+	private boolean _create_simple_cont_index = false;
+
+	/** The internal status corresponding to --no-create-simple-cont-index option. */
+	private boolean _no_create_simple_cont_index = false;
+
+	/** The internal status corresponding to --drop-simple-cont-index option. */
+	private boolean _drop_simple_cont_index = false;
 
 	/**
 	 * Return database URL for JDBC connection.
@@ -291,6 +324,140 @@ public class PgOption {
 
 		drop_attr_index = _drop_attr_index = true;
 		create_attr_index = false;
+
+		return true;
+	}
+
+	/**
+	 * Set maximum element columns to create PostgreSQL index on the elements.
+	 *
+	 * @param max_elem_cols_for_index argument value
+	 */
+	public void setMaxElemColsForIndex(String max_elem_cols_for_index) {
+
+		this.max_elem_cols_for_index = Integer.valueOf(max_elem_cols_for_index);
+
+		if (this.max_elem_cols_for_index > PgSchemaUtil.pg_limit_elem_cols_for_index) {
+			System.err.println("Maximum element colomuns for creation of PostgreSQL index on the elements is greater than " + PgSchemaUtil.pg_limit_elem_cols_for_index + ". Set to the default value.");
+			this.max_elem_cols_for_index = PgSchemaUtil.pg_limit_elem_cols_for_index;
+		}
+
+	}
+
+	/**
+	 * Set internal status corresponding to --create-elem-index and --no-create-elem-index options.
+	 *
+	 * @param create whether to create index on element
+	 * @return boolean whether status changed
+	 */
+	public boolean setCreateElemIndex(boolean create) {
+
+		if (create) {
+
+			if (_no_create_elem_index) {
+				System.err.println("--no-create-elem-index is already set.");
+				return false;
+			}
+
+			if (_drop_elem_index) {
+				System.err.println("--drop-elem-index is already set.");
+				return false;
+			}
+
+			_create_elem_index = true;
+			drop_elem_index = false;
+
+		}
+
+		else {
+
+			if (_create_elem_index) {
+				System.err.println("--create-elem-index is already set.");
+				return false;
+			}
+
+			_no_create_elem_index = true;
+
+		}
+
+		create_elem_index = create;
+
+		return true;
+	}
+
+	/**
+	 * Set internal status corresponding to --drop-elem-index option.
+	 *
+	 * @return boolean whether status changed
+	 */
+	public boolean setDropElemIndex() {
+
+		if (_create_elem_index) {
+			System.err.println("--create-elem-index is already set.");
+			return false;
+		}
+
+		drop_elem_index = _drop_elem_index = true;
+		create_elem_index = false;
+
+		return true;
+	}
+
+	/**
+	 * Set internal status corresponding to --create-simple-cont-index and --no-create-simple-cont-index options.
+	 *
+	 * @param create whether to create index on simple content
+	 * @return boolean whether status changed
+	 */
+	public boolean setCreateSimpleContIndex(boolean create) {
+
+		if (create) {
+
+			if (_no_create_simple_cont_index) {
+				System.err.println("--no-create-simple-cont-index is already set.");
+				return false;
+			}
+
+			if (_drop_simple_cont_index) {
+				System.err.println("--drop-simple-cont-index is already set.");
+				return false;
+			}
+
+			_create_simple_cont_index = true;
+			drop_simple_cont_index = false;
+
+		}
+
+		else {
+
+			if (_create_simple_cont_index) {
+				System.err.println("--create-simple-cont-index is already set.");
+				return false;
+			}
+
+			_no_create_simple_cont_index = true;
+
+		}
+
+		create_simple_cont_index = create;
+
+		return true;
+	}
+
+	/**
+	 * Set internal status corresponding to --drop-simple-cont-index option.
+	 *
+	 * @return boolean whether status changed
+	 */
+	public boolean setDropSimpleContIndex() {
+
+		if (_create_simple_cont_index) {
+			System.err.println("--create-simple-cont-index is already set.");
+			return false;
+		}
+
+		drop_simple_cont_index = _drop_simple_cont_index = true;
+		create_simple_cont_index = false;
 
 		return true;
 	}

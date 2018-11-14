@@ -113,6 +113,9 @@ public class XPathCompList {
 	/** The root table. */
 	private PgTable root_table = null;
 
+	/** The cache for XPath parser. */
+	private XPathCache cache = null;
+
 	/** Instance of path expression for UnionExprNoRootContext node. */
 	private List<XPathExpr> path_exprs_union = null;
 
@@ -142,6 +145,8 @@ public class XPathCompList {
 		tables = schema.getTableList();
 
 		root_table = schema.getRootTable();
+
+		cache = schema.xpath_cache;
 
 		document_key = option.document_key || option.in_place_document_key;
 
@@ -3921,9 +3926,6 @@ public class XPathCompList {
 	 */
 	private String getAbsoluteXPathOfTable(PgTable table, String ref_path) {
 
-		if (table.abs_xpath_expr == null)
-			table.abs_xpath_expr = new HashMap<String, String>();
-
 		String abs_xpath_expr = table.abs_xpath_expr.get(ref_path);
 
 		if (abs_xpath_expr != null)
@@ -3977,16 +3979,18 @@ public class XPathCompList {
 
 		Optional<PgTable> opt;
 
+		int table_id = tables.indexOf(table);
+
 		if (attr) {
 
-			opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+			opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 			if (opt.isPresent())
 				return getAbsoluteXPathOfTable(opt.get(), ref_path, attr, true, sb);
 
 		}
 
-		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> (as_attr ? !field.nested_key_as_attr : true) && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> (as_attr ? !field.nested_key_as_attr : true) && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		return opt.isPresent() ? getAbsoluteXPathOfTable(opt.get(), ref_path, attr, false, sb) : null;
 	}
@@ -4001,11 +4005,18 @@ public class XPathCompList {
 	 */
 	private String getAbsoluteXPathOfAttribute(PgTable table, String ref_path, String text) {
 
-		StringBuilder sb = new StringBuilder();
+		String _ref_path = ref_path + "/@" + text;
 
-		sb.append("@" + text);
+		String abs_xpath_expr = table.abs_xpath_expr.get(_ref_path);
 
-		return getAbsoluteXPathOfTable(table, ref_path, true, false, sb);
+		if (abs_xpath_expr != null)
+			return abs_xpath_expr;
+
+		StringBuilder sb = new StringBuilder("@" + text);
+
+		table.abs_xpath_expr.put(_ref_path, abs_xpath_expr = getAbsoluteXPathOfTable(table, ref_path, true, false, sb));
+
+		return abs_xpath_expr;
 	}
 
 	/**
@@ -4018,24 +4029,19 @@ public class XPathCompList {
 	 */
 	private String getAbsoluteXPathOfElement(PgTable table, String ref_path, String text) {
 
-		StringBuilder sb = new StringBuilder();
+		String _ref_path = ref_path + "/" + text;
 
-		sb.append(text);
+		String abs_xpath_expr = table.abs_xpath_expr.get(_ref_path);
 
-		return getAbsoluteXPathOfTable(table, ref_path, false, false, sb);
+		if (abs_xpath_expr != null)
+			return abs_xpath_expr;
+
+		StringBuilder sb = new StringBuilder(text);
+
+		table.abs_xpath_expr.put(_ref_path, abs_xpath_expr = getAbsoluteXPathOfTable(table, ref_path, false, false, sb));
+
+		return abs_xpath_expr;
 	}
-
-	/** Unmatched table. */
-	private HashSet<String> unmatched_tables = null;
-
-	/** Unmatched path. */
-	private HashSet<String> unmatched_paths = null;
-
-	/** Single matched table. */
-	private HashMap<String, PgTable> single_matched_tables = null;
-
-	/** Uniquely matched table. */
-	private HashMap<String, PgTable> unique_matched_tables = null;
 
 	/**
 	 * Return table of XPath expression.
@@ -4045,68 +4051,56 @@ public class XPathCompList {
 	 */
 	protected PgTable getTable(XPathExpr path_expr) {
 
-		if (unmatched_tables == null)
-			unmatched_tables = new HashSet<String>();
-
 		String table_xname = path_expr.getLastPathName();
 
-		if (unmatched_tables.contains(table_xname))
-			return null;
+		if (schema.getTotalPgNamedSchemaa() == 1) {
 
-		Optional<PgTable> opt = tables.parallelStream().filter(table -> table.xname.equals(table_xname)).findFirst();
+			PgTable hit_table = cache.matched_paths.get(table_xname);
 
-		if (!opt.isPresent()) {
+			if (hit_table != null)
+				return hit_table;
 
-			unmatched_tables.add(table_xname);
+			if (cache.unmatched_paths.contains(table_xname))
+				return null;
+
+			Optional<PgTable> opt = tables.parallelStream().filter(table -> table.xname.equals(table_xname)).findFirst();
+
+			if (opt.isPresent()) {
+
+				hit_table = opt.get();
+
+				cache.matched_paths.put(table_xname, hit_table);
+
+				return hit_table;
+			}
+
+			cache.unmatched_paths.add(table_xname);
 
 			return null;
 		}
-
-		if (single_matched_tables == null)
-			single_matched_tables = new HashMap<String, PgTable>();
-
-		PgTable hit_table = single_matched_tables.get(table_xname);
-
-		if (hit_table != null)
-			return hit_table;
-
-		if (tables.parallelStream().filter(table -> table.xname.equals(table_xname)).count() == 1) {
-
-			hit_table = opt.get();
-
-			single_matched_tables.put(table_xname, hit_table);
-
-			return hit_table;
-		}
-
-		if (unique_matched_tables == null)
-			unique_matched_tables = new HashMap<String, PgTable>();
 
 		String path = path_expr.getReadablePath();
 
-		hit_table = unique_matched_tables.get(path);
+		PgTable hit_table = cache.matched_paths.get(path);
 
 		if (hit_table != null)
 			return hit_table;
 
-		if (unmatched_paths == null)
-			unmatched_paths = new HashSet<String>();
-
-		if (unmatched_paths.contains(path))
+		if (cache.unmatched_paths.contains(path))
 			return null;
 
-		opt = tables.parallelStream().filter(table -> table.xname.equals(table_xname) && getAbsoluteXPathOfTable(table, null).endsWith(path)).findFirst();
+		Optional<PgTable> opt = tables.parallelStream().filter(table -> table.xname.equals(table_xname) && getAbsoluteXPathOfTable(table, null).endsWith(path)).findFirst();
 
 		if (opt.isPresent()) {
 
 			hit_table = opt.get();
 
-			unique_matched_tables.put(path, hit_table);
+			cache.matched_paths.put(path, hit_table);
 
 			return hit_table;
 		}
 
-		unmatched_paths.add(path);
+		cache.unmatched_paths.add(path);
 
 		return null;
 	}
@@ -7281,12 +7275,14 @@ public class XPathCompList {
 
 		Optional<PgTable> opt;
 
-		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+		int table_id = tables.indexOf(table);
+
+		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		if (opt.isPresent())
 			testJoinClauseForSimpleTypeAttr(opt.get(), ref_path, linking_tables, linking_order);
 
-		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> !field.nested_key_as_attr && schema.getTable(field.foreign_table_id).equals(table) && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> !field.nested_key_as_attr && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		if (opt.isPresent())
 			testJoinClauseForSimpleTypeAttr(opt.get(), ref_path, linking_tables, linking_order);
@@ -7676,19 +7672,19 @@ public class XPathCompList {
 
 				target_tables.remove(dst_table);
 
-				PgTable _dst_table = dst_table;
+				int dst_table_id = tables.indexOf(dst_table);
 
-				PgField nested_key = src_table.nested_fields.stream().filter(field -> schema.getTable(field.foreign_table_id).equals(_dst_table)).findFirst().get();
+				PgField nested_key = src_table.nested_fields.stream().filter(field -> field.foreign_table_id == dst_table_id).findFirst().get();
 
 				appendSqlColumnName(src_table, nested_key.pname, sb);
 
 				sb.append(" = ");
 
-				appendSqlColumnName(schema.getTable(nested_key.foreign_table_id), nested_key.foreign_field_pname, sb);
+				appendSqlColumnName(dst_table, nested_key.foreign_field_pname, sb);
 
 				sb.append(" AND ");
 
-				src_table = _dst_table;
+				src_table = dst_table;
 
 			}
 
@@ -7921,19 +7917,19 @@ public class XPathCompList {
 
 			target_tables.remove(dst_table);
 
-			PgTable _dst_table = dst_table;
+			int dst_table_id = tables.indexOf(dst_table);
 
-			PgField nested_key = src_table.nested_fields.stream().filter(field -> schema.getTable(field.foreign_table_id).equals(_dst_table)).findFirst().get();
+			PgField nested_key = src_table.nested_fields.stream().filter(field -> field.foreign_table_id == dst_table_id).findFirst().get();
 
 			appendSqlColumnName(src_table, nested_key.pname, sb);
 
 			sb.append(" = ");
 
-			appendSqlColumnName(schema.getTable(nested_key.foreign_table_id), nested_key.foreign_field_pname, sb);
+			appendSqlColumnName(dst_table, nested_key.foreign_field_pname, sb);
 
 			sb.append(" AND ");
 
-			src_table = _dst_table;
+			src_table = dst_table;
 
 		}
 

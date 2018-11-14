@@ -216,6 +216,12 @@ public class PgSchemaUtil {
 	/** The limit number of attribute columns for creation of PostgreSQL index on the attributes (except for in-place document key). */
 	public static final int pg_limit_attr_cols_for_index = 128;
 
+	/** The maximum element columns for creation of PostgreSQL index on the elements (except for in-place document key). */
+	public static final int pg_max_elem_cols_for_index = 1;
+
+	/** The limit number of element columns for creation of PostgreSQL index on the elements (except for in-place document key). */
+	public static final int pg_limit_elem_cols_for_index = 128;
+
 	/** The default buffer size for BufferedOutputStream(). */
 	public static final int def_buffered_output_stream_buffer_size = 1024 * 128;
 

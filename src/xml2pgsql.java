@@ -171,6 +171,27 @@ public class xml2pgsql {
 			else if (args[i].equals("--max-attr-cols-for-index") && i + 1 < args.length)
 				pg_option.setMaxAttrColsForIndex(args[++i]);
 
+			else if (args[i].equals("--create-elem-index"))
+				pg_option.setCreateElemIndex(true);
+
+			else if (args[i].equals("--no-create-elem-index"))
+				pg_option.setCreateElemIndex(false);
+
+			else if (args[i].equals("--drop-elem-index"))
+				pg_option.setDropElemIndex();
+
+			else if (args[i].equals("--max-elem-cols-for-index") && i + 1 < args.length)
+				pg_option.setMaxElemColsForIndex(args[++i]);
+
+			else if (args[i].equals("--create-simple-cont-index"))
+				pg_option.setCreateSimpleContIndex(true);
+
+			else if (args[i].equals("--no-create-simple-cont-index"))
+				pg_option.setCreateSimpleContIndex(false);
+
+			else if (args[i].equals("--drop-simple-cont-index"))
+				pg_option.setDropSimpleContIndex();
+
 			else if (args[i].equals("--fill-default-value"))
 				xml_post_editor.fill_default_value = true;
 
@@ -544,6 +565,13 @@ public class xml2pgsql {
 		System.err.println("        --no-create-attr-index (do not create PostgreSQL index on attribute)");
 		System.err.println("        --drop-attr-index (drop PostgreSQL index on attribute if exists)");
 		System.err.println("        --max-attr-cols-for-index MAX_ATTR_COLS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_max_attr_cols_for_index + "\")");
+		System.err.println("        --create-elem-index (create PostgreSQL index on element if not exists)");
+		System.err.println("        --no-create-elem-index (do not create PostgreSQL index on element, default)");
+		System.err.println("        --drop-elem-index (drop PostgreSQL index on element if exists)");
+		System.err.println("        --max-elem-cols-for-index MAX_ATTR_COLS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_max_elem_cols_for_index + "\")");
+		System.err.println("        --create-simple-cont-index (create PostgreSQL index on simple content if not exists, default)");
+		System.err.println("        --no-create-simple-cont-index (do not create PostgreSQL index on simple content)");
+		System.err.println("        --drop-simple-cont-index (drop PostgreSQL index on simple content if exists)");
 		System.err.println("        --update (insert if not exists, and update if required, default)");
 		System.err.println("        --sync CHECK_SUM_DIRECTORY (insert if not exists, update if required, and delete rows if XML not exists, select --create-doc-key-index option by default)");
 		System.err.println("        --sync-weak (insert if not exists, no update even if exists, no deletion, select --create-doc-key-index option by default)");

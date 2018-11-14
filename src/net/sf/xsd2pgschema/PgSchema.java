@@ -65,6 +65,7 @@ import net.sf.xsd2pgschema.type.PgHashSize;
 import net.sf.xsd2pgschema.type.XsFieldType;
 import net.sf.xsd2pgschema.type.XsTableType;
 import net.sf.xsd2pgschema.xmlutil.XmlParser;
+import net.sf.xsd2pgschema.xpathparser.XPathCache;
 
 /**
  * PostgreSQL data model.
@@ -97,6 +98,9 @@ public class PgSchema implements Serializable {
 	/** The PostgreSQL table for questing document id. */
 	private PgTable doc_id_table = null;
 
+	/** The total number of PostgreSQL named schema. */
+	private int total_pg_named_schema = 1;
+
 	/** Whether arbitrary table has any element. */
 	private boolean has_any = false;
 
@@ -119,9 +123,9 @@ public class PgSchema implements Serializable {
 	@Flat
 	private HashSet<String> schema_locations = null;
 
-	/** The PostgreSQL named schemata. */
+	/** The PostgreSQL named schema. */
 	@Flat
-	private HashSet<String> pg_named_schemata = null;
+	private HashSet<String> pg_named_schema = null;
 
 	/** The unique schema locations (value) with its target namespace (key). */
 	@Flat
@@ -223,7 +227,7 @@ public class PgSchema implements Serializable {
 		boolean root = parent_schema == null;
 		root_schema = root ? this : parent_schema;
 
-		// detect entry point of XML schemata
+		// detect entry point of XML schema
 
 		def_schema_parent = root ? PgSchemaUtil.getSchemaParent(def_schema_location) : root_schema.def_schema_parent;
 
@@ -604,7 +608,7 @@ public class PgSchema implements Serializable {
 		if (!root)
 			return;
 
-		// collect PostgreSQL named schemata
+		// collect PostgreSQL named schema
 
 		if (option.pg_named_schema) {
 
@@ -612,11 +616,16 @@ public class PgSchema implements Serializable {
 
 			tables.parallelStream().filter(table -> table.required && (option.rel_model_ext || !table.relational)).forEach(table -> table.writable = true);
 
-			pg_named_schemata = new HashSet<String>();
+			pg_named_schema = new HashSet<String>();
 
-			tables.stream().filter(table -> table.writable).filter(table -> !table.schema_name.equals(PgSchemaUtil.pg_public_schema_name)).forEach(table -> pg_named_schemata.add(table.schema_name)); // do not parallelize this because of order change
+			tables.stream().filter(table -> table.writable).filter(table -> !table.schema_name.equals(PgSchemaUtil.pg_public_schema_name)).forEach(table -> pg_named_schema.add(table.schema_name)); // do not parallelize this because of order change
+
+			total_pg_named_schema = pg_named_schema.size();
 
 		}
+
+		// allocation cache for XPath parser
+		xpath_cache = new XPathCache();
 
 		// apply pending attribute groups (lazy evaluation)
 
@@ -1309,8 +1318,8 @@ public class PgSchema implements Serializable {
 
 		if (option.pg_named_schema) {
 
-			pg_named_schemata.clear();
-			pg_named_schemata = null;
+			pg_named_schema.clear();
+			pg_named_schema = null;
 
 		}
 
@@ -2906,6 +2915,15 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
+	 * Return total number of PostgreSQL named schema.
+	 *
+	 * @return int total number of PostgreSQL named schema
+	 */
+	public int getTotalPgNamedSchemaa() {
+		return total_pg_named_schema;
+	}
+
+	/**
 	 * Return whether arbitrary table has any element.
 	 *
 	 * @return boolean whether arbitrary table has any element
@@ -3362,17 +3380,17 @@ public class PgSchema implements Serializable {
 
 		if (option.pg_named_schema) {
 
-			if (!pg_named_schemata.isEmpty()) {
+			if (!pg_named_schema.isEmpty()) {
 
 				// short of memory in case of huge database
-				// pg_named_schemata.forEach(named_schema -> System.out.println("DROP SCHEMA IF EXISTS " + PgSchemaUtil.avoidPgReservedWords(named_schema) + " CASCADE;"));
+				// pg_named_schema.forEach(named_schema -> System.out.println("DROP SCHEMA IF EXISTS " + PgSchemaUtil.avoidPgReservedWords(named_schema) + " CASCADE;"));
 				// System.out.println("");
 
-				pg_named_schemata.forEach(named_schema -> System.out.println("CREATE SCHEMA IF NOT EXISTS " + PgSchemaUtil.avoidPgReservedWords(named_schema) + ";"));
+				pg_named_schema.forEach(named_schema -> System.out.println("CREATE SCHEMA IF NOT EXISTS " + PgSchemaUtil.avoidPgReservedWords(named_schema) + ";"));
 
 				System.out.print("\nSET search_path TO ");
 
-				pg_named_schemata.forEach(named_schema -> System.out.print(PgSchemaUtil.avoidPgReservedWords(named_schema) + ", "));
+				pg_named_schema.forEach(named_schema -> System.out.print(PgSchemaUtil.avoidPgReservedWords(named_schema) + ", "));
 
 				System.out.println(PgSchemaUtil.pg_public_schema_name + ";\n");
 
@@ -5111,7 +5129,7 @@ public class PgSchema implements Serializable {
 
 		try {
 
-			if (has_db_rows == null)
+			if (has_db_rows.size() == 0)
 				initHasDbRows();
 
 			Statement stat = db_conn.createStatement();
@@ -5171,7 +5189,7 @@ public class PgSchema implements Serializable {
 
 		this.db_conn = db_conn;
 
-		if (has_db_rows == null)
+		if (has_db_rows.size() == 0)
 			initHasDbRows();
 
 		try {
@@ -5256,7 +5274,7 @@ public class PgSchema implements Serializable {
 
 		this.db_conn = db_conn;
 
-		if (has_db_rows == null)
+		if (has_db_rows.size() == 0)
 			initHasDbRows();
 
 		try {
@@ -5324,7 +5342,7 @@ public class PgSchema implements Serializable {
 
 		this.db_conn = db_conn;
 
-		if (has_db_rows == null)
+		if (has_db_rows.size() == 0)
 			initHasDbRows();
 
 		try {
@@ -5435,7 +5453,7 @@ public class PgSchema implements Serializable {
 
 		this.db_conn = db_conn;
 
-		if (has_db_rows == null)
+		if (has_db_rows.size() == 0)
 			initHasDbRows();
 
 		try {
@@ -5502,8 +5520,386 @@ public class PgSchema implements Serializable {
 
 	}
 
+	/**
+	 * Create PostgreSQL index on element if not exists.
+	 *
+	 * @param db_conn database connection
+	 * @param max_elem_count maximum count of element columns to create index
+	 * @param min_row_count minimum count of rows to create index
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void createElemIndex(Connection db_conn, int max_elem_count, int min_row_count) throws PgSchemaException {
+
+		if (max_elem_count < 1)
+			return;
+
+		this.db_conn = db_conn;
+
+		if (has_db_rows.size() == 0)
+			initHasDbRows();
+
+		try {
+
+			Statement stat = db_conn.createStatement();
+
+			DatabaseMetaData meta = db_conn.getMetaData();
+
+			has_db_rows.entrySet().stream().filter(arg -> arg.getValue()).map(arg -> arg.getKey()).forEach(table_name -> {
+
+				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
+
+				if (table.has_element) {
+
+					List<PgField> elems = table.elem_fields.stream().filter(field -> field.element &&
+							!option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) &&
+							(option.document_key || !option.in_place_document_key || (!option.in_place_document_key_names.contains(field.name) && !option.in_place_document_key_names.contains(table.name + "." + field.name)))).collect(Collectors.toList());
+
+					int elem_count = elems.size();
+
+					if (elem_count > 0 && elem_count <= max_elem_count) {
+
+						try {
+
+							ResultSet rset = meta.getIndexInfo(null, option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name, false, true);
+
+							boolean[] has_index = new boolean[elem_count];
+
+							Arrays.fill(has_index, false);
+
+							while (rset.next()) {
+
+								String column_name = rset.getString("COLUMN_NAME");
+
+								if (column_name != null)
+									elems.stream().filter(elem -> column_name.contains(elem.pname)).forEach(elem -> has_index[elems.indexOf(elem)] = true);
+
+							}
+
+							rset.close();
+
+							boolean has_no_index = false;
+
+							for (boolean _has_index : has_index)
+								has_no_index |= !_has_index;
+
+							if (has_no_index) {
+
+								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + min_row_count + " ) AS trunc";
+
+								rset = stat.executeQuery(sql);
+
+								String elem_pname;
+
+								while (rset.next()) {
+
+									if (rset.getInt(1) == min_row_count) {
+
+										for (int elem_id = 0; elem_id < elem_count; elem_id++) {
+
+											if (has_index[elem_id])
+												continue;
+
+											elem_pname = elems.get(elem_id).pname;
+
+											sql = "CREATE INDEX IDX_" + table_name + "_" + elem_pname + " ON " + table.pgname + " ( " + PgSchemaUtil.avoidPgReservedWords(elem_pname) + " )";
+
+											stat.execute(sql);
+
+											System.out.println(sql);
+
+										}
+
+										break;
+									}
+
+								}
+
+								rset.close();
+
+							}
+
+						} catch (SQLException e) {
+							e.printStackTrace();
+						}
+
+					}
+
+				}
+
+			});
+
+			stat.close();
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
+	/**
+	 * Drop PostgreSQL index on elements if exists.
+	 *
+	 * @param db_conn database connection
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void dropElemIndex(Connection db_conn) throws PgSchemaException {
+
+		this.db_conn = db_conn;
+
+		if (has_db_rows.size() == 0)
+			initHasDbRows();
+
+		try {
+
+			Statement stat = db_conn.createStatement();
+
+			DatabaseMetaData meta = db_conn.getMetaData();
+
+			has_db_rows.entrySet().stream().filter(arg -> arg.getValue()).map(arg -> arg.getKey()).forEach(table_name -> {
+
+				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
+
+				if (table.has_element) {
+
+					List<PgField> elems = table.elem_fields.stream().filter(field -> field.element &&
+							!option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) &&
+							(option.document_key || !option.in_place_document_key || (!option.in_place_document_key_names.contains(field.name) && !option.in_place_document_key_names.contains(table.name + "." + field.name)))).collect(Collectors.toList());
+
+					int elem_count = elems.size();
+
+					if (elem_count > 0) {
+
+						try {
+
+							ResultSet rset = meta.getIndexInfo(null, option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name, false, true);
+
+							String sql;
+
+							while (rset.next()) {
+
+								String index_name = rset.getString("INDEX_NAME");
+								String column_name = rset.getString("COLUMN_NAME");
+
+								if (index_name != null && elems.stream().anyMatch(elem -> index_name.equalsIgnoreCase("IDX_" + table_name + "_" + elem.pname)) && column_name != null && elems.stream().anyMatch(elem -> column_name.equals(elem.pname))) {
+
+									sql = "DROP INDEX " + PgSchemaUtil.avoidPgReservedWords(index_name);
+
+									stat.execute(sql);
+
+									System.out.println(sql);
+
+									break;
+								}
+
+							}
+
+							rset.close();
+
+						} catch (SQLException e) {
+							e.printStackTrace();
+						}
+
+					}
+
+				}
+
+			});
+
+			stat.close();
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
+	/**
+	 * Create PostgreSQL index on simple content if not exists.
+	 *
+	 * @param db_conn database connection
+	 * @param min_row_count minimum count of rows to create index
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void createSimpleContIndex(Connection db_conn, int min_row_count) throws PgSchemaException {
+
+		this.db_conn = db_conn;
+
+		if (has_db_rows.size() == 0)
+			initHasDbRows();
+
+		try {
+
+			Statement stat = db_conn.createStatement();
+
+			DatabaseMetaData meta = db_conn.getMetaData();
+
+			has_db_rows.entrySet().stream().filter(arg -> arg.getValue()).map(arg -> arg.getKey()).forEach(table_name -> {
+
+				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
+
+				if (table.has_simple_content) {
+
+					List<PgField> simple_conts = table.elem_fields.stream().filter(field -> field.simple_content).collect(Collectors.toList());
+
+					int simple_cont_count = simple_conts.size();
+
+					if (simple_cont_count > 0) {
+
+						try {
+
+							ResultSet rset = meta.getIndexInfo(null, option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name, false, true);
+
+							boolean[] has_index = new boolean[simple_cont_count];
+
+							Arrays.fill(has_index, false);
+
+							while (rset.next()) {
+
+								String column_name = rset.getString("COLUMN_NAME");
+
+								if (column_name != null)
+									simple_conts.stream().filter(simple_cont -> column_name.contains(simple_cont.pname)).forEach(simple_cont -> has_index[simple_conts.indexOf(simple_cont)] = true);
+
+							}
+
+							rset.close();
+
+							boolean has_no_index = false;
+
+							for (boolean _has_index : has_index)
+								has_no_index |= !_has_index;
+
+							if (has_no_index) {
+
+								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + min_row_count + " ) AS trunc";
+
+								rset = stat.executeQuery(sql);
+
+								String simple_cont_pname;
+
+								while (rset.next()) {
+
+									if (rset.getInt(1) == min_row_count) {
+
+										for (int simple_cont_id = 0; simple_cont_id < simple_cont_count; simple_cont_id++) {
+
+											if (has_index[simple_cont_id])
+												continue;
+
+											simple_cont_pname = simple_conts.get(simple_cont_id).pname;
+
+											sql = "CREATE INDEX IDX_" + table_name + "_" + simple_cont_pname + " ON " + table.pgname + " ( " + PgSchemaUtil.avoidPgReservedWords(simple_cont_pname) + " )";
+
+											stat.execute(sql);
+
+											System.out.println(sql);
+
+										}
+
+										break;
+									}
+
+								}
+
+								rset.close();
+
+							}
+
+						} catch (SQLException e) {
+							e.printStackTrace();
+						}
+
+					}
+
+				}
+
+			});
+
+			stat.close();
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
+	/**
+	 * Drop PostgreSQL index on simple contents if exists.
+	 *
+	 * @param db_conn database connection
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void dropSimpleContIndex(Connection db_conn) throws PgSchemaException {
+
+		this.db_conn = db_conn;
+
+		if (has_db_rows.size() == 0)
+			initHasDbRows();
+
+		try {
+
+			Statement stat = db_conn.createStatement();
+
+			DatabaseMetaData meta = db_conn.getMetaData();
+
+			has_db_rows.entrySet().stream().filter(arg -> arg.getValue()).map(arg -> arg.getKey()).forEach(table_name -> {
+
+				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
+
+				if (table.has_simple_content) {
+
+					List<PgField> simple_conts = table.elem_fields.stream().filter(field -> field.simple_content).collect(Collectors.toList());
+
+					int simple_cont_count = simple_conts.size();
+
+					if (simple_cont_count > 0) {
+
+						try {
+
+							ResultSet rset = meta.getIndexInfo(null, option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name, false, true);
+
+							String sql;
+
+							while (rset.next()) {
+
+								String index_name = rset.getString("INDEX_NAME");
+								String column_name = rset.getString("COLUMN_NAME");
+
+								if (index_name != null && simple_conts.stream().anyMatch(simple_cont -> index_name.equalsIgnoreCase("IDX_" + table_name + "_" + simple_cont.pname)) && column_name != null && simple_conts.stream().anyMatch(simple_cont -> column_name.equals(simple_cont.pname))) {
+
+									sql = "DROP INDEX " + PgSchemaUtil.avoidPgReservedWords(index_name);
+
+									stat.execute(sql);
+
+									System.out.println(sql);
+
+									break;
+								}
+
+							}
+
+							rset.close();
+
+						} catch (SQLException e) {
+							e.printStackTrace();
+						}
+
+					}
+
+				}
+
+			});
+
+			stat.close();
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
 	/** Whether PostgreSQL table has any rows. */
-	private HashMap<String, Boolean> has_db_rows = null;
+	private HashMap<String, Boolean> has_db_rows = new HashMap<String, Boolean>();
 
 	/**
 	 * Initialize whether PostgreSQL table has any rows.
@@ -5513,9 +5909,6 @@ public class PgSchema implements Serializable {
 	private void initHasDbRows() throws PgSchemaException {
 
 		try {
-
-			if (has_db_rows == null)
-				has_db_rows = new HashMap<String, Boolean>();
 
 			Statement stat = db_conn.createStatement();
 
@@ -5567,7 +5960,7 @@ public class PgSchema implements Serializable {
 	}
 
 	/** The set of PostgreSQL table. */
-	private HashSet<String> db_tables = null;
+	private HashSet<String> db_tables = new HashSet<String>();
 
 	/**
 	 * Return exact table name in PostgreSQL
@@ -5577,9 +5970,7 @@ public class PgSchema implements Serializable {
 	 */
 	private String getDbTableName(String table_name) throws PgSchemaException {
 
-		if (db_tables == null) {
-
-			db_tables = new HashSet<String>();
+		if (db_tables.size() == 0) {
 
 			try {
 
@@ -6082,5 +6473,8 @@ public class PgSchema implements Serializable {
 
 		return sph_mvas;
 	}
+
+	/** Cache for XPath parser. */
+	public XPathCache xpath_cache = null;
 
 }

@@ -1967,8 +1967,14 @@ public class JsonBuilder extends CommonBuilder {
 
 			// document key
 
-			if (table.doc_key_pname != null)
-				document_id = rset.getString(table.fields.stream().filter(field -> field.pname.equals(table.doc_key_pname)).findFirst().get().sql_param_id);
+			PgField document_key = null;
+
+			if (table.doc_key_pname != null) {
+
+				document_key = table.fields.stream().filter(field -> field.pname.equals(table.doc_key_pname)).findFirst().get();
+				document_id = rset.getString(document_key.sql_param_id);
+
+			}
 
 			// attribute, any_attribute
 
@@ -2037,29 +2043,31 @@ public class JsonBuilder extends CommonBuilder {
 
 			}
 
+			// insert document key
+
+			if (insert_doc_key && document_key != null && !table.equals(root_table)) {
+				/*
+				if (table.equals(root_table))
+					throw new PgSchemaException("Not allowed to insert document key to root element.");
+				 */
+				if (pending_elem.peek() != null)
+					writePendingElems(false);
+
+				writePendingSimpleCont();
+
+				writeField(table, document_key, false, rset.getString(document_key.sql_param_id), nest_test.child_indent_level);
+
+				nest_test.has_content = true;
+
+			}
+
 			// simple_content, element, any
 
-			if (table.has_elems || schema.option.document_key) {
+			if (table.has_elems) {
 
-				for (PgField field : table.fields) { // include document key
+				for (PgField field : table.elem_fields) {
 
-					if (insert_doc_key && field.document_key && !table.equals(root_table)) {
-						/*
-						if (table.equals(root_table))
-							throw new PgSchemaException("Not allowed to insert document key to root element.");
-						 */
-						if (pending_elem.peek() != null)
-							writePendingElems(false);
-
-						writePendingSimpleCont();
-
-						writeField(table, field, false, rset.getString(field.sql_param_id), nest_test.child_indent_level);
-
-						nest_test.has_content = true;
-
-					}
-
-					else if (field.simple_content && !field.simple_attribute) {
+					if (field.simple_content && !field.simple_attribute) {
 
 						content = field.retrieve(rset);
 
