@@ -1369,11 +1369,17 @@ public class PgSchema implements Serializable {
 
 			// preset XML start/end element tag template for document key
 
-			if (option.document_key) {
+			if (option.document_key || option.in_place_document_key) {
 
-				PgField field = table.fields.stream().filter(_field -> _field.document_key).findFirst().get();
+				Optional<PgField> opt = table.fields.stream().filter(field -> field.document_key).findFirst();
 
-				field.start_end_elem_tag = new String("<<" + (table.prefix.isEmpty() ? "" : table.prefix + ":") + field.xname + ">").getBytes(PgSchemaUtil.def_charset);
+				if (opt.isPresent()) {
+
+					PgField field = opt.get();
+
+					field.start_end_elem_tag = new String("<<" + (table.prefix.isEmpty() ? "" : table.prefix + ":") + field.xname + ">").getBytes(PgSchemaUtil.def_charset);
+
+				}
 
 			}
 
