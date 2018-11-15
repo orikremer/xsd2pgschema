@@ -331,22 +331,22 @@ public class Xml2PgSqlThrd implements Runnable {
 				db_conn.setAutoCommit(true);
 
 				if (pg_option.create_doc_key_index)
-					client.schema.createDocKeyIndex(db_conn, pg_option.min_rows_for_doc_key_index);
+					client.schema.createDocKeyIndex(db_conn, pg_option);
 				else if (pg_option.drop_doc_key_index)
 					client.schema.dropDocKeyIndex(db_conn);
 
 				if (pg_option.create_attr_index)
-					client.schema.createAttrIndex(db_conn, pg_option.max_attr_cols_for_index, pg_option.min_rows_for_doc_key_index);
+					client.schema.createAttrIndex(db_conn, pg_option);
 				else if (pg_option.drop_attr_index)
 					client.schema.dropAttrIndex(db_conn);
 
 				if (pg_option.create_elem_index)
-					client.schema.createElemIndex(db_conn, pg_option.max_elem_cols_for_index, pg_option.min_rows_for_doc_key_index);
+					client.schema.createElemIndex(db_conn, pg_option);
 				else if (pg_option.drop_elem_index)
 					client.schema.dropElemIndex(db_conn);
 
 				if (pg_option.create_simple_cont_index)
-					client.schema.createSimpleContIndex(db_conn, pg_option.min_rows_for_doc_key_index);
+					client.schema.createSimpleContIndex(db_conn, pg_option);
 				else if (pg_option.drop_simple_cont_index)
 					client.schema.dropSimpleContIndex(db_conn);
 

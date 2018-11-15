@@ -9,6 +9,7 @@
   Performance improvements of XPath serializer, XPath translation, and XPath evaluation.
   Allowed to use simple content as in-place document key when table name is specified by --inplace-doc-key-name (table_name).content format.
   Added orphan table report in PostgreSQL DDL.
+  Added --max-fks-for-simple-cont-index option to escape from error while index because huge simple content excesses PostgreSQL working memory.
 
  Changes in xsd2pgschema 3.0.6 (release 2018-10-25)
 

@@ -79,6 +79,9 @@ public class PgOption {
 	/** The maximum element columns for creation of PostgreSQL index on the elements (except for in-place document key). */
 	public int max_elem_cols_for_index = PgSchemaUtil.pg_max_elem_cols_for_index;
 
+	/** The maximum foreign keys in a table for creation of PostgreSQL index on the simple content. */
+	public int max_fks_for_simple_cont_index = PgSchemaUtil.pg_max_fks_for_simple_cont_index;
+
 	/** The internal status corresponding to --create-doc-key-index option. */
 	private boolean _create_doc_key_index = false;
 
@@ -460,6 +463,22 @@ public class PgOption {
 		create_simple_cont_index = false;
 
 		return true;
+	}
+
+	/**
+	 * Set maximum foreign keys in a table to create PostgreSQL index on the simple content.
+	 *
+	 * @param max_fks_for_simple_cont_index argument value
+	 */
+	public void setMaxFKsForSimpleContIndex(String max_fks_for_simple_cont_index) {
+
+		this.max_fks_for_simple_cont_index = Integer.valueOf(max_fks_for_simple_cont_index);
+
+		if (this.max_fks_for_simple_cont_index > PgSchemaUtil.pg_limit_fks_for_simple_cont_index) {
+			System.err.println("Maximum element colomuns for creation of PostgreSQL index on the elements is greater than " + PgSchemaUtil.pg_limit_fks_for_simple_cont_index + ". Set to the default value.");
+			this.max_fks_for_simple_cont_index = PgSchemaUtil.pg_limit_elem_cols_for_index;
+		}
+
 	}
 
 }

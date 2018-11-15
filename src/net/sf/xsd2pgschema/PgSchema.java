@@ -59,6 +59,7 @@ import org.xml.sax.SAXException;
 import net.sf.xsd2pgschema.nodeparser.PgSchemaNodeParserBuilder;
 import net.sf.xsd2pgschema.nodeparser.PgSchemaNodeParserType;
 import net.sf.xsd2pgschema.option.IndexFilter;
+import net.sf.xsd2pgschema.option.PgOption;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
 import net.sf.xsd2pgschema.option.XmlPostEditor;
 import net.sf.xsd2pgschema.type.PgHashSize;
@@ -5212,10 +5213,10 @@ public class PgSchema implements Serializable {
 	 * Create PostgreSQL index on document key if not exists.
 	 *
 	 * @param db_conn database connection
-	 * @param min_row_count minimum count of rows to create index
+	 * @param pg_option PostgreSQL option
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void createDocKeyIndex(Connection db_conn, int min_row_count) throws PgSchemaException {
+	public void createDocKeyIndex(Connection db_conn, PgOption pg_option) throws PgSchemaException {
 
 		this.db_conn = db_conn;
 
@@ -5257,13 +5258,13 @@ public class PgSchema implements Serializable {
 
 					if (!has_index) {
 
-						String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + min_row_count + " ) AS trunc";
+						String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_doc_key_index + " ) AS trunc";
 
 						rset = stat.executeQuery(sql);
 
 						while (rset.next()) {
 
-							if (rset.getInt(1) == min_row_count) {
+							if (rset.getInt(1) == pg_option.min_rows_for_doc_key_index) {
 
 								sql = "CREATE INDEX IDX_" + table_name + "_" + table.doc_key_pname + " ON " + table.pgname + " ( " + table.doc_key_pgname + " )";
 
@@ -5361,13 +5362,12 @@ public class PgSchema implements Serializable {
 	 * Create PostgreSQL index on attribute if not exists.
 	 *
 	 * @param db_conn database connection
-	 * @param max_attr_count maximum count of attribute columns to create index
-	 * @param min_row_count minimum count of rows to create index
+	 * @param pg_option PostgreSQL option
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void createAttrIndex(Connection db_conn, int max_attr_count, int min_row_count) throws PgSchemaException {
+	public void createAttrIndex(Connection db_conn, PgOption pg_option) throws PgSchemaException {
 
-		if (max_attr_count < 1)
+		if (pg_option.max_attr_cols_for_index < 1)
 			return;
 
 		this.db_conn = db_conn;
@@ -5393,7 +5393,7 @@ public class PgSchema implements Serializable {
 
 					int attr_count = attrs.size();
 
-					if (attr_count > 0 && attr_count <= max_attr_count) {
+					if (attr_count > 0 && attr_count <= pg_option.max_attr_cols_for_index) {
 
 						try {
 
@@ -5421,7 +5421,7 @@ public class PgSchema implements Serializable {
 
 							if (has_no_index) {
 
-								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + min_row_count + " ) AS trunc";
+								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_doc_key_index + " ) AS trunc";
 
 								rset = stat.executeQuery(sql);
 
@@ -5429,7 +5429,7 @@ public class PgSchema implements Serializable {
 
 								while (rset.next()) {
 
-									if (rset.getInt(1) == min_row_count) {
+									if (rset.getInt(1) == pg_option.min_rows_for_doc_key_index) {
 
 										for (int attr_id = 0; attr_id < attr_count; attr_id++) {
 
@@ -5554,13 +5554,12 @@ public class PgSchema implements Serializable {
 	 * Create PostgreSQL index on element if not exists.
 	 *
 	 * @param db_conn database connection
-	 * @param max_elem_count maximum count of element columns to create index
-	 * @param min_row_count minimum count of rows to create index
+	 * @param pg_option PostgreSQL option
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void createElemIndex(Connection db_conn, int max_elem_count, int min_row_count) throws PgSchemaException {
+	public void createElemIndex(Connection db_conn, PgOption pg_option) throws PgSchemaException {
 
-		if (max_elem_count < 1)
+		if (pg_option.max_elem_cols_for_index < 1)
 			return;
 
 		this.db_conn = db_conn;
@@ -5586,7 +5585,7 @@ public class PgSchema implements Serializable {
 
 					int elem_count = elems.size();
 
-					if (elem_count > 0 && elem_count <= max_elem_count) {
+					if (elem_count > 0 && elem_count <= pg_option.max_elem_cols_for_index) {
 
 						try {
 
@@ -5614,7 +5613,7 @@ public class PgSchema implements Serializable {
 
 							if (has_no_index) {
 
-								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + min_row_count + " ) AS trunc";
+								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_doc_key_index + " ) AS trunc";
 
 								rset = stat.executeQuery(sql);
 
@@ -5622,7 +5621,7 @@ public class PgSchema implements Serializable {
 
 								while (rset.next()) {
 
-									if (rset.getInt(1) == min_row_count) {
+									if (rset.getInt(1) == pg_option.min_rows_for_doc_key_index) {
 
 										for (int elem_id = 0; elem_id < elem_count; elem_id++) {
 
@@ -5747,10 +5746,10 @@ public class PgSchema implements Serializable {
 	 * Create PostgreSQL index on simple content if not exists.
 	 *
 	 * @param db_conn database connection
-	 * @param min_row_count minimum count of rows to create index
+	 * @param pg_option PostgreSQL option
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void createSimpleContIndex(Connection db_conn, int min_row_count) throws PgSchemaException {
+	public void createSimpleContIndex(Connection db_conn, PgOption pg_option) throws PgSchemaException {
 
 		this.db_conn = db_conn;
 
@@ -5767,7 +5766,7 @@ public class PgSchema implements Serializable {
 
 				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
 
-				if (table.has_simple_content) {
+				if (table.has_simple_content && table.fields.stream().filter(field -> field.foreign_key).count() <= pg_option.max_fks_for_simple_cont_index) {
 
 					List<PgField> simple_conts = table.elem_fields.stream().filter(field -> field.simple_content &&
 							!option.discarded_document_key_names.contains(table.name + "." + field.name) &&
@@ -5803,7 +5802,7 @@ public class PgSchema implements Serializable {
 
 							if (has_no_index) {
 
-								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + min_row_count + " ) AS trunc";
+								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_doc_key_index + " ) AS trunc";
 
 								rset = stat.executeQuery(sql);
 
@@ -5811,7 +5810,7 @@ public class PgSchema implements Serializable {
 
 								while (rset.next()) {
 
-									if (rset.getInt(1) == min_row_count) {
+									if (rset.getInt(1) == pg_option.min_rows_for_doc_key_index) {
 
 										for (int simple_cont_id = 0; simple_cont_id < simple_cont_count; simple_cont_id++) {
 

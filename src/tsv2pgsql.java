@@ -137,6 +137,9 @@ public class tsv2pgsql {
 			else if (args[i].equals("--drop-simple-cont-index"))
 				pg_option.setDropSimpleContIndex();
 
+			else if (args[i].equals("--max-fks-for-simple-cont-index") && i + 1 < args.length)
+				pg_option.setMaxFKsForSimpleContIndex(args[++i]);
+
 			else if (args[i].equals("--doc-key"))
 				option.setDocKeyOption(true);
 
@@ -283,14 +286,24 @@ public class tsv2pgsql {
 			System.out.println("Done " + (option.pg_delimiter == '\t' ? "tsv" : "csv") + " -> db (" + pg_option.name + ").");
 
 			if (pg_option.create_doc_key_index)
-				client.schema.createDocKeyIndex(db_conn, pg_option.min_rows_for_doc_key_index);
+				client.schema.createDocKeyIndex(db_conn, pg_option);
 			else if (pg_option.drop_doc_key_index)
 				client.schema.dropDocKeyIndex(db_conn);
 
 			if (pg_option.create_attr_index)
-				client.schema.createAttrIndex(db_conn, pg_option.max_attr_cols_for_index, pg_option.min_rows_for_doc_key_index);
+				client.schema.createAttrIndex(db_conn, pg_option);
 			else if (pg_option.drop_attr_index)
 				client.schema.dropAttrIndex(db_conn);
+
+			if (pg_option.create_elem_index)
+				client.schema.createElemIndex(db_conn, pg_option);
+			else if (pg_option.drop_elem_index)
+				client.schema.dropElemIndex(db_conn);
+
+			if (pg_option.create_simple_cont_index)
+				client.schema.createSimpleContIndex(db_conn, pg_option);
+			else if (pg_option.drop_simple_cont_index)
+				client.schema.dropSimpleContIndex(db_conn);
 
 			db_conn.close();
 
@@ -324,10 +337,11 @@ public class tsv2pgsql {
 		System.err.println("        --create-elem-index (create PostgreSQL index on element if not exists)");
 		System.err.println("        --no-create-elem-index (do not create PostgreSQL index on element, default)");
 		System.err.println("        --drop-elem-index (drop PostgreSQL index on element if exists)");
-		System.err.println("        --max-elem-cols-for-index MAX_ATTR_COLS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_max_elem_cols_for_index + "\")");
+		System.err.println("        --max-elem-cols-for-index MAX_ELEM_COLS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_max_elem_cols_for_index + "\")");
 		System.err.println("        --create-simple-cont-index (create PostgreSQL index on simple content if not exists, default)");
 		System.err.println("        --no-create-simple-cont-index (do not create PostgreSQL index on simple content)");
 		System.err.println("        --drop-simple-cont-index (drop PostgreSQL index on simple content if exists)");
+		System.err.println("        --max-fks-for-simple-cont-index MAX_FKS_FOR_SIMPLE_CONT_INDEX (default=\"" + PgSchemaUtil.pg_max_fks_for_simple_cont_index + "\")");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");

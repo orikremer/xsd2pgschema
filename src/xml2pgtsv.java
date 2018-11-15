@@ -198,6 +198,9 @@ public class xml2pgtsv {
 			else if (args[i].equals("--drop-simple-cont-index"))
 				pg_option.setDropSimpleContIndex();
 
+			else if (args[i].equals("--max-fks-for-simple-cont-index") && i + 1 < args.length)
+				pg_option.setMaxFKsForSimpleContIndex(args[++i]);
+
 			else if (args[i].equals("--fill-default-value"))
 				xml_post_editor.fill_default_value = true;
 
@@ -586,10 +589,11 @@ public class xml2pgtsv {
 		System.err.println("        --create-elem-index (create PostgreSQL index on element if not exists)");
 		System.err.println("        --no-create-elem-index (do not create PostgreSQL index on element, default)");
 		System.err.println("        --drop-elem-index (drop PostgreSQL index on element if exists)");
-		System.err.println("        --max-elem-cols-for-index MAX_ATTR_COLS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_max_elem_cols_for_index + "\")");
+		System.err.println("        --max-elem-cols-for-index MAX_ELEM_COLS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_max_elem_cols_for_index + "\")");
 		System.err.println("        --create-simple-cont-index (create PostgreSQL index on simple content if not exists, default)");
 		System.err.println("        --no-create-simple-cont-index (do not create PostgreSQL index on simple content)");
 		System.err.println("        --drop-simple-cont-index (drop PostgreSQL index on simple content if exists)");
+		System.err.println("        --max-fks-for-simple-cont-index MAX_FKS_FOR_SIMPLE_CONT_INDEX (default=\"" + PgSchemaUtil.pg_max_fks_for_simple_cont_index + "\")");
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");
 		System.err.println("        --pg-named-schema (enable explicit named schema)");
