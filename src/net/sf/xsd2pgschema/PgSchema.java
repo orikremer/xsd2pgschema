@@ -558,8 +558,8 @@ public class PgSchema implements Serializable {
 			if (!option.rel_model_ext)
 				tables.parallelStream().forEach(table -> table.classify());
 
-			if (option.ddl_output && !root_schema.dup_schema_locations.containsKey(def_schema_location))
-				root_schema.def_stat_msg.append("--  " + (root ? "Generated" : "Found") + " " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.parallelStream().map(table -> option.rel_model_ext || !table.relational ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups " + (root ? "in total" : "in XML Schema: " + def_schema_location) + "\n");
+			if (!root && option.ddl_output && !root_schema.dup_schema_locations.containsKey(def_schema_location))
+				root_schema.def_stat_msg.append("--  Found " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.parallelStream().map(table -> option.rel_model_ext || !table.relational ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups in XML Schema: " + def_schema_location + "\n");
 
 		}
 
@@ -1244,6 +1244,8 @@ public class PgSchema implements Serializable {
 		// statistics
 
 		if (option.ddl_output) {
+
+			def_stat_msg.insert(0, "--  Generated " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.parallelStream().map(table -> option.rel_model_ext || !table.relational ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups in total\n");
 
 			StringBuilder sb = new StringBuilder();
 
