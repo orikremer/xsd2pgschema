@@ -1245,7 +1245,16 @@ public class PgSchema implements Serializable {
 
 		if (option.ddl_output) {
 
-			def_stat_msg.insert(0, "--  Generated " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.parallelStream().map(table -> option.rel_model_ext || !table.relational ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups in total\n");
+			def_stat_msg.insert(0, "--  Generated " + tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && table.writable).count() + " tables (" + tables.parallelStream().map(table -> (option.rel_model_ext || !table.relational) && table.writable ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups in total\n");
+
+			if (tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && !table.writable).count() > 0) {
+
+				def_stat_msg.append("--   Orphan tables:\n--    ");
+				tables.stream().filter(table -> (option.rel_model_ext || !table.relational) && !table.writable).forEach(table -> def_stat_msg.append(table.pname + ", "));
+				def_stat_msg.setLength(def_stat_msg.length() - 2);
+				def_stat_msg.append("\n");
+
+			}
 
 			StringBuilder sb = new StringBuilder();
 
