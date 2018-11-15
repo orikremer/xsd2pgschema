@@ -1150,7 +1150,7 @@ public class PgSchema implements Serializable {
 
 		if (!option.document_key && option.in_place_document_key && (option.rel_model_ext || option.document_key_if_no_in_place)) {
 
-			tables.parallelStream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> field.name.equals(option.document_key_name)) && !table.fields.stream().anyMatch(field -> field.dtd_data_holder && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))).forEach(table -> {
+			tables.parallelStream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> field.name.equals(option.document_key_name)) && !table.fields.stream().anyMatch(field -> (field.dtd_data_holder && option.in_place_document_key_names.contains(field.name)) || ((field.dtd_data_holder || field.simple_content) && option.in_place_document_key_names.contains(table.name + "." + field.name)))).forEach(table -> {
 
 				PgField field = new PgField();
 
@@ -1286,7 +1286,8 @@ public class PgSchema implements Serializable {
 					+ (option.document_key || !option.in_place_document_key ? 0 : tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.attribute && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
 			def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " elements ("
 					+ (option.document_key || !option.in_place_document_key ? 0 : tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.element && !option.discarded_document_key_names.contains(field.name) && !option.discarded_document_key_names.contains(table.name + "." + field.name) && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name))).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys), ");
-			def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_content).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents ("
+			def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_content && !option.discarded_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " simple contents ("
+					+ (option.document_key || !option.in_place_document_key ? 0 : tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_content && option.in_place_document_key_names.contains(table.name + "." + field.name)).count()).reduce((arg0, arg1) -> arg0 + arg1).get()) + " in-place document keys, "
 					+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute, "
 					+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.simple_attr_cond).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as conditional attribute)\n");
 			def_stat_msg.append("--   Wild cards:\n");
@@ -3787,14 +3788,22 @@ public class PgSchema implements Serializable {
 
 			else if (field.simple_content) {
 
+				if (option.discarded_document_key_names.contains(table.name + "." + field.name))
+					continue;
+
 				if (field.simple_primitive_list)
-					System.out.println("-- SIMPLE CONTENT AS PRIMITIVE LIST");
+					System.out.print("-- SIMPLE CONTENT AS PRIMITIVE LIST");
 				else if (field.simple_attribute)
-					System.out.println("-- SIMPLE CONTENT AS ATTRIBUTE, ATTRIBUTE NODE: " + field.foreign_table_xname);
+					System.out.print("-- SIMPLE CONTENT AS ATTRIBUTE, ATTRIBUTE NODE: " + field.foreign_table_xname);
 				else if (field.simple_attr_cond)
-					System.out.println("-- SIMPLE CONTENT AS CONDITIONAL ATTRIBUTE, ATTRIBUTE NODE: " + field.foreign_table_xname);
+					System.out.print("-- SIMPLE CONTENT AS CONDITIONAL ATTRIBUTE, ATTRIBUTE NODE: " + field.foreign_table_xname);
 				else
-					System.out.println("-- SIMPLE CONTENT");
+					System.out.print("-- SIMPLE CONTENT");
+
+				if (!option.document_key && option.in_place_document_key && option.in_place_document_key_names.contains(table.name + "." + field.name))
+					System.out.println(", IN-PLACE DOCUMENT KEY");
+				else
+					System.out.println("");
 
 			}
 
@@ -5081,7 +5090,7 @@ public class PgSchema implements Serializable {
 		if (fields.stream().anyMatch(field -> field.document_key))
 			return option.document_key_name;
 
-		if (!fields.stream().anyMatch(field -> field.dtd_data_holder && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))) {
+		if (!fields.stream().anyMatch(field -> (field.dtd_data_holder && option.in_place_document_key_names.contains(field.name)) || ((field.dtd_data_holder || field.simple_content) && option.in_place_document_key_names.contains(table.name + "." + field.name)))) {
 
 			if (option.document_key_if_no_in_place)
 				return option.document_key_name;
@@ -5089,7 +5098,7 @@ public class PgSchema implements Serializable {
 			throw new PgSchemaException("Not found in-place document key in " + table.pname + ", or select --doc-key-if-no-inplace option.");
 		}
 
-		return fields.stream().filter(field -> field.dtd_data_holder && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name))).findFirst().get().pname;
+		return fields.stream().filter(field -> (field.dtd_data_holder && option.in_place_document_key_names.contains(field.name)) || ((field.dtd_data_holder || field.simple_content) && option.in_place_document_key_names.contains(table.name + "." + field.name))).findFirst().get().pname;
 	}
 
 	/**
@@ -5743,7 +5752,9 @@ public class PgSchema implements Serializable {
 
 				if (table.has_simple_content) {
 
-					List<PgField> simple_conts = table.elem_fields.stream().filter(field -> field.simple_content).collect(Collectors.toList());
+					List<PgField> simple_conts = table.elem_fields.stream().filter(field -> field.simple_content &&
+							!option.discarded_document_key_names.contains(table.name + "." + field.name) &&
+							(option.document_key || !option.in_place_document_key || !option.in_place_document_key_names.contains(table.name + "." + field.name))).collect(Collectors.toList());
 
 					int simple_cont_count = simple_conts.size();
 
@@ -5852,7 +5863,9 @@ public class PgSchema implements Serializable {
 
 				if (table.has_simple_content) {
 
-					List<PgField> simple_conts = table.elem_fields.stream().filter(field -> field.simple_content).collect(Collectors.toList());
+					List<PgField> simple_conts = table.elem_fields.stream().filter(field -> field.simple_content &&
+							!option.discarded_document_key_names.contains(table.name + "." + field.name) &&
+							(option.document_key || !option.in_place_document_key || !option.in_place_document_key_names.contains(table.name + "." + field.name))).collect(Collectors.toList());
 
 					int simple_cont_count = simple_conts.size();
 

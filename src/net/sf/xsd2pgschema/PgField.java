@@ -1543,7 +1543,7 @@ public class PgField implements Serializable {
 	 */
 	protected void setOmissible(PgTable table, PgSchemaOption option) {
 
-		if (dtd_data_holder && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name))) {
+		if ((dtd_data_holder && option.discarded_document_key_names.contains(name)) || ((dtd_data_holder || simple_content) && option.discarded_document_key_names.contains(table.name + "." + name))) {
 			omissible = true;
 			return;
 		}
@@ -1560,7 +1560,7 @@ public class PgField implements Serializable {
 	 */
 	protected void setIndexable(PgTable table, PgSchemaOption option) {
 
-		if (system_key || user_key || (dtd_data_holder && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name)))) {
+		if (system_key || user_key || (dtd_data_holder && option.discarded_document_key_names.contains(name)) || ((dtd_data_holder || simple_content) && option.discarded_document_key_names.contains(table.name + "." + name))) {
 			indexable = false;
 			return;
 		}
@@ -1577,7 +1577,7 @@ public class PgField implements Serializable {
 	 */
 	protected void setJsonable(PgTable table, PgSchemaOption option) {
 
-		if (system_key || user_key || (dtd_data_holder && (option.discarded_document_key_names.contains(name) || option.discarded_document_key_names.contains(table.name + "." + name)))) {
+		if (system_key || user_key || (dtd_data_holder && option.discarded_document_key_names.contains(name)) || ((dtd_data_holder || simple_content) && option.discarded_document_key_names.contains(table.name + "." + name))) {
 			jsonable = false;
 			return;
 		}

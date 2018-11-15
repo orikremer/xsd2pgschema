@@ -1,4 +1,4 @@
-﻿ Changes in xsd2pgschema 3.0.7 (release 2018-11-14)
+﻿ Changes in xsd2pgschema 3.0.7 (release 2018-11-15)
 
   Allowed to follow URL redirection of schema location.
   Automatic redirect system message to stderr if redirect of result to stdout.
@@ -7,6 +7,7 @@
   Added support for CREATE/DROP of PostgreSQL index on simple content. (--create-simple-cont-index (default), --no-create-simple-cont-index, and --drop-simple-cont-index options)
   Set --create-attr-index and --create-simple-cont-index option by default.
   Performance improvements of XPath serializer, XPath translation, and XPath evaluation.
+  Allowed to use simple content as in-place document key when table name is specified by --inplace-doc-key-name (table_name).content format.
 
  Changes in xsd2pgschema 3.0.6 (release 2018-10-25)
 
