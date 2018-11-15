@@ -747,7 +747,7 @@ public class PgSchema implements Serializable {
 									foreign_field.foreign_schema = table.schema_name;
 									foreign_field.foreign_table_xname = table.xname;
 
-									table.has_nested_key_as_attr = foreign_table.has_simple_attribute = true;
+									table.has_nested_key_to_simple_attr = foreign_table.has_simple_attribute = true;
 
 								});
 
@@ -777,7 +777,11 @@ public class PgSchema implements Serializable {
 
 		// update table has attributes
 
-		tables.parallelStream().filter(table -> !table.has_attrs && (table.has_simple_attribute || table.has_nested_key_as_attr)).forEach(table -> table.has_attrs = true);
+		tables.parallelStream().filter(table -> !table.has_attrs && (table.has_simple_attribute || table.has_nested_key_to_simple_attr)).forEach(table -> table.has_attrs = true);
+
+		// update table has nested key as attribute
+
+		tables.parallelStream().filter(table -> table.total_nested_fields > 0 && table.fields.stream().anyMatch(field -> field.nested_key_as_attr)).forEach(table -> table.has_nested_key_as_attr = true);
 
 		// detect simple content as conditional attribute
 

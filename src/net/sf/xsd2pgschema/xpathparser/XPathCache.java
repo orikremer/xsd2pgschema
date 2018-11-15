@@ -21,7 +21,6 @@ package net.sf.xsd2pgschema.xpathparser;
 
 import java.io.Serializable;
 import java.util.HashMap;
-import java.util.HashSet;
 
 import net.sf.xsd2pgschema.PgTable;
 
@@ -37,8 +36,5 @@ public class XPathCache implements Serializable {
 
 	/** Matched path. */
 	public HashMap<String, PgTable> matched_paths = new HashMap<String, PgTable>();
-
-	/** Unmatched path. */
-	public HashSet<String> unmatched_paths = new HashSet<String>();
 
 }

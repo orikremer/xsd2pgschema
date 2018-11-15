@@ -86,6 +86,9 @@ public class XPathEvaluatorImpl {
 	/** The XML stream writer. */
 	private XMLStreamWriter xml_writer = null;
 
+	/** The XPath base listener. */
+	private xpathBaseListener xpath_base_listener = new xpathBaseListener();
+
 	/**
 	 * Instance of XPathEvaluatorImpl.
 	 *
@@ -154,7 +157,7 @@ public class XPathEvaluatorImpl {
 		CommonTokenStream tokens = new CommonTokenStream(lexer);
 
 		xpathParser parser = new xpathParser(tokens);
-		parser.addParseListener(new xpathBaseListener());
+		parser.addParseListener(xpath_base_listener);
 
 		// validate XPath expression with schema
 
@@ -177,10 +180,10 @@ public class XPathEvaluatorImpl {
 
 		xpath_comp_list.validate(false);
 
-		long end_time__ = System.currentTimeMillis();
-
 		if (xpath_comp_list.path_exprs.size() == 0)
 			throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
+
+		long end_time__ = System.currentTimeMillis();
 
 		sb.append("Input XPath query:\n" + main_text + "\n\nTarget path in XML Schema: " + option.root_schema_location + "\n");
 

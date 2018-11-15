@@ -34,28 +34,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.TerminalNodeImpl;
-
-import com.github.antlr.grammars_v4.xpath.xpathParser.AbbreviatedStepContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.AbsoluteLocationPathNorootContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.AdditiveExprContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.AndExprContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.AxisSpecifierContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.EqualityExprContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.FunctionCallContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.MultiplicativeExprContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.NCNameContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.NameTestContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.NodeTestContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.OrExprContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.PredicateContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.PrimaryExprContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.QNameContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.RelationalExprContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.RelativeLocationPathContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.StepContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.UnaryExprNoRootContext;
-import com.github.antlr.grammars_v4.xpath.xpathParser.VariableReferenceContext;
 
 import net.sf.xsd2pgschema.PgField;
 import net.sf.xsd2pgschema.PgSchema;
@@ -259,7 +237,7 @@ public class XPathCompList {
 
 		ParseTree child;
 
-		Class<?> anyClass;
+		String anyClass;
 
 		boolean union_expr;
 
@@ -267,13 +245,13 @@ public class XPathCompList {
 
 			child = tree.getChild(i);
 
-			anyClass = child.getClass();
+			anyClass = child.getClass().getSimpleName();
 
-			if (anyClass.equals(TerminalNodeImpl.class)) {
+			if (anyClass.equals("TerminalNodeImpl")) {
 
 				String text = child.getText();
 
-				if (text.equals("*") && tree.getClass().equals(MultiplicativeExprContext.class))
+				if (text.equals("*") && tree.getClass().getSimpleName().equals("MultiplicativeExprContext"))
 					continue;
 
 				if (!text.equals("/") && !text.equals("//") && !text.equals("|") && !text.equals("*")) {
@@ -309,7 +287,7 @@ public class XPathCompList {
 				comps.add(comp);
 
 				if (verbose)
-					System.out.println(union_counter + "." + step_counter + " - " + anyClass.getSimpleName() + " '" + text + "'");
+					System.out.println(union_counter + "." + step_counter + " - " + anyClass + " '" + text + "'");
 
 				if (!wild_card)
 					step_counter++;
@@ -324,7 +302,7 @@ public class XPathCompList {
 				continue;
 			}
 
-			else if (anyClass.equals(StepContext.class)) {
+			else if (anyClass.equals("StepContext")) {
 
 				if (verbose)
 					System.out.println(union_counter + "." + step_counter + " - '" + child.getText() + "' ->");
@@ -355,20 +333,16 @@ public class XPathCompList {
 
 		ParseTree child;
 
-		Class<?> anyClass;
-
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
 			child = tree.getChild(i);
-
-			anyClass = child.getClass();
 
 			if (hasEffectiveChildOfQNameContext(child)) {
 
 				comps.add(new XPathComp(union_counter, step_counter, child));
 
 				if (verbose)
-					System.out.print(" " + anyClass.getSimpleName() + " '" + child.getText() + "'");
+					System.out.print(" " + child.getClass().getSimpleName() + " '" + child.getText() + "'");
 
 				// no need to trace more
 
@@ -380,11 +354,11 @@ public class XPathCompList {
 				comps.add(new XPathComp(union_counter, step_counter, child));
 
 				if (verbose)
-					System.out.print(" " + anyClass.getSimpleName() + " '" + child.getText() + "'");
+					System.out.print(" " + child.getClass().getSimpleName() + " '" + child.getText() + "'");
 
 				// no need to trace prefix
 
-				if (anyClass.equals(NameTestContext.class))
+				if (child.getClass().getSimpleName().equals("NameTestContext"))
 					break;
 
 			}
@@ -409,7 +383,7 @@ public class XPathCompList {
 
 			child = tree.getChild(i);
 
-			if (child.getClass().equals(QNameContext.class))
+			if (child.getClass().getSimpleName().equals("QNameContext"))
 				return child.getChildCount() > 1;
 
 		}
@@ -458,7 +432,7 @@ public class XPathCompList {
 
 			child = tree.getChild(i);
 
-			if (child.getClass().equals(TerminalNodeImpl.class))
+			if (child.getClass().getSimpleName().equals("TerminalNodeImpl"))
 				return true;
 
 		}
@@ -480,7 +454,7 @@ public class XPathCompList {
 
 			child = tree.getChild(i);
 
-			if (child.getClass().equals(TerminalNodeImpl.class))
+			if (child.getClass().getSimpleName().equals("TerminalNodeImpl"))
 				return child.getText();
 
 		}
@@ -506,7 +480,7 @@ public class XPathCompList {
 
 				child = tree.getChild(i);
 
-				if (child.getClass().equals(TerminalNodeImpl.class))
+				if (child.getClass().getSimpleName().equals("TerminalNodeImpl"))
 					list.add(child.getText());
 
 			}
@@ -522,14 +496,14 @@ public class XPathCompList {
 	/**
 	 * Return whether current tree is path context.
 	 *
-	 * @param anyClass class object
+	 * @param anyClass class name
 	 * @return boolean whether current tree is path context
 	 */
-	private boolean isPathContextClass(Class<?> anyClass) {
-		return anyClass.equals(RelativeLocationPathContext.class)
-				|| anyClass.equals(AbsoluteLocationPathNorootContext.class)
-				|| anyClass.equals(StepContext.class)
-				|| anyClass.equals(NodeTestContext.class);
+	private boolean isPathContextClass(String anyClass) {
+		return anyClass.equals("RelativeLocationPathContext")
+				|| anyClass.equals("AbsoluteLocationPathNorootContext")
+				|| anyClass.equals("StepContext")
+				|| anyClass.equals("NodeTestContext");
 	}
 
 	/**
@@ -548,10 +522,10 @@ public class XPathCompList {
 	 * @return int the last step id
 	 */
 	private int getLastStepId(int union_id) {
-
+		/*
 		if (!comps.stream().anyMatch(comp -> comp.union_id == union_id))
 			return -1;
-
+		 */
 		return comps.stream().filter(comp -> comp.union_id == union_id).max(Comparator.comparingInt(comp -> comp.step_id)).get().step_id;
 	}
 
@@ -584,7 +558,7 @@ public class XPathCompList {
 	 * @return XPathComp[] array of PredicateContext XPath component
 	 */
 	private XPathComp[] arrayOfPredicateContext(int union_id, int step_id) {
-		return comps.stream().filter(comp -> comp.union_id == union_id && comp.step_id == step_id && comp.tree.getClass().equals(PredicateContext.class)).toArray(XPathComp[]::new);
+		return comps.stream().filter(comp -> comp.union_id == union_id && comp.step_id == step_id && comp.tree.getClass().getSimpleName().equals("PredicateContext")).toArray(XPathComp[]::new);
 	}
 
 	/**
@@ -593,7 +567,7 @@ public class XPathCompList {
 	 * @return int the size of path expression in XPath component list
 	 */
 	private int sizeOfPathExpr() {
-		return getLastUnionId() + 1 - (int) comps.stream().filter(comp -> comp.tree.getClass().equals(TerminalNodeImpl.class) && comp.tree.getText().equals("|")).count();
+		return getLastUnionId() + 1 - (int) comps.stream().filter(comp -> comp.tree.getClass().getSimpleName().equals("TerminalNodeImpl") && comp.tree.getText().equals("|")).count();
 	}
 
 	/**
@@ -604,7 +578,7 @@ public class XPathCompList {
 	 */
 	private XPathComp previousOf(XPathComp comp) {
 
-		int step_id = comp.step_id - (comp.tree.getClass().equals(TerminalNodeImpl.class) ? 1 : 2);
+		int step_id = comp.step_id - (comp.tree.getClass().getSimpleName().equals("TerminalNodeImpl") ? 1 : 2);
 
 		if (step_id < 0)
 			return null;
@@ -616,7 +590,7 @@ public class XPathCompList {
 
 		for (int comp_id = 0; comp_id < prev_comps.length; comp_id++) {
 
-			if (prev_comps[comp_id].tree.getClass().equals(PredicateContext.class))
+			if (prev_comps[comp_id].tree.getClass().getSimpleName().equals("PredicateContext"))
 				return prev_comps[--comp_id];
 
 		}
@@ -656,7 +630,7 @@ public class XPathCompList {
 
 		XPathComp[] comps;
 
-		Class<?> anyClass;
+		String anyClass;
 
 		for (int union_id = 0; union_id <= getLastUnionId(); union_id++) {
 
@@ -666,41 +640,9 @@ public class XPathCompList {
 
 				for (XPathComp comp : comps) {
 
-					anyClass = comp.tree.getClass();
+					anyClass = comp.tree.getClass().getSimpleName();
 
-					// TerminalNodeImpl node
-
-					if (anyClass.equals(TerminalNodeImpl.class))
-						testTerminalNodeImpl(comp, false);
-
-					// AbbreviatedStepContext node
-
-					else if (anyClass.equals(AbbreviatedStepContext.class))
-						testAbbreviateStepContext(comp, false);
-
-					// AxisSpecifierContext node
-
-					else if (anyClass.equals(AxisSpecifierContext.class))
-						testAxisSpecifierContext(comp, comps);
-
-					// NCNameContext node
-
-					else if (anyClass.equals(NCNameContext.class))
-						testNCNameContext(comp, comps, false);
-
-					// NodeTestContext node
-
-					else if (anyClass.equals(NodeTestContext.class))
-						testNodeTestContext(comp, comps, false);
-
-					// NameTestContext node
-
-					else if (anyClass.equals(NameTestContext.class))
-						testNameTestContext(comp, comps, false);
-
-					// PredicateContext node
-
-					else if (anyClass.equals(PredicateContext.class)) {
+					if (anyClass.equals("PredicateContext")) {
 
 						for (XPathComp pred_comp : arrayOfPredicateContext(union_id, step_id))
 							testPredicateContext(pred_comp);
@@ -708,8 +650,28 @@ public class XPathCompList {
 						break;
 					}
 
-					else
+					switch (anyClass) {
+					case "TerminalNodeImpl":
+						testTerminalNodeImpl(comp, false);
+						break;
+					case "AbbreviatedStepContext":
+						testAbbreviateStepContext(comp, false);
+						break;
+					case "AxisSpecifierContext":
+						testAxisSpecifierContext(comp, comps);
+						break;
+					case "NCNameContext":
+						testNCNameContext(comp, comps, false);
+						break;
+					case "NodeTestContext":
+						testNodeTestContext(comp, comps, false);
+						break;
+					case "NameTestContext":
+						testNameTestContext(comp, comps, false);
+						break;
+					default:
 						throw new PgSchemaException(comp.tree);
+					}
 
 				}
 
@@ -772,7 +734,7 @@ public class XPathCompList {
 
 						XPathComp child_last_comp = child_comps[child_comps.length - 1];
 
-						if (!child_last_comp.tree.getClass().equals(NodeTestContext.class) || !child_last_comp.tree.getText().equals("text()")) {
+						if (!child_last_comp.tree.getClass().getSimpleName().equals("NodeTestContext") || !child_last_comp.tree.getText().equals("text()")) {
 
 							if (removePathEndsWithTextNode() == 0) {
 
@@ -861,10 +823,12 @@ public class XPathCompList {
 
 		if (comps.length > 1) {
 
-			Class<?> anyClass = comps[1].getClass();
-
-			if (anyClass.equals(NCNameContext.class) || anyClass.equals(NodeTestContext.class) || anyClass.equals(NameTestContext.class))
+			switch (comps[1].getClass().getSimpleName()) {
+			case "NCNameContext":
+			case "NodeTestContext":
+			case "NameTestContext":
 				return;
+			}
 
 		}
 
@@ -892,16 +856,16 @@ public class XPathCompList {
 
 			boolean target_comp = false;
 
-			Class<?> _anyClass;
+			String _anyClass;
 
 			for (XPathComp _comp : comps) {
 
-				_anyClass = _comp.tree.getClass();
+				_anyClass = _comp.tree.getClass().getSimpleName();
 
-				if (_anyClass.equals(NameTestContext.class) || _anyClass.equals(PredicateContext.class))
+				if (_anyClass.equals("NameTestContext") || _anyClass.equals("PredicateContext"))
 					break;
 
-				else if (_anyClass.equals(NCNameContext.class)) {
+				else if (_anyClass.equals("NCNameContext")) {
 
 					if (_comp.equals(comp))
 						target_comp = true;
@@ -918,19 +882,19 @@ public class XPathCompList {
 
 			for (XPathComp _comp : comps) {
 
-				_anyClass = _comp.tree.getClass();
+				_anyClass = _comp.tree.getClass().getSimpleName();
 
-				if (_anyClass.equals(PredicateContext.class))
+				if (_anyClass.equals("PredicateContext"))
 					break;
 
-				else if (_anyClass.equals(AxisSpecifierContext.class)) {
+				else if (_anyClass.equals("AxisSpecifierContext")) {
 
 					if (!_comp.equals(first_comp))
 						throw new PgSchemaException(_comp.tree);
 
 				}
 
-				else if (_anyClass.equals(TerminalNodeImpl.class))
+				else if (_anyClass.equals("TerminalNodeImpl"))
 					wild_card = true;
 
 			}
@@ -945,16 +909,16 @@ public class XPathCompList {
 
 				for (XPathComp _comp : comps) {
 
-					_anyClass = _comp.tree.getClass();
+					_anyClass = _comp.tree.getClass().getSimpleName();
 					_text = _comp.tree.getText();
 
-					if (_anyClass.equals(PredicateContext.class))
+					if (_anyClass.equals("PredicateContext"))
 						break;
 
-					if (_anyClass.equals(NCNameContext.class))
+					if (_anyClass.equals("NCNameContext"))
 						sb.append(_text);
 
-					else if (_anyClass.equals(NameTestContext.class)) {
+					else if (_anyClass.equals("NameTestContext")) {
 
 						String local_part = _text;
 
@@ -965,10 +929,10 @@ public class XPathCompList {
 
 					}
 
-					else if (_anyClass.equals(TerminalNodeImpl.class)) // '*' -> regular expression '.*'
+					else if (_anyClass.equals("TerminalNodeImpl")) // '*' -> regular expression '.*'
 						sb.append("." + _text);
 
-					else if (!_anyClass.equals(AxisSpecifierContext.class))
+					else if (!_anyClass.equals("AxisSpecifierContext"))
 						throw new PgSchemaException(_comp.tree);
 
 				}
@@ -979,7 +943,7 @@ public class XPathCompList {
 
 			}
 
-			if (first_comp.tree.getClass().equals(AxisSpecifierContext.class)) {
+			if (first_comp.tree.getClass().getSimpleName().equals("AxisSpecifierContext")) {
 
 				switch (first_comp.tree.getText()) {
 				case "ancestor::":
@@ -1648,7 +1612,7 @@ public class XPathCompList {
 
 								// check foreign nested_key
 
-								if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
+								if (foreign_table.virtual || foreign_table.has_nested_key_to_simple_attr || !abs_location_path) {
 
 									int[] __ft_ids = foreign_table.ft_ids;
 
@@ -1700,7 +1664,7 @@ public class XPathCompList {
 
 									// check foreign nested_key
 
-									if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
+									if (foreign_table.virtual || foreign_table.has_nested_key_to_simple_attr || !abs_location_path) {
 
 										int[] __ft_ids = foreign_table.ft_ids;
 
@@ -1885,7 +1849,7 @@ public class XPathCompList {
 
 		}
 
-		else if (comps.length == 2 && first_comp.tree.getClass().equals(AxisSpecifierContext.class)) {
+		else if (comps.length == 2 && first_comp.tree.getClass().getSimpleName().equals("AxisSpecifierContext")) {
 
 			switch (text) {
 			case "node()":
@@ -2544,7 +2508,7 @@ public class XPathCompList {
 
 								// check foreign nested_key
 
-								if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
+								if (foreign_table.virtual || foreign_table.has_nested_key_to_simple_attr || !abs_location_path) {
 
 									int[] __ft_ids = foreign_table.ft_ids;
 
@@ -2594,7 +2558,7 @@ public class XPathCompList {
 
 									// check foreign nested_key
 
-									if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
+									if (foreign_table.virtual || foreign_table.has_nested_key_to_simple_attr || !abs_location_path) {
 
 										int[] __ft_ids = foreign_table.ft_ids;
 
@@ -2698,23 +2662,23 @@ public class XPathCompList {
 
 			XPathComp first_comp = comps[0];
 
-			Class<?> _anyClass;
+			String _anyClass;
 
 			for (XPathComp _comp : comps) {
 
-				_anyClass = _comp.tree.getClass();
+				_anyClass = _comp.tree.getClass().getSimpleName();
 
-				if (_anyClass.equals(PredicateContext.class))
+				if (_anyClass.equals("PredicateContext"))
 					break;
 
-				else if (_anyClass.equals(AxisSpecifierContext.class)) {
+				else if (_anyClass.equals("AxisSpecifierContext")) {
 
 					if (!_comp.equals(first_comp))
 						throw new PgSchemaException(_comp.tree);
 
 				}
 
-				else if (_anyClass.equals(TerminalNodeImpl.class))
+				else if (_anyClass.equals("TerminalNodeImpl"))
 					wild_card = true;
 
 			}
@@ -2729,16 +2693,16 @@ public class XPathCompList {
 
 				for (XPathComp _comp : comps) {
 
-					_anyClass = _comp.tree.getClass();
+					_anyClass = _comp.tree.getClass().getSimpleName();
 					_text = _comp.tree.getText();
 
-					if (_anyClass.equals(PredicateContext.class))
+					if (_anyClass.equals("PredicateContext"))
 						break;
 
-					if (_anyClass.equals(NCNameContext.class))
+					if (_anyClass.equals("NCNameContext"))
 						sb.append(_text);
 
-					else if (_anyClass.equals(NameTestContext.class)) {
+					else if (_anyClass.equals("NameTestContext")) {
 
 						String local_part = _text;
 
@@ -2749,10 +2713,10 @@ public class XPathCompList {
 
 					}
 
-					else if (_anyClass.equals(TerminalNodeImpl.class)) // '*' -> regular expression '.*'
+					else if (_anyClass.equals("TerminalNodeImpl")) // '*' -> regular expression '.*'
 						sb.append("." + _text);
 
-					else if (!_anyClass.equals(AxisSpecifierContext.class))
+					else if (!_anyClass.equals("AxisSpecifierContext"))
 						throw new PgSchemaException(_comp.tree);
 
 				}
@@ -2780,7 +2744,7 @@ public class XPathCompList {
 			if (namespace_uri == null || namespace_uri.isEmpty())
 				throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location, prefix);
 
-			if (first_comp.tree.getClass().equals(AxisSpecifierContext.class)) {
+			if (first_comp.tree.getClass().getSimpleName().equals("AxisSpecifierContext")) {
 
 				switch (first_comp.tree.getText()) {
 				case "ancestor::":
@@ -3452,7 +3416,7 @@ public class XPathCompList {
 
 								// check foreign nested_key
 
-								if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
+								if (foreign_table.virtual || foreign_table.has_nested_key_to_simple_attr || !abs_location_path) {
 
 									int[] __ft_ids = foreign_table.ft_ids;
 
@@ -3506,7 +3470,7 @@ public class XPathCompList {
 
 									// check foreign nested_key
 
-									if (foreign_table.virtual || foreign_table.has_nested_key_as_attr || !abs_location_path) {
+									if (foreign_table.virtual || foreign_table.has_nested_key_to_simple_attr || !abs_location_path) {
 
 										int[] __ft_ids = foreign_table.ft_ids;
 
@@ -3821,7 +3785,7 @@ public class XPathCompList {
 		XPathComp[] union_comps, pred_comps;
 		XPathPredExpr predicate;
 
-		Class<?> anyClass;
+		String anyClass;
 
 		for (XPathExpr path_expr : path_exprs) {
 
@@ -3849,40 +3813,30 @@ public class XPathCompList {
 
 					for (XPathComp pred_comp : pred_comps) {
 
-						anyClass = pred_comp.tree.getClass();
+						anyClass = pred_comp.tree.getClass().getSimpleName();
 
-						// TerminalNodeImpl node
-
-						if (anyClass.equals(TerminalNodeImpl.class))
+						switch (anyClass) {
+						case "TerminalNodeImpl":
 							pred_list.testTerminalNodeImpl(pred_comp, true);
-
-						// AbbreviatedStepContext node
-
-						else if (anyClass.equals(AbbreviatedStepContext.class))
+							break;
+						case "AbbreviatedStepContext":
 							pred_list.testAbbreviateStepContext(pred_comp, true);
-
-						// AxisSpecifierContext node
-
-						else if (anyClass.equals(AxisSpecifierContext.class))
+							break;
+						case "AxisSpecifierContext":
 							pred_list.testAxisSpecifierContext(pred_comp, pred_comps);
-
-						// NCNameContext node
-
-						else if (anyClass.equals(NCNameContext.class))
+							break;
+						case "NCNameContext":
 							pred_list.testNCNameContext(pred_comp, pred_comps, true);
-
-						// NodeTestContext node
-
-						else if (anyClass.equals(NodeTestContext.class))
+							break;
+						case "NodeTestContext":
 							pred_list.testNodeTestContext(pred_comp, pred_comps, true);
-
-						// NameTestContext node
-
-						else if (anyClass.equals(NameTestContext.class))
+							break;
+						case "NameTestContext":
 							pred_list.testNameTestContext(pred_comp, pred_comps, true);
-
-						else
+							break;
+						default:
 							throw new PgSchemaException(pred_comp.tree);
+						}
 
 						if (pred_list.path_exprs.isEmpty())
 							break;
@@ -3915,25 +3869,6 @@ public class XPathCompList {
 		if (pred_size == pred_exprs.size()) // invalid predicate
 			throw new PgSchemaException(comp.tree, def_schema_location);
 
-	}
-
-	/**
-	 * Return absolute XPath expression of current table.
-	 *
-	 * @param table current table
-	 * @param ref_path reference node path
-	 * @return String absolute XPath expression of current table
-	 */
-	private String getAbsoluteXPathOfTable(PgTable table, String ref_path) {
-
-		String abs_xpath_expr = table.abs_xpath_expr.get(ref_path);
-
-		if (abs_xpath_expr != null)
-			return abs_xpath_expr;
-
-		table.abs_xpath_expr.put(ref_path, abs_xpath_expr = getAbsoluteXPathOfTable(table, ref_path, false, false, null));
-
-		return abs_xpath_expr;
 	}
 
 	/**
@@ -3983,16 +3918,46 @@ public class XPathCompList {
 
 		if (attr) {
 
-			opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+			opt = tables.parallelStream().filter(foreign_table -> foreign_table.has_nested_key_as_attr && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr &&
+					field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || !foreign_table.virtual))))).findFirst();
 
 			if (opt.isPresent())
 				return getAbsoluteXPathOfTable(opt.get(), ref_path, attr, true, sb);
 
 		}
 
-		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> (as_attr ? !field.nested_key_as_attr : true) && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+		if (as_attr)
+			opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> !field.nested_key_as_attr &&
+					field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_to_simple_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+		else
+			opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field ->
+			field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_to_simple_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		return opt.isPresent() ? getAbsoluteXPathOfTable(opt.get(), ref_path, attr, false, sb) : null;
+	}
+
+	/**
+	 * Return absolute XPath expression of current table.
+	 *
+	 * @param table current table
+	 * @param ref_path reference node path
+	 * @return String absolute XPath expression of current table
+	 */
+	private String getAbsoluteXPathOfTable(PgTable table, String ref_path) {
+
+		boolean has_abs_xpath_expr = table.abs_xpath_expr != null;
+
+		String abs_xpath_expr = has_abs_xpath_expr ? table.abs_xpath_expr.get(ref_path) : null;
+
+		if (abs_xpath_expr != null)
+			return abs_xpath_expr;
+
+		if (!has_abs_xpath_expr)
+			table.abs_xpath_expr = new HashMap<String, String>();
+
+		table.abs_xpath_expr.put(ref_path, abs_xpath_expr = getAbsoluteXPathOfTable(table, ref_path, false, false, null));
+
+		return abs_xpath_expr;
 	}
 
 	/**
@@ -4007,12 +3972,17 @@ public class XPathCompList {
 
 		String _ref_path = ref_path + "/@" + text;
 
-		String abs_xpath_expr = table.abs_xpath_expr.get(_ref_path);
+		boolean has_abs_xpath_expr = table.abs_xpath_expr != null;
+
+		String abs_xpath_expr = has_abs_xpath_expr ? table.abs_xpath_expr.get(_ref_path) : null;
 
 		if (abs_xpath_expr != null)
 			return abs_xpath_expr;
 
 		StringBuilder sb = new StringBuilder("@" + text);
+
+		if (!has_abs_xpath_expr)
+			table.abs_xpath_expr = new HashMap<String, String>();
 
 		table.abs_xpath_expr.put(_ref_path, abs_xpath_expr = getAbsoluteXPathOfTable(table, ref_path, true, false, sb));
 
@@ -4031,12 +4001,17 @@ public class XPathCompList {
 
 		String _ref_path = ref_path + "/" + text;
 
-		String abs_xpath_expr = table.abs_xpath_expr.get(_ref_path);
+		boolean has_abs_xpath_expr = table.abs_xpath_expr != null;
+
+		String abs_xpath_expr = has_abs_xpath_expr ? table.abs_xpath_expr.get(_ref_path) : null;
 
 		if (abs_xpath_expr != null)
 			return abs_xpath_expr;
 
 		StringBuilder sb = new StringBuilder(text);
+
+		if (!has_abs_xpath_expr)
+			table.abs_xpath_expr = new HashMap<String, String>();
 
 		table.abs_xpath_expr.put(_ref_path, abs_xpath_expr = getAbsoluteXPathOfTable(table, ref_path, false, false, sb));
 
@@ -4060,9 +4035,6 @@ public class XPathCompList {
 			if (hit_table != null)
 				return hit_table;
 
-			if (cache.unmatched_paths.contains(table_xname))
-				return null;
-
 			Optional<PgTable> opt = tables.parallelStream().filter(table -> table.xname.equals(table_xname)).findFirst();
 
 			if (opt.isPresent()) {
@@ -4074,8 +4046,6 @@ public class XPathCompList {
 				return hit_table;
 			}
 
-			cache.unmatched_paths.add(table_xname);
-
 			return null;
 		}
 
@@ -4085,9 +4055,6 @@ public class XPathCompList {
 
 		if (hit_table != null)
 			return hit_table;
-
-		if (cache.unmatched_paths.contains(path))
-			return null;
 
 		Optional<PgTable> opt = tables.parallelStream().filter(table -> table.xname.equals(table_xname) && getAbsoluteXPathOfTable(table, null).endsWith(path)).findFirst();
 
@@ -4099,8 +4066,6 @@ public class XPathCompList {
 
 			return hit_table;
 		}
-
-		cache.unmatched_paths.add(path);
 
 		return null;
 	}
@@ -4293,7 +4258,7 @@ public class XPathCompList {
 
 			XPathComp first_comp = comps.stream().filter(comp -> comp.union_id == union_id && comp.step_id == 0).findFirst().get();
 
-			return first_comp.tree.getClass().equals(TerminalNodeImpl.class) && first_comp.tree.getText().equals("/");
+			return first_comp.tree.getClass().getSimpleName().equals("TerminalNodeImpl") && first_comp.tree.getText().equals("/");
 		}
 
 		return !path_exprs.get(0).path.endsWith("//");
@@ -4772,8 +4737,8 @@ public class XPathCompList {
 	/** Path expression counter in predicate. */
 	private int path_expr_counter = 0;
 
-	/** Class of child node under PredicateContext node. */
-	private Class<?> _predicateContextClass = null;
+	/** Class name of child node under PredicateContext node. */
+	private String _predicateContextClass = null;
 
 	/** Whether PredicateContext node has Boolean FunctionCallContext node. */
 	private boolean _predicateContextHasBooleanFunc = false;
@@ -4815,7 +4780,7 @@ public class XPathCompList {
 
 			child = tree.getChild(i);
 
-			if (child.getClass().equals(TerminalNodeImpl.class))
+			if (child.getClass().getSimpleName().equals("TerminalNodeImpl"))
 				continue;
 
 			_has_children = !child.getText().isEmpty() && (hasEffectiveChildren(child) || hasChildOfTerminalNodeImpl(child));
@@ -4832,65 +4797,56 @@ public class XPathCompList {
 			while (!(!parent.getText().isEmpty() && (hasEffectiveChildren(parent) || hasChildOfTerminalNodeImpl(parent))))
 				parent = parent.getParent();
 
-			Class<?> parentClass = parent.getClass();
+			String parentClass = parent.getClass().getSimpleName();
 
 			// PathContext node has already been validated
 
 			if (!isPathContextClass(parentClass)) {
 
-				Class<?> currentClass = tree.getClass();
+				String currentClass = tree.getClass().getSimpleName();
 
 				// arbitrary PathContext node
 
 				if (isPathContextClass(currentClass))
 					testPathContext(src_comp, src_path_expr, parent, tree);
 
-				// PrimaryExprContext node
+				else {
 
-				else if (currentClass.equals(PrimaryExprContext.class))
-					testPrimaryExprContext(src_path_expr, parent, tree);
+					switch (currentClass) {
+					case "PrimaryExprContext":
+						testPrimaryExprContext(src_path_expr, parent, tree);
+						break;
+					case "VariableReferenceContext":
+						testVariableReferenceContext(src_path_expr, parent, tree);
+						break;
+					case "EqualityExprContext":
+						testEqualityExprContext(src_path_expr, parent, tree);
+						break;
+					case "RelationalExprContext":
+						testRelationalExprContext(src_path_expr, parent, tree);
+						break;
+					case "AdditiveExprContext":
+						testAdditiveExprContext(src_path_expr, parent, tree, 0);
+						break;
+					case "MultiplicativeExprContext":
+						testMultiplicativeExprContext(src_path_expr, parent, tree);
+						break;
+					case "UnaryExprNoRootContext":
+						testUnaryExprNoRootContext(src_path_expr, parent, tree);
+						break;
+					case "FunctionCallContext":
+						testFunctionCallContext(src_path_expr, parent, tree);
+						break;
+					}
 
-				// VariableReferenceContext node
+				}
 
-				else if (currentClass.equals(VariableReferenceContext.class))
-					testVariableReferenceContext(src_path_expr, parent, tree);
-
-				// EqualityExprContext node
-
-				else if (currentClass.equals(EqualityExprContext.class))
-					testEqualityExprContext(src_path_expr, parent, tree);
-
-				// RelationalExprContext node
-
-				else if (currentClass.equals(RelationalExprContext.class))
-					testRelationalExprContext(src_path_expr, parent, tree);
-
-				// AdditiveExprContext node
-
-				else if (currentClass.equals(AdditiveExprContext.class))
-					testAdditiveExprContext(src_path_expr, parent, tree, 0);
-
-				// MultiplicativeExprContext node
-
-				else if (currentClass.equals(MultiplicativeExprContext.class))
-					testMultiplicativeExprContext(src_path_expr, parent, tree);
-
-				// UnaryExprNoRootContext node
-
-				else if (currentClass.equals(UnaryExprNoRootContext.class))
-					testUnaryExprNoRootContext(src_path_expr, parent, tree);
-
-				// FunctionCallContext node
-
-				else if (currentClass.equals(FunctionCallContext.class))
-					testFunctionCallContext(src_path_expr, parent, tree);
-
-				if (parent.getClass().equals(PredicateContext.class)) {
+				if (parentClass.equals("PredicateContext")) {
 
 					_predicateContextClass = currentClass;
 					_predicateContextHasBooleanFunc = false;
 
-					if (currentClass.equals(FunctionCallContext.class)) {
+					if (currentClass.equals("FunctionCallContext")) {
 
 						String func_name = null;
 
@@ -4898,7 +4854,7 @@ public class XPathCompList {
 
 							child = tree.getChild(i);
 
-							if (child.getClass().equals(TerminalNodeImpl.class))
+							if (child.getClass().getSimpleName().equals("TerminalNodeImpl"))
 								continue;
 
 							func_name = child.getText();
@@ -5028,7 +4984,7 @@ public class XPathCompList {
 
 			child = tree.getChild(i);
 
-			if (child.getClass().equals(TerminalNodeImpl.class))
+			if (child.getClass().getSimpleName().equals("TerminalNodeImpl"))
 				continue;
 
 			var_name = child.getText();
@@ -5473,7 +5429,7 @@ public class XPathCompList {
 
 			child = tree.getChild(i);
 
-			if (child.getClass().equals(TerminalNodeImpl.class))
+			if (child.getClass().getSimpleName().equals("TerminalNodeImpl"))
 				continue;
 
 			func_name = child.getText();
@@ -6760,17 +6716,17 @@ public class XPathCompList {
 		boolean valid = false, _has_children;
 
 		ParseTree child;
-		Class<?> childClass;
+		String childClass;
 
 		for (int i = 0; i < tree.getChildCount(); i++) {
 
 			child = tree.getChild(i);
-			childClass = child.getClass();
+			childClass = child.getClass().getSimpleName();
 
-			if (childClass.equals(TerminalNodeImpl.class))
+			if (childClass.equals("TerminalNodeImpl"))
 				continue;
 
-			else if (childClass.equals(FunctionCallContext.class))
+			else if (childClass.equals("FunctionCallContext"))
 				sb_list.addFirst(new StringBuilder());
 
 			_has_children = !child.getText().isEmpty() && (hasEffectiveChildren(child) || hasChildOfTerminalNodeImpl(child));
@@ -6787,39 +6743,31 @@ public class XPathCompList {
 			while (!(!parent.getText().isEmpty() && (hasEffectiveChildren(parent) || hasChildOfTerminalNodeImpl(parent))))
 				parent = parent.getParent();
 
-			Class<?> parentClass = parent.getClass();
+			String parentClass = parent.getClass().getSimpleName();
 
 			// PathContext node has already been validated
 
 			if (!isPathContextClass(parentClass)) {
 
-				Class<?> currentClass = tree.getClass();
+				String currentClass = tree.getClass().getSimpleName();
 
-				// OrExprContext node
-
-				if (currentClass.equals(OrExprContext.class))
+				switch (currentClass) {
+				case "OrExprContext":
 					translateOrExprContext(src_path_expr, parent, tree, sb_list.size() == 0 ? sb : sb_list.peek());
-
-				// AndExprContext node
-
-				else if (currentClass.equals(AndExprContext.class))
+					break;
+				case "AndExprContext":
 					translateAndExprContext(src_path_expr, parent, tree, sb_list.size() == 0 ? sb : sb_list.peek());
-
-				// AdditiveExprContext node
-
-				else if (currentClass.equals(AdditiveExprContext.class))
+					break;
+				case "AdditiveExprContext":
 					translateAdditiveExprContext(src_path_expr, parent, tree, sb_list.size() == 0 ? sb : sb_list.peek());
-
-				// MultiplicativeExprContext node
-
-				else if (currentClass.equals(MultiplicativeExprContext.class))
+					break;
+				case "MultiplicativeExprContext":
 					translateMultiplicativeExprContext(src_path_expr, parent, tree, sb_list.size() == 0 ? sb : sb_list.peek());
-
-				// FunctionCallContext node
-
-				else if (currentClass.equals(FunctionCallContext.class)) {
+					break;
+				case "FunctionCallContext":
 					translateFunctionCallContext(src_path_expr, parent, tree, sb_list.size() > 1 ? sb_list.get(1) : sb, sb_list.peek());
 					sb_list.removeFirst();
+					break;
 				}
 
 			}
@@ -6943,7 +6891,7 @@ public class XPathCompList {
 
 		String[] terminal_codes = getTextArrayOfChildTerminalNodeImpl(tree);
 
-		if (parent.getClass().equals(PredicateContext.class)) {
+		if (parent.getClass().getSimpleName().equals("PredicateContext")) {
 
 			appendSqlColumnName(getTable(src_path_expr), serial_key_name, sb);
 			sb.append(" = ");
@@ -7023,7 +6971,7 @@ public class XPathCompList {
 
 		String[] terminal_codes = getTextArrayOfChildTerminalNodeImpl(tree);
 
-		if (parent.getClass().equals(PredicateContext.class)) {
+		if (parent.getClass().getSimpleName().equals("PredicateContext")) {
 
 			appendSqlColumnName(getTable(src_path_expr), serial_key_name, sb);
 			sb.append(" = ");
@@ -7108,7 +7056,7 @@ public class XPathCompList {
 
 				child = tree.getChild(i);
 
-				if (child.getClass().equals(TerminalNodeImpl.class))
+				if (child.getClass().getSimpleName().equals("TerminalNodeImpl"))
 					continue;
 
 				func_name = child.getText();
@@ -7116,16 +7064,18 @@ public class XPathCompList {
 				break;
 			}
 
+			String parentClass = parent.getClass().getSimpleName();
+
 			int pred_size = sql_predicates.size();
 
 			if (pred_size == 0) {
 
 				switch (func_name) {
 				case "not":
-					if (sb.length() > 0 && parent.getClass().equals(OrExprContext.class))
+					if (sb.length() > 0 && parentClass.equals("OrExprContext"))
 						sb.append(" OR ");
 
-					if (sb.length() > 0 && parent.getClass().equals(AndExprContext.class))
+					if (sb.length() > 0 && parentClass.equals("AndExprContext"))
 						sb.append(" AND ");
 
 					switch (sb_func_call.toString()) {
@@ -7152,10 +7102,10 @@ public class XPathCompList {
 
 			switch (func_name) {
 			case "not":
-				if (sb.length() > 0 && parent.getClass().equals(OrExprContext.class))
+				if (sb.length() > 0 && parentClass.equals("OrExprContext"))
 					sb.append(" OR ");
 
-				if (sb.length() > 0 && parent.getClass().equals(AndExprContext.class))
+				if (sb.length() > 0 && parentClass.equals("AndExprContext"))
 					sb.append(" AND ");
 
 				sb.append("NOT ( ");
@@ -7228,7 +7178,7 @@ public class XPathCompList {
 			sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 			break;
 		case text:
-			if (_predicateContextClass != null && (_predicateContextClass.equals(EqualityExprContext.class) || _predicateContextClass.equals(RelationalExprContext.class) || _predicateContextHasBooleanFunc))
+			if (_predicateContextClass != null && (_predicateContextClass.equals("EqualityExprContext") || _predicateContextClass.equals("RelationalExprContext") || _predicateContextHasBooleanFunc))
 				sb.append(sql_expr.predicate);
 
 			else {
@@ -7260,29 +7210,24 @@ public class XPathCompList {
 	 */
 	private void testJoinClauseForSimpleTypeAttr(PgTable table, String ref_path, HashMap<PgTable, String> linking_tables, LinkedList<PgTable> linking_order) {
 
-		boolean has_nested_key_as_attr = table.has_nested_key_as_attr;
-
-		if (!has_nested_key_as_attr && table.total_nested_fields > 0)
-			has_nested_key_as_attr = table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr);
-
 		if (!linking_tables.containsKey(table))
 			linking_tables.put(table, getAbsoluteXPathOfTable(table, ref_path));
 
 		linking_order.push(table);
 
-		if (!table.has_simple_attribute && !has_nested_key_as_attr)
+		if (!table.has_simple_attribute && !table.has_nested_key_as_attr)
 			return;
 
 		Optional<PgTable> opt;
 
 		int table_id = tables.indexOf(table);
 
-		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+		opt = tables.parallelStream().filter(foreign_table -> foreign_table.has_nested_key_as_attr && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_to_simple_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		if (opt.isPresent())
 			testJoinClauseForSimpleTypeAttr(opt.get(), ref_path, linking_tables, linking_order);
 
-		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> !field.nested_key_as_attr && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_as_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> !field.nested_key_as_attr && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_to_simple_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		if (opt.isPresent())
 			testJoinClauseForSimpleTypeAttr(opt.get(), ref_path, linking_tables, linking_order);
@@ -7861,7 +7806,7 @@ public class XPathCompList {
 					break;
 				}
 
-				else if ((foreign_table.virtual || foreign_table.has_nested_key_as_attr) && !found_table) {
+				else if ((foreign_table.virtual || foreign_table.has_nested_key_to_simple_attr) && !found_table) {
 
 					touched_tables.add(foreign_table);
 
@@ -8192,7 +8137,7 @@ public class XPathCompList {
 
 						// check foreign nested_key
 
-						if (foreign_table.virtual || foreign_table.has_nested_key_as_attr) {
+						if (foreign_table.virtual || foreign_table.has_nested_key_to_simple_attr) {
 
 							int[] __ft_ids = foreign_table.ft_ids;
 
@@ -8373,7 +8318,7 @@ public class XPathCompList {
 		int union_size = getLastUnionId() + 1;
 
 		XPathComp[] last_named_comp = new XPathComp[union_size], comps;
-		Class<?> anyClass;
+		String anyClass;
 
 		for (int union_id = 0; union_id < union_size; union_id++) {
 
@@ -8383,45 +8328,26 @@ public class XPathCompList {
 
 				for (XPathComp comp : comps) {
 
-					anyClass = comp.tree.getClass();
+					anyClass = comp.tree.getClass().getSimpleName();
 
-					// TerminalNodeImpl node
-
-					if (anyClass.equals(TerminalNodeImpl.class))
-						continue;
-
-					// AbbreviatedStepContext node
-
-					else if (anyClass.equals(AbbreviatedStepContext.class))
-						continue;
-
-					// AxisSpecifierContext node
-
-					else if (anyClass.equals(AxisSpecifierContext.class))
-						continue;
-
-					// NCNameContext node
-
-					else if (anyClass.equals(NCNameContext.class))
-						last_named_comp[union_id] = comp;
-
-					// NodeTestContext node
-
-					else if (anyClass.equals(NodeTestContext.class))
-						continue;
-
-					// NameTestContext node
-
-					else if (anyClass.equals(NameTestContext.class))
-						last_named_comp[union_id] = comp;
-
-					// PredicateContext node
-
-					else if (anyClass.equals(PredicateContext.class))
+					if (anyClass.equals("PredicateContext"))
 						break;
 
-					else
+					switch (anyClass) {
+					case "TerminalNodeImpl":
+					case "AbbreviatedStepContext":
+					case "AxisSpecifierContext":
+					case "NodeTestContext":
+						continue;
+					case "NCNameContext":
+						last_named_comp[union_id] = comp;
+						break;
+					case "NameTestContext":
+						last_named_comp[union_id] = comp;
+						break;
+					default:
 						throw new PgSchemaException(comp.tree);
+					}
 
 				}
 
