@@ -1,4 +1,4 @@
-﻿ Changes in xsd2pgschema 3.0.7 (release 2018-11-15)
+﻿ Changes in xsd2pgschema 3.0.7 (release 2018-11-16)
 
   Allowed to follow URL redirection of schema location.
   Automatic redirect system message to stderr if redirect of result to stdout.
@@ -10,6 +10,8 @@
   Allowed to use simple content as in-place document key when table name is specified by --inplace-doc-key-name (table_name).content format.
   Added orphan table report in PostgreSQL DDL.
   Added --max-fks-for-simple-cont-index option to escape from error while index because huge simple content excesses PostgreSQL working memory.
+  Set defalt number 0 for --max-fks-for-simple-cont-index option.
+  Changed argument name from --min-rows-for-doc-key-index to --min-rows-for-index because the value is uniformly applied to attribute, element, and simple content PostgreSQL index.
 
  Changes in xsd2pgschema 3.0.6 (release 2018-10-25)
 

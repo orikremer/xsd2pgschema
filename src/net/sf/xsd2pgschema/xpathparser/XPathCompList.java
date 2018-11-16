@@ -4562,13 +4562,13 @@ public class XPathCompList {
 					LinkedList<LinkedList<PgTable>> linking_orders = new LinkedList<LinkedList<PgTable>>();
 					LinkedList<LinkedList<PgTable>> _linking_orders = new LinkedList<LinkedList<PgTable>>();
 
-					// simple type attribute in subject expression
+					// simple attribute in subject expression
 
 					if (path_expr.terminus.equals(XPathCompType.attribute) && !path_expr.sql_subject.field.attribute) {
 
 						LinkedList<PgTable> linking_order = new LinkedList<PgTable>();
 
-						testJoinClauseForSimpleTypeAttr(path_expr.sql_subject.table, path_expr.sql_subject.path, linking_tables, linking_order);
+						testJoinClauseForSimpleAttr(path_expr.sql_subject.table, path_expr.sql_subject.path, linking_tables, linking_order);
 
 						if (linking_tables.size() > 0) {
 
@@ -4584,13 +4584,13 @@ public class XPathCompList {
 
 					target_tables.remove(path_expr.sql_subject.table);
 
-					// simple type attribute in predicate expression
+					// simple attribute in predicate expression
 
 					path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.terminus.equals(XPathCompType.attribute) && !sql_expr.field.attribute).forEach(sql_expr -> {
 
 						LinkedList<PgTable> linking_order = new LinkedList<PgTable>();
 
-						testJoinClauseForSimpleTypeAttr(sql_expr.table, sql_expr.path, linking_tables, linking_order);
+						testJoinClauseForSimpleAttr(sql_expr.table, sql_expr.path, linking_tables, linking_order);
 
 						if (linking_tables.size() > 0) {
 
@@ -7201,14 +7201,14 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Test SQL JOIN clause for simple type attribute.
+	 * Test SQL JOIN clause for simple attribute.
 	 *
 	 * @param table current table
 	 * @param ref_path reference node path
 	 * @param linking_tables additional linking SQL tables
 	 * @param linking_order order of linking SQL tables
 	 */
-	private void testJoinClauseForSimpleTypeAttr(PgTable table, String ref_path, HashMap<PgTable, String> linking_tables, LinkedList<PgTable> linking_order) {
+	private void testJoinClauseForSimpleAttr(PgTable table, String ref_path, HashMap<PgTable, String> linking_tables, LinkedList<PgTable> linking_order) {
 
 		if (!linking_tables.containsKey(table))
 			linking_tables.put(table, getAbsoluteXPathOfTable(table, ref_path));
@@ -7225,12 +7225,12 @@ public class XPathCompList {
 		opt = tables.parallelStream().filter(foreign_table -> foreign_table.has_nested_key_as_attr && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_to_simple_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		if (opt.isPresent())
-			testJoinClauseForSimpleTypeAttr(opt.get(), ref_path, linking_tables, linking_order);
+			testJoinClauseForSimpleAttr(opt.get(), ref_path, linking_tables, linking_order);
 
 		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> !field.nested_key_as_attr && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_to_simple_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		if (opt.isPresent())
-			testJoinClauseForSimpleTypeAttr(opt.get(), ref_path, linking_tables, linking_order);
+			testJoinClauseForSimpleAttr(opt.get(), ref_path, linking_tables, linking_order);
 
 	}
 

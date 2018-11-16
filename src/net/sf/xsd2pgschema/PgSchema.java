@@ -5258,13 +5258,13 @@ public class PgSchema implements Serializable {
 
 					if (!has_index) {
 
-						String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_doc_key_index + " ) AS trunc";
+						String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
 
 						rset = stat.executeQuery(sql);
 
 						while (rset.next()) {
 
-							if (rset.getInt(1) == pg_option.min_rows_for_doc_key_index) {
+							if (rset.getInt(1) == pg_option.min_rows_for_index) {
 
 								sql = "CREATE INDEX IDX_" + table_name + "_" + table.doc_key_pname + " ON " + table.pgname + " ( " + table.doc_key_pgname + " )";
 
@@ -5421,7 +5421,7 @@ public class PgSchema implements Serializable {
 
 							if (has_no_index) {
 
-								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_doc_key_index + " ) AS trunc";
+								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
 
 								rset = stat.executeQuery(sql);
 
@@ -5429,7 +5429,7 @@ public class PgSchema implements Serializable {
 
 								while (rset.next()) {
 
-									if (rset.getInt(1) == pg_option.min_rows_for_doc_key_index) {
+									if (rset.getInt(1) == pg_option.min_rows_for_index) {
 
 										for (int attr_id = 0; attr_id < attr_count; attr_id++) {
 
@@ -5613,7 +5613,7 @@ public class PgSchema implements Serializable {
 
 							if (has_no_index) {
 
-								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_doc_key_index + " ) AS trunc";
+								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
 
 								rset = stat.executeQuery(sql);
 
@@ -5621,7 +5621,7 @@ public class PgSchema implements Serializable {
 
 								while (rset.next()) {
 
-									if (rset.getInt(1) == pg_option.min_rows_for_doc_key_index) {
+									if (rset.getInt(1) == pg_option.min_rows_for_index) {
 
 										for (int elem_id = 0; elem_id < elem_count; elem_id++) {
 
@@ -5802,7 +5802,7 @@ public class PgSchema implements Serializable {
 
 							if (has_no_index) {
 
-								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_doc_key_index + " ) AS trunc";
+								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
 
 								rset = stat.executeQuery(sql);
 
@@ -5810,7 +5810,7 @@ public class PgSchema implements Serializable {
 
 								while (rset.next()) {
 
-									if (rset.getInt(1) == pg_option.min_rows_for_doc_key_index) {
+									if (rset.getInt(1) == pg_option.min_rows_for_index) {
 
 										for (int simple_cont_id = 0; simple_cont_id < simple_cont_count; simple_cont_id++) {
 

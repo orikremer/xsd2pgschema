@@ -94,6 +94,9 @@ public class csv2pgsql {
 			else if (args[i].equals("--test-ddl"))
 				pg_option.test = true;
 
+			else if (args[i].equals("--min-rows-for-index") && i + 1 < args.length)
+				pg_option.setMinRowsForIndex(args[++i]);
+
 			else if (args[i].equals("--create-doc-key-index"))
 				pg_option.setCreateDocKeyIndex(true);
 
@@ -102,9 +105,6 @@ public class csv2pgsql {
 
 			else if (args[i].equals("--drop-doc-key-index"))
 				pg_option.setDropDocKeyIndex();
-
-			else if (args[i].equals("--min-rows-for-doc-key-index") && i + 1 < args.length)
-				pg_option.setMinRowsForDocKeyIndex(args[++i]);
 
 			else if (args[i].equals("--create-attr-index"))
 				pg_option.setCreateAttrIndex(true);
@@ -330,10 +330,10 @@ public class csv2pgsql {
 		System.err.println("        --db-host PG_HOST_NAME (default=\"" + PgSchemaUtil.pg_host + "\")");
 		System.err.println("        --db-port PG_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_port + "\")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
+		System.err.println("        --min-rows-for-index MIN_ROWS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_min_rows_for_index + "\")");
 		System.err.println("        --create-doc-key-index (create PostgreSQL index on document key if not exists, enable if --sync option is selected)");
 		System.err.println("        --no-create-doc-key-index (do not create PostgreSQL index on document key, default if no --sync option)");
 		System.err.println("        --drop-doc-key-index (drop PostgreSQL index on document key if exists)");
-		System.err.println("        --min-rows-for-doc-key-index MIN_ROWS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_min_rows_for_doc_key_index + "\")");
 		System.err.println("        --create-attr-index (create PostgreSQL index on attribute if not exists, default)");
 		System.err.println("        --no-create-attr-index (do not create PostgreSQL index on attribute)");
 		System.err.println("        --drop-attr-index (drop PostgreSQL index on attribute if exists)");

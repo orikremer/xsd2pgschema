@@ -271,7 +271,7 @@ public class XPathEvaluatorImpl {
 
 					ResultSet rset = stat.executeQuery(path_expr.sql);
 
-					stat.setFetchSize(PgSchemaUtil.pg_min_rows_for_doc_key_index);
+					stat.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
 
 					ResultSetMetaData meta = rset.getMetaData();
 
@@ -439,7 +439,7 @@ public class XPathEvaluatorImpl {
 
 					ResultSet rset = stat.executeQuery(path_expr.sql);
 
-					stat.setFetchSize(PgSchemaUtil.pg_min_rows_for_doc_key_index);
+					stat.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
 
 					// table node
 
@@ -554,7 +554,7 @@ public class XPathEvaluatorImpl {
 
 					ResultSet rset = stat.executeQuery(path_expr.sql);
 
-					stat.setFetchSize(PgSchemaUtil.pg_min_rows_for_doc_key_index);
+					stat.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
 
 					// table node
 

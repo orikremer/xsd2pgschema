@@ -70,8 +70,8 @@ public class PgOption {
 	/** Whether to drop PostgreSQL index on simple content. */
 	public boolean drop_simple_cont_index = false;
 
-	/** The minimum rows for creation of PostgreSQL index on document key. */
-	public int min_rows_for_doc_key_index = PgSchemaUtil.pg_min_rows_for_doc_key_index;
+	/** The minimum rows for creation of PostgreSQL index. */
+	public int min_rows_for_index = PgSchemaUtil.pg_min_rows_for_index;
 
 	/** The maximum attribute columns for creation of PostgreSQL index on the attributes (except for in-place document key). */
 	public int max_attr_cols_for_index = PgSchemaUtil.pg_max_attr_cols_for_index;
@@ -147,27 +147,27 @@ public class PgOption {
 	}
 
 	/**
-	 * Set minimum rows to create PostgreSQL index on document key.
+	 * Set minimum rows to create PostgreSQL index.
 	 *
-	 * @param min_rows_for_doc_key_index argument value
+	 * @param min_rows_for_index argument value
 	 */
-	public void setMinRowsForDocKeyIndex(String min_rows_for_doc_key_index) {
+	public void setMinRowsForIndex(String min_rows_for_index) {
 
-		if (min_rows_for_doc_key_index.endsWith("k"))
-			this.min_rows_for_doc_key_index = (int) (Float.valueOf(min_rows_for_doc_key_index.substring(0, min_rows_for_doc_key_index.indexOf('k'))) * 1024);
+		if (min_rows_for_index.endsWith("k"))
+			this.min_rows_for_index = (int) (Float.valueOf(min_rows_for_index.substring(0, min_rows_for_index.indexOf('k'))) * 1024);
 
-		else if (min_rows_for_doc_key_index.endsWith("M"))
-			this.min_rows_for_doc_key_index = (int) (Float.valueOf(min_rows_for_doc_key_index.substring(0, min_rows_for_doc_key_index.indexOf('M'))) * 1024 * 1024);
+		else if (min_rows_for_index.endsWith("M"))
+			this.min_rows_for_index = (int) (Float.valueOf(min_rows_for_index.substring(0, min_rows_for_index.indexOf('M'))) * 1024 * 1024);
 
-		else if (min_rows_for_doc_key_index.endsWith("G"))
-			this.min_rows_for_doc_key_index = (int) (Float.valueOf(min_rows_for_doc_key_index.substring(0, min_rows_for_doc_key_index.indexOf('G'))) * 1024 * 1024 * 1024);
+		else if (min_rows_for_index.endsWith("G"))
+			this.min_rows_for_index = (int) (Float.valueOf(min_rows_for_index.substring(0, min_rows_for_index.indexOf('G'))) * 1024 * 1024 * 1024);
 
 		else
-			this.min_rows_for_doc_key_index = Integer.valueOf(min_rows_for_doc_key_index);
+			this.min_rows_for_index = Integer.valueOf(min_rows_for_index);
 
-		if (this.min_rows_for_doc_key_index < PgSchemaUtil.pg_min_rows_for_doc_key_index) {
-			System.err.println("Minimum rows for creation of PostgreSQL index on document key is less than " + PgSchemaUtil.pg_min_rows_for_doc_key_index + ". Set to the default value.");
-			this.min_rows_for_doc_key_index = PgSchemaUtil.pg_min_rows_for_doc_key_index;
+		if (this.min_rows_for_index < PgSchemaUtil.pg_min_rows_for_index) {
+			System.err.println("Minimum rows for creation of PostgreSQL index is less than " + PgSchemaUtil.pg_min_rows_for_index + ". Set to the default value.");
+			this.min_rows_for_index = PgSchemaUtil.pg_min_rows_for_index;
 		}
 
 	}

@@ -207,8 +207,8 @@ public class PgSchemaUtil {
 	/** The PostgreSQL reserved operator codes. */
 	public static final String[] pg_reserved_ops = { "-", "->", "->>", "-|-", "!", "!!", "!=", "?-", "?-|", "?#", "?|", "?||", "@", "@-@", "@@", "@@@", "@>", "*", "/", "&", "&&", "&<", "&<|", "&>", "#", "##", "#>", "#>>", "%", "^", "+", "<", "<->", "<@", "<^", "<<", "<<=", "<<|", "<=", "<>", "=", ">", ">^", ">=", ">>", ">>=", "|", "|/", "|&>", "|>>", "||", "||/", "~", "~=" };
 
-	/** The minimum rows for creation of PostgreSQL index on document key. */
-	public static final int pg_min_rows_for_doc_key_index = 2048;
+	/** The minimum rows for creation of PostgreSQL index. */
+	public static final int pg_min_rows_for_index = 2048;
 
 	/** The maximum attribute columns for creation of PostgreSQL index on the attributes (except for in-place document key). */
 	public static final int pg_max_attr_cols_for_index = 1;
@@ -223,7 +223,7 @@ public class PgSchemaUtil {
 	public static final int pg_limit_elem_cols_for_index = 128;
 
 	/** The maximum foreign keys in a table for creation of PostgreSQL index on the simple content. */
-	public static final int pg_max_fks_for_simple_cont_index = 1;
+	public static final int pg_max_fks_for_simple_cont_index = 0;
 
 	/** The limit number of foreign keys in a table for creation of PostgreSQL index on the simple content. */
 	public static final int pg_limit_fks_for_simple_cont_index = 8;
