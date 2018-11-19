@@ -156,6 +156,9 @@ public class xsd2pgschema {
 				option.setDocKeyOption(false);
 			}
 
+			else if (args[i].equals("--show-orphan-table"))
+				option.show_orphan_table = true;
+
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
 				showUsage();
@@ -253,6 +256,7 @@ public class xsd2pgschema {
 		System.err.println("        --discarded-doc-key-name DISCARDED_DOCUMENT_KEY_NAME");
 		System.err.println("        --inplace-doc-key-name INPLACE_DOCUMENT_KEY_NAME");
 		System.err.println("        --doc-key-if-no-inplace (append document key if no in-place docuemnt key, select --no-doc-key options by default)");
+		System.err.println("        --show-orphan-table");
 		System.exit(1);
 
 	}

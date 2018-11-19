@@ -231,6 +231,10 @@ public class PgSchemaOption implements Serializable {
 	@Flat
 	public boolean field_resolved = false;
 
+	/** Whether show orphan table. */
+	@Flat
+	public boolean show_orphan_table = false;
+
 	/** The internal status corresponding to --doc-key option. */
 	@Flat
 	private boolean _doc_key = false;

@@ -12,6 +12,7 @@
   Added --max-fks-for-simple-cont-index option to escape from error while index because huge simple content excesses PostgreSQL working memory.
   Set defalt number 0 for --max-fks-for-simple-cont-index option.
   Changed argument name from --min-rows-for-doc-key-index to --min-rows-for-index because the value is uniformly applied to attribute, element, and simple content PostgreSQL index.
+  Added --show-orphan-table option in xsd2pgschema main class.
 
  Changes in xsd2pgschema 3.0.6 (release 2018-10-25)
 

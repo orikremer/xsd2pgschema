@@ -66,7 +66,6 @@ import net.sf.xsd2pgschema.type.PgHashSize;
 import net.sf.xsd2pgschema.type.XsFieldType;
 import net.sf.xsd2pgschema.type.XsTableType;
 import net.sf.xsd2pgschema.xmlutil.XmlParser;
-import net.sf.xsd2pgschema.xpathparser.XPathCache;
 
 /**
  * PostgreSQL data model.
@@ -88,7 +87,7 @@ public class PgSchema implements Serializable {
 	private String def_namespace = null;
 
 	/** The list of namespace (key=prefix, value=namespace_uri). */
-	private HashMap<String, String> def_namespaces = null;
+	private HashMap<String, String> def_namespaces = new HashMap<String, String>();
 
 	/** The list of PostgreSQL table. */
 	private List<PgTable> tables = null;
@@ -135,6 +134,14 @@ public class PgSchema implements Serializable {
 	/** The duplicated schema locations (key=duplicated schema location, value=unique schema location). */
 	@Flat
 	private HashMap<String, String> dup_schema_locations = null;
+
+	/** The dictionary of table name. */
+	@Flat
+	private HashMap<String, Integer> table_name_dic = null;
+
+	/** The dictionary of matched table path. */
+	@Flat
+	private HashMap<String, Integer> table_path_dic = null;
 
 	/** The attribute group definitions. */
 	@Flat
@@ -242,8 +249,6 @@ public class PgSchema implements Serializable {
 		}
 
 		// extract default namespace and default attributes
-
-		def_namespaces = new HashMap<String, String>();
 
 		NamedNodeMap root_attrs = root_node.getAttributes();
 
@@ -625,9 +630,6 @@ public class PgSchema implements Serializable {
 
 		}
 
-		// allocation cache for XPath parser
-		xpath_cache = new XPathCache();
-
 		// apply pending attribute groups (lazy evaluation)
 
 		if (pending_attr_groups.size() > 0) {
@@ -716,7 +718,7 @@ public class PgSchema implements Serializable {
 
 			table.classify();
 
-			// set foreign_table_id as table pointer otherwise remove orphaned nested key
+			// set foreign_table_id as table pointer otherwise remove orphan nested key
 
 			if (table.required) {
 
@@ -1124,59 +1126,59 @@ public class PgSchema implements Serializable {
 
 		tables.parallelStream().filter(table -> table.required && (option.rel_model_ext || !table.relational)).forEach(table -> table.writable = true);
 
-		// add serial key on demand in case that parent table is list holder
+		tables.parallelStream().filter(table -> table.writable).forEach(table -> {
 
-		if (option.serial_key)
-			tables.parallelStream().filter(table -> table.writable && table.list_holder).forEach(table -> table.fields.stream().filter(field -> field.nested_key).forEach(field -> getForeignTable(field).addSerialKey(option)));
+			// add serial key on demand in case that parent table is list holder
 
-		// add XPath key on demand
+			if (option.serial_key && table.list_holder)
+				table.fields.stream().filter(field -> field.nested_key).forEach(field -> getForeignTable(field).addSerialKey(option));
 
-		if (option.xpath_key)
-			tables.parallelStream().filter(table -> table.writable).forEach(table -> table.addXPathKey(option));
+			// add XPath key on demand
 
-		// remove nested key if relational model extension is disabled
+			if (option.xpath_key)
+				table.addXPathKey(option);
 
-		if (!option.rel_model_ext) {
+			// remove nested key if relational model extension is disabled
 
-			tables.parallelStream().filter(table -> table.writable && table.total_nested_fields > 0).forEach(table -> {
+			if (!option.rel_model_ext && table.total_nested_fields > 0) {
 
 				table.fields.removeIf(field -> field.nested_key);
 				table.countNestedFields();
 
+			}
+
+			// retrieve document key if no in-place document key exists
+
+			if (!option.document_key && option.in_place_document_key && (option.rel_model_ext || option.document_key_if_no_in_place)) {
+
+				if (!table.fields.stream().anyMatch(field -> field.name.equals(option.document_key_name)) && !table.fields.stream().anyMatch(field -> (field.dtd_data_holder && option.in_place_document_key_names.contains(field.name)) || ((field.dtd_data_holder || field.simple_content) && option.in_place_document_key_names.contains(table.name + "." + field.name)))) {
+
+					PgField field = new PgField();
+
+					field.name = field.pname = field.xname = option.document_key_name;
+					field.type = option.xs_prefix_ + "string";
+					field.xs_type = XsFieldType.xs_string;
+					field.document_key = true;
+
+					table.fields.add(0, field);
+
+				}
+
+			}
+
+			// update system key, user key, omissible and jsonable flags
+
+			table.fields.forEach(field -> {
+
+				field.setSystemKey();
+				field.setUserKey();
+				field.setOmissible(table, option);
+				field.setJsonable(table, option);
+
+
 			});
 
-		}
-
-		// retrieve document key if no in-place document key exists
-
-		if (!option.document_key && option.in_place_document_key && (option.rel_model_ext || option.document_key_if_no_in_place)) {
-
-			tables.parallelStream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> field.name.equals(option.document_key_name)) && !table.fields.stream().anyMatch(field -> (field.dtd_data_holder && option.in_place_document_key_names.contains(field.name)) || ((field.dtd_data_holder || field.simple_content) && option.in_place_document_key_names.contains(table.name + "." + field.name)))).forEach(table -> {
-
-				PgField field = new PgField();
-
-				field.name = field.pname = field.xname = option.document_key_name;
-				field.type = option.xs_prefix_ + "string";
-				field.xs_type = XsFieldType.xs_string;
-				field.document_key = true;
-
-				table.fields.add(0, field);
-
-			});
-
-		}
-
-		// update system key, user key, omissible and jsonable flags
-
-		tables.parallelStream().forEach(table -> table.fields.forEach(field -> {
-
-			field.setSystemKey();
-			field.setUserKey();
-			field.setOmissible(table, option);
-			field.setJsonable(table, option);
-
-
-		}));
+		});
 
 		// decide prefix of target namespace
 
@@ -1246,9 +1248,9 @@ public class PgSchema implements Serializable {
 
 		if (option.ddl_output) {
 
-			def_stat_msg.insert(0, "--  Generated " + tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && table.writable).count() + " tables (" + tables.parallelStream().map(table -> (option.rel_model_ext || !table.relational) && table.writable ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups in total\n");
+			def_stat_msg.insert(0, "--  Generated " + tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table)).count() + " tables (" + tables.parallelStream().map(table -> (option.rel_model_ext || !table.relational) && table.writable ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups in total\n");
 
-			if (tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && !table.writable).count() > 0) {
+			if (!option.show_orphan_table && tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && !table.writable).count() > 0) {
 
 				def_stat_msg.append("--   Orphan tables:\n--    ");
 				tables.stream().filter(table -> (option.rel_model_ext || !table.relational) && !table.writable).forEach(table -> def_stat_msg.append(table.pname + ", "));
@@ -2942,7 +2944,7 @@ public class PgSchema implements Serializable {
 	 *
 	 * @return int total number of PostgreSQL named schema
 	 */
-	public int getTotalPgNamedSchemaa() {
+	public int getTotalPgNamedSchema() {
 		return total_pg_named_schema;
 	}
 
@@ -3130,6 +3132,37 @@ public class PgSchema implements Serializable {
 	 */
 	private String getDataFileNameOf(PgTable table) {
 		return (option.pg_named_schema ? table.schema_name + "." : "") + table.pname + (option.pg_tab_delimiter ? ".tsv" : ".csv");
+	}
+
+	/**
+	 * Return dictionary of table name.
+	 *
+	 * @return HashMap dictionary of table name
+	 */
+	public HashMap<String, Integer> getTableNameDictionary() {
+
+		if (table_name_dic == null) {
+
+			table_name_dic = new HashMap<String, Integer>();
+
+			tables.parallelStream().filter(table -> table.writable).forEach(table -> table_name_dic.put(table.xname, tables.indexOf(table)));
+
+		}
+
+		return table_name_dic;
+	}
+
+	/**
+	 * Return dictionary of matched table path.
+	 *
+	 * @return HashMap dictionary of matched table path
+	 */
+	public HashMap<String, Integer> getTablePathDictionary() {
+
+		if (table_path_dic == null)
+			table_path_dic = new HashMap<String, Integer>();
+
+		return table_path_dic;
 	}
 
 	/**
@@ -3379,7 +3412,7 @@ public class PgSchema implements Serializable {
 		System.out.println("--  wild card extension: " + option.wild_card);
 		System.out.println("--  case sensitive name: " + option.case_sense);
 		System.out.println("--  no name collision: " + !name_collision);
-		System.out.println("--  append document key: " + option.document_key);
+		System.out.println("--  append document key: " + (option.document_key || option.in_place_document_key) + (option.in_place_document_key ? " (in-place)" : ""));
 		System.out.println("--  append serial key: " + option.serial_key);
 		System.out.println("--  append xpath key: " + option.xpath_key);
 		System.out.println("--  retain constraint: " + option.pg_retain_key);
@@ -3714,7 +3747,7 @@ public class PgSchema implements Serializable {
 			return;
 		}
 
-		if (!table.writable)
+		if (!((option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table)))
 			return;
 
 		System.out.println("--");
@@ -3736,7 +3769,7 @@ public class PgSchema implements Serializable {
 			sb.append("no namespace, ");
 
 		System.out.println("-- xmlns: " + sb.toString() + "schema location: " + table.schema_location);
-		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replace('_', ' ') + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (table.name_collision ? ", name collision: " + table.name_collision : ""));
+		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replace('_', ' ') + (!table.writable && option.show_orphan_table ? " (orphan)" : "") + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (table.name_collision ? ", name collision: " + table.name_collision : ""));
 		System.out.println("--");
 
 		sb.setLength(0);
@@ -6506,8 +6539,5 @@ public class PgSchema implements Serializable {
 
 		return sph_mvas;
 	}
-
-	/** Cache for XPath parser. */
-	public XPathCache xpath_cache = null;
 
 }

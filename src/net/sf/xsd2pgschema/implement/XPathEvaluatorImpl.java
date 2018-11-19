@@ -121,6 +121,9 @@ public class XPathEvaluatorImpl {
 
 	}
 
+	/** The string builder for SQL translation. */
+	private StringBuilder sb = new StringBuilder();
+
 	/** The XPath query previously translated. */
 	private String _xpath_query = "";
 
@@ -138,8 +141,6 @@ public class XPathEvaluatorImpl {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void translate(String xpath_query, HashMap<String, String> variables, boolean stdout_msg) throws IOException, xpathListenerException, PgSchemaException {
-
-		StringBuilder sb = new StringBuilder();
 
 		variables.entrySet().forEach(arg -> sb.append(arg.getKey() + arg.getValue()));
 

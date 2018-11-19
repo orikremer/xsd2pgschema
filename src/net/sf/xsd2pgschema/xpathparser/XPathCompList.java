@@ -85,14 +85,17 @@ public class XPathCompList {
 	/** The default schema location. */
 	private String def_schema_location = null;
 
+	/** The dictionary of table name. */
+	private HashMap<String, Integer> table_name_dic = null;
+
+	/** The dictionary of matched table path. */
+	private HashMap<String, Integer> table_path_dic = null;
+
 	/** The list of PostgreSQL table. */
 	private List<PgTable> tables = null;
 
 	/** The root table. */
 	private PgTable root_table = null;
-
-	/** The cache for XPath parser. */
-	private XPathCache cache = null;
 
 	/** Instance of path expression for UnionExprNoRootContext node. */
 	private List<XPathExpr> path_exprs_union = null;
@@ -120,11 +123,13 @@ public class XPathCompList {
 
 		def_schema_location = schema.getDefaultSchemaLocation();
 
+		table_name_dic = schema.getTableNameDictionary();
+
+		table_path_dic = schema.getTablePathDictionary();
+
 		tables = schema.getTableList();
 
 		root_table = schema.getRootTable();
-
-		cache = schema.xpath_cache;
 
 		document_key = option.document_key || option.in_place_document_key;
 
@@ -1023,14 +1028,14 @@ public class XPathCompList {
 
 			else {
 
-				tables.parallelStream().filter(table -> !table.virtual && table.matchesNodeName(text, wild_card)).forEach(table -> {
+				tables.parallelStream().filter(table -> table.writable && table.has_simple_content && !table.virtual && table.matchesNodeName(text, wild_card)).forEach(table -> {
 
 					String table_xpath = getAbsoluteXPathOfTable(table, null);
 
 					if (table_xpath != null && inc_self)
 						add(new XPathExpr(table_xpath, XPathCompType.table));
 
-					if (table.has_simple_content && table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+					if (table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 						String simple_content_xpath = getAbsoluteXPathOfTable(table, null);
 
@@ -1041,11 +1046,9 @@ public class XPathCompList {
 
 				});
 
-				int _path_exprs_size;
+				tables.parallelStream().filter(table -> table.writable && (table.has_element || table.has_any)).forEach(table -> {
 
-				for (PgTable table : tables) {
-
-					_path_exprs_size = path_exprs.size();
+					int _path_exprs_size = path_exprs.size();
 
 					if (table.has_element) {
 
@@ -1073,7 +1076,7 @@ public class XPathCompList {
 
 					}
 
-				}
+				});
 
 				if (path_exprs.size() == 0 && !predicate)
 					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
@@ -1116,14 +1119,14 @@ public class XPathCompList {
 
 						else {
 
-							tables.parallelStream().filter(table -> !table.virtual && table.matchesNodeName(text, wild_card)).forEach(table -> {
+							tables.parallelStream().filter(table -> table.writable && table.has_simple_content && !table.virtual && table.matchesNodeName(text, wild_card)).forEach(table -> {
 
 								String table_xpath = getAbsoluteXPathOfTable(table, ref_path);
 
 								if (table_xpath != null && inc_self)
 									_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
-								if (table.has_simple_content && table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+								if (table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 									String simple_content_xpath = getAbsoluteXPathOfTable(table, ref_path);
 
@@ -1134,11 +1137,9 @@ public class XPathCompList {
 
 							});
 
-							int _path_exprs_size;
+							tables.parallelStream().filter(table -> table.writable && (table.has_element || table.has_any)).forEach(table -> {
 
-							for (PgTable table : tables) {
-
-								_path_exprs_size = _list.path_exprs.size();
+								int _path_exprs_size = _list.path_exprs.size();
 
 								if (table.has_element) {
 
@@ -1166,7 +1167,7 @@ public class XPathCompList {
 
 								}
 
-							}
+							});
 
 						}
 
@@ -1406,11 +1407,9 @@ public class XPathCompList {
 
 			else {
 
-				int _path_exprs_size;
+				tables.parallelStream().filter(table -> table.writable && (table.has_attribute || table.has_simple_attribute || table.has_any_attribute)).forEach(table -> {
 
-				for (PgTable table : tables) {
-
-					_path_exprs_size = path_exprs.size();
+					int _path_exprs_size = path_exprs.size();
 
 					if (table.has_attribute || table.has_simple_attribute) {
 
@@ -1438,7 +1437,7 @@ public class XPathCompList {
 
 					}
 
-				}
+				});
 
 				if (path_exprs.size() == 0 && !predicate)
 					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
@@ -1478,11 +1477,9 @@ public class XPathCompList {
 
 							if (!path_expr.terminus.equals(XPathCompType.any_element)) {
 
-								int _path_exprs_size;
+								tables.parallelStream().filter(table -> table.writable && (table.has_attribute || table.has_simple_attribute || table.has_any_attribute)).forEach(table -> {
 
-								for (PgTable table : tables) {
-
-									_path_exprs_size = _list.path_exprs.size();
+									int _path_exprs_size = _list.path_exprs.size();
 
 									if (table.has_attribute || table.has_simple_attribute) {
 
@@ -1510,7 +1507,7 @@ public class XPathCompList {
 
 									}
 
-								}
+								});
 
 							}
 
@@ -1926,14 +1923,14 @@ public class XPathCompList {
 
 			else {
 
-				tables.parallelStream().filter(table -> !table.virtual).forEach(table -> {
+				tables.parallelStream().filter(table -> table.writable && !table.virtual && table.has_simple_content).forEach(table -> {
 
 					String table_xpath = getAbsoluteXPathOfTable(table, null);
 
 					if (table_xpath != null && inc_self)
 						add(new XPathExpr(table_xpath, XPathCompType.table));
 
-					if (table.has_simple_content && table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
+					if (table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute)) {
 
 						String simple_content_xpath = getAbsoluteXPathOfTable(table, null);
 
@@ -1944,11 +1941,9 @@ public class XPathCompList {
 
 				});
 
-				int _path_exprs_size;
+				tables.parallelStream().filter(table -> table.writable && (table.has_element || table.has_any)).forEach(table -> {
 
-				for (PgTable table : tables) {
-
-					_path_exprs_size = path_exprs.size();
+					int _path_exprs_size = path_exprs.size();
 
 					if (table.has_element) {
 
@@ -1976,7 +1971,7 @@ public class XPathCompList {
 
 					}
 
-				}
+				});
 
 				if (path_exprs.size() == 0 && !predicate)
 					throw new PgSchemaException(comp.tree, def_schema_location);
@@ -2019,33 +2014,27 @@ public class XPathCompList {
 
 						else {
 
-							tables.parallelStream().filter(table -> !table.virtual).forEach(table -> {
+							tables.parallelStream().filter(table -> table.writable && !table.virtual && table.has_simple_content).forEach(table -> {
 
 								String table_xpath = getAbsoluteXPathOfTable(table, ref_path);
 
 								if (table_xpath != null && inc_self)
 									_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
-								if (table.has_simple_content) {
+								table.elem_fields.stream().filter(field -> field.simple_content && !field.simple_attribute).forEach(field -> {
 
-									table.elem_fields.stream().filter(field -> field.simple_content && !field.simple_attribute).forEach(field -> {
+									String simple_content_xpath = getAbsoluteXPathOfTable(table, ref_path);
 
-										String simple_content_xpath = getAbsoluteXPathOfTable(table, ref_path);
+									if (simple_content_xpath != null && inc_self)
+										_list.add(new XPathExpr(simple_content_xpath, XPathCompType.simple_content));
 
-										if (simple_content_xpath != null && inc_self)
-											_list.add(new XPathExpr(simple_content_xpath, XPathCompType.simple_content));
-
-									});
-
-								}
+								});
 
 							});
 
-							int _path_exprs_size;
+							tables.parallelStream().filter(table -> table.writable && (table.has_element || table.has_any)).forEach(table -> {
 
-							for (PgTable table : tables) {
-
-								_path_exprs_size = _list.path_exprs.size();
+								int _path_exprs_size = _list.path_exprs.size();
 
 								if (table.has_element) {
 
@@ -2073,7 +2062,7 @@ public class XPathCompList {
 
 								}
 
-							}
+							});
 
 						}
 
@@ -2313,11 +2302,9 @@ public class XPathCompList {
 
 			else {
 
-				int _path_exprs_size;
+				tables.parallelStream().filter(table -> table.writable && (table.has_attribute || table.has_simple_attribute || table.has_any_attribute)).forEach(table -> {
 
-				for (PgTable table : tables) {
-
-					_path_exprs_size = path_exprs.size();
+					int _path_exprs_size = path_exprs.size();
 
 					if (table.has_attribute || table.has_simple_attribute) {
 
@@ -2341,7 +2328,7 @@ public class XPathCompList {
 
 					}
 
-				}
+				});
 
 				if (path_exprs.size() == 0 && !predicate)
 					throw new PgSchemaException(comp.tree, def_schema_location);
@@ -2379,11 +2366,9 @@ public class XPathCompList {
 
 							if (!path_expr.terminus.equals(XPathCompType.any_element)) {
 
-								int _path_exprs_size;
+								tables.parallelStream().filter(table -> table.writable && (table.has_attribute || table.has_simple_attribute || table.has_any_attribute)).forEach(table -> {
 
-								for (PgTable table : tables) {
-
-									_path_exprs_size = _list.path_exprs.size();
+									int _path_exprs_size = _list.path_exprs.size();
 
 									if (table.has_attribute || table.has_simple_attribute) {
 
@@ -2407,7 +2392,7 @@ public class XPathCompList {
 
 									}
 
-								}
+								});
 
 							}
 
@@ -2826,14 +2811,14 @@ public class XPathCompList {
 
 			else {
 
-				tables.parallelStream().filter(table -> !table.virtual && table.target_namespace != null && table.target_namespace.contains(namespace_uri) && table.matchesNodeName(text, wild_card)).forEach(table -> {
+				tables.parallelStream().filter(table -> table.writable && !table.virtual && table.has_simple_content && table.target_namespace != null && table.target_namespace.contains(namespace_uri) && table.matchesNodeName(text, wild_card)).forEach(table -> {
 
 					String table_xpath = getAbsoluteXPathOfTable(table, null);
 
 					if (table_xpath != null && inc_self)
 						add(new XPathExpr(table_xpath, XPathCompType.table));
 
-					if (table.has_simple_content && table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card))) {
+					if (table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card))) {
 
 						String simple_content_xpath = getAbsoluteXPathOfTable(table, null);
 
@@ -2844,11 +2829,9 @@ public class XPathCompList {
 
 				});
 
-				int _path_exprs_size;
+				tables.parallelStream().filter(table -> table.writable && (table.has_element || table.has_any)).forEach(table -> {
 
-				for (PgTable table : tables) {
-
-					_path_exprs_size = path_exprs.size();
+					int _path_exprs_size = path_exprs.size();
 
 					if (table.has_element) {
 
@@ -2876,7 +2859,7 @@ public class XPathCompList {
 
 					}
 
-				}
+				});
 
 				if (path_exprs.size() == 0 && !predicate)
 					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
@@ -2917,33 +2900,27 @@ public class XPathCompList {
 
 						else {
 
-							tables.parallelStream().filter(table -> !table.virtual && table.target_namespace != null && table.target_namespace.contains(namespace_uri) && table.matchesNodeName(text, wild_card)).forEach(table -> {
+							tables.parallelStream().filter(table -> table.writable && !table.virtual && table.has_simple_content && table.target_namespace != null && table.target_namespace.contains(namespace_uri) && table.matchesNodeName(text, wild_card)).forEach(table -> {
 
 								String table_xpath = getAbsoluteXPathOfTable(table, ref_path);
 
 								if (table_xpath != null && inc_self)
 									_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
-								if (table.has_simple_content) {
+								table.elem_fields.stream().filter(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
 
-									table.elem_fields.stream().filter(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card)).forEach(field -> {
+									String simple_content_xpath = getAbsoluteXPathOfTable(table, ref_path);
 
-										String simple_content_xpath = getAbsoluteXPathOfTable(table, ref_path);
+									if (simple_content_xpath != null && inc_self)
+										_list.add(new XPathExpr(simple_content_xpath, XPathCompType.simple_content));
 
-										if (simple_content_xpath != null && inc_self)
-											_list.add(new XPathExpr(simple_content_xpath, XPathCompType.simple_content));
-
-									});
-
-								}
+								});
 
 							});
 
-							int _path_exprs_size;
+							tables.parallelStream().filter(table -> table.writable && (table.has_element || table.has_any)).forEach(table -> {
 
-							for (PgTable table : tables) {
-
-								_path_exprs_size = _list.path_exprs.size();
+								int _path_exprs_size = _list.path_exprs.size();
 
 								if (table.has_element) {
 
@@ -2971,7 +2948,7 @@ public class XPathCompList {
 
 								}
 
-							}
+							});
 
 						}
 
@@ -3061,7 +3038,7 @@ public class XPathCompList {
 									if (table_xpath != null && (inc_self || _ft_ids == null))
 										_list.add(new XPathExpr(table_xpath, XPathCompType.table));
 
-									if (foreign_table.has_simple_content && foreign_table.has_simple_content && foreign_table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card))) {
+									if (foreign_table.has_simple_content && foreign_table.elem_fields.stream().anyMatch(field -> field.simple_content && !field.simple_attribute && field.target_namespace.contains(PgSchemaUtil.xs_namespace_uri) && field.matchesNodeName(option, text, false, wild_card))) {
 
 										String simple_content_xpath = getAbsoluteXPathOfTable(foreign_table, ref_path);
 
@@ -3213,11 +3190,9 @@ public class XPathCompList {
 
 			else {
 
-				int _path_exprs_size;
+				tables.parallelStream().filter(table -> table.writable && (table.has_attribute || table.has_simple_attribute || table.has_any_attribute)).forEach(table -> {
 
-				for (PgTable table : tables) {
-
-					_path_exprs_size = path_exprs.size();
+					int _path_exprs_size = path_exprs.size();
 
 					if (table.has_attribute || table.has_simple_attribute) {
 
@@ -3245,7 +3220,7 @@ public class XPathCompList {
 
 					}
 
-				}
+				});
 
 				if (path_exprs.size() == 0 && !predicate)
 					throw new PgSchemaException(comp.tree, wild_card, composite_text, def_schema_location);
@@ -3281,11 +3256,9 @@ public class XPathCompList {
 
 						if (abs_location_path) {
 
-							int _path_exprs_size;
+							tables.parallelStream().filter(table -> table.writable && (table.has_attribute || table.has_simple_attribute || table.has_any_attribute)).forEach(table -> {
 
-							for (PgTable table : tables) {
-
-								_path_exprs_size = _list.path_exprs.size();
+								int _path_exprs_size = _list.path_exprs.size();
 
 								if (table.has_attribute || table.has_simple_attribute) {
 
@@ -3313,7 +3286,7 @@ public class XPathCompList {
 
 								}
 
-							}
+							});
 
 						}
 
@@ -3918,7 +3891,7 @@ public class XPathCompList {
 
 		if (attr) {
 
-			opt = tables.parallelStream().filter(foreign_table -> foreign_table.has_nested_key_as_attr && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr &&
+			opt = tables.parallelStream().filter(foreign_table -> foreign_table.writable && foreign_table.has_nested_key_as_attr && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr &&
 					field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || !foreign_table.virtual))))).findFirst();
 
 			if (opt.isPresent())
@@ -3927,10 +3900,10 @@ public class XPathCompList {
 		}
 
 		if (as_attr)
-			opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> !field.nested_key_as_attr &&
+			opt = tables.parallelStream().filter(foreign_table -> foreign_table.writable && foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> !field.nested_key_as_attr &&
 					field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_to_simple_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 		else
-			opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field ->
+			opt = tables.parallelStream().filter(foreign_table -> foreign_table.writable && foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field ->
 			field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_to_simple_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		return opt.isPresent() ? getAbsoluteXPathOfTable(opt.get(), ref_path, attr, false, sb) : null;
@@ -4028,41 +4001,29 @@ public class XPathCompList {
 
 		String table_xname = path_expr.getLastPathName();
 
-		if (schema.getTotalPgNamedSchemaa() == 1) {
+		Integer table_id;
 
-			PgTable hit_table = cache.matched_paths.get(table_xname);
+		if (schema.getTotalPgNamedSchema() == 1) {
 
-			if (hit_table != null)
-				return hit_table;
+			table_id = table_name_dic.get(table_xname);
 
-			Optional<PgTable> opt = tables.parallelStream().filter(table -> table.xname.equals(table_xname)).findFirst();
-
-			if (opt.isPresent()) {
-
-				hit_table = opt.get();
-
-				cache.matched_paths.put(table_xname, hit_table);
-
-				return hit_table;
-			}
-
-			return null;
+			return table_id != null ? tables.get(table_id) : null;
 		}
 
 		String path = path_expr.getReadablePath();
 
-		PgTable hit_table = cache.matched_paths.get(path);
+		table_id = table_path_dic.get(path);
 
-		if (hit_table != null)
-			return hit_table;
+		if (table_id != null)
+			return tables.get(table_id);
 
-		Optional<PgTable> opt = tables.parallelStream().filter(table -> table.xname.equals(table_xname) && getAbsoluteXPathOfTable(table, null).endsWith(path)).findFirst();
+		Optional<PgTable> opt = tables.parallelStream().filter(table -> table.writable && table.xname.equals(table_xname) && getAbsoluteXPathOfTable(table, null).endsWith(path)).findFirst();
 
 		if (opt.isPresent()) {
 
-			hit_table = opt.get();
+			PgTable hit_table = opt.get();
 
-			cache.matched_paths.put(path, hit_table);
+			table_path_dic.put(path, tables.indexOf(hit_table));
 
 			return hit_table;
 		}
@@ -7222,12 +7183,12 @@ public class XPathCompList {
 
 		int table_id = tables.indexOf(table);
 
-		opt = tables.parallelStream().filter(foreign_table -> foreign_table.has_nested_key_as_attr && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_to_simple_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+		opt = tables.parallelStream().filter(foreign_table -> foreign_table.writable && foreign_table.has_nested_key_as_attr && foreign_table.nested_fields.stream().anyMatch(field -> field.nested_key_as_attr && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_to_simple_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		if (opt.isPresent())
 			testJoinClauseForSimpleAttr(opt.get(), ref_path, linking_tables, linking_order);
 
-		opt = tables.parallelStream().filter(foreign_table -> foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> !field.nested_key_as_attr && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_to_simple_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+		opt = tables.parallelStream().filter(foreign_table -> foreign_table.writable && foreign_table.total_nested_fields > 0 && foreign_table.nested_fields.stream().anyMatch(field -> !field.nested_key_as_attr && field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeName(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_to_simple_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		if (opt.isPresent())
 			testJoinClauseForSimpleAttr(opt.get(), ref_path, linking_tables, linking_order);
