@@ -3135,9 +3135,11 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
-	 * Prepare table dictionary for XPath parser.
+	 * Return dictionary of table name.
+	 *
+	 * @return HashMap dictionary of table name
 	 */
-	public void prepTableDictionary() {
+	public HashMap<String, PgTable> getTableNameDictionary() {
 
 		if (table_name_dic == null) {
 
@@ -3147,17 +3149,6 @@ public class PgSchema implements Serializable {
 
 		}
 
-		if (table_path_dic == null)
-			table_path_dic = new HashMap<String, PgTable>();
-
-	}
-
-	/**
-	 * Return dictionary of table name.
-	 *
-	 * @return HashMap dictionary of table name
-	 */
-	public HashMap<String, PgTable> getTableNameDictionary() {
 		return table_name_dic;
 	}
 
@@ -3167,6 +3158,10 @@ public class PgSchema implements Serializable {
 	 * @return HashMap dictionary of matched table path
 	 */
 	public HashMap<String, PgTable> getTablePathDictionary() {
+
+		if (table_path_dic == null)
+			table_path_dic = new HashMap<String, PgTable>();
+
 		return table_path_dic;
 	}
 

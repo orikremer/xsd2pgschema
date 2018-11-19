@@ -85,6 +85,9 @@ public class XPathCompList {
 	/** The default schema location. */
 	private String def_schema_location = null;
 
+	/** Whether total number of PostgreSQL named schema equals one. */
+	private boolean single_pg_named_schema;
+
 	/** The dictionary of table name. */
 	private HashMap<String, PgTable> table_name_dic = null;
 
@@ -122,6 +125,8 @@ public class XPathCompList {
 		option = schema.option;
 
 		def_schema_location = schema.getDefaultSchemaLocation();
+
+		single_pg_named_schema = schema.getTotalPgNamedSchema() == 1;
 
 		table_name_dic = schema.getTableNameDictionary();
 
@@ -4001,7 +4006,7 @@ public class XPathCompList {
 
 		String table_xname = path_expr.getLastPathName();
 
-		if (schema.getTotalPgNamedSchema() == 1)
+		if (single_pg_named_schema)
 			return table_name_dic.get(table_xname);
 
 		String path = path_expr.getReadablePath();
