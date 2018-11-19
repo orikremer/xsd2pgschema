@@ -86,10 +86,10 @@ public class XPathCompList {
 	private String def_schema_location = null;
 
 	/** The dictionary of table name. */
-	private HashMap<String, Integer> table_name_dic = null;
+	private HashMap<String, PgTable> table_name_dic = null;
 
 	/** The dictionary of matched table path. */
-	private HashMap<String, Integer> table_path_dic = null;
+	private HashMap<String, PgTable> table_path_dic = null;
 
 	/** The list of PostgreSQL table. */
 	private List<PgTable> tables = null;
@@ -4001,29 +4001,21 @@ public class XPathCompList {
 
 		String table_xname = path_expr.getLastPathName();
 
-		Integer table_id;
-
-		if (schema.getTotalPgNamedSchema() == 1) {
-
-			table_id = table_name_dic.get(table_xname);
-
-			return table_id != null ? tables.get(table_id) : null;
-		}
+		if (schema.getTotalPgNamedSchema() == 1)
+			return table_name_dic.get(table_xname);
 
 		String path = path_expr.getReadablePath();
 
-		table_id = table_path_dic.get(path);
+		PgTable hit_table = table_path_dic.get(path);
 
-		if (table_id != null)
-			return tables.get(table_id);
+		if (hit_table != null)
+			return hit_table;
 
 		Optional<PgTable> opt = tables.parallelStream().filter(table -> table.writable && table.xname.equals(table_xname) && getAbsoluteXPathOfTable(table, null).endsWith(path)).findFirst();
 
 		if (opt.isPresent()) {
 
-			PgTable hit_table = opt.get();
-
-			table_path_dic.put(path, tables.indexOf(hit_table));
+			table_path_dic.put(path, hit_table = opt.get());
 
 			return hit_table;
 		}

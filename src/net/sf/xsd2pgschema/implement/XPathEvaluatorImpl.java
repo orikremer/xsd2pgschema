@@ -119,6 +119,8 @@ public class XPathEvaluatorImpl {
 
 		}
 
+		client.schema.prepTableDictionary();
+
 	}
 
 	/** The string builder for SQL translation. */

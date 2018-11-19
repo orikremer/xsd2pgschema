@@ -137,11 +137,11 @@ public class PgSchema implements Serializable {
 
 	/** The dictionary of table name. */
 	@Flat
-	private HashMap<String, Integer> table_name_dic = null;
+	private HashMap<String, PgTable> table_name_dic = null;
 
 	/** The dictionary of matched table path. */
 	@Flat
-	private HashMap<String, Integer> table_path_dic = null;
+	private HashMap<String, PgTable> table_path_dic = null;
 
 	/** The attribute group definitions. */
 	@Flat
@@ -3135,20 +3135,29 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
+	 * Prepare table dictionary for XPath parser.
+	 */
+	public void prepTableDictionary() {
+
+		if (table_name_dic == null) {
+
+			table_name_dic = new HashMap<String, PgTable>();
+
+			tables.parallelStream().filter(table -> table.writable).forEach(table -> table_name_dic.put(table.xname, table));
+
+		}
+
+		if (table_path_dic == null)
+			table_path_dic = new HashMap<String, PgTable>();
+
+	}
+
+	/**
 	 * Return dictionary of table name.
 	 *
 	 * @return HashMap dictionary of table name
 	 */
-	public HashMap<String, Integer> getTableNameDictionary() {
-
-		if (table_name_dic == null) {
-
-			table_name_dic = new HashMap<String, Integer>();
-
-			tables.parallelStream().filter(table -> table.writable).forEach(table -> table_name_dic.put(table.xname, tables.indexOf(table)));
-
-		}
-
+	public HashMap<String, PgTable> getTableNameDictionary() {
 		return table_name_dic;
 	}
 
@@ -3157,11 +3166,7 @@ public class PgSchema implements Serializable {
 	 *
 	 * @return HashMap dictionary of matched table path
 	 */
-	public HashMap<String, Integer> getTablePathDictionary() {
-
-		if (table_path_dic == null)
-			table_path_dic = new HashMap<String, Integer>();
-
+	public HashMap<String, PgTable> getTablePathDictionary() {
 		return table_path_dic;
 	}
 
