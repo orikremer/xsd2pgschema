@@ -320,7 +320,7 @@ public enum XsFieldType {
 					case xs_nonNegativeInteger:
 					case xs_nonPositiveInteger:
 					case xs_positiveInteger:
-					case xs_negativeInteger:	
+					case xs_negativeInteger:
 					case xs_int:
 					case xs_unsignedInt:
 						return xs_int;
@@ -981,7 +981,7 @@ public enum XsFieldType {
 		case xs_NCName:
 		case xs_ENTITY:
 		case xs_ID:
-		case xs_IDREF:	
+		case xs_IDREF:
 		case xs_NMTOKEN:
 		case xs_ENTITIES:
 		case xs_IDREFS:
@@ -1061,7 +1061,7 @@ public enum XsFieldType {
 		case xs_NCName:
 		case xs_ENTITY:
 		case xs_ID:
-		case xs_IDREF:	
+		case xs_IDREF:
 		case xs_NMTOKEN:
 		case xs_ENTITIES:
 		case xs_IDREFS:

@@ -237,6 +237,14 @@ public class PgTable implements Serializable {
 	@Flat
 	public HashMap<String, String> abs_xpath_expr = null;
 
+	/** The dictionary of attribute name. */
+	@Flat
+	public HashMap<String, PgField> attr_name_dic = null;
+
+	/** The dictionary of element name. */
+	@Flat
+	public HashMap<String, PgField> elem_name_dic = null;
+
 	/**
 	 * Instance of PostgreSQL table.
 	 *

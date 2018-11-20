@@ -41,7 +41,7 @@ public class XmlPostEditor {
 	public HashSet<String> fill_these = new HashSet<String>();
 
 	/** Whether --file-in options have been resolved. */
-	public boolean filt_in_resolved = false;	
+	public boolean filt_in_resolved = false;
 
 	/** Whether --file-out options have been resolved. */
 	public boolean filt_out_resolved = false;

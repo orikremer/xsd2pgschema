@@ -177,10 +177,10 @@ public class pgschemaserv {
 
 			} catch (BindException e) {
 				System.out.print("\n" + server_info_header + yellow_color + "ALREADY RUNNING" + default_color + " --- port number: " + option.pg_schema_server_port + "\n");
-				System.exit(0);	
+				System.exit(0);
 			} catch (SocketException e) {
 				System.out.print("\n" + server_info_header + red_color + "STOP" + server_info_footer);
-				System.exit(0);	
+				System.exit(0);
 			} catch (IOException e) {
 				e.printStackTrace();
 				System.exit(1);

@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -231,6 +232,19 @@ public class JsonBuilder extends CommonBuilder {
 						field.jsonb_col_size = field.jsonb_null_size = 0;
 
 					});
+
+				}
+
+			}
+
+			if (schema.option.document_key) {
+
+				Optional<PgField> opt = table.fields.stream().filter(field -> field.document_key).findFirst();
+
+				if (opt.isPresent()) {
+
+					PgField document_key = opt.get();
+					document_key.jname = case_sense ? document_key.xname : document_key.xname.toLowerCase();
 
 				}
 
@@ -1138,7 +1152,7 @@ public class JsonBuilder extends CommonBuilder {
 				sb.setLength(sb.length() - (key_value_offset + 1));
 
 				buffer.append(sb);
-				buffer.append(array_field ? end_array_concat_code : concat_line_feed);	
+				buffer.append(array_field ? end_array_concat_code : concat_line_feed);
 
 				sb.setLength(0);
 
@@ -1204,7 +1218,7 @@ public class JsonBuilder extends CommonBuilder {
 					sb.setLength(sb.length() - (key_value_offset + 1));
 
 					buffer.append(sb);
-					buffer.append(array_field ? end_array_concat_code : concat_line_feed);	
+					buffer.append(array_field ? end_array_concat_code : concat_line_feed);
 
 				}
 
@@ -2055,7 +2069,7 @@ public class JsonBuilder extends CommonBuilder {
 
 				writePendingSimpleCont();
 
-				writeField(table, document_key, false, rset.getString(document_key.sql_param_id), nest_test.child_indent_level);
+				writeField(table, document_key, false, document_id, nest_test.child_indent_level);
 
 				nest_test.has_content = true;
 
@@ -2204,7 +2218,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param parent_nest_test nest test result of parent node
 	 * @return JsonBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
-	 */	
+	 */
 	private JsonBuilderNestTester nestChildNode2Json(final PgTable table, final Object parent_key, final boolean as_attr, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		try {
@@ -2666,7 +2680,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param parent_nest_test nest test result of parent node
 	 * @return JsonBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
-	 */	
+	 */
 	private JsonBuilderNestTester skipBridgeNode2Json(final PgTable table, final Object parent_key, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		JsonBuilderNestTester nest_test = new JsonBuilderNestTester(table, parent_nest_test);

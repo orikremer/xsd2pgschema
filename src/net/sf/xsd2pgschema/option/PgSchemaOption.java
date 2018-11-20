@@ -205,7 +205,7 @@ public class PgSchemaOption implements Serializable {
 
 	/** The default port number of PgSchema server. */
 	@Flat
-	public int pg_schema_server_port = PgSchemaUtil.pg_schema_server_port;	
+	public int pg_schema_server_port = PgSchemaUtil.pg_schema_server_port;
 
 	/** The default lifetime of unused PostgreSQL data model on PgSchema server in milliseconds. */
 	@Flat

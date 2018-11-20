@@ -524,7 +524,7 @@ public class XmlBuilder extends CommonBuilder {
 
 							if (field.is_xs_namespace)
 								writer.writeAttribute(field.foreign_table_xname, content);
-							else	
+							else
 								writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, content);
 
 							writeLineFeedCode();
@@ -573,7 +573,7 @@ public class XmlBuilder extends CommonBuilder {
 
 							if (field.is_xs_namespace)
 								writer.writeAttribute(field.foreign_table_xname, content);
-							else	
+							else
 								writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, content);
 
 							writeLineFeedCode();
@@ -839,7 +839,7 @@ public class XmlBuilder extends CommonBuilder {
 
 				writeSimpleCharacters(nest_test.child_indent_bytes);
 
-				insertDocKey(document_key.start_end_elem_tag, rset.getString(document_key.sql_param_id));
+				insertDocKey(document_key.start_end_elem_tag, document_id);
 
 				nest_test.has_child_elem = nest_test.has_content = has_insert_doc_key = true;
 
@@ -1036,7 +1036,7 @@ public class XmlBuilder extends CommonBuilder {
 	 * @param parent_nest_test nest test result of parent node
 	 * @return XmlBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
-	 */	
+	 */
 	private XmlBuilderNestTester nestChildNode2Xml(final PgTable table, final Object parent_key, final boolean as_attr, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		try {
@@ -1432,7 +1432,7 @@ public class XmlBuilder extends CommonBuilder {
 	 * @param parent_nest_test nest test result of parent node
 	 * @return XmlBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
-	 */	
+	 */
 	private XmlBuilderNestTester skipListAndBridgeNode2Xml(final PgTable table, final Object parent_key, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		try {
@@ -1563,7 +1563,7 @@ public class XmlBuilder extends CommonBuilder {
 	 * @param parent_nest_test nest test result of parent node
 	 * @return XmlBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
-	 */	
+	 */
 	private XmlBuilderNestTester skipBridgeNode2Xml(final PgTable table, final Object parent_key, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		try {

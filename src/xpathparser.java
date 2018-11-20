@@ -200,6 +200,8 @@ public class xpathparser {
 
 			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, MethodHandles.lookup().lookupClass().getName());
 
+			client.schema.prepDicForXPath();
+
 			xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_query));
 
 			CommonTokenStream tokens = new CommonTokenStream(lexer);

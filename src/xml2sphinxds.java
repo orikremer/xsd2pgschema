@@ -542,7 +542,7 @@ public class xml2sphinxds {
 
 		long end_time = System.currentTimeMillis();
 
-		System.out.println("Execution time: " + (end_time - start_time) + " ms");	
+		System.out.println("Execution time: " + (end_time - start_time) + " ms");
 
 	}
 

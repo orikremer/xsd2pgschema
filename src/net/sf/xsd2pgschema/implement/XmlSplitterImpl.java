@@ -150,6 +150,8 @@ public class XmlSplitterImpl {
 
 		client = new PgSchemaClientImpl(is, option, fst_conf, Thread.currentThread().getStackTrace()[2].getClassName());
 
+		client.schema.prepDicForXPath();
+
 		// prepare shard directories
 
 		xml_dir_paths = new Path[shard_size];

@@ -1725,10 +1725,10 @@ public class PgField implements Serializable {
 	 * @return boolean whether node name matches
 	 */
 	public boolean matchesNodeName(PgSchemaOption option, String node_name, boolean as_attr, boolean wild_card) {
-
+		/* the condition has already taken into consideration when making table.attr_fields and table.elem_fields
 		if (dtd_data_holder && option.discarded_document_key_names.contains(name))
 			return false;
-
+		 */
 		String _xname = as_attr ? (simple_attribute || simple_attr_cond ? foreign_table_xname : xname) : xname;
 
 		if (node_name.startsWith(prefix + ":"))
@@ -2889,7 +2889,7 @@ public class PgField implements Serializable {
 			case xs_NCName:
 			case xs_ENTITY:
 			case xs_ID:
-			case xs_IDREF:	
+			case xs_IDREF:
 			case xs_NMTOKEN:
 			case xs_ENTITIES:
 			case xs_IDREFS:
@@ -3018,7 +3018,7 @@ public class PgField implements Serializable {
 		case xs_NCName:
 		case xs_ENTITY:
 		case xs_ID:
-		case xs_IDREF:	
+		case xs_IDREF:
 		case xs_NMTOKEN:
 		case xs_ENTITIES:
 		case xs_IDREFS:
@@ -3097,7 +3097,7 @@ public class PgField implements Serializable {
 		case xs_NCName:
 		case xs_ENTITY:
 		case xs_ID:
-		case xs_IDREF:	
+		case xs_IDREF:
 		case xs_NMTOKEN:
 		case xs_ENTITIES:
 		case xs_IDREFS:
@@ -3171,7 +3171,7 @@ public class PgField implements Serializable {
 		case xs_NCName:
 		case xs_ENTITY:
 		case xs_ID:
-		case xs_IDREF:	
+		case xs_IDREF:
 		case xs_NMTOKEN:
 		case xs_ENTITIES:
 		case xs_IDREFS:
@@ -3242,7 +3242,7 @@ public class PgField implements Serializable {
 			case xs_NCName:
 			case xs_ENTITY:
 			case xs_ID:
-			case xs_IDREF:	
+			case xs_IDREF:
 			case xs_NMTOKEN:
 			case xs_ENTITIES:
 			case xs_IDREFS:
@@ -4974,7 +4974,7 @@ public class PgField implements Serializable {
 		case xs_short:
 		case xs_byte:
 		case xs_unsignedShort:
-		case xs_unsignedByte:			
+		case xs_unsignedByte:
 			try {
 				int int_value = Integer.valueOf(value);
 				ps.setInt(sql_param_id, int_value);
@@ -5170,7 +5170,7 @@ public class PgField implements Serializable {
 		case xs_NCName:
 		case xs_ENTITY:
 		case xs_ID:
-		case xs_IDREF:	
+		case xs_IDREF:
 		case xs_NMTOKEN:
 		case xs_ENTITIES:
 		case xs_IDREFS:
@@ -5528,7 +5528,7 @@ public class PgField implements Serializable {
 				if (!value.startsWith("\""))
 					value = "\"" + value + "\"";
 
-				jsonb.append(value + concat_value_space);	
+				jsonb.append(value + concat_value_space);
 
 			}
 
@@ -5690,7 +5690,7 @@ public class PgField implements Serializable {
 		case xs_byte:
 		case xs_unsignedShort:
 		case xs_unsignedByte:
-			// string	
+			// string
 		case xs_duration:
 		case xs_yearMonthDuration:
 		case xs_dayTimeDuration:
@@ -5708,7 +5708,7 @@ public class PgField implements Serializable {
 		case xs_NCName:
 		case xs_ENTITY:
 		case xs_ID:
-		case xs_IDREF:	
+		case xs_IDREF:
 		case xs_NMTOKEN:
 		case xs_ENTITIES:
 		case xs_IDREFS:
@@ -5880,7 +5880,7 @@ public class PgField implements Serializable {
 		case xs_byte:
 		case xs_unsignedShort:
 		case xs_unsignedByte:
-			// string	
+			// string
 		case xs_duration:
 		case xs_yearMonthDuration:
 		case xs_dayTimeDuration:
@@ -5898,7 +5898,7 @@ public class PgField implements Serializable {
 		case xs_NCName:
 		case xs_ENTITY:
 		case xs_ID:
-		case xs_IDREF:	
+		case xs_IDREF:
 		case xs_NMTOKEN:
 		case xs_ENTITIES:
 		case xs_IDREFS:

@@ -1456,20 +1456,26 @@ public class PgSchema implements Serializable {
 
 		});
 
-		// preset list of attribute fields
+		tables.parallelStream().forEach(table -> {
 
-		tables.parallelStream().filter(table -> table.has_attrs).forEach(table -> table.attr_fields = table.fields.stream().filter(field -> field.attribute || field.simple_attribute || field.simple_attr_cond || field.any_attribute || field.nested_key_as_attr).collect(Collectors.toList()));
+			// preset list of attribute fields
 
-		// preset list of element fields
+			if (table.has_attrs)
+				table.attr_fields = table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond || field.any_attribute || field.nested_key_as_attr) && !option.discarded_document_key_names.contains(field.name)).collect(Collectors.toList());
 
-		tables.parallelStream().filter(table -> table.has_elems).forEach(table -> table.elem_fields = table.fields.stream().filter(field -> (field.simple_content && !field.simple_attribute) || field.element || field.any).collect(Collectors.toList()));
+			// preset list of element fields
 
-		// preset list of nested fields and array of foreign table id
+			if (table.has_elems)
+				table.elem_fields = table.fields.stream().filter(field -> ((field.simple_content && !field.simple_attribute) || field.element || field.any) && !option.discarded_document_key_names.contains(field.name)).collect(Collectors.toList());
 
-		tables.parallelStream().filter(table -> table.total_nested_fields > 0).forEach(table -> {
+			// preset list of nested fields and array of foreign table id
 
-			table.nested_fields = table.fields.stream().filter(field -> field.nested_key).collect(Collectors.toList());
-			table.ft_ids = table.nested_fields.stream().map(field -> field.foreign_table_id).collect(Collectors.toList()).stream().mapToInt(Integer::intValue).toArray();
+			if (table.total_nested_fields > 0) {
+
+				table.nested_fields = table.fields.stream().filter(field -> field.nested_key).collect(Collectors.toList());
+				table.ft_ids = table.nested_fields.stream().map(field -> field.foreign_table_id).collect(Collectors.toList()).stream().mapToInt(Integer::intValue).toArray();
+
+			}
 
 		});
 
@@ -3135,20 +3141,47 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
-	 * Return dictionary of table name.
-	 *
-	 * @return HashMap dictionary of table name
+	 * Prepare dictionaries for XPath parser.
 	 */
-	public HashMap<String, PgTable> getTableNameDictionary() {
+	public void prepDicForXPath() {
 
 		if (table_name_dic == null) {
 
 			table_name_dic = new HashMap<String, PgTable>();
 
-			tables.parallelStream().filter(table -> table.writable).forEach(table -> table_name_dic.put(table.xname, table));
+			tables.parallelStream().filter(table -> table.writable).forEach(table -> {
+
+				table_name_dic.put(table.xname, table);
+
+				if (table.has_attrs) {
+
+					table.attr_name_dic = new HashMap<String, PgField>();
+					table.attr_fields.stream().filter(field -> field.attribute || field.simple_attribute || field.simple_attr_cond).forEach(field -> table.attr_name_dic.put(field.simple_attribute || field.simple_attr_cond ? field.foreign_table_xname : field.xname, field));
+
+				}
+
+				if (table.has_elems) {
+
+					table.elem_name_dic = new HashMap<String, PgField>();
+					table.elem_fields.stream().filter(field -> field.element).forEach(field -> table.elem_name_dic.put(field.xname, field));
+
+				}
+
+			});
 
 		}
 
+		if (table_path_dic == null)
+			table_path_dic = new HashMap<String, PgTable>();
+
+	}
+
+	/**
+	 * Return dictionary of table name.
+	 *
+	 * @return HashMap dictionary of table name
+	 */
+	public HashMap<String, PgTable> getTableNameDictionary() {
 		return table_name_dic;
 	}
 
@@ -3158,10 +3191,6 @@ public class PgSchema implements Serializable {
 	 * @return HashMap dictionary of matched table path
 	 */
 	public HashMap<String, PgTable> getTablePathDictionary() {
-
-		if (table_path_dic == null)
-			table_path_dic = new HashMap<String, PgTable>();
-
 		return table_path_dic;
 	}
 
