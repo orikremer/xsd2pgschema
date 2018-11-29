@@ -245,7 +245,7 @@ public class xmlsplitter {
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --no-pgschema-serv (not utilize PgSchema server)");
 		System.err.println("        --pgschema-serv-host PG_SCHEMA_SERV_HOST_NAME (default=\"" + PgSchemaUtil.pg_schema_server_host + "\")");
-		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
+		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=" + PgSchemaUtil.pg_schema_server_port + ")");
 		System.err.println("        --verbosei (verbose mode)");
 		System.exit(1);
 

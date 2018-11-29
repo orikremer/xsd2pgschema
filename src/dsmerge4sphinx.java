@@ -322,7 +322,7 @@ public class dsmerge4sphinx {
 		System.err.println("Option: --ds-name DS_NAME (default name is determined by data_source.conf file)");
 		System.err.println("        --no-pgschema-serv (not utilize PgSchema server)");
 		System.err.println("        --pgschema-serv-host PG_SCHEMA_SERV_HOST_NAME (default=\"" + PgSchemaUtil.pg_schema_server_host + "\")");
-		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
+		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=" + PgSchemaUtil.pg_schema_server_port + ")");
 		System.exit(1);
 
 	}

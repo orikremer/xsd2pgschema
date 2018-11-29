@@ -476,7 +476,7 @@ public class PgOption {
 
 		if (this.max_fks_for_simple_cont_index > PgSchemaUtil.pg_limit_fks_for_simple_cont_index) {
 			System.err.println("Maximum element colomuns for creation of PostgreSQL index on the elements is greater than " + PgSchemaUtil.pg_limit_fks_for_simple_cont_index + ". Set to the default value.");
-			this.max_fks_for_simple_cont_index = PgSchemaUtil.pg_limit_elem_cols_for_index;
+			this.max_fks_for_simple_cont_index = PgSchemaUtil.pg_limit_fks_for_simple_cont_index;
 		}
 
 	}

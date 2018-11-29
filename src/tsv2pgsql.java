@@ -324,24 +324,24 @@ public class tsv2pgsql {
 		System.err.println("tsv2pgsql: TSV -> PostgreSQL data migration");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --work-dir DIRECTORY (default=\"" + xml2pgtsv.work_dir_name + "\") --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host PG_HOST_NAME (default=\"" + PgSchemaUtil.pg_host + "\")");
-		System.err.println("        --db-port PG_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_port + "\")");
+		System.err.println("        --db-port PG_PORT_NUMBER (default=" + PgSchemaUtil.pg_port + ")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
-		System.err.println("        --min-rows-for-index MIN_ROWS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_min_rows_for_index + "\")");
+		System.err.println("        --min-rows-for-index MIN_ROWS_FOR_INDEX (default=" + PgSchemaUtil.pg_min_rows_for_index + ")");
 		System.err.println("        --create-doc-key-index (create PostgreSQL index on document key if not exists, enable if --sync option is selected)");
 		System.err.println("        --no-create-doc-key-index (do not create PostgreSQL index on document key, default if no --sync option)");
 		System.err.println("        --drop-doc-key-index (drop PostgreSQL index on document key if exists)");
 		System.err.println("        --create-attr-index (create PostgreSQL index on attribute if not exists, default)");
 		System.err.println("        --no-create-attr-index (do not create PostgreSQL index on attribute)");
 		System.err.println("        --drop-attr-index (drop PostgreSQL index on attribute if exists)");
-		System.err.println("        --max-attr-cols-for-index MAX_ATTR_COLS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_max_attr_cols_for_index + "\")");
+		System.err.println("        --max-attr-cols-for-index MAX_ATTR_COLS_FOR_INDEX (default=" + PgSchemaUtil.pg_max_attr_cols_for_index + ")");
 		System.err.println("        --create-elem-index (create PostgreSQL index on element if not exists)");
 		System.err.println("        --no-create-elem-index (do not create PostgreSQL index on element, default)");
 		System.err.println("        --drop-elem-index (drop PostgreSQL index on element if exists)");
-		System.err.println("        --max-elem-cols-for-index MAX_ELEM_COLS_FOR_INDEX (default=\"" + PgSchemaUtil.pg_max_elem_cols_for_index + "\")");
+		System.err.println("        --max-elem-cols-for-index MAX_ELEM_COLS_FOR_INDEX (default=" + PgSchemaUtil.pg_max_elem_cols_for_index + ")");
 		System.err.println("        --create-simple-cont-index (create PostgreSQL index on simple content if not exists, default)");
 		System.err.println("        --no-create-simple-cont-index (do not create PostgreSQL index on simple content)");
 		System.err.println("        --drop-simple-cont-index (drop PostgreSQL index on simple content if exists)");
-		System.err.println("        --max-fks-for-simple-cont-index MAX_FKS_FOR_SIMPLE_CONT_INDEX (default=\"" + PgSchemaUtil.pg_max_fks_for_simple_cont_index + "\")");
+		System.err.println("        --max-fks-for-simple-cont-index MAX_FKS_FOR_SIMPLE_CONT_INDEX (default=" + PgSchemaUtil.pg_max_fks_for_simple_cont_index + ")");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");
@@ -367,7 +367,7 @@ public class tsv2pgsql {
 		System.err.println("        --doc-key-if-no-inplace (append document key if no in-place docuemnt key, set --no-doc-key options by default)");
 		System.err.println("        --no-pgschema-serv (not utilize PgSchema server)");
 		System.err.println("        --pgschema-serv-host PG_SCHEMA_SERV_HOST_NAME (default=\"" + PgSchemaUtil.pg_schema_server_host + "\")");
-		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
+		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=" + PgSchemaUtil.pg_schema_server_port + ")");
 		System.exit(1);
 
 	}

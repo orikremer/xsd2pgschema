@@ -256,7 +256,7 @@ public class xpathparser {
 		PgSchemaOption option = new PgSchemaOption(true);
 
 		System.err.println("xpathparser: XPath 1.0 parser being aware of XML Schema");
-		System.err.println("Usage:  --xsd SCHEMA_LOCAITON");
+		System.err.println("Usage:  --xsd SCHEMA_LOCATION");
 		System.err.println("        --xpath-query XPATH_QUERY");
 		System.err.println("        --xpath-var KEY=VALUE");
 		System.err.println("        --no-rel (turn off relational model extension)");
@@ -283,7 +283,7 @@ public class xpathparser {
 		System.err.println("        --doc-key-if-no-inplace (append document key if no in-place docuemnt key, select --no-doc-key options by default)");
 		System.err.println("        --no-pgschema-serv (not utilize PgSchema server)");
 		System.err.println("        --pgschema-serv-host PG_SCHEMA_SERV_HOST_NAME (default=\"" + PgSchemaUtil.pg_schema_server_host + "\")");
-		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
+		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=" + PgSchemaUtil.pg_schema_server_port + ")");
 		System.exit(1);
 
 	}

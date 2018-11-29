@@ -215,9 +215,9 @@ public class pgschemaserv {
 	private static void showUsage() {
 
 		System.err.println("pgschemaserv: PgSchema server control");
-		System.err.println("Usage:  --port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
+		System.err.println("Usage:  --port PG_SCHEMA_SERV_PORT_NUMBER (default=" + PgSchemaUtil.pg_schema_server_port + ")");
 		System.err.println("Option: --host PG_SCHEMA_SERV_HOST_NAME (default=\"" + PgSchemaUtil.pg_schema_server_host + "\")");
-		System.err.println("        --lifetime LIFETIME_SECOND (default=\"" + (PgSchemaUtil.pg_schema_server_lifetime / 1000L) + "\")");
+		System.err.println("        --lifetime LIFETIME_SECOND (default=" + (PgSchemaUtil.pg_schema_server_lifetime / 1000L) + ")");
 		System.err.println("        --start (start PgSchema server, default)");
 		System.err.println("        --status (report PgSchema server status)");
 		System.err.println("        --stop (stop PgSchema server)");

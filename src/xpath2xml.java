@@ -326,9 +326,9 @@ public class xpath2xml {
 		XmlBuilder xmlb = new XmlBuilder();
 
 		System.err.println("xpath2xml: XPath 1.0 qeury evaluation to XML over PostgreSQL");
-		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
+		System.err.println("Usage:  --xsd SCHEMA_LOCATION --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host PG_HOST_NAME (default=\"" + PgSchemaUtil.pg_host + "\")");
-		System.err.println("        --db-port PG_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_port + "\")");
+		System.err.println("        --db-port PG_PORT_NUMBER (default=" + PgSchemaUtil.pg_port + ")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
 		System.err.println("        --xpath-query XPATH_QUERY (repeatable)");
 		System.err.println("        --xpath-var KEY=VALUE");
@@ -361,7 +361,7 @@ public class xpath2xml {
 		System.err.println("        --doc-key-if-no-inplace (append document key if no in-place docuemnt key, select --no-doc-key options by default)");
 		System.err.println("        --no-pgschema-serv (not utilize PgSchema server)");
 		System.err.println("        --pgschema-serv-host PG_SCHEMA_SERV_HOST_NAME (default=\"" + PgSchemaUtil.pg_schema_server_host + "\")");
-		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
+		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=" + PgSchemaUtil.pg_schema_server_port + ")");
 		System.err.println("        --xml-no-declare (dismiss XML declaration)");
 		System.err.println("        --xml-no-xmlns (dismiss XML namespace declaration)");
 		System.err.println("        --xml-no-nil-elem (dismiss nillable element)");
