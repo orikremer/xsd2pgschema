@@ -250,7 +250,7 @@ public class xmlvalidator {
 		System.err.println("        --checksum-by ALGORITHM [MD2 | MD5 (default) | SHA-1 | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --max-thrds MAX_THRDS (default is number of available processors)");
 		System.err.println("        --del-invalid-xml (delete invalid XML documents)");
-		System.err.println("        --verbose");
+		System.err.println("        --verbose (verbose mode)");
 		System.exit(1);
 
 	}

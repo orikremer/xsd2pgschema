@@ -309,7 +309,7 @@ public class chksumstat {
 		System.err.println("        --xml-file-ext-digest DIGESTIBLE_EXTENSION (default=\".\")");
 		System.err.println("        --update (update check sum files anyway)");
 		System.err.println("        --max-thrds MAX_THRDS (default is number of available processors)");
-		System.err.println("        --verbose");
+		System.err.println("        --verbose (verbose mode)");
 		System.exit(1);
 
 	}

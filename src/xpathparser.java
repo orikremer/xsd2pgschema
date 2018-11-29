@@ -255,7 +255,7 @@ public class xpathparser {
 
 		PgSchemaOption option = new PgSchemaOption(true);
 
-		System.err.println("xpathparser: XPath 1.0 parser with XML Schema validation");
+		System.err.println("xpathparser: XPath 1.0 parser being aware of XML Schema");
 		System.err.println("Usage:  --xsd SCHEMA_LOCAITON");
 		System.err.println("        --xpath-query XPATH_QUERY");
 		System.err.println("        --xpath-var KEY=VALUE");

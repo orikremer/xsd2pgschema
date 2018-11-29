@@ -42,7 +42,7 @@ import org.xml.sax.SAXException;
 import com.github.antlr.grammars_v4.xpath.xpathListenerException;
 
 /**
- * XPath 1.0 query evaluator to JSON over PostgreSQL.
+ * XPath 1.0 query evaluation to JSON over PostgreSQL.
  *
  * @author yokochi
  */
@@ -339,7 +339,7 @@ public class xpath2json {
 
 		JsonBuilderOption jsonb_option = new JsonBuilderOption();
 
-		System.err.println("xpath2json: XPath 1.0 qeury evaluator to JSON over PostgreSQL");
+		System.err.println("xpath2json: XPath 1.0 qeury evaluation to JSON over PostgreSQL");
 		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host PG_HOST_NAME (default=\"" + PgSchemaUtil.pg_host + "\")");
 		System.err.println("        --db-port PG_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_port + "\")");
@@ -387,7 +387,7 @@ public class xpath2json {
 		System.err.println("        --json-no-linefeed (dismiss line feed code)");
 		System.err.println("        --json-compact (equals to set --json-indent-offset 0 --json-key-value-offset 0 --json-no-linefeed)");
 		System.err.println("        --json-array-all (use JSON array if possible)");
-		System.err.println("        --verbose");
+		System.err.println("        --verbose (verbose mode)");
 		System.exit(1);
 
 	}

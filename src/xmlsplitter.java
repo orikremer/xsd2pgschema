@@ -41,7 +41,7 @@ import org.xml.sax.SAXException;
 import com.github.antlr.grammars_v4.xpath.xpathListenerException;
 
 /**
- * Split large XML file into small XML files.
+ * Split large XML file into small ones based on XPath query.
  *
  * @author yokochi
  */
@@ -234,7 +234,7 @@ public class xmlsplitter {
 	 */
 	private static void showUsage() {
 
-		System.err.println("xmlsplitter: Split large XML into small XML files");
+		System.err.println("xmlsplitter: Split large XML file into small ones based on XPath query");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml SRC_XML_FILE_OR_DIRECTORY --xml-dir DST_DIRECTORY (default=\"" + xml_dir_name + "\")");
 		System.err.println("        --xml-file-ext SRC_FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix) | zip (indicates xml.zip suffix)]");
 		System.err.println("        --xpath-doc-key XPATH_EXPR_FOR_DOC_KEY");
@@ -246,7 +246,7 @@ public class xmlsplitter {
 		System.err.println("        --no-pgschema-serv (not utilize PgSchema server)");
 		System.err.println("        --pgschema-serv-host PG_SCHEMA_SERV_HOST_NAME (default=\"" + PgSchemaUtil.pg_schema_server_host + "\")");
 		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
-		System.err.println("        --verbose");
+		System.err.println("        --verbosei (verbose mode)");
 		System.exit(1);
 
 	}

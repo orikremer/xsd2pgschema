@@ -41,7 +41,7 @@ import org.xml.sax.SAXException;
 import com.github.antlr.grammars_v4.xpath.xpathListenerException;
 
 /**
- * Query translator from XPath 1.0 to SQL.
+ * Query translation from XPath 1.0 to SQL.
  *
  * @author yokochi
  */
@@ -297,7 +297,7 @@ public class xpath2pgsql {
 
 		PgSchemaOption option = new PgSchemaOption(true);
 
-		System.err.println("xpath2pgsql: Qeury translator from XPath 1.0 to SQL");
+		System.err.println("xpath2pgsql: Query translation from XPath 1.0 to SQL");
 		System.err.println("Usage:  --xsd SCHEMA_LOCAITON --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host PG_HOST_NAME (default=\"" + PgSchemaUtil.pg_host + "\")");
 		System.err.println("        --db-port PG_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_port + "\")");
@@ -336,7 +336,7 @@ public class xpath2pgsql {
 		System.err.println("        --no-pgschema-serv (not utilize PgSchema server)");
 		System.err.println("        --pgschema-serv-host PG_SCHEMA_SERV_HOST_NAME (default=\"" + PgSchemaUtil.pg_schema_server_host + "\")");
 		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=\"" + PgSchemaUtil.pg_schema_server_port + "\")");
-		System.err.println("        --verbose");
+		System.err.println("        --verbose (verbose mode)");
 		System.exit(1);
 
 	}

@@ -43,7 +43,7 @@ import org.nustaq.serialization.FSTConfiguration;
 import org.xml.sax.SAXException;
 
 /**
- * Sphinx full-text indexing.
+ * Sphinx data source (xmlpipe2) conversion for full-text indexing
  *
  * @author yokochi
  */
@@ -551,7 +551,7 @@ public class xml2sphinxds {
 	 */
 	private static void showUsage() {
 
-		System.err.println("xml2sphinxds: XML -> Sphinx data source (xmlpipe2) conversion");
+		System.err.println("xml2sphinxds: XML -> Sphinx data source (xmlpipe2) conversion for full-text indexing");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --ds-dir DIRECTORY (default=\"" + ds_dir_name + "\")");
 		System.err.println("        --update (insert if not exists, and update if required, default)");
 		System.err.println("        --sync CHECK_SUM_DIRECTORY (insert if not exists, update if required, and delete rows if XML not exists)");
@@ -568,8 +568,8 @@ public class xml2sphinxds {
 		System.err.println("        --attr  table_name.column_name");
 		System.err.println("        --field table_name.column_name");
 		System.err.println("        --mva   table_name.column_name (multi-valued attribute)");
-		System.err.println("        --attr-all");
-		System.err.println("        --field-all (default)");
+		System.err.println("        --field-all (index all fields, default)");
+		System.err.println("        --attr-all (all attributes's values are stored as attribute )");
 		System.err.println("        --attr-string (all string values are stored as attribute)");
 		System.err.println("        --attr-integer (all integer values are stored as attribute)");
 		System.err.println("        --attr-float (all float values are stored as attribute)");
@@ -582,7 +582,7 @@ public class xml2sphinxds {
 		System.err.println("        --xml-file-ext-digest DIGESTIBLE_EXTENSION (default=\".\")");
 		System.err.println("        --lower-case-doc-key (lower case document key)");
 		System.err.println("        --upper-case-doc-key (upper case document key)");
-		System.err.println("        --fill-default value (fill @default value in case of empty)");
+		System.err.println("        --fill-default-value (fill @default value in case of empty)");
 		System.err.println("        --filt-in   table_name.column_name");
 		System.err.println("        --filt-out  table_name.column_name:regex_pattern(|regex_pattern...)");
 		System.err.println("        --fill-this table_name.column_name:filling_text");

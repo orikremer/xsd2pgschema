@@ -541,8 +541,8 @@ public class xml2luceneidx {
 		System.err.println("        --numeric-idx (allow to store numeric values in index)");
 		System.err.println("Option: --attr  table_name.column_name");
 		System.err.println("        --field table_name.column_name");
-		System.err.println("        --attr-all");
-		System.err.println("        --field-all (default)");
+		System.err.println("        --field-all (index all fields, default)");
+		System.err.println("        --attr-all (all attributes's values are stored as attribute )");
 		System.err.println("        --attr-string (all string values are stored as attribute)");
 		System.err.println("        --attr-integer (all integer values are stored as attribute)");
 		System.err.println("        --attr-float (all float values are stored as attribute)");
@@ -555,7 +555,7 @@ public class xml2luceneidx {
 		System.err.println("        --xml-file-ext-digest DIGESTIBLE_EXTENSION (default=\".\")");
 		System.err.println("        --lower-case-doc-key (lower case document key)");
 		System.err.println("        --upper-case-doc-key (upper case document key)");
-		System.err.println("        --fill-default value (fill @default value in case of empty)");
+		System.err.println("        --fill-default-value (fill @default value in case of empty)");
 		System.err.println("        --filt-in   table_name.column_name");
 		System.err.println("        --filt-out  table_name.column_name:regex_pattern(|regex_pattern...)");
 		System.err.println("        --fill-this table_name.column_name:filling_text");
