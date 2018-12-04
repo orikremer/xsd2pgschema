@@ -90,7 +90,7 @@ public class luceneidx2infix {
 
 		if (!Files.isDirectory(idx_dir_path)) {
 			System.err.println("Couldn't find directory '" + idx_dir_name + "'.");
-			System.exit(1);
+			showUsage();
 		}
 
 		Path infix_dir_path = Paths.get(infix_dir_name);

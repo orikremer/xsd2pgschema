@@ -99,7 +99,7 @@ public class luceneidx2dic {
 
 		if (!Files.isDirectory(idx_dir_path)) {
 			System.err.println("Couldn't find directory '" + idx_dir_name + "'.");
-			System.exit(1);
+			showUsage();
 		}
 
 		Path dic_dir_path = Paths.get(dic_dir_name);
