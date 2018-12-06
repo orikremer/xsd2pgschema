@@ -303,7 +303,7 @@ public class xpath2pgsql {
 		System.err.println("        --db-port PG_PORT_NUMBER (default=" + PgSchemaUtil.pg_port + ")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
 		System.err.println("        --xpath-query XPATH_QUERY (repeatable)");
-		System.err.println("        --xpath-var KEY=VALUE");
+		System.err.println("        --xpath-var KEY=VALUE (repeat until you specify all variables)");
 		System.err.println("        --out OUTPUT_FILE_OR_PATTERN (default=stdout)");
 		System.err.println("        --out-dir OUTPUT_DIRECTORY");
 		System.err.println("        --no-rel (turn off relational model extension)");

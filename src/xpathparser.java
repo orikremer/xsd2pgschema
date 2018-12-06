@@ -258,7 +258,7 @@ public class xpathparser {
 		System.err.println("xpathparser: XPath 1.0 parser being aware of XML Schema");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION");
 		System.err.println("        --xpath-query XPATH_QUERY");
-		System.err.println("        --xpath-var KEY=VALUE");
+		System.err.println("        --xpath-var KEY=VALUE (repeat until you specify all variables)");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");
