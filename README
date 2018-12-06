@@ -1,4 +1,9 @@
-﻿ Changes in xsd2pgschema 3.0.7 (release 2018-11-16)
+﻿ Changes in xsd2pgschema 3.0.8 (release 2018-12-06)
+
+  Fixed typos in usage.
+  Added a user guide (User Guilde.pdf)
+
+ Changes in xsd2pgschema 3.0.7 (release 2018-11-16)
 
   Allowed to follow URL redirection of schema location.
   Automatic redirect system message to stderr if redirect of result to stdout.
