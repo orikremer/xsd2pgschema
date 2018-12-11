@@ -451,7 +451,7 @@ public class PgTable implements Serializable {
 		field.xtype = ref_field.xtype;
 		field.nested_key = true;
 		field.nested_key_as_attr = ref_field.attribute;
-		field.constraint_name = "FK_" + name;
+		field.constraint_name = "FK_" + PgSchemaUtil.avoidPgReservedOps(name);
 		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
 			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 		field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
@@ -535,7 +535,7 @@ public class PgTable implements Serializable {
 		field.setHashKeyType(option);
 		field.xtype = name;
 		field.nested_key = true;
-		field.constraint_name = "FK_" + name;
+		field.constraint_name = "FK_" + PgSchemaUtil.avoidPgReservedOps(name);
 		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
 			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 		field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
@@ -568,7 +568,7 @@ public class PgTable implements Serializable {
 			field.pname = avoidFieldDuplication(option, field.xname);
 			field.setHashKeyType(option);
 			field.foreign_key = true;
-			field.constraint_name = "FK_" + pname + "_" + foreign_table.pname;
+			field.constraint_name = "FK_" + PgSchemaUtil.avoidPgReservedOps(pname) + "_" + PgSchemaUtil.avoidPgReservedOps(foreign_table.pname);
 			if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
 				field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 			field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);

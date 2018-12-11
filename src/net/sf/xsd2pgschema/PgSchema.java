@@ -3692,7 +3692,7 @@ public class PgSchema implements Serializable {
 					child_field_pnames[i] = child_field_pnames[i].replaceFirst(",$", "");
 					parent_field_pnames[i] = parent_field_pnames[i].replaceFirst(",$", "");
 
-					constraint_name = "KR_" + foreign_key.name + (child_field_pnames.length > 1 ? "_" + i : "");
+					constraint_name = "KR_" + PgSchemaUtil.avoidPgReservedOps(foreign_key.name) + (child_field_pnames.length > 1 ? "_" + i : "");
 
 					if (constraint_name.length() > PgSchemaUtil.max_enum_len)
 						constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
@@ -4020,7 +4020,7 @@ public class PgSchema implements Serializable {
 	 */
 	private void appendUniqueKeyConstraint(PgTable table, PgKey key, boolean unique) throws PgSchemaException {
 
-		String constraint_name = "UNQ_" + key.table_xname;
+		String constraint_name = "UNQ_" + PgSchemaUtil.avoidPgReservedOps(key.table_xname);
 
 		if (constraint_name.length() > PgSchemaUtil.max_enum_len)
 			constraint_name = constraint_name.substring(0, PgSchemaUtil.max_enum_len);
@@ -5328,11 +5328,11 @@ public class PgSchema implements Serializable {
 
 							if (rset.getInt(1) == pg_option.min_rows_for_index) {
 
-								sql = "CREATE INDEX IDX_" + table_name + "_" + table.doc_key_pname + " ON " + table.pgname + " ( " + table.doc_key_pgname + " )";
-
-								stat.execute(sql);
+								sql = "CREATE INDEX IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(table.doc_key_pname) + " ON " + table.pgname + " ( " + table.doc_key_pgname + " )";
 
 								System.out.println(sql);
+
+								stat.execute(sql);
 
 							}
 
@@ -5391,13 +5391,13 @@ public class PgSchema implements Serializable {
 						index_name = rset.getString("INDEX_NAME");
 						column_name = rset.getString("COLUMN_NAME");
 
-						if (index_name != null && index_name.equalsIgnoreCase("IDX_" + table_name + "_" + table.doc_key_pname) && column_name != null && column_name.equals(table.doc_key_pname)) {
+						if (index_name != null && index_name.equalsIgnoreCase("IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(table.doc_key_pname)) && column_name != null && column_name.equals(table.doc_key_pname)) {
 
 							sql = "DROP INDEX " + PgSchemaUtil.avoidPgReservedWords(index_name);
 
-							stat.execute(sql);
-
 							System.out.println(sql);
+
+							stat.execute(sql);
 
 							break;
 						}
@@ -5500,11 +5500,11 @@ public class PgSchema implements Serializable {
 
 											attr_pname = attrs.get(attr_id).pname;
 
-											sql = "CREATE INDEX IDX_" + table_name + "_" + attr_pname + " ON " + table.pgname + " ( " + PgSchemaUtil.avoidPgReservedWords(attr_pname) + " )";
-
-											stat.execute(sql);
+											sql = "CREATE INDEX IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(attr_pname) + " ON " + table.pgname + " ( " + PgSchemaUtil.avoidPgReservedWords(attr_pname) + " )";
 
 											System.out.println(sql);
+
+											stat.execute(sql);
 
 										}
 
@@ -5579,13 +5579,13 @@ public class PgSchema implements Serializable {
 								String index_name = rset.getString("INDEX_NAME");
 								String column_name = rset.getString("COLUMN_NAME");
 
-								if (index_name != null && attrs.stream().anyMatch(attr -> index_name.equalsIgnoreCase("IDX_" + table_name + "_" + attr.pname)) && column_name != null && attrs.stream().anyMatch(attr -> column_name.equals(attr.pname))) {
+								if (index_name != null && attrs.stream().anyMatch(attr -> index_name.equalsIgnoreCase("IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(attr.pname))) && column_name != null && attrs.stream().anyMatch(attr -> column_name.equals(attr.pname))) {
 
 									sql = "DROP INDEX " + PgSchemaUtil.avoidPgReservedWords(index_name);
 
-									stat.execute(sql);
-
 									System.out.println(sql);
+
+									stat.execute(sql);
 
 									break;
 								}
@@ -5692,11 +5692,11 @@ public class PgSchema implements Serializable {
 
 											elem_pname = elems.get(elem_id).pname;
 
-											sql = "CREATE INDEX IDX_" + table_name + "_" + elem_pname + " ON " + table.pgname + " ( " + PgSchemaUtil.avoidPgReservedWords(elem_pname) + " )";
-
-											stat.execute(sql);
+											sql = "CREATE INDEX IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(elem_pname) + " ON " + table.pgname + " ( " + PgSchemaUtil.avoidPgReservedWords(elem_pname) + " )";
 
 											System.out.println(sql);
+
+											stat.execute(sql);
 
 										}
 
@@ -5771,13 +5771,13 @@ public class PgSchema implements Serializable {
 								String index_name = rset.getString("INDEX_NAME");
 								String column_name = rset.getString("COLUMN_NAME");
 
-								if (index_name != null && elems.stream().anyMatch(elem -> index_name.equalsIgnoreCase("IDX_" + table_name + "_" + elem.pname)) && column_name != null && elems.stream().anyMatch(elem -> column_name.equals(elem.pname))) {
+								if (index_name != null && elems.stream().anyMatch(elem -> index_name.equalsIgnoreCase("IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(elem.pname))) && column_name != null && elems.stream().anyMatch(elem -> column_name.equals(elem.pname))) {
 
 									sql = "DROP INDEX " + PgSchemaUtil.avoidPgReservedWords(index_name);
 
-									stat.execute(sql);
-
 									System.out.println(sql);
+
+									stat.execute(sql);
 
 									break;
 								}
@@ -5881,11 +5881,11 @@ public class PgSchema implements Serializable {
 
 											simple_cont_pname = simple_conts.get(simple_cont_id).pname;
 
-											sql = "CREATE INDEX IDX_" + table_name + "_" + simple_cont_pname + " ON " + table.pgname + " ( " + PgSchemaUtil.avoidPgReservedWords(simple_cont_pname) + " )";
-
-											stat.execute(sql);
+											sql = "CREATE INDEX IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(simple_cont_pname) + " ON " + table.pgname + " ( " + PgSchemaUtil.avoidPgReservedWords(simple_cont_pname) + " )";
 
 											System.out.println(sql);
+
+											stat.execute(sql);
 
 										}
 
@@ -5960,13 +5960,13 @@ public class PgSchema implements Serializable {
 								String index_name = rset.getString("INDEX_NAME");
 								String column_name = rset.getString("COLUMN_NAME");
 
-								if (index_name != null && simple_conts.stream().anyMatch(simple_cont -> index_name.equalsIgnoreCase("IDX_" + table_name + "_" + simple_cont.pname)) && column_name != null && simple_conts.stream().anyMatch(simple_cont -> column_name.equals(simple_cont.pname))) {
+								if (index_name != null && simple_conts.stream().anyMatch(simple_cont -> index_name.equalsIgnoreCase("IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(simple_cont.pname))) && column_name != null && simple_conts.stream().anyMatch(simple_cont -> column_name.equals(simple_cont.pname))) {
 
 									sql = "DROP INDEX " + PgSchemaUtil.avoidPgReservedWords(index_name);
 
-									stat.execute(sql);
-
 									System.out.println(sql);
+
+									stat.execute(sql);
 
 									break;
 								}
