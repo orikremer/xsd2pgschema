@@ -2,6 +2,8 @@
 
   Fixed typos in usage.
   Added a user guide (User Guilde.pdf)
+  Fixed constraint name including PostgreSQL reserved operator.
+  Fixed case-insensitive name including PostgreSQL reserved operator.
 
  Changes in xsd2pgschema 3.0.7 (release 2018-11-16)
 
