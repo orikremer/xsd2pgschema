@@ -725,6 +725,16 @@ public class PgSchemaUtil {
 		return name;
 	}
 
+	/**
+	 * Return case-insensitive name for a given name.
+	 *
+	 * @param name name
+	 * @return String name case-insensitive name
+	 */
+	public static String toCaseInsensitive(String name) {
+		return avoidPgReservedOps(name.toLowerCase());
+	}
+
 	/** The date pattern in ISO 8601 format. */
 	private static final String[] date_patterns_iso = new String[] {
 			"yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "yyyy-MM-dd'T'HH:mm:ssXXX", "yyyy-MM-dd'T'HH:mmXXX", "yyyy-MM-dd'T'HHXXX", "yyyy-MM-ddXXX",

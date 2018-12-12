@@ -78,10 +78,10 @@ public class PgForeignKey {
 		this.schema_name = schema_name;
 
 		child_table_xname = PgSchemaUtil.extractSelectorXPath(node);
-		child_table_pname = case_sense ? child_table_xname : child_table_xname.toLowerCase();
+		child_table_pname = case_sense ? child_table_xname : PgSchemaUtil.toCaseInsensitive(child_table_xname);
 
 		child_field_xnames = PgSchemaUtil.extractFieldXPath(node);
-		child_field_pnames = case_sense ? child_field_xnames : child_field_xnames.toLowerCase();
+		child_field_pnames = case_sense ? child_field_xnames : PgSchemaUtil.toCaseInsensitive(child_field_xnames);
 
 		Node key_node;
 
@@ -93,10 +93,10 @@ public class PgForeignKey {
 				continue;
 
 			parent_table_xname = PgSchemaUtil.extractSelectorXPath(key_node);
-			parent_table_pname = case_sense ? parent_table_xname : parent_table_xname.toLowerCase();
+			parent_table_pname = case_sense ? parent_table_xname : PgSchemaUtil.toCaseInsensitive(parent_table_xname);
 
 			parent_field_xnames = PgSchemaUtil.extractFieldXPath(key_node);
-			parent_field_pnames = case_sense ? parent_field_xnames : parent_field_xnames.toLowerCase();
+			parent_field_pnames = case_sense ? parent_field_xnames : PgSchemaUtil.toCaseInsensitive(parent_field_xnames);
 
 			break;
 		}

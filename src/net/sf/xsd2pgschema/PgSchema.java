@@ -1508,7 +1508,7 @@ public class PgSchema implements Serializable {
 		String name = ((Element) node).getAttribute("name");
 
 		table.xname = PgSchemaUtil.getUnqualifiedName(name);
-		table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
+		table.name = table.pname = option.case_sense ? table.xname : PgSchemaUtil.toCaseInsensitive(table.xname);
 
 		if (table.pname.isEmpty())
 			return;
@@ -1593,7 +1593,7 @@ public class PgSchema implements Serializable {
 					String child_name = name;
 
 					child_table.xname = PgSchemaUtil.getUnqualifiedName(child_name);
-					child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
+					child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
 
 					table.required = child_table.required = true;
 
@@ -1645,7 +1645,7 @@ public class PgSchema implements Serializable {
 		String name = ((Element) node).getAttribute("name");
 
 		table.xname = PgSchemaUtil.getUnqualifiedName(name);
-		table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
+		table.name = table.pname = option.case_sense ? table.xname : PgSchemaUtil.toCaseInsensitive(table.xname);
 
 		if (table.pname.isEmpty())
 			return;
@@ -1726,7 +1726,7 @@ public class PgSchema implements Serializable {
 		String name = ((Element) node).getAttribute("name");
 
 		table.xname = PgSchemaUtil.getUnqualifiedName(name);
-		table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
+		table.name = table.pname = option.case_sense ? table.xname : PgSchemaUtil.toCaseInsensitive(table.xname);
 
 		if (table.pname.isEmpty())
 			return;
@@ -1773,7 +1773,7 @@ public class PgSchema implements Serializable {
 		String name = ((Element) node).getAttribute("name");
 
 		table.xname = PgSchemaUtil.getUnqualifiedName(name);
-		table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
+		table.name = table.pname = option.case_sense ? table.xname : PgSchemaUtil.toCaseInsensitive(table.xname);
 
 		if (table.pname.isEmpty())
 			return;
@@ -1957,7 +1957,7 @@ public class PgSchema implements Serializable {
 		field.extractMinOccurs(node);
 
 		field.xname = PgSchemaUtil.any_name;
-		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+		field.name = option.case_sense ? field.xname : PgSchemaUtil.toCaseInsensitive(field.xname);
 		field.pname = table.avoidFieldDuplication(option, field.xname);
 
 		if ((field.anno = PgSchemaUtil.extractAnnotation(node, false)) != null)
@@ -1987,7 +1987,7 @@ public class PgSchema implements Serializable {
 		field.any_attribute = true;
 
 		field.xname = PgSchemaUtil.any_attribute_name;
-		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+		field.name = option.case_sense ? field.xname : PgSchemaUtil.toCaseInsensitive(field.xname);
 		field.pname = table.avoidFieldDuplication(option, field.xname);
 
 		if ((field.anno = PgSchemaUtil.extractAnnotation(node, false)) != null)
@@ -2064,7 +2064,7 @@ public class PgSchema implements Serializable {
 		if (name != null && !name.isEmpty()) {
 
 			field.xname = PgSchemaUtil.getUnqualifiedName(name);
-			field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+			field.name = option.case_sense ? field.xname : PgSchemaUtil.toCaseInsensitive(field.xname);
 			field.pname = table.avoidFieldDuplication(option, field.xname);
 
 			if ((field.anno = PgSchemaUtil.extractAnnotation(node, false)) != null)
@@ -2137,7 +2137,7 @@ public class PgSchema implements Serializable {
 								table.cancelUniqueKey();
 
 							child_table.xname = PgSchemaUtil.getUnqualifiedName(name);
-							child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
+							child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
 
 							table.required = child_table.required = true;
 
@@ -2192,7 +2192,7 @@ public class PgSchema implements Serializable {
 							table.cancelUniqueKey();
 
 						child_table.xname = PgSchemaUtil.getUnqualifiedName(name);
-						child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
+						child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
 
 						table.required = child_table.required = true;
 
@@ -2244,7 +2244,7 @@ public class PgSchema implements Serializable {
 						table.cancelUniqueKey();
 
 					child_table.xname = PgSchemaUtil.getUnqualifiedName(name);
-					child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
+					child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
 
 					table.required = child_table.required = true;
 
@@ -2301,7 +2301,7 @@ public class PgSchema implements Serializable {
 							(table.target_namespace == null && getNamespaceUriOfQName(ref) == null))) {
 
 						field.xname = child_name;
-						field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+						field.name = option.case_sense ? field.xname : PgSchemaUtil.toCaseInsensitive(field.xname);
 						field.pname = table.avoidFieldDuplication(option, field.xname);
 
 						if ((field.anno = PgSchemaUtil.extractAnnotation(child, false)) != null)
@@ -2371,7 +2371,7 @@ public class PgSchema implements Serializable {
 									table.cancelUniqueKey();
 
 								child_table.xname = child_name;
-								child_table.name = child_table.pname = option.case_sense ? child_table.xname : child_table.xname.toLowerCase();
+								child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
 
 								table.required = child_table.required = true;
 
@@ -2435,7 +2435,7 @@ public class PgSchema implements Serializable {
 			String name = elem.getAttribute("name");
 
 			table.xname = PgSchemaUtil.getUnqualifiedName(name);
-			table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
+			table.name = table.pname = option.case_sense ? table.xname : PgSchemaUtil.toCaseInsensitive(table.xname);
 			table.xs_type = foreign_table.xs_type.equals(XsTableType.xs_root) || foreign_table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
 
@@ -2444,7 +2444,7 @@ public class PgSchema implements Serializable {
 		else {
 
 			table.xname = PgSchemaUtil.getUnqualifiedName(type);
-			table.name = table.pname = option.case_sense ? table.xname : table.xname.toLowerCase();
+			table.name = table.pname = option.case_sense ? table.xname : PgSchemaUtil.toCaseInsensitive(table.xname);
 			table.xs_type = XsTableType.xs_admin_root;
 
 		}
@@ -2575,7 +2575,7 @@ public class PgSchema implements Serializable {
 		field.simple_primitive_list = primitive_list;
 
 		field.xname = PgSchemaUtil.simple_content_name; // anonymous simple content
-		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+		field.name = option.case_sense ? field.xname : PgSchemaUtil.toCaseInsensitive(field.xname);
 		field.pname = table.avoidFieldDuplication(option, field.xname);
 
 		if ((field.anno = PgSchemaUtil.extractAnnotation(node, false)) != null)

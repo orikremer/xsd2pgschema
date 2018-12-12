@@ -353,7 +353,7 @@ public class PgTable implements Serializable {
 	protected String avoidFieldDuplication(PgSchemaOption option, String field_name) {
 
 		if (!option.case_sense)
-			field_name = field_name.toLowerCase();
+			field_name = PgSchemaUtil.toCaseInsensitive(field_name);
 
 		if (!option.rel_model_ext)
 			return field_name;
@@ -440,12 +440,12 @@ public class PgTable implements Serializable {
 		if (this.schema_name.equals(schema_name) && this.xname.equals(xname))
 			return false;
 
-		String name = option.case_sense ? xname : xname.toLowerCase();
+		String name = option.case_sense ? xname : PgSchemaUtil.toCaseInsensitive(xname);
 
 		PgField field = new PgField();
 
 		field.xname = name + "_id";
-		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+		field.name = option.case_sense ? field.xname : PgSchemaUtil.toCaseInsensitive(field.xname);
 		field.pname = avoidFieldDuplication(option, field.xname);
 		field.setHashKeyType(option);
 		field.xtype = ref_field.xtype;
@@ -525,12 +525,12 @@ public class PgTable implements Serializable {
 		if (this.schema_name.equals(schema_name) && this.xname.equals(xname))
 			return;
 
-		String name = option.case_sense ? xname : xname.toLowerCase();
+		String name = option.case_sense ? xname : PgSchemaUtil.toCaseInsensitive(xname);
 
 		PgField field = new PgField();
 
 		field.xname = name + "_id";
-		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+		field.name = option.case_sense ? field.xname : PgSchemaUtil.toCaseInsensitive(field.xname);
 		field.pname = avoidFieldDuplication(option, field.xname);
 		field.setHashKeyType(option);
 		field.xtype = name;
@@ -564,7 +564,7 @@ public class PgTable implements Serializable {
 			PgField field = new PgField();
 
 			field.xname = foreign_field.xname;
-			field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+			field.name = option.case_sense ? field.xname : PgSchemaUtil.toCaseInsensitive(field.xname);
 			field.pname = avoidFieldDuplication(option, field.xname);
 			field.setHashKeyType(option);
 			field.foreign_key = true;
@@ -600,7 +600,7 @@ public class PgTable implements Serializable {
 		PgField field = new PgField();
 
 		field.xname = option.serial_key_name;
-		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+		field.name = option.case_sense ? field.xname : PgSchemaUtil.toCaseInsensitive(field.xname);
 		field.pname = avoidFieldDuplication(option, field.xname);
 		field.setSerKeyType(option);
 		field.serial_key = true;
@@ -622,7 +622,7 @@ public class PgTable implements Serializable {
 		PgField field = new PgField();
 
 		field.xname = option.xpath_key_name;
-		field.name = option.case_sense ? field.xname : field.xname.toLowerCase();
+		field.name = option.case_sense ? field.xname : PgSchemaUtil.toCaseInsensitive(field.xname);
 		field.pname = avoidFieldDuplication(option, field.xname);
 		field.setHashKeyType(option);
 		field.xpath_key = true;

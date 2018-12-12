@@ -62,10 +62,10 @@ public class PgKey {
 		this.schema_name = schema_name;
 
 		table_xname = PgSchemaUtil.extractSelectorXPath(node);
-		table_pname = case_sense ? table_xname : table_xname.toLowerCase();
+		table_pname = case_sense ? table_xname : PgSchemaUtil.toCaseInsensitive(table_xname);
 
 		field_xnames = PgSchemaUtil.extractFieldXPath(node);
-		field_pnames = case_sense ? field_xnames : field_xnames.toLowerCase();
+		field_pnames = case_sense ? field_xnames : PgSchemaUtil.toCaseInsensitive(field_xnames);
 
 	}
 
