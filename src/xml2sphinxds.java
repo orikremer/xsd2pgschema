@@ -569,7 +569,7 @@ public class xml2sphinxds {
 		System.err.println("        --field table_name.column_name");
 		System.err.println("        --mva   table_name.column_name (multi-valued attribute)");
 		System.err.println("        --field-all (index all fields, default)");
-		System.err.println("        --attr-all (all attributes's values are stored as attribute )");
+		System.err.println("        --attr-all (all attributes's values are stored as attribute)");
 		System.err.println("        --attr-string (all string values are stored as attribute)");
 		System.err.println("        --attr-integer (all integer values are stored as attribute)");
 		System.err.println("        --attr-float (all float values are stored as attribute)");
