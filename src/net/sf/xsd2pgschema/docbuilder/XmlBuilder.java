@@ -97,7 +97,7 @@ public class XmlBuilder extends CommonBuilder {
 	/** The pending element. */
 	protected LinkedList<XmlBuilderPendingElem> pending_elem = new LinkedList<XmlBuilderPendingElem>();
 
-	/** The line feed code charactor. */
+	/** The line feed code character. */
 	private final char[] line_feed_code_char = { '\n' };
 
 	/**

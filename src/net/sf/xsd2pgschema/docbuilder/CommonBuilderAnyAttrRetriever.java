@@ -24,7 +24,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import net.sf.xsd2pgschema.PgField;
 
 /**
- * Common any attrivute retriever.
+ * Common any attribute retriever.
  *
  * @author yokochi
  */

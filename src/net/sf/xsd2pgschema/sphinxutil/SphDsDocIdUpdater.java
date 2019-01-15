@@ -125,7 +125,7 @@ public class SphDsDocIdUpdater {
 
 		xml_writer = out_factory.createXMLEventWriter(bout);
 
-		// Processing sph_data_srouce
+		// Processing sph_data_in_base_path
 
 		XMLInputFactory in_factory = XMLInputFactory.newInstance();
 

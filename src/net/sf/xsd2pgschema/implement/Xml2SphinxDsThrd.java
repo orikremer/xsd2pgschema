@@ -90,7 +90,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 	/** The XML validator. */
 	private XmlValidator validator;
 
-	/** The data srouce name. */
+	/** The data source name. */
 	private String ds_name;
 
 	/** The data source directory path. */
