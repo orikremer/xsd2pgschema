@@ -4413,8 +4413,13 @@ public class XPathCompList {
 
 		String table_xname = path_expr.getLastPathName();
 
-		if (single_pg_named_schema)
-			return table_name_dic.get(table_xname);
+		if (single_pg_named_schema) {
+
+			PgTable table = table_name_dic.get(table_xname);
+
+			if (table != null)
+				return table;
+		}
 
 		String path = path_expr.getReadablePath();
 
