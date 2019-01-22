@@ -146,18 +146,21 @@ public class XmlParser {
 	 */
 	private void init(XmlFileFilter xml_file_filter) {
 
-		basename = FilenameUtils.getBaseName(xml_file_name);
-
 		switch (xml_file_filter.ext) {
 		case "gz":
 		case "zip":
-			basename = FilenameUtils.getBaseName(basename);
+			basename = FilenameUtils.getBaseName(FilenameUtils.getBaseName(xml_file_name));
 			break;
+		default:
+			basename = FilenameUtils.getBaseName(xml_file_name);
 		}
 
 		// decide document id quoting XML file name
 
-		document_id = xml_file_name.replaceFirst(xml_file_filter.prefix_digest, "").replaceFirst(xml_file_filter.ext_digest, "");
+		document_id = xml_file_name.replaceFirst(xml_file_filter.ext_digest, "");
+
+		if (!xml_file_filter.prefix_digest.isEmpty())
+			document_id = document_id.replaceFirst(xml_file_filter.prefix_digest, "");
 
 		if (!xml_file_filter.case_sense_doc_key)
 			document_id = (xml_file_filter.lower_case_doc_key ? document_id.toLowerCase() : document_id.toUpperCase());
@@ -177,10 +180,8 @@ public class XmlParser {
 
 		InputStream in = Files.newInputStream(xml_file_path);
 
-		// xml.gz file
-
-		if (FilenameUtils.getExtension(xml_file_name).equals("gz")) {
-
+		switch (FilenameUtils.getExtension(xml_file_name)) {
+		case "gz":
 			GZIPInputStream gzin = new GZIPInputStream(in);
 
 			document = doc_builder.parse(gzin);
@@ -198,13 +199,8 @@ public class XmlParser {
 			}
 
 			gzin.close();
-
-		}
-
-		// xml.zip file
-
-		else if (FilenameUtils.getExtension(xml_file_name).equals("zip")) {
-
+			break;
+		case "zip":
 			ZipInputStream zin = new ZipInputStream(in);
 
 			document = doc_builder.parse(zin);
@@ -222,13 +218,8 @@ public class XmlParser {
 			}
 
 			zin.close();
-
-		}
-
-		// xml file
-
-		else {
-
+			break;
+		default:
 			document = doc_builder.parse(in);
 
 			if (validator != null) {
@@ -240,7 +231,6 @@ public class XmlParser {
 				validator.exec(in, xml_file_path, null, false, false);
 
 			}
-
 		}
 
 		in.close();
@@ -262,32 +252,20 @@ public class XmlParser {
 
 		InputStream in = Files.newInputStream(xml_file_path);
 
-		// xml.gz file
-
-		if (FilenameUtils.getExtension(xml_file_name).equals("gz")) {
-
+		switch (FilenameUtils.getExtension(xml_file_name)) {
+		case "gz":
 			GZIPInputStream gzin = new GZIPInputStream(in);
-
 			validator.exec(gzin, xml_file_path, check_sum_file_path, del_invalid_xml, verbose);
-
 			gzin.close();
-
-		}
-
-		else if (FilenameUtils.getExtension(xml_file_name).equals("zip")) {
-
+			break;
+		case "zip":
 			ZipInputStream zin = new ZipInputStream(in);
-
 			validator.exec(zin, xml_file_path, check_sum_file_path, del_invalid_xml, verbose);
-
 			zin.close();
-
-		}
-
-		// xml file
-
-		else
+			break;
+		default:
 			validator.exec(in, xml_file_path, check_sum_file_path, del_invalid_xml, verbose);
+		}
 
 		in.close();
 
