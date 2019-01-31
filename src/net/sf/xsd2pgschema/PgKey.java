@@ -58,7 +58,6 @@ public class PgKey {
 	public PgKey(String schema_name, Node node, String name, boolean case_sense) throws PgSchemaException {
 
 		this.name = name;
-
 		this.schema_name = schema_name;
 
 		table_xname = PgSchemaUtil.extractSelectorXPath(node);
@@ -75,14 +74,8 @@ public class PgKey {
 	 * @return boolean whether key is empty
 	 */
 	public boolean isEmpty() {
-
-		if (table_xname == null || table_xname.isEmpty())
-			return true;
-
-		if (field_xnames == null || field_xnames.isEmpty())
-			return true;
-
-		return false;
+		return table_xname == null || table_xname.isEmpty() ||
+				field_xnames == null || field_xnames.isEmpty();
 	}
 
 	/**

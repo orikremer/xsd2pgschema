@@ -74,7 +74,6 @@ public class PgForeignKey {
 	public PgForeignKey(String schema_name, NodeList key_nodes, Node node, String name, String key_name, boolean case_sense) throws PgSchemaException {
 
 		this.name = name;
-
 		this.schema_name = schema_name;
 
 		child_table_xname = PgSchemaUtil.extractSelectorXPath(node);
@@ -109,20 +108,10 @@ public class PgForeignKey {
 	 * @return boolean whether foreign key is empty
 	 */
 	public boolean isEmpty() {
-
-		if (child_table_xname == null || child_table_xname.isEmpty())
-			return true;
-
-		if (parent_table_xname == null || parent_table_xname.isEmpty())
-			return true;
-
-		if (child_field_xnames == null || child_field_xnames.isEmpty())
-			return true;
-
-		if (parent_field_xnames == null || parent_field_xnames.isEmpty())
-			return true;
-
-		return false;
+		return child_table_xname == null || child_table_xname.isEmpty() ||
+				parent_table_xname == null || parent_table_xname.isEmpty() ||
+				child_field_xnames == null || child_field_xnames.isEmpty() ||
+				parent_field_xnames == null || parent_field_xnames.isEmpty();
 	}
 
 	/**

@@ -30,7 +30,8 @@ public enum XsTableType {
 	xs_root,
 	/** The child table of the root table. */
 	xs_root_child,
-	/** The administrative root table. */
+
+	/** The administrative table. */
 	xs_admin_root,
 	/** The child table of the administrative table. */
 	xs_admin_child,

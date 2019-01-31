@@ -146,13 +146,13 @@ public class XmlParser {
 	 */
 	private void init(XmlFileFilter xml_file_filter) {
 
+		basename = FilenameUtils.getBaseName(xml_file_name);
+
 		switch (xml_file_filter.ext) {
 		case "gz":
 		case "zip":
-			basename = FilenameUtils.getBaseName(FilenameUtils.getBaseName(xml_file_name));
+			basename = FilenameUtils.getBaseName(basename);
 			break;
-		default:
-			basename = FilenameUtils.getBaseName(xml_file_name);
 		}
 
 		// decide document id quoting XML file name
