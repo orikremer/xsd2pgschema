@@ -749,10 +749,7 @@ public class PgTable implements Serializable {
 		if (node_name.startsWith(prefix + ":"))
 			node_name = PgSchemaUtil.getUnqualifiedName(node_name);
 
-		if (wild_card)
-			return xname.matches(node_name);
-
-		return node_name.equals("*") || xname.equals(node_name);
+		return wild_card ? xname.matches(node_name) : xname.equals(node_name) || node_name.equals("*");
 	}
 
 }
