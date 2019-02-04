@@ -26,11 +26,11 @@ package net.sf.xsd2pgschema.type;
  */
 public enum PgHashSize {
 
-	/** The unsigned long 64 bit. */
+	/** The unsigned long 64 bits. */
 	unsigned_long_64,
-	/** The unsigned int 32 bit. */
+	/** The unsigned int 32 bits. */
 	unsigned_int_32,
-	/** The native default bit. */
+	/** The native default bits. */
 	native_default,
 	/** The debug string (no hashing). */
 	debug_string;

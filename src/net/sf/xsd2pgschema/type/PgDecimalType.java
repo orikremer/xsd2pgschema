@@ -26,9 +26,9 @@ package net.sf.xsd2pgschema.type;
  */
 public enum PgDecimalType {
 
-	/** The double precision 64 bit. (PG data type: DOUBLE PRECISION) */
+	/** The double precision 64 bits. (PG data type: DOUBLE PRECISION) */
 	double_precision_64,
-	/** The single precision 32 bit. (PG data type: REAL) */
+	/** The single precision 32 bits. (PG data type: REAL) */
 	single_precision_32,
 	/** The BigDecimal. (PG data type: DECIMAL) */
 	big_decimal;

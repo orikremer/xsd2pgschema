@@ -4860,10 +4860,10 @@ public class PgSchema implements Serializable {
 				return "E'\\\\x" + DatatypeConverter.printHexBinary(bytes) + "'"; // PostgreSQL hex format
 			case unsigned_long_64:
 				BigInteger blong = new BigInteger(bytes);
-				return Long.toString(Math.abs(blong.longValue())); // use lower order 64bit
+				return Long.toString(Math.abs(blong.longValue())); // use lower order 64 bits
 			case unsigned_int_32:
 				BigInteger bint = new BigInteger(bytes);
-				return Integer.toString(Math.abs(bint.intValue())); // use lower order 32bit
+				return Integer.toString(Math.abs(bint.intValue())); // use lower order 32 bits
 			default:
 				return key_name;
 			}

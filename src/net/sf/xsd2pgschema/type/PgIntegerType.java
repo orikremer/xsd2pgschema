@@ -26,9 +26,9 @@ package net.sf.xsd2pgschema.type;
  */
 public enum PgIntegerType {
 
-	/** The signed long 64 bit. (PG data type: BIGINT) */
+	/** The signed long 64 bits. (PG data type: BIGINT) */
 	signed_long_64,
-	/** The signed int 32 bit. (PG data type: INTEGER) */
+	/** The signed int 32 bits. (PG data type: INTEGER) */
 	signed_int_32,
 	/** The BigInteger. (PG data type: DECIMAL with scale=0) */
 	big_integer;

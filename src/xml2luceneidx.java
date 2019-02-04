@@ -550,7 +550,7 @@ public class xml2luceneidx {
 		System.err.println("        --attr-time (all time values are stored as attribute)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
-		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
+		System.err.println("        --hash-size BIT_SIZE [int (32 bits) | long (64 bits, default) | native (default bits of algorithm) | debug (string)]");
 		System.err.println("        --xml-file-prerix-digest DIGESTIBLE_PREFIX (default=\"\")");
 		System.err.println("        --xml-file-ext-digest DIGESTIBLE_EXTENSION (default=\".\")");
 		System.err.println("        --lower-case-doc-key (lower case document key)");

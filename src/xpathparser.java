@@ -273,8 +273,8 @@ public class xpathparser {
 		System.err.println("        --pg-map-integer (map xs:integer to signed int 32 bits, default)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
-		System.err.println("        --hash-size BIT_SIZE [int (32bit) | long (64bit, default) | native (default bit of algorithm) | debug (string)]");
-		System.err.println("        --ser-size BIT_SIZE [short (16bit); | int (32bit, default)]");
+		System.err.println("        --hash-size BIT_SIZE [int (32 bits) | long (64 bits, default) | native (default bits of algorithm) | debug (string)]");
+		System.err.println("        --ser-size BIT_SIZE [short (16 bits); | int (32 bits, default)]");
 		System.err.println("        --doc-key-name DOC_KEY_NAME (default=\"" + option.def_document_key_name + "\")");
 		System.err.println("        --ser-key-name SER_KEY_NAME (default=\"" + option.def_serial_key_name + "\")");
 		System.err.println("        --xpath-key-name XPATH_KEY_NAME (default=\"" + option.def_xpath_key_name + "\")");

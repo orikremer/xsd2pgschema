@@ -83,7 +83,7 @@ public class PgSchemaNodeParserBuilder {
 	/** Whether to fill @default value. */
 	protected boolean fill_default_value;
 
-	/** Whether default serial key size (unsigned int 32 bit). */
+	/** Whether default serial key size (unsigned int 32 bits). */
 	protected boolean is_def_ser_size;
 
 	/** The size of hash key. */
@@ -524,10 +524,10 @@ public class PgSchemaNodeParserBuilder {
 				return "E'\\\\x" + DatatypeConverter.printHexBinary(bytes) + "'"; // PostgreSQL hex format
 			case unsigned_long_64:
 				BigInteger blong = new BigInteger(bytes);
-				return Long.toString(Math.abs(blong.longValue())); // use lower order 64bit
+				return Long.toString(Math.abs(blong.longValue())); // use lower order 64 bits
 			case unsigned_int_32:
 				BigInteger bint = new BigInteger(bytes);
-				return Integer.toString(Math.abs(bint.intValue())); // use lower order 32bit
+				return Integer.toString(Math.abs(bint.intValue())); // use lower order 32 bits
 			default:
 				return key_name;
 			}
@@ -570,7 +570,7 @@ public class PgSchemaNodeParserBuilder {
 
 			BigInteger bint = new BigInteger(hash);
 
-			return Math.abs(bint.intValue()); // use lower order 32bit
+			return Math.abs(bint.intValue()); // use lower order 32 bits
 
 		} finally {
 			md_hash_key.reset();
@@ -592,7 +592,7 @@ public class PgSchemaNodeParserBuilder {
 
 			BigInteger bint = new BigInteger(hash);
 
-			return Math.abs(bint.longValue()); // use lower order 64bit
+			return Math.abs(bint.longValue()); // use lower order 64 bits
 
 		} finally {
 			md_hash_key.reset();

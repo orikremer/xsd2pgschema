@@ -26,9 +26,9 @@ package net.sf.xsd2pgschema.type;
  */
 public enum PgSerSize {
 
-	/** The unsigned int 32 bit. */
+	/** The unsigned int 32 bits. */
 	unsigned_int_32,
-	/** The unsigned short 16 bit. */
+	/** The unsigned short 16 bits. */
 	unsigned_short_16;
 
 	/**
