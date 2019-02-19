@@ -5,6 +5,7 @@
   Fixed constraint name including PostgreSQL reserved operator.
   Fixed case-insensitive name including PostgreSQL reserved operator.
   Revised last modified date checker of check sum file.
+  Added --xml-allow-frag option in xpath2xml main class and --json-allow-frag option in xpath2json main class.
 
  Changes in xsd2pgschema 3.0.7 (release 2018-11-16)
 

@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018 Masashi Yokochi
+    Copyright 2018-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -84,6 +84,12 @@ public class XmlBuilder extends CommonBuilder {
 
 	/** Whether to append @xsi:nil="true" for nillable element. */
 	public boolean append_nil_elem = true;
+
+	/** Whether to allow fragmented document. */
+	public boolean allow_frag = false;
+
+	/** Whether to use line feed code. */
+	protected boolean line_feed = true;
 
 	/** The indent offset. */
 	protected int indent_offset = PgSchemaUtil.indent_offset;

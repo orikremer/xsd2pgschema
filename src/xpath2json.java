@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018 Masashi Yokochi
+    Copyright 2018-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -131,14 +131,17 @@ public class xpath2json {
 			else if (args[i].equals("--col-json"))
 				jsonb_option.type = JsonType.column;
 
-			else if (args[i].equals("--json-array-all"))
-				jsonb_option.array_all = true;
-
 			else if (args[i].equals("--json-attr-prefix") && i + 1 < args.length)
 				jsonb_option.setAttrPrefix(args[++i]);
 
 			else if (args[i].equals("--json-simple-cont-name") && i + 1 < args.length)
 				jsonb_option.setSimpleContentName(args[++i]);
+
+			else if (args[i].equals("--json-array-all"))
+				jsonb_option.array_all = true;
+
+			else if (args[i].equals("--json-allow-frag"))
+				jsonb_option.allow_frag = true;
 
 			else if (args[i].equals("--json-indent-offset") && i + 1 < args.length)
 				jsonb_option.setIndentOffset(args[++i]);
@@ -381,12 +384,13 @@ public class xpath2json {
 		System.err.println("        --pgschema-serv-port PG_SCHEMA_SERV_PORT_NUMBER (default=" + PgSchemaUtil.pg_schema_server_port + ")");
 		System.err.println("        --json-attr-prefix ATTR_PREFIX_CODE (default=\"" + jsonb_option.getAttrPrefix() + "\")");
 		System.err.println("        --json-simple-cont-name SIMPLE_CONTENT_NAME (default=\"" + jsonb_option.getSimpleContentName() + "\")");
+		System.err.println("        --json-array-all (use JSON array if possible)");
+		System.err.println("        --json-allow-frag (allow fragmented JSON document)");
 		System.err.println("        --json-indent-offset INTEGER (default=" + jsonb_option.getIndentOffset() + ", min=0, max=4)");
 		System.err.println("        --json-key-value-offset INTEGER (default=" + jsonb_option.getKeyValueOffset() + ", min=0, max=4)");
 		System.err.println("        --json-insert-doc-key (insert document key in result)");
 		System.err.println("        --json-no-linefeed (dismiss line feed code)");
 		System.err.println("        --json-compact (equals to set --json-indent-offset 0 --json-key-value-offset 0 --json-no-linefeed)");
-		System.err.println("        --json-array-all (use JSON array if possible)");
 		System.err.println("        --verbose (verbose mode)");
 		System.exit(1);
 

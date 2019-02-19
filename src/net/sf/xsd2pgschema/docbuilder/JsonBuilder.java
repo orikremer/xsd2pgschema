@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -113,6 +113,9 @@ public class JsonBuilder extends CommonBuilder {
 	/** Whether to retain field annotation. */
 	private boolean no_field_anno;
 
+	/** Whether to allow fragmented document. */
+	public boolean allow_frag;
+
 	/** The pending table header. */
 	private LinkedList<JsonBuilderPendingHeader> pending_header = new LinkedList<JsonBuilderPendingHeader>();
 
@@ -166,6 +169,7 @@ public class JsonBuilder extends CommonBuilder {
 		this.array_all = option.array_all;
 		this.no_field_anno = option.no_field_anno;
 		this.insert_doc_key = option.insert_doc_key;
+		this.allow_frag = option.allow_frag;
 
 		if (indent_space.length() != option.indent_offset) {
 

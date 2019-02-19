@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017-2018 Masashi Yokochi
+    Copyright 2017-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -489,10 +489,14 @@ public class XPathEvaluatorImpl {
 
 			}
 
-			if (xmlb.getRootCount() > 1)
-				throw new PgSchemaException("[WARNING] The XML document has multiple root nodes.");
-			if (xmlb.getFragment() > 1)
-				throw new PgSchemaException("[WARNING] The XML document has multiple fragments.");
+			if (!xmlb.allow_frag) {
+
+				if (xmlb.getRootCount() > 1)
+					throw new PgSchemaException("[WARNING] The XML document has multiple root nodes.");
+				if (xmlb.getFragment() > 1)
+					throw new PgSchemaException("[WARNING] The XML document has multiple fragments.");
+
+			}
 
 		} catch (IOException | XMLStreamException | SQLException e) {
 			throw new PgSchemaException(e);
@@ -604,10 +608,14 @@ public class XPathEvaluatorImpl {
 
 			}
 
-			if (jsonb.getRootCount() > 1)
-				throw new PgSchemaException("[WARNING] The JSON document has multiple root nodes.");
-			if (jsonb.getFragment() > 1)
-				throw new PgSchemaException("[WARNING] The JSON document has multiple fragments.");
+			if (!jsonb.allow_frag) {
+
+				if (jsonb.getRootCount() > 1)
+					throw new PgSchemaException("[WARNING] The JSON document has multiple root nodes.");
+				if (jsonb.getFragment() > 1)
+					throw new PgSchemaException("[WARNING] The JSON document has multiple fragments.");
+
+			}
 
 		} catch (IOException | SQLException e) {
 			throw new PgSchemaException(e);

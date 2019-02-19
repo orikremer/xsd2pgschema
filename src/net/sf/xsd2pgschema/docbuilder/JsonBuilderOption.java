@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -52,14 +52,17 @@ public class JsonBuilderOption {
 	/** The current line feed code. */
 	protected String line_feed_code = "\n";
 
-	/** Whether to use JSON array uniformly for descendants. */
-	public boolean array_all = false;
-
 	/** Whether to retain field annotation. */
 	public boolean no_field_anno = false;
 
 	/** Whether to insert document key. */
 	public boolean insert_doc_key = false;
+
+	/** Whether to use JSON array uniformly for descendants. */
+	public boolean array_all = false;
+
+	/** Whether to allow fragmented document. */
+	public boolean allow_frag = false;
 
 	/**
 	 * Set JSON Schema version.
