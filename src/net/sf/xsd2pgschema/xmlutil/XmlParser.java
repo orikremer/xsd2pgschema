@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -278,7 +278,7 @@ public class XmlParser {
 	 * @return Path check sum file path
 	 */
 	private Path getCheckSumFilePath(PgSchemaOption option) {
-		return Paths.get(option.check_sum_dir_name, xml_file_name + "." + option.check_sum_algorithm.toLowerCase());
+		return Paths.get(option.check_sum_dir_name, xml_file_name + "." + option.check_sum_ext);
 	}
 
 	/**
@@ -298,8 +298,9 @@ public class XmlParser {
 			Path check_sum_path = getCheckSumFilePath(option);
 
 			boolean check_sum_exists = Files.exists(check_sum_path);
+			boolean check_last_modified = check_sum_exists ? Files.getLastModifiedTime(xml_file_path).compareTo(Files.getLastModifiedTime(check_sum_path)) < 0 : false;
 
-			if (check_sum_exists && !option.sync_rescue && Files.getLastModifiedTime(xml_file_path).compareTo(Files.getLastModifiedTime(check_sum_path)) < 0)
+			if (!option.sync_rescue && check_last_modified)
 				return true;
 
 			InputStream in = Files.newInputStream(xml_file_path);
@@ -318,6 +319,9 @@ public class XmlParser {
 					identity = true;
 
 				br.close();
+
+				if (!option.sync_dry_run && identity && !check_last_modified)
+					Files.setLastModifiedTime(check_sum_path, Files.getLastModifiedTime(xml_file_path));
 
 			}
 

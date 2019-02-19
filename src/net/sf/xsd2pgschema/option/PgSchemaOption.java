@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -194,6 +194,9 @@ public class PgSchemaOption implements Serializable {
 
 	/** The default algorithm for check sum. */
 	public String check_sum_algorithm = PgSchemaUtil.def_check_sum_algorithm;
+
+	/** The default file extension of check sum file. */
+	public String check_sum_ext = check_sum_algorithm.toLowerCase();
 
 	/** Whether to use data model of PgSchema server. */
 	@Flat
@@ -552,6 +555,7 @@ public class PgSchemaOption implements Serializable {
 		}
 
 		this.check_sum_algorithm = check_sum_algorithm;
+		check_sum_ext = check_sum_algorithm.toLowerCase();
 
 		return true;
 	}
