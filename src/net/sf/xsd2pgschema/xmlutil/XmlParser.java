@@ -298,7 +298,7 @@ public class XmlParser {
 			Path check_sum_path = getCheckSumFilePath(option);
 
 			boolean check_sum_exists = Files.exists(check_sum_path);
-			boolean check_last_modified = check_sum_exists ? Files.getLastModifiedTime(xml_file_path).compareTo(Files.getLastModifiedTime(check_sum_path)) < 0 : false;
+			boolean check_last_modified = check_sum_exists ? Files.getLastModifiedTime(xml_file_path).compareTo(Files.getLastModifiedTime(check_sum_path)) <= 0 : false;
 
 			if (!option.sync_rescue && check_last_modified)
 				return true;
