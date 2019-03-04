@@ -1,4 +1,8 @@
-﻿ Changes in xsd2pgschema 3.0.8 (release 2019-02-19)
+﻿ Changes in xsd2pgschema 3.0.9 (release 2019-03-04)
+
+  Auto-detect root element in the primary schema.
+
+ Changes in xsd2pgschema 3.0.8 (release 2019-02-19)
 
   Fixed typos in usage.
   Added a user guide (User Guide.pdf)

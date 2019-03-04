@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -522,6 +522,11 @@ public class PgSchema implements Serializable {
 				String _abstract = ((Element) child).getAttribute("abstract");
 
 				if (_abstract != null && _abstract.equals("true"))
+					continue;
+
+				// test whether root element is referred in schema elsewhere
+
+				if (root_element && isReferredElsewhere(child))
 					continue;
 
 				extractRootElement(child, root_element);
@@ -1492,6 +1497,83 @@ public class PgSchema implements Serializable {
 
 		}
 
+	}
+
+	/**
+	 * Weather a given node is referred in schema elsewhere.
+	 *
+	 * @param node element node
+	 * @return boolean whether the node is referred in schema elsewhere
+	 */
+	private boolean isReferredElsewhere(Node node) {
+
+		String name = ((Element) node).getAttribute("name");
+
+		for (Node child = node.getPreviousSibling(); child != null; child = child.getPreviousSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
+				continue;
+
+			if (isReferred(name, child))
+				return true;
+
+		}
+
+		for (Node child = node.getNextSibling(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
+				continue;
+
+			if (isReferred(name, child))
+				return true;
+
+		}
+
+		return false;
+	}
+
+	/** Whether a given name is referred in node or child nodes.
+	 * 
+	 * @param name element name
+	 * @param node current node
+	 * @return boolean whether the name is referred in node or child nodes
+	 */
+	private boolean isReferred(String name, Node node) {
+
+		if (node.getNodeType() == Node.ELEMENT_NODE && node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri)) {
+
+			if (((Element) node).getLocalName().equals("element")) {
+
+				String ref = ((Element) node).getAttribute("ref");
+
+				if (ref != null && PgSchemaUtil.getUnqualifiedName(ref).equals(name))
+					return true;
+
+				else {
+
+					String _name = ((Element) node).getAttribute("name");
+
+					if (_name != null && PgSchemaUtil.getUnqualifiedName(_name).equals(name))
+						return true;
+
+				}
+
+			}
+
+		}
+
+		if (node.hasChildNodes()) {
+
+			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+				if (isReferred(name, child))
+					return true;
+
+			}
+
+		}
+
+		return false;
 	}
 
 	/**
