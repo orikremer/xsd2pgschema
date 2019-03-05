@@ -524,9 +524,9 @@ public class PgSchema implements Serializable {
 				if (_abstract != null && _abstract.equals("true"))
 					continue;
 
-				// test whether root element is referred in schema elsewhere
+				// test whether element is referred by sibling nodes
 
-				if (root_element && isReferredElsewhere(child))
+				if (root_element && isReferredBySibling(child))
 					continue;
 
 				extractRootElement(child, root_element);
@@ -1228,8 +1228,10 @@ public class PgSchema implements Serializable {
 								field.prefix = "ns" + (other_namespaces.indexOf(namespace) + 1);
 
 							else {
+
 								field.prefix = "ns" + (other_namespaces.size() + 1);
 								other_namespaces.add(namespace);
+
 							}
 
 							if (field.prefix.equals("ns1"))
@@ -1500,31 +1502,31 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
-	 * Weather a given node is referred in schema elsewhere.
+	 * Weather a given node is referred by sibling nodes.
 	 *
 	 * @param node element node
-	 * @return boolean whether the node is referred in schema elsewhere
+	 * @return boolean whether the node is referred by sibling nodes
 	 */
-	private boolean isReferredElsewhere(Node node) {
+	private boolean isReferredBySibling(Node node) {
 
 		String name = ((Element) node).getAttribute("name");
 
-		for (Node child = node.getPreviousSibling(); child != null; child = child.getPreviousSibling()) {
+		for (Node prev_node = node.getPreviousSibling(); prev_node != null; prev_node = prev_node.getPreviousSibling()) {
 
-			if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
+			if (prev_node.getNodeType() != Node.ELEMENT_NODE || !prev_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
 				continue;
 
-			if (isReferred(name, child))
+			if (isReferredByOffspring(name, prev_node))
 				return true;
 
 		}
 
-		for (Node child = node.getNextSibling(); child != null; child = child.getNextSibling()) {
+		for (Node next_node = node.getNextSibling(); next_node != null; next_node = next_node.getNextSibling()) {
 
-			if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
+			if (next_node.getNodeType() != Node.ELEMENT_NODE || !next_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
 				continue;
 
-			if (isReferred(name, child))
+			if (isReferredByOffspring(name, next_node))
 				return true;
 
 		}
@@ -1532,13 +1534,13 @@ public class PgSchema implements Serializable {
 		return false;
 	}
 
-	/** Whether a given name is referred in node or child nodes.
-	 * 
+	/** Whether a given name is referred by offspring nodes.
+	 *
 	 * @param name element name
 	 * @param node current node
-	 * @return boolean whether the name is referred in node or child nodes
+	 * @return boolean whether the name is referred by offspring nodes
 	 */
-	private boolean isReferred(String name, Node node) {
+	private boolean isReferredByOffspring(String name, Node node) {
 
 		if (node.getNodeType() == Node.ELEMENT_NODE && node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri)) {
 
@@ -1549,14 +1551,10 @@ public class PgSchema implements Serializable {
 				if (ref != null && PgSchemaUtil.getUnqualifiedName(ref).equals(name))
 					return true;
 
-				else {
+				String _name = ((Element) node).getAttribute("name");
 
-					String _name = ((Element) node).getAttribute("name");
-
-					if (_name != null && PgSchemaUtil.getUnqualifiedName(_name).equals(name))
-						return true;
-
-				}
+				if (_name != null && PgSchemaUtil.getUnqualifiedName(_name).equals(name))
+					return true;
 
 			}
 
@@ -1566,7 +1564,7 @@ public class PgSchema implements Serializable {
 
 			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-				if (isReferred(name, child))
+				if (isReferredByOffspring(name, child))
 					return true;
 
 			}
@@ -4022,6 +4020,7 @@ public class PgSchema implements Serializable {
 					System.out.println("-- must not be NULL, but dismissed due to name collision");
 
 				else {
+
 					System.out.print("-- must have a constraint ");
 
 					switch (field.xs_type.getJsonSchemaType()) {
@@ -4033,6 +4032,7 @@ public class PgSchema implements Serializable {
 					}
 
 					System.out.println(", but dismissed due to name collision");
+
 				}
 			}
 
