@@ -435,7 +435,7 @@ public class XmlBuilder extends CommonBuilder {
 
 					if (content != null) {
 
-						if (field.is_xs_namespace) {
+						if (field.is_same_namespace_of_table) {
 
 							writer.writeStartElement(table_prefix, field_name, table_ns);
 
@@ -463,7 +463,7 @@ public class XmlBuilder extends CommonBuilder {
 
 					else {
 
-						if (field.is_xs_namespace) {
+						if (field.is_same_namespace_of_table) {
 
 							writer.writeEmptyElement(table_prefix, field_name, table_ns);
 
@@ -528,7 +528,7 @@ public class XmlBuilder extends CommonBuilder {
 							if (append_xmlns)
 								writer.writeNamespace(parent_table.prefix, parent_table.target_namespace);
 
-							if (field.is_xs_namespace)
+							if (field.is_same_namespace_of_table)
 								writer.writeAttribute(field.foreign_table_xname, content);
 							else
 								writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, content);
@@ -553,7 +553,7 @@ public class XmlBuilder extends CommonBuilder {
 							if (append_xmlns)
 								writer.writeNamespace(table_prefix, table_ns);
 
-							if (field_ns.equals(PgSchemaUtil.xs_namespace_uri))
+							if (field_ns.equals(table.target_namespace))
 								writer.writeAttribute(field_name, content);
 							else
 								writer.writeAttribute(field_prefix, field_ns, field_name, content);
@@ -577,7 +577,7 @@ public class XmlBuilder extends CommonBuilder {
 							if (append_xmlns)
 								writer.writeNamespace(parent_table.prefix, parent_table.target_namespace);
 
-							if (field.is_xs_namespace)
+							if (field.is_same_namespace_of_table)
 								writer.writeAttribute(field.foreign_table_xname, content);
 							else
 								writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, content);
@@ -607,23 +607,23 @@ public class XmlBuilder extends CommonBuilder {
 								writer.writeEmptyElement(field.prefix, getLastNameOfPath(getParentPath(path)), table_ns);
 
 								if (append_xmlns)
-									writer.writeNamespace(field.prefix, field.namespace);
+									writer.writeNamespace(field.prefix, field.any_namespace);
 
 								String attr_name = target_path.replace("@", "");
 
-								if (field.prefix.isEmpty() || field.namespace.isEmpty())
+								if (field.prefix.isEmpty() || field.any_namespace.isEmpty())
 									writer.writeAttribute(attr_name, _content);
 								else
-									writer.writeAttribute(field.prefix, field.namespace, attr_name, _content);
+									writer.writeAttribute(field.prefix, field.any_namespace, attr_name, _content);
 
 							}
 
 							else {
 
-								writer.writeStartElement(field.prefix, target_path, field.namespace);
+								writer.writeStartElement(field.prefix, target_path, field.any_namespace);
 
 								if (append_xmlns)
-									writer.writeNamespace(field.prefix, field.namespace);
+									writer.writeNamespace(field.prefix, field.any_namespace);
 
 								writer.writeCharacters(_content);
 
@@ -1030,6 +1030,8 @@ public class XmlBuilder extends CommonBuilder {
 		}
 
 		incRootCount();
+
+		appended_xmlns.clear();
 
 	}
 

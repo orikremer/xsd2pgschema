@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018 Masashi Yokochi
+    Copyright 2018-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -92,7 +92,7 @@ public class XmlBuilderPendingAttr extends CommonPendingAttr {
 
 				if (field.attribute) {
 
-					if (field.is_xs_namespace)
+					if (field.is_same_namespace_of_table)
 						xmlb.writer.writeAttribute(field.xname, content);
 
 					else {
@@ -116,7 +116,7 @@ public class XmlBuilderPendingAttr extends CommonPendingAttr {
 
 				else {
 
-					if (field.is_xs_namespace)
+					if (field.is_same_namespace_of_table)
 						xmlb.writer.writeAttribute(field.foreign_table_xname, content);
 
 					else {
@@ -142,7 +142,7 @@ public class XmlBuilderPendingAttr extends CommonPendingAttr {
 
 			else {
 
-				String field_ns = any_field.namespace;
+				String field_ns = any_field.any_namespace;
 				String field_prefix = any_field.prefix;
 
 				if (field_prefix.isEmpty() || field_ns.isEmpty() || xmlb.appended_xmlns.contains(field_prefix))

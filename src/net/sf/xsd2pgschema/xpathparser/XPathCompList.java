@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017-2018 Masashi Yokochi
+    Copyright 2017-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -6080,7 +6080,7 @@ public class XPathCompList {
 						case any_attribute:
 							table = getParentTable(sql_expr);
 							PgField field = table.getCanField(sql_expr.xname);
-							prefix = field.is_xs_namespace ? "" : field.prefix;
+							prefix = field.is_same_namespace_of_table ? "" : field.prefix;
 
 							switch (sql_expr.terminus) {
 							case any_element:

@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018 Masashi Yokochi
+    Copyright 2018-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -72,7 +72,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 
 		super(root_node_name);
 
-		target_namespace = field.namespace;
+		target_namespace = field.any_namespace;
 		prefix = field.prefix;
 		this.nest_test = nest_test;
 		this.xmlb = xmlb;

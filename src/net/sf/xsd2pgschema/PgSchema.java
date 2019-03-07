@@ -1191,46 +1191,48 @@ public class PgSchema implements Serializable {
 
 		tables.parallelStream().forEach(table -> {
 
-			if (table.target_namespace != null)
-				table.prefix = getPrefixOf(table.target_namespace.split(" ")[0], "");
+			if (table.target_namespace == null)
+				table.target_namespace = "";
+
+			table.prefix = getPrefixOf(table.target_namespace.split(" ")[0], "");
 
 			table.fields.stream().filter(field -> !field.system_key && !field.user_key).forEach(field -> {
 
 				if (field.target_namespace != null) {
 
 					field.prefix = getPrefixOf(field.target_namespace.split(" ")[0], "");
-					field.is_xs_namespace = field.target_namespace.equals(PgSchemaUtil.xs_namespace_uri);
+					field.is_same_namespace_of_table = field.target_namespace.equals(table.target_namespace);
 
 				}
 
 				if (field.any_content_holder) {
 
-					String namespace = field.namespace.split(" ")[0]; // eval first item only
+					String any_namespace = field.any_namespace.split(" ")[0]; // eval first item only
 
-					switch (namespace) {
+					switch (any_namespace) {
 					case "##any":
 					case "##targetNamespace":
-						field.namespace = table.target_namespace;
+						field.any_namespace = table.target_namespace;
 						field.prefix = table.prefix;
 						break;
 					case "##other":
 					case "##local":
-						field.namespace = "";
+						field.any_namespace = "";
 						field.prefix = "";
 						break;
 					default:
-						field.namespace = namespace;
-						field.prefix = getPrefixOf(namespace, "");
+						field.any_namespace = any_namespace;
+						field.prefix = getPrefixOf(any_namespace, "");
 
 						if (field.prefix.isEmpty()) {
 
-							if (other_namespaces.contains(namespace))
-								field.prefix = "ns" + (other_namespaces.indexOf(namespace) + 1);
+							if (other_namespaces.contains(any_namespace))
+								field.prefix = "ns" + (other_namespaces.indexOf(any_namespace) + 1);
 
 							else {
 
 								field.prefix = "ns" + (other_namespaces.size() + 1);
-								other_namespaces.add(namespace);
+								other_namespaces.add(any_namespace);
 
 							}
 
@@ -1240,6 +1242,8 @@ public class PgSchema implements Serializable {
 						}
 
 					}
+
+					field.is_same_namespace_of_table = field.any_namespace.equals(table.target_namespace);
 
 				}
 
@@ -1408,7 +1412,7 @@ public class PgSchema implements Serializable {
 
 				table.fields.stream().filter(field -> field.element).forEach(field -> {
 
-					String prefix = field.is_xs_namespace ? table.prefix : field.prefix;
+					String prefix = field.is_same_namespace_of_table ? table.prefix : field.prefix;
 
 					field.start_end_elem_tag = new String("<<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + ">\n").getBytes(PgSchemaUtil.def_charset);
 					field.empty_elem_tag = new String("<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + " " + PgSchemaUtil.xsi_prefix + ":nil=\"true\"/>\n").getBytes(PgSchemaUtil.def_charset);
@@ -1548,12 +1552,12 @@ public class PgSchema implements Serializable {
 
 				String ref = ((Element) node).getAttribute("ref");
 
-				if (ref != null && PgSchemaUtil.getUnqualifiedName(ref).equals(name))
+				if (ref != null && ref.equals(name))
 					return true;
 
 				String _name = ((Element) node).getAttribute("name");
 
-				if (_name != null && PgSchemaUtil.getUnqualifiedName(_name).equals(name))
+				if (_name != null && _name.equals(name))
 					return true;
 
 			}
@@ -2046,8 +2050,8 @@ public class PgSchema implements Serializable {
 		field.xs_type = XsFieldType.xs_any;
 		field.type = field.xs_type.name();
 
-		field.extractTargetNamespace(this, node); // require type definition
-		field.extractNamespace(node);
+		field.extractTargetNamespace(this, node, null);
+		field.extractAnyNamespace(node);
 
 		if (option.wild_card)
 			table.fields.add(field);
@@ -2076,8 +2080,8 @@ public class PgSchema implements Serializable {
 		field.xs_type = XsFieldType.xs_anyAttribute;
 		field.type = field.xs_type.name();
 
-		field.extractTargetNamespace(this, node); // require type definition
-		field.extractNamespace(node);
+		field.extractTargetNamespace(this, node, null);
+		field.extractAnyNamespace(node);
 
 		if (option.wild_card)
 			table.fields.add(field);
@@ -2151,7 +2155,7 @@ public class PgSchema implements Serializable {
 				field.xanno_doc = PgSchemaUtil.extractDocumentation(node, false);
 
 			field.extractType(option, node);
-			field.extractTargetNamespace(this, node); // require type definition
+			field.extractTargetNamespace(this, node, getNamespaceUriOfFieldQName(table, name));
 			field.extractRequired(node);
 			field.extractFixedValue(node);
 			field.extractDefaultValue(option, node);
@@ -2376,9 +2380,9 @@ public class PgSchema implements Serializable {
 
 					child_name = PgSchemaUtil.getUnqualifiedName(child_elem.getAttribute("name"));
 
-					if (child_name.equals(PgSchemaUtil.getUnqualifiedName(ref)) && (
+					if (child_name.equals(PgSchemaUtil.getUnqualifiedName(ref)) /* && (
 							(table.target_namespace != null && table.target_namespace.equals(getNamespaceUriOfQName(ref))) ||
-							(table.target_namespace == null && getNamespaceUriOfQName(ref) == null))) {
+							(table.target_namespace == null && getNamespaceUriOfQName(ref) == null)) */) {
 
 						field.xname = child_name;
 						field.name = option.case_sense ? field.xname : PgSchemaUtil.toCaseInsensitive(field.xname);
@@ -2388,7 +2392,7 @@ public class PgSchema implements Serializable {
 							field.xanno_doc = PgSchemaUtil.extractDocumentation(child, false);
 
 						field.extractType(option, child);
-						field.extractTargetNamespace(this, child); // require type definition
+						field.extractTargetNamespace(this, child, getNamespaceUriOfFieldQName(table, ref));
 						field.extractRequired(child);
 						field.extractFixedValue(child);
 						field.extractDefaultValue(option, child);
@@ -2662,7 +2666,7 @@ public class PgSchema implements Serializable {
 			field.xanno_doc = PgSchemaUtil.extractDocumentation(node, false);
 
 		field.extractType(option, node);
-		field.extractTargetNamespace(this, node); // require type definition
+		field.extractTargetNamespace(this, node, table.target_namespace);
 		field.extractRequired(node);
 		field.extractFixedValue(node);
 		field.extractDefaultValue(option, node);
@@ -3147,6 +3151,20 @@ public class PgSchema implements Serializable {
 		String xname = PgSchemaUtil.getUnqualifiedName(qname);
 
 		return getNamespaceUriForPrefix(xname.equals(qname) ? "" : qname.substring(0, qname.length() - xname.length() - 1));
+	}
+
+	/**
+	 * Return namespace URI of field's qualified name.
+	 *
+	 * @param table current table
+	 * @param qname qualified name of field
+	 * @return String namespace URI
+	 */
+	private String getNamespaceUriOfFieldQName(PgTable table, String qname) {
+
+		String xname = PgSchemaUtil.getUnqualifiedName(qname);
+
+		return xname.equals(qname) ? table.target_namespace : getNamespaceUriForPrefix(qname.substring(0, qname.length() - xname.length() - 1));
 	}
 
 	/**
@@ -3867,7 +3885,7 @@ public class PgSchema implements Serializable {
 
 		StringBuilder sb = new StringBuilder();
 
-		if (table.target_namespace != null && !table.target_namespace.isEmpty()) {
+		if (!table.target_namespace.isEmpty()) {
 
 			for (String namespace_uri : table.target_namespace.split(" "))
 				sb.append(namespace_uri + " (" + getPrefixOf(namespace_uri, "default") + "), ");
@@ -3909,6 +3927,9 @@ public class PgSchema implements Serializable {
 		for (int f = 0; f < fields.size(); f++) {
 
 			PgField field = fields.get(f);
+
+			if (option.discarded_document_key_names.contains(field.name) || option.discarded_document_key_names.contains(table.name + "." + field.name))
+				continue;
 
 			if (field.document_key)
 				System.out.println("-- DOCUMENT KEY is pointer to data source (aka. Entry ID)");
@@ -3973,9 +3994,6 @@ public class PgSchema implements Serializable {
 			else if (field.any_attribute)
 				System.out.println("-- ANY ATTRIBUTE");
 
-			else if (option.discarded_document_key_names.contains(field.name) || option.discarded_document_key_names.contains(table.name + "." + field.name))
-				continue;
-
 			else if (!field.primary_key && !option.document_key && option.in_place_document_key && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))
 				System.out.println("-- IN-PLACE DOCUMENT KEY");
 
@@ -4035,6 +4053,9 @@ public class PgSchema implements Serializable {
 
 				}
 			}
+
+			if (!table.target_namespace.isEmpty() && !field.system_key && !field.user_key && !field.any_content_holder && !field.is_same_namespace_of_table)
+				System.out.println("-- xmlns: " + field.target_namespace + " (" + getPrefixOf(field.target_namespace, "n.d.") + ")");
 
 			if (field.enum_name == null || field.enum_name.isEmpty())
 				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.pname) + " " + field.getPgDataType());

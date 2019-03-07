@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -50,7 +50,7 @@ public class PgTable implements Serializable {
 	public String schema_name;
 
 	/** The target namespace. */
-	public String target_namespace;
+	public String target_namespace = "";
 
 	/** The prefix of target namespace. */
 	public String prefix = "";

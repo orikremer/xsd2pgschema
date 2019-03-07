@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -71,10 +71,10 @@ public class PgField implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/** The target namespace (@targetNamespace). */
-	public String target_namespace = PgSchemaUtil.xs_namespace_uri;
+	public String target_namespace = "";
 
 	/** The namespace restriction for any content (@namespace). */
-	public String namespace = "##any";
+	public String any_namespace = "##any";
 
 	/** The prefix of target namespace. */
 	public String prefix = "";
@@ -109,8 +109,8 @@ public class PgField implements Serializable {
 	/** The mapping of decimal numbers in PostgreSQL. */
 	protected PgDecimalType pg_decimal;
 
-	/** Whether target namespace equals URI of XML Schema 1.x. */
-	public boolean is_xs_namespace = false;
+	/** Whether target namespace is the same one of table. */
+	public boolean is_same_namespace_of_table = false;
 
 	/** Whether xs:element. */
 	public boolean element = false;
@@ -557,8 +557,9 @@ public class PgField implements Serializable {
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
+	 * @param optional_namespace optional_namespace
 	 */
-	protected void extractTargetNamespace(PgSchema schema, Node node) {
+	protected void extractTargetNamespace(PgSchema schema, Node node, String optional_namespace) {
 
 		target_namespace = null;
 
@@ -575,11 +576,13 @@ public class PgField implements Serializable {
 
 		}
 
+		target_namespace = optional_namespace;
+		/*
 		if (type == null)
 			return;
 
 		target_namespace = type.contains(":") ? schema.getNamespaceUriForPrefix(type.split(":")[0]) : schema.getNamespaceUriForPrefix("");
-
+		 */
 	}
 
 	/**
@@ -587,7 +590,7 @@ public class PgField implements Serializable {
 	 *
 	 * @param node current node
 	 */
-	protected void extractNamespace(Node node) {
+	protected void extractAnyNamespace(Node node) {
 
 		if (node.hasAttributes()) {
 
@@ -595,7 +598,7 @@ public class PgField implements Serializable {
 
 			if (namespace != null && !namespace.isEmpty()) {
 
-				this.namespace = namespace;
+				this.any_namespace = namespace;
 
 				return;
 			}

@@ -1,6 +1,7 @@
-﻿ Changes in xsd2pgschema 3.0.9 (release 2019-03-04)
+﻿ Changes in xsd2pgschema 3.0.9 (release 2019-03-07)
 
-  Auto-detect root element in the primary schema.
+  Added auto-detectction of root element in the primary schema.
+  Added support for namespace change of field in table.
 
  Changes in xsd2pgschema 3.0.8 (release 2019-02-19)
 
