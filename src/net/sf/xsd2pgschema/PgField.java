@@ -557,11 +557,9 @@ public class PgField implements Serializable {
 	 *
 	 * @param schema PostgreSQL data model
 	 * @param node current node
-	 * @param optional_namespace optional_namespace
+	 * @param table_namespace optional namespace derived from table
 	 */
-	protected void extractTargetNamespace(PgSchema schema, Node node, String optional_namespace) {
-
-		target_namespace = null;
+	protected void extractTargetNamespace(PgSchema schema, Node node, String table_namespace) {
 
 		if (node.hasAttributes()) {
 
@@ -576,13 +574,8 @@ public class PgField implements Serializable {
 
 		}
 
-		target_namespace = optional_namespace;
-		/*
-		if (type == null)
-			return;
+		target_namespace = table_namespace;
 
-		target_namespace = type.contains(":") ? schema.getNamespaceUriForPrefix(type.split(":")[0]) : schema.getNamespaceUriForPrefix("");
-		 */
 	}
 
 	/**
@@ -598,7 +591,7 @@ public class PgField implements Serializable {
 
 			if (namespace != null && !namespace.isEmpty()) {
 
-				this.any_namespace = namespace;
+				any_namespace = namespace;
 
 				return;
 			}
