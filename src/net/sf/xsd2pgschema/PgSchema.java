@@ -3806,6 +3806,12 @@ public class PgSchema implements Serializable {
 
 	}
 
+	/** The maximum number of administrative table references. */
+	private int max_admin_table_refs = 0;
+
+	/** Whether circular dependency in administrative tables exists. */
+	private boolean circular_dependency = false;
+
 	/**
 	 * Realize PostgreSQL DDL of administrative table.
 	 *
@@ -3814,9 +3820,15 @@ public class PgSchema implements Serializable {
 	 */
 	private void realizeAdmin(PgTable table, boolean output) {
 
+		if (++table.refs > max_admin_table_refs)
+			max_admin_table_refs = table.refs;
+
+		if (!circular_dependency && max_admin_table_refs > PgSchemaUtil.max_admin_table_refs)
+			circular_dependency = tables.parallelStream().filter(_table -> _table.xs_type.toString().contains("child") && _table.refs == max_admin_table_refs).count() > 2;
+
 		// realize parent table at first
 
-		foreign_keys.stream().filter(foreign_key -> foreign_key.schema_name.equals(table.schema_name) && (foreign_key.child_table_xname.equals(table.xname))).map(foreign_key -> getParentTable(foreign_key)).filter(admin_table -> admin_table != null).forEach(admin_table -> {
+		foreign_keys.stream().filter(foreign_key -> foreign_key.schema_name.equals(table.schema_name) && (foreign_key.child_table_xname.equals(table.xname))).map(foreign_key -> getParentTable(foreign_key)).filter(admin_table -> admin_table != null && (!admin_table.xs_type.toString().contains("child") || admin_table.refs < PgSchemaUtil.max_admin_table_refs || (!circular_dependency && admin_table.refs >= PgSchemaUtil.max_admin_table_refs))).forEach(admin_table -> {
 
 			realizeAdmin(admin_table, output);
 
@@ -3841,11 +3853,15 @@ public class PgSchema implements Serializable {
 
 				if (admin_table != null) {
 
-					field.foreign_table_id = tables.indexOf(admin_table);
+					if (!admin_table.xs_type.toString().contains("child") || admin_table.refs < PgSchemaUtil.max_admin_table_refs || (!circular_dependency && admin_table.refs >= PgSchemaUtil.max_admin_table_refs)) {
 
-					realizeAdmin(admin_table, output);
+						field.foreign_table_id = tables.indexOf(admin_table);
 
-					realize(admin_table, output);
+						realizeAdmin(admin_table, output);
+
+						realize(admin_table, output);
+
+					}
 
 				}
 

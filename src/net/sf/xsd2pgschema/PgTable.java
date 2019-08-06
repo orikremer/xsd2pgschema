@@ -88,6 +88,9 @@ public class PgTable implements Serializable {
 	/** The generation order in PostgreSQL DDL. */
 	public int order = 0;
 
+	/** The number of references. */
+	public int refs = 0;
+
 	/** The total number of field as nested key. */
 	public int total_nested_fields = 0;
 
