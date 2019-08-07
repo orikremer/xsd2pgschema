@@ -107,10 +107,6 @@ public class PgSchema implements Serializable {
 	/** Whether arbitrary table has any attribute. */
 	private boolean has_any_attribute = false;
 
-	/** Whether circular dependency in administrative table references exists. */
-	@Flat
-	private boolean circular_dependency = false;
-
 	/** The root schema (temporary). */
 	@Flat
 	private PgSchema root_schema = null;
@@ -206,10 +202,6 @@ public class PgSchema implements Serializable {
 	/** The current depth of table (internal use only). */
 	@Flat
 	private int level;
-
-	/** The maximum number of table references (internal use only). */
-	@Flat
-	private int max_table_refs = 0;
 
 	/**
 	 * Instance of PostgreSQL data model.
@@ -1634,7 +1626,8 @@ public class PgSchema implements Serializable {
 		if (!table.has_pending_group && table.fields.size() < option.getMinimumSizeOfField())
 			return;
 
-		tables.add(table);
+		if (avoidTableDuplication(tables, table))
+			tables.add(table);
 
 		extractRootElementType(node, table);
 
@@ -3013,7 +3006,7 @@ public class PgSchema implements Serializable {
 
 		}
 
-		if (known_table.xs_type.equals(XsTableType.xs_admin_root) && (table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child))) {
+		if (table.xs_type.equals(XsTableType.xs_root) || (known_table.xs_type.equals(XsTableType.xs_admin_root) && (table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child)))) {
 
 			known_table.xs_type = table.xs_type;
 			known_table.level = table.level;
@@ -3823,15 +3816,14 @@ public class PgSchema implements Serializable {
 	 */
 	private void realizeAdmin(PgTable table, boolean output) {
 
-		if (++table.refs > max_table_refs)
-			max_table_refs = table.refs;
+		table.refs++;
 
-		if (!circular_dependency && max_table_refs > PgSchemaUtil.limit_table_refs)
-			circular_dependency = tables.parallelStream().filter(_table -> _table.xs_type.toString().contains("child") && _table.refs == max_table_refs).count() > 2;
+		if (table.equals(root_table))
+			return;
 
 		// realize parent table at first
 
-		foreign_keys.stream().filter(foreign_key -> foreign_key.schema_name.equals(table.schema_name) && (foreign_key.child_table_xname.equals(table.xname))).map(foreign_key -> getParentTable(foreign_key)).filter(admin_table -> admin_table != null && (!admin_table.xs_type.toString().contains("child") || admin_table.refs < PgSchemaUtil.limit_table_refs || (!circular_dependency && admin_table.refs >= PgSchemaUtil.limit_table_refs))).forEach(admin_table -> {
+		foreign_keys.stream().filter(foreign_key -> foreign_key.schema_name.equals(table.schema_name) && (foreign_key.child_table_xname.equals(table.xname))).map(foreign_key -> getParentTable(foreign_key)).filter(admin_table -> admin_table != null).forEach(admin_table -> {
 
 			realizeAdmin(admin_table, output);
 
@@ -3856,15 +3848,11 @@ public class PgSchema implements Serializable {
 
 				if (admin_table != null) {
 
-					if (!admin_table.xs_type.toString().contains("child") || admin_table.refs < PgSchemaUtil.limit_table_refs || (!circular_dependency && admin_table.refs >= PgSchemaUtil.limit_table_refs)) {
+					field.foreign_table_id = tables.indexOf(admin_table);
 
-						field.foreign_table_id = tables.indexOf(admin_table);
+					realizeAdmin(admin_table, output);
 
-						realizeAdmin(admin_table, output);
-
-						realize(admin_table, output);
-
-					}
+					realize(admin_table, output);
 
 				}
 

@@ -1,6 +1,11 @@
-﻿ Changes in xsd2pgschema 3.1.0 (release 2019-08-06)
+﻿ Changes in xsd2pgschema 3.1.1 (release 2019-08-07)
 
-  [Ticket #8] Fixed stack overflow due to circular dependency among schema components.
+  [Ticket #8] Added table duplication check for root table.
+
+ Changes in xsd2pgschema 3.1.0 (release 2019-08-06)
+
+  NOTICE: We recommend all users should update 3.1.1 or later.
+  [Ticket #8 - Deprecated] Fixed stack overflow due to circular dependency among schema components.
   Updated dependency (Apache Lucene from 7.x to 8.x).
 
  Changes in xsd2pgschema 3.0.9 (release 2019-03-07)
