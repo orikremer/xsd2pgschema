@@ -1669,7 +1669,7 @@ public class JsonBuilder extends CommonBuilder {
 		writeStartDocument(true);
 		writeStartSchema();
 
-		tables.stream().filter(table -> table.jsonable).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> realizeJsonSchema(table, 2));
+		tables.stream().filter(table -> table.jsonable).sorted(Comparator.comparingInt(table -> -table.refs)).forEach(table -> realizeJsonSchema(table, 2));
 
 		writeEndSchema();
 		writeEndDocument();
@@ -1740,7 +1740,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		if (relational) {
 
-			tables.stream().filter(table -> table.jsonable && table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+			tables.stream().filter(table -> table.jsonable && table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> -table.refs)).forEach(table -> {
 
 				writeStartTable(table, true, 1);
 				writeFields(table, 2);

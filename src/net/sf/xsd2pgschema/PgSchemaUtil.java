@@ -141,8 +141,8 @@ public class PgSchemaUtil {
 	/** The default lifetime of unused PostgreSQL data model on PgSchema server in milliseconds. */
 	public static final long pg_schema_server_lifetime = 86400 * 14 * 1000L;
 
-	/** The maximum number of administrative table references, which is a trigger to detect circular dependency. */
-	public static final int max_admin_table_refs = 256;
+	/** The limit number of table references, which is a trigger to detect circular dependency. */
+	public static final int limit_table_refs = 256;
 
 	/** The minimum word length for index. */
 	public static final int min_word_len = 1;

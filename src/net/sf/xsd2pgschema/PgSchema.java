@@ -107,6 +107,10 @@ public class PgSchema implements Serializable {
 	/** Whether arbitrary table has any attribute. */
 	private boolean has_any_attribute = false;
 
+	/** Whether circular dependency in administrative table references exists. */
+	@Flat
+	private boolean circular_dependency = false;
+
 	/** The root schema (temporary). */
 	@Flat
 	private PgSchema root_schema = null;
@@ -202,6 +206,10 @@ public class PgSchema implements Serializable {
 	/** The current depth of table (internal use only). */
 	@Flat
 	private int level;
+
+	/** The maximum number of table references (internal use only). */
+	@Flat
+	private int max_table_refs = 0;
 
 	/**
 	 * Instance of PostgreSQL data model.
@@ -1496,7 +1504,7 @@ public class PgSchema implements Serializable {
 
 		if (!option.rel_data_ext) {
 
-			Optional<PgTable> opt = tables.parallelStream().filter(table -> table.writable).min(Comparator.comparingInt(table -> table.order));
+			Optional<PgTable> opt = tables.parallelStream().filter(table -> table.writable).min(Comparator.comparingInt(table -> -table.refs));
 
 			if (opt.isPresent())
 				doc_id_table = opt.get();
@@ -1634,6 +1642,7 @@ public class PgSchema implements Serializable {
 
 			if (tables.parallelStream().anyMatch(_table -> _table.xs_type.equals(XsTableType.xs_root)))
 				root_table = tables.parallelStream().filter(_table -> _table.xs_type.equals(XsTableType.xs_root)).findFirst().get();
+				root_table.refs = 1;
 
 		}
 
@@ -3589,7 +3598,7 @@ public class PgSchema implements Serializable {
 
 		}
 
-		tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> -table.order)).forEach(table -> {
+		tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> table.refs)).forEach(table -> {
 
 			System.out.println("DROP TABLE IF EXISTS " + table.pgname + " CASCADE;");
 
@@ -3597,13 +3606,13 @@ public class PgSchema implements Serializable {
 
 		System.out.println("");
 
-		tables.stream().sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> realize(table, true));
+		tables.stream().sorted(Comparator.comparingInt(table -> -table.refs)).forEach(table -> realize(table, true));
 
 		// add primary key/foreign key
 
 		if (!option.pg_retain_key) {
 
-			tables.stream().filter(table -> !table.bridge).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+			tables.stream().filter(table -> !table.bridge).sorted(Comparator.comparingInt(table -> -table.refs)).forEach(table -> {
 
 				table.fields.forEach(field -> {
 
@@ -3806,12 +3815,6 @@ public class PgSchema implements Serializable {
 
 	}
 
-	/** The maximum number of administrative table references. */
-	private int max_admin_table_refs = 0;
-
-	/** Whether circular dependency in administrative tables exists. */
-	private boolean circular_dependency = false;
-
 	/**
 	 * Realize PostgreSQL DDL of administrative table.
 	 *
@@ -3820,15 +3823,15 @@ public class PgSchema implements Serializable {
 	 */
 	private void realizeAdmin(PgTable table, boolean output) {
 
-		if (++table.refs > max_admin_table_refs)
-			max_admin_table_refs = table.refs;
+		if (++table.refs > max_table_refs)
+			max_table_refs = table.refs;
 
-		if (!circular_dependency && max_admin_table_refs > PgSchemaUtil.max_admin_table_refs)
-			circular_dependency = tables.parallelStream().filter(_table -> _table.xs_type.toString().contains("child") && _table.refs == max_admin_table_refs).count() > 2;
+		if (!circular_dependency && max_table_refs > PgSchemaUtil.limit_table_refs)
+			circular_dependency = tables.parallelStream().filter(_table -> _table.xs_type.toString().contains("child") && _table.refs == max_table_refs).count() > 2;
 
 		// realize parent table at first
 
-		foreign_keys.stream().filter(foreign_key -> foreign_key.schema_name.equals(table.schema_name) && (foreign_key.child_table_xname.equals(table.xname))).map(foreign_key -> getParentTable(foreign_key)).filter(admin_table -> admin_table != null && (!admin_table.xs_type.toString().contains("child") || admin_table.refs < PgSchemaUtil.max_admin_table_refs || (!circular_dependency && admin_table.refs >= PgSchemaUtil.max_admin_table_refs))).forEach(admin_table -> {
+		foreign_keys.stream().filter(foreign_key -> foreign_key.schema_name.equals(table.schema_name) && (foreign_key.child_table_xname.equals(table.xname))).map(foreign_key -> getParentTable(foreign_key)).filter(admin_table -> admin_table != null && (!admin_table.xs_type.toString().contains("child") || admin_table.refs < PgSchemaUtil.limit_table_refs || (!circular_dependency && admin_table.refs >= PgSchemaUtil.limit_table_refs))).forEach(admin_table -> {
 
 			realizeAdmin(admin_table, output);
 
@@ -3853,7 +3856,7 @@ public class PgSchema implements Serializable {
 
 				if (admin_table != null) {
 
-					if (!admin_table.xs_type.toString().contains("child") || admin_table.refs < PgSchemaUtil.max_admin_table_refs || (!circular_dependency && admin_table.refs >= PgSchemaUtil.max_admin_table_refs)) {
+					if (!admin_table.xs_type.toString().contains("child") || admin_table.refs < PgSchemaUtil.limit_table_refs || (!circular_dependency && admin_table.refs >= PgSchemaUtil.limit_table_refs)) {
 
 						field.foreign_table_id = tables.indexOf(admin_table);
 
@@ -3882,13 +3885,8 @@ public class PgSchema implements Serializable {
 	 */
 	private void realize(PgTable table, boolean output) {
 
-		if (table == null)
+		if (table == null || !output)
 			return;
-
-		if (!output) {
-			table.order--;
-			return;
-		}
 
 		if (!((option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table)))
 			return;
@@ -5131,7 +5129,7 @@ public class PgSchema implements Serializable {
 
 			CopyManager copy_man = new CopyManager((BaseConnection) db_conn);
 
-			tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+			tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> -table.refs)).forEach(table -> {
 
 				Path data_path = Paths.get(work_dir.toString(), getDataFileNameOf(table));
 
@@ -5359,7 +5357,7 @@ public class PgSchema implements Serializable {
 
 			if (has_doc_id || sync_rescue) {
 
-				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table) && ((no_pkey && !table.has_unique_primary_key) || !no_pkey || sync_rescue)).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table) && ((no_pkey && !table.has_unique_primary_key) || !no_pkey || sync_rescue)).sorted(Comparator.comparingInt(table -> -table.refs)).forEach(table -> {
 
 					if (has_db_rows.get(table.pname)) {
 
@@ -6227,7 +6225,7 @@ public class PgSchema implements Serializable {
 
 			Statement stat = db_conn.createStatement();
 
-			tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> table.order)).forEach(table -> {
+			tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> -table.refs)).forEach(table -> {
 
 				try {
 

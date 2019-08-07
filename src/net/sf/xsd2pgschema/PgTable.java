@@ -85,9 +85,6 @@ public class PgTable implements Serializable {
 	/** The field list. */
 	public List<PgField> fields = null;
 
-	/** The generation order in PostgreSQL DDL. */
-	public int order = 0;
-
 	/** The number of references. */
 	public int refs = 0;
 
