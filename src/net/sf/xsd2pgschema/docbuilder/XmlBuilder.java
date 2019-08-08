@@ -529,9 +529,9 @@ public class XmlBuilder extends CommonBuilder {
 								writer.writeNamespace(parent_table.prefix, parent_table.target_namespace);
 
 							if (field.is_same_namespace_of_table)
-								writer.writeAttribute(field.foreign_table_xname, content);
+								writer.writeAttribute(field.parent_nodes[0], content);
 							else
-								writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, content);
+								writer.writeAttribute(field_prefix, field_ns, field.parent_nodes[0], content);
 
 							writeLineFeedCode();
 
@@ -578,9 +578,9 @@ public class XmlBuilder extends CommonBuilder {
 								writer.writeNamespace(parent_table.prefix, parent_table.target_namespace);
 
 							if (field.is_same_namespace_of_table)
-								writer.writeAttribute(field.foreign_table_xname, content);
+								writer.writeAttribute(field.parent_nodes[0], content);
 							else
-								writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, content);
+								writer.writeAttribute(field_prefix, field_ns, field.parent_nodes[0], content);
 
 							writeLineFeedCode();
 
@@ -820,7 +820,7 @@ public class XmlBuilder extends CommonBuilder {
 						key = rset.getObject(field.sql_param_id);
 
 						if (key != null)
-							nest_test.merge(nestChildNode2Xml(tables.get(field.foreign_table_id), key, true, nest_test));
+							nest_test.merge(nestChildNode2Xml(table, tables.get(field.foreign_table_id), key, true, nest_test));
 
 					}
 
@@ -979,7 +979,7 @@ public class XmlBuilder extends CommonBuilder {
 							nested_table = tables.get(field.foreign_table_id);
 
 							if (nested_table.content_holder || !nested_table.bridge)
-								nest_test.merge(nestChildNode2Xml(nested_table, key, false, nest_test));
+								nest_test.merge(nestChildNode2Xml(table, nested_table, key, false, nest_test));
 
 							// skip bridge table for acceleration
 
@@ -1038,6 +1038,7 @@ public class XmlBuilder extends CommonBuilder {
 	/**
 	 * Nest node and compose XML document.
 	 *
+	 * @param foreign_table foreign table (for simple attribute)
 	 * @param table current table
 	 * @param parent_key parent key
 	 * @param as_attr whether parent key is simple attribute
@@ -1045,7 +1046,7 @@ public class XmlBuilder extends CommonBuilder {
 	 * @return XmlBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private XmlBuilderNestTester nestChildNode2Xml(final PgTable table, final Object parent_key, final boolean as_attr, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
+	private XmlBuilderNestTester nestChildNode2Xml(final PgTable foreign_table, final PgTable table, final Object parent_key, final boolean as_attr, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		try {
 
@@ -1164,7 +1165,7 @@ public class XmlBuilder extends CommonBuilder {
 
 							if (content != null) {
 
-								attr = new XmlBuilderPendingAttr(field, schema.getForeignTable(field), content);
+								attr = new XmlBuilderPendingAttr(field, foreign_table, content);
 
 								elem = pending_elem.peek();
 
@@ -1210,7 +1211,7 @@ public class XmlBuilder extends CommonBuilder {
 							key = rset.getObject(field.sql_param_id);
 
 							if (key != null)
-								nest_test.merge(nestChildNode2Xml(tables.get(field.foreign_table_id), key, true, nest_test));
+								nest_test.merge(nestChildNode2Xml(foreign_table, tables.get(field.foreign_table_id), key, true, nest_test));
 
 						}
 
@@ -1344,7 +1345,7 @@ public class XmlBuilder extends CommonBuilder {
 								nested_table = tables.get(field.foreign_table_id);
 
 								if (nested_table.content_holder || !nested_table.bridge || as_attr)
-									nest_test.merge(nestChildNode2Xml(nested_table, key, false, nest_test));
+									nest_test.merge(nestChildNode2Xml(table, nested_table, key, false, nest_test));
 
 								// skip bridge table for acceleration
 
@@ -1509,7 +1510,7 @@ public class XmlBuilder extends CommonBuilder {
 				if (key != null) {
 
 					if (nested_table.content_holder || !nested_table.bridge)
-						nest_test.merge(nestChildNode2Xml(nested_table, key, false, nest_test));
+						nest_test.merge(nestChildNode2Xml(table, nested_table, key, false, nest_test));
 
 					// skip bridge table for acceleration
 
@@ -1593,7 +1594,7 @@ public class XmlBuilder extends CommonBuilder {
 			}
 
 			if (nested_table.content_holder || !nested_table.bridge)
-				nest_test.merge(nestChildNode2Xml(nested_table, parent_key, false, nest_test));
+				nest_test.merge(nestChildNode2Xml(table, nested_table, parent_key, false, nest_test));
 
 			// skip bridge table for acceleration
 

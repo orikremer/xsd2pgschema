@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -111,7 +111,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		switch (jsonb.type) {
 		case column:
 			jsonb.writeStartTable(table, true, indent_level);
-			jsonb.writeFields(table, false, indent_level + 1);
+			jsonb.writeFields(null, table, false, indent_level + 1);
 
 			if (total_nested_fields > 0) {
 
@@ -124,7 +124,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			break;
 		case object:
 			jsonb.writeStartTable(table, true, indent_level);
-			jsonb.writeFields(table, false, indent_level + 1);
+			jsonb.writeFields(null, table, false, indent_level + 1);
 
 			if (total_nested_fields > 0) {
 
@@ -162,14 +162,14 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			if (start_table) {
 
 				jsonb.writeStartTable(table, true, indent_level);
-				jsonb.writeFields(table, as_attr, indent_level + (virtual ? 0 : 1));
+				jsonb.writeFields(parent_table, table, as_attr, indent_level + (virtual ? 0 : 1));
 
 			}
 
 			else if (last_node) {
 
 				if (!not_complete && table.jsonb_not_empty)
-					jsonb.writeFields(table, as_attr, indent_level + (virtual ? 0 : 1));
+					jsonb.writeFields(parent_table, table, as_attr, indent_level + (virtual ? 0 : 1));
 
 			}
 
@@ -197,13 +197,13 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (!virtual) {
 
 					jsonb.writeStartTable(table, true, indent_level);
-					jsonb.writeFields(table, as_attr, indent_level + 1);
+					jsonb.writeFields(parent_table, table, as_attr, indent_level + 1);
 					jsonb.writeEndTable();
 
 				}
 
 				else
-					jsonb.writeFields(table, as_attr, indent_level + 1);
+					jsonb.writeFields(parent_table, table, as_attr, indent_level + 1);
 
 			}
 
@@ -245,7 +245,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		switch (jsonb.type) {
 		case column:
 			if (written)
-				jsonb.writeFields(table, as_attr, indent_level + (virtual ? 0 : 1));
+				jsonb.writeFields(parent_table, table, as_attr, indent_level + (virtual ? 0 : 1));
 
 			if (not_complete || total_nested_fields == 0)
 				return;
@@ -263,7 +263,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 				if (!virtual)
 					jsonb.writeStartTable(table, !parent_table.bridge, indent_level);
 
-				jsonb.writeFields(table, as_attr, indent_level + 1);
+				jsonb.writeFields(parent_table, table, as_attr, indent_level + 1);
 
 			}
 

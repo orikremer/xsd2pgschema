@@ -107,6 +107,10 @@ public class PgSchema implements Serializable {
 	/** Whether arbitrary table has any attribute. */
 	private boolean has_any_attribute = false;
 
+	/** Whether circular dependency in table references exists. */
+	@Flat
+	private boolean circular_dependency = false;
+
 	/** The root schema (temporary). */
 	@Flat
 	private PgSchema root_schema = null;
@@ -202,6 +206,10 @@ public class PgSchema implements Serializable {
 	/** The current depth of table (internal use only). */
 	@Flat
 	private int level;
+
+	/** The maximum number of table references (internal use only). */
+	@Flat
+	private int max_table_refs = 0;
 
 	/**
 	 * Instance of PostgreSQL data model.
@@ -719,7 +727,7 @@ public class PgSchema implements Serializable {
 
 		// classify type of table
 
-		tables.parallelStream().forEach(table -> {
+		tables.stream().forEach(table -> { // do not parallelize this because of order change (simple attribute)
 
 			table.classify();
 
@@ -751,9 +759,11 @@ public class PgSchema implements Serializable {
 								foreign_table.fields.stream().filter(foreign_field -> foreign_field.simple_content).forEach(foreign_field -> {
 
 									foreign_field.simple_attribute = true;
-									foreign_field.foreign_table_id = tables.indexOf(table);
-									foreign_field.foreign_schema = table.schema_name;
-									foreign_field.foreign_table_xname = table.xname;
+
+									if (foreign_field.parent_node == null)
+										foreign_field.parent_node = table.xname;
+									else
+										foreign_field.parent_node += " " + table.xname;
 
 									table.has_nested_key_to_simple_attr = foreign_table.has_simple_attribute = true;
 
@@ -1107,6 +1117,14 @@ public class PgSchema implements Serializable {
 				table.fields.stream().filter(field -> field.nested_key && field.ancestor_node != null).forEach(field -> field.ancestor_nodes = field.ancestor_node.split(" "));
 
 			}
+
+		});
+
+		tables.parallelStream().filter(table -> table.has_simple_attribute).forEach(table -> {
+
+			// split parent node name
+
+			table.fields.stream().filter(field -> (field.simple_attribute || field.simple_attr_cond) && field.parent_node != null).forEach(field -> field.parent_nodes = field.parent_node.split(" "));
 
 		});
 
@@ -1626,7 +1644,43 @@ public class PgSchema implements Serializable {
 		if (!table.has_pending_group && table.fields.size() < option.getMinimumSizeOfField())
 			return;
 
-		if (avoidTableDuplication(tables, table))
+		if (root_element) {
+
+			// alter child table name due to name collision with root table
+
+			if (!avoidTableDuplication(tables, table)) {
+
+				Optional<PgField> opt = table.fields.stream().filter(field -> !field.document_key && !field.primary_key).findFirst();
+
+				tables.parallelStream().filter(_table -> !_table.xs_type.equals(table.xs_type) && _table.xname.equals(table.xname)).forEach(_table -> {
+
+					tables.forEach(__table -> __table.fields.stream().filter(__field -> (__field.nested_key || __field.foreign_key) && __field.foreign_table_pname.equals(_table.pname) && !__field.foreign_to_root).forEach(__field -> __field.foreign_table_pname = "_" + __field.foreign_table_pname));
+
+					_table.pname = "_" + _table.pname;
+					_table.name_collision = true;
+
+					if (opt.isPresent()) {
+
+						int first_field_id = _table.fields.indexOf(opt.get());
+
+						if (first_field_id >= 0) {
+
+							while (first_field_id < _table.fields.size())
+								_table.fields.remove(first_field_id);
+
+							_table.countNestedFields();
+
+						}
+					}
+
+				});
+
+			}
+
+			tables.add(table);
+		}
+
+		else if (avoidTableDuplication(tables, table))
 			tables.add(table);
 
 		extractRootElementType(node, table);
@@ -1635,7 +1689,16 @@ public class PgSchema implements Serializable {
 
 			if (tables.parallelStream().anyMatch(_table -> _table.xs_type.equals(XsTableType.xs_root)))
 				root_table = tables.parallelStream().filter(_table -> _table.xs_type.equals(XsTableType.xs_root)).findFirst().get();
+
+			if (root_table != null) {
+
+				// resolve inconsistency in foreign_to_root
+
+				tables.parallelStream().forEach(_table -> _table.fields.stream().filter(_field -> (_field.nested_key || _field.foreign_key) && !_field.foreign_table_pname.equals(root_table.pname) && _field.foreign_to_root).forEach(_field -> _field.foreign_to_root = false));
+
 				root_table.refs = 1;
+
+			}
 
 		}
 
@@ -1674,19 +1737,19 @@ public class PgSchema implements Serializable {
 
 					PgTable child_table = new PgTable(getPgSchemaOf(getNamespaceUriOfQName(dummy.type)), getNamespaceUriOfQName(dummy.type), def_schema_location);
 
-					boolean unique_key = table.addNestedKey(option, child_table.schema_name, PgSchemaUtil.getUnqualifiedName(name), dummy, node);
-
 					String child_name = name;
 
 					child_table.xname = PgSchemaUtil.getUnqualifiedName(child_name);
 					child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
 
+					child_table.xs_type = XsTableType.xs_admin_root;
+
+					boolean unique_key = table.addNestedKey(option, child_table, PgSchemaUtil.getUnqualifiedName(name), dummy, node);
+
 					table.required = child_table.required = true;
 
 					if ((child_table.anno = PgSchemaUtil.extractAnnotation(node, true)) != null)
 						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(node, false);
-
-					child_table.xs_type = XsTableType.xs_admin_root;
 
 					child_table.fields = new ArrayList<PgField>();
 
@@ -1694,7 +1757,7 @@ public class PgSchema implements Serializable {
 
 					child_table.addPrimaryKey(option, unique_key);
 
-					if (!child_table.addNestedKey(option, table.schema_name, PgSchemaUtil.getUnqualifiedName(dummy.type), dummy, node))
+					if (!child_table.addNestedKey(option, table, PgSchemaUtil.getUnqualifiedName(dummy.type), dummy, node))
 						child_table.cancelUniqueKey();
 
 					child_table.removeProhibitedAttrs();
@@ -1704,7 +1767,7 @@ public class PgSchema implements Serializable {
 					if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
 						tables.add(child_table);
 
-					extractChildElement(node, child_table);
+					extractChildElement(node, table, child_table);
 
 					level--;
 
@@ -2179,14 +2242,14 @@ public class PgSchema implements Serializable {
 
 			if (field.type == null || field.type.isEmpty()) {
 
-				if (!table.addNestedKey(option, table.schema_name, PgSchemaUtil.getUnqualifiedName(name), field, node))
+				if (!table.addNestedKey(option, table, PgSchemaUtil.getUnqualifiedName(name), field, node))
 					table.cancelUniqueKey();
 
 				level++;
 
 				table.required = true;
 
-				extractChildElement(node, table);
+				extractChildElement(node, table, table);
 
 				level--;
 
@@ -2217,28 +2280,27 @@ public class PgSchema implements Serializable {
 
 							PgTable child_table = new PgTable(table.schema_name, table.target_namespace, def_schema_location);
 
-							boolean unique_key = table.addNestedKey(option, child_table.schema_name, PgSchemaUtil.getUnqualifiedName(name), field, node);
+							child_table.xname = PgSchemaUtil.getUnqualifiedName(name);
+							child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
+
+							child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
+
+							boolean unique_key = table.addNestedKey(option, child_table, PgSchemaUtil.getUnqualifiedName(name), field, node);
 
 							if (!unique_key)
 								table.cancelUniqueKey();
-
-							child_table.xname = PgSchemaUtil.getUnqualifiedName(name);
-							child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
 
 							table.required = child_table.required = true;
 
 							if ((child_table.anno = PgSchemaUtil.extractAnnotation(node, true)) != null)
 								child_table.xanno_doc = PgSchemaUtil.extractDocumentation(node, false);
 
-							child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
-
 							child_table.fields = new ArrayList<PgField>();
 
 							child_table.level = level;
 
 							child_table.addPrimaryKey(option, unique_key);
-
-							child_table.addForeignKey(option, table);
+							child_table.addForeignKey(option, table, table);
 
 							for (Node grandchild = child.getFirstChild(); grandchild != null; grandchild = grandchild.getNextSibling()) {
 
@@ -2256,7 +2318,7 @@ public class PgSchema implements Serializable {
 							if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
 								tables.add(child_table);
 
-							extractChildElement(child, child_table);
+							extractChildElement(child, table, child_table);
 
 							level--;
 
@@ -2272,20 +2334,20 @@ public class PgSchema implements Serializable {
 
 						PgTable child_table = new PgTable(table.schema_name, table.target_namespace, def_schema_location);
 
-						boolean unique_key = table.addNestedKey(option, child_table.schema_name, PgSchemaUtil.getUnqualifiedName(name), field, node);
+						child_table.xname = PgSchemaUtil.getUnqualifiedName(name);
+						child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
+
+						child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
+
+						boolean unique_key = table.addNestedKey(option, child_table, PgSchemaUtil.getUnqualifiedName(name), field, node);
 
 						if (!unique_key)
 							table.cancelUniqueKey();
-
-						child_table.xname = PgSchemaUtil.getUnqualifiedName(name);
-						child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
 
 						table.required = child_table.required = true;
 
 						if ((child_table.anno = PgSchemaUtil.extractAnnotation(node, true)) != null)
 							child_table.xanno_doc = PgSchemaUtil.extractDocumentation(node, false);
-
-						child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
 						child_table.fields = new ArrayList<PgField>();
 
@@ -2324,20 +2386,20 @@ public class PgSchema implements Serializable {
 
 					PgTable child_table = new PgTable(getPgSchemaOf(getNamespaceUriOfQName(field.type)), getNamespaceUriOfQName(field.type), def_schema_location);
 
-					boolean unique_key = table.addNestedKey(option, child_table.schema_name, PgSchemaUtil.getUnqualifiedName(name), field, node);
+					child_table.xname = PgSchemaUtil.getUnqualifiedName(name);
+					child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
+
+					child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
+
+					boolean unique_key = table.addNestedKey(option, child_table, PgSchemaUtil.getUnqualifiedName(name), field, node);
 
 					if (!unique_key)
 						table.cancelUniqueKey();
-
-					child_table.xname = PgSchemaUtil.getUnqualifiedName(name);
-					child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
 
 					table.required = child_table.required = true;
 
 					if ((child_table.anno = PgSchemaUtil.extractAnnotation(node, true)) != null)
 						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(node, false);
-
-					child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
 					child_table.fields = new ArrayList<PgField>();
 
@@ -2345,7 +2407,7 @@ public class PgSchema implements Serializable {
 
 					child_table.addPrimaryKey(option, unique_key);
 
-					if (!child_table.addNestedKey(option, table.schema_name, PgSchemaUtil.getUnqualifiedName(field.type), field, node))
+					if (!child_table.addNestedKey(option, table, PgSchemaUtil.getUnqualifiedName(field.type), field, node))
 						child_table.cancelUniqueKey();
 
 					child_table.removeProhibitedAttrs();
@@ -2355,7 +2417,7 @@ public class PgSchema implements Serializable {
 					if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
 						tables.add(child_table);
 
-					extractChildElement(node, child_table);
+					extractChildElement(node, table, child_table);
 
 					level--;
 
@@ -2416,14 +2478,14 @@ public class PgSchema implements Serializable {
 
 						if (field.type == null || field.type.isEmpty()) {
 
-							if (!table.addNestedKey(option, table.schema_name, child_name, field, child))
+							if (!table.addNestedKey(option, table, child_name, field, child))
 								table.cancelUniqueKey();
 
 							level++;
 
 							table.required = true;
 
-							extractChildElement(child, table);
+							extractChildElement(child, table, table);
 
 							level--;
 
@@ -2451,20 +2513,20 @@ public class PgSchema implements Serializable {
 
 								PgTable child_table = new PgTable(getPgSchemaOf(getNamespaceUriOfQName(field.type)), getNamespaceUriOfQName(field.type), def_schema_location);
 
-								boolean unique_key = table.addNestedKey(option, child_table.schema_name, child_name, field, child);
+								child_table.xname = child_name;
+								child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
+
+								child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
+
+								boolean unique_key = table.addNestedKey(option, child_table, child_name, field, child);
 
 								if (!unique_key)
 									table.cancelUniqueKey();
-
-								child_table.xname = child_name;
-								child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
 
 								table.required = child_table.required = true;
 
 								if ((child_table.anno = PgSchemaUtil.extractAnnotation(child, true)) != null)
 									child_table.xanno_doc = PgSchemaUtil.extractDocumentation(child, false);
-
-								child_table.xs_type = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
 								child_table.fields = new ArrayList<PgField>();
 
@@ -2472,7 +2534,7 @@ public class PgSchema implements Serializable {
 
 								child_table.addPrimaryKey(option, unique_key);
 
-								if (!child_table.addNestedKey(option, table.schema_name, PgSchemaUtil.getUnqualifiedName(field.type), field, child))
+								if (!child_table.addNestedKey(option, table, PgSchemaUtil.getUnqualifiedName(field.type), field, child))
 									child_table.cancelUniqueKey();
 
 								child_table.removeProhibitedAttrs();
@@ -2482,7 +2544,7 @@ public class PgSchema implements Serializable {
 								if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
 									tables.add(child_table);
 
-								extractChildElement(child, child_table);
+								extractChildElement(child, table, child_table);
 
 								level--;
 
@@ -2505,10 +2567,11 @@ public class PgSchema implements Serializable {
 	 * Extract child element.
 	 *
 	 * @param node current node
+	 * @param parent_table parent table
 	 * @param foreign_table foreign table
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void extractChildElement(Node node, PgTable foreign_table) throws PgSchemaException {
+	private void extractChildElement(Node node, PgTable parent_table, PgTable foreign_table) throws PgSchemaException {
 
 		PgTable table = new PgTable(getPgSchemaOf(foreign_table), foreign_table.target_namespace, def_schema_location);
 
@@ -2548,7 +2611,7 @@ public class PgSchema implements Serializable {
 		table.level = level;
 
 		table.addPrimaryKey(option, true);
-		table.addForeignKey(option, foreign_table);
+		table.addForeignKey(option, parent_table, foreign_table);
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
@@ -2756,7 +2819,7 @@ public class PgSchema implements Serializable {
 
 			if (child_elem.getLocalName().equals("extension")) {
 
-				table.addNestedKey(option, table.schema_name, PgSchemaUtil.getUnqualifiedName(child_elem.getAttribute("base")));
+				table.addNestedKey(option, table, PgSchemaUtil.getUnqualifiedName(child_elem.getAttribute("base")));
 
 				extractComplexContentExt(child, table);
 
@@ -2874,6 +2937,7 @@ public class PgSchema implements Serializable {
 		if (!option.case_sense && !known_table.xname.equals(table.xname)) {
 
 			table.pname = "_" + table.pname;
+			table.name_collision = true;
 
 			try {
 				known_table = tables.equals(this.tables) ? getCanTable(table.schema_name, table.xname) : tables.equals(root_schema.attr_groups) ? getAttributeGroup(table.xname, false) : tables.equals(root_schema.model_groups) ? getModelGroup(table.xname, false) : null;
@@ -2885,6 +2949,11 @@ public class PgSchema implements Serializable {
 				return true;
 
 		}
+
+		// avoid circular dependency (root)
+
+		if (table.xs_type.equals(XsTableType.xs_root) && !known_table.xs_type.equals(XsTableType.xs_root))
+			return false;
 
 		boolean changed = false;
 		boolean name_collision = false;
@@ -3006,7 +3075,7 @@ public class PgSchema implements Serializable {
 
 		}
 
-		if (table.xs_type.equals(XsTableType.xs_root) || (known_table.xs_type.equals(XsTableType.xs_admin_root) && (table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child)))) {
+		if (known_table.xs_type.equals(XsTableType.xs_admin_root) && (table.xs_type.equals(XsTableType.xs_root_child) || table.xs_type.equals(XsTableType.xs_admin_child))) {
 
 			known_table.xs_type = table.xs_type;
 			known_table.level = table.level;
@@ -3256,7 +3325,19 @@ public class PgSchema implements Serializable {
 				if (table.has_attrs) {
 
 					table.attr_name_dic = new HashMap<String, PgField>();
-					table.attr_fields.stream().filter(field -> field.attribute || field.simple_attribute || field.simple_attr_cond).forEach(field -> table.attr_name_dic.put(field.simple_attribute || field.simple_attr_cond ? field.foreign_table_xname : field.xname, field));
+					table.attr_fields.stream().filter(field -> field.attribute || field.simple_attribute || field.simple_attr_cond).forEach(field -> {
+
+						if (field.attribute)
+							table.attr_name_dic.put(field.xname, field);
+
+						else {
+
+							for (String node_name : field.parent_nodes)
+								table.attr_name_dic.put(node_name, field);
+
+						}
+
+					});
 
 				}
 
@@ -3370,6 +3451,29 @@ public class PgSchema implements Serializable {
 	 * Return table.
 	 *
 	 * @param schema_name PostgreSQL schema name
+	 * @param table_xname table name (canonical)
+	 * @param boolean whether foreign table refers to the root table
+	 * @return PgTable table
+	 */
+	private PgTable getCanTable(String schema_name, String table_xname, boolean foreign_to_root) {
+
+		if (!option.pg_named_schema)
+			schema_name = PgSchemaUtil.pg_public_schema_name;
+
+		else if (schema_name == null || schema_name.isEmpty())
+			schema_name = root_table.schema_name;
+
+		String _schema_name = schema_name;
+
+		Optional<PgTable> opt = tables.parallelStream().filter(table -> table.schema_name.equals(_schema_name) && table.xname.equals(table_xname) && (foreign_to_root == table.xs_type.equals(XsTableType.xs_root))).findFirst();
+
+		return opt.isPresent() ? opt.get() : null;
+	}
+
+	/**
+	 * Return table.
+	 *
+	 * @param schema_name PostgreSQL schema name
 	 * @param table_pname table name in PostgreSQL
 	 * @return PgTable table
 	 */
@@ -3435,7 +3539,7 @@ public class PgSchema implements Serializable {
 	 * @return PgTable foreign table
 	 */
 	public PgTable getForeignTable(PgField field) {
-		return field.foreign_table_id == -1 ? getCanTable(field.foreign_schema, field.foreign_table_xname) : getTable(field.foreign_table_id);
+		return field.foreign_table_id == -1 ? getCanTable(field.foreign_schema, field.foreign_table_xname, field.foreign_to_root) : getTable(field.foreign_table_id);
 	}
 
 	/**
@@ -3816,14 +3920,18 @@ public class PgSchema implements Serializable {
 	 */
 	private void realizeAdmin(PgTable table, boolean output) {
 
-		table.refs++;
+		if (++table.refs > max_table_refs)
+			max_table_refs = table.refs;
 
-		if (table.equals(root_table))
+		if (table.xs_type.equals(XsTableType.xs_root))
 			return;
+
+		if (!circular_dependency && max_table_refs > PgSchemaUtil.limit_table_refs && tables.parallelStream().filter(_table -> _table.xs_type.toString().contains("child") && _table.refs == max_table_refs).count() > 2)
+			circular_dependency = true;
 
 		// realize parent table at first
 
-		foreign_keys.stream().filter(foreign_key -> foreign_key.schema_name.equals(table.schema_name) && (foreign_key.child_table_xname.equals(table.xname))).map(foreign_key -> getParentTable(foreign_key)).filter(admin_table -> admin_table != null).forEach(admin_table -> {
+		foreign_keys.stream().filter(foreign_key -> foreign_key.schema_name.equals(table.schema_name) && (foreign_key.child_table_xname.equals(table.xname))).map(foreign_key -> getParentTable(foreign_key)).filter(admin_table -> admin_table != null && (!admin_table.xs_type.toString().contains("child") || admin_table.refs < PgSchemaUtil.limit_table_refs || (!circular_dependency && admin_table.refs >= PgSchemaUtil.limit_table_refs))).forEach(admin_table -> {
 
 			realizeAdmin(admin_table, output);
 
@@ -3848,11 +3956,15 @@ public class PgSchema implements Serializable {
 
 				if (admin_table != null) {
 
-					field.foreign_table_id = tables.indexOf(admin_table);
+					if (!admin_table.xs_type.toString().contains("child") || admin_table.refs < PgSchemaUtil.limit_table_refs || (!circular_dependency && admin_table.refs >= PgSchemaUtil.limit_table_refs)) {
 
-					realizeAdmin(admin_table, output);
+						field.foreign_table_id = tables.indexOf(admin_table);
 
-					realize(admin_table, output);
+						realizeAdmin(admin_table, output);
+
+						realize(admin_table, output);
+
+					}
 
 				}
 
@@ -3977,9 +4089,9 @@ public class PgSchema implements Serializable {
 				if (field.simple_primitive_list)
 					System.out.print("-- SIMPLE CONTENT AS PRIMITIVE LIST");
 				else if (field.simple_attribute)
-					System.out.print("-- SIMPLE CONTENT AS ATTRIBUTE, ATTRIBUTE NODE: " + field.foreign_table_xname);
+					System.out.print("-- SIMPLE CONTENT AS ATTRIBUTE, ATTRIBUTE NODE: " + field.parent_node);
 				else if (field.simple_attr_cond)
-					System.out.print("-- SIMPLE CONTENT AS CONDITIONAL ATTRIBUTE, ATTRIBUTE NODE: " + field.foreign_table_xname);
+					System.out.print("-- SIMPLE CONTENT AS CONDITIONAL ATTRIBUTE, ATTRIBUTE NODE: " + field.parent_node);
 				else
 					System.out.print("-- SIMPLE CONTENT");
 

@@ -224,7 +224,7 @@ public class JsonBuilder extends CommonBuilder {
 
 					table.fields.stream().filter(field -> field.jsonable).forEach(field -> {
 
-						field.jname = field.simple_content ? (field.simple_attribute || field.simple_attr_cond ? (case_sense ? field.foreign_table_xname : field.foreign_table_xname.toLowerCase()) : simple_content_name) : (case_sense ? field.xname : field.xname.toLowerCase());
+						field.jname = field.simple_content ? (field.simple_attribute || field.simple_attr_cond ? (case_sense ? field.parent_nodes[0] : field.parent_nodes[0].toLowerCase()) : simple_content_name) : (case_sense ? field.xname : field.xname.toLowerCase());
 
 						field.jsonb_not_empty = false;
 
@@ -378,9 +378,21 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param field current field
 	 * @param as_attr whether parent node as attribute
 	 * @return String JSON key of field
-	 */
+	 *
 	private String getKey(PgField field, boolean as_attr) {
 		return (field.attribute || field.simple_attribute || (field.simple_attr_cond && as_attr) ? attr_prefix : "") + (field.simple_attr_cond ? (as_attr ? field.jname : simple_content_name) : field.jname);
+	} */
+
+	/**
+	 * Return JSON key of field.
+	 *
+	 * @param foreign_table foreign table (for simple attribute)
+	 * @param field current field
+	 * @param as_attr whether parent node as attribute
+	 * @return String JSON key of field
+	 */
+	private String getKey(PgTable foreign_table, PgField field, boolean as_attr) {
+		return (field.attribute || field.simple_attribute || (field.simple_attr_cond && as_attr) ? attr_prefix : "") + (field.simple_attr_cond ? (as_attr ? (field.attribute || field.parent_nodes.length == 1 || foreign_table == null ? field.jname : (case_sense ? foreign_table.xname : foreign_table.xname.toLowerCase())) : simple_content_name) : field.jname);
 	}
 
 	/**
@@ -399,9 +411,21 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param field current field
 	 * @param as_attr whether parent node as attribute
 	 * @return String JSON key declaration of field
-	 */
+	 *
 	private String getKeyDecl(PgField field, boolean as_attr) {
 		return "\"" + getKey(field, as_attr) + key_decl_suffix_code;
+	} */
+
+	/**
+	 * Return JSON key declaration of field.
+	 *
+	 * @param foreign_table foreign table (for simple attribute)
+	 * @param field current field
+	 * @param as_attr whether parent node as attribute
+	 * @return String JSON key declaration of field
+	 */
+	private String getKeyDecl(PgTable foreign_table, PgField field, boolean as_attr) {
+		return "\"" + getKey(foreign_table, field, as_attr) + key_decl_suffix_code;
 	}
 
 	/**
@@ -569,10 +593,11 @@ public class JsonBuilder extends CommonBuilder {
 	/**
 	 * Write table footer of JSON Schema.
 	 *
+	 * @param foreign_table foreign table (for simple attribute)
 	 * @param table current table
 	 * @param as_attr whether parent node as attribute
 	 */
-	private void writeEndSchemaTable(PgTable table, boolean as_attr) {
+	private void writeEndSchemaTable(PgTable foreign_table, PgTable table, boolean as_attr) {
 
 		int len = buffer.length();
 
@@ -597,7 +622,7 @@ public class JsonBuilder extends CommonBuilder {
 
 			buffer.append(_indent_spaces + getCanKeyDeclStartArray("required", true));
 
-			table.fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> buffer.append("\"" + getKey(field, as_attr) + "\"" + concat_value_space));
+			table.fields.stream().filter(field -> field.required && field.jsonable).forEach(field -> buffer.append("\"" + getKey(foreign_table, field, as_attr) + "\"" + concat_value_space));
 
 			buffer.setLength(buffer.length() - (key_value_offset + 1));
 
@@ -612,6 +637,7 @@ public class JsonBuilder extends CommonBuilder {
 	/**
 	 * Write field property of JSON Schema.
 	 *
+	 * @param foreign_table foreign table (for simple attribute)
 	 * @param field current field
 	 * @param as_attr whether parent node as attribute
 	 * @param object whether field as JSON object
@@ -619,7 +645,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param indent_level current indent level
 	 */
 	@SuppressWarnings("deprecation")
-	private void writeSchemaField(PgField field, boolean as_attr, boolean object, boolean array, int indent_level) {
+	private void writeSchemaField(PgTable foreign_table, PgField field, boolean as_attr, boolean object, boolean array, int indent_level) {
 
 		if (!object && !array)
 			return;
@@ -635,7 +661,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		String schema_type = field.xs_type.getJsonSchemaType();
 
-		buffer.append(getIndentSpaces(indent_level++) + getKeyDecl(field, as_attr) + start_object_code); // start field
+		buffer.append(getIndentSpaces(indent_level++) + getKeyDecl(foreign_table, field, as_attr) + start_object_code); // start field
 
 		String format = field.getJsonSchemaFormat(schema_ver);
 		String _format = field.getJsonSchemaFormat(JsonSchemaVersion.latest);
@@ -833,7 +859,7 @@ public class JsonBuilder extends CommonBuilder {
 				buffer.append(_indent_spaces + getCanKeyValuePairDecl("$ref", ref));
 
 			if (!no_field_anno)
-				buffer.append(_indent_spaces + getCanKeyValuePairDecl("description", "array of previous object: " + getKey(field, as_attr)));
+				buffer.append(_indent_spaces + getCanKeyValuePairDecl("description", "array of previous object: " + getKey(foreign_table, field, as_attr)));
 
 			if (field.default_value != null)
 				buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("default", field.getJsonSchemaDefaultValue()));
@@ -1021,11 +1047,12 @@ public class JsonBuilder extends CommonBuilder {
 	/**
 	 * Write fields' JSON buffer of current table to the mainline's JSON buffer.
 	 *
+	 * @param foreign_table foreign table (for simple attribute)
 	 * @param table current table
 	 * @param as_attr whether parent node as attribute
 	 * @param indent_level current indent level
 	 */
-	public void writeFields(PgTable table, boolean as_attr, final int indent_level) {
+	public void writeFields(PgTable foreign_table, PgTable table, boolean as_attr, final int indent_level) {
 
 		boolean array_json = !table.virtual && array_all;
 
@@ -1039,7 +1066,7 @@ public class JsonBuilder extends CommonBuilder {
 				if (field.jsonb_null_size == 1 && field.getJsonSchemaFormat(schema_ver) != null)
 					continue;
 
-				writeField(field, as_attr, array_json || field.jsonb_col_size > 1, indent_level);
+				writeField(foreign_table, field, as_attr, array_json || field.jsonb_col_size > 1, indent_level);
 
 			}
 
@@ -1054,12 +1081,13 @@ public class JsonBuilder extends CommonBuilder {
 	/**
 	 * Write field's JSON buffer of current table to the mainline's JSON buffer.
 	 *
+	 * @param foreign_table foreign table (for simple attribute)
 	 * @param field current field
 	 * @param as_attr whether parent node as attribute
 	 * @param array_field whether field as JSON array
 	 * @param indent_level current indent level
 	 */
-	private void writeField(PgField field, boolean as_attr, boolean array_field, final int indent_level) {
+	private void writeField(PgTable foreign_table, PgField field, boolean as_attr, boolean array_field, final int indent_level) {
 
 		String indent_spaces = getIndentSpaces(indent_level);
 
@@ -1094,7 +1122,7 @@ public class JsonBuilder extends CommonBuilder {
 			item_paths.clear();
 			break;
 		default:
-			buffer.append(indent_spaces + getKeyDecl(field, as_attr) + (array_field ? "[" : ""));
+			buffer.append(indent_spaces + getKeyDecl(foreign_table, field, as_attr) + (array_field ? "[" : ""));
 
 			field.jsonb.setLength(field.jsonb.length() - (key_value_offset + 1));
 
@@ -1277,10 +1305,11 @@ public class JsonBuilder extends CommonBuilder {
 	/**
 	 * Write fields' JSON buffer of current table to the mainline's JSON buffer (Relational-oriented JSON).
 	 *
+	 * @param foreign_table foreign table (for simple attribute)
 	 * @param table current table
 	 * @param indent_level current indent level
 	 */
-	private void writeFields(PgTable table, final int indent_level) {
+	private void writeFields(PgTable foreign_table, PgTable table, final int indent_level) {
 
 		boolean unique_table = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child);
 
@@ -1290,7 +1319,7 @@ public class JsonBuilder extends CommonBuilder {
 				continue;
 
 			if ((field.required || field.jsonb_not_empty) && field.jsonb_col_size > 0)
-				writeField(field, false, array_all || (!unique_table && field.jsonb_col_size > 1), indent_level);
+				writeField(foreign_table, field, false, array_all || (!unique_table && field.jsonb_col_size > 1), indent_level);
 
 			field.jsonb.setLength(0);
 
@@ -1305,34 +1334,35 @@ public class JsonBuilder extends CommonBuilder {
 	/**
 	 * Write field content as JSON fragment.
 	 *
+	 * @param foreign_table foreign table (for simple attribute)
 	 * @param field current field
 	 * @param as_attr whether parent node as attribute
 	 * @param content content
 	 */
-	private void writeFieldFrag(PgField field, boolean as_attr, String content) {
+	private void writeFieldFrag(PgTable foreign_table, PgField field, boolean as_attr, String content) {
 
 		if (array_all)
 			field.write(schema_ver, content, false, concat_value_space);
-
 		else
-			buffer.append(getIndentSpaces(1) + getKeyDecl(field, as_attr) + field.normalize(schema_ver, content) + line_feed_code + ",");
+			buffer.append(getIndentSpaces(1) + getKeyDecl(foreign_table, field, as_attr) + field.normalize(schema_ver, content) + line_feed_code + ",");
 
 	}
 
 	/**
 	 * Write field's JSON buffer to the mainline's JSON buffer.
 	 *
+	 * @param foreign_table foreign table (for simple attribute)
 	 * @param field current field
 	 * @param as_attr whether parent node as attribute
 	 */
-	private void writeFieldFrag(PgField field, boolean as_attr) {
+	private void writeFieldFrag(PgTable foreign_table, PgField field, boolean as_attr) {
 
 		if (field.jsonb == null)
 			return;
 
 		if ((field.required || field.jsonb_not_empty) && field.jsonb_col_size > 0) {
 
-			buffer.append(getIndentSpaces(1) + getKeyDecl(field, as_attr) + "[");
+			buffer.append(getIndentSpaces(1) + getKeyDecl(foreign_table, field, as_attr) + "[");
 
 			field.jsonb.setLength(field.jsonb.length() - (key_value_offset + 1));
 			buffer.append(field.jsonb);
@@ -1435,9 +1465,9 @@ public class JsonBuilder extends CommonBuilder {
 	 */
 	protected void writeField(PgTable table, PgField field, boolean as_attr, String content, final int indent_level) {
 
-		boolean array_field = table != null && !table.virtual && !table.list_holder && !table.bridge && array_all;
+		boolean array_field = !as_attr && table != null && !table.virtual && !table.list_holder && !table.bridge && array_all;
 
-		buffer.append(getIndentSpaces(indent_level) + getKeyDecl(field, as_attr) + (array_field ? "[" : "") + field.normalize(schema_ver, content) + (array_field ? end_array_concat_code : concat_line_feed));
+		buffer.append(getIndentSpaces(indent_level) + getKeyDecl(table, field, as_attr) + (array_field ? "[" : "") + field.normalize(schema_ver, content) + (array_field ? end_array_concat_code : concat_line_feed));
 
 	}
 
@@ -1526,13 +1556,13 @@ public class JsonBuilder extends CommonBuilder {
 
 		int _json_indent_level = json_indent_level;
 
-		root_table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(field, false, true, false, _json_indent_level));
+		root_table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(null, field, false, true, false, _json_indent_level));
 
 		if (root_table.total_nested_fields > 0)
 			root_table.nested_fields.forEach(field -> realizeObjJsonSchema(root_table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _json_indent_level));
 
 		if (!root_table.virtual)
-			writeEndSchemaTable(root_table, false);
+			writeEndSchemaTable(null, root_table, false);
 
 		writeEndSchema();
 		writeEndDocument();
@@ -1560,17 +1590,13 @@ public class JsonBuilder extends CommonBuilder {
 
 		int _json_indent_level = json_indent_level;
 
-		table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(field, as_attr, true, false, _json_indent_level));
+		table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(parent_table, field, as_attr, true, false, _json_indent_level));
 
-		if (table.total_nested_fields > 0) {
-
-			if (table.total_nested_fields > 0)
-				table.nested_fields.forEach(field -> realizeObjJsonSchema(table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _json_indent_level));
-
-		}
+		if (table.total_nested_fields > 0)
+			table.nested_fields.forEach(field -> realizeObjJsonSchema(table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _json_indent_level));
 
 		if (!table.virtual)
-			writeEndSchemaTable(table, as_attr);
+			writeEndSchemaTable(parent_table, table, as_attr);
 
 	}
 
@@ -1597,13 +1623,13 @@ public class JsonBuilder extends CommonBuilder {
 
 		int _json_indent_level = json_indent_level;
 
-		root_table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(field, false, !field.list_holder, field.list_holder, _json_indent_level));
+		root_table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(null, field, false, !field.list_holder, field.list_holder, _json_indent_level));
 
 		if (root_table.total_nested_fields > 0)
 			root_table.nested_fields.forEach(field -> realizeColJsonSchema(root_table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _json_indent_level));
 
 		if (!root_table.virtual)
-			writeEndSchemaTable(root_table, false);
+			writeEndSchemaTable(null, root_table, false);
 
 		writeEndSchema();
 		writeEndDocument();
@@ -1633,17 +1659,13 @@ public class JsonBuilder extends CommonBuilder {
 
 		int _json_indent_level = json_indent_level;
 
-		table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(field, as_attr, obj_json && !field.list_holder, !table.virtual || field.list_holder, _json_indent_level));
+		table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(parent_table, field, as_attr, obj_json && !field.list_holder, !table.virtual || field.list_holder, _json_indent_level));
 
-		if (table.total_nested_fields > 0) {
-
-			if (table.total_nested_fields > 0)
-				table.nested_fields.forEach(field -> realizeColJsonSchema(table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _json_indent_level));
-
-		}
+		if (table.total_nested_fields > 0)
+			table.nested_fields.forEach(field -> realizeColJsonSchema(table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _json_indent_level));
 
 		if (!table.virtual)
-			writeEndSchemaTable(table, as_attr);
+			writeEndSchemaTable(parent_table, table, as_attr);
 
 	}
 
@@ -1683,7 +1705,7 @@ public class JsonBuilder extends CommonBuilder {
 			table.attr_fields.stream().filter(field -> field.simple_attr_cond).forEach(field -> {
 
 				String cont_name = table.name + "." + field.name;
-				String attr_name = schema.getForeignTable(field).nested_fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.foreign_table_xname;
+				String attr_name = schema.getForeignTable(field).nested_fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.parent_nodes[0];
 
 				System.err.println("[WARNING] Simple content \"" + (case_sense ? cont_name : cont_name.toLowerCase()) + "\" may be confused with attribute \"" + (case_sense ? attr_name : attr_name.toLowerCase()) + "\" in relational-oriented JSON format.");
 
@@ -1706,9 +1728,9 @@ public class JsonBuilder extends CommonBuilder {
 		int _json_indent_level = json_indent_level + 2;
 		boolean unique_table = table.xs_type.equals(XsTableType.xs_root) || table.xs_type.equals(XsTableType.xs_root_child);
 
-		table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(field, false, !array_all, array_all || !unique_table, _json_indent_level));
+		table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(null, field, false, !array_all, array_all || !unique_table, _json_indent_level));
 
-		writeEndSchemaTable(table, false);
+		writeEndSchemaTable(null, table, false);
 
 	}
 
@@ -1743,7 +1765,7 @@ public class JsonBuilder extends CommonBuilder {
 			tables.stream().filter(table -> table.jsonable && table.jsonb_not_empty).sorted(Comparator.comparingInt(table -> -table.refs)).forEach(table -> {
 
 				writeStartTable(table, true, 1);
-				writeFields(table, 2);
+				writeFields(null, table, 2);
 				writeEndTable();
 
 			});
@@ -1773,7 +1795,7 @@ public class JsonBuilder extends CommonBuilder {
 				table.attr_fields.stream().filter(field -> field.simple_attr_cond).forEach(field -> {
 
 					String cont_name = table.name + "." + field.name;
-					String attr_name = schema.getForeignTable(field).nested_fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.foreign_table_xname;
+					String attr_name = schema.getForeignTable(field).nested_fields.stream().filter(foreign_field -> foreign_field.nested_key_as_attr).findFirst().get().foreign_table_xname + "/@" + field.parent_nodes[0];
 
 					System.err.println("[WARNING] Simple content \"" + (case_sense ? cont_name : cont_name.toLowerCase()) + "\" may be confused with attribute \"" + (case_sense ? attr_name : attr_name.toLowerCase()) + "\" in relational-oriented JSON format.");
 
@@ -1818,7 +1840,7 @@ public class JsonBuilder extends CommonBuilder {
 				switch (terminus) {
 				case element:
 					content = field.retrieveFirst(rset);
-					writeFieldFrag(field, as_attr, content);
+					writeFieldFrag(null, field, as_attr, content);
 					break;
 				case simple_content:
 					content = field.retrieveFirst(rset);
@@ -1828,14 +1850,14 @@ public class JsonBuilder extends CommonBuilder {
 					if (!field.simple_attribute) {
 
 						if (content != null)
-							writeFieldFrag(field, as_attr, content);
+							writeFieldFrag(null, field, as_attr, content);
 
 					}
 
 					// simple attribute
 
 					else if (content != null)
-						writeFieldFrag(field, as_attr = true, content);
+						writeFieldFrag(null, field, as_attr = true, content);
 					break;
 				case attribute:
 					content = field.retrieveFirst(rset);
@@ -1845,14 +1867,14 @@ public class JsonBuilder extends CommonBuilder {
 					if (field.attribute) {
 
 						if (content != null)
-							writeFieldFrag(field, as_attr, content);
+							writeFieldFrag(null, field, as_attr, content);
 
 					}
 
 					// simple attribute
 
 					else if (content != null)
-						writeFieldFrag(field, as_attr = true, content);
+						writeFieldFrag(null, field, as_attr = true, content);
 					break;
 				case any_attribute:
 				case any_element:
@@ -1915,7 +1937,7 @@ public class JsonBuilder extends CommonBuilder {
 					writeAnyFieldFrag(field, path_expr.getReadablePath());
 					break;
 				default:
-					writeFieldFrag(field, as_attr);
+					writeFieldFrag(null, field, as_attr);
 				}
 
 			}
@@ -2053,7 +2075,7 @@ public class JsonBuilder extends CommonBuilder {
 						key = rset.getObject(field.sql_param_id);
 
 						if (key != null)
-							nest_test.merge(nestChildNode2Json(tables.get(field.foreign_table_id), key, true, nest_test));
+							nest_test.merge(nestChildNode2Json(table, tables.get(field.foreign_table_id), key, true, nest_test));
 
 					}
 
@@ -2171,7 +2193,7 @@ public class JsonBuilder extends CommonBuilder {
 							nested_table = tables.get(field.foreign_table_id);
 
 							if (nested_table.content_holder || !nested_table.bridge)
-								nest_test.merge(nestChildNode2Json(nested_table, key, false, nest_test));
+								nest_test.merge(nestChildNode2Json(table, nested_table, key, false, nest_test));
 
 							// skip bridge table for acceleration
 
@@ -2216,6 +2238,7 @@ public class JsonBuilder extends CommonBuilder {
 	/**
 	 * Nest node and compose JSON document.
 	 *
+	 * @param foreign_table foreign table (for simple attribute)
 	 * @param table current table
 	 * @param parent_key parent key
 	 * @param as_attr whether parent key is simple attribute
@@ -2223,7 +2246,7 @@ public class JsonBuilder extends CommonBuilder {
 	 * @return JsonBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private JsonBuilderNestTester nestChildNode2Json(final PgTable table, final Object parent_key, final boolean as_attr, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
+	private JsonBuilderNestTester nestChildNode2Json(final PgTable foreign_table, final PgTable table, final Object parent_key, final boolean as_attr, JsonBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		try {
 
@@ -2337,7 +2360,7 @@ public class JsonBuilder extends CommonBuilder {
 
 								else {
 
-									attr = new JsonBuilderPendingAttr(field, schema.getForeignTable(field), content, nest_test.child_indent_level - 1); // decreasing indent level means simple attribute or conditional attribute derives from parent table
+									attr = new JsonBuilderPendingAttr(field, foreign_table, content, nest_test.child_indent_level - 1); // decreasing indent level means simple attribute or conditional attribute derives from parent table
 
 									elem = pending_elem.peek();
 
@@ -2385,7 +2408,7 @@ public class JsonBuilder extends CommonBuilder {
 							key = rset.getObject(field.sql_param_id);
 
 							if (key != null)
-								nest_test.merge(nestChildNode2Json(tables.get(field.foreign_table_id), key, true, nest_test));
+								nest_test.merge(nestChildNode2Json(foreign_table, tables.get(field.foreign_table_id), key, true, nest_test));
 
 						}
 
@@ -2497,7 +2520,7 @@ public class JsonBuilder extends CommonBuilder {
 								nested_table = tables.get(field.foreign_table_id);
 
 								if (nested_table.content_holder || !nested_table.bridge || as_attr)
-									nest_test.merge(nestChildNode2Json(nested_table, key, false, nest_test));
+									nest_test.merge(nestChildNode2Json(table, nested_table, key, false, nest_test));
 
 								// skip bridge table for acceleration
 
@@ -2547,7 +2570,7 @@ public class JsonBuilder extends CommonBuilder {
 					writePendingSimpleCont();
 
 					if (array_field)
-						writeFields(table, false, nest_test.child_indent_level);
+						writeFields(null, table, false, nest_test.child_indent_level);
 
 					writeEndTable();
 
@@ -2634,7 +2657,7 @@ public class JsonBuilder extends CommonBuilder {
 				if (key != null) {
 
 					if (nested_table.content_holder || !nested_table.bridge)
-						nest_test.merge(nestChildNode2Json(nested_table, key, false, nest_test));
+						nest_test.merge(nestChildNode2Json(table, nested_table, key, false, nest_test));
 
 					// skip bridge table for acceleration
 
@@ -2698,7 +2721,7 @@ public class JsonBuilder extends CommonBuilder {
 			pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
 
 		if (nested_table.content_holder || !nested_table.bridge)
-			nest_test.merge(nestChildNode2Json(nested_table, parent_key, false, nest_test));
+			nest_test.merge(nestChildNode2Json(table, nested_table, parent_key, false, nest_test));
 
 		// skip bridge table for acceleration
 

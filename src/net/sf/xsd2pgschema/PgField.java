@@ -172,6 +172,9 @@ public class PgField implements Serializable {
 	/** Whether @maxOccurs is greater than 1 || @minOccurs is greater than 1. */
 	public boolean list_holder = false;
 
+	/** Whether foreign table refers to the root table. */
+	public boolean foreign_to_root = false;
+
 	/** The foreign table id. */
 	public int foreign_table_id = -1;
 
@@ -1593,6 +1596,9 @@ public class PgField implements Serializable {
 		if (parent_nodes == null)
 			return true;
 
+		if (node_name.startsWith(prefix + ":"))
+			node_name = PgSchemaUtil.getUnqualifiedName(node_name);
+
 		for (String parent_node : parent_nodes) {
 
 			if (node_name.contains(parent_node))
@@ -1614,6 +1620,9 @@ public class PgField implements Serializable {
 		if (ancestor_nodes == null)
 			return true;
 
+		if (node_name.startsWith(prefix + ":"))
+			node_name = PgSchemaUtil.getUnqualifiedName(node_name);
+
 		for (String ancestor_node : ancestor_nodes) {
 
 			if (node_name.equals(ancestor_node))
@@ -1634,6 +1643,9 @@ public class PgField implements Serializable {
 
 		if (parent_nodes == null)
 			return true;
+
+		if (node_name.startsWith(prefix + ":"))
+			node_name = PgSchemaUtil.getUnqualifiedName(node_name);
 
 		for (String parent_node : parent_nodes) {
 
@@ -1714,23 +1726,31 @@ public class PgField implements Serializable {
 	/**
 	 * Return whether node name matches.
 	 *
-	 * @param option PostgreSQL data model option
 	 * @param node_name node name
 	 * @param as_attr whether evaluate this node as attribute
 	 * @param wild_card whether wild card follows
 	 * @return boolean whether node name matches
 	 */
-	public boolean matchesNodeName(PgSchemaOption option, String node_name, boolean as_attr, boolean wild_card) {
+	public boolean matchesNodeName(String node_name, boolean as_attr, boolean wild_card) {
 		/* the condition has already taken into consideration when making table.attr_fields and table.elem_fields
 		if (dtd_data_holder && option.discarded_document_key_names.contains(name))
 			return false;
 		 */
-		String _xname = as_attr ? (simple_attribute || simple_attr_cond ? foreign_table_xname : xname) : xname;
 
 		if (node_name.startsWith(prefix + ":"))
 			node_name = PgSchemaUtil.getUnqualifiedName(node_name);
 
-		return wild_card ? _xname.matches(node_name) : _xname.equals(node_name) || node_name.equals("*");
+		if (as_attr && (simple_attribute || simple_attr_cond) && !node_name.equals("*")) {
+
+			for (String parent_node : parent_nodes) {
+				if (wild_card ? parent_node.matches(node_name) : parent_node.equals(node_name))
+					return true;
+			}
+
+			return false;
+		}
+
+		return wild_card ? xname.matches(node_name) : xname.equals(node_name) || node_name.equals("*");
 	}
 
 	// PostgreSQL DDL

@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018 Masashi Yokochi
+    Copyright 2018-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -93,7 +93,7 @@ public class JsonBuilderPendingAttr extends CommonPendingAttr {
 		// attribute, simple attribute
 
 		if (field != null)
-			jsonb.writeField(null, field, !field.attribute, content, indent_level);
+			jsonb.writeField(foreign_table, field, !field.attribute, content, indent_level);
 
 		// any attribute
 

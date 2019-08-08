@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017-2018 Masashi Yokochi
+    Copyright 2017-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -251,7 +251,7 @@ public class XPathSqlExpr {
 			else throw new PgSchemaException();
 		case attribute:
 			if (table.has_attribute || table.has_simple_attribute) {
-				opt = table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && (field.attribute ? field.xname.equals(xname) : field.foreign_table_xname.equals(xname))).findFirst();
+				opt = table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && (field.attribute ? field.xname.equals(xname) : field.containsParentNodeName(xname))).findFirst();
 				if (opt.isPresent()) {
 					field = opt.get();
 					break;

@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import net.sf.xsd2pgschema.PgField;
@@ -375,7 +376,18 @@ public abstract class PgSchemaNodeParser {
 			if (!parent_node.hasAttributes())
 				return;
 
-			content = ((Element) parent_node).getAttribute(field.foreign_table_xname);
+			NamedNodeMap attrs = parent_node.getAttributes();
+
+			for (int i = 0; i < attrs.getLength(); i++) {
+
+				Node attr = attrs.item(i);
+
+				if (attr != null && field.matchesParentNodeName(attr.getNodeName())) {
+					content = attr.getNodeValue();
+					return;
+				}
+
+			}
 
 		}
 

@@ -426,16 +426,18 @@ public class PgTable implements Serializable {
 	 * Add a nested key.
 	 *
 	 * @param option PostgreSQL data model option
-	 * @param schema_name PostgreSQL schema name
+	 * @param source_table source table
 	 * @param xname canonical name of nested key
 	 * @param ref_field reference field
 	 * @param node current node
 	 * @return boolean whether reference field is unique
 	 */
-	protected boolean addNestedKey(PgSchemaOption option, String schema_name, String xname, PgField ref_field, Node node) {
+	protected boolean addNestedKey(PgSchemaOption option, PgTable source_table, String xname, PgField ref_field, Node node) {
 
 		if (xname == null || xname.isEmpty())
 			return false;
+
+		String schema_name = source_table.schema_name;
 
 		if (this.schema_name.equals(schema_name) && this.xname.equals(xname))
 			return false;
@@ -455,6 +457,7 @@ public class PgTable implements Serializable {
 		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
 			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 		field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
+		field.foreign_to_root = source_table.xs_type.equals(XsTableType.xs_root); // to be checked later if it is true
 		field.foreign_schema = schema_name;
 		field.foreign_table_xname = xname;
 		field.foreign_table_pname = name.equals(this.pname) ? "_" + name : name;
@@ -511,16 +514,18 @@ public class PgTable implements Serializable {
 	 * Add a nested key from foreign table.
 	 *
 	 * @param option PostgreSQL data model option
-	 * @param schema_name PostgreSQL schema name
+	 * @param source_table source table
 	 * @param xname canonical name of foreign table
 	 */
-	protected void addNestedKey(PgSchemaOption option, String schema_name, String xname) {
+	protected void addNestedKey(PgSchemaOption option, PgTable source_table, String xname) {
 
 		if (!option.rel_model_ext)
 			return;
 
 		if (xname == null || xname.isEmpty())
 			return;
+
+		String schema_name = source_table.schema_name;
 
 		if (this.schema_name.equals(schema_name) && this.xname.equals(xname))
 			return;
@@ -539,6 +544,7 @@ public class PgTable implements Serializable {
 		if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
 			field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 		field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
+		field.foreign_to_root = source_table.xs_type.equals(XsTableType.xs_root);
 		field.foreign_schema = schema_name;
 		field.foreign_table_xname = xname;
 		field.foreign_table_pname = name.equals(this.pname) ? "_" + name : name;
@@ -552,9 +558,10 @@ public class PgTable implements Serializable {
 	 * Add a foreign key from foreign table.
 	 *
 	 * @param option PostgreSQL data model option
+	 * @param parent_table parent table
 	 * @param foreign_table foreign table
 	 */
-	protected void addForeignKey(PgSchemaOption option, PgTable foreign_table) {
+	protected void addForeignKey(PgSchemaOption option, PgTable parent_table, PgTable foreign_table) {
 
 		if (schema_name.equals(foreign_table.schema_name) && xname.equals(foreign_table.xname))
 			return;
@@ -572,6 +579,7 @@ public class PgTable implements Serializable {
 			if (field.constraint_name.length() > PgSchemaUtil.max_enum_len)
 				field.constraint_name = field.constraint_name.substring(0, PgSchemaUtil.max_enum_len);
 			field.constraint_name = PgSchemaUtil.avoidPgReservedOps(field.constraint_name);
+			field.foreign_to_root = parent_table.xs_type.equals(XsTableType.xs_root);
 			field.foreign_schema = foreign_table.schema_name;
 			field.foreign_table_xname = foreign_table.xname;
 			field.foreign_table_pname = foreign_table.pname;

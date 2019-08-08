@@ -117,7 +117,7 @@ public class XmlBuilderPendingAttr extends CommonPendingAttr {
 				else {
 
 					if (field.is_same_namespace_of_table)
-						xmlb.writer.writeAttribute(field.foreign_table_xname, content);
+						xmlb.writer.writeAttribute(foreign_table.xname, content);
 
 					else {
 
@@ -130,7 +130,7 @@ public class XmlBuilderPendingAttr extends CommonPendingAttr {
 
 						}
 
-						xmlb.writer.writeAttribute(field_prefix, field_ns, field.foreign_table_xname, content);
+						xmlb.writer.writeAttribute(field_prefix, field_ns, foreign_table.xname, content);
 
 					}
 
