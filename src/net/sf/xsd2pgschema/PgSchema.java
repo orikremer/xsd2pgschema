@@ -1345,6 +1345,9 @@ public class PgSchema implements Serializable {
 
 			}
 
+			else
+				def_stat_msg.append("--\n--   No writable table exists." + (option.rel_model_ext ? "" : " You should try to enable relational model extension.") + "\n");
+
 		}
 
 		// update schema locations to unique ones
@@ -1401,7 +1404,7 @@ public class PgSchema implements Serializable {
 		if (root_table == null)
 			throw new PgSchemaException("Not found root table in XML Schema: " + def_schema_location);
 
-		// update writable table flags if relational data extension is disabled
+		// update writable table flags if relational model extension is disabled
 
 		if (!option.rel_data_ext)
 			tables.parallelStream().filter(table -> table.writable && !(table.required && (option.rel_data_ext || !table.relational))).forEach(table -> table.writable = false);
