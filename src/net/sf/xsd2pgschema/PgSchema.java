@@ -1542,7 +1542,7 @@ public class PgSchema implements Serializable {
 
 		for (Node prev_node = node.getPreviousSibling(); prev_node != null; prev_node = prev_node.getPreviousSibling()) {
 
-			if (prev_node.getNodeType() != Node.ELEMENT_NODE || !prev_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
+			if (prev_node.getNodeType() != Node.ELEMENT_NODE || prev_node.getNamespaceURI() == null || !prev_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
 				continue;
 
 			if (isReferredByOffspring(name, prev_node))
@@ -1552,7 +1552,7 @@ public class PgSchema implements Serializable {
 
 		for (Node next_node = node.getNextSibling(); next_node != null; next_node = next_node.getNextSibling()) {
 
-			if (next_node.getNodeType() != Node.ELEMENT_NODE || !next_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
+			if (next_node.getNodeType() != Node.ELEMENT_NODE || next_node.getNamespaceURI() == null || !next_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
 				continue;
 
 			if (isReferredByOffspring(name, next_node))
@@ -1571,7 +1571,7 @@ public class PgSchema implements Serializable {
 	 */
 	private boolean isReferredByOffspring(String name, Node node) {
 
-		if (node.getNodeType() == Node.ELEMENT_NODE && node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri)) {
+		if (node.getNodeType() == Node.ELEMENT_NODE && node.getNamespaceURI() != null && node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri)) {
 
 			if (((Element) node).getLocalName().equals("element")) {
 
@@ -1592,6 +1592,9 @@ public class PgSchema implements Serializable {
 		if (node.hasChildNodes()) {
 
 			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+				if (child.getNodeType() != Node.ELEMENT_NODE || child.getNamespaceURI() == null || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
+					continue;
 
 				if (isReferredByOffspring(name, child))
 					return true;
