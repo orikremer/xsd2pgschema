@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -201,6 +201,9 @@ public class xml2sphinxds {
 
 			else if (args[i].equals("--fill-this") && i + 1 < args.length)
 				xml_post_editor.addFillThis(args[++i]);
+
+			else if (args[i].equals("--inline-simple-cont"))
+				option.inline_simple_cont = true;
 
 			else if (args[i].equals("--no-wild-card"))
 				option.wild_card = false;
@@ -556,6 +559,7 @@ public class xml2sphinxds {
 		System.err.println("        --update (insert if not exists, and update if required, default)");
 		System.err.println("        --sync CHECK_SUM_DIRECTORY (insert if not exists, update if required, and delete rows if XML not exists)");
 		System.err.println("        --sync-weak (insert if not exists, no update even if exists, no deletion)");
+		System.err.println("        --inline-simple-cont (enable inlining simple content)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --validate (turn off XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");

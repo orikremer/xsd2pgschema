@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.parsers.DocumentBuilder;
 
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -130,6 +131,10 @@ public class PgSchema implements Serializable {
 	/** The PostgreSQL named schema. */
 	@Flat
 	private HashSet<String> pg_named_schema = null;
+
+	/** The PostgreSQL enum types. */
+	@Flat
+	private HashSet<String> pg_enum_types = null;
 
 	/** The unique schema locations (value) with its target namespace (key). */
 	@Flat
@@ -413,7 +418,7 @@ public class PgSchema implements Serializable {
 
 					schema2.tables.stream().filter(arg -> arg.xs_type.equals(XsTableType.xs_admin_root) || arg.xs_type.equals(XsTableType.xs_admin_child)).forEach(arg -> {
 
-						if (root_schema.avoidTableDuplication(tables, arg))
+						if (root_schema.avoidTableDuplication(root_schema.tables, arg))
 							root_schema.tables.add(arg);
 
 					});
@@ -643,6 +648,11 @@ public class PgSchema implements Serializable {
 
 		}
 
+		// collect PostgreSQL enum types
+
+		if (option.inline_simple_cont)
+			pg_enum_types = new HashSet<String>();
+
 		// apply pending attribute groups (lazy evaluation)
 
 		if (pending_attr_groups.size() > 0) {
@@ -793,10 +803,6 @@ public class PgSchema implements Serializable {
 
 		}
 
-		// update table has attributes
-
-		tables.parallelStream().filter(table -> !table.has_attrs && (table.has_simple_attribute || table.has_nested_key_to_simple_attr)).forEach(table -> table.has_attrs = true);
-
 		// update table has nested key as attribute
 
 		tables.parallelStream().filter(table -> table.total_nested_fields > 0 && table.fields.stream().anyMatch(field -> field.nested_key_as_attr)).forEach(table -> table.has_nested_key_as_attr = true);
@@ -893,8 +899,10 @@ public class PgSchema implements Serializable {
 				PgTable nested_table = getForeignTable(field);
 
 				if (nested_table != null && nested_table.anno == null) {
+
 					nested_table.anno = "(quoted from " + table.pname + ")\n-- " + table.anno;
 					nested_table.xanno_doc = "(quoted from " + table.pname + ")\n" + table.xanno_doc;
+
 				}
 
 			});
@@ -1189,6 +1197,228 @@ public class PgSchema implements Serializable {
 
 			}
 
+		});
+
+
+		// inline simple content
+
+		if (option.inline_simple_cont) {
+
+			ArrayList<PgTable> removed_tables = new ArrayList<PgTable>();
+
+			tables.stream().filter(table -> table.virtual && table.total_nested_fields == 0 && table.total_foreign_fields > 0 && (table.has_simple_content || table.has_simple_attribute)).forEach(table -> {
+
+				PgField simple_cont_field = table.fields.stream().filter(field -> field.simple_content).findFirst().get();
+
+				table.fields.stream().filter(field -> field.foreign_key).forEach(field -> {
+
+					PgTable parent_table = getForeignTable(field);
+
+					if (table.has_simple_attribute) {
+
+						tables.stream().filter(ancestor_table -> ancestor_table.total_nested_fields > 0 && ancestor_table.fields.stream().anyMatch(_field -> _field.nested_key_as_attr && _field.delegated_field_pname != null && _field.delegated_field_pname.equals(table.pname + "_id") && getForeignTable(_field).equals(parent_table))).forEach(ancestor_table -> {
+
+							PgField ancestor_field = ancestor_table.fields.stream().filter(_field -> _field.nested_key_as_attr && _field.delegated_field_pname != null && _field.delegated_field_pname.equals(table.pname + "_id") && getForeignTable(_field).equals(parent_table)).findFirst().get();
+
+							int field_id = ancestor_table.fields.indexOf(ancestor_field);
+
+							PgField inline_simple_cont = SerializationUtils.clone(simple_cont_field);
+
+							inline_simple_cont.xname = parent_table.xname;
+							inline_simple_cont.name = parent_table.name;
+							inline_simple_cont.pname = parent_table.pname;
+							inline_simple_cont.attribute = true;
+							inline_simple_cont.simple_content = false;
+							inline_simple_cont.simple_attribute = false;
+							inline_simple_cont.simple_attr_cond = false;
+							inline_simple_cont.nested_key = false;
+							inline_simple_cont.nested_key_as_attr = false;
+							inline_simple_cont.foreign_schema = PgSchemaUtil.pg_public_schema_name;
+							inline_simple_cont.foreign_table_id = -1;
+							inline_simple_cont.foreign_table_xname = null;
+							inline_simple_cont.foreign_table_pname = null;
+							inline_simple_cont.foreign_field_pname = null;
+							inline_simple_cont.ancestor_node = null;
+							inline_simple_cont.parent_node = null;
+							inline_simple_cont.ancestor_nodes = null;
+							inline_simple_cont.parent_nodes = null;
+
+							inline_simple_cont.setDtdDataHolder();
+							inline_simple_cont.setContentHolder();
+							inline_simple_cont.setOmissible(table, option);
+							inline_simple_cont.setJsonable(table, option);
+
+							ancestor_table.fields.set(field_id, inline_simple_cont);
+
+							ancestor_table.countNestedFields();
+
+						});
+
+					}
+
+					tables.stream().filter(ancestor_table -> ancestor_table.total_nested_fields > 0 && ancestor_table.fields.stream().anyMatch(_field -> _field.nested_key && !_field.nested_key_as_attr && _field.delegated_field_pname != null && _field.delegated_field_pname.equals(table.pname + "_id") && getForeignTable(_field).equals(parent_table))).forEach(ancestor_table -> {
+
+						PgField ancestor_field = ancestor_table.fields.stream().filter(_field -> _field.nested_key && !_field.nested_key_as_attr &&  _field.delegated_field_pname != null && _field.delegated_field_pname.equals(table.pname + "_id") && getForeignTable(_field).equals(parent_table)).findFirst().get();
+
+						int field_id = ancestor_table.fields.indexOf(ancestor_field);
+
+						PgField inline_simple_cont = SerializationUtils.clone(simple_cont_field);
+
+						inline_simple_cont.xname = parent_table.xname;
+						inline_simple_cont.name = parent_table.name;
+						inline_simple_cont.pname = parent_table.pname;
+						inline_simple_cont.element = true;
+						inline_simple_cont.simple_content = false;
+						inline_simple_cont.simple_attribute = false;
+						inline_simple_cont.simple_attr_cond = false;
+						inline_simple_cont.nested_key = false;
+						inline_simple_cont.nested_key_as_attr = false;
+						inline_simple_cont.foreign_schema = PgSchemaUtil.pg_public_schema_name;
+						inline_simple_cont.foreign_table_id = -1;
+						inline_simple_cont.foreign_table_xname = null;
+						inline_simple_cont.foreign_table_pname = null;
+						inline_simple_cont.foreign_field_pname = null;
+						inline_simple_cont.ancestor_node = null;
+						inline_simple_cont.parent_node = null;
+						inline_simple_cont.ancestor_nodes = null;
+						inline_simple_cont.parent_nodes = null;
+
+						inline_simple_cont.setDtdDataHolder();
+						inline_simple_cont.setContentHolder();
+						inline_simple_cont.setOmissible(table, option);
+						inline_simple_cont.setJsonable(table, option);
+
+						ancestor_table.fields.set(field_id, inline_simple_cont);
+
+						ancestor_table.countNestedFields();
+
+					});
+
+				});
+
+				removed_tables.add(table);
+
+			});
+
+			tables.removeAll(removed_tables);
+
+			removed_tables.clear();
+
+			tables.stream().filter(table -> table.writable && table.total_nested_fields > 0).forEach(table -> {
+
+				Iterator<PgField> iterator = table.fields.iterator();
+
+				PgField field;
+
+				boolean changed = false;
+
+				while (iterator.hasNext()) {
+
+					field = iterator.next();
+
+					if (field.nested_key_as_attr) {
+
+						field.foreign_table_id = -1;
+
+						PgTable foreign_table = getForeignTable(field);
+
+						if (foreign_table != null)
+							field.foreign_table_id = tables.indexOf(foreign_table);
+
+						else {
+
+							changed = true;
+
+							iterator.remove();
+
+						}
+
+					}
+
+				}
+
+				if (changed) {
+
+					table.countNestedFields();
+
+					if (table.total_nested_fields == 0 && !table.fields.stream().anyMatch(_field -> !_field.document_key && !_field.primary_key && !_field.foreign_key && !_field.nested_key && !_field.serial_key && !_field.xpath_key))
+						removed_tables.add(table);
+
+				}
+
+			});
+
+			do {
+
+				tables.removeAll(removed_tables);
+
+				removed_tables.clear();
+
+				tables.stream().filter(table -> table.writable && table.total_nested_fields > 0).forEach(table -> {
+
+					Iterator<PgField> iterator = table.fields.iterator();
+
+					PgField field;
+
+					boolean changed = false;
+
+					while (iterator.hasNext()) {
+
+						field = iterator.next();
+
+						if (field.nested_key) {
+
+							field.foreign_table_id = -1;
+
+							PgTable foreign_table = getForeignTable(field);
+
+							if (foreign_table != null)
+								field.foreign_table_id = tables.indexOf(foreign_table);
+
+							else {
+
+								changed = true;
+
+								iterator.remove();
+
+							}
+
+						}
+
+					}
+
+					if (changed) {
+
+						table.countNestedFields();
+
+						if (table.total_nested_fields == 0 && !table.fields.stream().anyMatch(_field -> !_field.document_key && !_field.primary_key && !_field.foreign_key && !_field.nested_key && !_field.serial_key && !_field.xpath_key))
+							removed_tables.add(table);
+
+					}
+
+				});
+
+			} while (removed_tables.size() > 0);
+
+			tables.parallelStream().filter(table -> table.writable).forEach(table -> {
+
+				table.has_nested_key_as_attr = false;
+				table.has_nested_key_to_simple_attr = false;
+				table.has_simple_attribute = false;
+
+			});
+
+		}
+
+		tables.parallelStream().filter(table -> table.writable).forEach(table -> {
+
+			table.classify();
+
+			// update table has attributes
+
+			if (!table.has_attrs && (table.has_simple_attribute || table.has_nested_key_to_simple_attr))
+				table.has_attrs = true;
+
 			// update system key, user key, omissible and jsonable flags
 
 			table.fields.forEach(field -> {
@@ -1197,7 +1427,6 @@ public class PgSchema implements Serializable {
 				field.setUserKey();
 				field.setOmissible(table, option);
 				field.setJsonable(table, option);
-
 
 			});
 
@@ -1375,6 +1604,13 @@ public class PgSchema implements Serializable {
 
 			pg_named_schema.clear();
 			pg_named_schema = null;
+
+		}
+
+		if (option.inline_simple_cont) {
+
+			pg_enum_types.clear();
+			pg_enum_types = null;
 
 		}
 
@@ -2597,7 +2833,6 @@ public class PgSchema implements Serializable {
 			table.name = table.pname = option.case_sense ? table.xname : PgSchemaUtil.toCaseInsensitive(table.xname);
 			table.xs_type = foreign_table.xs_type.equals(XsTableType.xs_root) || foreign_table.xs_type.equals(XsTableType.xs_root_child) ? XsTableType.xs_root_child : XsTableType.xs_admin_child;
 
-
 		}
 
 		else {
@@ -2934,7 +3169,7 @@ public class PgSchema implements Serializable {
 		PgTable known_table = null;
 
 		try {
-			known_table = tables.equals(this.tables) ? getPgTable(table.schema_name, table.pname) : tables.equals(root_schema.attr_groups) ? getAttributeGroup(table.xname, false) : tables.equals(root_schema.model_groups) ? getModelGroup(table.xname, false) : null;
+			known_table = tables.equals(this.tables) || tables.equals(root_schema.tables) ? getPgTable(table.schema_name, table.pname) : tables.equals(root_schema.attr_groups) ? getAttributeGroup(table.xname, false) : tables.equals(root_schema.model_groups) ? getModelGroup(table.xname, false) : null;
 		} catch (PgSchemaException e) {
 			e.printStackTrace();
 		}
@@ -2950,7 +3185,7 @@ public class PgSchema implements Serializable {
 			table.name_collision = true;
 
 			try {
-				known_table = tables.equals(this.tables) ? getCanTable(table.schema_name, table.xname) : tables.equals(root_schema.attr_groups) ? getAttributeGroup(table.xname, false) : tables.equals(root_schema.model_groups) ? getModelGroup(table.xname, false) : null;
+				known_table = tables.equals(this.tables) || tables.equals(root_schema.tables) ? getCanTable(table.schema_name, table.xname) : tables.equals(root_schema.attr_groups) ? getAttributeGroup(table.xname, false) : tables.equals(root_schema.model_groups) ? getModelGroup(table.xname, false) : null;
 			} catch (PgSchemaException e) {
 				e.printStackTrace();
 			}
@@ -3035,26 +3270,42 @@ public class PgSchema implements Serializable {
 
 			else {
 
-				// append target namespace if available
+				// resolve name collision between foreign key and nested key
 
-				if (field.target_namespace != null && !field.target_namespace.isEmpty()) {
+				if (known_field.foreign_key && field.nested_key) {
 
-					if (known_field.target_namespace == null || known_field.target_namespace.isEmpty())
-						known_field.target_namespace = table.target_namespace;
+					changed = true;
 
-					else if (!known_field.target_namespace.contains(field.target_namespace))
-						known_field.target_namespace += " " + field.target_namespace;
+					field.pname = "_" + field.pname;
+
+					known_fields.add(field);
 
 				}
 
-				// append parent node if available
+				else {
 
-				if (field.nested_key && field.parent_node != null) {
+					// append target namespace if available
 
-					if (known_field.nested_key) {
+					if (field.target_namespace != null && !field.target_namespace.isEmpty()) {
 
-						if (known_field.parent_node != null && !known_field.parent_node.contains(field.parent_node))
-							known_field.parent_node += " " + field.parent_node;
+						if (known_field.target_namespace == null || known_field.target_namespace.isEmpty())
+							known_field.target_namespace = table.target_namespace;
+
+						else if (!known_field.target_namespace.contains(field.target_namespace))
+							known_field.target_namespace += " " + field.target_namespace;
+
+					}
+
+					// append parent node if available
+
+					if (field.nested_key && field.parent_node != null) {
+
+						if (known_field.nested_key) {
+
+							if (known_field.parent_node != null && !known_field.parent_node.contains(field.parent_node))
+								known_field.parent_node += " " + field.parent_node;
+
+						}
 
 					}
 
@@ -3652,6 +3903,7 @@ public class PgSchema implements Serializable {
 		System.out.println("-- Schema modeling options:");
 		System.out.println("--  explicit named schema: " + option.pg_named_schema);
 		System.out.println("--  relational extension: " + option.rel_model_ext);
+		System.out.println("--  inline simple content: " + option.inline_simple_cont);
 		System.out.println("--  wild card extension: " + option.wild_card);
 		System.out.println("--  case sensitive name: " + option.case_sense);
 		System.out.println("--  no name collision: " + !name_collision);
@@ -4029,20 +4281,29 @@ public class PgSchema implements Serializable {
 
 		fields.stream().filter(field -> field.enum_name != null && !field.enum_name.isEmpty()).forEach(field -> {
 
-			System.out.println("DROP TYPE IF EXISTS " + table.schema_pgname + field.enum_name + " CASCADE;");
+			String enum_type = table.schema_pgname + field.enum_name;
 
-			System.out.print("CREATE TYPE " + table.schema_pgname + field.enum_name + " AS ENUM (");
+			if ((option.inline_simple_cont && !pg_enum_types.contains(enum_type)) || !option.inline_simple_cont) {
 
-			for (int i = 0; i < field.enumeration.length; i++) {
+				System.out.println("DROP TYPE IF EXISTS " + enum_type + " CASCADE;");
 
-				System.out.print(" '" + field.enumeration[i] + "'");
+				System.out.print("CREATE TYPE " + enum_type + " AS ENUM (");
 
-				if (i < field.enumeration.length - 1)
-					System.out.print(",");
+				for (int i = 0; i < field.enumeration.length; i++) {
+
+					System.out.print(" '" + field.enumeration[i] + "'");
+
+					if (i < field.enumeration.length - 1)
+						System.out.print(",");
+
+				}
+
+				System.out.println(" );");
+
+				if (option.inline_simple_cont)
+					pg_enum_types.add(enum_type);
 
 			}
-
-			System.out.println(" );");
 
 		});
 
@@ -4073,9 +4334,9 @@ public class PgSchema implements Serializable {
 			else if (field.nested_key) {
 
 				if (field.nested_key_as_attr)
-					System.out.println("-- NESTED KEY AS ATTRIBUTE : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
+					System.out.println("-- NESTED KEY AS ATTRIBUTE : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(field.delegated_field_pname) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
 				else
-					System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
+					System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(field.delegated_field_pname) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
 
 			}
 

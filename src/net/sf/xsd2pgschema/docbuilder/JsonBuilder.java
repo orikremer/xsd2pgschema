@@ -1592,8 +1592,8 @@ public class JsonBuilder extends CommonBuilder {
 
 		table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(parent_table, field, as_attr, true, false, _json_indent_level));
 
-		if (table.total_nested_fields > 0)
-			table.nested_fields.forEach(field -> realizeObjJsonSchema(table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _json_indent_level));
+		if (table.total_nested_fields > 0 && (!table.has_simple_content || !as_attr))
+			table.nested_fields.stream().filter(field -> ((as_attr && field.nested_key_as_attr) || !as_attr)).forEach(field -> realizeObjJsonSchema(table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _json_indent_level));
 
 		if (!table.virtual)
 			writeEndSchemaTable(parent_table, table, as_attr);
@@ -1661,8 +1661,8 @@ public class JsonBuilder extends CommonBuilder {
 
 		table.fields.stream().filter(field -> field.jsonable).forEach(field -> writeSchemaField(parent_table, field, as_attr, obj_json && !field.list_holder, !table.virtual || field.list_holder, _json_indent_level));
 
-		if (table.total_nested_fields > 0)
-			table.nested_fields.forEach(field -> realizeColJsonSchema(table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _json_indent_level));
+		if (table.total_nested_fields > 0 && (!table.has_simple_content || !as_attr))
+			table.nested_fields.stream().filter(field -> ((as_attr && field.nested_key_as_attr) || !as_attr)).forEach(field -> realizeColJsonSchema(table, tables.get(field.foreign_table_id), field.nested_key_as_attr, _json_indent_level));
 
 		if (!table.virtual)
 			writeEndSchemaTable(parent_table, table, as_attr);
@@ -2195,13 +2195,17 @@ public class JsonBuilder extends CommonBuilder {
 							if (nested_table.content_holder || !nested_table.bridge)
 								nest_test.merge(nestChildNode2Json(table, nested_table, key, false, nest_test));
 
-							// skip bridge table for acceleration
+							else if (nested_table.nested_fields != null && nested_table.nested_fields.stream().anyMatch(_field -> !_field.nested_key_as_attr)) {
 
-							else if (nested_table.list_holder)
-								nest_test.merge(skipListAndBridgeNode2Json(nested_table, key, nest_test));
+								// skip bridge table for acceleration
 
-							else
-								nest_test.merge(skipBridgeNode2Json(nested_table, key, nest_test));
+								if (nested_table.list_holder)
+									nest_test.merge(skipListAndBridgeNode2Json(nested_table, key, nest_test));
+
+								else
+									nest_test.merge(skipBridgeNode2Json(nested_table, key, nest_test));
+
+							}
 
 						}
 
@@ -2522,13 +2526,17 @@ public class JsonBuilder extends CommonBuilder {
 								if (nested_table.content_holder || !nested_table.bridge || as_attr)
 									nest_test.merge(nestChildNode2Json(table, nested_table, key, false, nest_test));
 
-								// skip bridge table for acceleration
+								else if (nested_table.nested_fields != null && nested_table.nested_fields.stream().anyMatch(_field -> !_field.nested_key_as_attr)) {
 
-								else if (nested_table.list_holder)
-									nest_test.merge(skipListAndBridgeNode2Json(nested_table, key, nest_test));
+									// skip bridge table for acceleration
 
-								else
-									nest_test.merge(skipBridgeNode2Json(nested_table, key, nest_test));
+									if (nested_table.list_holder)
+										nest_test.merge(skipListAndBridgeNode2Json(nested_table, key, nest_test));
+
+									else
+										nest_test.merge(skipBridgeNode2Json(nested_table, key, nest_test));
+
+								}
 
 							}
 
@@ -2659,13 +2667,17 @@ public class JsonBuilder extends CommonBuilder {
 					if (nested_table.content_holder || !nested_table.bridge)
 						nest_test.merge(nestChildNode2Json(table, nested_table, key, false, nest_test));
 
-					// skip bridge table for acceleration
+					else if (nested_table.nested_fields != null && nested_table.nested_fields.stream().anyMatch(_field -> !_field.nested_key_as_attr)) {
 
-					else if (nested_table.list_holder)
-						nest_test.merge(skipListAndBridgeNode2Json(nested_table, key, nest_test));
+						// skip bridge table for acceleration
 
-					else
-						nest_test.merge(skipBridgeNode2Json(nested_table, key, nest_test));
+						if (nested_table.list_holder)
+							nest_test.merge(skipListAndBridgeNode2Json(nested_table, key, nest_test));
+
+						else
+							nest_test.merge(skipBridgeNode2Json(nested_table, key, nest_test));
+
+					}
 
 				}
 
@@ -2723,13 +2735,17 @@ public class JsonBuilder extends CommonBuilder {
 		if (nested_table.content_holder || !nested_table.bridge)
 			nest_test.merge(nestChildNode2Json(table, nested_table, parent_key, false, nest_test));
 
-		// skip bridge table for acceleration
+		else if (nested_table.nested_fields != null && nested_table.nested_fields.stream().anyMatch(_field -> !_field.nested_key_as_attr)) {
 
-		else if (nested_table.list_holder)
-			nest_test.merge(skipListAndBridgeNode2Json(nested_table, parent_key, nest_test));
+			// skip bridge table for acceleration
 
-		else
-			nest_test.merge(skipBridgeNode2Json(nested_table, parent_key, nest_test));
+			if (nested_table.list_holder)
+				nest_test.merge(skipListAndBridgeNode2Json(nested_table, parent_key, nest_test));
+
+			else
+				nest_test.merge(skipBridgeNode2Json(nested_table, parent_key, nest_test));
+
+		}
 
 		if (category) {
 

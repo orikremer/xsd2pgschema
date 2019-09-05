@@ -981,13 +981,17 @@ public class XmlBuilder extends CommonBuilder {
 							if (nested_table.content_holder || !nested_table.bridge)
 								nest_test.merge(nestChildNode2Xml(table, nested_table, key, false, nest_test));
 
-							// skip bridge table for acceleration
+							else if (nested_table.nested_fields != null && nested_table.nested_fields.stream().anyMatch(_field -> !_field.nested_key_as_attr)) {
 
-							else if (nested_table.list_holder)
-								nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
+								// skip bridge table for acceleration
 
-							else
-								nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
+								if (nested_table.list_holder)
+									nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
+
+								else
+									nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
+
+							}
 
 						}
 
@@ -1347,13 +1351,17 @@ public class XmlBuilder extends CommonBuilder {
 								if (nested_table.content_holder || !nested_table.bridge || as_attr)
 									nest_test.merge(nestChildNode2Xml(table, nested_table, key, false, nest_test));
 
-								// skip bridge table for acceleration
+								else if (nested_table.nested_fields != null && nested_table.nested_fields.stream().anyMatch(_field -> !_field.nested_key_as_attr)) {
 
-								else if (nested_table.list_holder)
-									nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
+									// skip bridge table for acceleration
 
-								else
-									nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
+									if (nested_table.list_holder)
+										nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
+
+									else
+										nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
+
+								}
 
 							}
 
@@ -1512,13 +1520,17 @@ public class XmlBuilder extends CommonBuilder {
 					if (nested_table.content_holder || !nested_table.bridge)
 						nest_test.merge(nestChildNode2Xml(table, nested_table, key, false, nest_test));
 
-					// skip bridge table for acceleration
+					else if (nested_table.nested_fields != null && nested_table.nested_fields.stream().anyMatch(_field -> !_field.nested_key_as_attr)) {
 
-					else if (nested_table.list_holder)
-						nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
+						// skip bridge table for acceleration
 
-					else
-						nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
+						if (nested_table.list_holder)
+							nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
+
+						else
+							nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
+
+					}
 
 				}
 
@@ -1596,13 +1608,17 @@ public class XmlBuilder extends CommonBuilder {
 			if (nested_table.content_holder || !nested_table.bridge)
 				nest_test.merge(nestChildNode2Xml(table, nested_table, parent_key, false, nest_test));
 
-			// skip bridge table for acceleration
+			else if (nested_table.nested_fields != null && nested_table.nested_fields.stream().anyMatch(_field -> !_field.nested_key_as_attr)) {
 
-			else if (nested_table.list_holder)
-				nest_test.merge(skipListAndBridgeNode2Xml(nested_table, parent_key, nest_test));
+				// skip bridge table for acceleration
 
-			else
-				nest_test.merge(skipBridgeNode2Xml(nested_table, parent_key, nest_test));
+				if (nested_table.list_holder)
+					nest_test.merge(skipListAndBridgeNode2Xml(nested_table, parent_key, nest_test));
+
+				else
+					nest_test.merge(skipBridgeNode2Xml(nested_table, parent_key, nest_test));
+
+			}
 
 			if (category) {
 

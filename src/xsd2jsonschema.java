@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -96,6 +96,9 @@ public class xsd2jsonschema {
 
 			else if (args[i].equals("--schema-ver") && i + 1 < args.length)
 				jsonb_option.setSchemaVer(args[++i]);
+
+			else if (args[i].equals("--inline-simple-cont"))
+				option.inline_simple_cont = true;
 
 			else if (args[i].equals("--no-wild-card"))
 				option.wild_card = false;
@@ -194,7 +197,8 @@ public class xsd2jsonschema {
 		System.err.println("        --obj-json (use object-oriented JSON format)");
 		System.err.println("        --col-json (use column-oriented JSON format, default)");
 		System.err.println("        --rel-json (use relational-oriented JSON format)");
-		System.err.println("Option: --no-wild-card (turn off wild card extension)");
+		System.err.println("Option: --inline-simple-cont (enable inlining simple content)");
+		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --field-annotation (retrieve field annotation, default)");
 		System.err.println("        --no-field-annotation (do not retrieve field annotation)");

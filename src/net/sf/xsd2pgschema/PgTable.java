@@ -463,6 +463,11 @@ public class PgTable implements Serializable {
 		field.foreign_table_pname = name.equals(this.pname) ? "_" + name : name;
 		field.foreign_field_pname = name + "_id";
 
+		if (ref_field.type != null && !xname.equals(PgSchemaUtil.getUnqualifiedName(ref_field.type))) {
+			String tname = PgSchemaUtil.getUnqualifiedName(ref_field.type) + "_id";
+			field.delegated_field_pname = option.case_sense ? tname : PgSchemaUtil.toCaseInsensitive(tname);
+		}
+
 		field.maxoccurs = ref_field.maxoccurs;
 		field.minoccurs = ref_field.minoccurs;
 		field.list_holder = ref_field.list_holder;

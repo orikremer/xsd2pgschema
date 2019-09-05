@@ -67,6 +67,9 @@ public class PgSchemaOption implements Serializable {
 	/** The relational data extension. */
 	public boolean rel_data_ext = true;
 
+	/** Whether to inline simple content. */
+	public boolean inline_simple_cont = false;
+
 	/** The wild card extension. */
 	public boolean wild_card = true;
 
@@ -647,6 +650,9 @@ public class PgSchemaOption implements Serializable {
 			return false;
 
 		if (rel_data_ext != option.rel_data_ext)
+			return false;
+
+		if (inline_simple_cont != option.inline_simple_cont)
 			return false;
 
 		if (wild_card != option.wild_card)

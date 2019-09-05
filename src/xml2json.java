@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -177,6 +177,9 @@ public class xml2json {
 
 			else if (args[i].equals("--fill-this") && i + 1 < args.length)
 				xml_post_editor.addFillThis(args[++i]);
+
+			else if (args[i].equals("--inline-simple-cont"))
+				option.inline_simple_cont = true;
 
 			else if (args[i].equals("--no-wild-card"))
 				option.wild_card = false;
@@ -407,6 +410,7 @@ public class xml2json {
 
 		System.err.println("xml2json: XML -> JSON document conversion");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --json-dir DIRECTORY (default=\"" + json_dir_name + "\")");
+		System.err.println("        --inline-simple-cont (enable inlining simple content)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --validate (turn on XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");

@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.sf.xsd2pgschema</groupId>
 	<artifactId>xsd2pgschema</artifactId>
-	<version>3.1.2</version>
+	<version>3.2.0</version>
 	<name>xsd2pgschema</name>
 	<description>Database replication tool based on XML Schema</description>
 	<url>https://sourceforge.net/projects/xsd2pgschema/</url>
@@ -77,7 +77,7 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-text</artifactId>
-			<version>1.7</version>
+			<version>1.8</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-codec</groupId>
