@@ -1503,26 +1503,35 @@ public class PgSchema implements Serializable {
 
 		// statistics
 
+		boolean has_orphan_table = tables.parallelStream().anyMatch(table -> (option.rel_model_ext || !table.relational) && !table.writable);
+		boolean has_deadend_table = tables.parallelStream().anyMatch(table -> table.writable && !table.fields.stream().anyMatch(field -> !field.document_key && !field.primary_key && !field.serial_key && !field.xpath_key));
+
 		if (option.ddl_output) {
 
 			def_stat_msg.insert(0, "--  Generated " + tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table)).count() + " tables (" + tables.parallelStream().map(table -> (option.rel_model_ext || !table.relational) && table.writable ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups in total\n");
 
-			if (!option.show_orphan_table && tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && !table.writable).count() > 0) {
+			if (!option.show_orphan_table && has_orphan_table) {
 
 				def_stat_msg.append("--   Orphan tables:\n--    ");
 				tables.stream().filter(table -> (option.rel_model_ext || !table.relational) && !table.writable).forEach(table -> def_stat_msg.append(getPgNameOf(table) + ", "));
 				def_stat_msg.setLength(def_stat_msg.length() - 2);
 				def_stat_msg.append("\n");
 
+			}
+
+			if (!option.show_orphan_table && has_deadend_table) {
+
 				def_stat_msg.append("--   Dead-end tables:\n--    ");
-				tables.stream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> !field.document_key && !field.primary_key)).forEach(table -> def_stat_msg.append(getPgNameOf(table) + ", "));
+				tables.stream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> !field.document_key && !field.primary_key && !field.serial_key && !field.xpath_key)).forEach(table -> def_stat_msg.append(getPgNameOf(table) + ", "));
 				def_stat_msg.setLength(def_stat_msg.length() - 2);
 				def_stat_msg.append("\n");
 
 			}
 
-			// disable dead-end tables
-			tables.parallelStream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> !field.document_key && !field.primary_key)).forEach(table -> table.writable = false);
+			// change dead-end tables to unwritable tables
+
+			if (has_deadend_table)
+				tables.parallelStream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> !field.document_key && !field.primary_key && !field.serial_key && !field.xpath_key)).forEach(table -> table.writable = false);
 
 			StringBuilder sb = new StringBuilder();
 
@@ -1586,9 +1595,10 @@ public class PgSchema implements Serializable {
 
 		}
 
-		// disable dead-end tables
-		else
-			tables.parallelStream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> !field.document_key && !field.primary_key)).forEach(table -> table.writable = false);
+		// change dead-end tables to unwritable tables
+
+		else if (has_deadend_table)
+			tables.parallelStream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> !field.document_key && !field.primary_key && !field.serial_key && !field.xpath_key)).forEach(table -> table.writable = false);
 
 		// update schema locations to unique ones
 
