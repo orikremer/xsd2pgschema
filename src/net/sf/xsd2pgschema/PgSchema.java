@@ -3982,7 +3982,7 @@ public class PgSchema implements Serializable {
 
 		if (!option.pg_retain_key) {
 
-			tables.stream().filter(table -> !table.bridge).sorted(Comparator.comparingInt(table -> -table.refs)).forEach(table -> {
+			tables.stream().filter(table -> table.writable && !table.bridge).sorted(Comparator.comparingInt(table -> -table.refs)).forEach(table -> {
 
 				table.fields.forEach(field -> {
 
