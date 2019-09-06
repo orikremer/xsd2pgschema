@@ -1,6 +1,10 @@
-﻿ Changes in xsd2pgschema 3.2.0 (release 2019-09-05)
+﻿ Changes in xsd2pgschema 3.2.1 (release 2019-09-06)
 
-  NOTICE: We recommend all users should update 3.2.0 or later.
+  NOTICE: We recommend all users should update 3.2.1 or later.
+  Fixed missing primitive data type when default namespace prefix is http://www.w3.org/2001/XMLSchema.
+
+ Changes in xsd2pgschema 3.2.0 (release 2019-09-05)
+
   [Ticket #8-4] Added --inline-simple-cont option to enable in-lining simple content.
   Fixed duplicated tables when multiple XML Schemata were included or imported.
   Resolved name collision between foreign key and nested key and their circular dependency.

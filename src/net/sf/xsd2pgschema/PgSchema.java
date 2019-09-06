@@ -1436,7 +1436,7 @@ public class PgSchema implements Serializable {
 
 		List<String> other_namespaces = new ArrayList<String>();
 
-		tables.parallelStream().forEach(table -> {
+		tables.stream().forEach(table -> {
 
 			if (table.target_namespace == null)
 				table.target_namespace = "";
@@ -1973,7 +1973,7 @@ public class PgSchema implements Serializable {
 
 				// primitive data type
 
-				if (type.length != 0 && type[0].equals(option.xs_prefix)) { } // nothing to do
+				if (type.length != 0 && (type[0].equals(option.xs_prefix) || (type.length == 1 && option.xs_prefix.isEmpty()))) { } // nothing to do
 
 				// non-primitive data type
 
@@ -2507,7 +2507,7 @@ public class PgSchema implements Serializable {
 
 				// primitive data type
 
-				if (type.length != 0 && type[0].equals(option.xs_prefix)) {
+				if (type.length != 0 && (type[0].equals(option.xs_prefix) || (type.length == 1 && option.xs_prefix.isEmpty()))) {
 
 					boolean has_complex_child = false;
 
@@ -2520,7 +2520,7 @@ public class PgSchema implements Serializable {
 
 							has_complex_child = true;
 
-							// in-line complex type extension of primitive data type
+							// in-lined complex type extension of primitive data type
 
 							level++;
 
@@ -2616,7 +2616,7 @@ public class PgSchema implements Serializable {
 
 					else if (!has_complex_child) {
 
-						field.xs_type = XsFieldType.valueOf("xs_" + type[1]);
+						field.xs_type = XsFieldType.valueOf("xs_" + (type[0].equals(option.xs_prefix) ? type[1] : type[0]));
 
 						table.fields.add(field);
 
@@ -2743,9 +2743,9 @@ public class PgSchema implements Serializable {
 
 							// primitive data type
 
-							if (type.length != 0 && type[0].equals(option.xs_prefix)) {
+							if (type.length != 0 && (type[0].equals(option.xs_prefix) || (type.length == 1 && option.xs_prefix.isEmpty()))) {
 
-								field.xs_type = XsFieldType.valueOf("xs_" + type[1]);
+								field.xs_type = XsFieldType.valueOf("xs_" + (type[0].equals(option.xs_prefix) ? type[1] : type[0]));
 
 								table.fields.add(field);
 
@@ -3000,9 +3000,9 @@ public class PgSchema implements Serializable {
 
 		// primitive data type
 
-		if (type.length != 0 && type[0].equals(option.xs_prefix)) {
+		if (type.length != 0 && (type[0].equals(option.xs_prefix) || (type.length == 1 && option.xs_prefix.isEmpty()))) {
 
-			field.xs_type = XsFieldType.valueOf("xs_" + type[1]);
+			field.xs_type = XsFieldType.valueOf("xs_" + (type[0].equals(option.xs_prefix) ? type[1] : type[0]));
 
 			table.fields.add(field);
 
