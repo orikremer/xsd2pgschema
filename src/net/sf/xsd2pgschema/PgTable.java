@@ -460,7 +460,7 @@ public class PgTable implements Serializable {
 		field.foreign_to_root = source_table.xs_type.equals(XsTableType.xs_root); // to be checked later if it is true
 		field.foreign_schema = schema_name;
 		field.foreign_table_xname = xname;
-		field.foreign_table_pname = name.equals(this.pname) ? "_" + name : name;
+		field.foreign_table_pname = name;
 		field.foreign_field_pname = name + "_id";
 
 		if (ref_field.type != null && !xname.equals(PgSchemaUtil.getUnqualifiedName(ref_field.type))) {
@@ -552,7 +552,7 @@ public class PgTable implements Serializable {
 		field.foreign_to_root = source_table.xs_type.equals(XsTableType.xs_root);
 		field.foreign_schema = schema_name;
 		field.foreign_table_xname = xname;
-		field.foreign_table_pname = name.equals(this.pname) ? "_" + name : name;
+		field.foreign_table_pname = name;
 		field.foreign_field_pname = name + "_id";
 
 		fields.add(field);

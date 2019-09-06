@@ -1199,8 +1199,7 @@ public class PgSchema implements Serializable {
 
 		});
 
-
-		// inline simple content
+		// in-line simple contents as attributes and elements, respectively
 
 		if (option.inline_simple_cont) {
 
@@ -1436,7 +1435,7 @@ public class PgSchema implements Serializable {
 
 		List<String> other_namespaces = new ArrayList<String>();
 
-		tables.stream().forEach(table -> {
+		tables.stream().forEach(table -> { // do not parallelize this because of target namespace of field annotation
 
 			if (table.target_namespace == null)
 				table.target_namespace = "";
@@ -1511,11 +1510,19 @@ public class PgSchema implements Serializable {
 			if (!option.show_orphan_table && tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && !table.writable).count() > 0) {
 
 				def_stat_msg.append("--   Orphan tables:\n--    ");
-				tables.stream().filter(table -> (option.rel_model_ext || !table.relational) && !table.writable).forEach(table -> def_stat_msg.append(table.pname + ", "));
+				tables.stream().filter(table -> (option.rel_model_ext || !table.relational) && !table.writable).forEach(table -> def_stat_msg.append(getPgNameOf(table) + ", "));
+				def_stat_msg.setLength(def_stat_msg.length() - 2);
+				def_stat_msg.append("\n");
+
+				def_stat_msg.append("--   Dead-end tables:\n--    ");
+				tables.stream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> !field.document_key && !field.primary_key)).forEach(table -> def_stat_msg.append(getPgNameOf(table) + ", "));
 				def_stat_msg.setLength(def_stat_msg.length() - 2);
 				def_stat_msg.append("\n");
 
 			}
+
+			// disable dead-end tables
+			tables.parallelStream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> !field.document_key && !field.primary_key)).forEach(table -> table.writable = false);
 
 			StringBuilder sb = new StringBuilder();
 
@@ -1578,6 +1585,10 @@ public class PgSchema implements Serializable {
 				def_stat_msg.append("--\n--   No writable table exists." + (option.rel_model_ext ? "" : " You should try to enable relational model extension.") + "\n");
 
 		}
+
+		// disable dead-end tables
+		else
+			tables.parallelStream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> !field.document_key && !field.primary_key)).forEach(table -> table.writable = false);
 
 		// update schema locations to unique ones
 

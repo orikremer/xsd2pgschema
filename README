@@ -2,6 +2,9 @@
 
   NOTICE: We recommend all users should update 3.2.1 or later.
   Fixed missing primitive data type when default namespace prefix is http://www.w3.org/2001/XMLSchema.
+  Dropped dead-end tables by default. Use --show-orphan-table option to verify the orphan/dead-end tables.
+  Revised PostgreSQL DDL, which reports orphan/dead-end tables with their PostgreSQL named schema.
+  Fixed unnecessary escaped table name in comment of nested key in special case.
 
  Changes in xsd2pgschema 3.2.0 (release 2019-09-05)
 
