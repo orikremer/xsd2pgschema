@@ -247,6 +247,9 @@ public abstract class PgSchemaNodeParser {
 			if (!node.getParentNode().hasAttributes())
 				return null;
 
+			if (table.has_simple_content && !node.hasAttributes())
+				return null;
+
 		}
 
 		else if (table.has_nested_key_to_simple_attr && current_key.contains("@"))
@@ -418,7 +421,7 @@ public abstract class PgSchemaNodeParser {
 
 			if (field.simple_primitive_list && total_nested_fields > 0) {
 
-				if (content != null && table.nested_fields.stream().anyMatch(_field -> _field.matchesParentNodeName(parent_node_name)))
+				if (content != null && table.nested_fields.stream().filter(_field -> _field.parent_node != null).anyMatch(_field -> _field.matchesParentNodeName(parent_node_name)))
 					content = null;
 
 				null_simple_list = content == null;

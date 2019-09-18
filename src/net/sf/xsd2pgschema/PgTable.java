@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.nio.file.Path;
 import java.sql.PreparedStatement;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -370,6 +371,9 @@ public class PgTable implements Serializable {
 					continue;
 
 				if (field.pname.equals(field_name)) {
+					
+					if (field.nested_key)
+						break;
 
 					duplicate = true;
 
@@ -440,13 +444,16 @@ public class PgTable implements Serializable {
 		String schema_name = source_table.schema_name;
 
 		if (this.schema_name.equals(schema_name) && this.xname.equals(xname))
-			return false;
+			return true; // return true to affect unique key flag
 
 		String name = option.case_sense ? xname : PgSchemaUtil.toCaseInsensitive(xname);
 
 		PgField field = new PgField();
 
 		field.xname = name + "_id";
+
+		Optional<PgField> opt = fields.stream().filter(_field -> _field.nested_key && _field.xname.equals(field.xname)).findFirst();
+
 		field.name = option.case_sense ? field.xname : PgSchemaUtil.toCaseInsensitive(field.xname);
 		field.pname = avoidFieldDuplication(option, field.xname);
 		field.setHashKeyType(option);
@@ -464,8 +471,10 @@ public class PgTable implements Serializable {
 		field.foreign_field_pname = name + "_id";
 
 		if (ref_field.type != null && !xname.equals(PgSchemaUtil.getUnqualifiedName(ref_field.type))) {
+
 			String tname = PgSchemaUtil.getUnqualifiedName(ref_field.type) + "_id";
 			field.delegated_field_pname = option.case_sense ? tname : PgSchemaUtil.toCaseInsensitive(tname);
+
 		}
 
 		field.maxoccurs = ref_field.maxoccurs;
@@ -510,7 +519,35 @@ public class PgTable implements Serializable {
 		if (field.parent_node != null && field.parent_node.isEmpty())
 			field.parent_node = null;
 
+		if (opt.isPresent()) {
+
+			PgField known_field = opt.get();
+
+			if (known_field.delegated_field_pname != null && field.delegated_field_pname != null) {
+
+				HashSet<String> pnames = new HashSet<String>();
+
+				for (String pname : known_field.delegated_field_pname.split(" "))
+					pnames.add(pname);
+
+				for (String pname : field.delegated_field_pname.split(" "))
+					pnames.add(pname);
+
+				field.delegated_field_pname = String.join(" ", pnames);
+
+			}
+
+			else if (known_field.delegated_field_pname == null && field.delegated_field_pname != null)
+				field.delegated_field_pname = field.delegated_field_pname;
+
+			fields.set(fields.indexOf(known_field), field);
+
+			return known_field.maxoccurs.equals("1");
+
+		}
+
 		fields.add(field);
+		total_nested_fields++;
 
 		return field.maxoccurs.equals("1");
 	}
@@ -520,17 +557,19 @@ public class PgTable implements Serializable {
 	 *
 	 * @param option PostgreSQL data model option
 	 * @param source_table source table
-	 * @param xname canonical name of foreign table
+	 * @param qname qualified name of foreign table
 	 */
-	protected void addNestedKey(PgSchemaOption option, PgTable source_table, String xname) {
+	protected void addNestedKey(PgSchemaOption option, PgTable source_table, String qname) {
 
 		if (!option.rel_model_ext)
 			return;
 
+		String xname = PgSchemaUtil.getUnqualifiedName(qname);
+
 		if (xname == null || xname.isEmpty())
 			return;
 
-		String schema_name = source_table.schema_name;
+		String schema_name = qname.contains(":") ? qname.split(":")[0]: source_table.schema_name;
 
 		if (this.schema_name.equals(schema_name) && this.xname.equals(xname))
 			return;
@@ -540,6 +579,12 @@ public class PgTable implements Serializable {
 		PgField field = new PgField();
 
 		field.xname = name + "_id";
+
+		Optional<PgField> opt = fields.stream().filter(_field -> _field.nested_key && _field.xname.equals(field.xname)).findFirst();
+
+		if (opt.isPresent())
+			return;
+
 		field.name = option.case_sense ? field.xname : PgSchemaUtil.toCaseInsensitive(field.xname);
 		field.pname = avoidFieldDuplication(option, field.xname);
 		field.setHashKeyType(option);
@@ -556,6 +601,8 @@ public class PgTable implements Serializable {
 		field.foreign_field_pname = name + "_id";
 
 		fields.add(field);
+
+		total_nested_fields++;
 
 	}
 

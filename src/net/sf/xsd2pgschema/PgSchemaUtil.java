@@ -717,6 +717,25 @@ public class PgSchemaUtil {
 	/**
 	 * Suggest new name in PostgreSQL for a given name.
 	 *
+	 * @param delimiter delimiter
+	 * @param names array of names
+	 * @return String name without name collision against PostgreSQL reserved words
+	 */
+	public static String avoidPgReservedWords(String delimiter, String[] names) {
+
+		StringBuilder sb = new StringBuilder();
+
+		for (String name : names)
+			sb.append(avoidPgReservedWords(name) + delimiter);
+
+		sb.setLength(sb.length() - delimiter.length());
+
+		return sb.toString();
+	}
+
+	/**
+	 * Suggest new name in PostgreSQL for a given name.
+	 *
 	 * @param name name
 	 * @return String name without name collision against PostgreSQL operators
 	 */

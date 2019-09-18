@@ -448,7 +448,7 @@ public class PgSchemaOption implements Serializable {
 
 		if (!discarded_document_key_names.isEmpty()) {
 
-			String[] names = discarded_document_key_names.toArray(new String[0]);
+			String[] names = discarded_document_key_names.stream().toArray(String[]::new);
 
 			discarded_document_key_names.clear();
 
@@ -459,7 +459,7 @@ public class PgSchemaOption implements Serializable {
 
 		if (!in_place_document_key_names.isEmpty()) {
 
-			String[] names = in_place_document_key_names.toArray(new String[0]);
+			String[] names = in_place_document_key_names.stream().toArray(String[]::new);
 
 			in_place_document_key_names.clear();
 

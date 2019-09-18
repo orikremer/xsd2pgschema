@@ -1,6 +1,16 @@
-﻿ Changes in xsd2pgschema 3.2.1 (release 2019-09-06)
+﻿ Changes in xsd2pgschema 3.3.0 (release 2019-09-18)
 
-  NOTICE: We recommend all users should update 3.2.1 or later.
+  NOTICE: We recommend all users should update 3.3.0 or later.
+  [Ticket #4-7] Added support for xs:simpleContent/xs:restriction and xs:complexContent/xs:restriction.
+  [Ticket #4-8] Fixed namespace misrecognition.
+  [Ticket #4-9] Resolved name collision between nested key and foreign key.
+  Improved orphan/unnecessary table’s information in PostgreSQL DDL.
+  Improved restraint information in PostgreSQL DDL.
+  Fixed absolute XPath expression of table utilized for XPath parser.
+  Fixed misrecognition of tables when in-lining simple content.
+
+ Changes in xsd2pgschema 3.2.1 (release 2019-09-06)
+
   Fixed missing primitive data type when default namespace prefix is http://www.w3.org/2001/XMLSchema.
   Dropped dead-end tables by default. Use --show-orphan-table option to verify the orphan/dead-end tables.
   Revised PostgreSQL DDL, which reports orphan/dead-end tables with their PostgreSQL named schema.

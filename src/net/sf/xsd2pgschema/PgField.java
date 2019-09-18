@@ -268,6 +268,12 @@ public class PgField implements Serializable {
 	/** The xs:explicitTimezone restriction. */
 	protected String explicit_timezone = null;
 
+	/** The xs:list/@itemType restriction. */
+	protected String _list_item_type = null;
+
+	/** The xs:union/@memberTypes restriction. */
+	protected String _union_member_types = null;
+
 	/** Whether xs:list. */
 	protected boolean _list = false;
 
@@ -423,15 +429,17 @@ public class PgField implements Serializable {
 
 				if (item_type != null && !item_type.isEmpty()) {
 					_list = true;
+					_list_item_type = item_type;
 					type = xs_prefix_ + "string";
 					return;
 				}
 
-				String mem_types = elem.getAttribute("memberTypes"); // xs:union
+				String member_types = elem.getAttribute("memberTypes"); // xs:union
 
-				if (mem_types != null && !mem_types.isEmpty()) {
+				if (member_types != null && !member_types.isEmpty()) {
 					_union = true;
-					type = mem_types;
+					_union_member_types = member_types;
+					type = member_types;
 					return;
 				}
 
@@ -479,15 +487,17 @@ public class PgField implements Serializable {
 
 					if (item_type != null && !item_type.isEmpty()) {
 						_list = true;
+						_list_item_type = item_type;
 						type = xs_prefix_ + "string";
 						return;
 					}
 
-					String mem_types = child_elem.getAttribute("memberTypes"); // xs:union
+					String member_types = child_elem.getAttribute("memberTypes"); // xs:union
 
-					if (mem_types != null && !mem_types.isEmpty()) {
+					if (member_types != null && !member_types.isEmpty()) {
 						_union = true;
-						type = mem_types;
+						_union_member_types = member_types;
+						type = member_types;
 						return;
 					}
 

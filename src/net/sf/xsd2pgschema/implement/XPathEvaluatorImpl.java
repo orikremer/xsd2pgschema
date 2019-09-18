@@ -266,7 +266,7 @@ public class XPathEvaluatorImpl {
 
 			long start_time = System.currentTimeMillis();
 
-			xpath_comp_list.path_exprs.forEach(path_expr -> {
+			xpath_comp_list.path_exprs.stream().filter(path_expr -> path_expr.sql != null).forEach(path_expr -> {
 
 				XPathCompType terminus = path_expr.terminus;
 
@@ -434,7 +434,7 @@ public class XPathEvaluatorImpl {
 
 			long start_time = System.currentTimeMillis();
 
-			xpath_comp_list.path_exprs.forEach(path_expr -> {
+			xpath_comp_list.path_exprs.stream().filter(path_expr -> path_expr.sql != null).forEach(path_expr -> {
 
 				XPathCompType terminus = path_expr.terminus;
 
@@ -553,7 +553,7 @@ public class XPathEvaluatorImpl {
 
 			long start_time = System.currentTimeMillis();
 
-			xpath_comp_list.path_exprs.forEach(path_expr -> {
+			xpath_comp_list.path_exprs.stream().filter(path_expr -> path_expr.sql != null).forEach(path_expr -> {
 
 				XPathCompType terminus = path_expr.terminus;
 
