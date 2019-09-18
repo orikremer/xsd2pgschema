@@ -1533,6 +1533,8 @@ public class PgSchema implements Serializable {
 
 		other_namespaces.clear();
 
+		// shrink orphan/unnecessary tables if possible
+
 		ArrayList<PgTable> orphan_tables = new ArrayList<PgTable>();
 		ArrayList<PgTable> unused_tables = new ArrayList<PgTable>();
 
@@ -2685,7 +2687,7 @@ public class PgSchema implements Serializable {
 				field.xanno_doc = PgSchemaUtil.extractDocumentation(node, false);
 
 			field.extractType(option, node);
-			field.extractTargetNamespace(this, node, getNamespaceUriOfFieldQName(table, name));
+			field.extractTargetNamespace(this, node, getNamespaceUriOfFieldQName(name));
 			field.extractRequired(node);
 			field.extractFixedValue(node);
 			field.extractDefaultValue(option, node);
@@ -2925,7 +2927,7 @@ public class PgSchema implements Serializable {
 							field.xanno_doc = PgSchemaUtil.extractDocumentation(child, false);
 
 						field.extractType(option, child);
-						field.extractTargetNamespace(this, child, getNamespaceUriOfFieldQName(table, ref));
+						field.extractTargetNamespace(this, child, getNamespaceUriOfFieldQName(ref));
 						field.extractRequired(child);
 						field.extractFixedValue(child);
 						field.extractDefaultValue(option, child);
@@ -3745,15 +3747,14 @@ public class PgSchema implements Serializable {
 	/**
 	 * Return namespace URI of field's qualified name.
 	 *
-	 * @param table current table
 	 * @param qname qualified name of field
 	 * @return String namespace URI
 	 */
-	private String getNamespaceUriOfFieldQName(PgTable table, String qname) {
+	private String getNamespaceUriOfFieldQName(String qname) {
 
 		String xname = PgSchemaUtil.getUnqualifiedName(qname);
 
-		return xname.equals(qname) ? def_namespace /* table.target_namespace */ : getNamespaceUriForPrefix(qname.substring(0, qname.length() - xname.length() - 1));
+		return xname.equals(qname) ? def_namespace : getNamespaceUriForPrefix(qname.substring(0, qname.length() - xname.length() - 1));
 	}
 
 	/**
