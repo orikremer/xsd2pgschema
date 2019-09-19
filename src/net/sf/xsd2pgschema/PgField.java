@@ -4579,23 +4579,28 @@ public class PgField implements Serializable {
 	 */
 	public String getJsonSchemaFormat(JsonSchemaVersion schema_ver) {
 
-		boolean latest = schema_ver.isLatest();
+		boolean draft7_or_lator = schema_ver.isDraft7OrLater();
+		boolean is_latest = schema_ver.isLatest();
 
 		switch (xs_type) {
+		case xs_duration:
+		case xs_yearMonthDuration:
+		case xs_dayTimeDuration:
+			return is_latest ? "duration" : null;
 		case xs_dateTime:
 		case xs_dateTimeStamp:
 			return "date-time";
 		case xs_time:
-			return latest ? "time" : null;
+			return draft7_or_lator ? "time" : null;
 		case xs_date:
-			return latest ? "date" : null;
+			return draft7_or_lator ? "date" : null;
 		case xs_anyURI:
 			return "uri";
 		case xs_ID:
-			return latest ? "iri" : null;
+			return draft7_or_lator ? "iri" : null;
 		case xs_IDREF:
 		case xs_IDREFS:
-			return latest ? "iri-reference" : null;
+			return draft7_or_lator ? "iri-reference" : null;
 		default:
 			return null;
 		}
@@ -4745,7 +4750,7 @@ public class PgField implements Serializable {
 		case xs_unsignedByte:
 			return value;
 		case xs_date:
-			if (schema_ver.isLatest()) {
+			if (schema_ver.isDraft7OrLater()) {
 				if (value.endsWith("Z"))
 					value = value.substring(0, value.length() - 1);
 			}
@@ -5536,7 +5541,7 @@ public class PgField implements Serializable {
 			jsonb.append(value);
 			break;
 		case xs_date:
-			if (schema_ver.isLatest()) {
+			if (schema_ver.isDraft7OrLater()) {
 				if (value.endsWith("Z"))
 					value = value.substring(0, value.length() - 1);
 			}

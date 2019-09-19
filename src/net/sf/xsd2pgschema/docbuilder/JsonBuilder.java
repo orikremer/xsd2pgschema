@@ -776,6 +776,8 @@ public class JsonBuilder extends CommonBuilder {
 			break;
 		case draft_v6:
 		case draft_v7:
+		case draft_v8:
+		case draft_2019_09:
 		case latest:
 			schema_maximum = field.getJsonSchemaMaximumValue(this);
 
@@ -897,6 +899,8 @@ public class JsonBuilder extends CommonBuilder {
 				break;
 			case draft_v6:
 			case draft_v7:
+			case draft_v8:
+			case draft_2019_09:
 			case latest:
 				if (schema_maximum != null)
 					buffer.append(_indent_spaces + schema_maximum + concat_line_feed);

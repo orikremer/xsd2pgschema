@@ -1,6 +1,7 @@
 ﻿ Changes in xsd2pgschema 3.3.1 (release 2019-09-19)
 
   Fixed an implementation that avoids virtual duplication of nested keys causing primary key errors.
+  Added support for JSON Schema Draft 2019-09 (https://tools.ietf.org/html/draft-handrews-json-schema-02).
 
  Changes in xsd2pgschema 3.3.0 (release 2019-09-18)
 

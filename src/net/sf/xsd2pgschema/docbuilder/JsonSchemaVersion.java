@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018 Masashi Yokochi
+    Copyright 2018-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -28,6 +28,10 @@ public enum JsonSchemaVersion {
 
 	/** The latest version. */
 	latest,
+	/** The draft version 2019-09 (formerly known as draft version 8). */
+	draft_2019_09,
+	/** The draft version 8. (deprecated) */
+	draft_v8,
 	/** The draft version 7. */
 	draft_v7,
 	/** The draft version 6. */
@@ -41,7 +45,7 @@ public enum JsonSchemaVersion {
 	 * @return JsonType the default JSON version
 	 */
 	public static JsonSchemaVersion defaultVersion() {
-		return draft_v7;
+		return draft_2019_09;
 	}
 
 	/**
@@ -52,7 +56,12 @@ public enum JsonSchemaVersion {
 	 */
 	public static JsonSchemaVersion getVersion(String name) {
 
-		name = name.toLowerCase().replace("-0", "_v").replace('-', '_');
+		name = name.toLowerCase().replaceFirst("^draft?", "").replaceAll("\\-", "_");
+
+		if (name.matches("^_0[0-9]$"))
+			name = name.replace("_0", "_v");
+
+		name = "draft" + (name.startsWith("_") ? "" : "_") + name;
 
 		for (JsonSchemaVersion schema_ver : values()) {
 
@@ -78,6 +87,9 @@ public enum JsonSchemaVersion {
 			return "http://json-schema.org/draft-06/schema#";
 		case draft_v7:
 			return "http://json-schema.org/draft-07/schema#";
+		case draft_v8:
+		case draft_2019_09:
+			return "https://json-schema.org/draft/2019-09/schema#";
 		default:
 			return "http://json-schema.org/schema#";
 		}
@@ -90,7 +102,16 @@ public enum JsonSchemaVersion {
 	 * @return boolean whether JSON Schema version is latest
 	 */
 	public boolean isLatest() {
-		return this.equals(latest) || this.equals(defaultVersion());
+		return this.equals(draft_v8) || this.equals(defaultVersion()) || this.equals(latest);
+	}
+
+	/**
+	 * Return whether JSON Schema version is draft 7 or later.
+	 *
+	 * @return boolean whether JSON Schema version is draft 7 or later
+	 */
+	public boolean isDraft7OrLater() {
+		return isLatest() || this.equals(draft_v7);
 	}
 
 }

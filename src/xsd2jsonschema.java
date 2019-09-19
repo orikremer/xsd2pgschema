@@ -193,7 +193,7 @@ public class xsd2jsonschema {
 
 		System.err.println("xsd2jsonschema: XML Schema -> JSON Schema conversion");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --json JSON_SCHEMA_FILE (default=stdout)");
-		System.err.println("        --schema-ver JSON_SCHEMA_VER (choose from \"draft_v7\" (default), \"draft_v6\", \"draft_v4\", or \"latest\" as \"" + JsonSchemaVersion.defaultVersion().toString() + "\")");
+		System.err.println("        --schema-ver JSON_SCHEMA_VER (choose from \"2019_09\" (default), \"draft_v8\", \"draft_v7\", \"draft_v6\", \"draft_v4\", or \"latest\" as \"" + JsonSchemaVersion.defaultVersion().toString().replaceAll("draft_", "") + "\")");
 		System.err.println("        --obj-json (use object-oriented JSON format)");
 		System.err.println("        --col-json (use column-oriented JSON format, default)");
 		System.err.println("        --rel-json (use relational-oriented JSON format)");
