@@ -371,7 +371,7 @@ public class PgTable implements Serializable {
 					continue;
 
 				if (field.pname.equals(field_name)) {
-					
+
 					if (field.nested_key)
 						break;
 
@@ -543,10 +543,10 @@ public class PgTable implements Serializable {
 			fields.set(fields.indexOf(known_field), field);
 
 			return known_field.maxoccurs.equals("1");
-
 		}
 
 		fields.add(field);
+
 		total_nested_fields++;
 
 		return field.maxoccurs.equals("1");

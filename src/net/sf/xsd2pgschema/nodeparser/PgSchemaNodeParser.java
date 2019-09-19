@@ -228,9 +228,10 @@ public abstract class PgSchemaNodeParser {
 	 *
 	 * @param node current node
 	 * @param field current field
+	 * @param append whether to append effective nested key or not (dryrun)
 	 * @return String nested key name, null if invalid
 	 */
-	protected String setNestedKey(final Node node, final PgField field) {
+	protected String setNestedKey(final Node node, final PgField field, boolean append) {
 
 		if (table.has_path_restriction) {
 
@@ -260,9 +261,19 @@ public abstract class PgSchemaNodeParser {
 		if (!nested_table.virtual && !field.nested_key_as_attr && !existsNestedNode(node, nested_table))
 			return null;
 
+		if (field.delegated_sibling_key_name != null) {
+
+			PgField _field = table.getField(field.delegated_sibling_key_name);
+
+			if (_field != null && setNestedKey(node, _field, false) != null)
+				return null;
+
+		}
+
 		PgSchemaNestedKey nested_key = new PgSchemaNestedKey(nested_table, field, current_key);
 
-		nested_keys.add(nested_key);
+		if (append)
+			nested_keys.add(nested_key);
 
 		return nested_key.current_key;
 	}

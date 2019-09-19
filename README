@@ -1,4 +1,8 @@
-﻿ Changes in xsd2pgschema 3.3.0 (release 2019-09-18)
+﻿ Changes in xsd2pgschema 3.3.1 (release 2019-09-19)
+
+  Fixed an implementation that avoids virtual duplication of nested keys causing primary key errors.
+
+ Changes in xsd2pgschema 3.3.0 (release 2019-09-18)
 
   NOTICE: We recommend all users should update 3.3.0 or later.
   [Ticket #4-7] Added support for xs:simpleContent/xs:restriction and xs:complexContent/xs:restriction.

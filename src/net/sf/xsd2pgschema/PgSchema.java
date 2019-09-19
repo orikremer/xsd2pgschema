@@ -834,9 +834,35 @@ public class PgSchema implements Serializable {
 			}
 
 		});
-		/*
+
 		// avoid virtual duplication of nested key
 
+		tables.parallelStream().filter(table -> table.total_nested_fields > 1).forEach(table -> {
+
+			table.fields.stream().filter(field -> field.nested_key && !field.nested_key_as_attr).forEach(field -> {
+
+				PgTable foreign_table = getForeignTable(field);
+
+				List<PgField> _fields = table.fields.stream().filter(_field -> _field.nested_key && !_field.nested_key_as_attr && !_field.equals(field)).collect(Collectors.toList());
+
+				for (PgField _field : _fields) {
+
+					PgTable _foreign_table = getForeignTable(_field);
+
+					if (_foreign_table.total_nested_fields > 0 && _foreign_table.virtual && _foreign_table.fields.stream().anyMatch(__field -> __field.nested_key && getForeignTable(__field).equals(foreign_table))) {
+
+						_field.delegated_sibling_key_name = field.name;
+
+						break;
+					}
+
+				}
+
+			});
+
+		});
+
+		/*
 		tables.parallelStream().forEach(table -> {
 
 			Iterator<PgField> iterator = table.fields.iterator(), _iterator;
@@ -4594,7 +4620,7 @@ public class PgSchema implements Serializable {
 				if (field.nested_key_as_attr)
 					System.out.println("-- NESTED KEY AS ATTRIBUTE : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(" OR ", field.delegated_field_pname.split(" ")) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
 				else
-					System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(" OR ", field.delegated_field_pname.split(" ")) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
+					System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(" OR ", field.delegated_field_pname.split(" ")) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : "") + (field.delegated_sibling_key_name != null ? ", DELEGATED SIBLING KEY NAME : " + field.delegated_sibling_key_name : ""));
 
 			}
 

@@ -199,6 +199,9 @@ public class PgField implements Serializable {
 	/** The delegated field name in PostgreSQL. */
 	public String delegated_field_pname = null;
 
+	/** The delegated sibling key name. */
+	public String delegated_sibling_key_name = null;
+
 	/** The concatenated ancestor node names. */
 	public String ancestor_node = null;
 
