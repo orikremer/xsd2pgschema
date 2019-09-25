@@ -1074,7 +1074,7 @@ public class XmlBuilder extends CommonBuilder {
 			}
 
 			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
-			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1;
+			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1 || table.total_nested_fields > 1;
 			boolean attr_only;
 
 			PreparedStatement ps = table.ps;

@@ -2273,7 +2273,7 @@ public class JsonBuilder extends CommonBuilder {
 				pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
 
 			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
-			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1;
+			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1 || table.total_nested_fields > 1;
 
 			PreparedStatement ps = table.ps;
 
