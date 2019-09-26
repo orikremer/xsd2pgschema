@@ -345,7 +345,7 @@ public class xpath2json {
 
 		JsonBuilderOption jsonb_option = new JsonBuilderOption();
 
-		System.err.println("xpath2json: XPath 1.0 qeury evaluation to JSON over PostgreSQL");
+		System.err.println("xpath2json: XPath 1.0 query evaluation to JSON over PostgreSQL");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --db-name DATABASE --db-user USER --db-pass PASSWORD (default=\"\")");
 		System.err.println("        --db-host PG_HOST_NAME (default=\"" + PgSchemaUtil.pg_host + "\")");
 		System.err.println("        --db-port PG_PORT_NUMBER (default=" + PgSchemaUtil.pg_port + ")");
