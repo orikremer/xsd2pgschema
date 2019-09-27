@@ -1006,30 +1006,36 @@ public class PgSchema implements Serializable {
 
 							if (parent_field.foreign_key) {
 
-								has_foreign_key = true;
+								PgTable ancestor_table = getCanTable(parent_field.foreign_schema, parent_field.foreign_table_xname);
 
-								if (field.parent_node == null)
-									field.parent_node = parent_field.foreign_table_xname;
+								if (!ancestor_table.virtual) {
 
-								else {
+									has_foreign_key = true;
 
-									String[] _parent_nodes = field.parent_node.split(" ");
+									if (field.parent_node == null)
+										field.parent_node = parent_field.foreign_table_xname;
 
-									boolean has_parent_node = false;
+									else {
 
-									for (String _parent_node : _parent_nodes) {
+										String[] _parent_nodes = field.parent_node.split(" ");
 
-										if (_parent_node.equals(parent_field.foreign_table_xname)) {
+										boolean has_parent_node = false;
 
-											has_parent_node = true;
+										for (String _parent_node : _parent_nodes) {
 
-											break;
+											if (_parent_node.equals(parent_field.foreign_table_xname)) {
+
+												has_parent_node = true;
+
+												break;
+											}
+
 										}
 
-									}
+										if (!has_parent_node)
+											field.parent_node += " " + parent_field.foreign_table_xname;
 
-									if (!has_parent_node)
-										field.parent_node += " " + parent_field.foreign_table_xname;
+									}
 
 								}
 
@@ -2228,7 +2234,7 @@ public class PgSchema implements Serializable {
 				level++;
 
 				if (!name.contains(":"))
-					dummy.type = name;
+					dummy.type = dummy.xtype = name;
 
 				PgTable child_table = new PgTable(getPgSchemaOf(getNamespaceUriOfQName(dummy.type)), getNamespaceUriOfQName(dummy.type), def_schema_location);
 
@@ -3324,13 +3330,84 @@ public class PgSchema implements Serializable {
 
 			child_elem = (Element) child;
 
-			if (child_elem.getLocalName().equals("extension") || child_elem.getLocalName().equals("restriction")) {
+			if (child_elem.getLocalName().equals("extension") || child_elem.getLocalName().equals("restriction"))
+				extractComplexContentType(child, table);
 
-				table.addNestedKey(option, table, child_elem.getAttribute("base"));
+		}
 
-				extractComplexContentExt(child, table);
+	}
 
-			}
+	/**
+	 * Extract complex content type.
+	 *
+	 * @param node current node
+	 * @param table root table
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void extractComplexContentType(Node node, PgTable table) throws PgSchemaException {
+
+		String name = ((Element) node).getAttribute("base");
+
+		if (name == null || name.isEmpty())
+			return;
+
+		PgField dummy = new PgField();
+
+		dummy.type = dummy.xtype = name;
+
+		String[] type = dummy.type.contains(" ") ? dummy.type.split(" ")[0].split(":") : dummy.type.split(":");
+
+		// primitive data type
+
+		if (type.length != 0 && (type[0].equals(option.xs_prefix) || (type.length == 1 && option.xs_prefix.isEmpty()))) { // nothing to do
+
+			if (option.ddl_output)
+				root_schema.pg_inline_simple_types.add((option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(table.pname));
+
+		}
+
+		// non-primitive data type
+
+		else {
+
+			level++;
+
+			PgTable child_table = new PgTable(getPgSchemaOf(getNamespaceUriOfQName(dummy.type)), getNamespaceUriOfQName(dummy.type), def_schema_location);
+
+			String child_name = name;
+
+			child_table.xname = PgSchemaUtil.getUnqualifiedName(child_name);
+			child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
+
+			child_table.xs_type = XsTableType.xs_admin_root;
+
+			boolean unique_key = table.addNestedKey(option, child_table, PgSchemaUtil.getUnqualifiedName(name), dummy, node);
+
+			table.required = child_table.required = true;
+
+			if ((child_table.anno = PgSchemaUtil.extractAnnotation(node, true)) != null)
+				child_table.xanno_doc = PgSchemaUtil.extractDocumentation(node, false);
+
+			child_table.fields = new ArrayList<PgField>();
+
+			child_table.level = level;
+
+			child_table.addPrimaryKey(option, unique_key);
+			child_table.addForeignKey(option, table, table);
+
+			if (!child_table.addNestedKey(option, table, PgSchemaUtil.getUnqualifiedName(dummy.type), dummy, node))
+				child_table.cancelUniqueKey();
+
+			child_table.removeProhibitedAttrs();
+			child_table.removeBlockedSubstitutionGroups();
+			child_table.countNestedFields();
+
+			if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
+				tables.add(child_table);
+
+			extractComplexContentExt(node, table);
+
+			level--;
 
 		}
 

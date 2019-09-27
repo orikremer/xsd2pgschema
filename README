@@ -1,4 +1,10 @@
-﻿ Changes in xsd2pgschema 3.3.2 (release 2019-09-25)
+﻿ Changes in xsd2pgschema 3.3.3 (release 2019-09-27)
+
+  NOTICE: We recommend all users should update 3.3.3 or later.
+  Fixed missing of data in administrative xs:complexContent.
+  Fixed invalid parent node causing missing of data.
+
+ Changes in xsd2pgschema 3.3.2 (release 2019-09-25)
 
   Fixed infinite loop while XPath evaluation in some cases.
 
@@ -9,7 +15,6 @@
 
  Changes in xsd2pgschema 3.3.0 (release 2019-09-18)
 
-  NOTICE: We recommend all users should update 3.3.0 or later.
   [Ticket #4-7] Added support for xs:simpleContent/xs:restriction and xs:complexContent/xs:restriction.
   [Ticket #4-8] Fixed namespace misrecognition.
   [Ticket #4-9] Resolved name collision between nested key and foreign key.
