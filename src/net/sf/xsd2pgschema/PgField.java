@@ -208,11 +208,17 @@ public class PgField implements Serializable {
 	/** The concatenated parent node names. */
 	public String parent_node = null;
 
+	/** The child node names. */
+	public String child_node = null;
+
 	/** The array of ancestor node name. */
 	public String[] ancestor_nodes = null;
 
 	/** The array of parent node name. */
 	public String[] parent_nodes = null;
+
+	/** The array of child node name. */
+	public String[] child_nodes = null;
 
 	/** The @fixed. */
 	protected String fixed_value = null;

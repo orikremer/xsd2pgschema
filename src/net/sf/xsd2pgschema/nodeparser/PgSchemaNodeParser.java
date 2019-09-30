@@ -258,14 +258,18 @@ public abstract class PgSchemaNodeParser {
 
 		PgTable nested_table = npb.schema.getTable(field.foreign_table_id);
 
-		if (!nested_table.virtual && !field.nested_key_as_attr && !existsNestedNode(node, nested_table))
-			return null;
+		if (!field.nested_key_as_attr) {
 
-		if (field.delegated_sibling_key_name != null) {
+			if (field.delegated_sibling_key_name != null) {
 
-			PgField _field = table.getField(field.delegated_sibling_key_name);
+				PgField _field = table.getField(field.delegated_sibling_key_name);
 
-			if (_field != null && setNestedKey(node, _field, false) != null)
+				if (_field != null && setNestedKey(node, _field, false) != null)
+					return null;
+
+			}
+
+			else if (!existsNestedNode(node, field))
 				return null;
 
 		}
@@ -276,6 +280,37 @@ public abstract class PgSchemaNodeParser {
 			nested_keys.add(nested_key);
 
 		return nested_key.current_key;
+	}
+
+	/**
+	 * Return whether nested node exists.
+	 *
+	 * @param node current node
+	 * @param nested_field nested field
+	 * @return boolean whether nested node exists
+	 */
+	private boolean existsNestedNode(final Node node, final PgField nested_field) {
+
+		if (nested_field.child_node == null)
+			return true;
+
+		String[] child_nodes = nested_field.child_nodes;
+
+		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
+			for (String child_node : child_nodes) {
+
+				if (((Element) child).getLocalName().equals(child_node))
+					return true;
+
+			}
+
+		}
+
+		return false;
 	}
 
 	/**

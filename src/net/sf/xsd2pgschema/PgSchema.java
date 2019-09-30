@@ -1179,6 +1179,32 @@ public class PgSchema implements Serializable {
 
 		});
 
+		// decide child node name constraint
+
+		tables.parallelStream().filter(table -> table.total_nested_fields > 0).forEach(table -> {
+
+			table.fields.stream().filter(field -> field.nested_key && !field.nested_key_as_attr && field.delegated_sibling_key_name == null).forEach(field -> {
+
+				HashSet<String> child_tables = new HashSet<String>();
+				HashSet<String> child_nodes = new HashSet<String>();
+
+				extractChildNodeName(field, child_tables, child_nodes);
+
+				child_tables.clear();
+
+				if (child_nodes.size() > 0) {
+
+					field.child_node = String.join(" ", child_nodes);
+					field.child_nodes = child_nodes.stream().toArray(String[]::new);
+
+					child_nodes.clear();
+
+				}
+
+			});
+
+		});
+
 		// update requirement flag due to foreign key
 
 		foreign_keys.forEach(foreign_key -> {
@@ -3721,6 +3747,30 @@ public class PgSchema implements Serializable {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Extract child node name of nested key.
+	 *
+	 * @param field field of nested key
+	 * @param child_tables visited child table names
+	 * @param child_nodes extracted child node names
+	 */
+	private void extractChildNodeName(PgField field, HashSet<String> child_tables, HashSet<String> child_nodes) {
+
+		PgTable nested_table = getForeignTable(field);
+
+		if (child_tables.contains(nested_table.xname))
+			return;
+
+		child_tables.add(nested_table.xname);
+
+		if (!nested_table.virtual)
+			child_nodes.add(nested_table.xname);
+
+		else if (nested_table.total_nested_fields > 0 && !nested_table.content_holder)
+			nested_table.fields.stream().filter(nested_field -> nested_field.nested_key && !nested_field.nested_key_as_attr && nested_field.delegated_sibling_key_name == null).forEach(nested_field -> extractChildNodeName(nested_field, child_tables, child_nodes));
+
 	}
 
 	/**
