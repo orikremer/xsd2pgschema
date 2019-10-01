@@ -251,6 +251,9 @@ public abstract class PgSchemaNodeParser {
 			if (table.has_simple_content && !node.hasAttributes())
 				return null;
 
+			if (field.delegated_field_pname != null && ((Element) node).getAttribute(field.foreign_table_xname).isEmpty())
+				return null;
+
 		}
 
 		else if (table.has_nested_key_to_simple_attr && current_key.contains("@"))

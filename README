@@ -1,9 +1,11 @@
-﻿ Changes in xsd2pgschema 3.3.3 (release 2019-09-30)
+﻿ Changes in xsd2pgschema 3.3.3 (release 2019-10-01)
 
   NOTICE: We recommend all users should update 3.3.3 or later.
   Fixed missing of data in administrative xs:complexContent.
   Fixed invalid parent node name constraint causing missing of data.
   Revised implementation of child node name constraint.
+  Revised restraint information in PostgreSQL DDL.
+  Improved attribute existence check for nested key as attribute.
 
  Changes in xsd2pgschema 3.3.2 (release 2019-09-25)
 

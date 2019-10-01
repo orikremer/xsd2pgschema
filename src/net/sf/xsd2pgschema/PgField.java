@@ -925,7 +925,7 @@ public class PgField implements Serializable {
 	}
 
 	/**
-	 * Extract xs:restriction/xs:enumeration@value.
+	 * Extract xs:restriction/xs:enumeration/@value.
 	 *
 	 * @param option PostgreSQL data model option
 	 * @param node current node
@@ -1100,7 +1100,7 @@ public class PgField implements Serializable {
 	}
 
 	/**
-	 * Extract xs:restriction/xs:any@value.
+	 * Extract xs:restriction/xs:any/@value.
 	 *
 	 * @param node current node
 	 */

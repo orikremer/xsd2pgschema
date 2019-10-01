@@ -1085,7 +1085,7 @@ public class PgSchema implements Serializable {
 				HashSet<String> visited_tables = new HashSet<String>();
 				LinkedHashSet<String> _child_nodes = new LinkedHashSet<String>();
 
-				extractChildNodeNameConst(field, visited_tables, _child_nodes);
+				extractChildNodeNameConstraint(field, visited_tables, _child_nodes);
 
 				visited_tables.clear();
 
@@ -1488,7 +1488,7 @@ public class PgSchema implements Serializable {
 
 		other_namespaces.clear();
 
-		// shrink orphan/unnecessary tables if possible
+		// shrink orphan/unused tables if possible
 
 		ArrayList<PgTable> orphan_tables = new ArrayList<PgTable>();
 		ArrayList<PgTable> unused_tables = new ArrayList<PgTable>();
@@ -3653,7 +3653,7 @@ public class PgSchema implements Serializable {
 	 * @param visited_tables visited table names
 	 * @param _child_nodes child node name constraint
 	 */
-	private void extractChildNodeNameConst(PgField field, HashSet<String> visited_tables, LinkedHashSet<String> _child_nodes) {
+	private void extractChildNodeNameConstraint(PgField field, HashSet<String> visited_tables, LinkedHashSet<String> _child_nodes) {
 
 		PgTable foreign_table = getForeignTable(field);
 
@@ -3666,7 +3666,7 @@ public class PgSchema implements Serializable {
 			_child_nodes.add(foreign_table.xname);
 
 		else if (foreign_table.total_nested_fields > 0 && !foreign_table.content_holder)
-			foreign_table.fields.stream().filter(foreign_field -> foreign_field.nested_key && !foreign_field.nested_key_as_attr && foreign_field.delegated_sibling_key_name == null).forEach(foreign_field -> extractChildNodeNameConst(foreign_field, visited_tables, _child_nodes));
+			foreign_table.fields.stream().filter(foreign_field -> foreign_field.nested_key && !foreign_field.nested_key_as_attr && foreign_field.delegated_sibling_key_name == null).forEach(foreign_field -> extractChildNodeNameConstraint(foreign_field, visited_tables, _child_nodes));
 
 	}
 
@@ -4749,51 +4749,51 @@ public class PgSchema implements Serializable {
 				System.out.println("-- xmlns: " + field.target_namespace + " (" + getPrefixOf(field.target_namespace, "n.d.") + ")");
 
 			if (field._list)
-				System.out.println("-- " + option.xs_prefix_ + "line/@itemType: " + field._list_item_type);
+				System.out.println("-- " + option.xs_prefix_ + "line/@itemType=\"" + field._list_item_type + "\"");
 
 			if (field._union)
-				System.out.println("-- " + option.xs_prefix_ + "union/@memeberTypes: " + field._union_member_types);
+				System.out.println("-- " + option.xs_prefix_ + "union/@memeberTypes=\"" + field._union_member_types + "\"");
 
 			if (field.restriction) {
 
 				if (field.length != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "length: " + field.length);
+					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "length=\"" + field.length + "\"");
 
 				if (field.min_length != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minLength: " + field.min_length);
+					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minLength=\"" + field.min_length + "\"");
 
 				if (field.max_length != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxLength: " + field.max_length);
+					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxLength=\"" + field.max_length + "\"");
 
 				if (field.pattern != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "pattern: " + field.pattern);		
+					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "pattern=\"" + field.pattern + "\"");
 
 				if (field.max_inclusive != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxInclusive: " + field.max_inclusive);
+					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxInclusive=\"" + field.max_inclusive + "\"");
 
 				if (field.max_exclusive != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxInclusive: " + field.max_exclusive);
+					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxInclusive=\"" + field.max_exclusive + "\"");
 
 				if (field.min_exclusive != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minInclusive: " + field.min_exclusive);
+					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minInclusive=\"" + field.min_exclusive + "\"");
 
 				if (field.min_inclusive != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minInclusive: " + field.min_inclusive);
+					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minInclusive=\"" + field.min_inclusive + "\"");
 
 				if (field.total_digits != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "totalDigits: " + field.total_digits);
+					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "totalDigits=\"" + field.total_digits + "\"");
 
 				if (field.fraction_digits != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "fractionDigits: " + field.fraction_digits);
+					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "fractionDigits=\"" + field.fraction_digits + "\"");
 
 				if (field.white_space != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "witeSpace: " + field.white_space);
+					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "witeSpace=\"" + field.white_space + "\"");
 
 				if (field.explicit_timezone != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "explicitTimezone: " + field.explicit_timezone);
+					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "explicitTimezone=\"" + field.explicit_timezone + "\"");
 
 				if (field.assertions != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "assertions: " + field.assertions);
+					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "assertions=\"" + field.assertions + "\"");
 
 			}
 
