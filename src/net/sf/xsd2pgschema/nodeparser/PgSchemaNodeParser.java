@@ -269,7 +269,7 @@ public abstract class PgSchemaNodeParser {
 
 			}
 
-			else if (!existsNestedNode(node, field))
+			else if (!existsNestedNode(node, field.child_nodes))
 				return null;
 
 		}
@@ -286,15 +286,13 @@ public abstract class PgSchemaNodeParser {
 	 * Return whether nested node exists.
 	 *
 	 * @param node current node
-	 * @param nested_field nested field
+	 * @param child_nodes array of child node name constraints
 	 * @return boolean whether nested node exists
 	 */
-	private boolean existsNestedNode(final Node node, final PgField nested_field) {
+	private boolean existsNestedNode(final Node node, final String[] child_nodes) {
 
-		if (nested_field.child_node == null)
+		if (child_nodes == null)
 			return true;
-
-		String[] child_nodes = nested_field.child_nodes;
 
 		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 

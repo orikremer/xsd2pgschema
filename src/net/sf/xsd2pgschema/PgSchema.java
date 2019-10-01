@@ -36,6 +36,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -775,7 +776,7 @@ public class PgSchema implements Serializable {
 
 							// detect simple content as attribute
 
-							if (field.nested_key_as_attr) { // && foreign_table.has_simple_content) { // do not test table.has_simple_content because table.classify() has not been completed
+							if (field.nested_key_as_attr) { // do not test table.has_simple_content because table.classify() has not been completed
 
 								foreign_table.fields.stream().filter(foreign_field -> foreign_field.simple_content).forEach(foreign_field -> {
 
@@ -843,15 +844,15 @@ public class PgSchema implements Serializable {
 
 				PgTable foreign_table = getForeignTable(field);
 
-				List<PgField> _fields = table.fields.stream().filter(_field -> _field.nested_key && !_field.nested_key_as_attr && !_field.equals(field)).collect(Collectors.toList());
+				List<PgField> foreign_fields = table.fields.stream().filter(foreign_field -> foreign_field.nested_key && !foreign_field.nested_key_as_attr && !foreign_field.equals(field)).collect(Collectors.toList());
 
-				for (PgField _field : _fields) {
+				for (PgField foreign_field : foreign_fields) {
 
-					PgTable _foreign_table = getForeignTable(_field);
+					PgTable _foreign_table = getForeignTable(foreign_field);
 
-					if (_foreign_table.total_nested_fields > 0 && _foreign_table.virtual && _foreign_table.fields.stream().anyMatch(__field -> __field.nested_key && getForeignTable(__field).equals(foreign_table))) {
+					if (_foreign_table.total_nested_fields > 0 && _foreign_table.virtual && _foreign_table.fields.stream().anyMatch(_foreign_field -> _foreign_field.nested_key && getForeignTable(_foreign_field).equals(foreign_table))) {
 
-						_field.delegated_sibling_key_name = field.name;
+						foreign_field.delegated_sibling_key_name = field.name;
 
 						break;
 					}
@@ -862,83 +863,18 @@ public class PgSchema implements Serializable {
 
 		});
 
-		/*
-		tables.parallelStream().forEach(table -> {
-
-			Iterator<PgField> iterator = table.fields.iterator(), _iterator;
-
-			PgField field, _field;
-			PgTable nested_table, _nested_table;
-			boolean changed;
-
-			while (iterator.hasNext()) {
-
-				field = iterator.next();
-
-				if (!field.nested_key)
-					continue;
-
-				nested_table = getForeignTable(field);
-
-				if (nested_table.virtual)
-					continue;
-
-				changed = false;
-
-				_iterator = table.fields.iterator();
-
-				while (_iterator.hasNext()) {
-
-					_field = _iterator.next();
-
-					if (!_field.nested_key)
-						continue;
-
-					if (_field.equals(field))
-						continue;
-
-					_nested_table = getForeignTable(_field);
-
-					if (!_nested_table.virtual)
-						continue;
-
-					for (PgField __field : _nested_table.fields) {
-
-						if (!__field.nested_key)
-							continue;
-
-						if (field.foreign_key == __field.foreign_key) {
-
-							changed = true;
-
-							iterator.remove();
-
-							break;
-						}
-
-					}
-
-					if (changed)
-						break;
-
-				}
-
-			}
-
-		});
-		 */
 		// append annotation of nested tables if possible
 
 		tables.stream().filter(table -> table.virtual && table.anno != null).forEach(table -> {
 
 			table.fields.stream().filter(field -> field.nested_key).forEach(field -> {
 
-				PgTable nested_table = getForeignTable(field);
+				PgTable foreign_table = getForeignTable(field);
 
-				if (nested_table != null && nested_table.anno == null) {
+				if (foreign_table != null && foreign_table.anno == null) {
 
-					nested_table.anno = "(quoted from " + table.pname + ")\n-- " + table.anno;
-					nested_table.xanno_doc = "(quoted from " + table.pname + ")\n" + table.xanno_doc;
+					foreign_table.anno = "(quoted from " + table.pname + ")\n-- " + table.anno;
+					foreign_table.xanno_doc = "(quoted from " + table.pname + ")\n" + table.xanno_doc;
 
 				}
 
@@ -1092,7 +1028,7 @@ public class PgSchema implements Serializable {
 
 			if (opt.isPresent()) {
 
-				Optional<PgField> opt2 = getForeignTable(opt.get()).fields.stream().filter(nested_field -> nested_field.nested_key && getForeignTable(nested_field).equals(table)).findFirst();
+				Optional<PgField> opt2 = getForeignTable(opt.get()).fields.stream().filter(foreign_field -> foreign_field.nested_key && getForeignTable(foreign_field).equals(table)).findFirst();
 
 				if (opt2.isPresent())
 					field.ancestor_node = opt2.get().parent_node;
@@ -1103,49 +1039,22 @@ public class PgSchema implements Serializable {
 
 		tables.parallelStream().filter(table -> table.total_foreign_fields == 0 && table.total_nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null && field.ancestor_node == null).forEach(field -> {
 
-			StringBuilder sb = new StringBuilder();
+			HashSet<String> _ancestor_nodes = new HashSet<String>();
 
 			tables.stream().filter(ancestor_table -> ancestor_table.total_nested_fields > 0).forEach(ancestor_table -> {
 
 				Optional<PgField> opt = ancestor_table.fields.stream().filter(ancestor_field -> ancestor_field.nested_key && getForeignTable(ancestor_field).equals(table) && ancestor_field.xtype.equals(field.xtype) && ancestor_field.ancestor_node != null).findFirst();
 
-				if (opt.isPresent()) {
-
-					String[] ancestor_nodes = opt.get().ancestor_node.split(" ");
-
-					String[] _ancestor_nodes = sb.toString().split(" ");
-
-					boolean has_ancestor_node;
-
-					for (String ancestor_node : ancestor_nodes) {
-
-						has_ancestor_node = false;
-
-						for (String _ancestor_node : _ancestor_nodes) {
-
-							if (_ancestor_node.equals(ancestor_node)) {
-
-								has_ancestor_node = true;
-
-								break;
-							}
-
-						}
-
-						if (!has_ancestor_node)
-							sb.append(ancestor_node + " ");
-
-					}
-
-				}
+				if (opt.isPresent())
+					Collections.addAll(_ancestor_nodes, opt.get().ancestor_node.split(" "));
 
 			});
 
-			if (sb.length() > 0) {
+			if (_ancestor_nodes.size() > 0) {
 
-				field.ancestor_node = sb.substring(0, sb.length() - 1);
+				field.ancestor_node = String.join(" ", _ancestor_nodes);
 
-				sb.setLength(0);
+				_ancestor_nodes.clear();
 
 			}
 
@@ -1194,7 +1103,7 @@ public class PgSchema implements Serializable {
 
 				if (child_nodes.size() > 0) {
 
-					field.child_node = String.join(" ", child_nodes);
+					// field.child_node = String.join(" ", child_nodes);
 					field.child_nodes = child_nodes.stream().toArray(String[]::new);
 
 					child_nodes.clear();
@@ -1859,7 +1768,7 @@ public class PgSchema implements Serializable {
 
 		realize();
 
-		// never change to access, set null for serialization
+		// never chance to access, set null for serialization
 
 		root_schema = null;
 
@@ -3758,18 +3667,18 @@ public class PgSchema implements Serializable {
 	 */
 	private void extractChildNodeName(PgField field, HashSet<String> child_tables, HashSet<String> child_nodes) {
 
-		PgTable nested_table = getForeignTable(field);
+		PgTable foreign_table = getForeignTable(field);
 
-		if (child_tables.contains(nested_table.xname))
+		if (child_tables.contains(foreign_table.xname))
 			return;
 
-		child_tables.add(nested_table.xname);
+		child_tables.add(foreign_table.xname);
 
-		if (!nested_table.virtual)
-			child_nodes.add(nested_table.xname);
+		if (!foreign_table.virtual)
+			child_nodes.add(foreign_table.xname);
 
-		else if (nested_table.total_nested_fields > 0 && !nested_table.content_holder)
-			nested_table.fields.stream().filter(nested_field -> nested_field.nested_key && !nested_field.nested_key_as_attr && nested_field.delegated_sibling_key_name == null).forEach(nested_field -> extractChildNodeName(nested_field, child_tables, child_nodes));
+		else if (foreign_table.total_nested_fields > 0 && !foreign_table.content_holder)
+			foreign_table.fields.stream().filter(foreign_field -> foreign_field.nested_key && !foreign_field.nested_key_as_attr && foreign_field.delegated_sibling_key_name == null).forEach(foreign_field -> extractChildNodeName(foreign_field, child_tables, child_nodes));
 
 	}
 
@@ -4344,10 +4253,6 @@ public class PgSchema implements Serializable {
 
 			if (!pg_named_schema.isEmpty()) {
 
-				// short of memory in case of huge database
-				// pg_named_schema.forEach(named_schema -> System.out.println("DROP SCHEMA IF EXISTS " + PgSchemaUtil.avoidPgReservedWords(named_schema) + " CASCADE;"));
-				// System.out.println("");
-
 				pg_named_schema.forEach(named_schema -> System.out.println("CREATE SCHEMA IF NOT EXISTS " + PgSchemaUtil.avoidPgReservedWords(named_schema) + ";"));
 
 				System.out.print("\nSET search_path TO ");
@@ -4535,7 +4440,9 @@ public class PgSchema implements Serializable {
 		// append foreign key constraint
 
 		boolean relational;
+
 		PgTable child_table, parent_table;
+
 		String constraint_name;
 		String[] child_field_pnames, parent_field_pnames;
 

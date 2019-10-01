@@ -2,7 +2,7 @@
 
   NOTICE: We recommend all users should update 3.3.3 or later.
   Fixed missing of data in administrative xs:complexContent.
-  Fixed invalid parent node causing missing of data.
+  Fixed invalid parent node name constraint causing missing of data.
   Revised implementation of child node name constraint.
 
  Changes in xsd2pgschema 3.3.2 (release 2019-09-25)
