@@ -41,6 +41,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -918,6 +919,8 @@ public class PgSchema implements Serializable {
 
 				String[] parent_nodes = field.parent_node.split(" ");
 
+				LinkedHashSet<String> _parent_nodes = new LinkedHashSet<String>();
+
 				field.parent_node = null;
 
 				boolean infinite_loop = false, has_content, has_foreign_key;
@@ -946,32 +949,9 @@ public class PgSchema implements Serializable {
 
 								if (!ancestor_table.virtual) {
 
+									_parent_nodes.add(parent_field.foreign_table_xname);
+
 									has_foreign_key = true;
-
-									if (field.parent_node == null)
-										field.parent_node = parent_field.foreign_table_xname;
-
-									else {
-
-										String[] _parent_nodes = field.parent_node.split(" ");
-
-										boolean has_parent_node = false;
-
-										for (String _parent_node : _parent_nodes) {
-
-											if (_parent_node.equals(parent_field.foreign_table_xname)) {
-
-												has_parent_node = true;
-
-												break;
-											}
-
-										}
-
-										if (!has_parent_node)
-											field.parent_node += " " + parent_field.foreign_table_xname;
-
-									}
 
 								}
 
@@ -1005,7 +985,7 @@ public class PgSchema implements Serializable {
 
 						if (parent_table.equals(_parent_table)) { // escape from infinite loop
 
-							field.parent_node = null;
+							_parent_nodes.clear();
 
 							infinite_loop = true;
 
@@ -1013,6 +993,14 @@ public class PgSchema implements Serializable {
 						}
 
 					} while (!has_content && !has_foreign_key && !infinite_loop);
+
+				}
+
+				if (_parent_nodes.size() > 0) {
+
+					field.parent_node = String.join(" ", _parent_nodes);
+
+					_parent_nodes.clear();
 
 				}
 
@@ -1039,7 +1027,7 @@ public class PgSchema implements Serializable {
 
 		tables.parallelStream().filter(table -> table.total_foreign_fields == 0 && table.total_nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null && field.ancestor_node == null).forEach(field -> {
 
-			HashSet<String> _ancestor_nodes = new HashSet<String>();
+			LinkedHashSet<String> _ancestor_nodes = new LinkedHashSet<String>();
 
 			tables.stream().filter(ancestor_table -> ancestor_table.total_nested_fields > 0).forEach(ancestor_table -> {
 
@@ -1094,19 +1082,19 @@ public class PgSchema implements Serializable {
 
 			table.fields.stream().filter(field -> field.nested_key && !field.nested_key_as_attr && field.delegated_sibling_key_name == null).forEach(field -> {
 
-				HashSet<String> child_tables = new HashSet<String>();
-				HashSet<String> child_nodes = new HashSet<String>();
+				HashSet<String> visited_tables = new HashSet<String>();
+				LinkedHashSet<String> _child_nodes = new LinkedHashSet<String>();
 
-				extractChildNodeName(field, child_tables, child_nodes);
+				extractChildNodeNameConst(field, visited_tables, _child_nodes);
 
-				child_tables.clear();
+				visited_tables.clear();
 
-				if (child_nodes.size() > 0) {
+				if (_child_nodes.size() > 0) {
 
 					// field.child_node = String.join(" ", child_nodes);
-					field.child_nodes = child_nodes.stream().toArray(String[]::new);
+					field.child_nodes = _child_nodes.stream().toArray(String[]::new);
 
-					child_nodes.clear();
+					_child_nodes.clear();
 
 				}
 
@@ -3659,26 +3647,26 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
-	 * Extract child node name of nested key.
+	 * Extract child node name constraint of nested key.
 	 *
 	 * @param field field of nested key
-	 * @param child_tables visited child table names
-	 * @param child_nodes extracted child node names
+	 * @param visited_tables visited table names
+	 * @param _child_nodes child node name constraint
 	 */
-	private void extractChildNodeName(PgField field, HashSet<String> child_tables, HashSet<String> child_nodes) {
+	private void extractChildNodeNameConst(PgField field, HashSet<String> visited_tables, LinkedHashSet<String> _child_nodes) {
 
 		PgTable foreign_table = getForeignTable(field);
 
-		if (child_tables.contains(foreign_table.xname))
+		if (visited_tables.contains(foreign_table.xname))
 			return;
 
-		child_tables.add(foreign_table.xname);
+		visited_tables.add(foreign_table.xname);
 
 		if (!foreign_table.virtual)
-			child_nodes.add(foreign_table.xname);
+			_child_nodes.add(foreign_table.xname);
 
 		else if (foreign_table.total_nested_fields > 0 && !foreign_table.content_holder)
-			foreign_table.fields.stream().filter(foreign_field -> foreign_field.nested_key && !foreign_field.nested_key_as_attr && foreign_field.delegated_sibling_key_name == null).forEach(foreign_field -> extractChildNodeName(foreign_field, child_tables, child_nodes));
+			foreign_table.fields.stream().filter(foreign_field -> foreign_field.nested_key && !foreign_field.nested_key_as_attr && foreign_field.delegated_sibling_key_name == null).forEach(foreign_field -> extractChildNodeNameConst(foreign_field, visited_tables, _child_nodes));
 
 	}
 
