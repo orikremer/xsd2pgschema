@@ -251,7 +251,7 @@ public class XPathSqlExpr {
 			else throw new PgSchemaException();
 		case attribute:
 			if (table.has_attribute || table.has_simple_attribute) {
-				opt = table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && (field.attribute ? field.xname.equals(xname) : field.containsParentNodeName(xname))).findFirst();
+				opt = table.attr_fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond) && (field.attribute ? field.xname.equals(xname) : field.containsParentNodeNameConstraint(xname))).findFirst();
 				if (opt.isPresent()) {
 					field = opt.get();
 					break;

@@ -235,10 +235,10 @@ public abstract class PgSchemaNodeParser {
 
 		if (table.has_path_restriction) {
 
-			if (!field.matchesParentNodeName(parent_node_name))
+			if (!field.matchesParentNodeNameConstraint(parent_node_name))
 				return null;
 
-			if (!field.matchesAncestorNodeName(ancestor_node_name))
+			if (!field.matchesAncestorNodeNameConstraint(ancestor_node_name))
 				return null;
 
 		}
@@ -272,7 +272,7 @@ public abstract class PgSchemaNodeParser {
 
 			}
 
-			else if (!existsNestedNode(node, field.child_nodes))
+			else if (!field.matchesChildNodeNameConstraints(node))
 				return null;
 
 		}
@@ -283,35 +283,6 @@ public abstract class PgSchemaNodeParser {
 			nested_keys.add(nested_key);
 
 		return nested_key.current_key;
-	}
-
-	/**
-	 * Return whether nested node exists.
-	 *
-	 * @param node current node
-	 * @param child_nodes array of child node name constraints
-	 * @return boolean whether nested node exists
-	 */
-	private boolean existsNestedNode(final Node node, final String[] child_nodes) {
-
-		if (child_nodes == null)
-			return true;
-
-		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
-
-			if (child.getNodeType() != Node.ELEMENT_NODE)
-				continue;
-
-			for (String child_node : child_nodes) {
-
-				if (((Element) child).getLocalName().equals(child_node))
-					return true;
-
-			}
-
-		}
-
-		return false;
 	}
 
 	/**
@@ -432,8 +403,10 @@ public abstract class PgSchemaNodeParser {
 
 				Node attr = attrs.item(i);
 
-				if (attr != null && field.matchesParentNodeName(attr.getNodeName())) {
+				if (attr != null && field.matchesParentNodeNameConstraint(attr.getNodeName())) {
+
 					content = attr.getNodeValue();
+
 					return;
 				}
 
@@ -468,7 +441,7 @@ public abstract class PgSchemaNodeParser {
 
 			if (field.simple_primitive_list && total_nested_fields > 0) {
 
-				if (content != null && table.nested_fields.stream().filter(_field -> _field.parent_node != null).anyMatch(_field -> _field.matchesParentNodeName(parent_node_name)))
+				if (content != null && table.nested_fields.stream().filter(_field -> _field.parent_node != null).anyMatch(_field -> _field.matchesParentNodeNameConstraint(parent_node_name)))
 					content = null;
 
 				null_simple_list = content == null;

@@ -1091,7 +1091,6 @@ public class PgSchema implements Serializable {
 
 				if (_child_nodes.size() > 0) {
 
-					// field.child_node = String.join(" ", child_nodes);
 					field.child_nodes = _child_nodes.stream().toArray(String[]::new);
 
 					_child_nodes.clear();

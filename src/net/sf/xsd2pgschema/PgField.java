@@ -202,23 +202,19 @@ public class PgField implements Serializable {
 	/** The delegated sibling key name. */
 	public String delegated_sibling_key_name = null;
 
-	/** The concatenated ancestor node names. */
+	/** The concatenated ancestor node name constraints. */
 	public String ancestor_node = null;
 
-	/** The concatenated parent node names. */
+	/** The concatenated parent node name constraints. */
 	public String parent_node = null;
 
-	/** The child node names. *
-	public String child_node = null;
-	 */
-
-	/** The array of ancestor node name. */
+	/** The array of ancestor node name constraints. */
 	public String[] ancestor_nodes = null;
 
-	/** The array of parent node name. */
+	/** The array of parent node name constraints. */
 	public String[] parent_nodes = null;
 
-	/** The array of child node name. */
+	/** The array of child node name constraints. */
 	public String[] child_nodes = null;
 
 	/** The @fixed. */
@@ -1609,12 +1605,12 @@ public class PgField implements Serializable {
 	}
 
 	/**
-	 * Return whether node name contains one of parent node names.
+	 * Return whether node name contains one of parent node name constraints.
 	 *
 	 * @param node_name node name
-	 * @return boolean whether node name contains one of parent node names
+	 * @return boolean whether node name contains one of parent node name constraints
 	 */
-	public boolean containsParentNodeName(String node_name) {
+	public boolean containsParentNodeNameConstraint(String node_name) {
 
 		if (parent_nodes == null)
 			return true;
@@ -1633,12 +1629,12 @@ public class PgField implements Serializable {
 	}
 
 	/**
-	 * Return whether node name matches ancestor node names.
+	 * Return whether node name matches ancestor node name constraints.
 	 *
 	 * @param node_name node name
-	 * @return boolean whether node name matches ancestor node names
+	 * @return boolean whether node name matches ancestor node name constraints
 	 */
-	public boolean matchesAncestorNodeName(String node_name) {
+	public boolean matchesAncestorNodeNameConstraint(String node_name) {
 
 		if (ancestor_nodes == null)
 			return true;
@@ -1657,12 +1653,12 @@ public class PgField implements Serializable {
 	}
 
 	/**
-	 * Return whether node name matches parent node names.
+	 * Return whether node name matches parent node name constraints.
 	 *
 	 * @param node_name node name
-	 * @return boolean whether node name matches parent node names
+	 * @return boolean whether node name matches parent node name constraints
 	 */
-	public boolean matchesParentNodeName(String node_name) {
+	public boolean matchesParentNodeNameConstraint(String node_name) {
 
 		if (parent_nodes == null)
 			return true;
@@ -1674,6 +1670,34 @@ public class PgField implements Serializable {
 
 			if (node_name.equals(parent_node))
 				return true;
+
+		}
+
+		return false;
+	}
+
+	/**
+	 * Return whether one of child node matches child node name constraints.
+	 *
+	 * @param node node
+	 * @return boolean whether one of child node matches child node name constraints
+	 */
+	public boolean matchesChildNodeNameConstraints(Node node) {
+
+		if (child_nodes == null)
+			return true;
+
+		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE)
+				continue;
+
+			for (String child_node : child_nodes) {
+
+				if (((Element) child).getLocalName().equals(child_node))
+					return true;
+
+			}
 
 		}
 
