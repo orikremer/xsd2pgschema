@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018 Masashi Yokochi
+    Copyright 2018-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -50,6 +50,9 @@ public class PgSchemaNestedKey {
 	/** The target ordinal number of current node. */
 	protected int target_ordinal = 0;
 
+	/** The integer value of @maxOccurs except for @maxOccurs="unbounded", which gives -1. */
+	protected int maxoccurs = -1;
+
 	/**
 	 * Instance of nested key.
 	 *
@@ -63,6 +66,7 @@ public class PgSchemaNestedKey {
 
 		list_holder = field.list_holder;
 		as_attr = field.nested_key_as_attr;
+		maxoccurs = field._maxoccurs;
 
 		if (!table.virtual)
 			current_key += "/" + (field.nested_key_as_attr ? "@" : "") + field.foreign_table_xname; // XPath child

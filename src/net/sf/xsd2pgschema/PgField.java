@@ -178,6 +178,9 @@ public class PgField implements Serializable {
 	/** Whether foreign table refers to the root table. */
 	public boolean foreign_to_root = false;
 
+	/** The integer value of @maxOccurs except for @maxOccurs="unbounded", which gives -1. */
+	public int _maxoccurs = -1;
+
 	/** The foreign table id. */
 	public int foreign_table_id = -1;
 
@@ -678,7 +681,7 @@ public class PgField implements Serializable {
 
 				maxoccurs = _maxoccurs;
 
-				list_holder = (!maxoccurs.equals("0") && !maxoccurs.equals("1")) || (!minoccurs.equals("0") && !minoccurs.equals("1"));
+				setListHolder();
 
 				return;
 			}
@@ -704,7 +707,7 @@ public class PgField implements Serializable {
 
 					maxoccurs = _maxoccurs;
 
-					list_holder = (!maxoccurs.equals("0") && !maxoccurs.equals("1")) || (!minoccurs.equals("0") && !minoccurs.equals("1"));
+					setListHolder();
 
 					return;
 				}
@@ -745,7 +748,7 @@ public class PgField implements Serializable {
 
 					maxoccurs = _maxoccurs;
 
-					list_holder = (!maxoccurs.equals("0") && !maxoccurs.equals("1")) || (!minoccurs.equals("0") && !minoccurs.equals("1"));
+					setListHolder();
 
 					return;
 				}
@@ -774,7 +777,7 @@ public class PgField implements Serializable {
 
 				minoccurs = _minoccurs;
 
-				list_holder = (!maxoccurs.equals("0") && !maxoccurs.equals("1")) || (!minoccurs.equals("0") && !minoccurs.equals("1"));
+				setListHolder();
 
 				return;
 			}
@@ -800,7 +803,7 @@ public class PgField implements Serializable {
 
 					minoccurs = _minoccurs;
 
-					list_holder = (!maxoccurs.equals("0") && !maxoccurs.equals("1")) || (!minoccurs.equals("0") && !minoccurs.equals("1"));
+					setListHolder();
 
 					return;
 				}
@@ -841,7 +844,7 @@ public class PgField implements Serializable {
 
 					minoccurs = _minoccurs;
 
-					list_holder = (!maxoccurs.equals("0") && !maxoccurs.equals("1")) || (!minoccurs.equals("0") && !minoccurs.equals("1"));
+					setListHolder();
 
 					return;
 				}
@@ -1545,6 +1548,24 @@ public class PgField implements Serializable {
 			type = xs_prefix_ + "unsignedShort";
 			xs_type = XsFieldType.xs_unsignedShort;
 			break;
+		}
+
+	}
+
+	/**
+	 * Decide whether field is list holder.
+	 */
+	protected void setListHolder() {
+
+		list_holder = (!maxoccurs.equals("0") && !maxoccurs.equals("1")) || (!minoccurs.equals("0") && !minoccurs.equals("1"));
+
+		if (list_holder) {
+
+			if (maxoccurs.equals("unbounded"))
+				this._maxoccurs = -1;
+			else
+				this._maxoccurs = Integer.valueOf(maxoccurs);
+
 		}
 
 	}

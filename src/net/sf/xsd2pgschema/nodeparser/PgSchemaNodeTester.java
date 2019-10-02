@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -49,6 +49,9 @@ public class PgSchemaNodeTester {
 
 	/** The target ordinal number of sibling node. */
 	private int target_ordinal;
+
+	/** The integer value of @maxOccurs except for @maxOccurs="unbounded", which gives -1. */
+	private int maxoccurs = -1;
 
 	/** The original processing key name. */
 	private String _proc_key;
@@ -112,6 +115,8 @@ public class PgSchemaNodeTester {
 		virtual = table.virtual;
 
 		target_ordinal = nested_key.target_ordinal;
+		maxoccurs = nested_key.maxoccurs;
+
 		parent_key = nested_key.parent_key;
 		primary_key = proc_key = _proc_key = nested_key.current_key;
 		as_attr = nested_key.as_attr;
@@ -144,6 +149,9 @@ public class PgSchemaNodeTester {
 		if (list_holder) {
 
 			if (indirect && node_ordinal < target_ordinal)
+				return true;
+
+			if (maxoccurs >= 0 && node_ordinal > maxoccurs)
 				return true;
 
 			if (!virtual)
