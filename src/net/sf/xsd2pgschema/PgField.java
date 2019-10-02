@@ -103,6 +103,9 @@ public class PgField implements Serializable {
 	/** The field type. */
 	public XsFieldType xs_type;
 
+	/** The array of auxiliary field types for xs:list/@itemType and xs:union/@memberTypes. */
+	protected XsFieldType[] xs_aux_types = null;
+
 	/** The mapping of integer numbers in PostgreSQL. */
 	protected PgIntegerType pg_integer;
 
@@ -435,7 +438,13 @@ public class PgField implements Serializable {
 
 				if (item_type != null && !item_type.isEmpty()) {
 					_list = true;
-					_list_item_type = item_type;
+					_list_item_type = item_type.trim();
+					xs_aux_types = new XsFieldType[1];
+					try {
+						xs_aux_types[0] = XsFieldType.valueOf("xs_" + (_list_item_type.contains(":") ? _list_item_type.split(":")[1] : _list_item_type));
+					} catch (IllegalArgumentException ex) {
+						xs_aux_types = null;
+					}
 					type = xs_prefix_ + "string";
 					return;
 				}
@@ -444,7 +453,20 @@ public class PgField implements Serializable {
 
 				if (member_types != null && !member_types.isEmpty()) {
 					_union = true;
-					_union_member_types = member_types;
+					_union_member_types = member_types.trim();
+					String[] __union_member_types = _union_member_types.split(" ");
+					int len = __union_member_types.length;
+					if (len > 0) {
+						xs_aux_types = new XsFieldType[len];
+						try {
+							for (int i = 0; i < len; i++) {
+								String __union_member_type = __union_member_types[i];
+								xs_aux_types[i] = XsFieldType.valueOf("xs_" + (__union_member_type.contains(":") ? __union_member_type.split(":")[1] : __union_member_type));
+							}
+						} catch (IllegalArgumentException ex) {
+							xs_aux_types = null;
+						}
+					}
 					type = member_types;
 					return;
 				}
@@ -493,7 +515,13 @@ public class PgField implements Serializable {
 
 					if (item_type != null && !item_type.isEmpty()) {
 						_list = true;
-						_list_item_type = item_type;
+						_list_item_type = item_type.trim();
+						xs_aux_types = new XsFieldType[1];
+						try {
+							xs_aux_types[0] = XsFieldType.valueOf("xs_" + (_list_item_type.contains(":") ? _list_item_type.split(":")[1] : _list_item_type));
+						} catch (IllegalArgumentException ex) {
+							xs_aux_types = null;
+						}
 						type = xs_prefix_ + "string";
 						return;
 					}
@@ -502,7 +530,20 @@ public class PgField implements Serializable {
 
 					if (member_types != null && !member_types.isEmpty()) {
 						_union = true;
-						_union_member_types = member_types;
+						_union_member_types = member_types.trim();
+						String[] __union_member_types = _union_member_types.split(" ");
+						int len = __union_member_types.length;
+						if (len > 0) {
+							xs_aux_types = new XsFieldType[len];
+							try {
+								for (int i = 0; i < len; i++) {
+									String __union_member_type = __union_member_types[i];
+									xs_aux_types[i] = XsFieldType.valueOf("xs_" + (__union_member_type.contains(":") ? __union_member_type.split(":")[1] : __union_member_type));
+								}
+							} catch (IllegalArgumentException ex) {
+								xs_aux_types = null;
+							}
+						}
 						type = member_types;
 						return;
 					}
@@ -4813,6 +4854,211 @@ public class PgField implements Serializable {
 
 		if (restriction && min_length != null && value.length() < Integer.valueOf(min_length))
 			return false;
+
+		switch (xs_type) {
+		case xs_hexBinary:
+			try {
+				DatatypeConverter.parseHexBinary(value);
+			} catch (IllegalArgumentException e) {
+				return false;
+			}
+		case xs_base64Binary:
+			try {
+				DatatypeConverter.parseBase64Binary(value);
+			} catch (IllegalArgumentException e) {
+				return false;
+			}
+		case xs_long:
+			try {
+				Long.parseLong(value);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+			return true;
+		case xs_float:
+			try {
+				Float.parseFloat(value);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+			return true;
+		case xs_double:
+			try {
+				Double.parseDouble(value);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+			return true;
+		case xs_decimal:
+			switch (pg_decimal) {
+			case big_decimal:
+				try {
+					new BigDecimal(value);
+				} catch (NumberFormatException e) {
+					return false;
+				}
+				break;
+			case double_precision_64:
+				try {
+					Double.parseDouble(value);
+				} catch (NumberFormatException e) {
+					return false;
+				}
+				break;
+			case single_precision_32:
+				try {
+					Float.parseFloat(value);
+				} catch (NumberFormatException e) {
+					return false;
+				}
+				break;
+			}
+			return true;
+		case xs_integer:
+			try {
+				new BigInteger(value);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+			return true;
+		case xs_nonNegativeInteger:
+			try {
+				return (new BigInteger(value).compareTo(BigInteger.ZERO)) >= 0;
+			} catch (NumberFormatException e) {
+				return false;
+			}
+		case xs_nonPositiveInteger:
+			try {
+				return (new BigInteger(value).compareTo(BigInteger.ZERO) <= 0);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+		case xs_positiveInteger:
+			try {
+				return (new BigInteger(value).compareTo(BigInteger.ZERO) > 0);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+		case xs_negativeInteger:
+			try {
+				return (new BigInteger(value).compareTo(BigInteger.ZERO) < 0);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+		case xs_int:
+			try {
+				Integer.parseInt(value);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+			return true;
+		case xs_short:
+		case xs_byte:
+			try {
+				Short.parseShort(value);
+			} catch (NumberFormatException e) {
+				return false;
+			}
+			return true;
+		case xs_unsignedLong:
+			try {
+				return Long.parseLong(value) >= 0;
+			} catch (NumberFormatException e) {
+				return false;
+			}
+		case xs_unsignedInt:
+			try {
+				return Integer.parseInt(value) >= 0;
+			} catch (NumberFormatException e) {
+				return false;
+			}
+		case xs_unsignedShort:
+		case xs_unsignedByte:
+			try {
+				return Short.parseShort(value) >= 0;
+			} catch (NumberFormatException e) {
+				return false;
+			}
+		case xs_dateTime:
+		case xs_dateTimeStamp:
+		case xs_date:
+		case xs_gYearMonth:
+		case xs_gYear:
+		case xs_gMonthDay:
+		case xs_gMonth:
+		case xs_gDay:
+			return PgSchemaUtil.parseDate(value) != null;
+		case xs_time:
+			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) {
+
+				try {
+					LocalTime.parse(value);
+				} catch (DateTimeParseException e) {
+
+					try {
+						OffsetTime.parse(value);
+					} catch (DateTimeParseException e2) {
+						return false;
+					}
+				}
+
+			}
+
+			else {
+
+				try {
+					OffsetTime.parse(value);
+				} catch (DateTimeParseException e) {
+
+					try {
+						LocalTime.parse(value);
+					} catch (DateTimeParseException e2) {
+						return false;
+					}
+
+				}
+
+			}
+			return true;
+		default: // free text
+			if (_list && xs_aux_types != null) {
+
+				String[] _values = value.trim().split(" ");
+
+				for (String _value : _values) {
+
+					if (!validate(xs_aux_types[0], _value))
+						return false;
+
+				}
+
+			}
+
+			if (_union && xs_aux_types != null) {
+
+				for (XsFieldType _xs_type : xs_aux_types) {
+
+					if (validate(_xs_type, value))
+						return true;
+
+				}
+
+				return false;
+			}
+
+			return true;
+		}
+
+	}
+
+	/**
+	 * Validate content.
+	 *
+	 * @param xs_type field type
+	 * @param value content
+	 * @return boolean whether content is valid
+	 */
+	public boolean validate(XsFieldType xs_type, String value) {
 
 		switch (xs_type) {
 		case xs_hexBinary:

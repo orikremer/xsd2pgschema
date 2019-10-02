@@ -4751,7 +4751,7 @@ public class PgSchema implements Serializable {
 				System.out.println("-- " + option.xs_prefix_ + "line/@itemType=\"" + field._list_item_type + "\"");
 
 			if (field._union)
-				System.out.println("-- " + option.xs_prefix_ + "union/@memeberTypes=\"" + field._union_member_types + "\"");
+				System.out.println("-- " + option.xs_prefix_ + "union/@memberTypes=\"" + field._union_member_types + "\"");
 
 			if (field.restriction) {
 
