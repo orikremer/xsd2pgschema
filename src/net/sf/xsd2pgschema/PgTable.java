@@ -89,10 +89,13 @@ public class PgTable implements Serializable {
 	/** The number of references. */
 	public int refs = 0;
 
-	/** The total number of field as nested key. */
+	/** The total number of nested key. */
 	public int total_nested_fields = 0;
 
-	/** The total number of field as foreign key. */
+	/** The total number of nested key excluding nested key as attribute. */
+	public int total_nested_fields_exc_attr = 0;
+
+	/** The total number of foreign key. */
 	public int total_foreign_fields = 0;
 
 	/** The total number of SQL parameter. */
@@ -134,6 +137,9 @@ public class PgTable implements Serializable {
 	/** Whether table has @nillable="true" element. */
 	public boolean has_nillable_element = false;
 
+	/** Whether table has nested key except for nested key as attribute. */
+	public boolean has_nested_key_exc_attr = false;
+
 	/** Whether table has nested key as attribute. */
 	public boolean has_nested_key_as_attr = false;
 
@@ -166,6 +172,12 @@ public class PgTable implements Serializable {
 
 	/** The field list of nested key. */
 	public List<PgField> nested_fields = null;
+
+	/** The field list of nested key excluding nested key as attribute. */
+	public List<PgField> nested_fields_exc_attr = null;
+
+	/** The field list of nested key as attribute. */
+	public List<PgField> nested_fields_as_attr = null;
 
 	/** The list of foreign table id. */
 	public int[] ft_ids = null;
@@ -225,6 +237,10 @@ public class PgTable implements Serializable {
 	/** Whether JSON buffer of arbitrary field is not empty (internal use only). */
 	@Flat
 	public boolean jsonb_not_empty = false;
+
+	/** The embedded document id in the primary prepared statement (internal use only). */
+	@Flat
+	public String ps_doc_id = "";
 
 	/** The primary prepared statement (internal use only). */
 	@Flat
@@ -788,7 +804,7 @@ public class PgTable implements Serializable {
 	}
 
 	/**
-	 * Determine the total number of field as nested key.
+	 * Determine the total number of nested key.
 	 */
 	protected void countNestedFields() {
 

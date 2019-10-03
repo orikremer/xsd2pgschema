@@ -95,6 +95,15 @@ public class tsv2pgsql {
 			else if (args[i].equals("--min-rows-for-index") && i + 1 < args.length)
 				pg_option.setMinRowsForIndex(args[++i]);
 
+			else if (args[i].equals("--create-non-uniq-pkey-index"))
+				pg_option.setCreateNonUniqPKeyIndex(true);
+
+			else if (args[i].equals("--no-create-non-uniq-pkey-index"))
+				pg_option.setCreateNonUniqPKeyIndex(false);
+
+			else if (args[i].equals("--drop-non-uniq-pkey-index"))
+				pg_option.setDropNonUniqPKeyIndex();
+
 			else if (args[i].equals("--create-doc-key-index"))
 				pg_option.setCreateDocKeyIndex(true);
 
@@ -288,6 +297,11 @@ public class tsv2pgsql {
 
 			System.out.println("Done " + (option.pg_delimiter == '\t' ? "tsv" : "csv") + " -> db (" + pg_option.name + ").");
 
+			if (pg_option.create_non_uniq_pkey_index)
+				client.schema.createNonUniqPKeyIndex(db_conn, pg_option);
+			else if (pg_option.drop_non_uniq_pkey_index)
+				client.schema.dropNonUniqPKeyIndex(db_conn);
+
 			if (pg_option.create_doc_key_index)
 				client.schema.createDocKeyIndex(db_conn, pg_option);
 			else if (pg_option.drop_doc_key_index)
@@ -330,6 +344,9 @@ public class tsv2pgsql {
 		System.err.println("        --db-port PG_PORT_NUMBER (default=" + PgSchemaUtil.pg_port + ")");
 		System.err.println("        --test-ddl (perform consistency test on PostgreSQL DDL)");
 		System.err.println("        --min-rows-for-index MIN_ROWS_FOR_INDEX (default=" + PgSchemaUtil.pg_min_rows_for_index + ")");
+		System.err.println("        --create-non-uniq-pkey-index (create PostgreSQL index on non-unique primary key if not exists, default)");
+		System.err.println("        --no-create-non-uniq-pkey-index (do not create PostgreSQL index on non-unique primary key)");
+		System.err.println("        --drop-non-uniq-pkey-index (drop PostgreSQL index on non-unique primary if exists)");
 		System.err.println("        --create-doc-key-index (create PostgreSQL index on document key if not exists, enable if --sync option is selected)");
 		System.err.println("        --no-create-doc-key-index (do not create PostgreSQL index on document key, default if no --sync option)");
 		System.err.println("        --drop-doc-key-index (drop PostgreSQL index on document key if exists)");

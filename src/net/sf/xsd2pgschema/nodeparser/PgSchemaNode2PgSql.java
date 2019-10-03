@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -134,7 +134,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 						if (field.omissible || field.primary_key)
 							continue;
 
-						sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + " = ");
+						sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + "=");
 
 						if (field.enum_name == null)
 							sql.append("?");
@@ -147,7 +147,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					sql.setLength(sql.length() - 2);
 
-					sql.append(" WHERE EXCLUDED." + table.primary_key_pgname + " = ?");
+					sql.append(" WHERE EXCLUDED." + table.primary_key_pgname + "=?");
 
 					table.ps2 = npb.db_conn.prepareStatement(sql.toString());
 

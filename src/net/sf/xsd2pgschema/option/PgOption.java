@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -46,6 +46,12 @@ public class PgOption {
 	/** Whether to perform consistency test on PostgreSQL DDL. */
 	public boolean test = false;
 
+	/** Whether to create PostgreSQL index on non-unique primary key. */
+	public boolean create_non_uniq_pkey_index = true;
+
+	/** Whether to drop PostgreSQL index on non-unique primary key. */
+	public boolean drop_non_uniq_pkey_index = false;
+
 	/** Whether to create PostgreSQL index on document key. */
 	public boolean create_doc_key_index = false;
 
@@ -81,6 +87,15 @@ public class PgOption {
 
 	/** The maximum foreign keys in a table for creation of PostgreSQL index on the simple content. */
 	public int max_fks_for_simple_cont_index = PgSchemaUtil.pg_max_fks_for_simple_cont_index;
+
+	/** The internal status corresponding to --create-non-uniq-pkey-index option. */
+	private boolean _create_non_uniq_pkey_index = false;
+
+	/** The internal status corresponding to --no-create-non-uniq-pkey-index option. */
+	private boolean _no_create_non_uniq_pkey_index = false;
+
+	/** The internal status corresponding to --drop-non-uniq-pkey-index option. */
+	private boolean _drop_non_uniq_pkey_index = false;	
 
 	/** The internal status corresponding to --create-doc-key-index option. */
 	private boolean _create_doc_key_index = false;
@@ -170,6 +185,65 @@ public class PgOption {
 			this.min_rows_for_index = PgSchemaUtil.pg_min_rows_for_index;
 		}
 
+	}
+
+	/**
+	 * Set internal status corresponding to --create-non-uniq-pkey-index and --no-create-non-uniq-pkey-index options.
+	 *
+	 * @param create whether to create index on non-unique primary key
+	 * @return boolean whether status changed
+	 */
+	public boolean setCreateNonUniqPKeyIndex(boolean create) {
+
+		if (create) {
+
+			if (_no_create_non_uniq_pkey_index) {
+				System.err.println("--no-create-non-uniq-pkey-index is already set.");
+				return false;
+			}
+
+			if (_drop_non_uniq_pkey_index) {
+				System.err.println("--drop-non-uniq-pkey-index is already set.");
+				return false;
+			}
+
+			_create_non_uniq_pkey_index = true;
+			drop_non_uniq_pkey_index = false;
+
+		}
+
+		else {
+
+			if (_create_non_uniq_pkey_index) {
+				System.err.println("--create-non-uniq-pkey-index is already set.");
+				return false;
+			}
+
+			_no_create_non_uniq_pkey_index = true;
+
+		}
+
+		create_non_uniq_pkey_index = create;
+
+		return true;
+	}
+
+	/**
+	 * Set internal status corresponding to --drop-non-uniq-pkey-index option.
+	 *
+	 * @return boolean whether status changed
+	 */
+	public boolean setDropNonUniqPKeyIndex() {
+
+		if (_create_non_uniq_pkey_index) {
+			System.err.println("--create-non-uniq-pkey-index is already set.");
+			return false;
+		}
+
+		drop_non_uniq_pkey_index = _drop_non_uniq_pkey_index = true;
+		create_non_uniq_pkey_index = false;
+
+		return true;
 	}
 
 	/**

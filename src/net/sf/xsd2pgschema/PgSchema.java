@@ -816,10 +816,6 @@ public class PgSchema implements Serializable {
 
 		}
 
-		// update table has nested key as attribute
-
-		tables.parallelStream().filter(table -> table.total_nested_fields > 0 && table.fields.stream().anyMatch(field -> field.nested_key_as_attr)).forEach(table -> table.has_nested_key_as_attr = true);
-
 		// detect simple content as conditional attribute
 
 		tables.stream().filter(foreign_table -> foreign_table.has_simple_attribute).forEach(foreign_table -> {
@@ -1383,7 +1379,6 @@ public class PgSchema implements Serializable {
 
 			tables.parallelStream().filter(table -> table.writable).forEach(table -> {
 
-				table.has_nested_key_as_attr = false;
 				table.has_nested_key_to_simple_attr = false;
 				table.has_simple_attribute = false;
 
@@ -1911,6 +1906,21 @@ public class PgSchema implements Serializable {
 			if (table.total_nested_fields > 0) {
 
 				table.nested_fields = table.fields.stream().filter(field -> field.nested_key).collect(Collectors.toList());
+
+				table.nested_fields_exc_attr = table.fields.stream().filter(field -> field.nested_key && !field.nested_key_as_attr).collect(Collectors.toList());
+
+				table.has_nested_key_exc_attr = table.nested_fields_exc_attr.size() > 0;
+
+				if (!table.has_nested_key_exc_attr)
+					table.nested_fields_exc_attr = null;
+
+				table.nested_fields_as_attr = table.fields.stream().filter(field -> field.nested_key_as_attr).collect(Collectors.toList());
+
+				table.has_nested_key_as_attr = table.nested_fields_as_attr.size() > 0;
+
+				if (!table.has_nested_key_as_attr)
+					table.nested_fields_as_attr = null;
+
 				table.ft_ids = table.nested_fields.stream().map(field -> field.foreign_table_id).collect(Collectors.toList()).stream().mapToInt(Integer::intValue).toArray();
 
 			}
@@ -5761,6 +5771,7 @@ public class PgSchema implements Serializable {
 			}
 
 			table.ps = null;
+			table.ps_doc_id = "";
 
 		});
 
@@ -6112,6 +6123,170 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
+	 * Create PostgreSQL index on non-unique primary key if not exists.
+	 *
+	 * @param db_conn database connection
+	 * @param pg_option PostgreSQL option
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void createNonUniqPKeyIndex(Connection db_conn, PgOption pg_option) throws PgSchemaException {
+
+		if (!option.rel_data_ext)
+			return;
+
+		this.db_conn = db_conn;
+
+		if (has_db_rows.size() == 0)
+			initHasDbRows();
+
+		try {
+
+			Statement stat = db_conn.createStatement();
+
+			DatabaseMetaData meta = db_conn.getMetaData();
+
+			has_db_rows.entrySet().stream().filter(arg -> arg.getValue()).map(arg -> arg.getKey()).forEach(table_name -> {
+
+				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
+
+				if (!table.has_unique_primary_key) {
+
+					String primary_key_pname = table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname;
+
+					try {
+
+						ResultSet rset = meta.getIndexInfo(null, option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name, false, true);
+
+						boolean has_index = false;
+
+						String column_name;
+
+						while (rset.next()) {
+
+							column_name = rset.getString("COLUMN_NAME");
+
+							if (column_name != null && column_name.contains(primary_key_pname)) {
+
+								has_index = true;
+
+								break;
+							}
+
+						}
+
+						rset.close();
+
+						if (!has_index) {
+
+							String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
+
+							rset = stat.executeQuery(sql);
+
+							while (rset.next()) {
+
+								if (rset.getInt(1) == pg_option.min_rows_for_index) {
+
+									sql = "CREATE INDEX IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(primary_key_pname) + " ON " + table.pgname + " ( " + table.primary_key_pgname + " )";
+
+									System.out.println(sql);
+
+									stat.execute(sql);
+
+								}
+
+								break;
+							}
+
+							rset.close();
+
+						}
+
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+
+				}
+
+			});
+
+			stat.close();
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
+	/**
+	 * Drop PostgreSQL index on non-unique primary key if exists.
+	 *
+	 * @param db_conn database connection
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public void dropNonUniqPKeyIndex(Connection db_conn) throws PgSchemaException {
+
+		this.db_conn = db_conn;
+
+		if (has_db_rows.size() == 0)
+			initHasDbRows();
+
+		try {
+
+			Statement stat = db_conn.createStatement();
+
+			DatabaseMetaData meta = db_conn.getMetaData();
+
+			has_db_rows.entrySet().stream().filter(arg -> arg.getValue()).map(arg -> arg.getKey()).forEach(table_name -> {
+
+				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
+
+				if (!table.has_unique_primary_key) {
+
+					String primary_key_pname = table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname;
+
+					try {
+
+						ResultSet rset = meta.getIndexInfo(null, option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name, false, true);
+
+						String index_name, column_name, sql;
+
+						while (rset.next()) {
+
+							index_name = rset.getString("INDEX_NAME");
+							column_name = rset.getString("COLUMN_NAME");
+
+							if (index_name != null && index_name.equalsIgnoreCase("IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(primary_key_pname)) && column_name != null && column_name.equals(primary_key_pname)) {
+
+								sql = "DROP INDEX " + PgSchemaUtil.avoidPgReservedWords(index_name);
+
+								System.out.println(sql);
+
+								stat.execute(sql);
+
+								break;
+							}
+
+						}
+
+						rset.close();
+
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+
+				}
+
+			});
+
+			stat.close();
+
+		} catch (SQLException e) {
+			throw new PgSchemaException(e);
+		}
+
+	}
+
+	/**
 	 * Create PostgreSQL index on document key if not exists.
 	 *
 	 * @param db_conn database connection
@@ -6119,6 +6294,9 @@ public class PgSchema implements Serializable {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	public void createDocKeyIndex(Connection db_conn, PgOption pg_option) throws PgSchemaException {
+
+		if (!option.document_key && option.in_place_document_key)
+			return;
 
 		this.db_conn = db_conn;
 

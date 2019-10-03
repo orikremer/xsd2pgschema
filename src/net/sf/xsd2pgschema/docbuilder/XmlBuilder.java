@@ -912,13 +912,10 @@ public class XmlBuilder extends CommonBuilder {
 							else
 								writeSimpleCharacters(field.empty_elem_tag);
 
-							if (!nest_test.has_child_elem)
-								nest_test.has_child_elem = true;
+							if (!nest_test.has_child_elem || !nest_test.has_content)
+								nest_test.has_child_elem = nest_test.has_content = true;
 
-							if (!nest_test.has_content)
-								nest_test.has_content = true;
-
-							if (has_insert_doc_key)
+							if (insert_doc_key && has_insert_doc_key)
 								has_insert_doc_key = false;
 
 						}
@@ -941,7 +938,7 @@ public class XmlBuilder extends CommonBuilder {
 
 								any_sax_parser.reset();
 
-								if (has_insert_doc_key)
+								if (insert_doc_key && has_insert_doc_key)
 									has_insert_doc_key = false;
 
 								in.close();
@@ -960,38 +957,34 @@ public class XmlBuilder extends CommonBuilder {
 
 			// nested key
 
-			if (table.total_nested_fields > 0) {
+			if (table.has_nested_key_exc_attr) {
 
 				PgTable nested_table;
 
 				n = 0;
 
-				for (PgField field : table.nested_fields) {
+				for (PgField field : table.nested_fields_exc_attr) {
 
-					if (!field.nested_key_as_attr) {
+					key = rset.getObject(field.sql_param_id);
 
-						key = rset.getObject(field.sql_param_id);
+					if (key != null) {
 
-						if (key != null) {
+						nest_test.has_child_elem |= n++ > 0;
 
-							nest_test.has_child_elem |= n++ > 0;
+						nested_table = tables.get(field.foreign_table_id);
 
-							nested_table = tables.get(field.foreign_table_id);
+						if (nested_table.content_holder || !nested_table.bridge)
+							nest_test.merge(nestChildNode2Xml(table, nested_table, key, false, nest_test));
 
-							if (nested_table.content_holder || !nested_table.bridge)
-								nest_test.merge(nestChildNode2Xml(table, nested_table, key, false, nest_test));
+						else if (nested_table.has_nested_key_exc_attr) {
 
-							else if (nested_table.nested_fields != null && nested_table.nested_fields.stream().anyMatch(_field -> !_field.nested_key_as_attr)) {
+							// skip bridge table for acceleration
 
-								// skip bridge table for acceleration
+							if (nested_table.list_holder)
+								nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
 
-								if (nested_table.list_holder)
-									nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
-
-								else
-									nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
-
-							}
+							else
+								nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
 
 						}
 
@@ -1068,7 +1061,7 @@ public class XmlBuilder extends CommonBuilder {
 
 				pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 ? (has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
 
-				if (has_insert_doc_key)
+				if (insert_doc_key && has_insert_doc_key)
 					has_insert_doc_key = false;
 
 			}
@@ -1081,15 +1074,15 @@ public class XmlBuilder extends CommonBuilder {
 
 			if (ps == null) {
 
-				String sql = "SELECT * FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + " = ?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + " = ?" : "");
+				String sql = "SELECT * FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
 				ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
 
 			}
 
-			if (use_doc_key_index)
-				ps.setString(1, document_id);
+			if (use_doc_key_index && !document_id.equals(table.ps_doc_id))
+				ps.setString(1, table.ps_doc_id = document_id);
 
 			if (use_primary_key) {
 
@@ -1127,7 +1120,7 @@ public class XmlBuilder extends CommonBuilder {
 
 					pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? (has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
 
-					if (has_insert_doc_key)
+					if (insert_doc_key && has_insert_doc_key)
 						has_insert_doc_key = false;
 
 					if (!table.bridge)
@@ -1284,13 +1277,10 @@ public class XmlBuilder extends CommonBuilder {
 								else
 									writeSimpleCharacters(field.empty_elem_tag);
 
-								if (!nest_test.has_child_elem)
-									nest_test.has_child_elem = true;
+								if (!nest_test.has_child_elem || !nest_test.has_content)
+									nest_test.has_child_elem = nest_test.has_content = true;
 
-								if (!nest_test.has_content)
-									nest_test.has_content = true;
-
-								if (has_insert_doc_key)
+								if (insert_doc_key && has_insert_doc_key)
 									has_insert_doc_key = false;
 
 							}
@@ -1313,7 +1303,7 @@ public class XmlBuilder extends CommonBuilder {
 
 									any_sax_parser.reset();
 
-									if (has_insert_doc_key)
+									if (insert_doc_key && has_insert_doc_key)
 										has_insert_doc_key = false;
 
 									in.close();
@@ -1332,36 +1322,32 @@ public class XmlBuilder extends CommonBuilder {
 
 				// nested key
 
-				if (table.total_nested_fields > 0) {
+				if (table.has_nested_key_exc_attr) {
 
 					n = 0;
 
-					for (PgField field : table.nested_fields) {
+					for (PgField field : table.nested_fields_exc_attr) {
 
-						if (!field.nested_key_as_attr) {
+						key = rset.getObject(field.sql_param_id);
 
-							key = rset.getObject(field.sql_param_id);
+						if (key != null) {
 
-							if (key != null) {
+							nest_test.has_child_elem |= n++ > 0;
 
-								nest_test.has_child_elem |= n++ > 0;
+							nested_table = tables.get(field.foreign_table_id);
 
-								nested_table = tables.get(field.foreign_table_id);
+							if (nested_table.content_holder || !nested_table.bridge || as_attr)
+								nest_test.merge(nestChildNode2Xml(table, nested_table, key, false, nest_test));
 
-								if (nested_table.content_holder || !nested_table.bridge || as_attr)
-									nest_test.merge(nestChildNode2Xml(table, nested_table, key, false, nest_test));
+							else if (nested_table.has_nested_key_exc_attr) {
 
-								else if (nested_table.nested_fields != null && nested_table.nested_fields.stream().anyMatch(_field -> !_field.nested_key_as_attr)) {
+								// skip bridge table for acceleration
 
-									// skip bridge table for acceleration
+								if (nested_table.list_holder)
+									nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
 
-									if (nested_table.list_holder)
-										nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
-
-									else
-										nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
-
-								}
+								else
+									nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
 
 							}
 
@@ -1463,20 +1449,20 @@ public class XmlBuilder extends CommonBuilder {
 
 			PreparedStatement ps = table.ps;
 
-			PgField nested_key = table.nested_fields.stream().filter(field -> !field.nested_key_as_attr).findFirst().get();
+			PgField nested_key = table.nested_fields_exc_attr.get(0);
 			PgTable nested_table = tables.get(nested_key.foreign_table_id);
 
 			if (ps == null) {
 
-				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + " = ?" : "") + (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + " = ?";
+				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?";
 
 				ps = table.ps = db_conn.prepareStatement(sql);
 				ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
 
 			}
 
-			if (use_doc_key_index)
-				ps.setString(1, document_id);
+			if (use_doc_key_index && !document_id.equals(table.ps_doc_id))
+				ps.setString(1, table.ps_doc_id = document_id);
 
 			int param_id = use_doc_key_index ? 2 : 1;
 
@@ -1506,7 +1492,7 @@ public class XmlBuilder extends CommonBuilder {
 
 					pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 || list_id > 0 ? (has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
 
-					if (has_insert_doc_key)
+					if (insert_doc_key && has_insert_doc_key)
 						has_insert_doc_key = false;
 
 				}
@@ -1520,7 +1506,7 @@ public class XmlBuilder extends CommonBuilder {
 					if (nested_table.content_holder || !nested_table.bridge)
 						nest_test.merge(nestChildNode2Xml(table, nested_table, key, false, nest_test));
 
-					else if (nested_table.nested_fields != null && nested_table.nested_fields.stream().anyMatch(_field -> !_field.nested_key_as_attr)) {
+					else if (nested_table.has_nested_key_exc_attr) {
 
 						// skip bridge table for acceleration
 
@@ -1593,14 +1579,13 @@ public class XmlBuilder extends CommonBuilder {
 
 			boolean category = !table.virtual;
 
-			PgField nested_key = table.nested_fields.stream().filter(field -> !field.nested_key_as_attr).findFirst().get();
-			PgTable nested_table = tables.get(nested_key.foreign_table_id);
+			PgTable nested_table = tables.get(table.nested_fields_exc_attr.get(0).foreign_table_id);
 
 			if (category) {
 
 				pending_elem.push(new XmlBuilderPendingElem(table, (parent_nest_test.has_child_elem || pending_elem.size() > 0 ? (has_insert_doc_key ? line_feed_code : "") : line_feed_code) + nest_test.current_indent_space, true));
 
-				if (has_insert_doc_key)
+				if (insert_doc_key && has_insert_doc_key)
 					has_insert_doc_key = false;
 
 			}
@@ -1608,7 +1593,7 @@ public class XmlBuilder extends CommonBuilder {
 			if (nested_table.content_holder || !nested_table.bridge)
 				nest_test.merge(nestChildNode2Xml(table, nested_table, parent_key, false, nest_test));
 
-			else if (nested_table.nested_fields != null && nested_table.nested_fields.stream().anyMatch(_field -> !_field.nested_key_as_attr)) {
+			else if (nested_table.has_nested_key_exc_attr) {
 
 				// skip bridge table for acceleration
 

@@ -214,7 +214,7 @@ public class PgSchemaNodeTester {
 	protected boolean isLastNode() {
 
 		try {
-			return last_node == null || proc_node.equals(last_node) || (indirect && node_ordinal == target_ordinal);
+			return last_node == null || proc_node.equals(last_node) || (indirect && node_ordinal == target_ordinal) || (maxoccurs >= 0 && node_ordinal == maxoccurs);
 		} finally {
 			++node_ordinal;
 		}

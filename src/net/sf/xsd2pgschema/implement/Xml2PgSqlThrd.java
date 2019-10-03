@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -326,9 +326,14 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		try {
 
-			if (show_progress && (pg_option.create_doc_key_index || pg_option.drop_doc_key_index)) {
+			if (thrd_id == 0) {
 
 				db_conn.setAutoCommit(true);
+
+				if (pg_option.create_non_uniq_pkey_index)
+					client.schema.createNonUniqPKeyIndex(db_conn, pg_option);
+				else if (pg_option.drop_non_uniq_pkey_index)
+					client.schema.dropNonUniqPKeyIndex(db_conn);
 
 				if (pg_option.create_doc_key_index)
 					client.schema.createDocKeyIndex(db_conn, pg_option);
