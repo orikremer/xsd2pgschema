@@ -820,7 +820,7 @@ public class XmlBuilder extends CommonBuilder {
 						key = rset.getObject(field.sql_param_id);
 
 						if (key != null)
-							nest_test.merge(nestChildNode2Xml(table, tables.get(field.foreign_table_id), key, true, nest_test));
+							nest_test.merge(nestChildNode2Xml(table, tables.get(field.foreign_table_id), key, field._maxoccurs, true, nest_test));
 
 					}
 
@@ -974,14 +974,14 @@ public class XmlBuilder extends CommonBuilder {
 						nested_table = tables.get(field.foreign_table_id);
 
 						if (nested_table.content_holder || !nested_table.bridge)
-							nest_test.merge(nestChildNode2Xml(table, nested_table, key, false, nest_test));
+							nest_test.merge(nestChildNode2Xml(table, nested_table, key, field._maxoccurs, false, nest_test));
 
 						else if (nested_table.has_nested_key_exc_attr) {
 
 							// skip bridge table for acceleration
 
 							if (nested_table.list_holder)
-								nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
+								nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, field._maxoccurs, nest_test));
 
 							else
 								nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
@@ -1038,12 +1038,13 @@ public class XmlBuilder extends CommonBuilder {
 	 * @param foreign_table foreign table (for simple attribute)
 	 * @param table current table
 	 * @param parent_key parent key
+	 * @param maxoccurs integer value of @maxOccurs except for @maxOccurs="unbounded", which gives -1
 	 * @param as_attr whether parent key is simple attribute
 	 * @param parent_nest_test nest test result of parent node
 	 * @return XmlBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private XmlBuilderNestTester nestChildNode2Xml(final PgTable foreign_table, final PgTable table, final Object parent_key, final boolean as_attr, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
+	private XmlBuilderNestTester nestChildNode2Xml(final PgTable foreign_table, final PgTable table, final Object parent_key, final int maxoccurs, final boolean as_attr, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		try {
 
@@ -1074,7 +1075,7 @@ public class XmlBuilder extends CommonBuilder {
 
 			if (ps == null) {
 
-				String sql = "SELECT * FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" : "");
+				String sql = "SELECT * FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" : "") + (table.has_unique_primary_key ? " LIMIT 1" : maxoccurs >= 0 ? " LIMIT " + maxoccurs : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
 				ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
@@ -1208,7 +1209,7 @@ public class XmlBuilder extends CommonBuilder {
 							key = rset.getObject(field.sql_param_id);
 
 							if (key != null)
-								nest_test.merge(nestChildNode2Xml(foreign_table, tables.get(field.foreign_table_id), key, true, nest_test));
+								nest_test.merge(nestChildNode2Xml(foreign_table, tables.get(field.foreign_table_id), key, field._maxoccurs, true, nest_test));
 
 						}
 
@@ -1337,14 +1338,14 @@ public class XmlBuilder extends CommonBuilder {
 							nested_table = tables.get(field.foreign_table_id);
 
 							if (nested_table.content_holder || !nested_table.bridge || as_attr)
-								nest_test.merge(nestChildNode2Xml(table, nested_table, key, false, nest_test));
+								nest_test.merge(nestChildNode2Xml(table, nested_table, key, field._maxoccurs, false, nest_test));
 
 							else if (nested_table.has_nested_key_exc_attr) {
 
 								// skip bridge table for acceleration
 
 								if (nested_table.list_holder)
-									nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
+									nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, field._maxoccurs, nest_test));
 
 								else
 									nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
@@ -1433,10 +1434,11 @@ public class XmlBuilder extends CommonBuilder {
 	 * @param table list holder and bridge table
 	 * @param parent_key parent key
 	 * @param parent_nest_test nest test result of parent node
+	 * @param maxoccurs integer value of @maxOccurs except for @maxOccurs="unbounded", which gives -1
 	 * @return XmlBuilderNestTester nest test of this node
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private XmlBuilderNestTester skipListAndBridgeNode2Xml(final PgTable table, final Object parent_key, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
+	private XmlBuilderNestTester skipListAndBridgeNode2Xml(final PgTable table, final Object parent_key, final int maxoccurs, XmlBuilderNestTester parent_nest_test) throws PgSchemaException {
 
 		try {
 
@@ -1454,7 +1456,7 @@ public class XmlBuilder extends CommonBuilder {
 
 			if (ps == null) {
 
-				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?";
+				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" + (table.has_unique_primary_key ? " LIMIT 1" : maxoccurs >= 0 ? " LIMIT " + maxoccurs : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
 				ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
@@ -1504,14 +1506,14 @@ public class XmlBuilder extends CommonBuilder {
 				if (key != null) {
 
 					if (nested_table.content_holder || !nested_table.bridge)
-						nest_test.merge(nestChildNode2Xml(table, nested_table, key, false, nest_test));
+						nest_test.merge(nestChildNode2Xml(table, nested_table, key, nested_key._maxoccurs, false, nest_test));
 
 					else if (nested_table.has_nested_key_exc_attr) {
 
 						// skip bridge table for acceleration
 
 						if (nested_table.list_holder)
-							nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nest_test));
+							nest_test.merge(skipListAndBridgeNode2Xml(nested_table, key, nested_key._maxoccurs, nest_test));
 
 						else
 							nest_test.merge(skipBridgeNode2Xml(nested_table, key, nest_test));
@@ -1579,7 +1581,8 @@ public class XmlBuilder extends CommonBuilder {
 
 			boolean category = !table.virtual;
 
-			PgTable nested_table = tables.get(table.nested_fields_exc_attr.get(0).foreign_table_id);
+			PgField nested_key = table.nested_fields_exc_attr.get(0);
+			PgTable nested_table = tables.get(nested_key.foreign_table_id);
 
 			if (category) {
 
@@ -1591,14 +1594,14 @@ public class XmlBuilder extends CommonBuilder {
 			}
 
 			if (nested_table.content_holder || !nested_table.bridge)
-				nest_test.merge(nestChildNode2Xml(table, nested_table, parent_key, false, nest_test));
+				nest_test.merge(nestChildNode2Xml(table, nested_table, parent_key, nested_key._maxoccurs, false, nest_test));
 
 			else if (nested_table.has_nested_key_exc_attr) {
 
 				// skip bridge table for acceleration
 
 				if (nested_table.list_holder)
-					nest_test.merge(skipListAndBridgeNode2Xml(nested_table, parent_key, nest_test));
+					nest_test.merge(skipListAndBridgeNode2Xml(nested_table, parent_key, nested_key._maxoccurs, nest_test));
 
 				else
 					nest_test.merge(skipBridgeNode2Xml(nested_table, parent_key, nest_test));
