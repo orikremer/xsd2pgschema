@@ -724,15 +724,27 @@ public class JsonBuilder extends CommonBuilder {
 
 		}
 
-		if (field.default_value != null)
-			buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("default", field.getJsonSchemaDefaultValue()));
-
 		String enum_array = null;
+
+		if (field.fixed_value != null && !field.fixed_value.isEmpty()) {
+
+			switch (schema_ver) {
+			case draft_v4:
+				enum_array = field.getJsonSchemaFixedValue() + concat_value_space;
+				buffer.append(_indent_spaces + getCanKeyDeclStartArray("enum", true) + enum_array.substring(0, enum_array.length() - (key_value_offset + 1)) + end_array_concat_code);
+				break;
+			default:
+				buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("const", field.getJsonSchemaFixedValue()));
+			}
+
+		}
+
+		if (field.default_value != null && !field.default_value.isEmpty())
+			buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("default", field.getJsonSchemaDefaultValue()));
 
 		if (field.enum_name != null) {
 
 			enum_array = field.getJsonSchemaEnumArray(concat_value_space);
-
 			buffer.append(_indent_spaces + getCanKeyDeclStartArray("enum", true) + enum_array.substring(0, enum_array.length() - (key_value_offset + 1)) + end_array_concat_code);
 
 		}
@@ -772,11 +784,7 @@ public class JsonBuilder extends CommonBuilder {
 			if (schema_minimum != null)
 				buffer.append(_indent_spaces + getCanKeyDecl("minimum") + schema_minimum + concat_line_feed);
 			break;
-		case draft_v6:
-		case draft_v7:
-		case draft_v8:
-		case draft_2019_09:
-		case latest:
+		default:
 			schema_maximum = field.getJsonSchemaMaximumValue(this);
 
 			if (schema_maximum != null)
@@ -895,11 +903,7 @@ public class JsonBuilder extends CommonBuilder {
 				if (schema_minimum != null)
 					buffer.append(_indent_spaces + getCanKeyDecl("minimum") + schema_minimum + concat_line_feed);
 				break;
-			case draft_v6:
-			case draft_v7:
-			case draft_v8:
-			case draft_2019_09:
-			case latest:
+			default:
 				if (schema_maximum != null)
 					buffer.append(_indent_spaces + schema_maximum + concat_line_feed);
 
@@ -2277,7 +2281,9 @@ public class JsonBuilder extends CommonBuilder {
 				String sql = "SELECT * FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" : "") + (table.has_unique_primary_key ? " LIMIT 1" : maxoccurs >= 0 ? " LIMIT " + maxoccurs : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
-				ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
+
+				if (!table.has_unique_primary_key && maxoccurs < 0)
+					ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
 
 			}
 
@@ -2622,7 +2628,9 @@ public class JsonBuilder extends CommonBuilder {
 				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" + (table.has_unique_primary_key ? " LIMIT 1" : maxoccurs >= 0 ? " LIMIT " + maxoccurs : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
-				ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
+
+				if (!table.has_unique_primary_key && maxoccurs < 0)
+					ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
 
 			}
 

@@ -274,8 +274,6 @@ public class XPathEvaluatorImpl {
 
 					ResultSet rset = stat.executeQuery(path_expr.sql);
 
-					stat.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
-
 					ResultSetMetaData meta = rset.getMetaData();
 
 					// field or text node
@@ -442,8 +440,6 @@ public class XPathEvaluatorImpl {
 
 					ResultSet rset = stat.executeQuery(path_expr.sql);
 
-					stat.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
-
 					// table node
 
 					if (terminus.equals(XPathCompType.table)) {
@@ -560,8 +556,6 @@ public class XPathEvaluatorImpl {
 				try {
 
 					ResultSet rset = stat.executeQuery(path_expr.sql);
-
-					stat.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
 
 					// table node
 

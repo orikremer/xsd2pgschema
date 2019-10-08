@@ -4757,6 +4757,9 @@ public class PgSchema implements Serializable {
 			if (!table.target_namespace.isEmpty() && !field.system_key && !field.user_key && !field.any_content_holder && !field.is_same_namespace_of_table)
 				System.out.println("-- xmlns: " + field.target_namespace + " (" + getPrefixOf(field.target_namespace, "n.d.") + ")");
 
+			if (field.default_value != null && !field.default_value.isEmpty())
+				System.out.println("-- @default=\"" + field.default_value + "\"");
+
 			if (field._list)
 				System.out.println("-- " + option.xs_prefix_ + "line/@itemType=\"" + field._list_item_type + "\"");
 
@@ -6313,56 +6316,60 @@ public class PgSchema implements Serializable {
 
 				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
 
-				try {
+				if (!table.has_unique_primary_key) {
 
-					ResultSet rset = meta.getIndexInfo(null, option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name, false, true);
+					try {
 
-					boolean has_index = false;
+						ResultSet rset = meta.getIndexInfo(null, option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name, false, true);
 
-					String column_name;
+						boolean has_index = false;
 
-					while (rset.next()) {
-
-						column_name = rset.getString("COLUMN_NAME");
-
-						if (column_name != null && column_name.contains(table.doc_key_pname)) {
-
-							has_index = true;
-
-							break;
-						}
-
-					}
-
-					rset.close();
-
-					if (!has_index) {
-
-						String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
-
-						rset = stat.executeQuery(sql);
+						String column_name;
 
 						while (rset.next()) {
 
-							if (rset.getInt(1) == pg_option.min_rows_for_index) {
+							column_name = rset.getString("COLUMN_NAME");
 
-								sql = "CREATE INDEX IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(table.doc_key_pname) + " ON " + table.pgname + " ( " + table.doc_key_pgname + " )";
+							if (column_name != null && column_name.contains(table.doc_key_pname)) {
 
-								System.out.println(sql);
+								has_index = true;
 
-								stat.execute(sql);
-
+								break;
 							}
 
-							break;
 						}
 
 						rset.close();
 
+						if (!has_index) {
+
+							String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
+
+							rset = stat.executeQuery(sql);
+
+							while (rset.next()) {
+
+								if (rset.getInt(1) == pg_option.min_rows_for_index) {
+
+									sql = "CREATE INDEX IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(table.doc_key_pname) + " ON " + table.pgname + " ( " + table.doc_key_pgname + " )";
+
+									System.out.println(sql);
+
+									stat.execute(sql);
+
+								}
+
+								break;
+							}
+
+							rset.close();
+
+						}
+
+					} catch (SQLException e) {
+						e.printStackTrace();
 					}
 
-				} catch (SQLException e) {
-					e.printStackTrace();
 				}
 
 			});
@@ -6398,34 +6405,38 @@ public class PgSchema implements Serializable {
 
 				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
 
-				try {
+				if (!table.has_unique_primary_key) {
 
-					ResultSet rset = meta.getIndexInfo(null, option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name, false, true);
+					try {
 
-					String index_name, column_name, sql;
+						ResultSet rset = meta.getIndexInfo(null, option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name, false, true);
 
-					while (rset.next()) {
+						String index_name, column_name, sql;
 
-						index_name = rset.getString("INDEX_NAME");
-						column_name = rset.getString("COLUMN_NAME");
+						while (rset.next()) {
 
-						if (index_name != null && index_name.equalsIgnoreCase("IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(table.doc_key_pname)) && column_name != null && column_name.equals(table.doc_key_pname)) {
+							index_name = rset.getString("INDEX_NAME");
+							column_name = rset.getString("COLUMN_NAME");
 
-							sql = "DROP INDEX " + PgSchemaUtil.avoidPgReservedWords(index_name);
+							if (index_name != null && index_name.equalsIgnoreCase("IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(table.doc_key_pname)) && column_name != null && column_name.equals(table.doc_key_pname)) {
 
-							System.out.println(sql);
+								sql = "DROP INDEX " + PgSchemaUtil.avoidPgReservedWords(index_name);
 
-							stat.execute(sql);
+								System.out.println(sql);
 
-							break;
+								stat.execute(sql);
+
+								break;
+							}
+
 						}
 
+						rset.close();
+
+					} catch (SQLException e) {
+						e.printStackTrace();
 					}
 
-					rset.close();
-
-				} catch (SQLException e) {
-					e.printStackTrace();
 				}
 
 			});

@@ -1,4 +1,4 @@
-﻿ Changes in xsd2pgschema 3.3.4 (release 2019-10-03)
+﻿ Changes in xsd2pgschema 3.3.4 (release 2019-10-08)
 
   Revised implementation of child node name constraint.
   Revised restraint information in PostgreSQL DDL.
@@ -7,6 +7,7 @@
   Added support for @maxOccurs constraint in nodeparser.
   Added support for CREATE/DROP of PostgreSQL index on primary key without unique constraint. (--create-non-uniq-pkey-index (default), --no-create-non-uniq-pkey-index, and --drop-non-uniq-pkey-index options)
   Improved XPath evaluation performance.
+  Added support for mapping XSD's @fixed value to JSON Schema's "const" property.
 
  Changes in xsd2pgschema 3.3.3 (release 2019-09-27)
 

@@ -224,7 +224,7 @@ public class PgField implements Serializable {
 	public String[] child_nodes = null;
 
 	/** The @fixed. */
-	protected String fixed_value = null;
+	public String fixed_value = null;
 
 	/** The @default. */
 	public String default_value = null;
@@ -3241,6 +3241,70 @@ public class PgField implements Serializable {
 	}
 
 	// JSON Schema
+
+	/**
+	 * Return JSON Schema fixed value.
+	 *
+	 * @return String JSON Schema fixed value
+	 */
+	public String getJsonSchemaFixedValue() {
+
+		switch (xs_type) {
+		case xs_boolean:
+		case xs_float:
+		case xs_double:
+		case xs_decimal:
+		case xs_integer:
+		case xs_nonNegativeInteger:
+		case xs_nonPositiveInteger:
+		case xs_positiveInteger:
+		case xs_negativeInteger:
+		case xs_long:
+		case xs_unsignedLong:
+		case xs_int:
+		case xs_unsignedInt:
+		case xs_short:
+		case xs_unsignedShort:
+		case xs_byte:
+		case xs_unsignedByte:
+			return fixed_value;
+		case xs_hexBinary:
+		case xs_base64Binary:
+		case xs_duration:
+		case xs_yearMonthDuration:
+		case xs_dayTimeDuration:
+		case xs_dateTime:
+		case xs_dateTimeStamp:
+		case xs_date:
+		case xs_time:
+		case xs_gYear:
+		case xs_gYearMonth:
+		case xs_gMonth:
+		case xs_gMonthDay:
+		case xs_gDay:
+		case xs_string:
+		case xs_anyURI:
+		case xs_QName:
+		case xs_NOTATION:
+		case xs_normalizedString:
+		case xs_token:
+		case xs_language:
+		case xs_Name:
+		case xs_NCName:
+		case xs_ENTITY:
+		case xs_ID:
+		case xs_IDREF:
+		case xs_NMTOKEN:
+		case xs_ENTITIES:
+		case xs_IDREFS:
+		case xs_NMTOKENS:
+		case xs_anyType:
+			return "\"" + StringEscapeUtils.escapeEcmaScript(fixed_value) + "\"";
+		default: // xs_any, xs_anyAttribute
+		}
+
+		return "null";
+	}
 
 	/**
 	 * Return JSON Schema default value.

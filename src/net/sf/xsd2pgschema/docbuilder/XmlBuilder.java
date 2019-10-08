@@ -1078,7 +1078,9 @@ public class XmlBuilder extends CommonBuilder {
 				String sql = "SELECT * FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" : "") + (table.has_unique_primary_key ? " LIMIT 1" : maxoccurs >= 0 ? " LIMIT " + maxoccurs : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
-				ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
+
+				if (!table.has_unique_primary_key && maxoccurs < 0)
+					ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
 
 			}
 
@@ -1459,7 +1461,9 @@ public class XmlBuilder extends CommonBuilder {
 				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" + (table.has_unique_primary_key ? " LIMIT 1" : maxoccurs >= 0 ? " LIMIT " + maxoccurs : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
-				ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
+
+				if (!table.has_unique_primary_key && maxoccurs < 0)
+					ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
 
 			}
 
