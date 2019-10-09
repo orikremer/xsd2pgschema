@@ -3243,11 +3243,12 @@ public class PgField implements Serializable {
 	// JSON Schema
 
 	/**
-	 * Return JSON Schema fixed value.
+	 * Return JSON Schema value.
 	 *
-	 * @return String JSON Schema fixed value
+	 * @param value string
+	 * @return String JSON Schema value
 	 */
-	public String getJsonSchemaFixedValue() {
+	public String getJsonSchemaValue(final String value) {
 
 		switch (xs_type) {
 		case xs_boolean:
@@ -3267,7 +3268,7 @@ public class PgField implements Serializable {
 		case xs_unsignedShort:
 		case xs_byte:
 		case xs_unsignedByte:
-			return fixed_value;
+			return value;
 		case xs_hexBinary:
 		case xs_base64Binary:
 		case xs_duration:
@@ -3299,71 +3300,7 @@ public class PgField implements Serializable {
 		case xs_IDREFS:
 		case xs_NMTOKENS:
 		case xs_anyType:
-			return "\"" + StringEscapeUtils.escapeEcmaScript(fixed_value) + "\"";
-		default: // xs_any, xs_anyAttribute
-		}
-
-		return "null";
-	}
-
-	/**
-	 * Return JSON Schema default value.
-	 *
-	 * @return String JSON Schema default value
-	 */
-	public String getJsonSchemaDefaultValue() {
-
-		switch (xs_type) {
-		case xs_boolean:
-		case xs_float:
-		case xs_double:
-		case xs_decimal:
-		case xs_integer:
-		case xs_nonNegativeInteger:
-		case xs_nonPositiveInteger:
-		case xs_positiveInteger:
-		case xs_negativeInteger:
-		case xs_long:
-		case xs_unsignedLong:
-		case xs_int:
-		case xs_unsignedInt:
-		case xs_short:
-		case xs_unsignedShort:
-		case xs_byte:
-		case xs_unsignedByte:
-			return default_value;
-		case xs_hexBinary:
-		case xs_base64Binary:
-		case xs_duration:
-		case xs_yearMonthDuration:
-		case xs_dayTimeDuration:
-		case xs_dateTime:
-		case xs_dateTimeStamp:
-		case xs_date:
-		case xs_time:
-		case xs_gYear:
-		case xs_gYearMonth:
-		case xs_gMonth:
-		case xs_gMonthDay:
-		case xs_gDay:
-		case xs_string:
-		case xs_anyURI:
-		case xs_QName:
-		case xs_NOTATION:
-		case xs_normalizedString:
-		case xs_token:
-		case xs_language:
-		case xs_Name:
-		case xs_NCName:
-		case xs_ENTITY:
-		case xs_ID:
-		case xs_IDREF:
-		case xs_NMTOKEN:
-		case xs_ENTITIES:
-		case xs_IDREFS:
-		case xs_NMTOKENS:
-		case xs_anyType:
-			return "\"" + StringEscapeUtils.escapeEcmaScript(default_value) + "\"";
+			return "\"" + StringEscapeUtils.escapeEcmaScript(value) + "\"";
 		default: // xs_any, xs_anyAttribute
 		}
 
@@ -3400,8 +3337,8 @@ public class PgField implements Serializable {
 			case xs_unsignedShort:
 			case xs_byte:
 			case xs_unsignedByte:
-				for (String enumeration : xenumeration)
-					sb.append(enumeration + concat_value_space);
+				for (String value : xenumeration)
+					sb.append(value + concat_value_space);
 				break;
 			case xs_hexBinary:
 			case xs_base64Binary:
@@ -3434,8 +3371,8 @@ public class PgField implements Serializable {
 			case xs_IDREFS:
 			case xs_NMTOKENS:
 			case xs_anyType:
-				for (String enumeration : xenumeration)
-					sb.append("\"" + StringEscapeUtils.escapeEcmaScript(enumeration) + "\"" + concat_value_space);
+				for (String value : xenumeration)
+					sb.append("\"" + StringEscapeUtils.escapeEcmaScript(value) + "\"" + concat_value_space);
 				break;
 			default: // xs_any, xs_anyAttribute
 			}

@@ -724,23 +724,25 @@ public class JsonBuilder extends CommonBuilder {
 
 		}
 
-		String enum_array = null;
+		String fixed_array = null;
 
-		if (field.fixed_value != null && !field.fixed_value.isEmpty()) {
+		if (field.fixed_value != null) {
 
 			switch (schema_ver) {
 			case draft_v4:
-				enum_array = field.getJsonSchemaFixedValue() + concat_value_space;
-				buffer.append(_indent_spaces + getCanKeyDeclStartArray("enum", true) + enum_array.substring(0, enum_array.length() - (key_value_offset + 1)) + end_array_concat_code);
+				fixed_array = field.getJsonSchemaValue(field.fixed_value) + concat_value_space;
+				buffer.append(_indent_spaces + getCanKeyDeclStartArray("enum", true) + fixed_array.substring(0, fixed_array.length() - (key_value_offset + 1)) + end_array_concat_code);
 				break;
 			default:
-				buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("const", field.getJsonSchemaFixedValue()));
+				buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("const", field.getJsonSchemaValue(field.fixed_value)));
 			}
 
 		}
 
-		if (field.default_value != null && !field.default_value.isEmpty())
-			buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("default", field.getJsonSchemaDefaultValue()));
+		if (field.default_value != null)
+			buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("default", field.getJsonSchemaValue(field.default_value)));
+
+		String enum_array = null;
 
 		if (field.enum_name != null) {
 
@@ -869,8 +871,20 @@ public class JsonBuilder extends CommonBuilder {
 			if (!no_field_anno)
 				buffer.append(_indent_spaces + getCanKeyValuePairDecl("description", "array of previous object: " + getKey(foreign_table, field, as_attr)));
 
+			if (field.fixed_value != null) {
+
+				switch (schema_ver) {
+				case draft_v4:
+					buffer.append(_indent_spaces + getCanKeyDeclStartArray("enum", true) + fixed_array.substring(0, fixed_array.length() - (key_value_offset + 1)) + end_array_concat_code);
+					break;
+				default:
+					buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("const", field.getJsonSchemaValue(field.fixed_value)));
+				}
+
+			}
+
 			if (field.default_value != null)
-				buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("default", field.getJsonSchemaDefaultValue()));
+				buffer.append(_indent_spaces + getCanKeyValuePairDeclNoQuote("default", field.getJsonSchemaValue(field.default_value)));
 
 			if (field.enum_name != null)
 				buffer.append(_indent_spaces + getCanKeyDeclStartArray("enum", true) + enum_array.substring(0, enum_array.length() - (key_value_offset + 1)) + end_array_concat_code);
