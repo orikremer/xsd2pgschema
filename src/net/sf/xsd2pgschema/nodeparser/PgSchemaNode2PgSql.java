@@ -488,7 +488,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 					continue;
 
 				if (!occupied[f])
-					ps.setNull(field.sql_param_id, field.getSqlDataType());
+					ps.setNull(field.sql_insert_id, field.getSqlDataType());
 
 			}
 

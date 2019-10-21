@@ -13,7 +13,14 @@ fi
 DB_NAME=intact
 DB_USER=$USER
 
-psql -U $DB_USER -l | grep $DB_NAME > /dev/null || ( echo "database \"$DB_NAME\" does not exist." && exit 1 )
+psql -U $DB_USER -l | grep $DB_NAME > /dev/null
+
+if [ $? != 0 ] ; then
+
+ echo "database \"$DB_NAME\" does not exist."
+ exit 1
+
+fi
 
 XML_DIR=pmid
 
@@ -34,7 +41,9 @@ fi
 
 DB_SCHEMA=`basename $XSD_SCHEMA .xsd`.schema
 
-java -classpath ../xsd2pgschema.jar xsd2pgschema --xsd $XSD_SCHEMA --ddl $DB_SCHEMA
+java -classpath ../xsd2pgschema.jar xsd2pgschema --xsd $XSD_SCHEMA --ddl $DB_SCHEMA --pg-map-timestamp
+
+exit
 
 echo
 echo "Do you want to update $DB_NAME? (y [n]) "
@@ -105,11 +114,11 @@ err_file=$ERR_DIR/all_err
 
 if [ $sync_update != "true" ] ; then
 
- java -classpath ../xsd2pgschema.jar xml2pgtsv --xsd $XSD_SCHEMA --xml $XML_DIR --work-dir $DATA_DIR --sync $MD5_DIR --db-name $DB_NAME --db-user $DB_USER 2> $err_file
+ java -classpath ../xsd2pgschema.jar xml2pgtsv --xsd $XSD_SCHEMA --xml $XML_DIR --work-dir $DATA_DIR --sync $MD5_DIR --db-name $DB_NAME --db-user $DB_USER --pg-map-timestamp 2> $err_file
 
 else
 
- java -classpath ../xsd2pgschema.jar xml2pgsql --xsd $XSD_SCHEMA --xml $XML_DIR --sync $MD5_DIR --db-name $DB_NAME --db-user $DB_USER 2> $err_file
+ java -classpath ../xsd2pgschema.jar xml2pgsql --xsd $XSD_SCHEMA --xml $XML_DIR --sync $MD5_DIR --db-name $DB_NAME --db-user $DB_USER --pg-map-timestamp 2> $err_file
 
 fi
 

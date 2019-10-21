@@ -20,6 +20,7 @@ limitations under the License.
 import net.sf.xsd2pgschema.*;
 import net.sf.xsd2pgschema.docbuilder.*;
 import net.sf.xsd2pgschema.option.*;
+import net.sf.xsd2pgschema.type.PgDateType;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -107,6 +108,12 @@ public class xsd2jsonschema {
 				option.setCaseInsensitive();
 				jsonb_option.setCaseInsensitive();
 			}
+
+			else if (args[i].equals("--json-map-date-time"))
+				option.pg_date = PgDateType.timestamp;
+
+			else if (args[i].equals("--json-map-date"))
+				option.pg_date = PgDateType.date;
 
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
@@ -200,6 +207,8 @@ public class xsd2jsonschema {
 		System.err.println("Option: --inline-simple-cont (enable inlining simple content)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");
+		System.err.println("        --json-map-date-time (map xs:date to JSON Schema date-time type according to the W3C rules)");
+		System.err.println("        --json-map-date (map xs:date to JSON Schema date type, default)");	
 		System.err.println("        --field-annotation (retrieve field annotation, default)");
 		System.err.println("        --no-field-annotation (do not retrieve field annotation)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");

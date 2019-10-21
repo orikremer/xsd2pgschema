@@ -31,7 +31,7 @@ if [ ! -e $DB_FTP/$ZIP_FILE ] ; then
 
 fi
 
-unzip $DB_FTP/$ZIP_FILE -d $XML_DIR
+( mkdir $XML_DIR; cd $XML_DIR ; jar xvf ../$DB_FTP/$ZIP_FILE )
 
 date
 

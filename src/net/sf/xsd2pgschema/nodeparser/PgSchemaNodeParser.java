@@ -259,6 +259,9 @@ public abstract class PgSchemaNodeParser {
 		else if (table.has_nested_key_to_simple_attr && current_key.contains("@"))
 			return null;
 
+		if (field.nested_key_as_attr_group && !node.hasAttributes())
+			return null;
+
 		PgTable nested_table = npb.schema.getTable(field.foreign_table_id);
 
 		if (!field.nested_key_as_attr) {

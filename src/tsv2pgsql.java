@@ -20,6 +20,7 @@ limitations under the License.
 import net.sf.xsd2pgschema.*;
 import net.sf.xsd2pgschema.option.*;
 import net.sf.xsd2pgschema.serverutil.*;
+import net.sf.xsd2pgschema.type.PgDateType;
 import net.sf.xsd2pgschema.type.PgDecimalType;
 import net.sf.xsd2pgschema.type.PgIntegerType;
 
@@ -196,6 +197,12 @@ public class tsv2pgsql {
 
 			else if (args[i].equals("--pg-map-float-decimal"))
 				option.pg_decimal = PgDecimalType.single_precision_32;
+
+			else if (args[i].equals("--pg-map-timestamp"))
+				option.pg_date = PgDateType.timestamp;
+
+			else if (args[i].equals("--pg-map-date"))
+				option.pg_date = PgDateType.date;
 
 			else if (args[i].equals("--pg-comma-delimiter"))
 				option.usePgCsv();
@@ -378,6 +385,8 @@ public class tsv2pgsql {
 		System.err.println("        --pg-map-big-decimal (map xs:decimal to BigDecimal according to the W3C rules, default)");
 		System.err.println("        --pg-map-double-decimal (map xs:decimal to double precision 64 bits)");
 		System.err.println("        --pg-map-float-decimal (map xs:decimal to single precision 32 bits)");
+		System.err.println("        --pg-map-timestamp (map xs:date to PostgreSQL timestamp type according to the W3C rules)");
+		System.err.println("        --pg-map-date (map xs:date to PostgreSQL date type, default)");	
 		System.err.println("        --pg-comma-delimiter (use comma separated file)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --doc-key-name DOC_KEY_NAME (default=\"" + option.def_document_key_name + "\")");

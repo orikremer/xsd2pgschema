@@ -1859,11 +1859,11 @@ public class JsonBuilder extends CommonBuilder {
 
 				switch (terminus) {
 				case element:
-					content = field.retrieveFirst(rset);
+					content = field.retrieve(rset, 1);
 					writeFieldFrag(null, field, as_attr, content);
 					break;
 				case simple_content:
-					content = field.retrieveFirst(rset);
+					content = field.retrieve(rset, 1);
 
 					// simple content
 
@@ -1880,7 +1880,7 @@ public class JsonBuilder extends CommonBuilder {
 						writeFieldFrag(null, field, as_attr = true, content);
 					break;
 				case attribute:
-					content = field.retrieveFirst(rset);
+					content = field.retrieve(rset, 1);
 
 					// attribute
 
@@ -1930,7 +1930,7 @@ public class JsonBuilder extends CommonBuilder {
 						PgField _field = table.getField(column_name);
 
 						if (_field != null)
-							content = field.retrieveFirst(rset);
+							content = field.retrieve(rset, 1);
 
 						buffer.append(content + concat_line_feed);
 
@@ -2032,7 +2032,7 @@ public class JsonBuilder extends CommonBuilder {
 			if (table.doc_key_pname != null) {
 
 				document_key = table.fields.stream().filter(field -> field.pname.equals(table.doc_key_pname)).findFirst().get();
-				document_id = rset.getString(document_key.sql_param_id);
+				document_id = rset.getString(document_key.sql_insert_id);
 
 			}
 
@@ -2044,7 +2044,7 @@ public class JsonBuilder extends CommonBuilder {
 
 					if (field.attribute) {
 
-						content = field.retrieve(rset);
+						content = field.retrieveByInsertId(rset);
 
 						if (content != null) {
 
@@ -2066,7 +2066,7 @@ public class JsonBuilder extends CommonBuilder {
 
 					else if (field.any_attribute) {
 
-						SQLXML xml_object = rset.getSQLXML(field.sql_param_id);
+						SQLXML xml_object = rset.getSQLXML(field.sql_insert_id);
 
 						if (xml_object != null) {
 
@@ -2092,12 +2092,27 @@ public class JsonBuilder extends CommonBuilder {
 
 					else if (field.nested_key_as_attr) {
 
-						key = rset.getObject(field.sql_param_id);
+						key = rset.getObject(field.sql_insert_id);
 
 						if (key != null)
 							nest_test.merge(nestChildNode2Json(table, tables.get(field.foreign_table_id), key, field._maxoccurs, true, nest_test));
 
 					}
+
+				}
+
+			}
+
+			// nested key as attribute group
+
+			if (table.has_nested_key_as_attr_group) {
+
+				for (PgField field : table.nested_fields_as_attr_group) {
+
+					key = rset.getObject(field.sql_insert_id);
+
+					if (key != null)
+						nest_test.merge(nestChildNode2Json(table, tables.get(field.foreign_table_id), key, field._maxoccurs, true, nest_test));
 
 				}
 
@@ -2129,7 +2144,7 @@ public class JsonBuilder extends CommonBuilder {
 
 					if (field.simple_content && !field.simple_attribute) {
 
-						content = field.retrieve(rset);
+						content = field.retrieveByInsertId(rset);
 
 						if (content != null) {
 
@@ -2148,7 +2163,7 @@ public class JsonBuilder extends CommonBuilder {
 
 					else if (field.element) {
 
-						content = field.retrieve(rset);
+						content = field.retrieveByInsertId(rset);
 
 						if (content != null) {
 
@@ -2168,7 +2183,7 @@ public class JsonBuilder extends CommonBuilder {
 
 					else if (field.any) {
 
-						SQLXML xml_object = rset.getSQLXML(field.sql_param_id);
+						SQLXML xml_object = rset.getSQLXML(field.sql_insert_id);
 
 						if (xml_object != null) {
 
@@ -2198,13 +2213,16 @@ public class JsonBuilder extends CommonBuilder {
 
 			// nested key
 
-			if (table.has_nested_key_exc_attr) {
+			if (table.has_nested_key_excl_attr) {
 
 				PgTable nested_table;
 
-				for (PgField field : table.nested_fields_exc_attr) {
+				for (PgField field : table.nested_fields_excl_attr) {
 
-					key = rset.getObject(field.sql_param_id);
+					if (field.nested_key_as_attr_group)
+						continue;
+
+					key = rset.getObject(field.sql_insert_id);
 
 					if (key != null) {
 
@@ -2213,7 +2231,7 @@ public class JsonBuilder extends CommonBuilder {
 						if (nested_table.content_holder || !nested_table.bridge)
 							nest_test.merge(nestChildNode2Json(table, nested_table, key, field._maxoccurs, false, nest_test));
 
-						else if (nested_table.has_nested_key_exc_attr) {
+						else if (nested_table.has_nested_key_excl_attr) {
 
 							// skip bridge table for acceleration
 
@@ -2286,18 +2304,22 @@ public class JsonBuilder extends CommonBuilder {
 				pending_elem.push(new JsonBuilderPendingElem(table, nest_test.current_indent_level));
 
 			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
-			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1 || table.total_nested_fields > 1;
+			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1 || table.total_nested_fields > 1 || (table.content_holder && !table.bridge);
 
 			PreparedStatement ps = table.ps;
 
 			if (ps == null) {
 
-				String sql = "SELECT * FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" : "") + (table.has_unique_primary_key ? " LIMIT 1" : maxoccurs >= 0 ? " LIMIT " + maxoccurs : "");
+				boolean limit_one = table.has_unique_primary_key || (table.bridge && table.virtual) || (!category_item && !foreign_table.list_holder);
+
+				String sql = "SELECT " + table.select_field_names + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" : "") + (limit_one ? " LIMIT 1" : maxoccurs > 0 ? " LIMIT " + maxoccurs : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
 
-				if (!table.has_unique_primary_key && maxoccurs < 0)
-					ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
+				int fetch_size = limit_one ? 1 : (maxoccurs > 0 && maxoccurs < PgSchemaUtil.def_jdbc_fetch_size ? maxoccurs : maxoccurs < 0 ? PgSchemaUtil.pg_min_rows_for_index : 0);
+
+				if (fetch_size > 0)
+					ps.setFetchSize(fetch_size);
 
 			}
 
@@ -2345,7 +2367,7 @@ public class JsonBuilder extends CommonBuilder {
 
 						if (field.attribute) {
 
-							content = field.retrieve(rset);
+							content = field.retrieveBySelectId(rset);
 
 							if (content != null) {
 
@@ -2374,7 +2396,7 @@ public class JsonBuilder extends CommonBuilder {
 
 						else if ((field.simple_attribute || field.simple_attr_cond) && as_attr) {
 
-							content = field.retrieve(rset);
+							content = field.retrieveBySelectId(rset);
 
 							if (content != null) {
 
@@ -2402,7 +2424,7 @@ public class JsonBuilder extends CommonBuilder {
 
 						else if (field.any_attribute) {
 
-							SQLXML xml_object = rset.getSQLXML(field.sql_param_id);
+							SQLXML xml_object = rset.getSQLXML(field.sql_select_id);
 
 							if (xml_object != null) {
 
@@ -2428,12 +2450,27 @@ public class JsonBuilder extends CommonBuilder {
 
 						else if (field.nested_key_as_attr) {
 
-							key = rset.getObject(field.sql_param_id);
+							key = rset.getObject(field.sql_select_id);
 
 							if (key != null)
 								nest_test.merge(nestChildNode2Json(foreign_table, tables.get(field.foreign_table_id), key, field._maxoccurs, true, nest_test));
 
 						}
+
+					}
+
+				}
+
+				// nested key as attribute group
+
+				if (table.has_nested_key_as_attr_group) {
+
+					for (PgField field : table.nested_fields_as_attr_group) {
+
+						key = rset.getObject(field.sql_select_id);
+
+						if (key != null)
+							nest_test.merge(nestChildNode2Json(table, tables.get(field.foreign_table_id), key, field._maxoccurs, true, nest_test));
 
 					}
 
@@ -2447,7 +2484,7 @@ public class JsonBuilder extends CommonBuilder {
 
 						if (field.simple_content && !field.simple_attribute && !as_attr) {
 
-							content = field.retrieve(rset);
+							content = field.retrieveBySelectId(rset);
 
 							if (content != null) {
 
@@ -2473,7 +2510,7 @@ public class JsonBuilder extends CommonBuilder {
 
 						else if (field.element) {
 
-							content = field.retrieve(rset);
+							content = field.retrieveBySelectId(rset);
 
 							if (content != null) {
 
@@ -2500,7 +2537,7 @@ public class JsonBuilder extends CommonBuilder {
 
 						else if (field.any) {
 
-							SQLXML xml_object = rset.getSQLXML(field.sql_param_id);
+							SQLXML xml_object = rset.getSQLXML(field.sql_select_id);
 
 							if (xml_object != null) {
 
@@ -2530,11 +2567,14 @@ public class JsonBuilder extends CommonBuilder {
 
 				// nested key
 
-				if (table.has_nested_key_exc_attr) {
+				if (table.has_nested_key_excl_attr) {
 
-					for (PgField field : table.nested_fields_exc_attr) {
+					for (PgField field : table.nested_fields_excl_attr) {
 
-						key = rset.getObject(field.sql_param_id);
+						if (field.nested_key_as_attr_group)
+							continue;
+
+						key = rset.getObject(field.sql_select_id);
 
 						if (key != null) {
 
@@ -2543,7 +2583,7 @@ public class JsonBuilder extends CommonBuilder {
 							if (nested_table.content_holder || !nested_table.bridge || as_attr)
 								nest_test.merge(nestChildNode2Json(table, nested_table, key, field._maxoccurs, false, nest_test));
 
-							else if (nested_table.has_nested_key_exc_attr) {
+							else if (nested_table.has_nested_key_excl_attr) {
 
 								// skip bridge table for acceleration
 
@@ -2634,17 +2674,21 @@ public class JsonBuilder extends CommonBuilder {
 
 			PreparedStatement ps = table.ps;
 
-			PgField nested_key = table.nested_fields_exc_attr.get(0);
+			PgField nested_key = table.nested_fields_excl_attr.get(0);
 			PgTable nested_table = tables.get(nested_key.foreign_table_id);
 
 			if (ps == null) {
 
-				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" + (table.has_unique_primary_key ? " LIMIT 1" : maxoccurs >= 0 ? " LIMIT " + maxoccurs : "");
+				boolean limit_one = table.has_unique_primary_key || (table.bridge && table.virtual);
+
+				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" + (limit_one ? " LIMIT 1" : maxoccurs > 0 ? " LIMIT " + maxoccurs : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
 
-				if (!table.has_unique_primary_key && maxoccurs < 0)
-					ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
+				int fetch_size = limit_one ? 1 : (maxoccurs > 0 && maxoccurs < PgSchemaUtil.def_jdbc_fetch_size ? maxoccurs : maxoccurs < 0 ? PgSchemaUtil.pg_min_rows_for_index : 0);
+
+				if (fetch_size > 0)
+					ps.setFetchSize(fetch_size);
 
 			}
 
@@ -2685,7 +2729,7 @@ public class JsonBuilder extends CommonBuilder {
 					if (nested_table.content_holder || !nested_table.bridge)
 						nest_test.merge(nestChildNode2Json(table, nested_table, key, nested_key._maxoccurs, false, nest_test));
 
-					else if (nested_table.has_nested_key_exc_attr) {
+					else if (nested_table.has_nested_key_excl_attr) {
 
 						// skip bridge table for acceleration
 
@@ -2744,7 +2788,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		boolean category = !table.virtual;
 
-		PgField nested_key = table.nested_fields_exc_attr.get(0);
+		PgField nested_key = table.nested_fields_excl_attr.get(0);
 		PgTable nested_table = tables.get(nested_key.foreign_table_id);
 
 		if (category)
@@ -2753,7 +2797,7 @@ public class JsonBuilder extends CommonBuilder {
 		if (nested_table.content_holder || !nested_table.bridge)
 			nest_test.merge(nestChildNode2Json(table, nested_table, parent_key, nested_key._maxoccurs, false, nest_test));
 
-		else if (nested_table.has_nested_key_exc_attr) {
+		else if (nested_table.has_nested_key_excl_attr) {
 
 			// skip bridge table for acceleration
 

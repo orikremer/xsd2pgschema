@@ -1114,6 +1114,13 @@ public class PgSchema implements Serializable {
 
 		});
 
+		// update nested key as attribute group
+
+		tables.stream().filter(table -> (table.has_attrs || table.has_simple_attribute || table.has_nested_key_to_simple_attr) &&
+				!table.has_elems && table.total_foreign_fields == 1 &&
+				table.fields.stream().filter(field -> field.attribute || field.nested_key_as_attr).count() > 0 &&
+				!table.fields.stream().anyMatch(field -> field.nested_key && !field.nested_key_as_attr)).forEach(table -> extractNestedKeyAsAttrGrp(getForeignTable(table.fields.stream().filter(field -> field.foreign_key).findFirst().get()), table));
+
 		// decide whether writable table
 
 		tables.parallelStream().filter(table -> table.required && (option.rel_model_ext || !table.relational)).forEach(table -> table.writable = true);
@@ -1273,6 +1280,43 @@ public class PgSchema implements Serializable {
 
 			});
 
+			do {
+
+				tables.stream().filter(table -> table.total_nested_fields > 0 && table.fields.stream().anyMatch(field -> field.nested_key_as_attr_group)).forEach(table -> {
+
+					PgField field = table.fields.stream().filter(_field -> _field.nested_key_as_attr_group).findFirst().get();
+
+					int field_id = table.fields.indexOf(field);
+
+					PgTable attr_group_table = getForeignTable(field);
+
+					if (!disrupted_tables.contains(attr_group_table)) {
+
+						List<PgField> attr_group = attr_group_table.fields.stream().filter(attr_field -> (attr_field.attribute || attr_field.nested_key_as_attr) && !table.fields.stream().anyMatch(_field -> _field.name.equals(attr_field.name))).collect(Collectors.toList());
+
+						if (attr_group.size() > 0) {
+
+							table.fields.addAll(field_id, attr_group);
+							attr_group.clear();
+
+						}
+
+						table.fields.remove(field);
+
+						table.countNestedFields();
+
+						disrupted_tables.add(attr_group_table);
+
+					}
+
+				});
+
+				tables.stream().filter(table -> !table.has_elems && table.total_foreign_fields == 1 &&
+						table.fields.stream().filter(field -> field.attribute || field.nested_key_as_attr || field.nested_key_as_attr_group).count() > 0 &&
+						!table.fields.stream().anyMatch(field -> field.nested_key && !field.nested_key_as_attr)).forEach(table -> extractNestedKeyAsAttrGrp(getForeignTable(table.fields.stream().filter(field -> field.foreign_key).findFirst().get()), table));
+
+			} while (tables.stream().anyMatch(table -> table.total_nested_fields > 0 && table.fields.stream().anyMatch(field -> field.nested_key_as_attr_group)));
+
 			disrupted_tables.forEach(table -> pg_inline_simple_conts.add(table.schema_location + " " + getPgNameOf(table)));
 
 			tables.removeAll(disrupted_tables);
@@ -1390,16 +1434,14 @@ public class PgSchema implements Serializable {
 
 		tables.parallelStream().filter(table -> table.writable && !table.fields.stream().anyMatch(field -> !field.document_key && !field.primary_key && !field.serial_key && !field.xpath_key)).forEach(table -> table.writable = false);
 
+		// update system key, user key, omissible and jsonable flags
+
 		tables.parallelStream().forEach(table -> {
 
 			table.classify();
 
-			// update table has attributes
-
-			if (!table.has_attrs && (table.has_simple_attribute || table.has_nested_key_to_simple_attr))
+			if (!table.has_attrs && (table.has_simple_attribute || table.has_nested_key_to_simple_attr || table.fields.stream().anyMatch(field -> field.nested_key_as_attr_group)))
 				table.has_attrs = true;
-
-			// update system key, user key, omissible and jsonable flags
 
 			table.fields.forEach(field -> {
 
@@ -1711,7 +1753,8 @@ public class PgSchema implements Serializable {
 						+ tables.parallelStream().map(table -> table.fields.stream().filter(field -> field.unique_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " unique constraints), ");
 				def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.foreign_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " foreign keys, ");
 				def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.nested_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " nested keys ("
-						+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.nested_key_as_attr).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute)\n");
+						+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.nested_key_as_attr).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute, "
+						+ tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.nested_key_as_attr_group).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " as attribute group)\n");
 				def_stat_msg.append("--   User keys:\n");
 				def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.document_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " document keys, ");
 				def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.serial_key).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " serial keys, ");
@@ -1812,38 +1855,7 @@ public class PgSchema implements Serializable {
 
 			table.fields.forEach(field -> field.latin_1_encoded = field.xs_type.isLatin1Encoded());
 
-			// preset XML start/end element tag template for document key
-
-			if (option.document_key || option.in_place_document_key) {
-
-				Optional<PgField> opt = table.fields.stream().filter(field -> field.document_key).findFirst();
-
-				if (opt.isPresent()) {
-
-					PgField field = opt.get();
-
-					field.start_end_elem_tag = new String("<<" + (table.prefix.isEmpty() ? "" : table.prefix + ":") + field.xname + ">").getBytes(PgSchemaUtil.def_charset);
-
-				}
-
-			}
-
-			// preset XML start/end/empty element tag template for element
-
-			if (table.has_element) {
-
-				table.fields.stream().filter(field -> field.element).forEach(field -> {
-
-					String prefix = field.is_same_namespace_of_table ? table.prefix : field.prefix;
-
-					field.start_end_elem_tag = new String("<<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + ">\n").getBytes(PgSchemaUtil.def_charset);
-					field.empty_elem_tag = new String("<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + " " + PgSchemaUtil.xsi_prefix + ":nil=\"true\"/>\n").getBytes(PgSchemaUtil.def_charset);
-
-				});
-
-			}
-
-			// preset SQL parameter id
+			// preset SQL insert id
 
 			int param_id = 0;
 
@@ -1852,7 +1864,7 @@ public class PgSchema implements Serializable {
 				if (field.omissible)
 					continue;
 
-				field.sql_param_id = ++param_id;
+				field.sql_insert_id = ++param_id;
 
 			}
 
@@ -1872,6 +1884,22 @@ public class PgSchema implements Serializable {
 					field.sql_upsert_id = ++param_id;
 
 			}
+
+			// preset SQL select id
+
+			param_id = 0;
+
+			for (PgField field : table.fields) {
+
+				if (field.omissible || field.primary_key || field.foreign_key || field.user_key)
+					continue;
+
+				field.sql_select_id = ++param_id;
+
+			}
+
+			if (param_id > 0)
+				table.select_field_names = PgSchemaUtil.avoidPgReservedWords(",", table.fields.stream().filter(field -> field.sql_select_id >= 0).map(field -> field.pname).toArray(String[]::new));
 
 			// check in-place document keys
 
@@ -1894,7 +1922,7 @@ public class PgSchema implements Serializable {
 			// preset list of attribute fields
 
 			if (table.has_attrs)
-				table.attr_fields = table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond || field.any_attribute || field.nested_key_as_attr) && !option.discarded_document_key_names.contains(field.name)).collect(Collectors.toList());
+				table.attr_fields = table.fields.stream().filter(field -> (field.attribute || field.simple_attribute || field.simple_attr_cond || field.any_attribute || field.nested_key_as_attr || field.nested_key_as_attr_group) && !option.discarded_document_key_names.contains(field.name)).collect(Collectors.toList());
 
 			// preset list of element fields
 
@@ -1907,19 +1935,26 @@ public class PgSchema implements Serializable {
 
 				table.nested_fields = table.fields.stream().filter(field -> field.nested_key).collect(Collectors.toList());
 
-				table.nested_fields_exc_attr = table.fields.stream().filter(field -> field.nested_key && !field.nested_key_as_attr).collect(Collectors.toList());
+				table.nested_fields_excl_attr = table.fields.stream().filter(field -> field.nested_key && !field.nested_key_as_attr).collect(Collectors.toList());
 
-				table.has_nested_key_exc_attr = table.nested_fields_exc_attr.size() > 0;
+				table.has_nested_key_excl_attr = table.nested_fields_excl_attr.size() > 0;
 
-				if (!table.has_nested_key_exc_attr)
-					table.nested_fields_exc_attr = null;
+				if (!table.has_nested_key_excl_attr)
+					table.nested_fields_excl_attr = null;
 
-				table.nested_fields_as_attr = table.fields.stream().filter(field -> field.nested_key_as_attr).collect(Collectors.toList());
+				table.nested_fields_as_attr = table.fields.stream().filter(field -> field.nested_key_as_attr || field.nested_key_as_attr_group).collect(Collectors.toList());
 
 				table.has_nested_key_as_attr = table.nested_fields_as_attr.size() > 0;
 
 				if (!table.has_nested_key_as_attr)
 					table.nested_fields_as_attr = null;
+
+				table.nested_fields_as_attr_group = table.fields.stream().filter(field -> field.nested_key_as_attr_group).collect(Collectors.toList());
+
+				table.has_nested_key_as_attr_group = table.nested_fields_as_attr_group.size() > 0;
+
+				if (!table.has_nested_key_as_attr_group)
+					table.nested_fields_as_attr_group = null;
 
 				table.ft_ids = table.nested_fields.stream().map(field -> field.foreign_table_id).collect(Collectors.toList()).stream().mapToInt(Integer::intValue).toArray();
 
@@ -2867,6 +2902,8 @@ public class PgSchema implements Serializable {
 			Element child_elem;
 			String child_name;
 
+			boolean found_ref = false;
+
 			for (Node child = root_node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
 				if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
@@ -2882,6 +2919,8 @@ public class PgSchema implements Serializable {
 					if (child_name.equals(PgSchemaUtil.getUnqualifiedName(ref)) /* && (
 							(table.target_namespace != null && table.target_namespace.equals(getNamespaceUriOfQName(ref))) ||
 							(table.target_namespace == null && getNamespaceUriOfQName(ref) == null)) */) {
+
+						found_ref = true;
 
 						field.xname = child_name;
 						field.name = option.case_sense ? field.xname : PgSchemaUtil.toCaseInsensitive(field.xname);
@@ -2993,6 +3032,68 @@ public class PgSchema implements Serializable {
 
 						break;
 					}
+
+				}
+
+			}
+
+			if (!found_ref) {
+
+				PgField dummy = new PgField();
+
+				dummy.type = dummy.xtype = ref;
+
+				String[] type = dummy.type.contains(" ") ? dummy.type.split(" ")[0].split(":") : dummy.type.split(":");
+
+				// primitive data type
+
+				if (type.length != 0 && (type[0].equals(option.xs_prefix) || (type.length == 1 && option.xs_prefix.isEmpty()))) { // nothing to do
+
+					if (option.ddl_output)
+						root_schema.pg_inline_simple_types.add((option.pg_named_schema ? PgSchemaUtil.avoidPgReservedWords(table.schema_name) + "." : "") + PgSchemaUtil.avoidPgReservedWords(table.pname));
+
+				}
+
+				// non-primitive data type
+
+				else {
+
+					level++;
+
+					PgTable child_table = new PgTable(getPgSchemaOf(getNamespaceUriOfQName(dummy.type)), getNamespaceUriOfQName(dummy.type), def_schema_location);
+
+					child_table.xname = PgSchemaUtil.getUnqualifiedName(ref);
+					child_table.name = child_table.pname = option.case_sense ? child_table.xname : PgSchemaUtil.toCaseInsensitive(child_table.xname);
+
+					child_table.xs_type = XsTableType.xs_admin_root;
+
+					boolean unique_key = table.addNestedKey(option, child_table, PgSchemaUtil.getUnqualifiedName(ref), dummy, node);
+
+					table.required = child_table.required = true;
+
+					if ((child_table.anno = PgSchemaUtil.extractAnnotation(node, true)) != null)
+						child_table.xanno_doc = PgSchemaUtil.extractDocumentation(node, false);
+
+					child_table.fields = new ArrayList<PgField>();
+
+					child_table.level = level;
+
+					child_table.addPrimaryKey(option, unique_key);
+					child_table.addForeignKey(option, table, table);
+
+					if (!child_table.addNestedKey(option, table, PgSchemaUtil.getUnqualifiedName(dummy.type), dummy, node))
+						child_table.cancelUniqueKey();
+
+					child_table.removeProhibitedAttrs();
+					child_table.removeBlockedSubstitutionGroups();
+					child_table.countNestedFields();
+
+					if (!child_table.has_pending_group && child_table.fields.size() > 1 && avoidTableDuplication(tables, child_table))
+						tables.add(child_table);
+
+					extractComplexContent(node, table);
+
+					level--;
 
 				}
 
@@ -3675,7 +3776,25 @@ public class PgSchema implements Serializable {
 			_child_nodes.add(foreign_table.xname);
 
 		else if (foreign_table.total_nested_fields > 0 && !foreign_table.content_holder)
-			foreign_table.fields.stream().filter(foreign_field -> foreign_field.nested_key && !foreign_field.nested_key_as_attr && foreign_field.delegated_sibling_key_name == null).forEach(foreign_field -> extractChildNodeNameConstraint(foreign_field, visited_tables, _child_nodes));
+			foreign_table.fields.stream().filter(foreign_field -> foreign_field.nested_key && !foreign_field.nested_key_as_attr && !foreign_field.nested_key_as_attr_group && foreign_field.delegated_sibling_key_name == null).forEach(foreign_field -> extractChildNodeNameConstraint(foreign_field, visited_tables, _child_nodes));
+
+	}
+
+	/**
+	 * Extract nested key as attribute group.
+	 *
+	 * @param table current table
+	 * @param child_table child table
+	 */
+	private void extractNestedKeyAsAttrGrp(PgTable table, PgTable child_table) {
+
+		if (!child_table.virtual)
+			return;
+
+		table.fields.stream().filter(field -> field.nested_key && getForeignTable(field).equals(child_table)).forEach(field -> field.nested_key_as_attr_group = true);
+
+		if (!option.inline_simple_cont && !table.has_elems && table.total_foreign_fields == 1 && table.fields.stream().filter(field -> field.attribute || field.nested_key_as_attr || field.nested_key_as_attr_group).count() > 0 && !table.fields.stream().anyMatch(field -> field.nested_key && !field.nested_key_as_attr))
+			extractNestedKeyAsAttrGrp(getForeignTable(table.fields.stream().filter(field -> field.foreign_key).findFirst().get()), table);
 
 	}
 
@@ -3722,6 +3841,15 @@ public class PgSchema implements Serializable {
 	 */
 	public String getDefaultNamespace() {
 		return def_namespace;
+	}
+
+	/**
+	 * Return prefix for default namespace.
+	 *
+	 * @return String default prefix
+	 */
+	public String getDefaultPrefix() {
+		return getPrefixOf(def_namespace, "");
 	}
 
 	/**
@@ -4231,6 +4359,7 @@ public class PgSchema implements Serializable {
 		System.out.println("--  retrieve field annotation: " + !option.no_field_anno);
 		System.out.println("--  map integer numbers to: " + option.pg_integer.getName());
 		System.out.println("--  map decimal numbers to: " + option.pg_decimal.getName());
+		System.out.println("--  map xsd date type to: sql " + option.pg_date.getName() + " type");
 		if (option.rel_model_ext || option.serial_key) {
 			if (!option.hash_algorithm.isEmpty() && !option.hash_size.equals(PgHashSize.debug_string))
 				System.out.println("--  hash algorithm: " + option.hash_algorithm);
@@ -4648,8 +4777,8 @@ public class PgSchema implements Serializable {
 
 			else if (field.nested_key) {
 
-				if (field.nested_key_as_attr)
-					System.out.println("-- NESTED KEY AS ATTRIBUTE : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(" OR ", field.delegated_field_pname.split(" ")) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
+				if (field.nested_key_as_attr || field.nested_key_as_attr_group)
+					System.out.println("-- NESTED KEY AS ATTRIBUTE " + (field.nested_key_as_attr ? "" : "GROUP ") + ": " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(" OR ", field.delegated_field_pname.split(" ")) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
 				else
 					System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(" OR ", field.delegated_field_pname.split(" ")) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : "") + (field.delegated_sibling_key_name != null ? ", DELEGATED SIBLING KEY NAME : " + field.delegated_sibling_key_name : ""));
 
@@ -4725,6 +4854,16 @@ public class PgSchema implements Serializable {
 						if (field.getSqlDataType() == java.sql.Types.FLOAT)
 							System.out.println("-- map mathematical concept of decimal numbers (" + field.type + ") to " + option.pg_decimal.getName());
 						break;
+					default:
+					}
+
+				}
+
+				if (field.xs_type.equals(XsFieldType.xs_date)) {
+
+					switch (option.pg_date) {
+					case date:
+						System.out.println("-- map XSD date (" + option.xs_prefix_ + "date) to SQL " + field.getPgDataType());
 					default:
 					}
 
@@ -6152,7 +6291,7 @@ public class PgSchema implements Serializable {
 
 				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
 
-				if (!table.has_unique_primary_key) {
+				if (!table.has_unique_primary_key && (table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1 || table.total_nested_fields > 1 || (table.content_holder && !table.bridge))) {
 
 					String primary_key_pname = table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname;
 
@@ -6189,7 +6328,7 @@ public class PgSchema implements Serializable {
 
 								if (rset.getInt(1) == pg_option.min_rows_for_index) {
 
-									sql = "CREATE INDEX IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(primary_key_pname) + " ON " + table.pgname + " ( " + table.primary_key_pgname + " )";
+									sql = "CREATE INDEX IDX_" + PgSchemaUtil.avoidPgReservedOps(table_name) + "_" + PgSchemaUtil.avoidPgReservedOps(primary_key_pname) + " ON " + table.pgname + " ( " + (table.doc_key_pgname != null ? table.doc_key_pgname + ", " : "") + table.primary_key_pgname + " )";
 
 									System.out.println(sql);
 
@@ -6243,7 +6382,7 @@ public class PgSchema implements Serializable {
 
 				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
 
-				if (!table.has_unique_primary_key) {
+				if (!table.has_unique_primary_key && (table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1 || table.total_nested_fields > 1 || (table.content_holder && !table.bridge))) {
 
 					String primary_key_pname = table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname;
 
@@ -6298,7 +6437,7 @@ public class PgSchema implements Serializable {
 	 */
 	public void createDocKeyIndex(Connection db_conn, PgOption pg_option) throws PgSchemaException {
 
-		if (!option.document_key && option.in_place_document_key)
+		if (!option.document_key && !option.in_place_document_key)
 			return;
 
 		this.db_conn = db_conn;
@@ -6316,7 +6455,7 @@ public class PgSchema implements Serializable {
 
 				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
 
-				if (!table.has_unique_primary_key) {
+				if (!table.has_unique_primary_key && table.content_holder) {
 
 					try {
 
@@ -6405,7 +6544,7 @@ public class PgSchema implements Serializable {
 
 				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
 
-				if (!table.has_unique_primary_key) {
+				if (!table.has_unique_primary_key && table.content_holder) {
 
 					try {
 

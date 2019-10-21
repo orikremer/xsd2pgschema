@@ -31,6 +31,7 @@ import java.sql.SQLXML;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -76,8 +77,14 @@ public class XmlBuilder extends CommonBuilder {
 	/** The @xsi:schemaLocation value. */
 	protected String xsi_schema_location = "";
 
+	/** The prefix of default target namespace URI. */
+	protected String def_prefix = "";
+
 	/** Whether to append XML declaration. */
 	public boolean append_declare = true;
+
+	/** Whether to qualify default target namespace. */
+	public boolean qualify_def_ns = true;
 
 	/** Whether to append namespace declaration. */
 	public boolean append_xmlns = true;
@@ -362,6 +369,20 @@ public class XmlBuilder extends CommonBuilder {
 	}
 
 	/**
+	 * Return effective prefix of namespace URI.
+	 *
+	 * @param prefix prefix of namespace URI
+	 * @return String converted prefix of namespace URI
+	 */
+	private String getPrefixOf(String prefix) {
+
+		if (qualify_def_ns || prefix.isEmpty() || !prefix.equals(def_prefix))
+			return prefix;
+
+		return "";
+	}
+
+	/**
 	 * Clear XML builder.
 	 */
 	public void clear() {
@@ -394,6 +415,46 @@ public class XmlBuilder extends CommonBuilder {
 
 		xsi_schema_location = schema.getDefaultNamespace() + " " + PgSchemaUtil.getSchemaFileName(schema.option.root_schema_location);
 
+		def_prefix = schema.getDefaultPrefix();
+
+		tables.parallelStream().filter(table -> table.writable).forEach(table -> {
+
+			table.xprefix = getPrefixOf(table.prefix);
+			table.fields.stream().filter(field -> field.sql_select_id >= 0 && !field.nested_key).forEach(field -> field.xprefix = getPrefixOf(field.prefix));
+
+			// preset XML start/end element tag template for document key
+
+			if (schema.option.document_key || schema.option.in_place_document_key) {
+
+				Optional<PgField> opt = table.fields.stream().filter(field -> field.document_key).findFirst();
+
+				if (opt.isPresent()) {
+
+					PgField field = opt.get();
+
+					field.start_end_elem_tag = new String("<<" + (table.xprefix.isEmpty() ? "" : table.xprefix + ":") + field.xname + ">").getBytes(PgSchemaUtil.def_charset);
+
+				}
+
+			}
+
+			// preset XML start/end/empty element tag template for element
+
+			if (table.has_element) {
+
+				table.fields.stream().filter(field -> field.element).forEach(field -> {
+
+					String prefix = field.is_same_namespace_of_table ? table.xprefix : field.xprefix;
+
+					field.start_end_elem_tag = new String("<<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + ">\n").getBytes(PgSchemaUtil.def_charset);
+					field.empty_elem_tag = new String("<" + (prefix.isEmpty() ? "" : prefix + ":") + field.xname + " " + PgSchemaUtil.xsi_prefix + ":nil=\"true\"/>\n").getBytes(PgSchemaUtil.def_charset);
+
+				});
+
+			}
+
+		});
+
 	}
 
 	/**
@@ -415,13 +476,13 @@ public class XmlBuilder extends CommonBuilder {
 
 		String table_name = table.xname;
 		String table_ns = table.target_namespace;
-		String table_prefix = table.prefix;
+		String table_prefix = table.xprefix;
 
 		PgField field = path_expr.sql_subject.field;
 
 		String field_name = field.xname;
 		String field_ns = field.target_namespace;
-		String field_prefix = field.prefix;
+		String field_prefix = field.xprefix;
 
 		try {
 
@@ -431,7 +492,7 @@ public class XmlBuilder extends CommonBuilder {
 
 				switch (terminus) {
 				case element:
-					content = field.retrieveFirst(rset);
+					content = field.retrieve(rset, 1);
 
 					if (content != null) {
 
@@ -492,7 +553,7 @@ public class XmlBuilder extends CommonBuilder {
 					}
 					break;
 				case simple_content:
-					content = field.retrieveFirst(rset);
+					content = field.retrieve(rset, 1);
 
 					// simple content
 
@@ -523,10 +584,10 @@ public class XmlBuilder extends CommonBuilder {
 
 						if (content != null) {
 
-							writer.writeEmptyElement(parent_table.prefix, parent_table.xname, parent_table.target_namespace);
+							writer.writeEmptyElement(parent_table.xprefix, parent_table.xname, parent_table.target_namespace);
 
 							if (append_xmlns)
-								writer.writeNamespace(parent_table.prefix, parent_table.target_namespace);
+								writer.writeNamespace(parent_table.xprefix, parent_table.target_namespace);
 
 							if (field.is_same_namespace_of_table)
 								writer.writeAttribute(field.parent_nodes[0], content);
@@ -540,7 +601,7 @@ public class XmlBuilder extends CommonBuilder {
 					}
 					break;
 				case attribute:
-					content = field.retrieveFirst(rset);
+					content = field.retrieve(rset, 1);
 
 					// attribute
 
@@ -572,10 +633,10 @@ public class XmlBuilder extends CommonBuilder {
 
 						if (content != null) {
 
-							writer.writeEmptyElement(parent_table.prefix, parent_table.xname, parent_table.target_namespace);
+							writer.writeEmptyElement(parent_table.xprefix, parent_table.xname, parent_table.target_namespace);
 
 							if (append_xmlns)
-								writer.writeNamespace(parent_table.prefix, parent_table.target_namespace);
+								writer.writeNamespace(parent_table.xprefix, parent_table.target_namespace);
 
 							if (field.is_same_namespace_of_table)
 								writer.writeAttribute(field.parent_nodes[0], content);
@@ -604,26 +665,26 @@ public class XmlBuilder extends CommonBuilder {
 
 							if (terminus.equals(XPathCompType.any_attribute) || target_path.startsWith("@")) {
 
-								writer.writeEmptyElement(field.prefix, getLastNameOfPath(getParentPath(path)), table_ns);
+								writer.writeEmptyElement(field.xprefix, getLastNameOfPath(getParentPath(path)), table_ns);
 
 								if (append_xmlns)
-									writer.writeNamespace(field.prefix, field.any_namespace);
+									writer.writeNamespace(field.xprefix, field.any_namespace);
 
 								String attr_name = target_path.replace("@", "");
 
-								if (field.prefix.isEmpty() || field.any_namespace.isEmpty())
+								if (field.xprefix.isEmpty() || field.any_namespace.isEmpty())
 									writer.writeAttribute(attr_name, _content);
 								else
-									writer.writeAttribute(field.prefix, field.any_namespace, attr_name, _content);
+									writer.writeAttribute(field.xprefix, field.any_namespace, attr_name, _content);
 
 							}
 
 							else {
 
-								writer.writeStartElement(field.prefix, target_path, field.any_namespace);
+								writer.writeStartElement(field.xprefix, target_path, field.any_namespace);
 
 								if (append_xmlns)
-									writer.writeNamespace(field.prefix, field.any_namespace);
+									writer.writeNamespace(field.xprefix, field.any_namespace);
 
 								writer.writeCharacters(_content);
 
@@ -647,7 +708,7 @@ public class XmlBuilder extends CommonBuilder {
 						PgField _field = table.getField(column_name);
 
 						if (_field != null)
-							content = field.retrieveFirst(rset);
+							content = field.retrieve(rset, 1);
 
 						writer.writeCharacters(content);
 
@@ -757,7 +818,7 @@ public class XmlBuilder extends CommonBuilder {
 			if (table.doc_key_pname != null) {
 
 				document_key = table.fields.stream().filter(field -> field.pname.equals(table.doc_key_pname)).findFirst().get();
-				document_id = rset.getString(document_key.sql_param_id);
+				document_id = rset.getString(document_key.sql_insert_id);
 
 			}
 
@@ -769,7 +830,7 @@ public class XmlBuilder extends CommonBuilder {
 
 					if (field.attribute) {
 
-						content = field.retrieve(rset);
+						content = field.retrieveByInsertId(rset);
 
 						if (content != null) {
 
@@ -791,7 +852,7 @@ public class XmlBuilder extends CommonBuilder {
 
 					else if (field.any_attribute) {
 
-						SQLXML xml_object = rset.getSQLXML(field.sql_param_id);
+						SQLXML xml_object = rset.getSQLXML(field.sql_insert_id);
 
 						if (xml_object != null) {
 
@@ -817,12 +878,27 @@ public class XmlBuilder extends CommonBuilder {
 
 					else if (field.nested_key_as_attr) {
 
-						key = rset.getObject(field.sql_param_id);
+						key = rset.getObject(field.sql_insert_id);
 
 						if (key != null)
 							nest_test.merge(nestChildNode2Xml(table, tables.get(field.foreign_table_id), key, field._maxoccurs, true, nest_test));
 
 					}
+
+				}
+
+			}
+
+			// nested key as attribute group
+
+			if (table.has_nested_key_as_attr_group) {
+
+				for (PgField field : table.nested_fields_as_attr_group) {
+
+					key = rset.getObject(field.sql_insert_id);
+
+					if (key != null)
+						nest_test.merge(nestChildNode2Xml(table, tables.get(field.foreign_table_id), key, field._maxoccurs, true, nest_test));
 
 				}
 
@@ -859,7 +935,7 @@ public class XmlBuilder extends CommonBuilder {
 
 					if (field.simple_content && !field.simple_attribute) {
 
-						content = field.retrieve(rset);
+						content = field.retrieveByInsertId(rset);
 
 						if (content != null) {
 
@@ -892,7 +968,7 @@ public class XmlBuilder extends CommonBuilder {
 
 					else if (field.element) {
 
-						content = field.retrieve(rset);
+						content = field.retrieveByInsertId(rset);
 
 						if (content != null || (field.nillable && append_nil_elem)) {
 
@@ -924,7 +1000,7 @@ public class XmlBuilder extends CommonBuilder {
 
 					else if (field.any) {
 
-						SQLXML xml_object = rset.getSQLXML(field.sql_param_id);
+						SQLXML xml_object = rset.getSQLXML(field.sql_insert_id);
 
 						if (xml_object != null) {
 
@@ -957,15 +1033,18 @@ public class XmlBuilder extends CommonBuilder {
 
 			// nested key
 
-			if (table.has_nested_key_exc_attr) {
-
-				PgTable nested_table;
+			if (table.has_nested_key_excl_attr) {
 
 				n = 0;
 
-				for (PgField field : table.nested_fields_exc_attr) {
+				PgTable nested_table;
 
-					key = rset.getObject(field.sql_param_id);
+				for (PgField field : table.nested_fields_excl_attr) {
+
+					if (field.nested_key_as_attr_group)
+						continue;
+
+					key = rset.getObject(field.sql_insert_id);
 
 					if (key != null) {
 
@@ -976,7 +1055,7 @@ public class XmlBuilder extends CommonBuilder {
 						if (nested_table.content_holder || !nested_table.bridge)
 							nest_test.merge(nestChildNode2Xml(table, nested_table, key, field._maxoccurs, false, nest_test));
 
-						else if (nested_table.has_nested_key_exc_attr) {
+						else if (nested_table.has_nested_key_excl_attr) {
 
 							// skip bridge table for acceleration
 
@@ -1068,19 +1147,23 @@ public class XmlBuilder extends CommonBuilder {
 			}
 
 			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
-			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1 || table.total_nested_fields > 1;
+			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1 || table.total_nested_fields > 1 || (table.content_holder && !table.bridge);
 			boolean attr_only;
 
 			PreparedStatement ps = table.ps;
 
 			if (ps == null) {
 
-				String sql = "SELECT * FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" : "") + (table.has_unique_primary_key ? " LIMIT 1" : maxoccurs >= 0 ? " LIMIT " + maxoccurs : "");
+				boolean limit_one = table.has_unique_primary_key || (table.bridge && table.virtual) || (!category_item && !foreign_table.list_holder);
+
+				String sql = "SELECT " + table.select_field_names + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" : "") + (limit_one ? " LIMIT 1" : maxoccurs > 0 ? " LIMIT " + maxoccurs : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
 
-				if (!table.has_unique_primary_key && maxoccurs < 0)
-					ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
+				int fetch_size = limit_one ? 1 : (maxoccurs > 0 && maxoccurs < PgSchemaUtil.def_jdbc_fetch_size ? maxoccurs : maxoccurs < 0 ? PgSchemaUtil.pg_min_rows_for_index : 0);
+
+				if (fetch_size > 0)
+					ps.setFetchSize(fetch_size);
 
 			}
 
@@ -1139,7 +1222,7 @@ public class XmlBuilder extends CommonBuilder {
 
 						if (field.attribute) {
 
-							content = field.retrieve(rset);
+							content = field.retrieveBySelectId(rset);
 
 							if (content != null) {
 
@@ -1161,7 +1244,7 @@ public class XmlBuilder extends CommonBuilder {
 
 						else if ((field.simple_attribute || field.simple_attr_cond) && as_attr) {
 
-							content = field.retrieve(rset);
+							content = field.retrieveBySelectId(rset);
 
 							if (content != null) {
 
@@ -1182,7 +1265,7 @@ public class XmlBuilder extends CommonBuilder {
 
 						else if (field.any_attribute) {
 
-							SQLXML xml_object = rset.getSQLXML(field.sql_param_id);
+							SQLXML xml_object = rset.getSQLXML(field.sql_select_id);
 
 							if (xml_object != null) {
 
@@ -1208,12 +1291,27 @@ public class XmlBuilder extends CommonBuilder {
 
 						else if (field.nested_key_as_attr) {
 
-							key = rset.getObject(field.sql_param_id);
+							key = rset.getObject(field.sql_select_id);
 
 							if (key != null)
 								nest_test.merge(nestChildNode2Xml(foreign_table, tables.get(field.foreign_table_id), key, field._maxoccurs, true, nest_test));
 
 						}
+
+					}
+
+				}
+
+				// nested key as attribute group
+
+				if (table.has_nested_key_as_attr_group) {
+
+					for (PgField field : table.nested_fields_as_attr_group) {
+
+						key = rset.getObject(field.sql_select_id);
+
+						if (key != null)
+							nest_test.merge(nestChildNode2Xml(table, tables.get(field.foreign_table_id), key, field._maxoccurs, true, nest_test));
 
 					}
 
@@ -1227,7 +1325,7 @@ public class XmlBuilder extends CommonBuilder {
 
 						if (field.simple_content && !field.simple_attribute && !as_attr) {
 
-							content = field.retrieve(rset);
+							content = field.retrieveBySelectId(rset);
 
 							if (content != null) {
 
@@ -1260,7 +1358,7 @@ public class XmlBuilder extends CommonBuilder {
 
 						else if (field.element) {
 
-							content = field.retrieve(rset);
+							content = field.retrieveBySelectId(rset);
 
 							if (content != null || (field.nillable && append_nil_elem)) {
 
@@ -1292,7 +1390,7 @@ public class XmlBuilder extends CommonBuilder {
 
 						else if (field.any) {
 
-							SQLXML xml_object = rset.getSQLXML(field.sql_param_id);
+							SQLXML xml_object = rset.getSQLXML(field.sql_select_id);
 
 							if (xml_object != null) {
 
@@ -1325,13 +1423,16 @@ public class XmlBuilder extends CommonBuilder {
 
 				// nested key
 
-				if (table.has_nested_key_exc_attr) {
+				if (table.has_nested_key_excl_attr) {
 
 					n = 0;
 
-					for (PgField field : table.nested_fields_exc_attr) {
+					for (PgField field : table.nested_fields_excl_attr) {
 
-						key = rset.getObject(field.sql_param_id);
+						if (field.nested_key_as_attr_group)
+							continue;
+
+						key = rset.getObject(field.sql_select_id);
 
 						if (key != null) {
 
@@ -1342,7 +1443,7 @@ public class XmlBuilder extends CommonBuilder {
 							if (nested_table.content_holder || !nested_table.bridge || as_attr)
 								nest_test.merge(nestChildNode2Xml(table, nested_table, key, field._maxoccurs, false, nest_test));
 
-							else if (nested_table.has_nested_key_exc_attr) {
+							else if (nested_table.has_nested_key_excl_attr) {
 
 								// skip bridge table for acceleration
 
@@ -1453,17 +1554,21 @@ public class XmlBuilder extends CommonBuilder {
 
 			PreparedStatement ps = table.ps;
 
-			PgField nested_key = table.nested_fields_exc_attr.get(0);
+			PgField nested_key = table.nested_fields_excl_attr.get(0);
 			PgTable nested_table = tables.get(nested_key.foreign_table_id);
 
 			if (ps == null) {
 
-				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" + (table.has_unique_primary_key ? " LIMIT 1" : maxoccurs >= 0 ? " LIMIT " + maxoccurs : "");
+				boolean limit_one = table.has_unique_primary_key || (table.bridge && table.virtual);
+
+				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" + (limit_one ? " LIMIT 1" : maxoccurs > 0 ? " LIMIT " + maxoccurs : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
 
-				if (!table.has_unique_primary_key && maxoccurs < 0)
-					ps.setFetchSize(PgSchemaUtil.pg_min_rows_for_index);
+				int fetch_size = limit_one ? 1 : (maxoccurs > 0 && maxoccurs < PgSchemaUtil.def_jdbc_fetch_size ? maxoccurs : maxoccurs < 0 ? PgSchemaUtil.pg_min_rows_for_index : 0);
+
+				if (fetch_size > 0)
+					ps.setFetchSize(fetch_size);
 
 			}
 
@@ -1512,7 +1617,7 @@ public class XmlBuilder extends CommonBuilder {
 					if (nested_table.content_holder || !nested_table.bridge)
 						nest_test.merge(nestChildNode2Xml(table, nested_table, key, nested_key._maxoccurs, false, nest_test));
 
-					else if (nested_table.has_nested_key_exc_attr) {
+					else if (nested_table.has_nested_key_excl_attr) {
 
 						// skip bridge table for acceleration
 
@@ -1585,7 +1690,7 @@ public class XmlBuilder extends CommonBuilder {
 
 			boolean category = !table.virtual;
 
-			PgField nested_key = table.nested_fields_exc_attr.get(0);
+			PgField nested_key = table.nested_fields_excl_attr.get(0);
 			PgTable nested_table = tables.get(nested_key.foreign_table_id);
 
 			if (category) {
@@ -1600,7 +1705,7 @@ public class XmlBuilder extends CommonBuilder {
 			if (nested_table.content_holder || !nested_table.bridge)
 				nest_test.merge(nestChildNode2Xml(table, nested_table, parent_key, nested_key._maxoccurs, false, nest_test));
 
-			else if (nested_table.has_nested_key_exc_attr) {
+			else if (nested_table.has_nested_key_excl_attr) {
 
 				// skip bridge table for acceleration
 

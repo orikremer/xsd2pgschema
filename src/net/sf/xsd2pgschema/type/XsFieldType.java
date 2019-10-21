@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -168,9 +168,10 @@ public enum XsFieldType {
 	 * @param xs_type compared type
 	 * @param pg_integer mapping of integer numbers in PostgreSQL
 	 * @param pg_decimal mapping of decimal numbers in PostgreSQL
+	 * @param pg_date mapping of xs:date in PostgreSQL
 	 * @return XsDataType the least common type
 	 */
-	public XsFieldType leastCommonOf(XsFieldType xs_type, PgIntegerType pg_integer, PgDecimalType pg_decimal) {
+	public XsFieldType leastCommonOf(XsFieldType xs_type, PgIntegerType pg_integer, PgDecimalType pg_decimal, PgDateType pg_date) {
 
 		if (xs_type == null)
 			return xs_anyType;

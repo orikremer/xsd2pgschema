@@ -113,6 +113,21 @@ public class xsd2pgschema {
 			else if (args[i].equals("--pg-map-float-decimal"))
 				option.pg_decimal = PgDecimalType.single_precision_32;
 
+			else if (args[i].equals("--pg-map-big-decimal"))
+				option.pg_decimal = PgDecimalType.big_decimal;
+
+			else if (args[i].equals("--pg-map-double-decimal"))
+				option.pg_decimal = PgDecimalType.double_precision_64;
+
+			else if (args[i].equals("--pg-map-float-decimal"))
+				option.pg_decimal = PgDecimalType.single_precision_32;
+
+			else if (args[i].equals("--pg-map-timestamp"))
+				option.pg_date = PgDateType.timestamp;
+
+			else if (args[i].equals("--pg-map-date"))
+				option.pg_date = PgDateType.date;
+
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
 
@@ -247,6 +262,8 @@ public class xsd2pgschema {
 		System.err.println("        --pg-map-big-decimal (map xs:decimal to BigDecimal according to the W3C rules, default)");
 		System.err.println("        --pg-map-double-decimal (map xs:decimal to double precision 64 bits)");
 		System.err.println("        --pg-map-float-decimal (map xs:decimal to single precision 32 bits)");
+		System.err.println("        --pg-map-timestamp (map xs:date to PostgreSQL timestamp type according to the W3C rules)");
+		System.err.println("        --pg-map-date (map xs:date to PostgreSQL date type, default)");	
 		System.err.println("        --field-annotation (retrieve field annotation)");
 		System.err.println("        --no-field-annotation (do not retrieve field annotation, default)");
 		System.err.println("        --max-uniq-touple-size MAX_UNIQ_TUPLE_SIZE (maximum tuple size of unique constraint derived from xs:key, ignore the limit if non-positive value, default=1)");

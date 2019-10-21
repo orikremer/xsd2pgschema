@@ -13,7 +13,14 @@ fi
 DB_NAME=uniprotkb
 DB_USER=$USER
 
-psql -U $DB_USER -l | grep $DB_NAME > /dev/null || ( echo "database \"$DB_NAME\" does not exist." && exit 1 )
+psql -U $DB_USER -l | grep $DB_NAME > /dev/null
+
+if [ $? != 0 ] ; then
+
+ echo "database \"$DB_NAME\" does not exist."
+ exit 1
+
+fi
 
 XML_DIR=uniprot_xml
 

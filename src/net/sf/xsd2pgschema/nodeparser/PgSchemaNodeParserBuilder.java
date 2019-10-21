@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018 Masashi Yokochi
+    Copyright 2018-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -614,24 +614,24 @@ public class PgSchemaNodeParserBuilder {
 		switch (hash_size) {
 		case native_default:
 			byte[] bytes = getHashKeyBytes(current_key);
-			ps.setBytes(field.sql_param_id, bytes);
+			ps.setBytes(field.sql_insert_id, bytes);
 			if (upsert)
 				ps.setBytes(field.sql_upsert_id, bytes);
 			break;
 		case unsigned_int_32:
 			int int_key = getHashKeyInt(current_key);
-			ps.setInt(field.sql_param_id, int_key);
+			ps.setInt(field.sql_insert_id, int_key);
 			if (upsert)
 				ps.setInt(field.sql_upsert_id, int_key);
 			break;
 		case unsigned_long_64:
 			long long_key = getHashKeyLong(current_key);
-			ps.setLong(field.sql_param_id, long_key);
+			ps.setLong(field.sql_insert_id, long_key);
 			if (upsert)
 				ps.setLong(field.sql_upsert_id, long_key);
 			break;
 		default:
-			ps.setString(field.sql_param_id, current_key);
+			ps.setString(field.sql_insert_id, current_key);
 			if (upsert)
 				ps.setString(field.sql_upsert_id, current_key);
 		}
@@ -650,13 +650,13 @@ public class PgSchemaNodeParserBuilder {
 	protected void writeSerKey(PreparedStatement ps, boolean upsert, PgField field, int ordinal) throws SQLException {
 
 		if (is_def_ser_size) {
-			ps.setInt(field.sql_param_id, ordinal);
+			ps.setInt(field.sql_insert_id, ordinal);
 			if (upsert)
 				ps.setInt(field.sql_upsert_id, ordinal);
 		}
 
 		else {
-			ps.setShort(field.sql_param_id, (short) ordinal);
+			ps.setShort(field.sql_insert_id, (short) ordinal);
 			if (upsert)
 				ps.setInt(field.sql_upsert_id, ordinal);
 		}

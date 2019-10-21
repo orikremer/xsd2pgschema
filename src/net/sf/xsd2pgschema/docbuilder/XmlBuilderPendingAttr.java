@@ -86,7 +86,7 @@ public class XmlBuilderPendingAttr extends CommonPendingAttr {
 			if (field != null) {
 
 				String field_ns = field.target_namespace;
-				String field_prefix = field.prefix;
+				String field_prefix = field.xprefix;
 
 				// attribute
 
@@ -145,7 +145,7 @@ public class XmlBuilderPendingAttr extends CommonPendingAttr {
 			else {
 
 				String field_ns = any_field.any_namespace;
-				String field_prefix = any_field.prefix;
+				String field_prefix = any_field.xprefix;
 
 				if (field_prefix.isEmpty() || field_ns.isEmpty() || xmlb.appended_xmlns.contains(field_prefix))
 					xmlb.writer.writeAttribute(local_name, content);

@@ -7642,7 +7642,7 @@ public class XPathCompList {
 		if (opt.isPresent())
 			testJoinClauseForSimpleAttr(opt.get(), ref_path, linking_tables, linking_order);
 
-		opt = tables.parallelStream().filter(foreign_table -> foreign_table.writable && foreign_table.has_nested_key_exc_attr && foreign_table.nested_fields_exc_attr.stream().anyMatch(field -> field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeNameConstraint(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_to_simple_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
+		opt = tables.parallelStream().filter(foreign_table -> foreign_table.writable && foreign_table.has_nested_key_excl_attr && foreign_table.nested_fields_excl_attr.stream().anyMatch(field -> field.foreign_table_id == table_id && (ref_path == null || (ref_path != null && ((foreign_table.virtual && field.containsParentNodeNameConstraint(ref_path)) || (!foreign_table.virtual && (foreign_table.has_nested_key_to_simple_attr || ref_path.contains(foreign_table.xname)))))))).findFirst();
 
 		if (opt.isPresent())
 			testJoinClauseForSimpleAttr(opt.get(), ref_path, linking_tables, linking_order);

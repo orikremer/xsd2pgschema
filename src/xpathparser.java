@@ -128,6 +128,21 @@ public class xpathparser {
 			else if (args[i].equals("--pg-map-integer"))
 				option.pg_integer = PgIntegerType.signed_int_32;
 
+			else if (args[i].equals("--pg-map-big-decimal"))
+				option.pg_decimal = PgDecimalType.big_decimal;
+
+			else if (args[i].equals("--pg-map-double-decimal"))
+				option.pg_decimal = PgDecimalType.double_precision_64;
+
+			else if (args[i].equals("--pg-map-float-decimal"))
+				option.pg_decimal = PgDecimalType.single_precision_32;
+
+			else if (args[i].equals("--pg-map-timestamp"))
+				option.pg_date = PgDateType.timestamp;
+
+			else if (args[i].equals("--pg-map-date"))
+				option.pg_date = PgDateType.date;
+
 			else if (args[i].equals("--no-cache-xsd"))
 				option.cache_xsd = false;
 
@@ -275,6 +290,11 @@ public class xpathparser {
 		System.err.println("        --pg-map-big-integer (map xs:integer to BigInteger according to the W3C rules)");
 		System.err.println("        --pg-map-long-integer (map xs:integer to signed long 64 bits)");
 		System.err.println("        --pg-map-integer (map xs:integer to signed int 32 bits, default)");
+		System.err.println("        --pg-map-big-decimal (map xs:decimal to BigDecimal according to the W3C rules, default)");
+		System.err.println("        --pg-map-double-decimal (map xs:decimal to double precision 64 bits)");
+		System.err.println("        --pg-map-float-decimal (map xs:decimal to single precision 32 bits)");
+		System.err.println("        --pg-map-timestamp (map xs:date to PostgreSQL timestamp type according to the W3C rules)");
+		System.err.println("        --pg-map-date (map xs:date to PostgreSQL date type, default)");	
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32 bits) | long (64 bits, default) | native (default bits of algorithm) | debug (string)]");

@@ -211,7 +211,7 @@ public class PgSchemaUtil {
 	public static final String[] pg_reserved_ops = { "-", "->", "->>", "-|-", "!", "!!", "!=", "?-", "?-|", "?#", "?|", "?||", "@", "@-@", "@@", "@@@", "@>", "*", "/", "&", "&&", "&<", "&<|", "&>", "#", "##", "#>", "#>>", "%", "^", "+", "<", "<->", "<@", "<^", "<<", "<<=", "<<|", "<=", "<>", "=", ">", ">^", ">=", ">>", ">>=", "|", "|/", "|&>", "|>>", "||", "||/", "~", "~=" };
 
 	/** The minimum rows for creation of PostgreSQL index. */
-	public static final int pg_min_rows_for_index = 2048;
+	public static final int pg_min_rows_for_index = 1024;
 
 	/** The maximum attribute columns for creation of PostgreSQL index on the attributes (except for in-place document key). */
 	public static final int pg_max_attr_cols_for_index = 1;
@@ -230,6 +230,9 @@ public class PgSchemaUtil {
 
 	/** The limit number of foreign keys in a table for creation of PostgreSQL index on the simple content. */
 	public static final int pg_limit_fks_for_simple_cont_index = 8;
+
+	/** The default JDBC fetch size. */
+	public static final int def_jdbc_fetch_size = 10;
 
 	/** The default buffer size for BufferedOutputStream(). */
 	public static final int def_buffered_output_stream_buffer_size = 1024 * 128;

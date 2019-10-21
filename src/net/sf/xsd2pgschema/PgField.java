@@ -56,6 +56,7 @@ import net.sf.xsd2pgschema.docbuilder.JsonBuilder;
 import net.sf.xsd2pgschema.docbuilder.JsonSchemaVersion;
 import net.sf.xsd2pgschema.luceneutil.VecTextField;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
+import net.sf.xsd2pgschema.type.PgDateType;
 import net.sf.xsd2pgschema.type.PgDecimalType;
 import net.sf.xsd2pgschema.type.PgIntegerType;
 import net.sf.xsd2pgschema.type.XsFieldType;
@@ -112,6 +113,9 @@ public class PgField implements Serializable {
 	/** The mapping of decimal numbers in PostgreSQL. */
 	protected PgDecimalType pg_decimal;
 
+	/** The mapping of xs:date in PostgreSQL. */
+	protected PgDateType pg_date;
+
 	/** Whether target namespace is the same one of table. */
 	public boolean is_same_namespace_of_table = false;
 
@@ -154,6 +158,9 @@ public class PgField implements Serializable {
 	/** Whether nested key as attribute. */
 	public boolean nested_key_as_attr = false;
 
+	/** Whether nested key as attribute group. */
+	public boolean nested_key_as_attr_group = false;
+
 	/** Whether document key. */
 	public boolean document_key = false;
 
@@ -184,11 +191,14 @@ public class PgField implements Serializable {
 	/** The foreign table id. */
 	public int foreign_table_id = -1;
 
-	/** The SQL parameter id. */
-	public int sql_param_id = -1;
+	/** The SQL insert parameter id for data migration. */
+	public int sql_insert_id = -1;
 
-	/** The SQL upsert parameter id. */
+	/** The SQL upsert parameter id for data migration. */
 	public int sql_upsert_id = -1;
+
+	/** The SQL select parameter id for XPath evaluation. */
+	public int sql_select_id = -1;
 
 	/** The schema name of foreign table in PostgreSQL (default schema name is "public"). */
 	protected String foreign_schema = PgSchemaUtil.pg_public_schema_name;
@@ -314,9 +324,11 @@ public class PgField implements Serializable {
 	public boolean latin_1_encoded = false;
 
 	/** The XML start/end element tag. */
+	@Flat
 	public byte[] start_end_elem_tag = null;
 
 	/** The XML empty element tag. */
+	@Flat
 	public byte[] empty_elem_tag = null;
 
 	/** The content of xs:annotation/xs:documentation (as is). */
@@ -326,6 +338,10 @@ public class PgField implements Serializable {
 	/** The content of xs:annotation. */
 	@Flat
 	public String anno = null;
+
+	/** The effective prefix of target namespace in XPath evaluation. */
+	@Flat
+	public String xprefix = null;
 
 	/** The field name in JSON. */
 	@Flat
@@ -579,6 +595,7 @@ public class PgField implements Serializable {
 
 			pg_integer = option.pg_integer;
 			pg_decimal = option.pg_decimal;
+			pg_date = option.pg_date;
 
 			type = xtype = type.trim();
 
@@ -608,7 +625,7 @@ public class PgField implements Serializable {
 
 				xs_type2 = XsFieldType.valueOf("xs_" + _type2[1]);
 
-				xs_type1 = xs_type1.leastCommonOf(xs_type2, pg_integer, pg_decimal);
+				xs_type1 = xs_type1.leastCommonOf(xs_type2, pg_integer, pg_decimal, pg_date);
 
 			}
 
@@ -2991,6 +3008,7 @@ public class PgField implements Serializable {
 				else
 					return "TIME WITH TIME ZONE";
 			case xs_date:
+				return pg_date.getPgDataType(!restriction || (explicit_timezone != null && !explicit_timezone.equals("required")));
 			case xs_gYearMonth:
 			case xs_gYear:
 				return "DATE";
@@ -3120,6 +3138,7 @@ public class PgField implements Serializable {
 			else
 				return java.sql.Types.TIME_WITH_TIMEZONE;
 		case xs_date:
+			return pg_date.getSqlDataType(!restriction || (explicit_timezone != null && !explicit_timezone.equals("required")));
 		case xs_gYearMonth:
 		case xs_gYear:
 			return java.sql.Types.DATE;
@@ -3199,6 +3218,7 @@ public class PgField implements Serializable {
 			else
 				return "TIME WITH TIME ZONE '" + value + "'";
 		case xs_date:
+			return pg_date.getPgDataType(!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) + " '" + value + "'";
 		case xs_gYearMonth:
 		case xs_gYear:
 			return "DATE '" + value + "'";
@@ -4680,14 +4700,14 @@ public class PgField implements Serializable {
 		case xs_duration:
 		case xs_yearMonthDuration:
 		case xs_dayTimeDuration:
-			return is_latest ? "duration" : null;
+			return is_latest ? "duration" : null; // duration is supported since draft version 2019-09 (latest)
 		case xs_dateTime:
 		case xs_dateTimeStamp:
 			return "date-time";
 		case xs_time:
 			return draft7_or_lator ? "time" : null;
 		case xs_date:
-			return draft7_or_lator ? "date" : null;
+			return draft7_or_lator ? (pg_date.equals(PgDateType.timestamp) ? "date-time" : "date") : null;
 		case xs_anyURI:
 			return "uri";
 		case xs_ID:
@@ -4725,6 +4745,9 @@ public class PgField implements Serializable {
 		case xs_base64Binary:
 			return "decode('" + value + "','base64')";
 		case xs_date:
+			if (pg_date.equals(PgDateType.timestamp))
+				return value;
+			// break through
 		case xs_gYearMonth:
 		case xs_gYear:
 			if (cal == null)
@@ -4844,7 +4867,7 @@ public class PgField implements Serializable {
 		case xs_unsignedByte:
 			return value;
 		case xs_date:
-			if (schema_ver.isDraft7OrLater()) {
+			if (schema_ver.isDraft7OrLater() && pg_date.equals(PgDateType.date)) {
 				if (value.endsWith("Z"))
 					value = value.substring(0, value.length() - 1);
 			}
@@ -5266,7 +5289,7 @@ public class PgField implements Serializable {
 	public void write(PreparedStatement ps, boolean upsert, String value) throws SQLException {
 
 		if (enum_name != null) {
-			ps.setString(sql_param_id, value);
+			ps.setString(sql_insert_id, value);
 			if (upsert)
 				ps.setString(sql_upsert_id, value);
 			return;
@@ -5275,19 +5298,19 @@ public class PgField implements Serializable {
 		switch (xs_type) {
 		case xs_boolean:
 			boolean boolean_value = Boolean.valueOf(value);
-			ps.setBoolean(sql_param_id, boolean_value);
+			ps.setBoolean(sql_insert_id, boolean_value);
 			if (upsert)
 				ps.setBoolean(sql_upsert_id, boolean_value);
 			break;
 		case xs_hexBinary:
 			byte[] hexbin_value = DatatypeConverter.parseHexBinary(value);
-			ps.setBytes(sql_param_id, hexbin_value);
+			ps.setBytes(sql_insert_id, hexbin_value);
 			if (upsert)
 				ps.setBytes(sql_upsert_id, hexbin_value);
 			break;
 		case xs_base64Binary:
 			byte[] base64bin_value = DatatypeConverter.parseBase64Binary(value);
-			ps.setBytes(sql_param_id, base64bin_value);
+			ps.setBytes(sql_insert_id, base64bin_value);
 			if (upsert)
 				ps.setBytes(sql_upsert_id, base64bin_value);
 			break;
@@ -5295,7 +5318,7 @@ public class PgField implements Serializable {
 		case xs_unsignedLong:
 			try {
 				long long_value = Long.valueOf(value);
-				ps.setLong(sql_param_id, long_value);
+				ps.setLong(sql_insert_id, long_value);
 				if (upsert)
 					ps.setLong(sql_upsert_id, long_value);
 			} catch (NumberFormatException e) {
@@ -5310,7 +5333,7 @@ public class PgField implements Serializable {
 		case xs_unsignedByte:
 			try {
 				int int_value = Integer.valueOf(value);
-				ps.setInt(sql_param_id, int_value);
+				ps.setInt(sql_insert_id, int_value);
 				if (upsert)
 					ps.setInt(sql_upsert_id, int_value);
 			} catch (NumberFormatException e) {
@@ -5320,7 +5343,7 @@ public class PgField implements Serializable {
 		case xs_float:
 			try {
 				float float_value = Float.valueOf(value);
-				ps.setFloat(sql_param_id, float_value);
+				ps.setFloat(sql_insert_id, float_value);
 				if (upsert)
 					ps.setFloat(sql_upsert_id, float_value);
 			} catch (NumberFormatException e) {
@@ -5330,7 +5353,7 @@ public class PgField implements Serializable {
 		case xs_double:
 			try {
 				double double_value = Double.valueOf(value);
-				ps.setDouble(sql_param_id, double_value);
+				ps.setDouble(sql_insert_id, double_value);
 				if (upsert)
 					ps.setDouble(sql_upsert_id, double_value);
 			} catch (NumberFormatException e) {
@@ -5342,7 +5365,7 @@ public class PgField implements Serializable {
 			case big_decimal:
 				try {
 					BigDecimal bigdec_value = new BigDecimal(value);
-					ps.setBigDecimal(sql_param_id, bigdec_value);
+					ps.setBigDecimal(sql_insert_id, bigdec_value);
 					if (upsert)
 						ps.setBigDecimal(sql_upsert_id, bigdec_value);
 				} catch (NumberFormatException e) {
@@ -5352,7 +5375,7 @@ public class PgField implements Serializable {
 			case double_precision_64:
 				try {
 					double double_value = Double.valueOf(value);
-					ps.setDouble(sql_param_id, double_value);
+					ps.setDouble(sql_insert_id, double_value);
 					if (upsert)
 						ps.setDouble(sql_upsert_id, double_value);
 				} catch (NumberFormatException e) {
@@ -5362,7 +5385,7 @@ public class PgField implements Serializable {
 			case single_precision_32:
 				try {
 					float float_value = Float.valueOf(value);
-					ps.setFloat(sql_param_id, float_value);
+					ps.setFloat(sql_insert_id, float_value);
 					if (upsert)
 						ps.setFloat(sql_upsert_id, float_value);
 				} catch (NumberFormatException e) {
@@ -5380,7 +5403,7 @@ public class PgField implements Serializable {
 			case signed_int_32:
 				try {
 					int int_value = Integer.valueOf(value);
-					ps.setInt(sql_param_id, int_value);
+					ps.setInt(sql_insert_id, int_value);
 					if (upsert)
 						ps.setInt(sql_upsert_id, int_value);
 				} catch (NumberFormatException e) {
@@ -5390,7 +5413,7 @@ public class PgField implements Serializable {
 			case signed_long_64:
 				try {
 					long long_value = Long.valueOf(value);
-					ps.setLong(sql_param_id, long_value);
+					ps.setLong(sql_insert_id, long_value);
 					if (upsert)
 						ps.setLong(sql_upsert_id, long_value);
 				} catch (NumberFormatException e) {
@@ -5400,7 +5423,7 @@ public class PgField implements Serializable {
 			case big_integer:
 				try {
 					BigDecimal bigdec_value = new BigDecimal(value);
-					ps.setBigDecimal(sql_param_id, bigdec_value);
+					ps.setBigDecimal(sql_insert_id, bigdec_value);
 					if (upsert)
 						ps.setBigDecimal(sql_upsert_id, bigdec_value);
 				} catch (NumberFormatException e) {
@@ -5413,7 +5436,7 @@ public class PgField implements Serializable {
 		case xs_dateTimeStamp:
 			Timestamp timestamp = new java.sql.Timestamp(PgSchemaUtil.parseDate(value).getTime());
 			if ((!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) && xs_type.equals(XsFieldType.xs_dateTime)) {
-				ps.setTimestamp(sql_param_id, timestamp);
+				ps.setTimestamp(sql_insert_id, timestamp);
 				if (upsert)
 					ps.setTimestamp(sql_upsert_id, timestamp);
 			} else {
@@ -5422,7 +5445,7 @@ public class PgField implements Serializable {
 				else
 					cal.setTimeZone(PgSchemaUtil.tz_utc);
 
-				ps.setTimestamp(sql_param_id, timestamp, cal);
+				ps.setTimestamp(sql_insert_id, timestamp, cal);
 				if (upsert)
 					ps.setTimestamp(sql_upsert_id, timestamp, cal);
 			}
@@ -5431,13 +5454,13 @@ public class PgField implements Serializable {
 			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) {
 				try {
 					Time time = java.sql.Time.valueOf(LocalTime.parse(value));
-					ps.setTime(sql_param_id, time);
+					ps.setTime(sql_insert_id, time);
 					if (upsert)
 						ps.setTime(sql_upsert_id, time);
 				} catch (DateTimeParseException e) {
 					try {
 						Time time = java.sql.Time.valueOf(OffsetTime.parse(value).toLocalTime());
-						ps.setTime(sql_param_id, time);
+						ps.setTime(sql_insert_id, time);
 						if (upsert)
 							ps.setTime(sql_upsert_id, time);
 					} catch (DateTimeParseException e2) {
@@ -5451,13 +5474,13 @@ public class PgField implements Serializable {
 
 				try {
 					Time time = java.sql.Time.valueOf(OffsetTime.parse(value).toLocalTime());
-					ps.setTime(sql_param_id, time, cal);
+					ps.setTime(sql_insert_id, time, cal);
 					if (upsert)
 						ps.setTime(sql_upsert_id, time, cal);
 				} catch (DateTimeParseException e) {
 					Time time = java.sql.Time.valueOf(LocalTime.parse(value));
 					try {
-						ps.setTime(sql_param_id, time, cal);
+						ps.setTime(sql_insert_id, time, cal);
 						if (upsert)
 							ps.setTime(sql_upsert_id, time, cal);
 					} catch (DateTimeParseException e2) {
@@ -5466,6 +5489,25 @@ public class PgField implements Serializable {
 			}
 			break;
 		case xs_date:
+			if (pg_date.equals(PgDateType.timestamp)) {
+				Timestamp _timestamp = new java.sql.Timestamp(PgSchemaUtil.parseDate(value).getTime());
+				if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) {
+					ps.setTimestamp(sql_insert_id, _timestamp);
+					if (upsert)
+						ps.setTimestamp(sql_upsert_id, _timestamp);
+				} else {
+					if (cal == null)
+						cal = Calendar.getInstance(PgSchemaUtil.tz_utc);
+					else
+						cal.setTimeZone(PgSchemaUtil.tz_utc);
+
+					ps.setTimestamp(sql_insert_id, _timestamp, cal);
+					if (upsert)
+						ps.setTimestamp(sql_upsert_id, _timestamp, cal);
+				}
+				return;
+			}
+			// pass through
 		case xs_gYearMonth:
 		case xs_gYear:
 			if (cal == null)
@@ -5482,7 +5524,7 @@ public class PgField implements Serializable {
 
 			Date date = new java.sql.Date(cal.getTimeInMillis());
 
-			ps.setDate(sql_param_id, date);
+			ps.setDate(sql_insert_id, date);
 			if (upsert)
 				ps.setDate(sql_upsert_id, date);
 			break;
@@ -5509,7 +5551,7 @@ public class PgField implements Serializable {
 		case xs_IDREFS:
 		case xs_NMTOKENS:
 		case xs_anyType:
-			ps.setString(sql_param_id, value);
+			ps.setString(sql_insert_id, value);
 			if (upsert)
 				ps.setString(sql_upsert_id, value);
 			break;
@@ -5531,7 +5573,7 @@ public class PgField implements Serializable {
 		switch (xs_type) {
 		case xs_any:
 		case xs_anyAttribute:
-			ps.setSQLXML(sql_param_id, xml_object);
+			ps.setSQLXML(sql_insert_id, xml_object);
 			if (upsert)
 				ps.setSQLXML(sql_upsert_id, xml_object);
 		default: // not xml
@@ -5608,7 +5650,7 @@ public class PgField implements Serializable {
 				break;
 			case xs_date:
 				java.util.Date util_date = PgSchemaUtil.parseDate(value);
-				lucene_doc.add(new StringField(name, DateTools.dateToString(util_date, DateTools.Resolution.DAY), Field.Store.YES));
+				lucene_doc.add(new StringField(name, DateTools.dateToString(util_date, pg_date.equals(PgDateType.timestamp) ? DateTools.Resolution.SECOND : DateTools.Resolution.DAY), Field.Store.YES));
 				break;
 			case xs_gYearMonth:
 				java.util.Date util_month = PgSchemaUtil.parseDate(value);
@@ -5840,7 +5882,7 @@ public class PgField implements Serializable {
 			jsonb.append(value);
 			break;
 		case xs_date:
-			if (schema_ver.isDraft7OrLater()) {
+			if (schema_ver.isDraft7OrLater() && pg_date.equals(PgDateType.date)) {
 				if (value.endsWith("Z"))
 					value = value.substring(0, value.length() - 1);
 			}
@@ -5893,207 +5935,40 @@ public class PgField implements Serializable {
 	// XPath evaluation over PostgreSQL
 
 	/**
-	 * Retrieve content from ResultSet.
+	 * Retrieve content from ResultSet (sql_insert_id).
 	 *
 	 * @param rset result set
 	 * @return String retrieved content
 	 * @throws SQLException the SQL exception
 	 */
-	public String retrieve(ResultSet rset) throws SQLException {
-
-		if (enum_name != null) {
-
-			String ret = rset.getString(sql_param_id);
-
-			if (ret != null) {
-
-				if (ret.length() < PgSchemaUtil.max_enum_len)
-					return ret;
-
-				for (String enum_string : xenumeration) {
-
-					if (enum_string.startsWith(ret))
-						return enum_string;
-
-				}
-
-			}
-
-			return fill_default_value ? default_value : null;
-		}
-
-		switch (xs_type) {
-		case xs_dateTime:
-		case xs_dateTimeStamp:
-			Timestamp ts = rset.getTimestamp(sql_param_id);
-
-			if (ts == null)
-				return fill_default_value ? default_value : null;
-
-			if (cal == null)
-				cal = Calendar.getInstance();
-			else
-				cal.setTimeZone(PgSchemaUtil.tz_loc);
-
-			if ((!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) && xs_type.equals(XsFieldType.xs_dateTime)) { }
-
-			else
-				cal.setTimeZone(PgSchemaUtil.tz_utc);
-
-			cal.setTimeInMillis(ts.getTime());
-
-			return DatatypeConverter.printDateTime(cal);
-		case xs_time:
-			Time tm = rset.getTime(sql_param_id);
-
-			if (tm == null)
-				return fill_default_value ? default_value : null;
-
-			if (cal == null)
-				cal = Calendar.getInstance();
-			else
-				cal.setTimeZone(PgSchemaUtil.tz_loc);
-
-			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) { }
-
-			else
-				cal.setTimeZone(PgSchemaUtil.tz_utc);
-
-			cal.setTimeInMillis(tm.getTime());
-
-			return DatatypeConverter.printTime(cal);
-		case xs_date:
-		case xs_gYearMonth:
-		case xs_gYear:
-			Date d = rset.getDate(sql_param_id);
-
-			if (d == null)
-				return fill_default_value ? default_value : null;
-
-			if (cal == null)
-				cal = Calendar.getInstance();
-			else
-				cal.setTimeZone(PgSchemaUtil.tz_loc);
-
-			cal.setTime(d);
-			cal.set(Calendar.HOUR_OF_DAY, 0);
-			cal.set(Calendar.MINUTE, 0);
-			cal.set(Calendar.SECOND, 0);
-			cal.set(Calendar.MILLISECOND, 0);
-			cal.setTimeZone(PgSchemaUtil.tz_utc);
-
-			String ret = DatatypeConverter.printDate(cal);
-
-			switch (xs_type) {
-			case xs_date:
-				if (ret.endsWith("Z"))
-					ret = ret.substring(0, ret.length() - 1);
-				return ret;
-			case xs_gYearMonth:
-				return ret.substring(0, ret.lastIndexOf('-'));
-			default: // xs_gYear
-				return ret.substring(0, ret.indexOf('-'));
-			}
-		case xs_decimal:
-			if (pg_decimal.equals(PgDecimalType.big_decimal)) {
-
-				BigDecimal bd = rset.getBigDecimal(sql_param_id);
-
-				return bd != null ? bd.toString() : (fill_default_value ? default_value : null);
-			}
-			break;
-		case xs_integer:
-		case xs_nonNegativeInteger:
-		case xs_nonPositiveInteger:
-		case xs_positiveInteger:
-		case xs_negativeInteger:
-			if (pg_integer.equals(PgIntegerType.big_integer)) {
-
-				BigDecimal _bd = rset.getBigDecimal(sql_param_id);
-
-				return _bd != null ? _bd.toBigInteger().toString() : (fill_default_value ? default_value : null);
-			}
-			// break through
-			// number
-		case xs_long:
-		case xs_unsignedLong:
-		case xs_int:
-		case xs_unsignedInt:
-		case xs_short:
-		case xs_byte:
-		case xs_unsignedShort:
-		case xs_unsignedByte:
-			// string
-		case xs_duration:
-		case xs_yearMonthDuration:
-		case xs_dayTimeDuration:
-		case xs_gMonth:
-		case xs_gMonthDay:
-		case xs_gDay:
-		case xs_string:
-		case xs_anyURI:
-		case xs_QName:
-		case xs_NOTATION:
-		case xs_normalizedString:
-		case xs_token:
-		case xs_language:
-		case xs_Name:
-		case xs_NCName:
-		case xs_ENTITY:
-		case xs_ID:
-		case xs_IDREF:
-		case xs_NMTOKEN:
-		case xs_ENTITIES:
-		case xs_IDREFS:
-		case xs_NMTOKENS:
-		case xs_anyType:
-			String value = rset.getString(sql_param_id);
-
-			return value != null ? value : (fill_default_value ? default_value : null);
-		default:
-		}
-
-		Object obj = rset.getObject(sql_param_id);
-
-		if (obj == null)
-			return fill_default_value ? default_value : null;
-
-		switch (xs_type) {
-		case xs_boolean:
-			return DatatypeConverter.printBoolean((boolean) obj);
-		case xs_hexBinary:
-			return DatatypeConverter.printHexBinary((byte[]) obj);
-		case xs_base64Binary:
-			return DatatypeConverter.printBase64Binary((byte[]) obj);
-		case xs_float:
-			return String.valueOf((float) obj);
-		case xs_double:
-			return String.valueOf((double) obj);
-		case xs_decimal:
-			switch (pg_decimal) {
-			case single_precision_32:
-				return BigDecimal.valueOf((float) obj).setScale(6, BigDecimal.ROUND_HALF_UP).stripTrailingZeros().toString();
-			default: // double precision
-				return BigDecimal.valueOf((double) obj).setScale(15, BigDecimal.ROUND_HALF_UP).stripTrailingZeros().toString();
-			}
-		default: // xs_any, xs_anyAttribute
-		}
-
-		return null;
+	public String retrieveByInsertId(ResultSet rset) throws SQLException {
+		return retrieve(rset, sql_insert_id);
 	}
 
 	/**
-	 * Retrieve first content from ResultSet.
+	 * Retrieve content from ResultSet (sql_select_id).
 	 *
 	 * @param rset result set
 	 * @return String retrieved content
 	 * @throws SQLException the SQL exception
 	 */
-	public String retrieveFirst(ResultSet rset) throws SQLException {
+	public String retrieveBySelectId(ResultSet rset) throws SQLException {
+		return retrieve(rset, sql_select_id);
+	}
+
+	/**
+	 * Retrieve content from ResultSet.
+	 *
+	 * @param rset result set
+	 * @param param_id parameter id
+	 * @return String retrieved content
+	 * @throws SQLException the SQL exception
+	 */
+	public String retrieve(ResultSet rset, int param_id) throws SQLException {
 
 		if (enum_name != null) {
 
-			String ret = rset.getString(1);
+			String ret = rset.getString(param_id);
 
 			if (ret != null) {
 
@@ -6115,7 +5990,7 @@ public class PgField implements Serializable {
 		switch (xs_type) {
 		case xs_dateTime:
 		case xs_dateTimeStamp:
-			Timestamp ts = rset.getTimestamp(1);
+			Timestamp ts = rset.getTimestamp(param_id);
 
 			if (ts == null)
 				return fill_default_value ? default_value : null;
@@ -6134,7 +6009,7 @@ public class PgField implements Serializable {
 
 			return DatatypeConverter.printDateTime(cal);
 		case xs_time:
-			Time tm = rset.getTime(1);
+			Time tm = rset.getTime(param_id);
 
 			if (tm == null)
 				return fill_default_value ? default_value : null;
@@ -6153,9 +6028,31 @@ public class PgField implements Serializable {
 
 			return DatatypeConverter.printTime(cal);
 		case xs_date:
+			if (pg_date.equals(PgDateType.timestamp)) {
+
+				Timestamp td = rset.getTimestamp(param_id);
+
+				if (td == null)
+					return fill_default_value ? default_value : null;
+
+				if (cal == null)
+					cal = Calendar.getInstance();
+				else
+					cal.setTimeZone(PgSchemaUtil.tz_loc);
+
+				if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) { }
+
+				else
+					cal.setTimeZone(PgSchemaUtil.tz_utc);
+
+				cal.setTimeInMillis(td.getTime());
+
+				return DatatypeConverter.printDateTime(cal);
+			}
+			// pass through
 		case xs_gYearMonth:
 		case xs_gYear:
-			Date d = rset.getDate(1);
+			Date d = rset.getDate(param_id);
 
 			if (d == null)
 				return fill_default_value ? default_value : null;
@@ -6187,7 +6084,7 @@ public class PgField implements Serializable {
 		case xs_decimal:
 			if (pg_decimal.equals(PgDecimalType.big_decimal)) {
 
-				BigDecimal bd = rset.getBigDecimal(1);
+				BigDecimal bd = rset.getBigDecimal(param_id);
 
 				return bd != null ? bd.toString() : (fill_default_value ? default_value : null);
 			}
@@ -6199,7 +6096,7 @@ public class PgField implements Serializable {
 		case xs_negativeInteger:
 			if (pg_integer.equals(PgIntegerType.big_integer)) {
 
-				BigDecimal _bd = rset.getBigDecimal(1);
+				BigDecimal _bd = rset.getBigDecimal(param_id);
 
 				return _bd != null ? _bd.toBigInteger().toString() : (fill_default_value ? default_value : null);
 			}
@@ -6237,13 +6134,13 @@ public class PgField implements Serializable {
 		case xs_IDREFS:
 		case xs_NMTOKENS:
 		case xs_anyType:
-			String value = rset.getString(1);
+			String value = rset.getString(param_id);
 
 			return value != null ? value : (fill_default_value ? default_value : null);
 		default:
 		}
 
-		Object obj = rset.getObject(1);
+		Object obj = rset.getObject(param_id);
 
 		if (obj == null)
 			return fill_default_value ? default_value : null;

@@ -1,4 +1,16 @@
-﻿ Changes in xsd2pgschema 3.3.4 (release 2019-10-08)
+﻿ Changes in xsd2pgschema 3.4.0 (release 2019-10-21)
+
+  NOTICE: We recommend all users should update 3.4.0 or later.
+  Fixed missing of data in administrative xs:complexContent delegated to definition in the other XSD.
+  Fixed table classification that was cause of XMLStreamException: Attribute not associated with any element in XPath evaluation.
+  Defined "nested key as attribute group" in PostgreSQL DDL to escape from the XMLStreamException.
+  Further SQL optimization for XPath evaluation including PostgreSQL indexing.
+  Allowed to map xs:date to PostgreSQL TIMESTAMP type. (--pg-map-timestamp option, which conforms to the W3C standards)
+  Otherwise, map xs:date to PostgreSQL DATE type by default (--pg-map-date option).
+  Added --xml-unqualify-def-ns option in xpath2xml main class to unqualify default target namespace.
+  Revised example scripts for IntAct database.
+
+ Changes in xsd2pgschema 3.3.4 (release 2019-10-08)
 
   Revised implementation of child node name constraint.
   Revised restraint information in PostgreSQL DDL.

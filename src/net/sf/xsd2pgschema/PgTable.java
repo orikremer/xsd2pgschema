@@ -83,6 +83,9 @@ public class PgTable implements Serializable {
 	/** The document key name in PostgreSQL. */
 	public String doc_key_pname = null;
 
+	/** The concatenated field names having effective SQL select parameter in PostgreSQL (used in SQL clause). */
+	public String select_field_names = null;
+
 	/** The field list. */
 	public List<PgField> fields = null;
 
@@ -93,7 +96,7 @@ public class PgTable implements Serializable {
 	public int total_nested_fields = 0;
 
 	/** The total number of nested key excluding nested key as attribute. */
-	public int total_nested_fields_exc_attr = 0;
+	public int total_nested_fields_excl_attr = 0;
 
 	/** The total number of foreign key. */
 	public int total_foreign_fields = 0;
@@ -137,11 +140,14 @@ public class PgTable implements Serializable {
 	/** Whether table has @nillable="true" element. */
 	public boolean has_nillable_element = false;
 
-	/** Whether table has nested key except for nested key as attribute. */
-	public boolean has_nested_key_exc_attr = false;
+	/** Whether table has nested key excluding nested key as attribute. */
+	public boolean has_nested_key_excl_attr = false;
 
 	/** Whether table has nested key as attribute. */
 	public boolean has_nested_key_as_attr = false;
+
+	/** Whether table has nested key as attribute group. */
+	public boolean has_nested_key_as_attr_group = false;
 
 	/** Whether table has nested key to simple attribute. */
 	public boolean has_nested_key_to_simple_attr = false;
@@ -174,10 +180,13 @@ public class PgTable implements Serializable {
 	public List<PgField> nested_fields = null;
 
 	/** The field list of nested key excluding nested key as attribute. */
-	public List<PgField> nested_fields_exc_attr = null;
+	public List<PgField> nested_fields_excl_attr = null;
 
 	/** The field list of nested key as attribute. */
 	public List<PgField> nested_fields_as_attr = null;
+
+	/** The field list of nested key as attribute group. */
+	public List<PgField> nested_fields_as_attr_group = null;
 
 	/** The list of foreign table id. */
 	public int[] ft_ids = null;
@@ -213,6 +222,10 @@ public class PgTable implements Serializable {
 	/** The xs:annotation. */
 	@Flat
 	public String anno = null;
+
+	/** The effective prefix of target namespace in XPath evaluation. */
+	@Flat
+	public String xprefix = null;
 
 	/** The table name in JSON. */
 	@Flat
@@ -286,6 +299,34 @@ public class PgTable implements Serializable {
 
 		content_holder = fields.stream().anyMatch(field -> !field.document_key && !field.primary_key && !field.foreign_key && !field.nested_key && !field.serial_key && !field.xpath_key);
 
+		// whether table has element
+
+		has_element = fields.stream().anyMatch(field -> field.element);
+
+		// whether table has attribute
+
+		has_attribute = fields.stream().anyMatch(field -> field.attribute);
+
+		// whether table has simple content
+
+		has_simple_content = fields.stream().anyMatch(field -> field.simple_content);
+
+		// whether table has any element
+
+		has_any = fields.stream().anyMatch(field -> field.any);
+
+		// whether table has any attribute
+
+		has_any_attribute = fields.stream().anyMatch(field -> field.any_attribute);
+
+		// whether table has attributes
+
+		has_attrs = has_attribute || has_any_attribute;
+
+		// whether table has elements
+
+		has_elems = has_simple_content || has_element || has_any;
+
 		// whether list holder table having one of field whose occurrence is unbounded
 
 		list_holder = fields.stream().filter(field -> field.nested_key).anyMatch(field -> field.list_holder);
@@ -316,7 +357,7 @@ public class PgTable implements Serializable {
 
 		}
 
-		bridge = (has_primary_key && has_single_nested_key);
+		bridge = has_primary_key && has_single_nested_key && !has_elems;
 
 		// whether virtual table equals administrative table (xs_admin_root)
 
@@ -329,34 +370,6 @@ public class PgTable implements Serializable {
 		// the number of foreign key constraint
 
 		total_foreign_fields = (int) fields.stream().filter(field -> field.foreign_key).count();
-
-		// whether table has element
-
-		has_element = fields.stream().anyMatch(field -> field.element);
-
-		// whether table has attribute
-
-		has_attribute = fields.stream().anyMatch(field -> field.attribute);
-
-		// whether table has simple content
-
-		has_simple_content = fields.stream().anyMatch(field -> field.simple_content);
-
-		// whether table has any element
-
-		has_any = fields.stream().anyMatch(field -> field.any);
-
-		// whether table has any attribute
-
-		has_any_attribute = fields.stream().anyMatch(field -> field.any_attribute);
-
-		// whether table has attributes
-
-		has_attrs = has_attribute || has_any_attribute;
-
-		// whether table has elements
-
-		has_elems = has_simple_content || has_element || has_any;
 
 	}
 

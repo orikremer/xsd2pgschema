@@ -73,7 +73,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 		super(root_node_name);
 
 		target_namespace = field.any_namespace;
-		prefix = field.prefix;
+		prefix = field.xprefix;
 		this.nest_test = nest_test;
 		this.xmlb = xmlb;
 		this.xml_writer = xmlb.writer;

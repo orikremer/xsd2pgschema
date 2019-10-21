@@ -119,6 +119,8 @@ public class XPathEvaluatorImpl {
 			if (pg_option.test)
 				client.schema.testPgSql(db_conn, false);
 
+			db_conn.setReadOnly(true);
+
 		}
 
 	}
