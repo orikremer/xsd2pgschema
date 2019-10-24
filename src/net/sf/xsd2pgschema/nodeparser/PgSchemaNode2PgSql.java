@@ -48,6 +48,9 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	/** The prepared statement. */
 	private PreparedStatement ps = null;
 
+	/** Whether to enable PostgreSQL view for this table. */
+	private boolean pg_view;
+
 	/** Whether to upsert. */
 	private boolean upsert = false;
 
@@ -88,6 +91,8 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	protected void init(boolean as_attr) throws PgSchemaException {
 
 		this.as_attr = as_attr;
+
+		pg_view = !npb.schema.option.realize_simple_brdg && table.simple_bridge;
 
 		try {
 
@@ -480,19 +485,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			written = true;
 
-			for (int f = 0; f < fields_size; f++) {
-
-				field = fields.get(f);
-
-				if (field.omissible || field.primary_key || field.user_key)
-					continue;
-
-				if (!occupied[f])
-					ps.setNull(field.sql_insert_id, field.getSqlDataType());
-
-			}
-
-			if (upsert) {
+			if (!pg_view) {
 
 				for (int f = 0; f < fields_size; f++) {
 
@@ -502,16 +495,32 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 						continue;
 
 					if (!occupied[f])
-						ps.setNull(field.sql_upsert_id, field.getSqlDataType());
+						ps.setNull(field.sql_insert_id, field.getSqlDataType());
 
 				}
 
+				if (upsert) {
+
+					for (int f = 0; f < fields_size; f++) {
+
+						field = fields.get(f);
+
+						if (field.omissible || field.primary_key || field.user_key)
+							continue;
+
+						if (!occupied[f])
+							ps.setNull(field.sql_upsert_id, field.getSqlDataType());
+
+					}
+
+				}
+
+				ps.addBatch();
+
+				if (npb.rel_data_ext)
+					ps.executeBatch();
+
 			}
-
-			ps.addBatch();
-
-			if (npb.rel_data_ext)
-				ps.executeBatch();
 
 			table.visited_key = current_key;
 
@@ -530,7 +539,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	@Override
 	protected void clear() throws PgSchemaException {
 
-		if (written && !npb.rel_data_ext) {
+		if (written && !npb.rel_data_ext && !pg_view) {
 
 			try {
 				ps.executeBatch();

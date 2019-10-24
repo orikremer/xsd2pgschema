@@ -113,6 +113,9 @@ public class PgTable implements Serializable {
 	/** Whether bridge table. */
 	public boolean bridge = false;
 
+	/** Whether simple bridge table. */
+	public boolean simple_bridge = false;
+
 	/** Whether xs_type equals xs_admin_root. */
 	public boolean virtual = false;
 
@@ -136,6 +139,9 @@ public class PgTable implements Serializable {
 
 	/** Whether table has unique primary key. */
 	public boolean has_unique_primary_key = false;
+
+	/** Whether table has non-unique primary key to be indexed. */
+	public boolean has_non_uniq_primary_key = false;
 
 	/** Whether table has @nillable="true" element. */
 	public boolean has_nillable_element = false;
@@ -295,6 +301,10 @@ public class PgTable implements Serializable {
 	 */
 	protected void classify() {
 
+		// the number of foreign key constraint
+
+		total_foreign_fields = (int) fields.stream().filter(field -> field.foreign_key).count();
+
 		// whether content holder table having one of arbitrary content field such as attribute, element, simple content
 
 		content_holder = fields.stream().anyMatch(field -> !field.document_key && !field.primary_key && !field.foreign_key && !field.nested_key && !field.serial_key && !field.xpath_key);
@@ -357,7 +367,13 @@ public class PgTable implements Serializable {
 
 		}
 
+		// whether bridge table
+
 		bridge = has_primary_key && has_single_nested_key && !has_elems;
+
+		// whether simple bridge table enables PostgreSQL view
+
+		simple_bridge = bridge && !content_holder && !list_holder && total_foreign_fields == 0 && !xs_type.equals(XsTableType.xs_root);
 
 		// whether virtual table equals administrative table (xs_admin_root)
 
@@ -366,10 +382,6 @@ public class PgTable implements Serializable {
 		// whether table required for relational model extension
 
 		relational = bridge || virtual || !content_holder;
-
-		// the number of foreign key constraint
-
-		total_foreign_fields = (int) fields.stream().filter(field -> field.foreign_key).count();
 
 	}
 

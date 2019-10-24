@@ -1538,6 +1538,19 @@ public class PgSchema implements Serializable {
 
 		});
 
+		if (!option.realize_simple_brdg) {
+
+			tables.stream().filter(table -> table.simple_bridge).forEach(table -> {
+
+				Optional<PgTable> opt = tables.parallelStream().filter(_table -> _table.total_nested_fields > 0 && _table.fields.stream().anyMatch(_field -> _field.nested_key && getForeignTable(_field).equals(table))).findFirst();
+
+				if (!opt.isPresent())
+					unused_tables.add(table);
+
+			});
+
+		}
+
 		if (!option.show_orphan_table && orphan_tables.size() + unused_tables.size() > 0) {
 
 			ArrayList<PgTable> disrupted_tables = new ArrayList<PgTable>();
@@ -1600,6 +1613,21 @@ public class PgSchema implements Serializable {
 
 				});
 
+				if (!option.realize_simple_brdg) {
+
+					tables.stream().filter(table -> table.simple_bridge).forEach(table -> {
+
+						Optional<PgTable> opt = tables.parallelStream().filter(_table -> _table.total_nested_fields > 0 && _table.fields.stream().anyMatch(_field -> _field.nested_key && getForeignTable(_field).equals(table))).findFirst();
+
+						if (!opt.isPresent()) {
+							disrupted_tables.add(table);	
+							unused_tables.add(table);
+						}
+
+					});
+
+				}
+
 			} while (disrupted_tables.size() > 0);
 
 		}
@@ -1653,7 +1681,9 @@ public class PgSchema implements Serializable {
 
 			});
 
-			def_stat_msg.insert(0, "--  Generated " + tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table)).count() + " tables (" + tables.parallelStream().map(table -> (option.rel_model_ext || !table.relational) && table.writable ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups in total\n");
+			def_stat_msg.insert(0, "--  Generated " + tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table) && (option.realize_simple_brdg || !table.simple_bridge)).count() + " tables (" + tables.parallelStream().map(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table) && (option.realize_simple_brdg || !table.simple_bridge) ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), "
+					+ tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table) && (!option.realize_simple_brdg && table.simple_bridge)).count() + " views (" + tables.parallelStream().map(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table) && (!option.realize_simple_brdg && table.simple_bridge) ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), "
+					+ attr_groups.size() + " attr groups, " + model_groups.size() + " model groups in total\n");
 
 			if (!option.show_orphan_table) {
 
@@ -1918,6 +1948,10 @@ public class PgSchema implements Serializable {
 		});
 
 		tables.parallelStream().forEach(table -> {
+
+			// whether table has non-unique primary key to be indexed
+
+			table.has_non_uniq_primary_key = !table.has_unique_primary_key && (table.list_holder || table.virtual || table.total_foreign_fields > 1 || table.total_nested_fields > 1 || (table.content_holder && !table.bridge));
 
 			// preset list of attribute fields
 
@@ -4349,6 +4383,7 @@ public class PgSchema implements Serializable {
 		System.out.println("--  explicit named schema: " + option.pg_named_schema);
 		System.out.println("--  relational extension: " + option.rel_model_ext);
 		System.out.println("--  inline simple content: " + option.inline_simple_cont);
+		System.out.println("--  realize simple bridge: " + option.realize_simple_brdg);
 		System.out.println("--  wild card extension: " + option.wild_card);
 		System.out.println("--  case sensitive name: " + option.case_sense);
 		System.out.println("--  no name collision: " + !name_collision);
@@ -4401,7 +4436,10 @@ public class PgSchema implements Serializable {
 
 		tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> table.refs)).forEach(table -> {
 
-			System.out.println("DROP TABLE IF EXISTS " + table.pgname + " CASCADE;");
+			if (!option.realize_simple_brdg && table.simple_bridge)
+				System.out.println("DROP VIEW IF EXISTS " + table.pgname + " CASCADE;");
+			else
+				System.out.println("DROP TABLE IF EXISTS " + table.pgname + " CASCADE;");
 
 		});
 
@@ -4629,6 +4667,9 @@ public class PgSchema implements Serializable {
 		if (++table.refs > max_table_refs)
 			max_table_refs = table.refs;
 
+		if (!option.realize_simple_brdg && table.simple_bridge)
+			table.refs -= tables.parallelStream().filter(_table -> _table.total_nested_fields > 0 && _table.fields.stream().anyMatch(_field -> _field.nested_key && getForeignTable(_field).equals(table))).findFirst().get().refs + 1;
+
 		if (table.xs_type.equals(XsTableType.xs_root))
 			return;
 
@@ -4716,291 +4757,514 @@ public class PgSchema implements Serializable {
 			sb.append("no namespace, ");
 
 		System.out.println("-- xmlns: " + sb.toString() + "schema location: " + table.schema_location);
-		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replace('_', ' ') + (!table.writable && option.show_orphan_table ? " (orphan: " + (pg_inline_simple_types.contains(getPgNameOf(table)) ? "inlined simple type as a primitive data type)" : "unreachable from the document root)") : "") + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (table.name_collision ? ", name collision: " + table.name_collision : ""));
+		System.out.println("-- type: " + table.xs_type.toString().replaceFirst("^xs_", "").replace('_', ' ') + (!option.realize_simple_brdg && table.simple_bridge ? " (view)" : "") + (!table.writable && option.show_orphan_table ? " (orphan: " + (pg_inline_simple_types.contains(getPgNameOf(table)) ? "inlined simple type as a primitive data type)" : "unreachable from the document root)") : "") + ", content: " + table.content_holder + ", list: " + table.list_holder + ", bridge: " + table.bridge + ", virtual: " + table.virtual + (table.name_collision ? ", name collision: " + table.name_collision : ""));
 		System.out.println("--");
 
 		sb.setLength(0);
 
 		List<PgField> fields = table.fields;
 
-		fields.stream().filter(field -> field.enum_name != null && !field.enum_name.isEmpty()).forEach(field -> {
+		if (!option.realize_simple_brdg && table.simple_bridge) {
 
-			String enum_type = table.schema_pgname + field.enum_name;
+			PgTable foreign_table = tables.parallelStream().filter(_table -> _table.total_nested_fields > 0 && _table.fields.stream().anyMatch(_field -> _field.nested_key && getForeignTable(_field).equals(table))).findFirst().get();
 
-			if ((option.inline_simple_cont && !pg_enum_types.contains(enum_type)) || !option.inline_simple_cont) {
+			PgField primary_key = fields.stream().filter(field -> field.primary_key).findFirst().get();
 
-				System.out.println("DROP TYPE IF EXISTS " + enum_type + " CASCADE;");
+			System.out.println("CREATE VIEW " + table.pgname + " AS SELECT");
 
-				System.out.print("CREATE TYPE " + enum_type + " AS ENUM (");
+			for (int f = 0; f < fields.size(); f++) {
 
-				for (int i = 0; i < field.enumeration.length; i++) {
-
-					System.out.print(" '" + field.enumeration[i] + "'");
-
-					if (i < field.enumeration.length - 1)
-						System.out.print(",");
-
-				}
-
-				System.out.println(" );");
-
-				if (option.inline_simple_cont)
-					pg_enum_types.add(enum_type);
-
-			}
-
-		});
-
-		System.out.println("CREATE TABLE " + table.pgname + " (");
-
-		for (int f = 0; f < fields.size(); f++) {
-
-			PgField field = fields.get(f);
-
-			if (option.discarded_document_key_names.contains(field.name) || option.discarded_document_key_names.contains(table.name + "." + field.name))
-				continue;
-
-			if (field.document_key)
-				System.out.println("-- DOCUMENT KEY is pointer to data source (aka. Entry ID)");
-
-			else if (field.serial_key)
-				System.out.println("-- SERIAL KEY");
-
-			else if (field.xpath_key)
-				System.out.println("-- XPATH KEY");
-
-			else if (field.unique_key)
-				System.out.println("-- PRIMARY KEY");
-
-			else if (field.foreign_key)
-				System.out.println("-- FOREIGN KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " )");
-
-			else if (field.nested_key) {
-
-				if (field.nested_key_as_attr || field.nested_key_as_attr_group)
-					System.out.println("-- NESTED KEY AS ATTRIBUTE " + (field.nested_key_as_attr ? "" : "GROUP ") + ": " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(" OR ", field.delegated_field_pname.split(" ")) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
-				else
-					System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(" OR ", field.delegated_field_pname.split(" ")) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : "") + (field.delegated_sibling_key_name != null ? ", DELEGATED SIBLING KEY NAME : " + field.delegated_sibling_key_name : ""));
-
-			}
-
-			else if (field.attribute) {
+				PgField field = fields.get(f);
 
 				if (option.discarded_document_key_names.contains(field.name) || option.discarded_document_key_names.contains(table.name + "." + field.name))
 					continue;
 
-				if (!option.document_key && option.in_place_document_key && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))
-					System.out.println("-- ATTRIBUTE, IN-PLACE DOCUMENT KEY");
-				else
-					System.out.println("-- ATTRIBUTE");
+				if (field.document_key)
+					System.out.println("-- DOCUMENT KEY is pointer to data source (aka. Entry ID)");
 
-			}
+				else if (field.serial_key)
+					System.out.println("-- SERIAL KEY");
 
-			else if (field.simple_content) {
+				else if (field.xpath_key)
+					System.out.println("-- XPATH KEY");
 
-				if (option.discarded_document_key_names.contains(table.name + "." + field.name))
-					continue;
+				else if (field.unique_key)
+					System.out.println("-- PRIMARY KEY");
 
-				if (field.simple_primitive_list)
-					System.out.print("-- SIMPLE CONTENT AS PRIMITIVE LIST");
-				else if (field.simple_attribute)
-					System.out.print("-- SIMPLE CONTENT AS ATTRIBUTE, ATTRIBUTE NODE: " + field.parent_node);
-				else if (field.simple_attr_cond)
-					System.out.print("-- SIMPLE CONTENT AS CONDITIONAL ATTRIBUTE, ATTRIBUTE NODE: " + field.parent_node);
-				else
-					System.out.print("-- SIMPLE CONTENT");
+				else if (field.foreign_key)
+					System.out.println("-- FOREIGN KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " )");
 
-				if (!option.document_key && option.in_place_document_key && option.in_place_document_key_names.contains(table.name + "." + field.name))
-					System.out.println(", IN-PLACE DOCUMENT KEY");
-				else
-					System.out.println("");
+				else if (field.nested_key) {
 
-			}
+					if (field.nested_key_as_attr || field.nested_key_as_attr_group)
+						System.out.println("-- NESTED KEY AS ATTRIBUTE " + (field.nested_key_as_attr ? "" : "GROUP ") + ": " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(" OR ", field.delegated_field_pname.split(" ")) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
+					else
+						System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(" OR ", field.delegated_field_pname.split(" ")) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : "") + (field.delegated_sibling_key_name != null ? ", DELEGATED SIBLING KEY NAME : " + field.delegated_sibling_key_name : ""));
 
-			else if (field.any)
-				System.out.println("-- ANY ELEMENT");
-
-			else if (field.any_attribute)
-				System.out.println("-- ANY ATTRIBUTE");
-
-			else if (!field.primary_key && !option.document_key && option.in_place_document_key && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))
-				System.out.println("-- IN-PLACE DOCUMENT KEY");
-
-			if (!field.system_key && !field.user_key) {
-
-				switch (option.pg_integer) {
-				case signed_int_32:
-					if (field.getSqlDataType() == java.sql.Types.INTEGER && !field.xs_type.equals(XsFieldType.xs_int) && !field.xs_type.equals(XsFieldType.xs_unsignedInt))
-						System.out.println("-- map mathematical concept of integer numbers (" + field.type + ") to " + option.pg_integer.getName());
-					break;
-				case signed_long_64:
-					if (field.getSqlDataType() == java.sql.Types.BIGINT && !field.xs_type.equals(XsFieldType.xs_long) && !field.xs_type.equals(XsFieldType.xs_unsignedLong))
-						System.out.println("-- map mathematical concept of integer numbers (" + field.type + ") to " + option.pg_integer.getName());
-					break;
-				case big_integer:
-					if (field.getSqlDataType() == java.sql.Types.DECIMAL && !field.xs_type.equals(XsFieldType.xs_decimal))
-						System.out.println("-- must be treated as a BigInteger outside of JDBC");
-					break;
 				}
 
-				if (field.xs_type.equals(XsFieldType.xs_decimal)) {
+				else if (field.attribute) {
 
-					switch (option.pg_decimal) {
-					case double_precision_64:
-						if (field.getSqlDataType() == java.sql.Types.DOUBLE)
-							System.out.println("-- map mathematical concept of decimal numbers (" + field.type + ") to " + option.pg_decimal.getName());
+					if (option.discarded_document_key_names.contains(field.name) || option.discarded_document_key_names.contains(table.name + "." + field.name))
+						continue;
+
+					if (!option.document_key && option.in_place_document_key && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))
+						System.out.println("-- ATTRIBUTE, IN-PLACE DOCUMENT KEY");
+					else
+						System.out.println("-- ATTRIBUTE");
+
+				}
+
+				else if (field.simple_content) {
+
+					if (option.discarded_document_key_names.contains(table.name + "." + field.name))
+						continue;
+
+					if (field.simple_primitive_list)
+						System.out.print("-- SIMPLE CONTENT AS PRIMITIVE LIST");
+					else if (field.simple_attribute)
+						System.out.print("-- SIMPLE CONTENT AS ATTRIBUTE, ATTRIBUTE NODE: " + field.parent_node);
+					else if (field.simple_attr_cond)
+						System.out.print("-- SIMPLE CONTENT AS CONDITIONAL ATTRIBUTE, ATTRIBUTE NODE: " + field.parent_node);
+					else
+						System.out.print("-- SIMPLE CONTENT");
+
+					if (!option.document_key && option.in_place_document_key && option.in_place_document_key_names.contains(table.name + "." + field.name))
+						System.out.println(", IN-PLACE DOCUMENT KEY");
+					else
+						System.out.println("");
+
+				}
+
+				else if (field.any)
+					System.out.println("-- ANY ELEMENT");
+
+				else if (field.any_attribute)
+					System.out.println("-- ANY ATTRIBUTE");
+
+				else if (!field.primary_key && !option.document_key && option.in_place_document_key && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))
+					System.out.println("-- IN-PLACE DOCUMENT KEY");
+
+				if (!field.system_key && !field.user_key) {
+
+					switch (option.pg_integer) {
+					case signed_int_32:
+						if (field.getSqlDataType() == java.sql.Types.INTEGER && !field.xs_type.equals(XsFieldType.xs_int) && !field.xs_type.equals(XsFieldType.xs_unsignedInt))
+							System.out.println("-- map mathematical concept of integer numbers (" + field.type + ") to " + option.pg_integer.getName());
 						break;
-					case single_precision_32:
-						if (field.getSqlDataType() == java.sql.Types.FLOAT)
-							System.out.println("-- map mathematical concept of decimal numbers (" + field.type + ") to " + option.pg_decimal.getName());
+					case signed_long_64:
+						if (field.getSqlDataType() == java.sql.Types.BIGINT && !field.xs_type.equals(XsFieldType.xs_long) && !field.xs_type.equals(XsFieldType.xs_unsignedLong))
+							System.out.println("-- map mathematical concept of integer numbers (" + field.type + ") to " + option.pg_integer.getName());
 						break;
-					default:
-					}
-
-				}
-
-				if (field.xs_type.equals(XsFieldType.xs_date)) {
-
-					switch (option.pg_date) {
-					case date:
-						System.out.println("-- map XSD date (" + option.xs_prefix_ + "date) to SQL " + field.getPgDataType());
-					default:
-					}
-
-				}
-
-			}
-
-			if (!field.required && field.xrequired) {
-
-				if (field.fixed_value == null || field.fixed_value.isEmpty())
-					System.out.println("-- must not be NULL, but dismissed due to name collision");
-
-				else {
-
-					System.out.print("-- must have a constraint ");
-
-					switch (field.xs_type.getJsonSchemaType()) {
-					case "\"number\"":
-						System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = " + field.fixed_value + " ) ");
+					case big_integer:
+						if (field.getSqlDataType() == java.sql.Types.DECIMAL && !field.xs_type.equals(XsFieldType.xs_decimal))
+							System.out.println("-- must be treated as a BigInteger outside of JDBC");
 						break;
-					default:
-						System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = '" + field.fixed_value + "' ) ");
 					}
 
-					System.out.println(", but dismissed due to name collision");
+					if (field.xs_type.equals(XsFieldType.xs_decimal)) {
 
-				}
-			}
+						switch (option.pg_decimal) {
+						case double_precision_64:
+							if (field.getSqlDataType() == java.sql.Types.DOUBLE)
+								System.out.println("-- map mathematical concept of decimal numbers (" + field.type + ") to " + option.pg_decimal.getName());
+							break;
+						case single_precision_32:
+							if (field.getSqlDataType() == java.sql.Types.FLOAT)
+								System.out.println("-- map mathematical concept of decimal numbers (" + field.type + ") to " + option.pg_decimal.getName());
+							break;
+						default:
+						}
 
-			if (!table.target_namespace.isEmpty() && !field.system_key && !field.user_key && !field.any_content_holder && !field.is_same_namespace_of_table)
-				System.out.println("-- xmlns: " + field.target_namespace + " (" + getPrefixOf(field.target_namespace, "n.d.") + ")");
+					}
 
-			if (field.default_value != null && !field.default_value.isEmpty())
-				System.out.println("-- @default=\"" + field.default_value + "\"");
+					if (field.xs_type.equals(XsFieldType.xs_date)) {
 
-			if (field._list)
-				System.out.println("-- " + option.xs_prefix_ + "line/@itemType=\"" + field._list_item_type + "\"");
-
-			if (field._union)
-				System.out.println("-- " + option.xs_prefix_ + "union/@memberTypes=\"" + field._union_member_types + "\"");
-
-			if (field.restriction) {
-
-				if (field.length != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "length=\"" + field.length + "\"");
-
-				if (field.min_length != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minLength=\"" + field.min_length + "\"");
-
-				if (field.max_length != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxLength=\"" + field.max_length + "\"");
-
-				if (field.pattern != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "pattern=\"" + field.pattern + "\"");
-
-				if (field.max_inclusive != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxInclusive=\"" + field.max_inclusive + "\"");
-
-				if (field.max_exclusive != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxInclusive=\"" + field.max_exclusive + "\"");
-
-				if (field.min_exclusive != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minInclusive=\"" + field.min_exclusive + "\"");
-
-				if (field.min_inclusive != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minInclusive=\"" + field.min_inclusive + "\"");
-
-				if (field.total_digits != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "totalDigits=\"" + field.total_digits + "\"");
-
-				if (field.fraction_digits != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "fractionDigits=\"" + field.fraction_digits + "\"");
-
-				if (field.white_space != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "witeSpace=\"" + field.white_space + "\"");
-
-				if (field.explicit_timezone != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "explicitTimezone=\"" + field.explicit_timezone + "\"");
-
-				if (field.assertions != null)
-					System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "assertions=\"" + field.assertions + "\"");
-
-			}
-
-			if (field.enum_name == null || field.enum_name.isEmpty())
-				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.pname) + " " + field.getPgDataType());
-			else
-				System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.pname) + " " + table.schema_pgname + field.enum_name);
-
-			if ((field.required || !field.xrequired) && field.fixed_value != null && !field.fixed_value.isEmpty()) {
-
-				switch (field.xs_type.getJsonSchemaType()) {
-				case "\"number\"":
-					System.out.print(" CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = " + field.fixed_value + " )");
-					break;
-				default:
-					System.out.print(" CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = '" + field.fixed_value + "' )");
-				}
-
-			}
-
-			if (field.required)
-				System.out.print(" NOT NULL");
-
-			if (option.pg_retain_key) {
-
-				if (field.unique_key) {
-
-					System.out.print(" PRIMARY KEY");
-
-				}
-
-				else if (field.foreign_key) {
-
-					PgTable foreign_table = getForeignTable(field);
-
-					PgField foreign_field = foreign_table.getPgField(field.foreign_field_pname);
-
-					if (foreign_field != null) {
-
-						if (foreign_field.unique_key)
-							System.out.print(" CONSTRAINT " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " ) ON DELETE CASCADE");
+						switch (option.pg_date) {
+						case date:
+							System.out.println("-- map XSD date (" + option.xs_prefix_ + "date) to SQL " + field.getPgDataType());
+						default:
+						}
 
 					}
 
 				}
 
+				if (!field.required && field.xrequired) {
+
+					if (field.fixed_value == null || field.fixed_value.isEmpty())
+						System.out.println("-- must not be NULL, but dismissed due to name collision");
+
+					else {
+
+						System.out.print("-- must have a constraint ");
+
+						switch (field.xs_type.getJsonSchemaType()) {
+						case "\"number\"":
+							System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = " + field.fixed_value + " ) ");
+							break;
+						default:
+							System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = '" + field.fixed_value + "' ) ");
+						}
+
+						System.out.println(", but dismissed due to name collision");
+
+					}
+				}
+
+				if (!table.target_namespace.isEmpty() && !field.system_key && !field.user_key && !field.any_content_holder && !field.is_same_namespace_of_table)
+					System.out.println("-- xmlns: " + field.target_namespace + " (" + getPrefixOf(field.target_namespace, "n.d.") + ")");
+
+				if (field.default_value != null && !field.default_value.isEmpty())
+					System.out.println("-- @default=\"" + field.default_value + "\"");
+
+				if (field._list)
+					System.out.println("-- " + option.xs_prefix_ + "line/@itemType=\"" + field._list_item_type + "\"");
+
+				if (field._union)
+					System.out.println("-- " + option.xs_prefix_ + "union/@memberTypes=\"" + field._union_member_types + "\"");
+
+				if (field.restriction) {
+
+					if (field.length != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "length=\"" + field.length + "\"");
+
+					if (field.min_length != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minLength=\"" + field.min_length + "\"");
+
+					if (field.max_length != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxLength=\"" + field.max_length + "\"");
+
+					if (field.pattern != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "pattern=\"" + field.pattern + "\"");
+
+					if (field.max_inclusive != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxInclusive=\"" + field.max_inclusive + "\"");
+
+					if (field.max_exclusive != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxInclusive=\"" + field.max_exclusive + "\"");
+
+					if (field.min_exclusive != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minInclusive=\"" + field.min_exclusive + "\"");
+
+					if (field.min_inclusive != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minInclusive=\"" + field.min_inclusive + "\"");
+
+					if (field.total_digits != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "totalDigits=\"" + field.total_digits + "\"");
+
+					if (field.fraction_digits != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "fractionDigits=\"" + field.fraction_digits + "\"");
+
+					if (field.white_space != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "witeSpace=\"" + field.white_space + "\"");
+
+					if (field.explicit_timezone != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "explicitTimezone=\"" + field.explicit_timezone + "\"");
+
+					if (field.assertions != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "assertions=\"" + field.assertions + "\"");
+
+				}
+
+				if (field.nested_key)
+					System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(primary_key.pname) + " AS " + PgSchemaUtil.avoidPgReservedWords(field.pname));
+				else
+					System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.pname));
+
+				if (f < fields.size() - 1)
+					System.out.println(" ," + (option.no_field_anno || field.anno == null || field.anno.isEmpty() ? "" : " -- " + field.anno));
+				else
+					System.out.println((option.no_field_anno || field.anno == null || field.anno.isEmpty() ? "" : " -- " + field.anno));
+
 			}
 
-			if (f < fields.size() - 1)
-				System.out.println(" ," + (option.no_field_anno || field.anno == null || field.anno.isEmpty() ? "" : " -- " + field.anno));
-			else
-				System.out.println((option.no_field_anno || field.anno == null || field.anno.isEmpty() ? "" : " -- " + field.anno));
+			System.out.println("FROM " + PgSchemaUtil.avoidPgReservedWords(foreign_table.pname) + " WHERE " + PgSchemaUtil.avoidPgReservedWords(primary_key.pname) + " IS NOT NULL;\n");
 
 		}
 
-		System.out.println(");\n");
+		else {
+
+			fields.stream().filter(field -> field.enum_name != null && !field.enum_name.isEmpty()).forEach(field -> {
+
+				String enum_type = table.schema_pgname + field.enum_name;
+
+				if ((option.inline_simple_cont && !pg_enum_types.contains(enum_type)) || !option.inline_simple_cont) {
+
+					System.out.println("DROP TYPE IF EXISTS " + enum_type + " CASCADE;");
+
+					System.out.print("CREATE TYPE " + enum_type + " AS ENUM (");
+
+					for (int i = 0; i < field.enumeration.length; i++) {
+
+						System.out.print(" '" + field.enumeration[i] + "'");
+
+						if (i < field.enumeration.length - 1)
+							System.out.print(",");
+
+					}
+
+					System.out.println(" );");
+
+					if (option.inline_simple_cont)
+						pg_enum_types.add(enum_type);
+
+				}
+
+			});
+
+			System.out.println("CREATE TABLE " + table.pgname + " (");
+
+			for (int f = 0; f < fields.size(); f++) {
+
+				PgField field = fields.get(f);
+
+				if (option.discarded_document_key_names.contains(field.name) || option.discarded_document_key_names.contains(table.name + "." + field.name))
+					continue;
+
+				if (field.document_key)
+					System.out.println("-- DOCUMENT KEY is pointer to data source (aka. Entry ID)");
+
+				else if (field.serial_key)
+					System.out.println("-- SERIAL KEY");
+
+				else if (field.xpath_key)
+					System.out.println("-- XPATH KEY");
+
+				else if (field.unique_key)
+					System.out.println("-- PRIMARY KEY");
+
+				else if (field.foreign_key)
+					System.out.println("-- FOREIGN KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " )");
+
+				else if (field.nested_key) {
+
+					if (field.nested_key_as_attr || field.nested_key_as_attr_group)
+						System.out.println("-- NESTED KEY AS ATTRIBUTE " + (field.nested_key_as_attr ? "" : "GROUP ") + ": " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(" OR ", field.delegated_field_pname.split(" ")) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
+					else
+						System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(" OR ", field.delegated_field_pname.split(" ")) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : "") + (field.delegated_sibling_key_name != null ? ", DELEGATED SIBLING KEY NAME : " + field.delegated_sibling_key_name : ""));
+
+				}
+
+				else if (field.attribute) {
+
+					if (option.discarded_document_key_names.contains(field.name) || option.discarded_document_key_names.contains(table.name + "." + field.name))
+						continue;
+
+					if (!option.document_key && option.in_place_document_key && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))
+						System.out.println("-- ATTRIBUTE, IN-PLACE DOCUMENT KEY");
+					else
+						System.out.println("-- ATTRIBUTE");
+
+				}
+
+				else if (field.simple_content) {
+
+					if (option.discarded_document_key_names.contains(table.name + "." + field.name))
+						continue;
+
+					if (field.simple_primitive_list)
+						System.out.print("-- SIMPLE CONTENT AS PRIMITIVE LIST");
+					else if (field.simple_attribute)
+						System.out.print("-- SIMPLE CONTENT AS ATTRIBUTE, ATTRIBUTE NODE: " + field.parent_node);
+					else if (field.simple_attr_cond)
+						System.out.print("-- SIMPLE CONTENT AS CONDITIONAL ATTRIBUTE, ATTRIBUTE NODE: " + field.parent_node);
+					else
+						System.out.print("-- SIMPLE CONTENT");
+
+					if (!option.document_key && option.in_place_document_key && option.in_place_document_key_names.contains(table.name + "." + field.name))
+						System.out.println(", IN-PLACE DOCUMENT KEY");
+					else
+						System.out.println("");
+
+				}
+
+				else if (field.any)
+					System.out.println("-- ANY ELEMENT");
+
+				else if (field.any_attribute)
+					System.out.println("-- ANY ATTRIBUTE");
+
+				else if (!field.primary_key && !option.document_key && option.in_place_document_key && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))
+					System.out.println("-- IN-PLACE DOCUMENT KEY");
+
+				if (!field.system_key && !field.user_key) {
+
+					switch (option.pg_integer) {
+					case signed_int_32:
+						if (field.getSqlDataType() == java.sql.Types.INTEGER && !field.xs_type.equals(XsFieldType.xs_int) && !field.xs_type.equals(XsFieldType.xs_unsignedInt))
+							System.out.println("-- map mathematical concept of integer numbers (" + field.type + ") to " + option.pg_integer.getName());
+						break;
+					case signed_long_64:
+						if (field.getSqlDataType() == java.sql.Types.BIGINT && !field.xs_type.equals(XsFieldType.xs_long) && !field.xs_type.equals(XsFieldType.xs_unsignedLong))
+							System.out.println("-- map mathematical concept of integer numbers (" + field.type + ") to " + option.pg_integer.getName());
+						break;
+					case big_integer:
+						if (field.getSqlDataType() == java.sql.Types.DECIMAL && !field.xs_type.equals(XsFieldType.xs_decimal))
+							System.out.println("-- must be treated as a BigInteger outside of JDBC");
+						break;
+					}
+
+					if (field.xs_type.equals(XsFieldType.xs_decimal)) {
+
+						switch (option.pg_decimal) {
+						case double_precision_64:
+							if (field.getSqlDataType() == java.sql.Types.DOUBLE)
+								System.out.println("-- map mathematical concept of decimal numbers (" + field.type + ") to " + option.pg_decimal.getName());
+							break;
+						case single_precision_32:
+							if (field.getSqlDataType() == java.sql.Types.FLOAT)
+								System.out.println("-- map mathematical concept of decimal numbers (" + field.type + ") to " + option.pg_decimal.getName());
+							break;
+						default:
+						}
+
+					}
+
+					if (field.xs_type.equals(XsFieldType.xs_date)) {
+
+						switch (option.pg_date) {
+						case date:
+							System.out.println("-- map XSD date (" + option.xs_prefix_ + "date) to SQL " + field.getPgDataType());
+						default:
+						}
+
+					}
+
+				}
+
+				if (!field.required && field.xrequired) {
+
+					if (field.fixed_value == null || field.fixed_value.isEmpty())
+						System.out.println("-- must not be NULL, but dismissed due to name collision");
+
+					else {
+
+						System.out.print("-- must have a constraint ");
+
+						switch (field.xs_type.getJsonSchemaType()) {
+						case "\"number\"":
+							System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = " + field.fixed_value + " ) ");
+							break;
+						default:
+							System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = '" + field.fixed_value + "' ) ");
+						}
+
+						System.out.println(", but dismissed due to name collision");
+
+					}
+				}
+
+				if (!table.target_namespace.isEmpty() && !field.system_key && !field.user_key && !field.any_content_holder && !field.is_same_namespace_of_table)
+					System.out.println("-- xmlns: " + field.target_namespace + " (" + getPrefixOf(field.target_namespace, "n.d.") + ")");
+
+				if (field.default_value != null && !field.default_value.isEmpty())
+					System.out.println("-- @default=\"" + field.default_value + "\"");
+
+				if (field._list)
+					System.out.println("-- " + option.xs_prefix_ + "line/@itemType=\"" + field._list_item_type + "\"");
+
+				if (field._union)
+					System.out.println("-- " + option.xs_prefix_ + "union/@memberTypes=\"" + field._union_member_types + "\"");
+
+				if (field.restriction) {
+
+					if (field.length != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "length=\"" + field.length + "\"");
+
+					if (field.min_length != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minLength=\"" + field.min_length + "\"");
+
+					if (field.max_length != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxLength=\"" + field.max_length + "\"");
+
+					if (field.pattern != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "pattern=\"" + field.pattern + "\"");
+
+					if (field.max_inclusive != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxInclusive=\"" + field.max_inclusive + "\"");
+
+					if (field.max_exclusive != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxInclusive=\"" + field.max_exclusive + "\"");
+
+					if (field.min_exclusive != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minInclusive=\"" + field.min_exclusive + "\"");
+
+					if (field.min_inclusive != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minInclusive=\"" + field.min_inclusive + "\"");
+
+					if (field.total_digits != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "totalDigits=\"" + field.total_digits + "\"");
+
+					if (field.fraction_digits != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "fractionDigits=\"" + field.fraction_digits + "\"");
+
+					if (field.white_space != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "witeSpace=\"" + field.white_space + "\"");
+
+					if (field.explicit_timezone != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "explicitTimezone=\"" + field.explicit_timezone + "\"");
+
+					if (field.assertions != null)
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "assertions=\"" + field.assertions + "\"");
+
+				}
+
+				if (field.enum_name == null || field.enum_name.isEmpty())
+					System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.pname) + " " + field.getPgDataType());
+				else
+					System.out.print("\t" + PgSchemaUtil.avoidPgReservedWords(field.pname) + " " + table.schema_pgname + field.enum_name);
+
+				if ((field.required || !field.xrequired) && field.fixed_value != null && !field.fixed_value.isEmpty()) {
+
+					switch (field.xs_type.getJsonSchemaType()) {
+					case "\"number\"":
+						System.out.print(" CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = " + field.fixed_value + " )");
+						break;
+					default:
+						System.out.print(" CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = '" + field.fixed_value + "' )");
+					}
+
+				}
+
+				if (field.required)
+					System.out.print(" NOT NULL");
+
+				if (option.pg_retain_key) {
+
+					if (field.unique_key) {
+
+						System.out.print(" PRIMARY KEY");
+
+					}
+
+					else if (field.foreign_key) {
+
+						PgTable foreign_table = getForeignTable(field);
+
+						PgField foreign_field = foreign_table.getPgField(field.foreign_field_pname);
+
+						if (foreign_field != null) {
+
+							if ((option.realize_simple_brdg || !foreign_table.simple_bridge) && foreign_field.unique_key)
+								System.out.print(" CONSTRAINT " + field.constraint_name + " REFERENCES " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " ) ON DELETE CASCADE");
+
+						}
+
+					}
+
+				}
+
+				if (f < fields.size() - 1)
+					System.out.println(" ," + (option.no_field_anno || field.anno == null || field.anno.isEmpty() ? "" : " -- " + field.anno));
+				else
+					System.out.println((option.no_field_anno || field.anno == null || field.anno.isEmpty() ? "" : " -- " + field.anno));
+
+			}
+
+			System.out.println(");\n");
+
+		}
 
 	}
 
@@ -6183,25 +6447,21 @@ public class PgSchema implements Serializable {
 	 */
 	public void deleteRows(Connection db_conn, HashSet<String> set) throws PgSchemaException {
 
-		if (!option.rel_data_ext) {
+		this.db_conn = db_conn;
 
-			this.db_conn = db_conn;
+		set.forEach(id -> {
 
-			set.forEach(id -> {
+			try {
 
-				try {
+				document_id = id;
 
-					document_id = id;
+				deleteBeforeUpdate(false);
 
-					deleteBeforeUpdate(false);
+			} catch (PgSchemaException e) {
+				e.printStackTrace();
+			}
 
-				} catch (PgSchemaException e) {
-					e.printStackTrace();
-				}
-
-			});
-
-		}
+		});
 
 	}
 
@@ -6291,7 +6551,7 @@ public class PgSchema implements Serializable {
 
 				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
 
-				if (!table.has_unique_primary_key && (table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1 || table.total_nested_fields > 1 || (table.content_holder && !table.bridge))) {
+				if (table.has_non_uniq_primary_key) {
 
 					String primary_key_pname = table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname;
 
@@ -6382,7 +6642,7 @@ public class PgSchema implements Serializable {
 
 				PgTable table = getPgTable(option.pg_named_schema ? null : PgSchemaUtil.pg_public_schema_name, table_name);
 
-				if (!table.has_unique_primary_key && (table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1 || table.total_nested_fields > 1 || (table.content_holder && !table.bridge))) {
+				if (table.has_non_uniq_primary_key) {
 
 					String primary_key_pname = table.fields.stream().filter(field -> field.primary_key).findFirst().get().pname;
 

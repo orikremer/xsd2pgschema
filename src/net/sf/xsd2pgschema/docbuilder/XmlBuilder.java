@@ -1146,8 +1146,8 @@ public class XmlBuilder extends CommonBuilder {
 
 			}
 
-			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
-			boolean use_primary_key = !use_doc_key_index || table.list_holder || table.virtual || table.has_simple_content || table.total_foreign_fields > 1 || table.total_nested_fields > 1 || (table.content_holder && !table.bridge);
+			boolean use_doc_key = document_id != null && !table.has_unique_primary_key;
+			boolean use_primary_key = !use_doc_key || table.has_non_uniq_primary_key;
 			boolean attr_only;
 
 			PreparedStatement ps = table.ps;
@@ -1156,7 +1156,7 @@ public class XmlBuilder extends CommonBuilder {
 
 				boolean limit_one = table.has_unique_primary_key || (table.bridge && table.virtual) || (!category_item && !foreign_table.list_holder);
 
-				String sql = "SELECT " + table.select_field_names + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_primary_key ? (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" : "") + (limit_one ? " LIMIT 1" : maxoccurs > 0 ? " LIMIT " + maxoccurs : "");
+				String sql = "SELECT " + table.select_field_names + " FROM " + table.pgname + " WHERE " + (use_doc_key ? table.doc_key_pgname + "=?" : "") + (use_primary_key ? (use_doc_key ? " AND " : "") + table.primary_key_pgname + "=?" : "") + (limit_one ? " LIMIT 1" : maxoccurs > 0 ? " LIMIT " + maxoccurs : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
 
@@ -1167,12 +1167,12 @@ public class XmlBuilder extends CommonBuilder {
 
 			}
 
-			if (use_doc_key_index && !document_id.equals(table.ps_doc_id))
+			if (use_doc_key && !document_id.equals(table.ps_doc_id))
 				ps.setString(1, table.ps_doc_id = document_id);
 
 			if (use_primary_key) {
 
-				int param_id = use_doc_key_index ? 2 : 1;
+				int param_id = use_doc_key ? 2 : 1;
 
 				switch (hash_size) {
 				case native_default:
@@ -1549,7 +1549,7 @@ public class XmlBuilder extends CommonBuilder {
 
 			boolean category_item = !table.virtual;
 
-			boolean use_doc_key_index = document_id != null && !table.has_unique_primary_key;
+			boolean use_doc_key = document_id != null && !table.has_unique_primary_key;
 			boolean attr_only;
 
 			PreparedStatement ps = table.ps;
@@ -1561,7 +1561,7 @@ public class XmlBuilder extends CommonBuilder {
 
 				boolean limit_one = table.has_unique_primary_key || (table.bridge && table.virtual);
 
-				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key_index ? table.doc_key_pgname + "=?" : "") + (use_doc_key_index ? " AND " : "") + table.primary_key_pgname + "=?" + (limit_one ? " LIMIT 1" : maxoccurs > 0 ? " LIMIT " + maxoccurs : "");
+				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key ? table.doc_key_pgname + "=?" : "") + (use_doc_key ? " AND " : "") + table.primary_key_pgname + "=?" + (limit_one ? " LIMIT 1" : maxoccurs > 0 ? " LIMIT " + maxoccurs : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
 
@@ -1572,10 +1572,10 @@ public class XmlBuilder extends CommonBuilder {
 
 			}
 
-			if (use_doc_key_index && !document_id.equals(table.ps_doc_id))
+			if (use_doc_key && !document_id.equals(table.ps_doc_id))
 				ps.setString(1, table.ps_doc_id = document_id);
 
-			int param_id = use_doc_key_index ? 2 : 1;
+			int param_id = use_doc_key ? 2 : 1;
 
 			switch (hash_size) {
 			case native_default:

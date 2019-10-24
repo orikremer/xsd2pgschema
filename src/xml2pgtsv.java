@@ -234,6 +234,9 @@ public class xml2pgtsv {
 			else if (args[i].equals("--inline-simple-cont"))
 				option.inline_simple_cont = true;
 
+			else if (args[i].equals("--realize-simple-brdg"))
+				option.realize_simple_brdg = true;
+
 			else if (args[i].equals("--no-wild-card"))
 				option.wild_card = false;
 
@@ -582,6 +585,7 @@ public class xml2pgtsv {
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY --work-dir DIRECTORY (default=\"" + work_dir_name + "\")");
 		System.err.println("        --no-rel (turn off relational model extension)");
 		System.err.println("        --inline-simple-cont (enable inlining simple content)");
+		System.err.println("        --realize-simple-brdg (realize simple bridge tables, otherwise implement them as PostgreSQL views by default)");
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --doc-key (append " + option.document_key_name + " column in all relations, default with relational model extension)");
 		System.err.println("        --no-doc-key (remove " + option.document_key_name + " column from all relations, effective only with relational model extension)");

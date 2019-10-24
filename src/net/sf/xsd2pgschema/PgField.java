@@ -438,13 +438,14 @@ public class PgField implements Serializable {
 		String xs_prefix = option.xs_prefix;
 		String xs_prefix_ = option.xs_prefix_;
 
-		type = null;
+		if (!_union)
+			type = null;
 
 		try {
 
-			if (node.hasAttributes()) {
+			Element elem = (Element) node;
 
-				Element elem = (Element) node;
+			if (node.hasAttributes()) {
 
 				String _type = elem.getAttribute("type");
 
@@ -498,6 +499,12 @@ public class PgField implements Serializable {
 				}
 
 			}
+
+			if (elem.getLocalName().equals("list"))
+				_list = true;
+
+			if (elem.getLocalName().equals("union"))
+				_union = true;
 
 			Element child_elem;
 			String child_name;
@@ -577,8 +584,54 @@ public class PgField implements Serializable {
 					String base = child_elem.getAttribute("base");
 
 					if (base != null && !base.isEmpty()) {
-						type = base;
-						return;
+
+						if (!_list && !_union) {
+							type = base;
+							return;
+						}
+
+						if (_union) {
+
+							if (type == null) {
+
+								type = _union_member_types = base;
+
+								String restriction = extractAnyRestrictionLU(option, node);
+
+								if (restriction != null)
+									_union_member_types += "/" + restriction;
+
+							}
+
+							else {
+
+								type += " " + base;
+								_union_member_types += " " + base;
+
+								String restriction = extractAnyRestrictionLU(option, node);
+
+								if (restriction != null)
+									_union_member_types += "/" + restriction;
+
+							}
+
+						}
+
+						if (_list) {
+
+							if (!_union)
+								type = base;
+
+							_list_item_type = base;
+
+							String restriction = extractAnyRestrictionLU(option, node);
+
+							if (restriction != null)
+								_list_item_type += "/" + restriction;
+
+							return;
+						}
+
 					}
 
 				}
@@ -982,6 +1035,199 @@ public class PgField implements Serializable {
 	}
 
 	/**
+	 * Extract xs:restriction/xs:any/@value including xs:enumeration under xs:list|xs:union.
+	 *
+	 * @param option PostgreSQL data model option
+	 * @param node current node
+	 * @return String description of any restriction
+	 */
+	private String extractAnyRestrictionLU(PgSchemaOption option, Node node) {
+
+		if (!_list && !_union)
+			return null;
+
+		String enumeration = extractEnumerationLU(option, node);
+		String restriction = extractRestrictionLU(option, node);
+
+		if (enumeration == null && restriction == null)
+			return null;
+
+		if (enumeration != null && restriction == null)
+			return enumeration;
+
+		if (enumeration == null && restriction != null) {
+
+			if (!restriction.contains(" and "))
+				return restriction;
+
+			return "[" + restriction + "]";
+		}
+
+		return "[" + enumeration + " and " + restriction + "]";
+	}
+
+	/**
+	 * Extract xs:restriction/xs:enumeration/@value under xs:list|xs:union.
+	 *
+	 * @param option PostgreSQL data model option
+	 * @param node current node
+	 * @return String description of enumeration
+	 */
+	private String extractEnumerationLU(PgSchemaOption option, Node node) {
+
+		String child_name;
+
+		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
+				continue;
+
+			child_name = ((Element) child).getLocalName();
+
+			if (child_name.equals("annotation"))
+				continue;
+
+			else if (child_name.equals("any") ||
+					child_name.equals("anyAttribute") ||
+					child_name.equals("attribute") ||
+					child_name.equals("attributeGroup") ||
+					child_name.equals("element") ||
+					child_name.equals("group"))
+				return null;
+
+			else if (child_name.equals("restriction")) {
+
+				Element enum_elem;
+				String value;
+
+				int length = 0;
+
+				for (Node enum_node = child.getFirstChild(); enum_node != null; enum_node = enum_node.getNextSibling()) {
+
+					if (enum_node.getNodeType() != Node.ELEMENT_NODE || !enum_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
+						continue;
+
+					enum_elem = (Element) enum_node;
+
+					if (enum_elem.getLocalName().equals("enumeration")) {
+
+						value = enum_elem.getAttribute("value");
+
+						if (value != null && !value.isEmpty())
+							length++;
+
+					}
+
+				}
+
+				if (length == 0)
+					return null;
+
+				String[] enumeration = new String[length];
+
+				int _length = 0;
+
+				for (Node enum_node = child.getFirstChild(); enum_node != null; enum_node = enum_node.getNextSibling()) {
+
+					if (enum_node.getNodeType() != Node.ELEMENT_NODE || !enum_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
+						continue;
+
+					enum_elem = (Element) enum_node;
+
+					if (enum_elem.getLocalName().equals("enumeration")) {
+
+						value = enum_elem.getAttribute("value");
+
+						if (value != null && !value.isEmpty()) {
+
+							String enum_value = value.replace("'", "''");
+
+							enumeration[_length] = enum_value;
+
+							_length++;
+
+						}
+
+					}
+
+				}
+
+				boolean duplicated = (_length < length);
+
+				for (int i = 0; i < _length; i++) {
+
+					if (enumeration[i] == null || enumeration[i].isEmpty())
+						continue;
+
+					for (int j = 0; j < i; j++) {
+
+						if (enumeration[j] == null || enumeration[j].isEmpty())
+							continue;
+
+						if (enumeration[i].equals(enumeration[j])) {
+
+							duplicated = true;
+
+							enumeration[i] = null;
+
+							break;
+						}
+
+					}
+
+				}
+
+				if (duplicated) {
+
+					length = 0;
+
+					for (int i = 0; i < _length; i++) {
+
+						if (enumeration[i] != null && !enumeration[i].isEmpty())
+							continue;
+
+						length++;
+
+					}
+
+					if (length == 0)
+						enumeration = null;
+
+					else {
+
+						String[] _enumeration = new String[length];
+
+						length = 0;
+
+						for (int i = 0; i < _length; i++) {
+
+							if (enumeration[i] != null && !enumeration[i].isEmpty())
+								continue;
+
+							_enumeration[length] = enumeration[i];
+
+							length++;
+
+						}
+
+						enumeration = _enumeration;
+
+					}
+
+				}
+
+				return option.xs_prefix_ + "enumeration[@value='" + String.join("' or @value='", enumeration) + "']";
+			}
+
+			if (child.hasChildNodes())
+				extractEnumerationLU(option, child);
+
+		}
+
+		return null;
+	}
+
+	/**
 	 * Extract xs:restriction/xs:enumeration/@value.
 	 *
 	 * @param option PostgreSQL data model option
@@ -990,6 +1236,9 @@ public class PgField implements Serializable {
 	protected void extractEnumeration(PgSchemaOption option, Node node) {
 
 		enumeration = xenumeration = null;
+
+		if (_list || _union)
+			return;
 
 		String child_name;
 
@@ -1157,7 +1406,418 @@ public class PgField implements Serializable {
 	}
 
 	/**
-	 * Extract xs:restriction/xs:any/@value.
+	 * Extract xs:restriction/xs:any/@value except for xs:enumeration under xs:list|xs:union.
+	 *
+	 * @param option PostgreSQL data model option
+	 * @param node current node
+	 * @return String description of restriction except for enumeration
+	 */
+	private String extractRestrictionLU(PgSchemaOption option, Node node) {
+
+		boolean restriction = false;
+
+		String length = null; // xs:length
+		String min_length = null; // xs:minLength
+		String max_length = null; // xs:maxLength
+
+		String pattern = null; // xs:pattern
+
+		String max_inclusive = null; // xs:maxInclusive
+		String max_exclusive = null; // xs:maxExclusive
+		String min_exclusive = null; // xs:minExclusive
+		String min_inclusive = null; // xs:minInclusive
+
+		String total_digits = null; // xs:totalDigits
+		String fraction_digits = null; // xs:fractionDigits
+
+		String white_space = null;
+		String explicit_timezone = null;
+
+		String assertions = null;
+
+		StringBuilder sb = new StringBuilder();
+
+		String child_name;
+
+		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+
+			if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
+				continue;
+
+			child_name = ((Element) child).getLocalName();
+
+			if (child_name.equals("annotation"))
+				continue;
+
+			else if (child_name.equals("any") ||
+					child_name.equals("anyAttribute") ||
+					child_name.equals("attribute") ||
+					child_name.equals("attributeGroup") ||
+					child_name.equals("element") ||
+					child_name.equals("group"))
+				return null;
+
+			else if (child_name.equals("restriction")) {
+
+				Element rest_elem;
+				String value;
+
+				for (Node rest_node = child.getFirstChild(); rest_node != null; rest_node = rest_node.getNextSibling()) {
+
+					if (rest_node.getNodeType() != Node.ELEMENT_NODE || !rest_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
+						continue;
+
+					rest_elem = (Element) rest_node;
+
+					value = rest_elem.getAttribute("value");
+
+					if (value == null || value.isEmpty())
+						continue;
+
+					if (rest_elem.getLocalName().equals("length")) {
+
+						try {
+
+							int i = Integer.parseInt(value);
+
+							if (i > 0) {
+
+								restriction = true;
+
+								if (length == null)
+									length = value;
+
+								else if (i > Integer.valueOf(length))
+									length = value;
+
+							}
+
+						} catch (NumberFormatException ex) {
+						}
+
+					}
+
+					else if (rest_elem.getLocalName().equals("minLength")) {
+
+						try {
+
+							int i = Integer.parseInt(value);
+
+							if (i > 0) {
+
+								restriction = true;
+
+								if (min_length == null)
+									min_length = value;
+
+								else if (i < Integer.valueOf(min_length))
+									min_length = value;
+
+							}
+
+						} catch (NumberFormatException ex) {
+						}
+
+					}
+
+					else if (rest_elem.getLocalName().equals("maxLength")) {
+
+						try {
+
+							int i = Integer.parseInt(value);
+
+							if (i > 0) {
+
+								restriction = true;
+
+								if (max_length == null)
+									max_length = value;
+
+								else if (i > Integer.valueOf(max_length))
+									max_length = value;
+
+							}
+
+						} catch (NumberFormatException ex) {
+						}
+
+					}
+
+					else if (rest_elem.getLocalName().equals("pattern")) {
+
+						restriction = true;
+						pattern = value;
+
+					}
+
+					else if (rest_elem.getLocalName().equals("maxInclusive")) {
+
+						try {
+
+							BigDecimal new_value = new BigDecimal(value);
+
+							restriction = true;
+
+							if (max_inclusive == null)
+								max_inclusive = value;
+
+							else {
+
+								BigDecimal old_value = new BigDecimal(max_inclusive);
+
+								if (new_value.compareTo(old_value) > 0)
+									max_inclusive = value;
+
+							}
+
+							if (max_exclusive != null) {
+
+								BigDecimal inc_value = new BigDecimal(max_inclusive);
+								BigDecimal exc_value = new BigDecimal(max_exclusive);
+
+								if (inc_value.compareTo(exc_value) < 0)
+									max_inclusive = null;
+
+							}
+
+						} catch (NumberFormatException ex) {
+						}
+
+					}
+
+					else if (rest_elem.getLocalName().equals("maxExclusive")) {
+
+						try {
+
+							BigDecimal new_value = new BigDecimal(value);
+
+							restriction = true;
+
+							if (max_exclusive == null)
+								max_exclusive = value;
+
+							else {
+
+								BigDecimal old_value = new BigDecimal(max_inclusive);
+
+								if (new_value.compareTo(old_value) > 0)
+									max_exclusive = value;
+
+							}
+
+							if (max_inclusive != null) {
+
+								BigDecimal inc_value = new BigDecimal(max_inclusive);
+								BigDecimal exc_value = new BigDecimal(max_exclusive);
+
+								if (exc_value.compareTo(inc_value) < 0)
+									max_exclusive = null;
+
+							}
+
+						} catch (NumberFormatException ex) {
+						}
+
+					}
+
+					else if (rest_elem.getLocalName().equals("minExclusive")) {
+
+						try {
+
+							BigDecimal new_value = new BigDecimal(value);
+
+							restriction = true;
+
+							if (min_exclusive == null)
+								min_exclusive = value;
+
+							else {
+
+								BigDecimal old_value = new BigDecimal(max_inclusive);
+
+								if (new_value.compareTo(old_value) < 0)
+									min_exclusive = value;
+
+							}
+
+							if (min_inclusive != null) {
+
+								BigDecimal inc_value = new BigDecimal(min_inclusive);
+								BigDecimal exc_value = new BigDecimal(min_exclusive);
+
+								if (exc_value.compareTo(inc_value) > 0)
+									min_exclusive = null;
+
+							}
+
+						} catch (NumberFormatException ex) {
+						}
+
+					}
+
+					else if (rest_elem.getLocalName().equals("minInclusive")) {
+
+						try {
+
+							BigDecimal new_value = new BigDecimal(value);
+
+							restriction = true;
+
+							if (min_inclusive == null)
+								min_inclusive = value;
+
+							else {
+
+								BigDecimal old_value = new BigDecimal(max_inclusive);
+
+								if (new_value.compareTo(old_value) < 0)
+									min_inclusive = value;
+
+							}
+
+							if (min_exclusive != null) {
+
+								BigDecimal inc_value = new BigDecimal(min_inclusive);
+								BigDecimal exc_value = new BigDecimal(min_exclusive);
+
+								if (inc_value.compareTo(exc_value) > 0)
+									min_inclusive = null;
+
+							}
+
+						} catch (NumberFormatException ex) {
+						}
+
+					}
+
+					else if (rest_elem.getLocalName().equals("totalDigits")) {
+
+						try {
+
+							int i = Integer.parseInt(value);
+
+							if (i > 0) {
+
+								restriction = true;
+
+								if (total_digits == null)
+									total_digits = value;
+
+								else if (i > Integer.valueOf(total_digits))
+									total_digits = value;
+
+							}
+
+						} catch (NumberFormatException ex) {
+						}
+
+					}
+
+					else if (rest_elem.getLocalName().equals("fractionDigits")) {
+
+						try {
+
+							int i = Integer.parseInt(value);
+
+							if (i >= 0) {
+
+								restriction = true;
+
+								if (fraction_digits == null)
+									fraction_digits = value;
+
+								else if (i > Integer.valueOf(fraction_digits))
+									fraction_digits = value;
+
+							}
+
+						} catch (NumberFormatException ex) {
+						}
+
+					}
+
+					else if (rest_elem.getLocalName().equals("whiteSpace")) {
+
+						if (value.equals("replace") || value.equals("collapse")) {
+
+							restriction = true;
+							white_space = value;
+
+						}
+
+					}
+
+					else if (rest_elem.getLocalName().equals("explicitTimezone")) {
+
+						restriction = true;
+						explicit_timezone = value;
+
+					}
+
+					else if (rest_elem.getLocalName().equals("assertions")) {
+
+						restriction = true;
+						assertions = value;
+
+					}
+
+				}
+
+				if (!restriction)
+					return null;
+
+				if (length != null)
+					sb.append(option.xs_prefix_ + "length/@value='" + length + "' and ");
+
+				if (min_length != null)
+					sb.append(option.xs_prefix_ + "minLength/@value='" + min_length + "' and ");
+
+				if (max_length != null)
+					sb.append(option.xs_prefix_ + "maxLength/@value='" + max_length + "' and ");
+
+				if (pattern != null)
+					sb.append(option.xs_prefix_ + "pattern/@value='" + pattern + "' and ");
+
+				if (max_inclusive != null)
+					sb.append(option.xs_prefix_ + "maxInclusive/@value='" + max_inclusive + "' and ");	
+
+				if (max_exclusive != null)
+					sb.append(option.xs_prefix_ + "maxExclusive/@value='" + max_exclusive + "' and ");
+
+				if (min_exclusive != null)
+					sb.append(option.xs_prefix_ + "minExclusive/@value='" + min_exclusive + "' and ");
+
+				if (min_inclusive != null)
+					sb.append(option.xs_prefix_ + "minInclusive/@value='" + min_inclusive + "' and ");	
+
+				if (total_digits != null)
+					sb.append(option.xs_prefix_ + "totalDigits/@value='" + total_digits + "' and ");
+
+				if (fraction_digits != null)
+					sb.append(option.xs_prefix_ + "fractionDigits/@value='" + fraction_digits + "' and ");
+
+				if (white_space != null)
+					sb.append(option.xs_prefix_ + "whiteSpace/@value='" + white_space + "' and ");
+
+				if (explicit_timezone != null)
+					sb.append(option.xs_prefix_ + "explicitTimezone/@value='" + explicit_timezone + "' and ");
+
+				if (assertions != null)
+					sb.append(option.xs_prefix_ + "assertions/@value='" + assertions + "' and ");
+
+				return sb.substring(0, sb.length() - 5);
+			}
+
+			if (child.hasChildNodes())
+				extractRestrictionLU(option, child);
+
+		}
+
+		return null;
+	}
+
+	/**
+	 * Extract xs:restriction/xs:any/@value except for xs:enumeration.
 	 *
 	 * @param node current node
 	 */
@@ -1181,6 +1841,9 @@ public class PgField implements Serializable {
 		explicit_timezone = null;
 
 		assertions = null;
+
+		if (_list || _union)
+			return;
 
 		String child_name;
 

@@ -71,6 +71,9 @@ public class PgSchemaOption implements Serializable {
 	/** Whether to inline simple content. */
 	public boolean inline_simple_cont = false;
 
+	/** Whether to realize simple bridge tables, otherwise implement them as PostgreSQL views by default. */
+	public boolean realize_simple_brdg = false;
+
 	/** The wild card extension. */
 	public boolean wild_card = true;
 
@@ -657,6 +660,9 @@ public class PgSchemaOption implements Serializable {
 			return false;
 
 		if (inline_simple_cont != option.inline_simple_cont)
+			return false;
+
+		if (realize_simple_brdg != option.realize_simple_brdg)
 			return false;
 
 		if (wild_card != option.wild_card)

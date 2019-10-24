@@ -48,6 +48,9 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	/** The buffered writer for data conversion. */
 	private BufferedWriter buffw;
 
+	/** Whether to enable PostgreSQL view for this table. */
+	private boolean pg_view;
+
 	/** Whether to use TSV format in PostgreSQL data migration. */
 	private boolean pg_tab_delimiter;
 
@@ -91,6 +94,8 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 		sb = new StringBuilder();
 
 		buffw = table.buffw;
+
+		pg_view = !npb.schema.option.realize_simple_brdg && table.simple_bridge;
 
 		pg_tab_delimiter = npb.schema.option.pg_tab_delimiter;
 		pg_delimiter = npb.schema.option.pg_delimiter;
@@ -336,27 +341,31 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 		if (null_simple_list && (total_nested_fields == 0 || nested_keys.size() == 0))
 			return;
 
-		try {
+		if (!pg_view) {
 
-			for (int f = 0; f < fields_size; f++) {
+			try {
 
-				if (fields.get(f).omissible)
-					continue;
+				for (int f = 0; f < fields_size; f++) {
 
-				sb.append(values[f] + pg_delimiter);
+					if (fields.get(f).omissible)
+						continue;
 
+					sb.append(values[f] + pg_delimiter);
+
+				}
+
+				if (buffw == null)
+					buffw = table.buffw = Files.newBufferedWriter(table.pathw);
+
+				buffw.write(sb.substring(0, sb.length() - 1) + "\n");
+
+				sb.setLength(0);
+
+			} catch (IOException e) {
+				System.err.println("Exception occurred while processing table: " + table.xname);
+				throw new PgSchemaException(e);
 			}
 
-			if (buffw == null)
-				buffw = table.buffw = Files.newBufferedWriter(table.pathw);
-
-			buffw.write(sb.substring(0, sb.length() - 1) + "\n");
-
-			sb.setLength(0);
-
-		} catch (IOException e) {
-			System.err.println("Exception occurred while processing table: " + table.xname);
-			throw new PgSchemaException(e);
 		}
 
 		table.visited_key = current_key;
