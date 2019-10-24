@@ -4993,18 +4993,7 @@ public class PgSchema implements Serializable {
 
 					System.out.println("DROP TYPE IF EXISTS " + enum_type + " CASCADE;");
 
-					System.out.print("CREATE TYPE " + enum_type + " AS ENUM (");
-
-					for (int i = 0; i < field.enumeration.length; i++) {
-
-						System.out.print(" '" + field.enumeration[i] + "'");
-
-						if (i < field.enumeration.length - 1)
-							System.out.print(",");
-
-					}
-
-					System.out.println(" );");
+					System.out.println("CREATE TYPE " + enum_type + " AS ENUM ( '" + String.join("', '", field.enumeration) + "' );");
 
 					if (option.inline_simple_cont)
 						pg_enum_types.add(enum_type);
