@@ -143,6 +143,9 @@ public class xsd2pgschema {
 			else if (args[i].equals("--no-field-annotation"))
 				option.no_field_anno = true;
 
+			else if (args[i].equals("--pg-comment-on"))
+				option.pg_comment_on = true;
+
 			else if (args[i].equals("--max-uniq-tuple-size") && i + 1 < args.length)
 				option.pg_max_uniq_tuple_size = Integer.valueOf(args[++i]);
 
@@ -270,6 +273,7 @@ public class xsd2pgschema {
 		System.err.println("        --pg-map-date (map xs:date to PostgreSQL date type, default)");	
 		System.err.println("        --field-annotation (retrieve field annotation)");
 		System.err.println("        --no-field-annotation (do not retrieve field annotation, default)");
+		System.err.println("        --pg-comment-on (set annotation as comment in PostgreSQL DB.)");
 		System.err.println("        --max-uniq-touple-size MAX_UNIQ_TUPLE_SIZE (maximum tuple size of unique constraint derived from xs:key, ignore the limit if non-positive value, default=1)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --hash-by ASSUMED_ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");

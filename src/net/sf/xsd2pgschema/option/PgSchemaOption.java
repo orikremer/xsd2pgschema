@@ -104,6 +104,9 @@ public class PgSchemaOption implements Serializable {
 	/** The current delimiter code. */
 	public char pg_delimiter = '\t';
 
+	/** Whether to set annotation as comment in PostgreSQL DB. */
+	public boolean pg_comment_on = false;
+
 	/** The current null code. */
 	public String pg_null = PgSchemaUtil.pg_tsv_null;
 

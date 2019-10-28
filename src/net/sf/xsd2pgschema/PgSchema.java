@@ -4410,19 +4410,15 @@ public class PgSchema implements Serializable {
 		System.out.print(def_stat_msg.toString());
 		System.out.println("--\n");
 
-		if (option.pg_named_schema) {
+		if (option.pg_named_schema && !pg_named_schema.isEmpty()) {
 
-			if (!pg_named_schema.isEmpty()) {
+			pg_named_schema.forEach(named_schema -> System.out.println("CREATE SCHEMA IF NOT EXISTS " + PgSchemaUtil.avoidPgReservedWords(named_schema) + ";"));
 
-				pg_named_schema.forEach(named_schema -> System.out.println("CREATE SCHEMA IF NOT EXISTS " + PgSchemaUtil.avoidPgReservedWords(named_schema) + ";"));
+			System.out.print("\nSET search_path TO ");
 
-				System.out.print("\nSET search_path TO ");
+			System.out.print(PgSchemaUtil.avoidPgReservedWords(", ", pg_named_schema.stream().toArray(String[]::new)));
 
-				System.out.print(PgSchemaUtil.avoidPgReservedWords(", ", pg_named_schema.stream().toArray(String[]::new)));
-
-				System.out.println(", " + PgSchemaUtil.pg_public_schema_name + ";\n");
-
-			}
+			System.out.println(", " + PgSchemaUtil.pg_public_schema_name + ";\n");
 
 		}
 
@@ -4434,14 +4430,7 @@ public class PgSchema implements Serializable {
 
 		}
 
-		tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> table.refs)).forEach(table -> {
-
-			if (!option.realize_simple_brdg && table.simple_bridge)
-				System.out.println("DROP VIEW IF EXISTS " + table.pgname + " CASCADE;");
-			else
-				System.out.println("DROP TABLE IF EXISTS " + table.pgname + " CASCADE;");
-
-		});
+		tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> table.refs)).forEach(table -> System.out.println("DROP " + (!option.realize_simple_brdg && table.simple_bridge ? "VIEW" : "TABLE") + " IF EXISTS " + table.pgname + " CASCADE;"));
 
 		System.out.println("");
 
@@ -4651,6 +4640,19 @@ public class PgSchema implements Serializable {
 				}
 
 			}
+
+		}
+
+		if (option.pg_comment_on) {
+
+			tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> table.refs)).forEach(table -> {
+
+				if (table.xanno_doc != null)
+					System.out.println("COMMENT ON " + (!option.realize_simple_brdg && table.simple_bridge ? "VIEW" : "TABLE") + " " + table.pgname + " IS '" + PgSchemaUtil.collapseWhiteSpace(table.xanno_doc).replace("'", "''") + "';");
+
+				table.fields.stream().filter(field -> field.xanno_doc != null).forEach(field -> System.out.println("COMMENT ON COLUMN " + table.pgname + "." + PgSchemaUtil.avoidPgReservedWords(field.pname) + " IS '" + PgSchemaUtil.collapseWhiteSpace(field.xanno_doc).replace("'", "''") + "';"));
+
+			});
 
 		}
 
@@ -7512,10 +7514,11 @@ public class PgSchema implements Serializable {
 	 * Perform consistency test on PostgreSQL DDL.
 	 *
 	 * @param db_conn database connection
+	 * @param pg_option PostgreSQL option
 	 * @param strict whether to perform strict consistency test
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void testPgSql(Connection db_conn, boolean strict) throws PgSchemaException {
+	public void testPgSql(Connection db_conn, PgOption pg_option, boolean strict) throws PgSchemaException {
 
 		this.db_conn = db_conn;
 
@@ -7578,6 +7581,12 @@ public class PgSchema implements Serializable {
 							if (db_column_type == java.sql.Types.NUMERIC) // NUMERIC and DECIMAL are equivalent in PostgreSQL
 								db_column_type = java.sql.Types.DECIMAL;
 
+							if (db_column_type == java.sql.Types.REAL) // REAL and FLOAT are equivalent in PostgreSQL
+								db_column_type = java.sql.Types.FLOAT;							
+
+							if (db_column_type == java.sql.Types.BIT) // BIT and BOOLEAN are equivalent in PostgreSQL
+								db_column_type = java.sql.Types.BOOLEAN;
+
 							field = fields.get(col_id++);
 
 							if (!field.pname.equals(db_column_name))
@@ -7601,6 +7610,8 @@ public class PgSchema implements Serializable {
 			});
 
 			stat.close();
+
+			System.out.println(pg_option.getDbUrl() + " is valid.");
 
 		} catch (SQLException e) {
 			throw new PgSchemaException(e);

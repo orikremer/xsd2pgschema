@@ -301,7 +301,7 @@ public class tsv2pgsql {
 			// test PostgreSQL DDL with schema
 
 			if (pg_option.test)
-				client.schema.testPgSql(db_conn, true);
+				client.schema.testPgSql(db_conn, pg_option, true);
 
 			client.schema.pgCsv2PgSql(db_conn, work_dir);
 

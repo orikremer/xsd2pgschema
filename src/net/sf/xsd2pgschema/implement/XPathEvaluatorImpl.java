@@ -117,7 +117,7 @@ public class XPathEvaluatorImpl {
 			// test PostgreSQL DDL with schema
 
 			if (pg_option.test)
-				client.schema.testPgSql(db_conn, false);
+				client.schema.testPgSql(db_conn, pg_option, false);
 
 			db_conn.setReadOnly(true);
 

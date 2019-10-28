@@ -180,8 +180,8 @@ public class Xml2PgSqlThrd implements Runnable {
 
 		// test PostgreSQL DDL with schema
 
-		if (pg_option.test)
-			client.schema.testPgSql(db_conn, true);
+		if (pg_option.test && thrd_id == 0)
+			client.schema.testPgSql(db_conn, pg_option, true);
 
 		db_name = pg_option.name;
 
