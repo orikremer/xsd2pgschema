@@ -43,10 +43,10 @@ import net.sf.xsd2pgschema.PgTable;
 public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 	/** The string builder for a line of CSV/TSV format. */
-	private StringBuilder sb;
+	private StringBuilder sb = null;
 
 	/** The buffered writer for data conversion. */
-	private BufferedWriter buffw;
+	private BufferedWriter buffw = null;
 
 	/** Whether to enable PostgreSQL view for this table. */
 	private boolean pg_view;
@@ -91,11 +91,15 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		this.as_attr = as_attr;
 
-		sb = new StringBuilder();
-
-		buffw = table.buffw;
-
 		pg_view = !npb.schema.option.realize_simple_brdg && table.simple_bridge;
+
+		if (!pg_view) {
+
+			sb = new StringBuilder();
+
+			buffw = table.buffw;
+
+		}
 
 		pg_tab_delimiter = npb.schema.option.pg_tab_delimiter;
 		pg_delimiter = npb.schema.option.pg_delimiter;

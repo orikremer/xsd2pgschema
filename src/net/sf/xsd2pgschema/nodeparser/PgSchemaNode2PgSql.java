@@ -92,121 +92,125 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 		this.as_attr = as_attr;
 
+		if (update && npb.rel_data_ext)
+			upsert = table.has_unique_primary_key;
+
+		occupied = new boolean[fields_size];
+
 		pg_view = !npb.schema.option.realize_simple_brdg && table.simple_bridge;
 
-		try {
+		if (!pg_view) {
 
-			PgField field;
+			try {
 
-			if (update && npb.rel_data_ext)
-				upsert = table.has_unique_primary_key;
+				PgField field;
 
-			// upsert
+				// upsert
 
-			if (upsert) {
+				if (upsert) {
 
-				if (table.ps2 == null) {
+					if (table.ps2 == null) {
 
-					StringBuilder sql = new StringBuilder();
+						StringBuilder sql = new StringBuilder();
 
-					sql.append("INSERT INTO " + table.pgname + " VALUES ( ");
+						sql.append("INSERT INTO " + table.pgname + " VALUES ( ");
 
-					for (int f = 0; f < fields_size; f++) {
+						for (int f = 0; f < fields_size; f++) {
 
-						field = fields.get(f);
+							field = fields.get(f);
 
-						if (field.omissible)
-							continue;
+							if (field.omissible)
+								continue;
 
-						if (field.enum_name == null)
-							sql.append("?");
-						else
-							sql.append("?::" + table.schema_pgname + field.enum_name);
+							if (field.enum_name == null)
+								sql.append("?");
+							else
+								sql.append("?::" + table.schema_pgname + field.enum_name);
 
-						sql.append(", ");
+							sql.append(", ");
+
+						}
+
+						sql.setLength(sql.length() - 2);
+						sql.append(" )");
+
+						sql.append(" ON CONFLICT ( " + table.primary_key_pgname + " ) DO UPDATE SET ");
+
+						for (int f = 0; f < fields_size; f++) {
+
+							field = fields.get(f);
+
+							if (field.omissible || field.primary_key)
+								continue;
+
+							sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + "=");
+
+							if (field.enum_name == null)
+								sql.append("?");
+							else
+								sql.append("?::" + table.schema_pgname + field.enum_name);
+
+							sql.append(", ");
+
+						}
+
+						sql.setLength(sql.length() - 2);
+
+						sql.append(" WHERE EXCLUDED." + table.primary_key_pgname + "=?");
+
+						table.ps2 = npb.db_conn.prepareStatement(sql.toString());
+
+						sql.setLength(0);
 
 					}
 
-					sql.setLength(sql.length() - 2);
-					sql.append(" )");
-
-					sql.append(" ON CONFLICT ( " + table.primary_key_pgname + " ) DO UPDATE SET ");
-
-					for (int f = 0; f < fields_size; f++) {
-
-						field = fields.get(f);
-
-						if (field.omissible || field.primary_key)
-							continue;
-
-						sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + "=");
-
-						if (field.enum_name == null)
-							sql.append("?");
-						else
-							sql.append("?::" + table.schema_pgname + field.enum_name);
-
-						sql.append(", ");
-
-					}
-
-					sql.setLength(sql.length() - 2);
-
-					sql.append(" WHERE EXCLUDED." + table.primary_key_pgname + "=?");
-
-					table.ps2 = npb.db_conn.prepareStatement(sql.toString());
-
-					sql.setLength(0);
+					ps = table.ps2;
 
 				}
 
-				ps = table.ps2;
+				// insert
 
-			}
+				else {
 
-			// insert
+					if (table.ps == null) {
 
-			else {
+						StringBuilder sql = new StringBuilder();
 
-				if (table.ps == null) {
+						sql.append("INSERT INTO " + table.pgname + " VALUES ( ");
 
-					StringBuilder sql = new StringBuilder();
+						for (int f = 0; f < fields_size; f++) {
 
-					sql.append("INSERT INTO " + table.pgname + " VALUES ( ");
+							field = fields.get(f);
 
-					for (int f = 0; f < fields_size; f++) {
+							if (field.omissible)
+								continue;
 
-						field = fields.get(f);
+							if (field.enum_name == null)
+								sql.append("?");
+							else
+								sql.append("?::" + table.schema_pgname + field.enum_name);
 
-						if (field.omissible)
-							continue;
+							sql.append(", ");
 
-						if (field.enum_name == null)
-							sql.append("?");
-						else
-							sql.append("?::" + table.schema_pgname + field.enum_name);
+						}
 
-						sql.append(", ");
+						sql.setLength(sql.length() - 2);
+						sql.append(" )");
+
+						table.ps = npb.db_conn.prepareStatement(sql.toString());
+
+						sql.setLength(0);
 
 					}
 
-					sql.setLength(sql.length() - 2);
-					sql.append(" )");
-
-					table.ps = npb.db_conn.prepareStatement(sql.toString());
-
-					sql.setLength(0);
+					ps = table.ps;
 
 				}
 
-				ps = table.ps;
-
+			} catch (SQLException e) {
+				throw new PgSchemaException(e);
 			}
 
-			occupied = new boolean[fields_size];
-
-		} catch (SQLException e) {
-			throw new PgSchemaException(e);
 		}
 
 	}

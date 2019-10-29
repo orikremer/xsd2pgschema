@@ -611,6 +611,9 @@ public class PgSchemaNodeParserBuilder {
 	 */
 	protected void writeHashKey(PreparedStatement ps, boolean upsert, PgField field, String current_key) throws SQLException {
 
+		if (ps == null)
+			return;
+
 		switch (hash_size) {
 		case native_default:
 			byte[] bytes = getHashKeyBytes(current_key);
@@ -648,6 +651,9 @@ public class PgSchemaNodeParserBuilder {
 	 * @throws SQLException the SQL exception
 	 */
 	protected void writeSerKey(PreparedStatement ps, boolean upsert, PgField field, int ordinal) throws SQLException {
+
+		if (ps == null)
+			return;
 
 		if (is_def_ser_size) {
 			ps.setInt(field.sql_insert_id, ordinal);

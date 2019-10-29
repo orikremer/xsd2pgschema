@@ -4430,7 +4430,7 @@ public class PgSchema implements Serializable {
 
 		}
 
-		tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> table.refs)).forEach(table -> System.out.println("DROP " + (!option.realize_simple_brdg && table.simple_bridge ? "VIEW" : "TABLE") + " IF EXISTS " + table.pgname + " CASCADE;"));
+		tables.stream().filter(table -> table.writable && (option.realize_simple_brdg || !table.simple_bridge)).sorted(Comparator.comparingInt(table -> table.refs)).forEach(table -> System.out.println("DROP TABLE IF EXISTS " + table.pgname + " CASCADE;"));
 
 		System.out.println("");
 
@@ -4791,17 +4791,11 @@ public class PgSchema implements Serializable {
 					if (field.document_key)
 						System.out.println("-- DOCUMENT KEY is pointer to data source (aka. Entry ID)");
 
-					else if (field.serial_key)
-						System.out.println("-- SERIAL KEY");
-
 					else if (field.xpath_key)
 						System.out.println("-- XPATH KEY");
 
 					else if (field.unique_key)
 						System.out.println("-- PRIMARY KEY");
-
-					else if (field.foreign_key)
-						System.out.println("-- FOREIGN KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + " )");
 
 					else if (field.nested_key) {
 
@@ -4809,170 +4803,6 @@ public class PgSchema implements Serializable {
 							System.out.println("-- NESTED KEY AS ATTRIBUTE " + (field.nested_key_as_attr ? "" : "GROUP ") + ": " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(" OR ", field.delegated_field_pname.split(" ")) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : ""));
 						else
 							System.out.println("-- NESTED KEY : " + getPgForeignNameOf(field) + " ( " + PgSchemaUtil.avoidPgReservedWords(field.foreign_field_pname) + (field.delegated_field_pname != null ? ", DELEGATED TO " + PgSchemaUtil.avoidPgReservedWords(" OR ", field.delegated_field_pname.split(" ")) : "") + " )" + (field.parent_node != null ? ", PARENT NODE : " + field.parent_node : "") + (field.ancestor_node != null ? ", ANCESTOR NODE : " + field.ancestor_node : "") + (field.delegated_sibling_key_name != null ? ", DELEGATED SIBLING KEY NAME : " + field.delegated_sibling_key_name : ""));
-
-					}
-
-					else if (field.attribute) {
-
-						if (option.discarded_document_key_names.contains(field.name) || option.discarded_document_key_names.contains(table.name + "." + field.name))
-							continue;
-
-						if (!option.document_key && option.in_place_document_key && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))
-							System.out.println("-- ATTRIBUTE, IN-PLACE DOCUMENT KEY");
-						else
-							System.out.println("-- ATTRIBUTE");
-
-					}
-
-					else if (field.simple_content) {
-
-						if (option.discarded_document_key_names.contains(table.name + "." + field.name))
-							continue;
-
-						if (field.simple_primitive_list)
-							System.out.print("-- SIMPLE CONTENT AS PRIMITIVE LIST");
-						else if (field.simple_attribute)
-							System.out.print("-- SIMPLE CONTENT AS ATTRIBUTE, ATTRIBUTE NODE: " + field.parent_node);
-						else if (field.simple_attr_cond)
-							System.out.print("-- SIMPLE CONTENT AS CONDITIONAL ATTRIBUTE, ATTRIBUTE NODE: " + field.parent_node);
-						else
-							System.out.print("-- SIMPLE CONTENT");
-
-						if (!option.document_key && option.in_place_document_key && option.in_place_document_key_names.contains(table.name + "." + field.name))
-							System.out.println(", IN-PLACE DOCUMENT KEY");
-						else
-							System.out.println("");
-
-					}
-
-					else if (field.any)
-						System.out.println("-- ANY ELEMENT");
-
-					else if (field.any_attribute)
-						System.out.println("-- ANY ATTRIBUTE");
-
-					else if (!field.primary_key && !option.document_key && option.in_place_document_key && (option.in_place_document_key_names.contains(field.name) || option.in_place_document_key_names.contains(table.name + "." + field.name)))
-						System.out.println("-- IN-PLACE DOCUMENT KEY");
-
-					if (!field.system_key && !field.user_key) {
-
-						switch (option.pg_integer) {
-						case signed_int_32:
-							if (field.getSqlDataType() == java.sql.Types.INTEGER && !field.xs_type.equals(XsFieldType.xs_int) && !field.xs_type.equals(XsFieldType.xs_unsignedInt))
-								System.out.println("-- map mathematical concept of integer numbers (" + field.type + ") to " + option.pg_integer.getName());
-							break;
-						case signed_long_64:
-							if (field.getSqlDataType() == java.sql.Types.BIGINT && !field.xs_type.equals(XsFieldType.xs_long) && !field.xs_type.equals(XsFieldType.xs_unsignedLong))
-								System.out.println("-- map mathematical concept of integer numbers (" + field.type + ") to " + option.pg_integer.getName());
-							break;
-						case big_integer:
-							if (field.getSqlDataType() == java.sql.Types.DECIMAL && !field.xs_type.equals(XsFieldType.xs_decimal))
-								System.out.println("-- must be treated as a BigInteger outside of JDBC");
-							break;
-						}
-
-						if (field.xs_type.equals(XsFieldType.xs_decimal)) {
-
-							switch (option.pg_decimal) {
-							case double_precision_64:
-								if (field.getSqlDataType() == java.sql.Types.DOUBLE)
-									System.out.println("-- map mathematical concept of decimal numbers (" + field.type + ") to " + option.pg_decimal.getName());
-								break;
-							case single_precision_32:
-								if (field.getSqlDataType() == java.sql.Types.FLOAT)
-									System.out.println("-- map mathematical concept of decimal numbers (" + field.type + ") to " + option.pg_decimal.getName());
-								break;
-							default:
-							}
-
-						}
-
-						if (field.xs_type.equals(XsFieldType.xs_date)) {
-
-							switch (option.pg_date) {
-							case date:
-								System.out.println("-- map XSD date (" + option.xs_prefix_ + "date) to SQL " + field.getPgDataType());
-							default:
-							}
-
-						}
-
-					}
-
-					if (!field.required && field.xrequired) {
-
-						if (field.fixed_value == null || field.fixed_value.isEmpty())
-							System.out.println("-- must not be NULL, but dismissed due to name collision");
-
-						else {
-
-							System.out.print("-- must have a constraint ");
-
-							switch (field.xs_type.getJsonSchemaType()) {
-							case "\"number\"":
-								System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = " + field.fixed_value + " ) ");
-								break;
-							default:
-								System.out.print("CHECK ( " + PgSchemaUtil.avoidPgReservedWords(field.pname) + " = '" + field.fixed_value + "' ) ");
-							}
-
-							System.out.println(", but dismissed due to name collision");
-
-						}
-					}
-
-					if (!table.target_namespace.isEmpty() && !field.system_key && !field.user_key && !field.any_content_holder && !field.is_same_namespace_of_table)
-						System.out.println("-- xmlns: " + field.target_namespace + " (" + getPrefixOf(field.target_namespace, "n.d.") + ")");
-
-					if (field.default_value != null && !field.default_value.isEmpty())
-						System.out.println("-- @default=\"" + field.default_value + "\"");
-
-					if (field._list)
-						System.out.println("-- " + option.xs_prefix_ + "line/@itemType=\"" + field._list_item_type + "\"");
-
-					if (field._union)
-						System.out.println("-- " + option.xs_prefix_ + "union/@memberTypes=\"" + field._union_member_types + "\"");
-
-					if (field.restriction) {
-
-						if (field.length != null)
-							System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "length=\"" + field.length + "\"");
-
-						if (field.min_length != null)
-							System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minLength=\"" + field.min_length + "\"");
-
-						if (field.max_length != null)
-							System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxLength=\"" + field.max_length + "\"");
-
-						if (field.pattern != null)
-							System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "pattern=\"" + field.pattern + "\"");
-
-						if (field.max_inclusive != null)
-							System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxInclusive=\"" + field.max_inclusive + "\"");
-
-						if (field.max_exclusive != null)
-							System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxInclusive=\"" + field.max_exclusive + "\"");
-
-						if (field.min_exclusive != null)
-							System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minInclusive=\"" + field.min_exclusive + "\"");
-
-						if (field.min_inclusive != null)
-							System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minInclusive=\"" + field.min_inclusive + "\"");
-
-						if (field.total_digits != null)
-							System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "totalDigits=\"" + field.total_digits + "\"");
-
-						if (field.fraction_digits != null)
-							System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "fractionDigits=\"" + field.fraction_digits + "\"");
-
-						if (field.white_space != null)
-							System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "witeSpace=\"" + field.white_space + "\"");
-
-						if (field.explicit_timezone != null)
-							System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "explicitTimezone=\"" + field.explicit_timezone + "\"");
-
-						if (field.assertions != null)
-							System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "assertions=\"" + field.assertions + "\"");
 
 					}
 
@@ -6221,7 +6051,7 @@ public class PgSchema implements Serializable {
 
 		this.md_hash_key = md_hash_key;
 
-		tables.parallelStream().filter(table -> table.writable).forEach(table -> {
+		tables.parallelStream().filter(table -> table.writable && (option.realize_simple_brdg || !table.simple_bridge)).forEach(table -> {
 
 			if (table.pathw == null)
 				table.pathw = Paths.get(work_dir.toString(), getDataFileNameOf(table));
@@ -6241,7 +6071,7 @@ public class PgSchema implements Serializable {
 	 */
 	public void closeXml2PgCsv() {
 
-		tables.parallelStream().filter(table -> table.writable).forEach(table -> {
+		tables.parallelStream().filter(table -> table.writable && (option.realize_simple_brdg || !table.simple_bridge)).forEach(table -> {
 
 			try {
 
@@ -6273,7 +6103,7 @@ public class PgSchema implements Serializable {
 
 			CopyManager copy_man = new CopyManager((BaseConnection) db_conn);
 
-			tables.stream().filter(table -> table.writable).sorted(Comparator.comparingInt(table -> -table.refs)).forEach(table -> {
+			tables.stream().filter(table -> table.writable && (option.realize_simple_brdg || !table.simple_bridge)).sorted(Comparator.comparingInt(table -> -table.refs)).forEach(table -> {
 
 				Path data_path = Paths.get(work_dir.toString(), getDataFileNameOf(table));
 
@@ -6497,7 +6327,7 @@ public class PgSchema implements Serializable {
 
 			if (has_doc_id || sync_rescue) {
 
-				tables.stream().filter(table -> table.writable && !table.equals(doc_id_table) && ((no_pkey && !table.has_unique_primary_key) || !no_pkey || sync_rescue)).sorted(Comparator.comparingInt(table -> -table.refs)).forEach(table -> {
+				tables.stream().filter(table -> table.writable && (option.realize_simple_brdg || !table.simple_bridge) && !table.equals(doc_id_table) && ((no_pkey && !table.has_unique_primary_key) || !no_pkey || sync_rescue)).sorted(Comparator.comparingInt(table -> -table.refs)).forEach(table -> {
 
 					if (has_db_rows.get(table.pname)) {
 
@@ -7439,7 +7269,7 @@ public class PgSchema implements Serializable {
 
 			Statement stat = db_conn.createStatement();
 
-			String sql1 = "SELECT EXISTS( SELECT 1 FROM " + doc_id_table.pgname + " LIMIT 1 )";
+			String sql1 = "SELECT EXISTS ( SELECT 1 FROM " + doc_id_table.pgname + " LIMIT 1 )";
 
 			ResultSet rset1 = stat.executeQuery(sql1);
 
@@ -7458,7 +7288,7 @@ public class PgSchema implements Serializable {
 
 					try {
 
-						String sql2 = "SELECT EXISTS( SELECT 1 FROM " + table.pgname + " LIMIT 1 )";
+						String sql2 = "SELECT EXISTS ( SELECT 1 FROM " + table.pgname + " LIMIT 1 )";
 
 						ResultSet rset2 = stat.executeQuery(sql2);
 

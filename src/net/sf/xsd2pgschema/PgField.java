@@ -5951,6 +5951,9 @@ public class PgField implements Serializable {
 	 */
 	public void write(PreparedStatement ps, boolean upsert, String value) throws SQLException {
 
+		if (ps == null)
+			return;
+
 		if (enum_name != null) {
 			ps.setString(sql_insert_id, value);
 			if (upsert)
@@ -6232,6 +6235,9 @@ public class PgField implements Serializable {
 	 * @throws SQLException the SQL exception
 	 */
 	public void write(PreparedStatement ps, boolean upsert, SQLXML xml_object) throws SQLException {
+
+		if (ps == null)
+			return;
 
 		switch (xs_type) {
 		case xs_any:
