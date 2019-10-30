@@ -400,8 +400,8 @@ public class xpath2json {
 		System.err.println("        --json-attr-prefix ATTR_PREFIX_CODE (default=\"" + jsonb_option.getAttrPrefix() + "\")");
 		System.err.println("        --json-simple-cont-name SIMPLE_CONTENT_NAME (default=\"" + jsonb_option.getSimpleContentName() + "\")");
 		System.err.println("        --json-array-all (use JSON array if possible)");
-		System.err.println("        --xml-allow-frag (allow fragmented JSON document, do not throw fragmentation warning)");
-		System.err.println("        --xml-deny-frag (deny fragmented JSON document, output the first root node)");
+		System.err.println("        --json-allow-frag (allow fragmented JSON document, do not throw fragmentation warning)");
+		System.err.println("        --json-deny-frag (deny fragmented JSON document, output the first root node)");
 		System.err.println("        --json-indent-offset INTEGER (default=" + jsonb_option.getIndentOffset() + ", min=0, max=4)");
 		System.err.println("        --json-key-value-offset INTEGER (default=" + jsonb_option.getKeyValueOffset() + ", min=0, max=4)");
 		System.err.println("        --json-insert-doc-key (insert document key in result)");
