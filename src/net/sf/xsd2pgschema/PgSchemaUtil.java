@@ -38,6 +38,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.TimeZone;
@@ -266,6 +267,9 @@ public class PgSchemaUtil {
 
 	/** The local time zone. */
 	public static final TimeZone tz_loc = TimeZone.getDefault();
+
+	/** The local zone id. */
+	public static final ZoneId zone_loc = ZoneId.systemDefault();
 
 	/**
 	 * Return input stream of XSD file path with decompression.

@@ -116,6 +116,9 @@ public class JsonBuilder extends CommonBuilder {
 	/** Whether to allow fragmented document. */
 	public boolean allow_frag;
 
+	/** Whether to deny fragmented document. */
+	public boolean deny_frag;
+
 	/** The pending table header. */
 	private LinkedList<JsonBuilderPendingHeader> pending_header = new LinkedList<JsonBuilderPendingHeader>();
 
@@ -170,6 +173,7 @@ public class JsonBuilder extends CommonBuilder {
 		this.no_field_anno = option.no_field_anno;
 		this.insert_doc_key = option.insert_doc_key;
 		this.allow_frag = option.allow_frag;
+		this.deny_frag = option.deny_frag;
 
 		if (indent_space.length() != option.indent_offset) {
 
@@ -1835,14 +1839,15 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param xpath_comp_list current XPath component list
 	 * @param path_expr current XPath expression
 	 * @param rset current result set
+	 * @return boolean whether to output JSON document
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void pgSql2JsonFrag(XPathCompList xpath_comp_list, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
+	public boolean pgSql2JsonFrag(XPathCompList xpath_comp_list, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
+
+		if (deny_frag && getFragment() > 0)
+			return false;
 
 		XPathCompType terminus = path_expr.terminus;
-
-		if (terminus.equals(XPathCompType.table))
-			return;
 
 		writeStartDocument(false);
 
@@ -1947,6 +1952,9 @@ public class JsonBuilder extends CommonBuilder {
 					continue;
 				}
 
+				if (deny_frag)
+					break;
+
 			}
 
 			if (array_all && terminus.isField()) {
@@ -1962,14 +1970,15 @@ public class JsonBuilder extends CommonBuilder {
 
 			}
 
-			writeEndDocument();
-
 		} catch (SQLException e) {
 			throw new PgSchemaException(e);
 		}
 
+		writeEndDocument();
+
 		incFragment();
 
+		return true;
 	}
 
 	/** The current database connection. */
@@ -1987,14 +1996,13 @@ public class JsonBuilder extends CommonBuilder {
 	 * @param db_conn database connection
 	 * @param path_expr current XPath expression
 	 * @param rset current result set
+	 * @return boolean whether to output JSON document
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void pgSql2Json(Connection db_conn, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
+	public boolean pgSql2Json(Connection db_conn, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
 
-		XPathCompType terminus = path_expr.terminus;
-
-		if (!terminus.equals(XPathCompType.table))
-			return;
+		if (deny_frag && getRootCount() > 0)
+			return false;
 
 		this.db_conn = db_conn;
 
@@ -2271,6 +2279,7 @@ public class JsonBuilder extends CommonBuilder {
 
 		incRootCount();
 
+		return true;
 	}
 
 	/**

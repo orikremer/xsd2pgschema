@@ -6414,7 +6414,7 @@ public class PgSchema implements Serializable {
 
 						if (!has_index) {
 
-							String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
+							String sql = "SELECT COUNT ( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
 
 							rset = stat.executeQuery(sql);
 
@@ -6576,7 +6576,7 @@ public class PgSchema implements Serializable {
 
 						if (!has_index) {
 
-							String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
+							String sql = "SELECT COUNT ( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
 
 							rset = stat.executeQuery(sql);
 
@@ -6745,7 +6745,7 @@ public class PgSchema implements Serializable {
 
 							if (has_no_index) {
 
-								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
+								String sql = "SELECT COUNT ( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
 
 								rset = stat.executeQuery(sql);
 
@@ -6937,7 +6937,7 @@ public class PgSchema implements Serializable {
 
 							if (has_no_index) {
 
-								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
+								String sql = "SELECT COUNT ( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
 
 								rset = stat.executeQuery(sql);
 
@@ -7126,7 +7126,7 @@ public class PgSchema implements Serializable {
 
 							if (has_no_index) {
 
-								String sql = "SELECT COUNT( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
+								String sql = "SELECT COUNT ( id ) FROM ( SELECT 1 AS id FROM " + table.pgname + " LIMIT " + pg_option.min_rows_for_index + " ) AS trunc";
 
 								rset = stat.executeQuery(sql);
 

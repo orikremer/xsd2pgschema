@@ -140,6 +140,9 @@ public class xpath2xml {
 			else if (args[i].equals("--xml-allow-frag"))
 				xmlb.allow_frag = true;
 
+			else if (args[i].equals("--xml-deny-frag"))
+				xmlb.deny_frag = true;
+
 			else if (args[i].equals("--xml-indent-offset") && i + 1 < args.length)
 				xmlb.setIndentOffset(args[++i]);
 
@@ -384,7 +387,8 @@ public class xpath2xml {
 		System.err.println("        --xml-unqualify-def-ns (unqualify default target namespace if possible)");
 		System.err.println("        --xml-no-xmlns (dismiss XML namespace declaration)");
 		System.err.println("        --xml-no-nil-elem (dismiss nillable element)");
-		System.err.println("        --xml-allow-frag (allow fragmented XML document)");
+		System.err.println("        --xml-allow-frag (allow fragmented XML document, do not throw fragmentation warning)");
+		System.err.println("        --xml-deny-frag (deny fragmented XML document, output the first root node)");
 		System.err.println("        --xml-indent-offset INTEGER (default=" + xmlb.getIndentOffset() + ", min=0, max=4)");
 		System.err.println("        --xml-insert-doc-key (insert document key in result)");
 		System.err.println("        --xml-no-linefeed (dismiss line feed code)");

@@ -64,6 +64,9 @@ public class JsonBuilderOption {
 	/** Whether to allow fragmented document. */
 	public boolean allow_frag = false;
 
+	/** Whether to deny fragmented document. */
+	public boolean deny_frag = false;
+
 	/**
 	 * Set JSON Schema version.
 	 *

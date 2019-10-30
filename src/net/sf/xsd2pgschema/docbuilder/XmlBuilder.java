@@ -95,6 +95,9 @@ public class XmlBuilder extends CommonBuilder {
 	/** Whether to allow fragmented document. */
 	public boolean allow_frag = false;
 
+	/** Whether to deny fragmented document. */
+	public boolean deny_frag = false;
+
 	/** Whether to use line feed code. */
 	protected boolean line_feed = true;
 
@@ -463,14 +466,15 @@ public class XmlBuilder extends CommonBuilder {
 	 * @param xpath_comp_list current XPath component list
 	 * @param path_expr current XPath expression
 	 * @param rset current result set
+	 * @return boolean whether to output XML document
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void pgSql2XmlFrag(XPathCompList xpath_comp_list, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
+	public boolean pgSql2XmlFrag(XPathCompList xpath_comp_list, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
+
+		if (deny_frag && getFragment() > 0)
+			return false;
 
 		XPathCompType terminus = path_expr.terminus;
-
-		if (terminus.equals(XPathCompType.table))
-			return;
 
 		PgTable table = path_expr.sql_subject.table;
 
@@ -742,6 +746,9 @@ public class XmlBuilder extends CommonBuilder {
 					continue;
 				}
 
+				if (deny_frag)
+					break;
+
 			}
 
 		} catch (SQLException | XMLStreamException e) {
@@ -750,6 +757,7 @@ public class XmlBuilder extends CommonBuilder {
 
 		incFragment();
 
+		return true;
 	}
 
 	/** The current database connection. */
@@ -770,14 +778,13 @@ public class XmlBuilder extends CommonBuilder {
 	 * @param db_conn database connection
 	 * @param path_expr current XPath expression
 	 * @param rset current result set
+	 * @return boolean whether to output XML document
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void pgSql2Xml(Connection db_conn, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
+	public boolean pgSql2Xml(Connection db_conn, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
 
-		XPathCompType terminus = path_expr.terminus;
-
-		if (!terminus.equals(XPathCompType.table))
-			return;
+		if (deny_frag && getRootCount() > 0)
+			return false;
 
 		this.db_conn = db_conn;
 
@@ -1109,6 +1116,7 @@ public class XmlBuilder extends CommonBuilder {
 
 		appended_xmlns.clear();
 
+		return true;
 	}
 
 	/**

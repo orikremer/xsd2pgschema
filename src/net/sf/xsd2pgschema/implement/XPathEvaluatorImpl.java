@@ -446,8 +446,10 @@ public class XPathEvaluatorImpl {
 
 					if (terminus.equals(XPathCompType.table)) {
 
-						while (rset.next())
-							xmlb.pgSql2Xml(db_conn, path_expr, rset);
+						while (rset.next()) {
+							if (!xmlb.pgSql2Xml(db_conn, path_expr, rset))
+								break;
+						}
 
 					}
 
@@ -489,10 +491,8 @@ public class XPathEvaluatorImpl {
 
 			if (!xmlb.allow_frag) {
 
-				if (xmlb.getRootCount() > 1)
+				if (xmlb.getRootCount() > 1 || xmlb.getFragment() > 1)
 					throw new PgSchemaException("[WARNING] The XML document has multiple root nodes.");
-				if (xmlb.getFragment() > 1)
-					throw new PgSchemaException("[WARNING] The XML document has multiple fragments.");
 
 			}
 
@@ -563,8 +563,10 @@ public class XPathEvaluatorImpl {
 
 					if (terminus.equals(XPathCompType.table)) {
 
-						while (rset.next())
-							jsonb.pgSql2Json(db_conn, path_expr, rset);
+						while (rset.next()) {
+							if (!jsonb.pgSql2Json(db_conn, path_expr, rset))
+								break;
+						}
 
 					}
 
@@ -606,10 +608,8 @@ public class XPathEvaluatorImpl {
 
 			if (!jsonb.allow_frag) {
 
-				if (jsonb.getRootCount() > 1)
+				if (jsonb.getRootCount() > 1 || jsonb.getFragment() > 1)
 					throw new PgSchemaException("[WARNING] The JSON document has multiple root nodes.");
-				if (jsonb.getFragment() > 1)
-					throw new PgSchemaException("[WARNING] The JSON document has multiple fragments.");
 
 			}
 

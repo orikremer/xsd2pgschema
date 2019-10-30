@@ -1,4 +1,10 @@
-﻿ Changes in xsd2pgschema 4.0.1 (release 2019-10-28)
+﻿ Changes in xsd2pgschema 4.0.2 (release 2019-10-30)
+
+  Added --xml-deny-frag and --json-deny-frag option in xpath2xml and xpath2json main classes respectively.
+  Revised PostgreSQL mapping of xs:dateTime/xs:dateTimesStamp/xs:date that support millisecond precision.
+  Changed to use UTC timezone by default in XPath evaluation output documnent, instead of local timezone.
+
+ Changes in xsd2pgschema 4.0.1 (release 2019-10-28)
 
   Fixed PgSchemaException while consistency test on PostgreSQL DDL (--test-ddl option).
   Added --pg-comment-on option in xsd2pgschema main class to set annotation as PostgreSQL comment.
