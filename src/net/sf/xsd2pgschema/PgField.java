@@ -5421,9 +5421,9 @@ public class PgField implements Serializable {
 		case xs_dateTimeStamp:
 			if (sdf == null) {
 				if ((!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) && xs_type.equals(XsFieldType.xs_dateTime))
-					sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+					sdf = new SimpleDateFormat(PgSchemaUtil.pg_date_time_format);
 				else
-					sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXXX");
+					sdf = new SimpleDateFormat(PgSchemaUtil.pg_date_time_tz_format);
 			}
 			/*
 			if (cal == null)
@@ -5438,9 +5438,9 @@ public class PgField implements Serializable {
 			if (pg_date.equals(PgDateType.timestamp)) {
 				if (sdf == null) {
 					if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required")))
-						sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+						sdf = new SimpleDateFormat(PgSchemaUtil.pg_date_time_format);
 					else
-						sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSXXX");
+						sdf = new SimpleDateFormat(PgSchemaUtil.pg_date_time_tz_format);
 				}
 				/*
 				if (cal == null)
@@ -5456,7 +5456,7 @@ public class PgField implements Serializable {
 		case xs_gYearMonth:
 		case xs_gYear:
 			if (sdf == null)
-				sdf = new SimpleDateFormat("yyyy-MM-dd");
+				sdf = new SimpleDateFormat(PgSchemaUtil.pg_date_format);
 			/*
 			if (cal == null)
 				cal = Calendar.getInstance();
@@ -6144,9 +6144,9 @@ public class PgField implements Serializable {
 		case xs_dateTimeStamp:
 			if (dtf == null) {
 				if ((!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) && xs_type.equals(XsFieldType.xs_dateTime))
-					dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+					dtf = DateTimeFormatter.ofPattern(PgSchemaUtil.pg_date_time_format);
 				else
-					dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSXXX");
+					dtf = DateTimeFormatter.ofPattern(PgSchemaUtil.pg_date_time_tz_format);
 			}
 			// Timestamp timestamp = Timestamp.valueOf(LocalDateTime.parse(value, dtf));
 			if ((!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) && xs_type.equals(XsFieldType.xs_dateTime)) {
@@ -6220,9 +6220,9 @@ public class PgField implements Serializable {
 			if (pg_date.equals(PgDateType.timestamp)) {
 				if (dtf == null) {
 					if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required")))
-						dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+						dtf = DateTimeFormatter.ofPattern(PgSchemaUtil.pg_date_time_format);
 					else
-						dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSXXX");
+						dtf = DateTimeFormatter.ofPattern(PgSchemaUtil.pg_date_time_tz_format);
 				}
 				// Timestamp _timestamp = Timestamp.valueOf(LocalDateTime.parse(value, dtf));
 				if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) {
@@ -6403,9 +6403,9 @@ public class PgField implements Serializable {
 			case xs_dateTimeStamp:
 				if (dtf == null) {
 					if ((!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) && xs_type.equals(XsFieldType.xs_dateTime))
-						dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+						dtf = DateTimeFormatter.ofPattern(PgSchemaUtil.pg_date_time_format);
 					else
-						dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSXXX");
+						dtf = DateTimeFormatter.ofPattern(PgSchemaUtil.pg_date_time_tz_format);
 				}
 				ZonedDateTime zonedDateTime = ZonedDateTime.of(LocalDateTime.parse(value, dtf), PgSchemaUtil.zone_loc);
 				lucene_doc.add(new StringField(name, DateTools.dateToString((Date) Date.from(zonedDateTime.toInstant()), DateTools.Resolution.SECOND), Field.Store.YES));
@@ -6414,9 +6414,9 @@ public class PgField implements Serializable {
 				if (pg_date.equals(PgDateType.timestamp)) {
 					if (dtf == null) {
 						if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required")))
-							dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+							dtf = DateTimeFormatter.ofPattern(PgSchemaUtil.pg_date_time_format);
 						else
-							dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSXXX");
+							dtf = DateTimeFormatter.ofPattern(PgSchemaUtil.pg_date_time_tz_format);
 					}
 					ZonedDateTime _zonedDateTime = ZonedDateTime.of(LocalDateTime.parse(value, dtf), PgSchemaUtil.zone_loc);
 					lucene_doc.add(new StringField(name, DateTools.dateToString((Date) Date.from(_zonedDateTime.toInstant()), DateTools.Resolution.SECOND), Field.Store.YES));
@@ -6516,9 +6516,9 @@ public class PgField implements Serializable {
 				case xs_dateTimeStamp:
 					if (dtf == null) {
 						if ((!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) && xs_type.equals(XsFieldType.xs_dateTime))
-							dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+							dtf = DateTimeFormatter.ofPattern(PgSchemaUtil.pg_date_time_format);
 						else
-							dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSXXX");
+							dtf = DateTimeFormatter.ofPattern(PgSchemaUtil.pg_date_time_tz_format);
 					}
 					ZonedDateTime zonedDateTime = ZonedDateTime.of(LocalDateTime.parse(value, dtf), PgSchemaUtil.zone_loc);
 					buffw.write(String.valueOf(Date.from(zonedDateTime.toInstant()).getTime() / 1000L));
@@ -6527,9 +6527,9 @@ public class PgField implements Serializable {
 					if (pg_date.equals(PgDateType.timestamp)) {
 						if (dtf == null) {
 							if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required")))
-								dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+								dtf = DateTimeFormatter.ofPattern(PgSchemaUtil.pg_date_time_format);
 							else
-								dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSXXX");
+								dtf = DateTimeFormatter.ofPattern(PgSchemaUtil.pg_date_time_tz_format);
 						}
 						ZonedDateTime _zonedDateTime = ZonedDateTime.of(LocalDateTime.parse(value, dtf), PgSchemaUtil.zone_loc);
 						buffw.write(String.valueOf(Date.from(_zonedDateTime.toInstant()).getTime() / 1000L));

@@ -211,6 +211,15 @@ public class PgSchemaUtil {
 	/** The PostgreSQL reserved operator codes. */
 	public static final String[] pg_reserved_ops = { "-", "->", "->>", "-|-", "!", "!!", "!=", "?-", "?-|", "?#", "?|", "?||", "@", "@-@", "@@", "@@@", "@>", "*", "/", "&", "&&", "&<", "&<|", "&>", "#", "##", "#>", "#>>", "%", "^", "+", "<", "<->", "<@", "<^", "<<", "<<=", "<<|", "<=", "<>", "=", ">", ">^", ">=", ">>", ">>=", "|", "|/", "|&>", "|>>", "||", "||/", "~", "~=" };
 
+	/** The PostgreSQL date format (ISO 8601). */
+	public static final String pg_date_format = "yyyy-MM-dd";
+
+	/** The PostgreSQL date/time format (ISO 8601). */
+	public static final String pg_date_time_format = "yyyy-MM-dd HH:mm:ss.SSS";
+
+	/** The PostgreSQL date/time format with time zone (ISO 8601). */
+	public static final String pg_date_time_tz_format = "yyyy-MM-dd HH:mm:ss.SSSXXX";
+
 	/** The minimum rows for creation of PostgreSQL index. */
 	public static final int pg_min_rows_for_index = 1024;
 
