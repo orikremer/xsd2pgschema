@@ -32,8 +32,10 @@ import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -6146,43 +6148,57 @@ public class PgField implements Serializable {
 				else
 					dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSXXX");
 			}
-			Timestamp timestamp = Timestamp.valueOf(LocalDateTime.parse(value, dtf));
+			// Timestamp timestamp = Timestamp.valueOf(LocalDateTime.parse(value, dtf));
 			if ((!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) && xs_type.equals(XsFieldType.xs_dateTime)) {
-				ps.setTimestamp(sql_insert_id, timestamp);
+				// JSR-310 using JDBC 4.2
+				LocalDateTime local_date_time = LocalDateTime.parse(value, dtf);
+				ps.setObject(sql_insert_id, local_date_time);
 				if (upsert)
-					ps.setTimestamp(sql_upsert_id, timestamp);
+					ps.setObject(sql_upsert_id, local_date_time);
 			} else {
+				// JSR-310 using JDBC 4.2
+				OffsetDateTime offset_date_time = OffsetDateTime.parse(value, dtf);
+				ps.setObject(sql_insert_id, offset_date_time);
+				if (upsert)
+					ps.setObject(sql_upsert_id, offset_date_time);
+				/*
 				if (cal == null)
 					cal = Calendar.getInstance(PgSchemaUtil.tz_utc);
-				else
+				/*
+				else if (!cal.getTimeZone().equals(PgSchemaUtil.tz_utc))
 					cal.setTimeZone(PgSchemaUtil.tz_utc);
+				 *
 
 				ps.setTimestamp(sql_insert_id, timestamp, cal);
 				if (upsert)
 					ps.setTimestamp(sql_upsert_id, timestamp, cal);
+				 */
 			}
 			break;
 		case xs_time:
 			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) {
+				// JSR-310 using JDBC 4.2
 				try {
-					Time time = java.sql.Time.valueOf(LocalTime.parse(value));
-					ps.setTime(sql_insert_id, time);
+					LocalTime local_time = LocalTime.parse(value);
+					ps.setObject(sql_insert_id, local_time);
 					if (upsert)
-						ps.setTime(sql_upsert_id, time);
+						ps.setObject(sql_upsert_id, local_time);
 				} catch (DateTimeParseException e) {
 					try {
-						Time time = java.sql.Time.valueOf(OffsetTime.parse(value).toLocalTime());
-						ps.setTime(sql_insert_id, time);
+						LocalTime _local_time = OffsetTime.parse(value).toLocalTime();
+						ps.setObject(sql_insert_id, _local_time);
 						if (upsert)
-							ps.setTime(sql_upsert_id, time);
+							ps.setObject(sql_upsert_id, _local_time);
 					} catch (DateTimeParseException e2) {
 					}
 				}
 			} else {
 				if (cal == null)
 					cal = Calendar.getInstance(PgSchemaUtil.tz_utc);
-				else
+				/*
+				else if (!cal.getTimeZone().equals(PgSchemaUtil.tz_utc))
 					cal.setTimeZone(PgSchemaUtil.tz_utc);
+				 */
 
 				try {
 					Time time = java.sql.Time.valueOf(OffsetTime.parse(value).toLocalTime());
@@ -6208,26 +6224,44 @@ public class PgField implements Serializable {
 					else
 						dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSXXX");
 				}
-				Timestamp _timestamp = Timestamp.valueOf(LocalDateTime.parse(value, dtf));
+				// Timestamp _timestamp = Timestamp.valueOf(LocalDateTime.parse(value, dtf));
 				if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) {
-					ps.setTimestamp(sql_insert_id, _timestamp);
+					// JSR-310 using JDBC 4.2
+					LocalDateTime local_date_time = LocalDateTime.parse(value, dtf);
+					ps.setObject(sql_insert_id, local_date_time);
 					if (upsert)
-						ps.setTimestamp(sql_upsert_id, _timestamp);
+						ps.setObject(sql_upsert_id, local_date_time);
 				} else {
+					// JSR-310 using JDBC 4.2
+					OffsetDateTime offset_date_time = OffsetDateTime.parse(value, dtf);
+					ps.setObject(sql_insert_id, offset_date_time);
+					if (upsert)
+						ps.setObject(sql_upsert_id, offset_date_time);
+					/*
 					if (cal == null)
 						cal = Calendar.getInstance(PgSchemaUtil.tz_utc);
-					else
+					/*
+					else if (!cal.getTimeZone().equals(PgSchemaUtil.tz_utc))
 						cal.setTimeZone(PgSchemaUtil.tz_utc);
+					 *
 
 					ps.setTimestamp(sql_insert_id, _timestamp, cal);
 					if (upsert)
 						ps.setTimestamp(sql_upsert_id, _timestamp, cal);
+					 */
 				}
 				return;
 			}
 			// pass through
 		case xs_gYearMonth:
 		case xs_gYear:
+			// JSR-310 using JDBC 4.2
+			LocalDate local_date = LocalDate.parse(value);
+
+			ps.setObject(sql_insert_id, local_date);
+			if (upsert)
+				ps.setObject(sql_upsert_id, local_date);
+			/*
 			if (cal == null)
 				cal = Calendar.getInstance();
 			else
@@ -6245,6 +6279,7 @@ public class PgField implements Serializable {
 			ps.setDate(sql_insert_id, date);
 			if (upsert)
 				ps.setDate(sql_upsert_id, date);
+			 */
 			break;
 		case xs_duration:
 		case xs_yearMonthDuration:
@@ -6376,7 +6411,6 @@ public class PgField implements Serializable {
 				lucene_doc.add(new StringField(name, DateTools.dateToString((Date) Date.from(zonedDateTime.toInstant()), DateTools.Resolution.SECOND), Field.Store.YES));
 				break;
 			case xs_date:
-				java.util.Date util_date;
 				if (pg_date.equals(PgDateType.timestamp)) {
 					if (dtf == null) {
 						if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required")))
@@ -6385,19 +6419,16 @@ public class PgField implements Serializable {
 							dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSXXX");
 					}
 					ZonedDateTime _zonedDateTime = ZonedDateTime.of(LocalDateTime.parse(value, dtf), PgSchemaUtil.zone_loc);
-					util_date = (Date) Date.from(_zonedDateTime.toInstant());
+					lucene_doc.add(new StringField(name, DateTools.dateToString((Date) Date.from(_zonedDateTime.toInstant()), DateTools.Resolution.SECOND), Field.Store.YES));
 				}
 				else
-					util_date = PgSchemaUtil.parseDate(value);
-				lucene_doc.add(new StringField(name, DateTools.dateToString(util_date, pg_date.equals(PgDateType.timestamp) ? DateTools.Resolution.SECOND : DateTools.Resolution.DAY), Field.Store.YES));
+					lucene_doc.add(new StringField(name, DateTools.dateToString(PgSchemaUtil.parseDate(value), DateTools.Resolution.DAY), Field.Store.YES));
 				break;
 			case xs_gYearMonth:
-				java.util.Date util_month = PgSchemaUtil.parseDate(value);
-				lucene_doc.add(new StringField(name, DateTools.dateToString(util_month, DateTools.Resolution.MONTH), Field.Store.YES));
+				lucene_doc.add(new StringField(name, DateTools.dateToString(PgSchemaUtil.parseDate(value), DateTools.Resolution.MONTH), Field.Store.YES));
 				break;
 			case xs_gYear:
-				java.util.Date util_year = PgSchemaUtil.parseDate(value);
-				lucene_doc.add(new StringField(name, DateTools.dateToString(util_year, DateTools.Resolution.YEAR), Field.Store.YES));
+				lucene_doc.add(new StringField(name, DateTools.dateToString(PgSchemaUtil.parseDate(value), DateTools.Resolution.YEAR), Field.Store.YES));
 				break;
 			case xs_boolean:
 			case xs_hexBinary:
@@ -6490,8 +6521,7 @@ public class PgField implements Serializable {
 							dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSXXX");
 					}
 					ZonedDateTime zonedDateTime = ZonedDateTime.of(LocalDateTime.parse(value, dtf), PgSchemaUtil.zone_loc);
-					java.util.Date util_date = Date.from(zonedDateTime.toInstant());
-					buffw.write(String.valueOf(util_date.getTime() / 1000L));
+					buffw.write(String.valueOf(Date.from(zonedDateTime.toInstant()).getTime() / 1000L));
 					break;
 				case xs_date:
 					if (pg_date.equals(PgDateType.timestamp)) {
@@ -6502,15 +6532,13 @@ public class PgField implements Serializable {
 								dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSXXX");
 						}
 						ZonedDateTime _zonedDateTime = ZonedDateTime.of(LocalDateTime.parse(value, dtf), PgSchemaUtil.zone_loc);
-						java.util.Date _util_date = (Date) Date.from(_zonedDateTime.toInstant());
-						buffw.write(String.valueOf(_util_date.getTime() / 1000L));
+						buffw.write(String.valueOf(Date.from(_zonedDateTime.toInstant()).getTime() / 1000L));
 						break;
 					}
 					// break through
 				case xs_gYearMonth:
 				case xs_gYear:
-					java.util.Date util_time = PgSchemaUtil.parseDate(value);
-					buffw.write(String.valueOf(util_time.getTime() / 1000L));
+					buffw.write(String.valueOf(PgSchemaUtil.parseDate(value).getTime() / 1000L));
 					break;
 				default: // free text
 					buffw.write(value = StringEscapeUtils.escapeXml10(value));
@@ -6759,14 +6787,11 @@ public class PgField implements Serializable {
 
 			if (cal == null)
 				cal = Calendar.getInstance();
-			else
-				cal.setTimeZone(PgSchemaUtil.tz_utc);
 			/*
-			if ((!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) && xs_type.equals(XsFieldType.xs_dateTime)) { }
-
-			else
+			else if (!cal.getTimeZone().equals(PgSchemaUtil.tz_utc))
 				cal.setTimeZone(PgSchemaUtil.tz_utc);
 			 */
+
 			cal.setTimeInMillis(ts.getTime());
 
 			if (!cal.getTimeZone().equals(PgSchemaUtil.tz_utc))
@@ -6781,14 +6806,11 @@ public class PgField implements Serializable {
 
 			if (cal == null)
 				cal = Calendar.getInstance();
-			else
-				cal.setTimeZone(PgSchemaUtil.tz_utc);
 			/*
-			if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) { }
-
-			else
+			else if (!cal.getTimeZone().equals(PgSchemaUtil.tz_utc))
 				cal.setTimeZone(PgSchemaUtil.tz_utc);
 			 */
+
 			cal.setTimeInMillis(tm.getTime());
 
 			if (!cal.getTimeZone().equals(PgSchemaUtil.tz_utc))
@@ -6805,14 +6827,11 @@ public class PgField implements Serializable {
 
 				if (cal == null)
 					cal = Calendar.getInstance();
-				else
-					cal.setTimeZone(PgSchemaUtil.tz_utc);
 				/*
-				if (!restriction || (explicit_timezone != null && !explicit_timezone.equals("required"))) { }
-
-				else
+				else if (!cal.getTimeZone().equals(PgSchemaUtil.tz_utc))
 					cal.setTimeZone(PgSchemaUtil.tz_utc);
 				 */
+
 				cal.setTimeInMillis(td.getTime());
 
 				if (!cal.getTimeZone().equals(PgSchemaUtil.tz_utc))
@@ -6830,8 +6849,10 @@ public class PgField implements Serializable {
 
 			if (cal == null)
 				cal = Calendar.getInstance();
-			else
+			/*
+			else if (!cal.getTimeZone().equals(PgSchemaUtil.tz_utc))
 				cal.setTimeZone(PgSchemaUtil.tz_utc);
+			 */
 
 			cal.setTime(d);
 			cal.set(Calendar.HOUR_OF_DAY, 0);
