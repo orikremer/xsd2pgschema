@@ -166,6 +166,9 @@ public class PgField implements Serializable {
 	/** Whether nested key as attribute group. */
 	public boolean nested_key_as_attr_group = false;
 
+	/** Whether nested key as simple content with a fixed attribute value. */
+	public boolean nested_key_as_simple_cont_with_fixed_attr = false;
+
 	/** Whether document key. */
 	public boolean document_key = false;
 
@@ -343,6 +346,10 @@ public class PgField implements Serializable {
 	/** The content of xs:annotation. */
 	@Flat
 	public String anno = null;
+
+	/** The comment while inlining simple content. */
+	@Flat
+	protected String inline_comment = null;
 
 	/** The effective prefix of target namespace in XPath evaluation. */
 	@Flat

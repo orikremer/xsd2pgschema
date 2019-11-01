@@ -592,11 +592,10 @@ public class PgSchema implements Serializable {
 
 		else {
 
-			if (!option.rel_model_ext)
-				tables.parallelStream().forEach(table -> table.classify());
+			tables.parallelStream().forEach(table -> table.classify());
 
 			if (!root && option.ddl_output && !root_schema.dup_schema_locations.containsKey(def_schema_location))
-				root_schema.def_stat_msg.append("--  Found " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.parallelStream().map(table -> option.rel_model_ext || !table.relational ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups in XML Schema: " + def_schema_location + "\n");
+				root_schema.def_stat_msg.append("--  Found " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.parallelStream().map(table -> option.rel_model_ext || !table.relational ? (option.rel_model_ext ? table.fields.size() : table.fields.stream().filter(field -> !field.primary_key && !field.foreign_key && !field.nested_key).count()) : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups in XML Schema: " + def_schema_location + "\n");
 
 		}
 
@@ -1121,6 +1120,14 @@ public class PgSchema implements Serializable {
 				table.fields.stream().filter(field -> field.attribute || field.nested_key_as_attr).count() > 0 &&
 				!table.fields.stream().anyMatch(field -> field.nested_key && !field.nested_key_as_attr)).forEach(table -> extractNestedKeyAsAttrGrp(getForeignTable(table.fields.stream().filter(field -> field.foreign_key).findFirst().get()), table));
 
+		// update nested key as simple content with fixed attribute
+
+		tables.parallelStream().filter(table -> (table.has_attribute && table.has_simple_content && !table.has_element && !table.has_any_attribute && !table.has_any) && table.fields.stream().anyMatch(field -> field.attribute && field.fixed_value != null) && !table.fields.stream().anyMatch(field -> field.attribute && field.fixed_value == null)).forEach(table -> {
+
+			tables.stream().filter(parent_table -> parent_table.total_nested_fields > 0 && parent_table.fields.stream().anyMatch(_field -> _field.nested_key && getForeignTable(_field).equals(table))).forEach(parent_table -> parent_table.fields.stream().filter(_field -> _field.nested_key && getForeignTable(_field).equals(table)).findFirst().get().nested_key_as_simple_cont_with_fixed_attr = true);
+
+		});
+
 		// decide whether writable table
 
 		tables.parallelStream().filter(table -> table.required && (option.rel_model_ext || !table.relational)).forEach(table -> table.writable = true);
@@ -1136,15 +1143,6 @@ public class PgSchema implements Serializable {
 
 			if (option.xpath_key)
 				table.addXPathKey(option);
-
-			// remove nested key if relational model extension is disabled
-
-			if (!option.rel_model_ext && table.total_nested_fields > 0) {
-
-				table.fields.removeIf(field -> field.nested_key);
-				table.countNestedFields();
-
-			}
 
 			// retrieve document key if no in-place document key exists
 
@@ -1174,7 +1172,7 @@ public class PgSchema implements Serializable {
 			ArrayList<PgTable> disrupted_tables = new ArrayList<PgTable>();
 			HashSet<PgField> disrupted_fields = new HashSet<PgField>();
 
-			tables.stream().filter(table -> table.virtual && table.total_nested_fields == 0 && table.total_foreign_fields > 0 && (table.has_simple_content || table.has_simple_attribute) && !table.has_attribute && !table.has_attrs && !table.has_element && !table.has_any).forEach(table -> {
+			tables.stream().filter(table -> table.virtual && table.total_nested_fields == 0 && table.total_foreign_fields > 0 && (table.has_simple_content || table.has_simple_attribute) && !table.has_attrs && !table.has_element && !table.has_any).forEach(table -> {
 
 				PgField simple_cont_field = table.fields.stream().filter(field -> field.simple_content).findFirst().get();
 
@@ -1242,7 +1240,6 @@ public class PgSchema implements Serializable {
 						inline_simple_cont.simple_attribute = false;
 						inline_simple_cont.simple_attr_cond = false;
 						inline_simple_cont.nested_key = false;
-						inline_simple_cont.nested_key_as_attr = false;
 						inline_simple_cont.foreign_schema = PgSchemaUtil.pg_public_schema_name;
 						inline_simple_cont.foreign_table_id = -1;
 						inline_simple_cont.foreign_table_xname = null;
@@ -1261,6 +1258,75 @@ public class PgSchema implements Serializable {
 						ancestor_table.fields.set(field_id, inline_simple_cont);
 
 						ancestor_table.countNestedFields();
+
+						disrupted_fields.add(field);
+
+					});
+
+				});
+
+				if (disrupted_fields.size() > 0) {
+
+					table.fields.removeAll(disrupted_fields);
+					disrupted_fields.clear();
+
+				}
+
+				if (table.fields.stream().filter(_field -> _field.foreign_key).count() == 0)
+					disrupted_tables.add(table);
+
+			});
+
+			tables.stream().filter(table -> !table.virtual && table.total_nested_fields == 0 && table.total_foreign_fields > 0 && table.has_attribute && table.has_simple_content && !table.has_element && !table.has_any_attribute && !table.has_any && table.fields.stream().anyMatch(field -> field.attribute && field.fixed_value != null) && !table.fields.stream().anyMatch(field -> field.attribute && field.fixed_value == null)).forEach(table -> {
+
+				PgField simple_cont_field = table.fields.stream().filter(field -> field.simple_content).findFirst().get();
+				int fixed_attrs = (int) table.fields.stream().filter(field -> field.attribute).count();
+
+				table.fields.stream().filter(field -> field.foreign_key).forEach(field -> {
+
+					PgTable parent_table = getForeignTable(field);
+
+					parent_table.fields.stream().filter(parent_field -> parent_field.nested_key_as_simple_cont_with_fixed_attr && getForeignTable(parent_field).equals(table)).forEach(parent_field -> {
+
+						int field_id = parent_table.fields.indexOf(parent_field);
+
+						PgField inline_simple_cont = SerializationUtils.clone(simple_cont_field);
+
+						inline_simple_cont.xname = table.xname;
+						inline_simple_cont.name = table.name;
+						inline_simple_cont.pname = table.pname;
+						inline_simple_cont.element = true;
+						inline_simple_cont.simple_content = false;
+						inline_simple_cont.simple_attribute = false;
+						inline_simple_cont.simple_attr_cond = false;
+						inline_simple_cont.nested_key = false;
+						inline_simple_cont.nested_key_as_simple_cont_with_fixed_attr = false;
+						inline_simple_cont.foreign_schema = PgSchemaUtil.pg_public_schema_name;
+						inline_simple_cont.foreign_table_id = -1;
+						inline_simple_cont.foreign_table_xname = null;
+						inline_simple_cont.foreign_table_pname = null;
+						inline_simple_cont.foreign_field_pname = null;
+						inline_simple_cont.ancestor_node = null;
+						inline_simple_cont.parent_node = null;
+						inline_simple_cont.ancestor_nodes = null;
+						inline_simple_cont.parent_nodes = null;
+
+						StringBuilder sb = new StringBuilder();
+
+						sb.append(fixed_attrs == 1 ? "omit an attribute having a fixed value: " : "omit attributes having fixed values: ");
+						table.fields.stream().filter(_field -> _field.attribute).forEach(_field -> sb.append("@" + _field.xname + "=\"" + _field.fixed_value + "\", "));
+						inline_simple_cont.inline_comment = sb.substring(0, sb.length() - 2);
+
+						sb.setLength(0);
+
+						inline_simple_cont.setDtdDataHolder();
+						inline_simple_cont.setContentHolder();
+						inline_simple_cont.setOmissible(table, option);
+						inline_simple_cont.setJsonable(table, option);
+
+						parent_table.fields.set(field_id, inline_simple_cont);
+
+						parent_table.countNestedFields();
 
 						disrupted_fields.add(field);
 
@@ -1425,6 +1491,20 @@ public class PgSchema implements Serializable {
 
 				table.has_nested_key_to_simple_attr = false;
 				table.has_simple_attribute = false;
+
+			});
+
+		}
+
+		if (!option.rel_model_ext) {
+
+			// delete relational tables and remove all system keys
+
+			tables.removeIf(table -> table.relational);
+			tables.parallelStream().filter(table -> table.writable).forEach(table -> {
+
+				table.removeSystemKeys();
+				table.countNestedFields();
 
 			});
 
@@ -1681,97 +1761,99 @@ public class PgSchema implements Serializable {
 
 			});
 
-			def_stat_msg.insert(0, "--  Generated " + tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table) && (option.realize_simple_brdg || !table.simple_bridge)).count() + " tables (" + tables.parallelStream().map(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table) && (option.realize_simple_brdg || !table.simple_bridge) ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), "
-					+ tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table) && (!option.realize_simple_brdg && table.simple_bridge)).count() + " views (" + tables.parallelStream().map(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table) && (!option.realize_simple_brdg && table.simple_bridge) ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), "
-					+ attr_groups.size() + " attr groups, " + model_groups.size() + " model groups in total\n");
-
-			if (!option.show_orphan_table) {
-
-				HashSet<String> orphan_schema_location = new HashSet<String>();
-
-				if (orphan_tables.size() > 0) {
-
-					def_stat_msg.append("--   Orphan tables that can not be reached from the document root:\n");
-
-					orphan_tables.forEach(table -> orphan_schema_location.add(table.schema_location));
-
-					orphan_schema_location.forEach(_schema_location -> {
-
-						def_stat_msg.append("--    schema location: " + _schema_location + "\n--      ");
-						orphan_tables.stream().filter(orphan_table -> orphan_table.schema_location.equals(_schema_location)).forEach(orphan_table -> def_stat_msg.append(getPgNameOf(orphan_table) + ", "));
-						def_stat_msg.setLength(def_stat_msg.length() - 2);
-						def_stat_msg.append("\n");
-
-					});
-
-					orphan_schema_location.clear();
-					orphan_tables.clear();
-
-				}
-
-				if (unused_tables.size() > 0) {
-
-					def_stat_msg.append("--   Unnecessary tables by inlining simple type as a primitive data type:\n");
-
-					unused_tables.forEach(table -> orphan_schema_location.add(table.schema_location));
-
-					orphan_schema_location.forEach(_schema_location -> {
-
-						def_stat_msg.append("--    schema location: " + _schema_location + "\n--      ");
-						unused_tables.stream().filter(unused_table -> unused_table.schema_location.equals(_schema_location)).forEach(unused_table -> def_stat_msg.append(getPgNameOf(unused_table) + ", "));
-						def_stat_msg.setLength(def_stat_msg.length() - 2);
-						def_stat_msg.append("\n");
-
-					});
-
-					orphan_schema_location.clear();
-					unused_tables.clear();
-
-				}
-
-				if (option.inline_simple_cont && pg_inline_simple_conts.size() > 0) {
-
-					def_stat_msg.append("--   Unnecessary tables by inlining simple content as a primitive data type:\n");
-
-					pg_inline_simple_conts.forEach(table_name -> orphan_schema_location.add(table_name.split(" ")[0]));
-
-					orphan_schema_location.forEach(_schema_location -> {
-
-						def_stat_msg.append("--    schema location: " + _schema_location + "\n--      ");
-						pg_inline_simple_conts.stream().filter(table_name -> table_name.split(" ")[0].equals(_schema_location)).forEach(table_name -> def_stat_msg.append(table_name.split(" ")[1] + ", "));
-						def_stat_msg.setLength(def_stat_msg.length() - 2);
-						def_stat_msg.append("\n");
-
-					});
-
-					orphan_schema_location.clear();
-
-				}
-
-			}
-
-			StringBuilder sb = new StringBuilder();
-
-			HashSet<String> namespace_uri = new HashSet<String>();
-
-			def_namespaces.entrySet().stream().map(arg -> arg.getValue()).forEach(arg -> namespace_uri.add(arg));
-
-			namespace_uri.forEach(arg -> sb.append(arg + " (" + getPrefixOf(arg, "default") + "), "));
-			namespace_uri.clear();
-
-			def_stat_msg.append("--   Namespaces:\n");
-			def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
-
-			sb.setLength(0);
-
-			schema_locations.stream().filter(arg -> !dup_schema_locations.containsKey(arg)).forEach(arg -> sb.append(arg + ", "));
-
-			def_stat_msg.append("--   Schema locations:\n");
-			def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
-
-			sb.setLength(0);
-
 			if (tables.stream().anyMatch(table -> table.writable)) {
+
+				def_stat_msg.insert(0, "--  Generated " + tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table) && (option.realize_simple_brdg || !table.simple_bridge)).count() + " tables ("
+						+ tables.parallelStream().map(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table) && (option.realize_simple_brdg || !table.simple_bridge) ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), "
+						+ tables.parallelStream().filter(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table) && (!option.realize_simple_brdg && table.simple_bridge)).count() + " views ("
+						+ tables.parallelStream().map(table -> (option.rel_model_ext || !table.relational) && (table.writable || option.show_orphan_table) && (!option.realize_simple_brdg && table.simple_bridge) ? table.fields.size() : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), "
+						+ attr_groups.size() + " attr groups, " + model_groups.size() + " model groups in total\n");
+
+				if (!option.show_orphan_table) {
+
+					HashSet<String> orphan_schema_location = new HashSet<String>();
+
+					if (orphan_tables.size() > 0) {
+
+						def_stat_msg.append("--   Orphan tables that can not be reached from the document root:\n");
+
+						orphan_tables.forEach(table -> orphan_schema_location.add(table.schema_location));
+
+						orphan_schema_location.forEach(_schema_location -> {
+
+							def_stat_msg.append("--    schema location: " + _schema_location + "\n--      ");
+							orphan_tables.stream().filter(orphan_table -> orphan_table.schema_location.equals(_schema_location)).forEach(orphan_table -> def_stat_msg.append(getPgNameOf(orphan_table) + ", "));
+							def_stat_msg.setLength(def_stat_msg.length() - 2);
+							def_stat_msg.append("\n");
+
+						});
+
+						orphan_schema_location.clear();
+						orphan_tables.clear();
+
+					}
+
+					if (unused_tables.size() > 0) {
+
+						def_stat_msg.append("--   Unnecessary tables by inlining simple type as a primitive data type:\n");
+
+						unused_tables.forEach(table -> orphan_schema_location.add(table.schema_location));
+
+						orphan_schema_location.forEach(_schema_location -> {
+
+							def_stat_msg.append("--    schema location: " + _schema_location + "\n--      ");
+							unused_tables.stream().filter(unused_table -> unused_table.schema_location.equals(_schema_location)).forEach(unused_table -> def_stat_msg.append(getPgNameOf(unused_table) + ", "));
+							def_stat_msg.setLength(def_stat_msg.length() - 2);
+							def_stat_msg.append("\n");
+
+						});
+
+						orphan_schema_location.clear();
+						unused_tables.clear();
+
+					}
+
+					if (option.inline_simple_cont && pg_inline_simple_conts.size() > 0) {
+
+						def_stat_msg.append("--   Unnecessary tables by inlining simple content as a primitive data type:\n");
+
+						pg_inline_simple_conts.forEach(table_name -> orphan_schema_location.add(table_name.split(" ")[0]));
+
+						orphan_schema_location.forEach(_schema_location -> {
+
+							def_stat_msg.append("--    schema location: " + _schema_location + "\n--      ");
+							pg_inline_simple_conts.stream().filter(table_name -> table_name.split(" ")[0].equals(_schema_location)).forEach(table_name -> def_stat_msg.append(table_name.split(" ")[1] + ", "));
+							def_stat_msg.setLength(def_stat_msg.length() - 2);
+							def_stat_msg.append("\n");
+
+						});
+
+						orphan_schema_location.clear();
+
+					}
+
+				}
+
+				StringBuilder sb = new StringBuilder();
+
+				HashSet<String> namespace_uri = new HashSet<String>();
+
+				def_namespaces.entrySet().stream().map(arg -> arg.getValue()).forEach(arg -> namespace_uri.add(arg));
+
+				namespace_uri.forEach(arg -> sb.append(arg + " (" + getPrefixOf(arg, "default") + "), "));
+				namespace_uri.clear();
+
+				def_stat_msg.append("--   Namespaces:\n");
+				def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
+
+				sb.setLength(0);
+
+				schema_locations.stream().filter(arg -> !dup_schema_locations.containsKey(arg)).forEach(arg -> sb.append(arg + ", "));
+
+				def_stat_msg.append("--   Schema locations:\n");
+				def_stat_msg.append("--    " + sb.substring(0, sb.length() - 2) + "\n");
+
+				sb.setLength(0);
 
 				def_stat_msg.append("--   Table types:\n");
 				def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.xs_type.equals(XsTableType.xs_root) && table.writable).count() + " root, ");
@@ -4964,6 +5046,9 @@ public class PgSchema implements Serializable {
 						}
 
 					}
+
+					if (field.inline_comment != null)
+						System.out.println("-- " + field.inline_comment);
 
 				}
 

@@ -321,6 +321,7 @@ public class PgSchemaOption implements Serializable {
 	public void cancelRelDataExt() {
 
 		rel_data_ext = document_key = serial_key = xpath_key = pg_retain_key = false;
+		inline_simple_cont = true;
 
 	}
 
@@ -330,6 +331,7 @@ public class PgSchemaOption implements Serializable {
 	public void enableRelDataExt() {
 
 		rel_model_ext = rel_data_ext = document_key = pg_retain_key = true;
+		inline_simple_cont = false;
 
 	}
 

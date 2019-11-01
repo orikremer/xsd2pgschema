@@ -397,9 +397,6 @@ public class PgTable implements Serializable {
 		if (!option.case_sense)
 			field_name = PgSchemaUtil.toCaseInsensitive(field_name);
 
-		if (!option.rel_model_ext)
-			return field_name;
-
 		boolean duplicate;
 
 		do {
@@ -450,9 +447,6 @@ public class PgTable implements Serializable {
 			fields.add(field);
 
 		}
-
-		if (!option.rel_model_ext)
-			return;
 
 		PgField field = new PgField();
 
@@ -511,11 +505,20 @@ public class PgTable implements Serializable {
 		field.foreign_table_pname = name;
 		field.foreign_field_pname = name + "_id";
 
-		if (ref_field.type != null && !xname.equals(PgSchemaUtil.getUnqualifiedName(ref_field.type))) {
+		if (ref_field.type != null) {
 
-			String tname = PgSchemaUtil.getUnqualifiedName(ref_field.type) + "_id";
-			field.delegated_field_pname = option.case_sense ? tname : PgSchemaUtil.toCaseInsensitive(tname);
+			String ref_field_type = PgSchemaUtil.getUnqualifiedName(ref_field.type);
 
+			try {
+				XsFieldType.valueOf("xs_" + ref_field_type);
+			} catch (IllegalArgumentException e) {
+
+				if (!xname.equals(ref_field_type)) {
+					String tname = ref_field_type + "_id";
+					field.delegated_field_pname = option.case_sense ? tname : PgSchemaUtil.toCaseInsensitive(tname);
+				}
+
+			}
 		}
 
 		field.maxoccurs = ref_field.maxoccurs;
@@ -601,9 +604,6 @@ public class PgTable implements Serializable {
 	 * @param qname qualified name of foreign table
 	 */
 	protected void addNestedKey(PgSchemaOption option, PgTable source_table, String qname) {
-
-		if (!option.rel_model_ext)
-			return;
 
 		String xname = PgSchemaUtil.getUnqualifiedName(qname);
 
@@ -691,9 +691,6 @@ public class PgTable implements Serializable {
 	 * @param option PostgreSQL data model option
 	 */
 	protected void addSerialKey(PgSchemaOption option) {
-
-		if (!option.rel_model_ext)
-			return;
 
 		if (fields.stream().anyMatch(field -> field.serial_key)) // already has a serial key
 			return;
@@ -816,6 +813,15 @@ public class PgTable implements Serializable {
 	protected void removeBlockedSubstitutionGroups() {
 
 		fields.stream().filter(field -> field.rep_substitution_group && field.block_value != null && field.block_value.equals("substitution")).map(field -> field.xname).collect(Collectors.toList()).forEach(xname -> fields.removeIf(field -> field.substitution_group != null && field.substitution_group.equals(xname)));
+
+	}
+
+	/**
+	 * Remove system keys.
+	 */
+	protected void removeSystemKeys() {
+
+		fields.removeIf(field -> field.primary_key || field.foreign_key || field.nested_key);
 
 	}
 
