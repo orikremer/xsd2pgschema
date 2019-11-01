@@ -1624,7 +1624,7 @@ public class JsonBuilder extends CommonBuilder {
 		String _current_node_name = table.virtual ? current_node_name : table.xname;
 
 		if (table.total_nested_fields > 0 && (!table.has_simple_content || !as_attr))
-			table.nested_fields.stream().filter(field -> ((as_attr && field.nested_key_as_attr) || !as_attr)).
+			table.nested_fields.stream().filter(field -> (as_attr && field.nested_key_as_attr) || !as_attr).
 			filter(field -> parent_node_name == null || parent_node_name.equals(_parent_node_name) || (field.matchesParentNodeNameConstraint(_parent_node_name) && field.matchesAncestorNodeNameConstraint(parent_node_name))).
 			forEach(field -> realizeObjJsonSchema(table, tables.get(field.foreign_table_id), _parent_node_name, _current_node_name, field.nested_key_as_attr, _json_indent_level));
 
