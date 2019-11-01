@@ -5464,7 +5464,7 @@ public class PgField implements Serializable {
 		case xs_gYear:
 			if (sdf == null)
 				sdf = new SimpleDateFormat(PgSchemaUtil.pg_date_format);
-			/*
+
 			if (cal == null)
 				cal = Calendar.getInstance();
 			else
@@ -5476,8 +5476,8 @@ public class PgField implements Serializable {
 			cal.set(Calendar.SECOND, 0);
 			cal.set(Calendar.MILLISECOND, 0);
 			cal.setTimeZone(PgSchemaUtil.tz_utc);
-			 */
-			return sdf.format(DatatypeConverter.parseDate(value).getTime());
+
+			return sdf.format(cal.getTime()); // DatatypeConverter.parseDate(value).getTime());
 		case xs_float:
 		case xs_double:
 		case xs_decimal:
