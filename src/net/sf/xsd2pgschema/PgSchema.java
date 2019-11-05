@@ -592,7 +592,8 @@ public class PgSchema implements Serializable {
 
 		else {
 
-			tables.parallelStream().forEach(table -> table.classify());
+			if (!option.rel_model_ext)
+				tables.parallelStream().forEach(table -> table.classify());
 
 			if (!root && option.ddl_output && !root_schema.dup_schema_locations.containsKey(def_schema_location))
 				root_schema.def_stat_msg.append("--  Found " + tables.parallelStream().filter(table -> option.rel_model_ext || !table.relational).count() + " tables (" + tables.parallelStream().map(table -> option.rel_model_ext || !table.relational ? (option.rel_model_ext ? table.fields.size() : table.fields.stream().filter(field -> !field.primary_key && !field.foreign_key && !field.nested_key).count()) : 0).reduce((arg0, arg1) -> arg0 + arg1).get() + " fields), " + attr_groups.size() + " attr groups, " + model_groups.size() + " model groups in XML Schema: " + def_schema_location + "\n");
@@ -1500,7 +1501,7 @@ public class PgSchema implements Serializable {
 
 			// resolve bridge/relational table by inlining simple content
 
-			tables.stream().filter(table -> table.relational).forEach(table -> {
+			tables.parallelStream().filter(table -> table.relational).forEach(table -> {
 
 				table.classify();
 

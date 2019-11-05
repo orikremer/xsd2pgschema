@@ -67,6 +67,8 @@ public class xml2luceneidx {
 
 		option.cancelRelDataExt(); // turn off relational model extension
 
+		option.inline_simple_cont = false;
+
 		/** The FST configuration. */
 		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
 

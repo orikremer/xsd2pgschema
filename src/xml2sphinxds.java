@@ -68,6 +68,8 @@ public class xml2sphinxds {
 
 		option.cancelRelDataExt(); // turn off relational data extension
 
+		option.inline_simple_cont = false;
+
 		/** The FST configuration. */
 		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
 
