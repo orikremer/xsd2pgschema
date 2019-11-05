@@ -166,7 +166,7 @@ public class PgField implements Serializable {
 	/** Whether nested key as attribute group. */
 	public boolean nested_key_as_attr_group = false;
 
-	/** Whether nested key as simple content with a fixed attribute value. */
+	/** Whether nested key as simple content with fixed attributes. */
 	public boolean nested_key_as_simple_cont_with_fixed_attr = false;
 
 	/** Whether document key. */

@@ -1498,9 +1498,23 @@ public class PgSchema implements Serializable {
 
 		if (!option.rel_model_ext) {
 
-			// delete relational tables and remove all system keys
+			// resolve bridge/relational table by inlining simple content
+
+			tables.stream().filter(table -> table.relational).forEach(table -> {
+
+				table.classify();
+
+				if (!table.relational)
+					table.writable = true;
+
+			});
+
+			// remove all relational tables
 
 			tables.removeIf(table -> table.relational);
+
+			// remove all system keys
+
 			tables.parallelStream().filter(table -> table.writable).forEach(table -> {
 
 				table.removeSystemKeys();
