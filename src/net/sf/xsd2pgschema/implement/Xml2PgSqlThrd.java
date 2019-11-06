@@ -43,6 +43,7 @@ import net.sf.xsd2pgschema.option.PgSchemaOption;
 import net.sf.xsd2pgschema.option.XmlFileFilter;
 import net.sf.xsd2pgschema.option.XmlPostEditor;
 import net.sf.xsd2pgschema.serverutil.PgSchemaClientImpl;
+import net.sf.xsd2pgschema.serverutil.PgSchemaClientType;
 import net.sf.xsd2pgschema.type.PgHashSize;
 import net.sf.xsd2pgschema.xmlutil.XmlParser;
 import net.sf.xsd2pgschema.xmlutil.XmlValidator;
@@ -138,7 +139,7 @@ public class Xml2PgSqlThrd implements Runnable {
 	 */
 	public Xml2PgSqlThrd(final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
-		client = new PgSchemaClientImpl(is, option, null, Thread.currentThread().getStackTrace()[2].getClassName());
+		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.pg_data_migration, Thread.currentThread().getStackTrace()[2].getClassName());
 
 		init(thrd_id, xml_file_filter, xml_file_queue, xml_post_editor, pg_option);
 

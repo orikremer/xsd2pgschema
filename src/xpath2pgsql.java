@@ -260,10 +260,12 @@ public class xpath2pgsql {
 
 		}
 
+		PgSchemaClientType client_type = PgSchemaClientType.xpath_evaluation;
+
 		InputStream is = null;
 
 		boolean server_alive = option.pingPgSchemaServer(fst_conf);
-		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf) : true;
+		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf, client_type) : true;
 
 		if (no_data_model) {
 

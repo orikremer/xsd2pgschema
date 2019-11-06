@@ -50,7 +50,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 	private String field_prefix;
 
 	/** The content of fields. */
-	private String[] values;
+	private String[] values = null;
 
 	/**
 	 * Node parser for Sphinx xmlpipe2 conversion.
@@ -84,11 +84,15 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 		this.as_attr = as_attr;
 
-		sph_ds_buffw = npb.schema.sph_ds_buffw;
+		if (table.indexable) {
 
-		field_prefix = table.name + PgSchemaUtil.sph_member_op;
+			sph_ds_buffw = npb.schema.sph_ds_buffw;
 
-		values = new String[fields_size];
+			field_prefix = table.name + PgSchemaUtil.sph_member_op;
+
+			values = new String[_fields_size];
+
+		}
 
 	}
 
@@ -175,9 +179,9 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 		PgField field;
 
-		for (int f = 0; f < fields_size; f++) {
+		for (int f = 0; f < _fields_size; f++) {
 
-			field = fields.get(f);
+			field = _fields.get(f);
 
 			// nested_key
 
@@ -228,9 +232,9 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 		if (null_simple_list && (total_nested_fields == 0 || nested_keys.size() == 0))
 			return;
 
-		for (int f = 0; f < fields_size; f++) {
+		for (int f = 0; f < _fields_size; f++) {
 
-			field = fields.get(f);
+			field = _fields.get(f);
 
 			if (field.indexable) {
 

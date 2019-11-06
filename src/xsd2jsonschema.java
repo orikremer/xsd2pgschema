@@ -180,6 +180,8 @@ public class xsd2jsonschema {
 
 			PgSchema schema = new PgSchema(doc_builder, xsd_doc, null, option.root_schema_location, option);
 
+			schema.prepForJsonBuilder(jsonb_option);
+
 			JsonBuilder jsonb = new JsonBuilder(schema, jsonb_option);
 
 			jsonb.realizeJsonSchema();

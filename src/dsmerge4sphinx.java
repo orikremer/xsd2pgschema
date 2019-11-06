@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -106,10 +106,12 @@ public class dsmerge4sphinx {
 			showUsage();
 		}
 
+		PgSchemaClientType client_type = PgSchemaClientType.full_text_indexing;
+
 		InputStream is = null;
 
 		boolean server_alive = option.pingPgSchemaServer(fst_conf);
-		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf) : true;
+		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf, client_type) : true;
 
 		if (no_data_model) {
 
@@ -208,7 +210,7 @@ public class dsmerge4sphinx {
 			if (!Files.isDirectory(dst_ds_dir_path))
 				Files.createDirectory(dst_ds_dir_path);
 
-			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, MethodHandles.lookup().lookupClass().getName());
+			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, client_type, MethodHandles.lookup().lookupClass().getName());
 
 			for (String src_ds_dir_name : src_ds_dir_list) {
 

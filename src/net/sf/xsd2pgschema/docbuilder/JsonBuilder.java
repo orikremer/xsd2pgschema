@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -215,50 +214,6 @@ public class JsonBuilder extends CommonBuilder {
 
 		if ((simple_content_name = option.simple_content_name) == null)
 			simple_content_name = PgSchemaUtil.simple_content_name;
-
-		tables.parallelStream().filter(table -> table.required && (table.content_holder || !table.virtual)).forEach(table -> {
-
-			table.jname = case_sense ? table.xname : table.xname.toLowerCase();
-
-			if (table.content_holder) {
-
-				if (table.jsonable = table.fields.stream().anyMatch(field -> field.jsonable)) {
-
-					table.jsonb_not_empty = false;
-
-					table.fields.stream().filter(field -> field.jsonable).forEach(field -> {
-
-						field.jname = field.simple_content ? (field.simple_attribute || field.simple_attr_cond ? (case_sense ? field.parent_nodes[0] : field.parent_nodes[0].toLowerCase()) : simple_content_name) : (case_sense ? field.xname : field.xname.toLowerCase());
-
-						field.jsonb_not_empty = false;
-
-						if (field.jsonb == null)
-							field.jsonb = new StringBuilder();
-						else if (field.jsonb.length() > 0)
-							field.jsonb.setLength(0);
-
-						field.jsonb_col_size = field.jsonb_null_size = 0;
-
-					});
-
-				}
-
-			}
-
-			if (schema.option.document_key) {
-
-				Optional<PgField> opt = table.fields.stream().filter(field -> field.document_key).findFirst();
-
-				if (opt.isPresent()) {
-
-					PgField document_key = opt.get();
-					document_key.jname = case_sense ? document_key.xname : document_key.xname.toLowerCase();
-
-				}
-
-			}
-
-		});
 
 	}
 

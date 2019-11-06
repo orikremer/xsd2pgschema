@@ -53,7 +53,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 	private String concat_value_space;
 
 	/** The content of fields. */
-	private String[] values;
+	private String[] values = null;
 
 	/**
 	 * Node parser for JSON conversion.
@@ -85,10 +85,15 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		this.as_attr = as_attr;
 
-		schema_ver = jsonb.schema_ver;
-		concat_value_space = jsonb.concat_value_space;
+		if (table.jsonable) {
 
-		values = new String[fields_size];
+			schema_ver = jsonb.schema_ver;
+
+			concat_value_space = jsonb.concat_value_space;
+
+			values = new String[_fields_size];
+
+		}
 
 	}
 
@@ -483,9 +488,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		PgField field;
 
-		for (int f = 0; f < fields_size; f++) {
+		for (int f = 0; f < _fields_size; f++) {
 
-			field = fields.get(f);
+			field = _fields.get(f);
 
 			// nested_key
 
@@ -540,9 +545,9 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 		boolean not_empty = false;
 
-		for (int f = 0; f < fields_size; f++) {
+		for (int f = 0; f < _fields_size; f++) {
 
-			field = fields.get(f);
+			field = _fields.get(f);
 
 			if (field.jsonable && field.write(schema_ver, values[f], false, concat_value_space))
 				not_empty = true;

@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018 Masashi Yokochi
+    Copyright 2018-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -34,6 +34,9 @@ public class PgSchemaServerImpl {
 	/** The serialized PostgreSQL data model. */
 	public byte[] schema_bytes;
 
+	/** The PgSchema client type. */
+	public PgSchemaClientType client_type = null;
+
 	/** The original caller class name (optional). */
 	public String original_caller;
 
@@ -49,6 +52,7 @@ public class PgSchemaServerImpl {
 
 		option = query.option;
 		schema_bytes = query.schema_bytes;
+		client_type = query.client_type;
 		original_caller = query.original_caller;
 
 		touch();

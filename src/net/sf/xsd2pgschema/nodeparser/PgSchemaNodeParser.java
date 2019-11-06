@@ -48,10 +48,10 @@ public abstract class PgSchemaNodeParser {
 	protected PgTable table;
 
 	/** The field list. */
-	protected List<PgField> fields;
+	protected List<PgField> _fields = null;
 
 	/** The size of field list. */
-	protected int fields_size;
+	protected int _fields_size = 0;
 
 	/** The total number of field as nested key. */
 	protected int total_nested_fields;
@@ -103,8 +103,26 @@ public abstract class PgSchemaNodeParser {
 		this.parent_table = parent_table;
 		this.table = table;
 
-		fields = table.fields;
-		fields_size = fields.size();
+		switch (npb.parser_type) {
+		case pg_data_migration:
+			if (table.writable) {
+				_fields = table.custom_fields;
+				_fields_size = _fields.size();
+			}
+			break;			
+		case json_conversion:
+			if (table.jsonable) {
+				_fields = table.custom_fields;
+				_fields_size = _fields.size();
+			}
+			break;
+		case full_text_indexing:
+			if (table.indexable) {
+				_fields = table.custom_fields;
+				_fields_size = _fields.size();
+			}
+			break;
+		}
 
 		if ((total_nested_fields = table.total_nested_fields) > 0)
 			nested_keys = new ArrayList<PgSchemaNestedKey>();

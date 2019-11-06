@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -53,6 +53,7 @@ import net.sf.xsd2pgschema.option.PgSchemaOption;
 import net.sf.xsd2pgschema.option.XmlFileFilter;
 import net.sf.xsd2pgschema.option.XmlPostEditor;
 import net.sf.xsd2pgschema.serverutil.PgSchemaClientImpl;
+import net.sf.xsd2pgschema.serverutil.PgSchemaClientType;
 import net.sf.xsd2pgschema.type.PgHashSize;
 import net.sf.xsd2pgschema.xmlutil.XmlParser;
 import net.sf.xsd2pgschema.xmlutil.XmlValidator;
@@ -163,7 +164,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	 */
 	public Xml2LuceneIdxThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final IndexFilter index_filter, final Path idx_dir_path, IndexWriter[] writers, HashMap<String, Integer> doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
-		client = new PgSchemaClientImpl(is, option, null, Thread.currentThread().getStackTrace()[2].getClassName());
+		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.full_text_indexing, Thread.currentThread().getStackTrace()[2].getClassName());
 
 		init(shard_id, shard_size, thrd_id, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, idx_dir_path, writers, doc_rows);
 

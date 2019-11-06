@@ -258,10 +258,12 @@ public class tsv2pgsql {
 			showUsage();
 		}
 
+		PgSchemaClientType client_type = PgSchemaClientType.pg_data_migration;
+
 		InputStream is = null;
 
 		boolean server_alive = option.pingPgSchemaServer(fst_conf);
-		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf) : true;
+		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf, client_type) : true;
 
 		if (no_data_model) {
 
@@ -292,7 +294,7 @@ public class tsv2pgsql {
 
 		try {
 
-			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, MethodHandles.lookup().lookupClass().getName());
+			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, client_type, MethodHandles.lookup().lookupClass().getName());
 
 			Connection db_conn = DriverManager.getConnection(pg_option.getDbUrl(PgSchemaUtil.def_encoding), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
 

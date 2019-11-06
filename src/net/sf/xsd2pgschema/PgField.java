@@ -356,7 +356,6 @@ public class PgField implements Serializable {
 	public String xprefix = null;
 
 	/** The field name in JSON. */
-	@Flat
 	public String jname = null;
 
 	/** The constraint name in PostgreSQL. */
@@ -424,19 +423,15 @@ public class PgField implements Serializable {
 	public boolean filt_out = false;
 
 	/** Whether JSON buffer is not empty (internal use only). */
-	@Flat
 	public boolean jsonb_not_empty = false;
 
 	/** The size of data in JSON buffer (internal use only). */
-	@Flat
 	public int jsonb_col_size = 0;
 
 	/** The size of null data in JSON buffer (internal use only). */
-	@Flat
 	public int jsonb_null_size = 0;
 
 	/** The JSON buffer (internal use only). */
-	@Flat
 	public StringBuilder jsonb = null;
 
 	/**

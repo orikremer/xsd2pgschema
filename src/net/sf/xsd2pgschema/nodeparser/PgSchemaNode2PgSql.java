@@ -58,7 +58,7 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 	private boolean written = false;
 
 	/** Whether field is occupied. */
-	private boolean[] occupied;
+	private boolean[] occupied = null;
 
 	/**
 	 * Node parser for PostgreSQL data migration.
@@ -95,121 +95,119 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 		if (update && npb.rel_data_ext)
 			upsert = table.has_unique_primary_key;
 
-		occupied = new boolean[fields_size];
-
 		pg_view = !npb.schema.option.realize_simple_brdg && table.simple_bridge;
 
-		if (!pg_view) {
+		if (table.writable) {
 
-			try {
+			if (!pg_view) {
 
-				PgField field;
+				try {
 
-				// upsert
+					PgField field;
 
-				if (upsert) {
+					// upsert
 
-					if (table.ps2 == null) {
+					if (upsert) {
 
-						StringBuilder sql = new StringBuilder();
+						if (table.ps2 == null) {
 
-						sql.append("INSERT INTO " + table.pgname + " VALUES ( ");
+							StringBuilder sql = new StringBuilder();
 
-						for (int f = 0; f < fields_size; f++) {
+							sql.append("INSERT INTO " + table.pgname + " VALUES ( ");
 
-							field = fields.get(f);
+							for (int f = 0; f < _fields_size; f++) {
 
-							if (field.omissible)
-								continue;
+								field = _fields.get(f);
 
-							if (field.enum_name == null)
-								sql.append("?");
-							else
-								sql.append("?::" + table.schema_pgname + field.enum_name);
+								if (field.enum_name == null)
+									sql.append("?");
+								else
+									sql.append("?::" + table.schema_pgname + field.enum_name);
 
-							sql.append(", ");
+								sql.append(", ");
+
+							}
+
+							sql.setLength(sql.length() - 2);
+							sql.append(" )");
+
+							sql.append(" ON CONFLICT ( " + table.primary_key_pgname + " ) DO UPDATE SET ");
+
+							for (int f = 0; f < _fields_size; f++) {
+
+								field = _fields.get(f);
+
+								if (field.primary_key)
+									continue;
+
+								sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + "=");
+
+								if (field.enum_name == null)
+									sql.append("?");
+								else
+									sql.append("?::" + table.schema_pgname + field.enum_name);
+
+								sql.append(", ");
+
+							}
+
+							sql.setLength(sql.length() - 2);
+
+							sql.append(" WHERE EXCLUDED." + table.primary_key_pgname + "=?");
+
+							table.ps2 = npb.db_conn.prepareStatement(sql.toString());
+
+							sql.setLength(0);
 
 						}
 
-						sql.setLength(sql.length() - 2);
-						sql.append(" )");
-
-						sql.append(" ON CONFLICT ( " + table.primary_key_pgname + " ) DO UPDATE SET ");
-
-						for (int f = 0; f < fields_size; f++) {
-
-							field = fields.get(f);
-
-							if (field.omissible || field.primary_key)
-								continue;
-
-							sql.append(PgSchemaUtil.avoidPgReservedWords(field.pname) + "=");
-
-							if (field.enum_name == null)
-								sql.append("?");
-							else
-								sql.append("?::" + table.schema_pgname + field.enum_name);
-
-							sql.append(", ");
-
-						}
-
-						sql.setLength(sql.length() - 2);
-
-						sql.append(" WHERE EXCLUDED." + table.primary_key_pgname + "=?");
-
-						table.ps2 = npb.db_conn.prepareStatement(sql.toString());
-
-						sql.setLength(0);
+						ps = table.ps2;
 
 					}
 
-					ps = table.ps2;
+					// insert
 
-				}
+					else {
 
-				// insert
+						if (table.ps == null) {
 
-				else {
+							StringBuilder sql = new StringBuilder();
 
-					if (table.ps == null) {
+							sql.append("INSERT INTO " + table.pgname + " VALUES ( ");
 
-						StringBuilder sql = new StringBuilder();
+							for (int f = 0; f < _fields_size; f++) {
 
-						sql.append("INSERT INTO " + table.pgname + " VALUES ( ");
+								field = _fields.get(f);
 
-						for (int f = 0; f < fields_size; f++) {
+								if (field.enum_name == null)
+									sql.append("?");
+								else
+									sql.append("?::" + table.schema_pgname + field.enum_name);
 
-							field = fields.get(f);
+								sql.append(", ");
 
-							if (field.omissible)
-								continue;
+							}
 
-							if (field.enum_name == null)
-								sql.append("?");
-							else
-								sql.append("?::" + table.schema_pgname + field.enum_name);
+							sql.setLength(sql.length() - 2);
+							sql.append(" )");
 
-							sql.append(", ");
+							table.ps = npb.db_conn.prepareStatement(sql.toString());
+
+							sql.setLength(0);
 
 						}
 
-						sql.setLength(sql.length() - 2);
-						sql.append(" )");
-
-						table.ps = npb.db_conn.prepareStatement(sql.toString());
-
-						sql.setLength(0);
+						ps = table.ps;
 
 					}
 
-					ps = table.ps;
-
+				} catch (SQLException e) {
+					throw new PgSchemaException(e);
 				}
 
-			} catch (SQLException e) {
-				throw new PgSchemaException(e);
 			}
+
+			occupied = new boolean[_fields_size];
 
 		}
 
@@ -296,16 +294,13 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			if (npb.rel_data_ext) {
 
-				for (int f = 0; f < fields_size; f++) {
+				for (int f = 0; f < _fields_size; f++) {
 
-					field = fields.get(f);
-
-					if (field.omissible)
-						continue;
+					field = _fields.get(f);
 
 					// document_key
 
-					else if (field.document_key)
+					if (field.document_key)
 						field.write(ps, upsert, npb.document_id);
 
 					// primary_key
@@ -405,17 +400,14 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			else {
 
-				for (int f = 0; f < fields_size; f++) {
+				for (int f = 0; f < _fields_size; f++) {
 
-					field = fields.get(f);
+					field = _fields.get(f);
 
 					// nested_key should be processed
 
 					if (field.nested_key)
 						setNestedKey(proc_node, field, true);
-
-					if (field.omissible)
-						continue;
 
 					// document_key
 
@@ -491,11 +483,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 			if (!pg_view) {
 
-				for (int f = 0; f < fields_size; f++) {
+				for (int f = 0; f < _fields_size; f++) {
 
-					field = fields.get(f);
+					field = _fields.get(f);
 
-					if (field.omissible || field.primary_key || field.user_key)
+					if (field.primary_key || field.user_key)
 						continue;
 
 					if (!occupied[f])
@@ -505,11 +497,11 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				if (upsert) {
 
-					for (int f = 0; f < fields_size; f++) {
+					for (int f = 0; f < _fields_size; f++) {
 
-						field = fields.get(f);
+						field = _fields.get(f);
 
-						if (field.omissible || field.primary_key || field.user_key)
+						if (field.primary_key || field.user_key)
 							continue;
 
 						if (!occupied[f])

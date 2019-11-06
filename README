@@ -1,11 +1,15 @@
-﻿ Changes in xsd2pgschema 4.0.3 (release 2019-11-05)
+﻿ Changes in xsd2pgschema 4.0.4 (release 2019-11-06)
+
+  Code refactoring for overall performance gains including start-up time.
+
+ Changes in xsd2pgschema 4.0.3 (release 2019-11-05)
 
   Fixed non-sense delegated field name to primitive data type.
   Enabled inlining simple content when relational model extension was disabled by default.
   Enabled inlining simple content with attribute(s) having fixed value(s) when relational model extension was disabled.
    Omitted attribute(s) are described in PostgreSQL DDL. It occurs only when relational model extension is disabled.
   Added ancestor/parent node name constraint checker in JSON Schema conversion.
-  Fixed missing tables when relational model extension is disabled and inlining simple content.
+  Fixed missing tables when relational model extension was disabled with inlining simple content.
 
  Changes in xsd2pgschema 4.0.2 (release 2019-10-30)
 

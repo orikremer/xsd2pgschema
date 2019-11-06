@@ -388,10 +388,12 @@ public class xml2pgtsv {
 			showUsage();
 		}
 
+		PgSchemaClientType client_type = PgSchemaClientType.pg_data_migration;
+
 		InputStream is = null;
 
 		boolean server_alive = option.pingPgSchemaServer(fst_conf);
-		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf) : true;
+		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf, client_type) : true;
 
 		if (no_data_model) {
 
@@ -480,7 +482,7 @@ public class xml2pgtsv {
 
 				if (no_data_model) {
 
-					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, class_name);
+					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, client_type, class_name);
 					get_thrd[0] = null;
 
 				}
@@ -492,7 +494,7 @@ public class xml2pgtsv {
 					if (thrd_id == 0 && no_data_model)
 						continue;
 
-					Thread _get_thrd = get_thrd[thrd_id] = new Thread(new PgSchemaGetClientThrd(thrd_id, option, fst_conf, class_name, clients));
+					Thread _get_thrd = get_thrd[thrd_id] = new Thread(new PgSchemaGetClientThrd(thrd_id, option, fst_conf, client_type, class_name, clients));
 
 					_get_thrd.setPriority(Thread.MAX_PRIORITY);
 					_get_thrd.start();

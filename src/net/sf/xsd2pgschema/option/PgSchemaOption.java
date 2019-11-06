@@ -40,6 +40,7 @@ import org.w3c.dom.NodeList;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.docbuilder.JsonType;
+import net.sf.xsd2pgschema.serverutil.PgSchemaClientType;
 import net.sf.xsd2pgschema.serverutil.PgSchemaServerQuery;
 import net.sf.xsd2pgschema.serverutil.PgSchemaServerQueryType;
 import net.sf.xsd2pgschema.serverutil.PgSchemaServerReply;
@@ -620,9 +621,10 @@ public class PgSchemaOption implements Serializable {
 	 * Send MATCH query to PgSchema server.
 	 *
 	 * @param fst_conf FST configuration
+	 * @param client_type PgSchema client type
 	 * @return boolean whether PgSchema server does not have data model (true)
 	 */
-	public boolean matchPgSchemaServer(FSTConfiguration fst_conf) {
+	public boolean matchPgSchemaServer(FSTConfiguration fst_conf, PgSchemaClientType client_type) {
 
 		if (!pg_schema_server)
 			return false;
@@ -632,7 +634,7 @@ public class PgSchemaOption implements Serializable {
 			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 			DataInputStream in = new DataInputStream(socket.getInputStream());
 
-			PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.MATCH, this));
+			PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.MATCH, this, client_type));
 
 			PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 			/*

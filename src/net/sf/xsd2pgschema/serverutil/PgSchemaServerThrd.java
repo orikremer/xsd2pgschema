@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018 Masashi Yokochi
+    Copyright 2018-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -130,7 +130,7 @@ public class PgSchemaServerThrd implements Runnable {
 				reply.message = server_info_header + blue_color + "ADD" + server_info_footer;
 				break;
 			case MATCH:
-				Optional<PgSchemaServerImpl> match_opt = list.stream().filter(arg -> arg.option.equals(query.option)).findFirst();
+				Optional<PgSchemaServerImpl> match_opt = list.stream().filter(arg -> arg.client_type.equals(query.client_type) && arg.option.equals(query.option)).findFirst();
 
 				if (match_opt.isPresent())
 					reply.message = server_info_header + green_color + "MATCH" + server_info_footer;
@@ -138,7 +138,7 @@ public class PgSchemaServerThrd implements Runnable {
 					reply.message = server_info_header + red_color + "MATCH NOTHING" + server_info_footer;
 				break;
 			case GET:
-				Optional<PgSchemaServerImpl> get_opt = list.stream().filter(arg -> arg.option.equals(query.option)).findFirst();
+				Optional<PgSchemaServerImpl> get_opt = list.stream().filter(arg -> arg.client_type.equals(query.client_type) && arg.option.equals(query.option)).findFirst();
 
 				if (get_opt.isPresent()) {
 

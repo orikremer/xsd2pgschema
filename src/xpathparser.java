@@ -200,10 +200,12 @@ public class xpathparser {
 			showUsage();
 		}
 
+		PgSchemaClientType client_type = PgSchemaClientType.xpath_evaluation;
+
 		InputStream is = null;
 
 		boolean server_alive = option.pingPgSchemaServer(fst_conf);
-		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf) : true;
+		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf, client_type) : true;
 
 		if (no_data_model) {
 
@@ -216,9 +218,7 @@ public class xpathparser {
 
 		try {
 
-			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, MethodHandles.lookup().lookupClass().getName());
-
-			client.schema.prepDicForXPath();
+			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, client_type, MethodHandles.lookup().lookupClass().getName());
 
 			xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_query));
 

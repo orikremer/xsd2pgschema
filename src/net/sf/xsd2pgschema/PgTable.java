@@ -194,6 +194,9 @@ public class PgTable implements Serializable {
 	/** The field list of nested key as attribute group. */
 	public List<PgField> nested_fields_as_attr_group = null;
 
+	/** The customized field list. */
+	public List<PgField> custom_fields = null;
+
 	/** The list of foreign table id. */
 	public int[] ft_ids = null;
 
@@ -210,7 +213,6 @@ public class PgTable implements Serializable {
 	public boolean indexable = false;
 
 	/** Whether table is JSON convertible. */
-	@Flat
 	public boolean jsonable = false;
 
 	/** The depth of table. */
@@ -234,7 +236,6 @@ public class PgTable implements Serializable {
 	public String xprefix = null;
 
 	/** The table name in JSON. */
-	@Flat
 	public String jname = null;
 
 	/** Whether table is subset of database (internal use only). */
@@ -254,7 +255,6 @@ public class PgTable implements Serializable {
 	public BufferedWriter buffw = null;
 
 	/** Whether JSON buffer of arbitrary field is not empty (internal use only). */
-	@Flat
 	public boolean jsonb_not_empty = false;
 
 	/** The embedded document id in the primary prepared statement (internal use only). */
@@ -274,11 +274,9 @@ public class PgTable implements Serializable {
 	public HashMap<String, String> abs_xpath_expr = null;
 
 	/** The dictionary of attribute name. */
-	@Flat
 	public HashMap<String, PgField> attr_name_dic = null;
 
 	/** The dictionary of element name. */
-	@Flat
 	public HashMap<String, PgField> elem_name_dic = null;
 
 	/**

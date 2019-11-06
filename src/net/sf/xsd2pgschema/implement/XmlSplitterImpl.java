@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017-2018 Masashi Yokochi
+    Copyright 2017-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -62,6 +62,7 @@ import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
 import net.sf.xsd2pgschema.serverutil.PgSchemaClientImpl;
+import net.sf.xsd2pgschema.serverutil.PgSchemaClientType;
 import net.sf.xsd2pgschema.xpathparser.XPathCompList;
 
 /**
@@ -148,9 +149,7 @@ public class XmlSplitterImpl {
 
 		this.xml_file_queue = xml_file_queue;
 
-		client = new PgSchemaClientImpl(is, option, fst_conf, Thread.currentThread().getStackTrace()[2].getClassName());
-
-		client.schema.prepDicForXPath();
+		client = new PgSchemaClientImpl(is, option, fst_conf, PgSchemaClientType.xpath_evaluation, Thread.currentThread().getStackTrace()[2].getClassName());
 
 		// prepare shard directories
 

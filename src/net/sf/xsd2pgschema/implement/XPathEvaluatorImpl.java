@@ -57,7 +57,9 @@ import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
 import net.sf.xsd2pgschema.serverutil.PgSchemaClientImpl;
+import net.sf.xsd2pgschema.serverutil.PgSchemaClientType;
 import net.sf.xsd2pgschema.docbuilder.JsonBuilder;
+import net.sf.xsd2pgschema.docbuilder.JsonBuilderOption;
 import net.sf.xsd2pgschema.docbuilder.XmlBuilder;
 import net.sf.xsd2pgschema.option.PgOption;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
@@ -106,9 +108,46 @@ public class XPathEvaluatorImpl {
 	 */
 	public XPathEvaluatorImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgOption pg_option, final boolean stdout_msg) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
-		client = new PgSchemaClientImpl(is, this.option = option, fst_conf, Thread.currentThread().getStackTrace()[2].getClassName(), stdout_msg);
+		String original_caller = Thread.currentThread().getStackTrace()[2].getClassName();
 
-		client.schema.prepDicForXPath();
+		client = new PgSchemaClientImpl(is, this.option = option, fst_conf, original_caller.equals("xpath2json") ? PgSchemaClientType.xpath_evaluation_to_json : PgSchemaClientType.xpath_evaluation, original_caller, stdout_msg);
+
+		if (!pg_option.name.isEmpty()) {
+
+			db_conn = DriverManager.getConnection(pg_option.getDbUrl(PgSchemaUtil.def_encoding), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
+
+			// test PostgreSQL DDL with schema
+
+			if (pg_option.test)
+				client.schema.testPgSql(db_conn, pg_option, false);
+
+			db_conn.setReadOnly(true);
+
+		}
+
+	}
+
+	/**
+	 * Instance of XPathEvaluatorImpl.
+	 *
+	 * @param is InputStream of XML Schema
+	 * @param option PostgreSQL data model option
+	 * @param fst_conf FST configuration
+	 * @param pg_option PostgreSQL option
+	 * @param jsonb_option JSON builder option
+	 * @param stdout_msg whether to output processing message to stdin or not (stderr)
+	 * @throws ParserConfigurationException the parser configuration exception
+	 * @throws SAXException the SAX exception
+	 * @throws IOException Signals that an I/O exception has occurred.
+	 * @throws NoSuchAlgorithmException the no such algorithm exception
+	 * @throws SQLException the SQL exception
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	public XPathEvaluatorImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgOption pg_option, final JsonBuilderOption jsonb_option, final boolean stdout_msg) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
+
+		String original_caller = Thread.currentThread().getStackTrace()[2].getClassName();
+
+		client = new PgSchemaClientImpl(is, this.option = option, fst_conf, original_caller.equals("xpath2json") ? PgSchemaClientType.xpath_evaluation_to_json : PgSchemaClientType.xpath_evaluation, original_caller, jsonb_option, stdout_msg);
 
 		if (!pg_option.name.isEmpty()) {
 

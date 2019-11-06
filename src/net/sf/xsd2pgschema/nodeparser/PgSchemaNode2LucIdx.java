@@ -53,7 +53,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 	private String field_prefix;
 
 	/** The content of fields. */
-	private String[] values;
+	private String[] values = null;
 
 	/**
 	 * Node parser for Lucene document conversion.
@@ -88,11 +88,15 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		this.as_attr = as_attr;
 
-		lucene_doc = npb.schema.lucene_doc;
+		if (table.indexable) {
 
-		field_prefix = table.name + ".";
+			lucene_doc = npb.schema.lucene_doc;
 
-		values = new String[fields_size];
+			field_prefix = table.name + ".";
+
+			values = new String[_fields_size];
+
+		}
 
 	}
 
@@ -181,9 +185,9 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		if (npb.rel_data_ext) {
 
-			for (int f = 0; f < fields_size; f++) {
+			for (int f = 0; f < _fields_size; f++) {
 
-				field = fields.get(f);
+				field = _fields.get(f);
 
 				// primary_key
 
@@ -254,9 +258,9 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			if (null_simple_list && (total_nested_fields == 0 || nested_keys.size() == 0))
 				return;
 
-			for (int f = 0; f < fields_size; f++) {
+			for (int f = 0; f < _fields_size; f++) {
 
-				field = fields.get(f);
+				field = _fields.get(f);
 
 				if (field.system_key) {
 
@@ -282,9 +286,9 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 		else {
 
-			for (int f = 0; f < fields_size; f++) {
+			for (int f = 0; f < _fields_size; f++) {
 
-				field = fields.get(f);
+				field = _fields.get(f);
 
 				// nested_key
 
@@ -335,9 +339,9 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 			if (null_simple_list && (total_nested_fields == 0 || nested_keys.size() == 0))
 				return;
 
-			for (int f = 0; f < fields_size; f++) {
+			for (int f = 0; f < _fields_size; f++) {
 
-				field = fields.get(f);
+				field = _fields.get(f);
 
 				if (field.indexable) {
 

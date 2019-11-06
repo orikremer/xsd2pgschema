@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018 Masashi Yokochi
+    Copyright 2018-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -48,6 +48,9 @@ public class PgSchemaServerQuery implements Serializable {
 	/** The serialized PostgreSQL data model. */
 	public byte[] schema_bytes = null;
 
+	/** The PgSchema client type. */
+	public PgSchemaClientType client_type = null;
+
 	/** The original caller class name (optional). */
 	public String original_caller = null;
 
@@ -67,12 +70,14 @@ public class PgSchemaServerQuery implements Serializable {
 	 *
 	 * @param type query type should be either GET or MATCH
 	 * @param option PostgreSQL data model option
+	 * @param client_type PgSchema client type
 	 */
-	public PgSchemaServerQuery(PgSchemaServerQueryType type, PgSchemaOption option) {
+	public PgSchemaServerQuery(PgSchemaServerQueryType type, PgSchemaOption option, PgSchemaClientType client_type) {
 
 		this.type = type;
 		def_schema_location = option.root_schema_location;
 		this.option = option;
+		this.client_type = client_type;
 
 	}
 
@@ -81,14 +86,16 @@ public class PgSchemaServerQuery implements Serializable {
 	 *
 	 * @param fst_conf FST configuration
 	 * @param schema PostgreSQL data model
+	 * @param client_type PgSchema client type
 	 * @param original_caller original caller class name
 	 */
-	public PgSchemaServerQuery(FSTConfiguration fst_conf, PgSchema schema, String original_caller) {
+	public PgSchemaServerQuery(FSTConfiguration fst_conf, PgSchema schema, PgSchemaClientType client_type, String original_caller) {
 
 		type = PgSchemaServerQueryType.ADD;
 		def_schema_location = schema.getDefaultSchemaLocation();
 		option = schema.option;
 		schema_bytes = fst_conf.asByteArray(schema);
+		this.client_type = client_type;
 		this.original_caller = original_caller;
 
 	}

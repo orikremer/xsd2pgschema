@@ -302,10 +302,12 @@ public class xpath2json {
 
 		}
 
+		PgSchemaClientType client_type = PgSchemaClientType.xpath_evaluation_to_json;
+
 		InputStream is = null;
 
 		boolean server_alive = option.pingPgSchemaServer(fst_conf);
-		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf) : true;
+		boolean no_data_model = server_alive ? !option.matchPgSchemaServer(fst_conf, client_type) : true;
 
 		if (no_data_model) {
 
@@ -318,7 +320,7 @@ public class xpath2json {
 
 		try {
 
-			XPathEvaluatorImpl evaluator = new XPathEvaluatorImpl(is, option, fst_conf, pg_option, stdout_msg); // reuse the instance for repetition
+			XPathEvaluatorImpl evaluator = new XPathEvaluatorImpl(is, option, fst_conf, pg_option, jsonb_option, stdout_msg); // reuse the instance for repetition
 
 			if (!pg_option.name.isEmpty())
 				pg_option.clear();

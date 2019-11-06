@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2018 Masashi Yokochi
+    Copyright 2014-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -36,6 +36,7 @@ import org.xml.sax.SAXException;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.serverutil.PgSchemaClientImpl;
+import net.sf.xsd2pgschema.serverutil.PgSchemaClientType;
 import net.sf.xsd2pgschema.type.PgHashSize;
 import net.sf.xsd2pgschema.xmlutil.XmlParser;
 import net.sf.xsd2pgschema.xmlutil.XmlValidator;
@@ -124,7 +125,7 @@ public class Xml2JsonThrd implements Runnable {
 	 */
 	public Xml2JsonThrd(final int thrd_id, final InputStream is, final Path json_dir_path, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
-		client = new PgSchemaClientImpl(is, option, null, Thread.currentThread().getStackTrace()[2].getClassName());
+		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.json_conversion, Thread.currentThread().getStackTrace()[2].getClassName(), jsonb_option);
 
 		init(thrd_id, json_dir_path, xml_file_filter, xml_file_queue, xml_post_editor, jsonb_option);
 

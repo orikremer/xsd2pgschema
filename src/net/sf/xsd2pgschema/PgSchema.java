@@ -59,6 +59,7 @@ import org.postgresql.core.BaseConnection;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
+import net.sf.xsd2pgschema.docbuilder.JsonBuilderOption;
 import net.sf.xsd2pgschema.nodeparser.PgSchemaNodeParserBuilder;
 import net.sf.xsd2pgschema.nodeparser.PgSchemaNodeParserType;
 import net.sf.xsd2pgschema.option.IndexFilter;
@@ -155,11 +156,9 @@ public class PgSchema implements Serializable {
 	private HashMap<String, String> dup_schema_locations = null;
 
 	/** The dictionary of table name. */
-	@Flat
 	private HashMap<String, PgTable> table_name_dic = null;
 
 	/** The dictionary of matched table path. */
-	@Flat
 	private HashMap<String, PgTable> table_path_dic = null;
 
 	/** The attribute group definitions. */
@@ -4147,9 +4146,100 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
-	 * Prepare dictionaries for XPath parser.
+	 * Prepare for data migration.
 	 */
-	public void prepDicForXPath() {
+	public void prepForDataMigration() {
+
+		if (option.rel_data_ext)
+			tables.parallelStream().filter(table -> table.writable).forEach(table -> table.custom_fields = table.fields.stream().filter(field -> field.nested_key || !field.omissible).collect(Collectors.toList()));
+		else
+			tables.parallelStream().filter(table -> table.writable).forEach(table -> table.custom_fields = table.fields.stream().filter(field -> field.nested_key || (!field.omissible && !field.primary_key && !field.foreign_key)).collect(Collectors.toList()));
+
+	}
+
+	/**
+	 * Prepare for full-text indexing
+	 * applyIndexFilter() should be called beforehand.
+	 */
+	private void prepForFullTextIndexing() {
+
+		if (option.rel_data_ext)
+			tables.parallelStream().filter(table -> table.indexable).forEach(table -> table.custom_fields = table.fields.stream().filter(field -> field.nested_key || (field.indexable && !field.document_key)).collect(Collectors.toList()));
+		else
+			tables.parallelStream().filter(table -> table.indexable).forEach(table -> table.custom_fields = table.fields.stream().filter(field -> field.nested_key || (field.indexable && !field.document_key && !field.primary_key && !field.foreign_key)).collect(Collectors.toList()));
+	}
+
+	/**
+	 * Prepare for JSON builder.
+	 *
+	 * @param jsonb_option JSON builder option
+	 */
+	public void prepForJsonBuilder(JsonBuilderOption jsonb_option) {
+
+		boolean case_sense = jsonb_option.case_sense;
+
+		String simple_content_name = jsonb_option.simple_content_name != null ? jsonb_option.simple_content_name : PgSchemaUtil.simple_content_name;
+
+		tables.parallelStream().filter(table -> table.required && (table.content_holder || !table.virtual)).forEach(table -> {
+
+			table.jname = case_sense ? table.xname : table.xname.toLowerCase();
+
+			if (table.content_holder) {
+
+				if (table.jsonable = table.fields.stream().anyMatch(field -> field.jsonable)) {
+
+					table.jsonb_not_empty = false;
+
+					table.fields.stream().filter(field -> field.jsonable).forEach(field -> {
+
+						field.jname = field.simple_content ? (field.simple_attribute || field.simple_attr_cond ? (case_sense ? field.parent_nodes[0] : field.parent_nodes[0].toLowerCase()) : simple_content_name) : (case_sense ? field.xname : field.xname.toLowerCase());
+
+						field.jsonb_not_empty = false;
+
+						if (field.jsonb == null)
+							field.jsonb = new StringBuilder();
+						else if (field.jsonb.length() > 0)
+							field.jsonb.setLength(0);
+
+						field.jsonb_col_size = field.jsonb_null_size = 0;
+
+					});
+
+				}
+
+			}
+
+			if (option.document_key) {
+
+				Optional<PgField> opt = table.fields.stream().filter(field -> field.document_key).findFirst();
+
+				if (opt.isPresent()) {
+
+					PgField document_key = opt.get();
+					document_key.jname = case_sense ? document_key.xname : document_key.xname.toLowerCase();
+
+				}
+
+			}
+
+		});
+
+	}
+
+	/**
+	 * Prepare for JSON conversion.
+	 * prepForJsonBuilder() should be called beforehand.
+	 */
+	public void prepForJsonConversion() {
+
+		tables.parallelStream().filter(table -> table.jsonable).forEach(table -> table.custom_fields = table.fields.stream().filter(field -> field.nested_key || field.jsonable).collect(Collectors.toList()));
+
+	}
+
+	/**
+	 * Prepare for XPath parser.
+	 */
+	public void prepForXPathParser() {
 
 		if (table_name_dic == null) {
 
@@ -5760,6 +5850,8 @@ public class PgSchema implements Serializable {
 		tables.parallelStream().filter(table -> table.required).forEach(table -> table.fields.forEach(field -> field.setIndexable(table, option)));
 
 		tables.parallelStream().filter(table -> table.required).forEach(table -> table.indexable = table.fields.stream().anyMatch(field -> (include_system_keys && field.system_key) || field.indexable));
+
+		prepForFullTextIndexing();
 
 	}
 

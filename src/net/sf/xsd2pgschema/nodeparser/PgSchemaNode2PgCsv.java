@@ -61,7 +61,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	private String pg_null;
 
 	/** The content of fields. */
-	private String[] values;
+	private String[] values = null;
 
 	/**
 	 * Node parser for CSV/TSV conversion.
@@ -93,21 +93,27 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		pg_view = !npb.schema.option.realize_simple_brdg && table.simple_bridge;
 
-		if (!pg_view) {
+		if (table.writable) {
 
-			sb = new StringBuilder();
+			if (!pg_view) {
 
-			buffw = table.buffw;
+				sb = new StringBuilder();
+
+				buffw = table.buffw;
+
+				pg_delimiter = npb.schema.option.pg_delimiter;
+
+			}
+
+			pg_tab_delimiter = npb.schema.option.pg_tab_delimiter;
+
+			pg_null = npb.schema.option.pg_null;
+
+			values = new String[_fields_size];
+
+			Arrays.fill(values, pg_null);
 
 		}
-
-		pg_tab_delimiter = npb.schema.option.pg_tab_delimiter;
-		pg_delimiter = npb.schema.option.pg_delimiter;
-		pg_null = npb.schema.option.pg_null;
-
-		values = new String[fields_size];
-
-		Arrays.fill(values, pg_null);
 
 	}
 
@@ -190,16 +196,13 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		if (npb.rel_data_ext) {
 
-			for (int f = 0; f < fields_size; f++) {
+			for (int f = 0; f < _fields_size; f++) {
 
-				field = fields.get(f);
-
-				if (field.omissible)
-					continue;
+				field = _fields.get(f);
 
 				// document_key
 
-				else if (field.document_key)
+				if (field.document_key)
 					values[f] = npb.document_id;
 
 				// primary_key
@@ -277,17 +280,14 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 		else {
 
-			for (int f = 0; f < fields_size; f++) {
+			for (int f = 0; f < _fields_size; f++) {
 
-				field = fields.get(f);
+				field = _fields.get(f);
 
 				// nested_key should be processed
 
 				if (field.nested_key)
 					setNestedKey(proc_node, field, true);
-
-				if (field.omissible)
-					continue;
 
 				// document_key
 
@@ -349,14 +349,8 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			try {
 
-				for (int f = 0; f < fields_size; f++) {
-
-					if (fields.get(f).omissible)
-						continue;
-
+				for (int f = 0; f < _fields_size; f++)
 					sb.append(values[f] + pg_delimiter);
-
-				}
 
 				if (buffw == null)
 					buffw = table.buffw = Files.newBufferedWriter(table.pathw);
