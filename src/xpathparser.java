@@ -218,7 +218,9 @@ public class xpathparser {
 
 		try {
 
-			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, client_type, MethodHandles.lookup().lookupClass().getName());
+			String original_caller = MethodHandles.lookup().lookupClass().getName();
+
+			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, client_type, original_caller);
 
 			xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_query));
 
@@ -258,6 +260,9 @@ public class xpathparser {
 			System.out.print(sb.toString());
 
 			sb.setLength(0);
+
+			if (xpath_comp_list.updated)
+				option.updatePgSchemaServer(fst_conf, client.schema, client_type, original_caller);
 
 		} catch (IOException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException e) {
 			e.printStackTrace();

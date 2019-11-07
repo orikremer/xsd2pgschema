@@ -37,6 +37,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import net.sf.xsd2pgschema.PgSchema;
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.docbuilder.JsonType;
@@ -662,6 +663,43 @@ public class PgSchemaOption implements Serializable {
 
 		} catch (IOException | ClassNotFoundException e) {
 			return false;
+		}
+
+	}
+
+	/**
+	 * Send UPDATE query to PgSchema server.
+	 *
+	 * @param fst_conf FST configuration
+	 * @param schema PostgreSQL data model
+	 * @param client_type PgSchema client type
+	 * @param original_caller original caller class name (optional)
+	 */
+	public void updatePgSchemaServer(FSTConfiguration fst_conf, PgSchema schema, PgSchemaClientType client_type, String original_caller) {
+
+		if (!pg_schema_server)
+			return;
+
+		try {
+
+			try (Socket socket = new Socket(InetAddress.getByName(pg_schema_server_host), pg_schema_server_port)) {
+
+				DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+				DataInputStream in = new DataInputStream(socket.getInputStream());
+
+				PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.UPDATE, fst_conf, schema, client_type, original_caller));
+
+				PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
+
+				System.out.print(reply.message);
+				/*
+				in.close();
+				out.close();
+				 */
+			}
+
+		} catch (IOException | ClassNotFoundException e) {
+			e.printStackTrace();
 		}
 
 	}

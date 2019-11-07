@@ -79,7 +79,7 @@ public class XmlSplitterImpl {
 	private int shard_size;
 
 	/** The PgSchema client. */
-	private PgSchemaClientImpl client;
+	public PgSchemaClientImpl client;
 
 	/** The XML file queue. */
 	private LinkedBlockingQueue<Path> xml_file_queue;
@@ -125,6 +125,9 @@ public class XmlSplitterImpl {
 
 	/** The XML directory paths. */
 	private Path[] xml_dir_paths;
+
+	/** Whether any dictionary has been updated. */
+	public boolean updated = false;
 
 	/**
 	 * Instance of XmlSplitterImpl.
@@ -253,6 +256,8 @@ public class XmlSplitterImpl {
 
 		if (attr_doc_key)
 			attr_doc_key_holder = doc_key_path.substring(0, doc_key_path.lastIndexOf('/'));
+
+		updated = doc_unit.updated || doc_key.updated;
 
 		doc_unit.clear();
 		doc_key.clear();

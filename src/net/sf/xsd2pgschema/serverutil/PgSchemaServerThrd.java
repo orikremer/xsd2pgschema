@@ -189,6 +189,22 @@ public class PgSchemaServerThrd implements Runnable {
 				stop = true;
 
 				break;
+			case UPDATE:
+				PgSchemaServerImpl update_item = new PgSchemaServerImpl(query);
+
+				Optional<PgSchemaServerImpl> update_opt = list.stream().filter(arg -> arg.client_type.equals(query.client_type) && arg.option.equals(query.option)).findFirst();
+
+				if (update_opt.isPresent()) {
+					list.set(list.indexOf(update_opt.get()), update_item);
+
+					reply.message = server_info_header + green_color + "UPDATE" + server_info_footer;
+				}
+				else {
+					list.add(update_item);
+
+					reply.message = server_info_header + blue_color + "ADD" + server_info_footer;
+				}
+				break;
 			}
 
 			if (!query.type.equals(PgSchemaServerQueryType.STOP))

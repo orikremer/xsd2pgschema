@@ -111,6 +111,12 @@ public class PgSchema implements Serializable {
 	/** Whether arbitrary table has any attribute. */
 	private boolean has_any_attribute = false;
 
+	/** The dictionary of table name. */
+	private HashMap<String, PgTable> table_name_dic = null;
+
+	/** The dictionary of matched table path. */
+	private HashMap<String, PgTable> table_path_dic = null;
+
 	/** Whether circular dependency in table references exists. */
 	@Flat
 	private boolean circular_dependency = false;
@@ -154,12 +160,6 @@ public class PgSchema implements Serializable {
 	/** The duplicated schema locations (key=duplicated schema location, value=unique schema location). */
 	@Flat
 	private HashMap<String, String> dup_schema_locations = null;
-
-	/** The dictionary of table name. */
-	private HashMap<String, PgTable> table_name_dic = null;
-
-	/** The dictionary of matched table path. */
-	private HashMap<String, PgTable> table_path_dic = null;
 
 	/** The attribute group definitions. */
 	@Flat

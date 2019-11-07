@@ -109,6 +109,9 @@ public class XPathCompList {
 	/** The qualifier of namespace URI in PostgreSQL XPath. */
 	private final String pg_xpath_prefix_ = pg_xpath_prefix + ":";
 
+	/** Whether any dictionary has been updated. */
+	public boolean updated = false;
+
 	// XPath parser being aware of XML Schema
 
 	/**
@@ -4388,6 +4391,9 @@ public class XPathCompList {
 
 		table.abs_xpath_expr.put(ref_path, abs_xpath_expr = getAbsoluteXPathOfTable(table, ref_path, false, false, null));
 
+		if (ref_path != null)
+			updated = true;
+
 		return abs_xpath_expr;
 	}
 
@@ -4417,6 +4423,8 @@ public class XPathCompList {
 
 		table.abs_xpath_expr.put(_ref_path, abs_xpath_expr = getAbsoluteXPathOfTable(table, ref_path, true, table.virtual, sb));
 
+		updated = true;
+
 		return abs_xpath_expr;
 	}
 
@@ -4445,6 +4453,8 @@ public class XPathCompList {
 			table.abs_xpath_expr = new HashMap<String, String>();
 
 		table.abs_xpath_expr.put(_ref_path, abs_xpath_expr = getAbsoluteXPathOfTable(table, ref_path, false, false, sb));
+
+		updated = true;
 
 		return abs_xpath_expr;
 	}
@@ -4479,6 +4489,8 @@ public class XPathCompList {
 		if (opt.isPresent()) {
 
 			table_path_dic.put(path, hit_table = opt.get());
+
+			updated = true;
 
 			return hit_table;
 		}

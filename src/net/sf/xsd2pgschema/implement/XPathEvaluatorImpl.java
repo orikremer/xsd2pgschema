@@ -91,6 +91,9 @@ public class XPathEvaluatorImpl {
 	/** The XPath base listener. */
 	private xpathBaseListener xpath_base_listener = new xpathBaseListener();
 
+	/** Whether any dictionary has been updated. */
+	public boolean updated = false;
+
 	/**
 	 * Instance of XPathEvaluatorImpl.
 	 *
@@ -256,6 +259,8 @@ public class XPathEvaluatorImpl {
 
 		_xpath_query = xpath_query;
 		_variables = variables_;
+
+		updated = xpath_comp_list.updated;
 
 	}
 

@@ -26,6 +26,7 @@ import net.sf.xsd2pgschema.type.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -309,6 +310,8 @@ public class xpath2xml {
 
 		try {
 
+			String original_caller = MethodHandles.lookup().lookupClass().getName();
+
 			XPathEvaluatorImpl evaluator = new XPathEvaluatorImpl(is, option, fst_conf, pg_option, stdout_msg); // reuse the instance for repetition
 
 			if (!pg_option.name.isEmpty())
@@ -328,6 +331,9 @@ public class xpath2xml {
 			}
 
 			evaluator.client.schema.closePreparedStatement(true);
+
+			if (evaluator.updated)
+				option.updatePgSchemaServer(fst_conf, evaluator.client.schema, client_type, original_caller);
 
 		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException | SQLException e) {
 			e.printStackTrace();

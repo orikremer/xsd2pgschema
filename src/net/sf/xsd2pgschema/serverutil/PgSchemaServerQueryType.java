@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018 Masashi Yokochi
+    Copyright 2018-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -32,6 +32,8 @@ public enum PgSchemaServerQueryType {
 	GET,
 	/** The ADD query. */
 	ADD,
+	/** The UPDATE query. */
+	UPDATE,
 	/** The PING query. */
 	PING,
 	/** The STATUS query. */

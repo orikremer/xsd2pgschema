@@ -82,16 +82,17 @@ public class PgSchemaServerQuery implements Serializable {
 	}
 
 	/**
-	 * Instance of PgSchemaServerQuery as ADD query.
+	 * Instance of PgSchemaServerQuery as ADD/UPDATE query.
 	 *
+	 * @param type query type should be either ADD or UPDATE
 	 * @param fst_conf FST configuration
 	 * @param schema PostgreSQL data model
 	 * @param client_type PgSchema client type
 	 * @param original_caller original caller class name
 	 */
-	public PgSchemaServerQuery(FSTConfiguration fst_conf, PgSchema schema, PgSchemaClientType client_type, String original_caller) {
+	public PgSchemaServerQuery(PgSchemaServerQueryType type, FSTConfiguration fst_conf, PgSchema schema, PgSchemaClientType client_type, String original_caller) {
 
-		type = PgSchemaServerQueryType.ADD;
+		this.type = type;
 		def_schema_location = schema.getDefaultSchemaLocation();
 		option = schema.option;
 		schema_bytes = fst_conf.asByteArray(schema);

@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017-2018 Masashi Yokochi
+    Copyright 2017-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -220,9 +221,14 @@ public class xmlsplitter {
 
 		try {
 
+			String original_caller = MethodHandles.lookup().lookupClass().getName();
+
 			XmlSplitterImpl splitter = new XmlSplitterImpl(shard_size, is, xml_dir_path, xml_file_queue, option, fst_conf, xpath_doc_key);
 
 			splitter.exec();
+
+			if (splitter.updated)
+				option.updatePgSchemaServer(fst_conf, splitter.client.schema, client_type, original_caller);
 
 		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException e) {
 			e.printStackTrace();

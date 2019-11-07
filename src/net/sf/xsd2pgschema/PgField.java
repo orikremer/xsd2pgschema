@@ -94,6 +94,9 @@ public class PgField implements Serializable {
 	/** The field name. */
 	public String name = "";
 
+	/** The field name in JSON. */
+	public String jname = null;
+
 	/** The data type in XML document. */
 	protected String xtype = null;
 
@@ -207,6 +210,12 @@ public class PgField implements Serializable {
 
 	/** The SQL select parameter id for XPath evaluation. */
 	public int sql_select_id = -1;
+
+	/** The size of data in JSON buffer. */
+	public int jsonb_col_size = 0;
+
+	/** The size of null data in JSON buffer. */
+	public int jsonb_null_size = 0;
 
 	/** The schema name of foreign table in PostgreSQL (default schema name is "public"). */
 	protected String foreign_schema = PgSchemaUtil.pg_public_schema_name;
@@ -331,6 +340,12 @@ public class PgField implements Serializable {
 	/** Whether field is Latin-1 encoded. */
 	public boolean latin_1_encoded = false;
 
+	/** Whether JSON buffer is not empty. */
+	public boolean jsonb_not_empty = false;
+
+	/** The JSON buffer. */
+	public StringBuilder jsonb = null;
+
 	/** The XML start/end element tag. */
 	@Flat
 	public byte[] start_end_elem_tag = null;
@@ -354,9 +369,6 @@ public class PgField implements Serializable {
 	/** The effective prefix of target namespace in XPath evaluation. */
 	@Flat
 	public String xprefix = null;
-
-	/** The field name in JSON. */
-	public String jname = null;
 
 	/** The constraint name in PostgreSQL. */
 	@Flat
@@ -421,18 +433,6 @@ public class PgField implements Serializable {
 	/** The --filt-out option. */
 	@Flat
 	public boolean filt_out = false;
-
-	/** Whether JSON buffer is not empty (internal use only). */
-	public boolean jsonb_not_empty = false;
-
-	/** The size of data in JSON buffer (internal use only). */
-	public int jsonb_col_size = 0;
-
-	/** The size of null data in JSON buffer (internal use only). */
-	public int jsonb_null_size = 0;
-
-	/** The JSON buffer (internal use only). */
-	public StringBuilder jsonb = null;
 
 	/**
 	 * Extract @type, @itemType, @memberTypes or @base and set type.

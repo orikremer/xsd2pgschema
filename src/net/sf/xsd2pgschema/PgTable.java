@@ -65,6 +65,9 @@ public class PgTable implements Serializable {
 	/** The table name. */
 	public String name = "";
 
+	/** The table name in JSON. */
+	public String jname = null;
+
 	/** The table type classified by xs_root (root node), xs_root_child (children node of root node), xs_admin_root (administrative root node), xs_admin_child (children node of administrative node). */
 	public XsTableType xs_type;
 
@@ -176,6 +179,12 @@ public class PgTable implements Serializable {
 	/** Whether table could have writer. */
 	public boolean writable = false;
 
+	/** Whether table is JSON convertible. */
+	public boolean jsonable = false;
+
+	/** Whether JSON buffer of arbitrary field is not empty. */
+	public boolean jsonb_not_empty = false;
+
 	/** The field list of attribute. */
 	public List<PgField> attr_fields = null;
 
@@ -200,6 +209,15 @@ public class PgTable implements Serializable {
 	/** The list of foreign table id. */
 	public int[] ft_ids = null;
 
+	/** The dictionary of absolute XPath expression. */
+	public HashMap<String, String> abs_xpath_expr = null;
+
+	/** The dictionary of attribute name. */
+	public HashMap<String, PgField> attr_name_dic = null;
+
+	/** The dictionary of element name. */
+	public HashMap<String, PgField> elem_name_dic = null;
+
 	/** Whether name collision occurs. */
 	@Flat
 	protected boolean name_collision = false;
@@ -211,9 +229,6 @@ public class PgTable implements Serializable {
 	/** Whether table is indexable. */
 	@Flat
 	public boolean indexable = false;
-
-	/** Whether table is JSON convertible. */
-	public boolean jsonable = false;
 
 	/** The depth of table. */
 	@Flat
@@ -235,9 +250,6 @@ public class PgTable implements Serializable {
 	@Flat
 	public String xprefix = null;
 
-	/** The table name in JSON. */
-	public String jname = null;
-
 	/** Whether table is subset of database (internal use only). */
 	@Flat
 	protected boolean filt_out = false;
@@ -254,9 +266,6 @@ public class PgTable implements Serializable {
 	@Flat
 	public BufferedWriter buffw = null;
 
-	/** Whether JSON buffer of arbitrary field is not empty (internal use only). */
-	public boolean jsonb_not_empty = false;
-
 	/** The embedded document id in the primary prepared statement (internal use only). */
 	@Flat
 	public String ps_doc_id = "";
@@ -268,16 +277,6 @@ public class PgTable implements Serializable {
 	/** The secondary prepared statement (internal use only). */
 	@Flat
 	public PreparedStatement ps2 = null;
-
-	/** The absolute XPath expression (internal use only). */
-	@Flat
-	public HashMap<String, String> abs_xpath_expr = null;
-
-	/** The dictionary of attribute name. */
-	public HashMap<String, PgField> attr_name_dic = null;
-
-	/** The dictionary of element name. */
-	public HashMap<String, PgField> elem_name_dic = null;
 
 	/**
 	 * Instance of PostgreSQL table.

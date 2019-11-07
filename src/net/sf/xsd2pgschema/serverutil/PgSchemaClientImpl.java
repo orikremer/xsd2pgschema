@@ -158,7 +158,7 @@ public class PgSchemaClientImpl {
 						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 						DataInputStream in = new DataInputStream(socket.getInputStream());
 
-						PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(fst_conf, schema, client_type, original_caller));
+						PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.ADD, fst_conf, schema, client_type, original_caller));
 
 						PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 
@@ -282,7 +282,7 @@ public class PgSchemaClientImpl {
 						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 						DataInputStream in = new DataInputStream(socket.getInputStream());
 
-						PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(fst_conf, schema, client_type, original_caller));
+						PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.ADD, fst_conf, schema, client_type, original_caller));
 
 						PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 
@@ -407,7 +407,7 @@ public class PgSchemaClientImpl {
 						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 						DataInputStream in = new DataInputStream(socket.getInputStream());
 
-						PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(fst_conf, schema, client_type, original_caller));
+						PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.ADD, fst_conf, schema, client_type, original_caller));
 
 						PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 
@@ -538,7 +538,7 @@ public class PgSchemaClientImpl {
 						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
 						DataInputStream in = new DataInputStream(socket.getInputStream());
 
-						PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(fst_conf, schema, client_type, original_caller));
+						PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.ADD, fst_conf, schema, client_type, original_caller));
 
 						PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 
