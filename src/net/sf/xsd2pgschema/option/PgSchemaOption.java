@@ -212,6 +212,9 @@ public class PgSchemaOption implements Serializable {
 	/** The default file extension of check sum file. */
 	public String check_sum_ext = check_sum_algorithm.toLowerCase();
 
+	/** The JSON item name of xs:simpleContent. */
+	public String simple_content_name = PgSchemaUtil.simple_content_name;
+
 	/** Whether to use data model of PgSchema server. */
 	@Flat
 	public boolean pg_schema_server = true;
@@ -587,6 +590,20 @@ public class PgSchemaOption implements Serializable {
 	}
 
 	/**
+	 * Set item name in JSON document of xs:simpleContent.
+	 *
+	 * @param simple_content_name item name of xs:simpleContent in JSON document
+	 */
+	public void setSimpleContentName(String simple_content_name) {
+
+		if (simple_content_name == null)
+			simple_content_name= PgSchemaUtil.simple_content_name;
+
+		this.simple_content_name = case_sense ? simple_content_name : simple_content_name.toLowerCase();
+
+	}
+
+	/**
 	 * Send PING query to PgSchema server.
 	 *
 	 * @param fst_conf FST configuration
@@ -801,6 +818,11 @@ public class PgSchemaOption implements Serializable {
 		}
 
 		else if (check_sum_dir_name != null || option.check_sum_dir_name != null)
+			return false;
+
+		// JSON builder option
+
+		if (!simple_content_name.equals(option.simple_content_name))
 			return false;
 
 		return true;

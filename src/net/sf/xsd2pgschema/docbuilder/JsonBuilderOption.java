@@ -37,11 +37,11 @@ public class JsonBuilderOption {
 	/** Whether to retain case sensitive name. */
 	public boolean case_sense = true;
 
-	/** The prefix of JSON item name of xs:attribute. */
-	protected String attr_prefix = "";
-
 	/** The JSON item name of xs:simpleContent. */
 	public String simple_content_name = PgSchemaUtil.simple_content_name;
+
+	/** The prefix of JSON item name of xs:attribute. */
+	protected String attr_prefix = "";
 
 	/** The indent offset. */
 	protected int indent_offset = PgSchemaUtil.indent_offset;

@@ -85,11 +85,11 @@ public class JsonBuilder extends CommonBuilder {
 	/** The JSON buffer. */
 	private StringBuilder buffer = new StringBuilder();
 
-	/** The prefix of JSON key of xs:attribute. */
-	private String attr_prefix;
-
 	/** The JSON key of xs:simpleContent. */
 	protected String simple_content_name;
+
+	/** The prefix of JSON key of xs:attribute. */
+	private String attr_prefix;
 
 	/** The unit of indent space. */
 	private String indent_space = " ";

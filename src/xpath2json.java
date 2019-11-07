@@ -134,8 +134,10 @@ public class xpath2json {
 			else if (args[i].equals("--json-attr-prefix") && i + 1 < args.length)
 				jsonb_option.setAttrPrefix(args[++i]);
 
-			else if (args[i].equals("--json-simple-cont-name") && i + 1 < args.length)
-				jsonb_option.setSimpleContentName(args[++i]);
+			else if (args[i].equals("--json-simple-cont-name") && i + 1 < args.length) {
+				option.setSimpleContentName(args[++i]);
+				jsonb_option.setSimpleContentName(args[i]);
+			}
 
 			else if (args[i].equals("--json-array-all"))
 				jsonb_option.array_all = true;
