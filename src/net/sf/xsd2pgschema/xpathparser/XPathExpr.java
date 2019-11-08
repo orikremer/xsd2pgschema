@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017-2018 Masashi Yokochi
+    Copyright 2017-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -19,6 +19,7 @@ limitations under the License.
 
 package net.sf.xsd2pgschema.xpathparser;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,7 +28,10 @@ import java.util.List;
  *
  * @author yokochi
  */
-public class XPathExpr {
+public class XPathExpr implements Serializable {
+
+	/** The default serial version ID. */
+	private static final long serialVersionUID = 1L;
 
 	/** The node path. */
 	protected String path;
@@ -47,6 +51,9 @@ public class XPathExpr {
 	/** The predicate SQL expression. */
 	protected List<XPathSqlExpr> sql_predicates = null;
 
+	/** The parent node path name. */
+	public String parent_node = null;
+
 	/**
 	 * Instance of XPathExpr.
 	 *
@@ -56,6 +63,8 @@ public class XPathExpr {
 
 		this.path = path_expr.path;
 		this.terminus = path_expr.terminus;
+
+		parent_node = getParentNodeName();
 
 	}
 
@@ -69,6 +78,8 @@ public class XPathExpr {
 
 		this.path = path;
 		this.terminus = terminus;
+
+		parent_node = getParentNodeName();
 
 	}
 
@@ -84,6 +95,8 @@ public class XPathExpr {
 		this.path = path;
 		this.terminus = terminus;
 		this.prev_term = prev_term;
+
+		parent_node = getParentNodeName();
 
 	}
 
@@ -169,15 +182,32 @@ public class XPathExpr {
 	}
 
 	/**
-	 * Return the last path name.
+	 * Return the last node name.
 	 *
-	 * @return String the last path name
+	 * @return String the last node name
 	 */
-	public String getLastPathName() {
+	public String getLastNodeName() {
 
 		String[] _path = path.split(" ").length < 2 ? path.replaceFirst("//$", "").split("/") : path.replaceFirst("//$", "").split(" ");
 
 		int position = _path.length - 1;
+
+		if (position < 0)
+			return null;
+
+		return _path[position];
+	}
+
+	/**
+	 * Return the parent node name.
+	 *
+	 * @return String the parent node name
+	 */
+	public String getParentNodeName() {
+
+		String[] _path = path.split(" ").length < 2 ? path.replaceFirst("//$", "").split("/") : path.replaceFirst("//$", "").split(" ");
+
+		int position = _path.length - 2;
 
 		if (position < 0)
 			return null;

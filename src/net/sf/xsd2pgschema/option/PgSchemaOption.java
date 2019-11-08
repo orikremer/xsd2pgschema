@@ -680,6 +680,9 @@ public class PgSchemaOption implements Serializable {
 		if (!pg_schema_server)
 			return;
 
+		if (!pingPgSchemaServer(fst_conf))
+			return;
+
 		try {
 
 			try (Socket socket = new Socket(InetAddress.getByName(pg_schema_server_host), pg_schema_server_port)) {

@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017-2018 Masashi Yokochi
+    Copyright 2017-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 

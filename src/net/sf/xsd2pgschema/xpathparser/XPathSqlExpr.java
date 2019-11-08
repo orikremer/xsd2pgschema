@@ -19,11 +19,13 @@ limitations under the License.
 
 package net.sf.xsd2pgschema.xpathparser;
 
+import java.io.Serializable;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.antlr.v4.runtime.tree.ParseTree;
+import org.nustaq.serialization.annotations.Flat;
 
 import net.sf.xsd2pgschema.PgField;
 import net.sf.xsd2pgschema.PgSchema;
@@ -35,7 +37,10 @@ import net.sf.xsd2pgschema.PgTable;
  *
  * @author yokochi
  */
-public class XPathSqlExpr {
+public class XPathSqlExpr implements Serializable {
+
+	/** The default serial version ID. */
+	private static final long serialVersionUID = 1L;
 
 	/** The node path. */
 	protected String path;
@@ -59,9 +64,11 @@ public class XPathSqlExpr {
 	protected XPathCompType terminus;
 
 	/** The parent tree. */
+	@Flat
 	protected ParseTree parent_tree = null;
 
 	/** The current tree. */
+	@Flat
 	protected ParseTree current_tree = null;
 
 	/** The unary operator. */
@@ -71,7 +78,7 @@ public class XPathSqlExpr {
 	protected String binary_operator = null;
 
 	/** The PostgreSQL table. */
-	public PgTable table;
+	public PgTable table = null;
 
 	/** The PostgreSQL field. */
 	public PgField field = null;

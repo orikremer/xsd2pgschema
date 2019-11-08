@@ -48,7 +48,6 @@ import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.PgTable;
 import net.sf.xsd2pgschema.type.PgHashSize;
-import net.sf.xsd2pgschema.xpathparser.XPathCompList;
 import net.sf.xsd2pgschema.xpathparser.XPathCompType;
 import net.sf.xsd2pgschema.xpathparser.XPathExpr;
 
@@ -463,13 +462,12 @@ public class XmlBuilder extends CommonBuilder {
 	/**
 	 * Compose XML fragment (field or text node)
 	 *
-	 * @param xpath_comp_list current XPath component list
 	 * @param path_expr current XPath expression
 	 * @param rset current result set
 	 * @return boolean whether to output XML document
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public boolean pgSql2XmlFrag(XPathCompList xpath_comp_list, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
+	public boolean pgSql2XmlFrag(XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
 
 		if (deny_frag && getFragment() > 0)
 			return false;
@@ -584,9 +582,9 @@ public class XmlBuilder extends CommonBuilder {
 
 					else {
 
-						PgTable parent_table = xpath_comp_list.getParentTable(path_expr);
-
 						if (content != null) {
+
+							PgTable parent_table = tables.parallelStream().filter(_table -> _table.xname.equals(path_expr.parent_node)).findFirst().get();
 
 							writer.writeEmptyElement(parent_table.xprefix, parent_table.xname, parent_table.target_namespace);
 
@@ -633,9 +631,9 @@ public class XmlBuilder extends CommonBuilder {
 
 					else {
 
-						PgTable parent_table = xpath_comp_list.getParentTable(path_expr);
-
 						if (content != null) {
+
+							PgTable parent_table = tables.parallelStream().filter(_table -> _table.xname.equals(path_expr.parent_node)).findFirst().get();
 
 							writer.writeEmptyElement(parent_table.xprefix, parent_table.xname, parent_table.target_namespace);
 

@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017-2018 Masashi Yokochi
+    Copyright 2017-2019 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -22,7 +22,7 @@ package net.sf.xsd2pgschema.xpathparser;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 /**
- * XPath component.
+ * Serialized XPath component.
  *
  * @author yokochi
  */

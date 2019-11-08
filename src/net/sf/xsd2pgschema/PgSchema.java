@@ -70,6 +70,7 @@ import net.sf.xsd2pgschema.type.PgHashSize;
 import net.sf.xsd2pgschema.type.XsFieldType;
 import net.sf.xsd2pgschema.type.XsTableType;
 import net.sf.xsd2pgschema.xmlutil.XmlParser;
+import net.sf.xsd2pgschema.xpathparser.XPathQuery;
 
 /**
  * PostgreSQL data model.
@@ -116,6 +117,9 @@ public class PgSchema implements Serializable {
 
 	/** The dictionary of matched table path. */
 	private HashMap<String, PgTable> table_path_dic = null;
+
+	/** The list of XPath query previously translated. */
+	private List<XPathQuery> prev_xpath_queries = null;
 
 	/** Whether circular dependency in table references exists. */
 	@Flat
@@ -654,7 +658,7 @@ public class PgSchema implements Serializable {
 
 			pg_named_schema = new HashSet<String>();
 
-			tables.stream().filter(table -> table.writable).filter(table -> !table.schema_name.equals(PgSchemaUtil.pg_public_schema_name)).forEach(table -> pg_named_schema.add(table.schema_name)); // do not parallelize this because of order change
+			tables.stream().filter(table -> table.writable).filter(table -> !table.schema_name.equals(PgSchemaUtil.pg_public_schema_name)).forEach(table -> pg_named_schema.add(table.schema_name)); // do not parallelize this because of HashSet
 
 			total_pg_named_schema = pg_named_schema.size();
 
@@ -1552,7 +1556,7 @@ public class PgSchema implements Serializable {
 
 		List<String> other_namespaces = new ArrayList<String>();
 
-		tables.stream().filter(table-> table.writable).forEach(table -> { // do not parallelize this because of target namespace of field annotation
+		tables.stream().filter(table-> table.writable).forEach(table -> { // do not parallelize this because of target namespace
 
 			if (table.target_namespace == null)
 				table.target_namespace = "";
@@ -4245,7 +4249,7 @@ public class PgSchema implements Serializable {
 
 			table_name_dic = new HashMap<String, PgTable>();
 
-			tables.stream().filter(table -> table.writable).forEach(table -> {
+			tables.stream().filter(table -> table.writable).forEach(table -> { // do not parallelize this because of HashMap
 
 				table_name_dic.put(table.xname, table);
 
@@ -4300,6 +4304,19 @@ public class PgSchema implements Serializable {
 	 */
 	public HashMap<String, PgTable> getTablePathDictionary() {
 		return table_path_dic;
+	}
+
+	/**
+	 * Return XPath queries previously translated.
+	 *
+	 * @return List list of XPath queries previously translated
+	 */
+	public List<XPathQuery> getPrevXPathQueries() {
+
+		if (prev_xpath_queries == null)
+			prev_xpath_queries = new ArrayList<XPathQuery>();
+
+		return prev_xpath_queries;
 	}
 
 	/**
@@ -6501,7 +6518,7 @@ public class PgSchema implements Serializable {
 
 		try {
 
-			if (has_db_rows.size() == 0)
+			if (has_db_rows == null)
 				initHasDbRows();
 
 			Statement stat = db_conn.createStatement();
@@ -6564,7 +6581,7 @@ public class PgSchema implements Serializable {
 
 		this.db_conn = db_conn;
 
-		if (has_db_rows.size() == 0)
+		if (has_db_rows == null)
 			initHasDbRows();
 
 		try {
@@ -6655,7 +6672,7 @@ public class PgSchema implements Serializable {
 
 		this.db_conn = db_conn;
 
-		if (has_db_rows.size() == 0)
+		if (has_db_rows == null)
 			initHasDbRows();
 
 		try {
@@ -6728,7 +6745,7 @@ public class PgSchema implements Serializable {
 
 		this.db_conn = db_conn;
 
-		if (has_db_rows.size() == 0)
+		if (has_db_rows == null)
 			initHasDbRows();
 
 		try {
@@ -6817,7 +6834,7 @@ public class PgSchema implements Serializable {
 
 		this.db_conn = db_conn;
 
-		if (has_db_rows.size() == 0)
+		if (has_db_rows == null)
 			initHasDbRows();
 
 		try {
@@ -6888,7 +6905,7 @@ public class PgSchema implements Serializable {
 
 		this.db_conn = db_conn;
 
-		if (has_db_rows.size() == 0)
+		if (has_db_rows == null)
 			initHasDbRows();
 
 		try {
@@ -6999,7 +7016,7 @@ public class PgSchema implements Serializable {
 
 		this.db_conn = db_conn;
 
-		if (has_db_rows.size() == 0)
+		if (has_db_rows == null)
 			initHasDbRows();
 
 		try {
@@ -7080,7 +7097,7 @@ public class PgSchema implements Serializable {
 
 		this.db_conn = db_conn;
 
-		if (has_db_rows.size() == 0)
+		if (has_db_rows == null)
 			initHasDbRows();
 
 		try {
@@ -7191,7 +7208,7 @@ public class PgSchema implements Serializable {
 
 		this.db_conn = db_conn;
 
-		if (has_db_rows.size() == 0)
+		if (has_db_rows == null)
 			initHasDbRows();
 
 		try {
@@ -7269,7 +7286,7 @@ public class PgSchema implements Serializable {
 
 		this.db_conn = db_conn;
 
-		if (has_db_rows.size() == 0)
+		if (has_db_rows == null)
 			initHasDbRows();
 
 		try {
@@ -7380,7 +7397,7 @@ public class PgSchema implements Serializable {
 
 		this.db_conn = db_conn;
 
-		if (has_db_rows.size() == 0)
+		if (has_db_rows == null)
 			initHasDbRows();
 
 		try {
@@ -7448,7 +7465,8 @@ public class PgSchema implements Serializable {
 	}
 
 	/** Whether PostgreSQL table has any rows. */
-	private HashMap<String, Boolean> has_db_rows = new HashMap<String, Boolean>();
+	@Flat
+	private HashMap<String, Boolean> has_db_rows = null;
 
 	/**
 	 * Initialize whether PostgreSQL table has any rows.
@@ -7456,6 +7474,8 @@ public class PgSchema implements Serializable {
 	 * @throws PgSchemaException the pg schema exception
 	 */
 	private void initHasDbRows() throws PgSchemaException {
+
+		has_db_rows = new HashMap<String, Boolean>();
 
 		try {
 
@@ -7509,7 +7529,8 @@ public class PgSchema implements Serializable {
 	}
 
 	/** The set of PostgreSQL table. */
-	private HashSet<String> db_tables = new HashSet<String>();
+	@Flat
+	private HashSet<String> db_tables = null;
 
 	/**
 	 * Return exact table name in PostgreSQL
@@ -7519,7 +7540,9 @@ public class PgSchema implements Serializable {
 	 */
 	private String getDbTableName(String table_name) throws PgSchemaException {
 
-		if (db_tables.size() == 0) {
+		if (db_tables == null) {
+
+			db_tables = new HashSet<String>();
 
 			try {
 

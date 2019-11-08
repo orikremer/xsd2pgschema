@@ -53,7 +53,6 @@ import net.sf.xsd2pgschema.nodeparser.PgSchemaNodeParserBuilder;
 import net.sf.xsd2pgschema.type.PgHashSize;
 import net.sf.xsd2pgschema.type.XsTableType;
 import net.sf.xsd2pgschema.xmlutil.XmlParser;
-import net.sf.xsd2pgschema.xpathparser.XPathCompList;
 import net.sf.xsd2pgschema.xpathparser.XPathCompType;
 import net.sf.xsd2pgschema.xpathparser.XPathExpr;
 
@@ -1809,13 +1808,12 @@ public class JsonBuilder extends CommonBuilder {
 	/**
 	 * Compose JSON fragment (field or text node)
 	 *
-	 * @param xpath_comp_list current XPath component list
 	 * @param path_expr current XPath expression
 	 * @param rset current result set
 	 * @return boolean whether to output JSON document
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public boolean pgSql2JsonFrag(XPathCompList xpath_comp_list, XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
+	public boolean pgSql2JsonFrag(XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
 
 		if (deny_frag && getFragment() > 0)
 			return false;

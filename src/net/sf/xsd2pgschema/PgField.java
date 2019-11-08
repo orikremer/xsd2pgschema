@@ -6849,23 +6849,22 @@ public class PgField implements Serializable {
 			if (d == null)
 				return fill_default_value ? default_value : null;
 
+			if (sdf == null)
+				sdf = new SimpleDateFormat(PgSchemaUtil.pg_date_format);
+
 			if (cal == null)
 				cal = Calendar.getInstance();
-			/*
-			else if (!cal.getTimeZone().equals(PgSchemaUtil.tz_utc))
-				cal.setTimeZone(PgSchemaUtil.tz_utc);
-			 */
+			else
+				cal.setTimeZone(PgSchemaUtil.tz_loc);
 
 			cal.setTime(d);
 			cal.set(Calendar.HOUR_OF_DAY, 0);
 			cal.set(Calendar.MINUTE, 0);
 			cal.set(Calendar.SECOND, 0);
 			cal.set(Calendar.MILLISECOND, 0);
+			cal.setTimeZone(PgSchemaUtil.tz_utc);
 
-			if (!cal.getTimeZone().equals(PgSchemaUtil.tz_utc))
-				cal.setTimeZone(PgSchemaUtil.tz_utc);
-
-			String ret = DatatypeConverter.printDate(cal);
+			String ret = sdf.format(cal.getTime());
 
 			switch (xs_type) {
 			case xs_date:

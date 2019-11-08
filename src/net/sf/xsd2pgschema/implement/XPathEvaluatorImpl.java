@@ -35,6 +35,8 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.stream.XMLStreamException;
@@ -65,6 +67,8 @@ import net.sf.xsd2pgschema.option.PgOption;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
 import net.sf.xsd2pgschema.xpathparser.XPathCompList;
 import net.sf.xsd2pgschema.xpathparser.XPathCompType;
+import net.sf.xsd2pgschema.xpathparser.XPathExpr;
+import net.sf.xsd2pgschema.xpathparser.XPathQuery;
 
 /**
  * Implementation of XPath evaluator.
@@ -82,14 +86,14 @@ public class XPathEvaluatorImpl {
 	/** The database connection. */
 	private Connection db_conn = null;
 
-	/** The XPath component list. */
-	private XPathCompList xpath_comp_list = null;
+	/** The list of XPath query previously translated. */
+	private List<XPathQuery> prev_xpath_queries = null;
+
+	/** Instance of path expression. */
+	private List<XPathExpr> path_exprs = null;
 
 	/** The XML stream writer. */
 	private XMLStreamWriter xml_writer = null;
-
-	/** The XPath base listener. */
-	private xpathBaseListener xpath_base_listener = new xpathBaseListener();
 
 	/** Whether any dictionary has been updated. */
 	public boolean updated = false;
@@ -114,6 +118,8 @@ public class XPathEvaluatorImpl {
 		String original_caller = Thread.currentThread().getStackTrace()[2].getClassName();
 
 		client = new PgSchemaClientImpl(is, this.option = option, fst_conf, original_caller.equals("xpath2json") ? PgSchemaClientType.xpath_evaluation_to_json : PgSchemaClientType.xpath_evaluation, original_caller, stdout_msg);
+
+		prev_xpath_queries = client.schema.getPrevXPathQueries();
 
 		if (!pg_option.name.isEmpty()) {
 
@@ -152,6 +158,8 @@ public class XPathEvaluatorImpl {
 
 		client = new PgSchemaClientImpl(is, this.option = option, fst_conf, original_caller.equals("xpath2json") ? PgSchemaClientType.xpath_evaluation_to_json : PgSchemaClientType.xpath_evaluation, original_caller, jsonb_option, stdout_msg);
 
+		prev_xpath_queries = client.schema.getPrevXPathQueries();
+
 		if (!pg_option.name.isEmpty()) {
 
 			db_conn = DriverManager.getConnection(pg_option.getDbUrl(PgSchemaUtil.def_encoding), pg_option.user.isEmpty() ? System.getProperty("user.name") : pg_option.user, pg_option.pass);
@@ -167,15 +175,6 @@ public class XPathEvaluatorImpl {
 
 	}
 
-	/** The string builder for SQL translation. */
-	private StringBuilder sb = new StringBuilder();
-
-	/** The XPath query previously translated. */
-	private String _xpath_query = "";
-
-	/** The XPath variables previously translated. */
-	private String _variables = "";
-
 	/**
 	 * Translate XPath to SQL.
 	 *
@@ -188,79 +187,95 @@ public class XPathEvaluatorImpl {
 	 */
 	public void translate(String xpath_query, HashMap<String, String> variables, boolean stdout_msg) throws IOException, xpathListenerException, PgSchemaException {
 
-		variables.entrySet().forEach(arg -> sb.append(arg.getKey() + arg.getValue()));
+		StringBuilder sb = new StringBuilder();
 
-		String variables_ = sb.toString();
+		try {
 
-		sb.setLength(0);
+			XPathQuery xpq = new XPathQuery(xpath_query, variables);
 
-		if (xpath_query.equals(_xpath_query) && variables_.equals(_variables))
-			return;
+			Optional<XPathQuery> opt = prev_xpath_queries.stream().filter(prev_xpath_query -> prev_xpath_query.equals(xpq)).findFirst();
 
-		long start_time = System.currentTimeMillis();
+			if (opt.isPresent()) {
 
-		xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_query));
+				XPathQuery _xpq = opt.get();
 
-		CommonTokenStream tokens = new CommonTokenStream(lexer);
+				sb.append("Input XPath query:\n" + xpath_query + "\n\nTarget path in XML Schema: " + option.root_schema_location + "\n");
 
-		xpathParser parser = new xpathParser(tokens);
-		parser.addParseListener(xpath_base_listener);
+				sb.append(_xpq.path_string + "\nSQL expression:\n" + _xpq.sql_string + "\n");
 
-		// validate XPath expression with schema
+				if (stdout_msg)
+					System.out.print(sb.toString());
+				else
+					System.err.print(sb.toString());
 
-		MainContext main = parser.main();
+				path_exprs = _xpq.path_exprs;
 
-		ParseTree tree = main.children.get(0);
-		String main_text = main.getText();
+				return;
+			}
 
-		if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
-			throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
+			long start_time = System.currentTimeMillis();
 
-		long end_time = System.currentTimeMillis();
+			xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_query));
 
-		xpath_comp_list = new XPathCompList(client.schema, tree, variables);
+			CommonTokenStream tokens = new CommonTokenStream(lexer);
 
-		if (xpath_comp_list.comps.size() == 0)
-			throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
+			xpathParser parser = new xpathParser(tokens);
+			parser.addParseListener(new xpathBaseListener());
 
-		long end_time_ = System.currentTimeMillis();
+			// validate XPath expression with schema
 
-		xpath_comp_list.validate(false);
+			MainContext main = parser.main();
 
-		if (xpath_comp_list.path_exprs.size() == 0)
-			throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
+			ParseTree tree = main.children.get(0);
+			String main_text = main.getText();
 
-		long end_time__ = System.currentTimeMillis();
+			if (parser.getNumberOfSyntaxErrors() > 0 || tree.getSourceInterval().length() == 0)
+				throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
 
-		sb.append("Input XPath query:\n" + main_text + "\n\nTarget path in XML Schema: " + option.root_schema_location + "\n");
+			long end_time = System.currentTimeMillis();
 
-		xpath_comp_list.showPathExprs(sb);
+			XPathCompList xpath_comp_list = new XPathCompList(client.schema, tree, variables);
 
-		// translate XPath to SQL
+			if (xpath_comp_list.comps.size() == 0)
+				throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
 
-		long start_time2 = System.currentTimeMillis();
+			long end_time_ = System.currentTimeMillis();
 
-		xpath_comp_list.translateToSqlExpr();
+			xpath_comp_list.validate(false);
 
-		long end_time2 = System.currentTimeMillis();
+			if (xpath_comp_list.path_exprs.size() == 0)
+				throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
 
-		sb.append("\nSQL expression:\n");
+			long end_time__ = System.currentTimeMillis();
 
-		xpath_comp_list.showSqlExpr(sb);
+			sb.append("Input XPath query:\n" + main_text + "\n\nTarget path in XML Schema: " + option.root_schema_location + "\n");
 
-		sb.append("\nXPath parser (ANTLR 4): " + (end_time - start_time) + " ms\nXPath serialization: " + (end_time_ - end_time) + "ms\nXPath validation: " + (end_time__ - end_time_) + " ms\n\nSQL translation: " + (end_time2 - start_time2) + " ms\n\n");
+			// translate XPath to SQL
 
-		if (stdout_msg)
-			System.out.print(sb.toString());
-		else
-			System.err.print(sb.toString());
+			long start_time2 = System.currentTimeMillis();
 
-		sb.setLength(0);
+			xpath_comp_list.translateToSqlExpr();
 
-		_xpath_query = xpath_query;
-		_variables = variables_;
+			long end_time2 = System.currentTimeMillis();
 
-		updated = xpath_comp_list.updated;
+			xpq.completeXPathExprs(xpath_comp_list);
+
+			sb.append(xpq.path_string + "\nSQL expression:\n" + xpq.sql_string + "\nXPath parser (ANTLR 4): " + (end_time - start_time) + " ms\nXPath serialization: " + (end_time_ - end_time) + "ms\nXPath validation: " + (end_time__ - end_time_) + " ms\n\nSQL translation: " + (end_time2 - start_time2) + " ms\n\n");
+
+			if (stdout_msg)
+				System.out.print(sb.toString());
+			else
+				System.err.print(sb.toString());
+
+			path_exprs = xpath_comp_list.path_exprs;
+
+			prev_xpath_queries.add(xpq);
+
+			updated = true;
+
+		} finally {
+			sb.setLength(0);
+		}
 
 	}
 
@@ -275,7 +290,7 @@ public class XPathEvaluatorImpl {
 	 */
 	public void execute(int id, int total, String out_dir_name, String out_file_name) throws PgSchemaException {
 
-		if (xpath_comp_list == null)
+		if (path_exprs == null)
 			throw new PgSchemaException("Not parsed XPath expression ever.");
 
 		try {
@@ -312,7 +327,7 @@ public class XPathEvaluatorImpl {
 
 			long start_time = System.currentTimeMillis();
 
-			xpath_comp_list.path_exprs.stream().filter(path_expr -> path_expr.sql != null).forEach(path_expr -> {
+			path_exprs.stream().filter(path_expr -> path_expr.sql != null).forEach(path_expr -> {
 
 				XPathCompType terminus = path_expr.terminus;
 
@@ -430,7 +445,7 @@ public class XPathEvaluatorImpl {
 	 */
 	public void composeXml(int id, int total, String out_dir_name, String out_file_name, XmlBuilder xmlb) throws PgSchemaException {
 
-		if (xpath_comp_list == null)
+		if (path_exprs == null)
 			throw new PgSchemaException("Not parsed XPath expression ever.");
 
 		try {
@@ -478,7 +493,7 @@ public class XPathEvaluatorImpl {
 
 			long start_time = System.currentTimeMillis();
 
-			xpath_comp_list.path_exprs.stream().filter(path_expr -> path_expr.sql != null).forEach(path_expr -> {
+			path_exprs.stream().filter(path_expr -> path_expr.sql != null).forEach(path_expr -> {
 
 				XPathCompType terminus = path_expr.terminus;
 
@@ -500,7 +515,7 @@ public class XPathEvaluatorImpl {
 					// field or text node
 
 					else
-						xmlb.pgSql2XmlFrag(xpath_comp_list, path_expr, rset);
+						xmlb.pgSql2XmlFrag(path_expr, rset);
 
 					rset.close();
 
@@ -536,7 +551,7 @@ public class XPathEvaluatorImpl {
 			if (!xmlb.allow_frag) {
 
 				if (xmlb.getRootCount() > 1 || xmlb.getFragment() > 1)
-					throw new PgSchemaException("[WARNING] The XML document has multiple root nodes.");
+					System.err.println("[WARNING] The XML document has multiple root nodes.");
 
 			}
 
@@ -558,7 +573,7 @@ public class XPathEvaluatorImpl {
 	 */
 	public void composeJson(int id, int total, String out_dir_name, String out_file_name, JsonBuilder jsonb) throws PgSchemaException {
 
-		if (xpath_comp_list == null)
+		if (path_exprs == null)
 			throw new PgSchemaException("Not parsed XPath expression ever.");
 
 		try {
@@ -595,7 +610,7 @@ public class XPathEvaluatorImpl {
 
 			long start_time = System.currentTimeMillis();
 
-			xpath_comp_list.path_exprs.stream().filter(path_expr -> path_expr.sql != null).forEach(path_expr -> {
+			path_exprs.stream().filter(path_expr -> path_expr.sql != null).forEach(path_expr -> {
 
 				XPathCompType terminus = path_expr.terminus;
 
@@ -617,7 +632,7 @@ public class XPathEvaluatorImpl {
 					// field or text node
 
 					else
-						jsonb.pgSql2JsonFrag(xpath_comp_list, path_expr, rset);
+						jsonb.pgSql2JsonFrag(path_expr, rset);
 
 					rset.close();
 
@@ -653,7 +668,7 @@ public class XPathEvaluatorImpl {
 			if (!jsonb.allow_frag) {
 
 				if (jsonb.getRootCount() > 1 || jsonb.getFragment() > 1)
-					throw new PgSchemaException("[WARNING] The JSON document has multiple root nodes.");
+					System.err.println("[WARNING] The JSON document has multiple root nodes.");
 
 			}
 

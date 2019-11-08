@@ -43,7 +43,7 @@ import net.sf.xsd2pgschema.PgTable;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
 
 /**
- * XPath parse tree serializer.
+ * Serialized XPath parse tree.
  *
  * @author yokochi
  */
@@ -4467,7 +4467,7 @@ public class XPathCompList {
 	 */
 	protected PgTable getTable(XPathExpr path_expr) {
 
-		String table_xname = path_expr.getLastPathName();
+		String table_xname = path_expr.getLastNodeName();
 
 		if (single_pg_named_schema) {
 
