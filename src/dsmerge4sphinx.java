@@ -210,7 +210,9 @@ public class dsmerge4sphinx {
 			if (!Files.isDirectory(dst_ds_dir_path))
 				Files.createDirectory(dst_ds_dir_path);
 
-			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, client_type, MethodHandles.lookup().lookupClass().getName());
+			IndexFilter index_filter = null; // dummy
+
+			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, client_type, MethodHandles.lookup().lookupClass().getName(), index_filter);
 
 			for (String src_ds_dir_name : src_ds_dir_list) {
 

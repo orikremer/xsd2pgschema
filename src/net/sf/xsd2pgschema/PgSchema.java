@@ -4162,18 +4162,6 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
-	 * Prepare for full-text indexing
-	 * applyIndexFilter() should be called beforehand.
-	 */
-	private void prepForFullTextIndexing() {
-
-		if (option.rel_data_ext)
-			tables.parallelStream().filter(table -> table.indexable).forEach(table -> table.custom_fields = table.fields.stream().filter(field -> field.nested_key || (field.indexable && !field.document_key)).collect(Collectors.toList()));
-		else
-			tables.parallelStream().filter(table -> table.indexable).forEach(table -> table.custom_fields = table.fields.stream().filter(field -> field.nested_key || (field.indexable && !field.document_key && !field.primary_key && !field.foreign_key)).collect(Collectors.toList()));
-	}
-
-	/**
 	 * Prepare for JSON builder.
 	 *
 	 * @param jsonb_option JSON builder option
@@ -5852,10 +5840,9 @@ public class PgSchema implements Serializable {
 	 * Apply filter for full-text indexing.
 	 *
 	 * @param index_filter index filter
-	 * @param include_system_keys whether to include system keys in full-text indexing (Lucene specific)
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void applyIndexFilter(IndexFilter index_filter, boolean include_system_keys) throws PgSchemaException {
+	public void applyIndexFilter(IndexFilter index_filter) throws PgSchemaException {
 
 		applyAttr(index_filter);
 
@@ -5866,9 +5853,12 @@ public class PgSchema implements Serializable {
 
 		tables.parallelStream().filter(table -> table.required).forEach(table -> table.fields.forEach(field -> field.setIndexable(table, option)));
 
-		tables.parallelStream().filter(table -> table.required).forEach(table -> table.indexable = table.fields.stream().anyMatch(field -> (include_system_keys && field.system_key) || field.indexable));
+		tables.parallelStream().filter(table -> table.required).forEach(table -> table.indexable = table.fields.stream().anyMatch(field -> (option.rel_data_ext && field.system_key) || field.indexable));
 
-		prepForFullTextIndexing();
+		if (option.rel_data_ext)
+			tables.parallelStream().filter(table -> table.indexable).forEach(table -> table.custom_fields = table.fields.stream().filter(field -> field.nested_key || (field.indexable && !field.document_key)).collect(Collectors.toList()));
+		else
+			tables.parallelStream().filter(table -> table.indexable).forEach(table -> table.custom_fields = table.fields.stream().filter(field -> field.nested_key || (field.indexable && !field.document_key && !field.primary_key && !field.foreign_key)).collect(Collectors.toList()));
 
 	}
 

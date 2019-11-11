@@ -28,6 +28,7 @@ import org.xml.sax.SAXException;
 
 import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.docbuilder.JsonBuilderOption;
+import net.sf.xsd2pgschema.option.IndexFilter;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
 
 /**
@@ -52,7 +53,10 @@ public class PgSchemaGetClientThrd implements Runnable {
 	/** The original caller class name (optional). */
 	private String original_caller;
 
-	/** The JSON Builder option. */
+	/** The index filter (optional). */
+	private IndexFilter index_filter = null;
+
+	/** The JSON Builder option (optional). */
 	private JsonBuilderOption jsonb_option = null;
 
 	/** The array of PgSchema server clients. */
@@ -80,7 +84,30 @@ public class PgSchemaGetClientThrd implements Runnable {
 	}
 
 	/**
-	 * Instance of PgSchemaGetClientThrd.
+	 * Instance of PgSchemaGetClientThrd with index filter.
+	 *
+	 * @param thrd_id thread id
+	 * @param option PostgreSQL data model option
+	 * @param fst_conf FST configuration
+	 * @param client_type PgSchema client type
+	 * @param original_caller original caller class name (optional)
+	 * @param index_filter index filter
+	 * @param clients array of PgSchemaClientImpl
+	 */
+	public PgSchemaGetClientThrd(final int thrd_id, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final IndexFilter index_filter, final PgSchemaClientImpl[] clients) {
+
+		this.thrd_id = thrd_id;
+		this.option = option;
+		this.fst_conf = fst_conf;
+		this.client_type = client_type;
+		this.original_caller = original_caller;
+		this.index_filter = index_filter;
+		this.clients = clients;
+
+	}
+
+	/**
+	 * Instance of PgSchemaGetClientThrd with JSON builder option.
 	 *
 	 * @param thrd_id thread id
 	 * @param option PostgreSQL data model option
@@ -110,8 +137,10 @@ public class PgSchemaGetClientThrd implements Runnable {
 
 		try {
 
-			if (jsonb_option == null)
+			if (index_filter == null && jsonb_option == null)
 				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller);
+			else if (index_filter != null)
+				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller, index_filter);
 			else
 				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller, jsonb_option);
 

@@ -397,7 +397,7 @@ public class xml2luceneidx {
 
 				if (no_data_model) {
 
-					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, client_type, class_name);
+					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, client_type, class_name, index_filter);
 					get_thrd[0] = null;
 
 				}
@@ -413,7 +413,7 @@ public class xml2luceneidx {
 						if (_thrd_id == 0 && no_data_model)
 							continue;
 
-						Thread _get_thrd = get_thrd[_thrd_id] = new Thread(new PgSchemaGetClientThrd(_thrd_id, option, fst_conf, client_type, class_name, clients));
+						Thread _get_thrd = get_thrd[_thrd_id] = new Thread(new PgSchemaGetClientThrd(_thrd_id, option, fst_conf, client_type, class_name, index_filter, clients));
 
 						_get_thrd.setPriority(Thread.MAX_PRIORITY);
 						_get_thrd.start();

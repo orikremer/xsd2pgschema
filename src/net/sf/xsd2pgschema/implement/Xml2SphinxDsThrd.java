@@ -183,7 +183,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 */
 	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, IndexFilter index_filter, final String ds_name, final Path ds_dir_path, HashMap<String, Integer> doc_rows, HashSet<String>[] sync_del_doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
-		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.full_text_indexing, Thread.currentThread().getStackTrace()[2].getClassName());
+		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.full_text_indexing, Thread.currentThread().getStackTrace()[2].getClassName(), index_filter);
 
 		init(shard_id, shard_size, thrd_id, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows);
 
@@ -219,6 +219,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 		this.xml_file_filter = xml_file_filter;
 		this.xml_file_queue = xml_file_queue;
 
+		this.index_filter = index_filter;
 		this.ds_name = ds_name;
 		this.ds_dir_path = ds_dir_path;
 		this.doc_rows = doc_rows;
@@ -227,7 +228,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 		option = client.option;
 
 		client.schema.applyXmlPostEditor(xml_post_editor);
-		client.schema.applyIndexFilter(this.index_filter = index_filter, false);
 
 		// prepare XML validator
 

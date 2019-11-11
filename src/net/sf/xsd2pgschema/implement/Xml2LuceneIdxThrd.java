@@ -164,7 +164,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 	 */
 	public Xml2LuceneIdxThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final IndexFilter index_filter, final Path idx_dir_path, IndexWriter[] writers, HashMap<String, Integer> doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
-		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.full_text_indexing, Thread.currentThread().getStackTrace()[2].getClassName());
+		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.full_text_indexing, Thread.currentThread().getStackTrace()[2].getClassName(), index_filter);
 
 		init(shard_id, shard_size, thrd_id, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, idx_dir_path, writers, doc_rows);
 
@@ -199,6 +199,7 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		this.xml_file_filter = xml_file_filter;
 		this.xml_file_queue = xml_file_queue;
 
+		this.index_filter = index_filter;
 		this.idx_dir_path = idx_dir_path;
 		this.writers = writers;
 		this.doc_rows = doc_rows;
@@ -206,7 +207,6 @@ public class Xml2LuceneIdxThrd implements Runnable {
 		option = client.option;
 
 		client.schema.applyXmlPostEditor(xml_post_editor);
-		client.schema.applyIndexFilter(this.index_filter = index_filter, option.rel_data_ext);
 
 		// prepare XML validator
 
