@@ -42,6 +42,7 @@ import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.docbuilder.JsonBuilderOption;
 import net.sf.xsd2pgschema.option.IndexFilter;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
+import net.sf.xsd2pgschema.type.PgHashSize;
 
 /**
  * Implementation of PostgreSQL server client.
@@ -151,7 +152,7 @@ public class PgSchemaClientImpl {
 				break;
 			}
 
-			if (server_alive && fst_conf != null) {
+			if (server_alive && fst_conf != null && !option.hash_size.equals(PgHashSize.debug_string)) {
 
 				try {
 
@@ -310,7 +311,7 @@ public class PgSchemaClientImpl {
 	}
 
 	/**
-	 * Instance of PgSchemaClientImpl with JSON builder.
+	 * Instance of PgSchemaClientImpl with JSON builder option.
 	 *
 	 * @param is InputStream of XML Schema
 	 * @param option PostgreSQL data model option
@@ -564,7 +565,7 @@ public class PgSchemaClientImpl {
 	}
 
 	/**
-	 * Instance of PgSchemaClientImpl with JSON builder.
+	 * Instance of PgSchemaClientImpl with JSON builder option.
 	 *
 	 * @param is InputStream of XML Schema
 	 * @param option PostgreSQL data model option
