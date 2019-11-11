@@ -51,9 +51,6 @@ public class XPathExpr implements Serializable {
 	/** The predicate SQL expression. */
 	protected List<XPathSqlExpr> sql_predicates = null;
 
-	/** The parent node path name. */
-	public String parent_node = null;
-
 	/**
 	 * Instance of XPathExpr.
 	 *
@@ -63,8 +60,6 @@ public class XPathExpr implements Serializable {
 
 		this.path = path_expr.path;
 		this.terminus = path_expr.terminus;
-
-		parent_node = getParentNodeName();
 
 	}
 
@@ -78,8 +73,6 @@ public class XPathExpr implements Serializable {
 
 		this.path = path;
 		this.terminus = terminus;
-
-		parent_node = getParentNodeName();
 
 	}
 
@@ -95,8 +88,6 @@ public class XPathExpr implements Serializable {
 		this.path = path;
 		this.terminus = terminus;
 		this.prev_term = prev_term;
-
-		parent_node = getParentNodeName();
 
 	}
 

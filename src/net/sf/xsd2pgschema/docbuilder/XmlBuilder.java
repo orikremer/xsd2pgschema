@@ -584,7 +584,9 @@ public class XmlBuilder extends CommonBuilder {
 
 						if (content != null) {
 
-							PgTable parent_table = tables.parallelStream().filter(_table -> _table.xname.equals(path_expr.parent_node)).findFirst().get();
+							String parent_node_name = path_expr.getParentNodeName();
+
+							PgTable parent_table = tables.parallelStream().filter(_table -> _table.writable && _table.xname.equals(parent_node_name)).findFirst().get();
 
 							writer.writeEmptyElement(parent_table.xprefix, parent_table.xname, parent_table.target_namespace);
 
@@ -633,7 +635,9 @@ public class XmlBuilder extends CommonBuilder {
 
 						if (content != null) {
 
-							PgTable parent_table = tables.parallelStream().filter(_table -> _table.xname.equals(path_expr.parent_node)).findFirst().get();
+							String parent_node_name = path_expr.getParentNodeName();
+
+							PgTable parent_table = tables.parallelStream().filter(_table -> _table.writable && _table.xname.equals(parent_node_name)).findFirst().get();
 
 							writer.writeEmptyElement(parent_table.xprefix, parent_table.xname, parent_table.target_namespace);
 
