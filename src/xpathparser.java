@@ -60,6 +60,7 @@ public class xpathparser {
 		PgSchemaOption option = new PgSchemaOption(true);
 
 		option.verbose = true; // turn on verbose mode
+		option.stdout_msg = false;
 
 		/** The FST configuration. */
 		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
@@ -220,7 +221,7 @@ public class xpathparser {
 
 			String original_caller = MethodHandles.lookup().lookupClass().getName();
 
-			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, client_type, original_caller, null, false);
+			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, client_type, original_caller, null);
 
 			xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_query));
 
@@ -262,7 +263,7 @@ public class xpathparser {
 			sb.setLength(0);
 
 			if (xpath_comp_list.updated)
-				option.updatePgSchemaServer(fst_conf, client.schema, client_type, original_caller, false);
+				option.updatePgSchemaServer(fst_conf, client.schema, client_type, original_caller);
 
 		} catch (IOException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException e) {
 			e.printStackTrace();

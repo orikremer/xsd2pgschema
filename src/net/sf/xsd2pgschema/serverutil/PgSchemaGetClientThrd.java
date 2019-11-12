@@ -148,11 +148,11 @@ public class PgSchemaGetClientThrd implements Runnable {
 		try {
 
 			if (index_filter == null && jsonb_option == null)
-				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller, xml_post_editor, true);
+				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller, xml_post_editor);
 			else if (index_filter != null)
-				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller, xml_post_editor, index_filter, true);
+				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller, xml_post_editor, index_filter);
 			else
-				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller, xml_post_editor, jsonb_option, true);
+				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller, xml_post_editor, jsonb_option);
 
 		} catch (IOException | ParserConfigurationException | SAXException | PgSchemaException e) {
 			e.printStackTrace();

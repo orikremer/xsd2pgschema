@@ -138,6 +138,10 @@ public class PgSchemaOption implements Serializable {
 	@Flat
 	public boolean full_check = true;
 
+	/** Whether to output processing message to stdout or not (stderr). */
+	@Flat
+	public boolean stdout_msg = true;
+
 	/** The default document key name in PostgreSQL DDL. */
 	@Flat
 	public final String def_document_key_name = "document_id";
@@ -674,9 +678,8 @@ public class PgSchemaOption implements Serializable {
 	 * @param schema PostgreSQL data model
 	 * @param client_type PgSchema client type
 	 * @param original_caller original caller class name (optional)
-	 * @param stdout_msg whether to output processing message to stdin or not (stderr)
 	 */
-	public void updatePgSchemaServer(FSTConfiguration fst_conf, PgSchema schema, PgSchemaClientType client_type, String original_caller, boolean stdout_msg) {
+	public void updatePgSchemaServer(FSTConfiguration fst_conf, PgSchema schema, PgSchemaClientType client_type, String original_caller) {
 
 		if (!pg_schema_server)
 			return;

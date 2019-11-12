@@ -124,7 +124,7 @@ public class Xml2JsonThrd implements Runnable {
 	 */
 	public Xml2JsonThrd(final int thrd_id, final InputStream is, final Path json_dir_path, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
-		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.json_conversion, Thread.currentThread().getStackTrace()[2].getClassName(), xml_post_editor, jsonb_option, true);
+		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.json_conversion, Thread.currentThread().getStackTrace()[2].getClassName(), xml_post_editor, jsonb_option);
 
 		init(thrd_id, json_dir_path, xml_file_filter, xml_file_queue, jsonb_option);
 

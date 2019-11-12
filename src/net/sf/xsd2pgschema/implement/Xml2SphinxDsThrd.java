@@ -182,7 +182,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 */
 	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, IndexFilter index_filter, final String ds_name, final Path ds_dir_path, HashMap<String, Integer> doc_rows, HashSet<String>[] sync_del_doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
-		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.full_text_indexing, Thread.currentThread().getStackTrace()[2].getClassName(), xml_post_editor, index_filter, true);
+		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.full_text_indexing, Thread.currentThread().getStackTrace()[2].getClassName(), xml_post_editor, index_filter);
 
 		init(shard_id, shard_size, thrd_id, xml_file_filter, xml_file_queue, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows);
 

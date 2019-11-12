@@ -142,7 +142,7 @@ public class Xml2PgCsvThrd implements Runnable {
 	 */
 	public Xml2PgCsvThrd(final int thrd_id, final InputStream is, final Path work_dir, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
-		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.pg_data_migration, Thread.currentThread().getStackTrace()[2].getClassName(), xml_post_editor, true);
+		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.pg_data_migration, Thread.currentThread().getStackTrace()[2].getClassName(), xml_post_editor);
 
 		init(thrd_id, work_dir, xml_file_filter, xml_file_queue, pg_option);
 

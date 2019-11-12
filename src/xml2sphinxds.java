@@ -424,7 +424,7 @@ public class xml2sphinxds {
 
 				if (no_data_model) {
 
-					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, client_type, class_name, xml_post_editor, index_filter, true);
+					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, client_type, class_name, xml_post_editor, index_filter);
 					get_thrd[0] = null;
 
 				}

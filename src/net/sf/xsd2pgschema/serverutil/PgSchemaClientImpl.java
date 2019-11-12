@@ -73,14 +73,13 @@ public class PgSchemaClientImpl {
 	 * @param client_type PgSchema client type
 	 * @param original_caller original caller class name (optional)
 	 * @param xml_post_editor XML post editor (optional)
-	 * @param stdout_msg whether to output processing message to stdin or not (stderr)
 	 * @throws UnknownHostException the unknown host exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaClientImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final XmlPostEditor xml_post_editor, final boolean stdout_msg) throws UnknownHostException, IOException, ParserConfigurationException, SAXException, PgSchemaException {
+	public PgSchemaClientImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final XmlPostEditor xml_post_editor) throws UnknownHostException, IOException, ParserConfigurationException, SAXException, PgSchemaException {
 
 		boolean server_alive = false;
 
@@ -110,7 +109,7 @@ public class PgSchemaClientImpl {
 
 						schema = (PgSchema) fst_conf.asObject(reply.schema_bytes);
 
-						if (stdout_msg)
+						if (option.stdout_msg)
 							System.out.print(reply.message);
 						else
 							System.err.print(reply.message);
@@ -173,7 +172,7 @@ public class PgSchemaClientImpl {
 
 						PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 
-						if (stdout_msg)
+						if (option.stdout_msg)
 							System.out.print(reply.message);
 						else
 							System.err.print(reply.message);
@@ -206,14 +205,13 @@ public class PgSchemaClientImpl {
 	 * @param original_caller original caller class name (optional)
 	 * @param xml_post_editor XML post editor (optional)
 	 * @param index_filter index filter
-	 * @param stdout_msg whether to output processing message to stdin or not (stderr)
 	 * @throws UnknownHostException the unknown host exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaClientImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final XmlPostEditor xml_post_editor, final IndexFilter index_filter, final boolean stdout_msg) throws UnknownHostException, IOException, ParserConfigurationException, SAXException, PgSchemaException {
+	public PgSchemaClientImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final XmlPostEditor xml_post_editor, final IndexFilter index_filter) throws UnknownHostException, IOException, ParserConfigurationException, SAXException, PgSchemaException {
 
 		boolean server_alive = false;
 
@@ -243,7 +241,7 @@ public class PgSchemaClientImpl {
 
 						schema = (PgSchema) fst_conf.asObject(reply.schema_bytes);
 
-						if (stdout_msg)
+						if (option.stdout_msg)
 							System.out.print(reply.message);
 						else
 							System.err.print(reply.message);
@@ -310,7 +308,7 @@ public class PgSchemaClientImpl {
 
 						PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 
-						if (stdout_msg)
+						if (option.stdout_msg)
 							System.out.print(reply.message);
 						else
 							System.err.print(reply.message);
@@ -343,14 +341,13 @@ public class PgSchemaClientImpl {
 	 * @param original_caller original caller class name (optional)
 	 * @param xml_post_editor XML post editor (optional)
 	 * @param jsonb_option JSON builder option
-	 * @param stdout_msg whether to output processing message to stdin or not (stderr)
 	 * @throws UnknownHostException the unknown host exception
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public PgSchemaClientImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final XmlPostEditor xml_post_editor, final JsonBuilderOption jsonb_option, final boolean stdout_msg) throws UnknownHostException, IOException, ParserConfigurationException, SAXException, PgSchemaException {
+	public PgSchemaClientImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final XmlPostEditor xml_post_editor, final JsonBuilderOption jsonb_option) throws UnknownHostException, IOException, ParserConfigurationException, SAXException, PgSchemaException {
 
 		boolean server_alive = false;
 
@@ -380,7 +377,7 @@ public class PgSchemaClientImpl {
 
 						schema = (PgSchema) fst_conf.asObject(reply.schema_bytes);
 
-						if (stdout_msg)
+						if (option.stdout_msg)
 							System.out.print(reply.message);
 						else
 							System.err.print(reply.message);
@@ -447,7 +444,7 @@ public class PgSchemaClientImpl {
 
 						PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 
-						if (stdout_msg)
+						if (option.stdout_msg)
 							System.out.print(reply.message);
 						else
 							System.err.print(reply.message);

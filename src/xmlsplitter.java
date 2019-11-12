@@ -61,6 +61,8 @@ public class xmlsplitter {
 		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(false);
 
+		option.stdout_msg = false;
+
 		/** The FST configuration. */
 		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
 
@@ -228,7 +230,7 @@ public class xmlsplitter {
 			splitter.exec();
 
 			if (splitter.updated)
-				option.updatePgSchemaServer(fst_conf, splitter.client.schema, client_type, original_caller, false);
+				option.updatePgSchemaServer(fst_conf, splitter.client.schema, client_type, original_caller);
 
 		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException e) {
 			e.printStackTrace();

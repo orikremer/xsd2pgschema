@@ -484,7 +484,7 @@ public class xml2pgcsv {
 
 				if (no_data_model) {
 
-					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, client_type, class_name, xml_post_editor, true);
+					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, client_type, class_name, xml_post_editor);
 					get_thrd[0] = null;
 
 				}

@@ -55,9 +55,6 @@ public class xpath2pgsql {
 	 */
 	public static void main(String[] args) {
 
-		/** Whether to output processing message to stdout or not (stderr). */
-		boolean stdout_msg = false;
-
 		/** The output directory name. */
 		String out_dir_name = "sql_result";
 
@@ -66,6 +63,8 @@ public class xpath2pgsql {
 
 		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(true);
+
+		option.stdout_msg = false;
 
 		/** The FST configuration. */
 		FSTConfiguration fst_conf = FSTConfiguration.createDefaultConfiguration();
@@ -244,7 +243,7 @@ public class xpath2pgsql {
 
 		if (!out_file_name.isEmpty() && !out_file_name.equals("stdout")) {
 
-			stdout_msg = true;
+			option.stdout_msg = true;
 
 			Path out_dir_path = Paths.get(out_dir_name);
 
@@ -281,7 +280,7 @@ public class xpath2pgsql {
 
 			String original_caller = MethodHandles.lookup().lookupClass().getName();
 
-			XPathEvaluatorImpl evaluator = new XPathEvaluatorImpl(is, option, fst_conf, pg_option, stdout_msg); // reuse the instance for repetition
+			XPathEvaluatorImpl evaluator = new XPathEvaluatorImpl(is, option, fst_conf, pg_option); // reuse the instance for repetition
 
 			if (!pg_option.name.isEmpty())
 				pg_option.clear();
@@ -290,7 +289,7 @@ public class xpath2pgsql {
 
 				String xpath_query = xpath_queries.get(id);
 
-				evaluator.translate(xpath_query, variables, stdout_msg);
+				evaluator.translate(xpath_query, variables);
 
 				if (!pg_option.name.isEmpty())
 					evaluator.execute(id, xpath_queries.size(), out_dir_name, out_file_name);
@@ -298,7 +297,7 @@ public class xpath2pgsql {
 			}
 
 			if (evaluator.updated)
-				option.updatePgSchemaServer(fst_conf, evaluator.client.schema, client_type, original_caller, stdout_msg);
+				option.updatePgSchemaServer(fst_conf, evaluator.client.schema, client_type, original_caller);
 
 		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException | SQLException e) {
 			e.printStackTrace();
