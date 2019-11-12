@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * XPath query.
+ * XPath query previously translated.
  *
  * @author yokochi
  */
@@ -39,10 +39,10 @@ public class XPathQuery implements Serializable {
 	/** The XPath variables (concatenated). */
 	private String variables = "";
 
-	/** The path string. */
+	/** The readable path expression. */
 	public String path_string = null;
 
-	/** The SQL string. */
+	/** The readable SQL expression. */
 	public String sql_string = null;
 
 	/** Instance of XPath expressions. */

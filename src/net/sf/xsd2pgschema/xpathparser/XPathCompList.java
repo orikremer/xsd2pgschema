@@ -4874,7 +4874,7 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Show path expressions.
+	 * Show readable path expressions.
 	 *
 	 * @param sb string builder
 	 */
@@ -8704,7 +8704,7 @@ public class XPathCompList {
 	}
 
 	/**
-	 * Show SQL string expressions.
+	 * Show readable SQL expressions.
 	 *
 	 * @param sb string builder
 	 */
