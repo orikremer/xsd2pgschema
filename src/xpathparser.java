@@ -262,7 +262,7 @@ public class xpathparser {
 			sb.setLength(0);
 
 			if (xpath_comp_list.updated)
-				option.updatePgSchemaServer(fst_conf, client.schema, client_type, original_caller);
+				option.updatePgSchemaServer(fst_conf, client.schema, client_type, original_caller, false);
 
 		} catch (IOException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException e) {
 			e.printStackTrace();

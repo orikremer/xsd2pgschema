@@ -298,7 +298,7 @@ public class xpath2pgsql {
 			}
 
 			if (evaluator.updated)
-				option.updatePgSchemaServer(fst_conf, evaluator.client.schema, client_type, original_caller);
+				option.updatePgSchemaServer(fst_conf, evaluator.client.schema, client_type, original_caller, stdout_msg);
 
 		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException | SQLException e) {
 			e.printStackTrace();

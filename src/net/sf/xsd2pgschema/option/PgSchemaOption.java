@@ -674,8 +674,9 @@ public class PgSchemaOption implements Serializable {
 	 * @param schema PostgreSQL data model
 	 * @param client_type PgSchema client type
 	 * @param original_caller original caller class name (optional)
+	 * @param stdout_msg whether to output processing message to stdin or not (stderr)
 	 */
-	public void updatePgSchemaServer(FSTConfiguration fst_conf, PgSchema schema, PgSchemaClientType client_type, String original_caller) {
+	public void updatePgSchemaServer(FSTConfiguration fst_conf, PgSchema schema, PgSchemaClientType client_type, String original_caller, boolean stdout_msg) {
 
 		if (!pg_schema_server)
 			return;
@@ -694,7 +695,10 @@ public class PgSchemaOption implements Serializable {
 
 				PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 
-				System.out.print(reply.message);
+				if (stdout_msg)
+					System.out.print(reply.message);
+				else
+					System.err.print(reply.message);
 				/*
 				in.close();
 				out.close();

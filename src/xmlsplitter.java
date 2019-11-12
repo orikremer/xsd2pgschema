@@ -228,7 +228,7 @@ public class xmlsplitter {
 			splitter.exec();
 
 			if (splitter.updated)
-				option.updatePgSchemaServer(fst_conf, splitter.client.schema, client_type, original_caller);
+				option.updatePgSchemaServer(fst_conf, splitter.client.schema, client_type, original_caller, false);
 
 		} catch (IOException | NoSuchAlgorithmException | ParserConfigurationException | SAXException | PgSchemaException | xpathListenerException e) {
 			e.printStackTrace();
