@@ -99,7 +99,6 @@ public class Xml2PgSqlThrd implements Runnable {
 	 * @param clients array of PgSchema server clients
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue
-	 * @param xml_post_editor XML post editor
 	 * @param pg_option PostgreSQL option
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
@@ -109,14 +108,14 @@ public class Xml2PgSqlThrd implements Runnable {
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws InterruptedException the interrupted exception
 	 */
-	public Xml2PgSqlThrd(final int thrd_id, final Thread get_thrd, final PgSchemaClientImpl[] clients, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException, InterruptedException {
+	public Xml2PgSqlThrd(final int thrd_id, final Thread get_thrd, final PgSchemaClientImpl[] clients, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException, InterruptedException {
 
 		if (get_thrd != null)
 			get_thrd.join();
 
 		this.client = clients[thrd_id];
 
-		init(thrd_id, xml_file_filter, xml_file_queue, xml_post_editor, pg_option);
+		init(thrd_id, xml_file_filter, xml_file_queue, pg_option);
 
 	}
 
@@ -139,9 +138,9 @@ public class Xml2PgSqlThrd implements Runnable {
 	 */
 	public Xml2PgSqlThrd(final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
-		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.pg_data_migration, Thread.currentThread().getStackTrace()[2].getClassName());
+		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.pg_data_migration, Thread.currentThread().getStackTrace()[2].getClassName(), xml_post_editor, true);
 
-		init(thrd_id, xml_file_filter, xml_file_queue, xml_post_editor, pg_option);
+		init(thrd_id, xml_file_filter, xml_file_queue, pg_option);
 
 	}
 
@@ -151,7 +150,6 @@ public class Xml2PgSqlThrd implements Runnable {
 	 * @param thrd_id thread id
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue
-	 * @param xml_post_editor XML post editor
 	 * @param pg_option PostgreSQL option
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
@@ -160,7 +158,7 @@ public class Xml2PgSqlThrd implements Runnable {
 	 * @throws SQLException the SQL exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void init(final int thrd_id, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
+	private void init(final int thrd_id, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final PgOption pg_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, SQLException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
 
@@ -168,8 +166,6 @@ public class Xml2PgSqlThrd implements Runnable {
 		this.xml_file_queue = xml_file_queue;
 
 		option = client.option;
-
-		client.schema.applyXmlPostEditor(xml_post_editor);
 
 		// prepare XML validator
 

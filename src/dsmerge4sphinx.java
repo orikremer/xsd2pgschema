@@ -212,7 +212,7 @@ public class dsmerge4sphinx {
 
 			IndexFilter index_filter = null; // dummy
 
-			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, client_type, MethodHandles.lookup().lookupClass().getName(), index_filter);
+			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, client_type, MethodHandles.lookup().lookupClass().getName(), null, index_filter, true);
 
 			for (String src_ds_dir_name : src_ds_dir_list) {
 

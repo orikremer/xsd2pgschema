@@ -86,7 +86,6 @@ public class Xml2JsonThrd implements Runnable {
 	 * @param json_dir_path directory path contains JSON files
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue
-	 * @param xml_post_editor XML post editor
 	 * @param jsonb_option JsonBuilder option
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
@@ -95,14 +94,14 @@ public class Xml2JsonThrd implements Runnable {
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws InterruptedException the interrupted exception
 	 */
-	public Xml2JsonThrd(final int thrd_id, final Thread get_thrd, final PgSchemaClientImpl[] clients, final Path json_dir_path, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, InterruptedException {
+	public Xml2JsonThrd(final int thrd_id, final Thread get_thrd, final PgSchemaClientImpl[] clients, final Path json_dir_path, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, InterruptedException {
 
 		if (get_thrd != null)
 			get_thrd.join();
 
 		this.client = clients[thrd_id];
 
-		init(thrd_id, json_dir_path, xml_file_filter, xml_file_queue, xml_post_editor, jsonb_option);
+		init(thrd_id, json_dir_path, xml_file_filter, xml_file_queue, jsonb_option);
 
 	}
 
@@ -125,9 +124,9 @@ public class Xml2JsonThrd implements Runnable {
 	 */
 	public Xml2JsonThrd(final int thrd_id, final InputStream is, final Path json_dir_path, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
-		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.json_conversion, Thread.currentThread().getStackTrace()[2].getClassName(), jsonb_option);
+		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.json_conversion, Thread.currentThread().getStackTrace()[2].getClassName(), xml_post_editor, jsonb_option, true);
 
-		init(thrd_id, json_dir_path, xml_file_filter, xml_file_queue, xml_post_editor, jsonb_option);
+		init(thrd_id, json_dir_path, xml_file_filter, xml_file_queue, jsonb_option);
 
 	}
 
@@ -138,7 +137,6 @@ public class Xml2JsonThrd implements Runnable {
 	 * @param json_dir_path directory path contains JSON files
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue
-	 * @param xml_post_editor XML post editor
 	 * @param jsonb_option JsonBuilder option
 	 * @throws ParserConfigurationException the parser configuration exception
 	 * @throws SAXException the SAX exception
@@ -146,7 +144,7 @@ public class Xml2JsonThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void init(final int thrd_id, final Path json_dir_path, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	private void init(final int thrd_id, final Path json_dir_path, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final JsonBuilderOption jsonb_option) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.thrd_id = thrd_id;
 		this.json_dir_path = json_dir_path;
@@ -155,8 +153,6 @@ public class Xml2JsonThrd implements Runnable {
 		this.xml_file_queue = xml_file_queue;
 
 		PgSchemaOption option = client.option;
-
-		client.schema.applyXmlPostEditor(xml_post_editor);
 
 		jsonb = new JsonBuilder(client.schema, jsonb_option);
 

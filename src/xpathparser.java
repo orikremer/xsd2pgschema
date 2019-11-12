@@ -220,7 +220,7 @@ public class xpathparser {
 
 			String original_caller = MethodHandles.lookup().lookupClass().getName();
 
-			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, client_type, original_caller);
+			PgSchemaClientImpl client = new PgSchemaClientImpl(is, option, fst_conf, client_type, original_caller, null, false);
 
 			xpathLexer lexer = new xpathLexer(CharStreams.fromString(xpath_query));
 

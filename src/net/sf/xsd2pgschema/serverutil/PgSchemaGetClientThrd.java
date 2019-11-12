@@ -30,6 +30,7 @@ import net.sf.xsd2pgschema.PgSchemaException;
 import net.sf.xsd2pgschema.docbuilder.JsonBuilderOption;
 import net.sf.xsd2pgschema.option.IndexFilter;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
+import net.sf.xsd2pgschema.option.XmlPostEditor;
 
 /**
  * Thread function for PgSchema server client.
@@ -53,6 +54,9 @@ public class PgSchemaGetClientThrd implements Runnable {
 	/** The original caller class name (optional). */
 	private String original_caller;
 
+	/** The XML post editor (optional). */
+	private XmlPostEditor xml_post_editor = null;
+
 	/** The index filter (optional). */
 	private IndexFilter index_filter = null;
 
@@ -70,15 +74,17 @@ public class PgSchemaGetClientThrd implements Runnable {
 	 * @param fst_conf FST configuration
 	 * @param client_type PgSchema client type
 	 * @param original_caller original caller class name (optional)
+	 * @param xml_post_editor XML post editor (optional)
 	 * @param clients array of PgSchemaClientImpl
 	 */
-	public PgSchemaGetClientThrd(final int thrd_id, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final PgSchemaClientImpl[] clients) {
+	public PgSchemaGetClientThrd(final int thrd_id, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final XmlPostEditor xml_post_editor, final PgSchemaClientImpl[] clients) {
 
 		this.thrd_id = thrd_id;
 		this.option = option;
 		this.fst_conf = fst_conf;
 		this.client_type = client_type;
 		this.original_caller = original_caller;
+		this.xml_post_editor = xml_post_editor;
 		this.clients = clients;
 
 	}
@@ -91,16 +97,18 @@ public class PgSchemaGetClientThrd implements Runnable {
 	 * @param fst_conf FST configuration
 	 * @param client_type PgSchema client type
 	 * @param original_caller original caller class name (optional)
+	 * @param xml_post_editor XML post editor (optional)
 	 * @param index_filter index filter
 	 * @param clients array of PgSchemaClientImpl
 	 */
-	public PgSchemaGetClientThrd(final int thrd_id, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final IndexFilter index_filter, final PgSchemaClientImpl[] clients) {
+	public PgSchemaGetClientThrd(final int thrd_id, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final XmlPostEditor xml_post_editor, final IndexFilter index_filter, final PgSchemaClientImpl[] clients) {
 
 		this.thrd_id = thrd_id;
 		this.option = option;
 		this.fst_conf = fst_conf;
 		this.client_type = client_type;
 		this.original_caller = original_caller;
+		this.xml_post_editor = xml_post_editor;
 		this.index_filter = index_filter;
 		this.clients = clients;
 
@@ -114,16 +122,18 @@ public class PgSchemaGetClientThrd implements Runnable {
 	 * @param fst_conf FST configuration
 	 * @param client_type PgSchema client type
 	 * @param original_caller original caller class name (optional)
+	 * @param xml_post_editor XML post editor (optional)
 	 * @param jsonb_option JSON builder option
 	 * @param clients array of PgSchemaClientImpl
 	 */
-	public PgSchemaGetClientThrd(final int thrd_id, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final JsonBuilderOption jsonb_option, final PgSchemaClientImpl[] clients) {
+	public PgSchemaGetClientThrd(final int thrd_id, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final XmlPostEditor xml_post_editor, final JsonBuilderOption jsonb_option, final PgSchemaClientImpl[] clients) {
 
 		this.thrd_id = thrd_id;
 		this.option = option;
 		this.fst_conf = fst_conf;
 		this.client_type = client_type;
 		this.original_caller = original_caller;
+		this.xml_post_editor = xml_post_editor;
 		this.jsonb_option = jsonb_option;
 		this.clients = clients;
 
@@ -138,11 +148,11 @@ public class PgSchemaGetClientThrd implements Runnable {
 		try {
 
 			if (index_filter == null && jsonb_option == null)
-				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller);
+				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller, xml_post_editor, true);
 			else if (index_filter != null)
-				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller, index_filter);
+				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller, xml_post_editor, index_filter, true);
 			else
-				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller, jsonb_option);
+				clients[thrd_id] = new PgSchemaClientImpl(null, option, fst_conf, client_type, original_caller, xml_post_editor, jsonb_option, true);
 
 		} catch (IOException | ParserConfigurationException | SAXException | PgSchemaException e) {
 			e.printStackTrace();

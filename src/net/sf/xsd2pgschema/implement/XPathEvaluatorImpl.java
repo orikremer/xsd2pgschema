@@ -117,7 +117,7 @@ public class XPathEvaluatorImpl {
 
 		String original_caller = Thread.currentThread().getStackTrace()[2].getClassName();
 
-		client = new PgSchemaClientImpl(is, this.option = option, fst_conf, original_caller.equals("xpath2json") ? PgSchemaClientType.xpath_evaluation_to_json : PgSchemaClientType.xpath_evaluation, original_caller, stdout_msg);
+		client = new PgSchemaClientImpl(is, this.option = option, fst_conf, original_caller.equals("xpath2json") ? PgSchemaClientType.xpath_evaluation_to_json : PgSchemaClientType.xpath_evaluation, original_caller, null, stdout_msg);
 
 		prev_xpath_queries = client.schema.getPrevXPathQueries();
 
@@ -156,7 +156,7 @@ public class XPathEvaluatorImpl {
 
 		String original_caller = Thread.currentThread().getStackTrace()[2].getClassName();
 
-		client = new PgSchemaClientImpl(is, this.option = option, fst_conf, original_caller.equals("xpath2json") ? PgSchemaClientType.xpath_evaluation_to_json : PgSchemaClientType.xpath_evaluation, original_caller, jsonb_option, stdout_msg);
+		client = new PgSchemaClientImpl(is, this.option = option, fst_conf, original_caller.equals("xpath2json") ? PgSchemaClientType.xpath_evaluation_to_json : PgSchemaClientType.xpath_evaluation, original_caller, null, jsonb_option, stdout_msg);
 
 		prev_xpath_queries = client.schema.getPrevXPathQueries();
 

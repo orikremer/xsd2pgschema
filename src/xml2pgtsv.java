@@ -482,7 +482,7 @@ public class xml2pgtsv {
 
 				if (no_data_model) {
 
-					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, client_type, class_name);
+					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, client_type, class_name, xml_post_editor, true);
 					get_thrd[0] = null;
 
 				}
@@ -494,7 +494,7 @@ public class xml2pgtsv {
 					if (thrd_id == 0 && no_data_model)
 						continue;
 
-					Thread _get_thrd = get_thrd[thrd_id] = new Thread(new PgSchemaGetClientThrd(thrd_id, option, fst_conf, client_type, class_name, clients));
+					Thread _get_thrd = get_thrd[thrd_id] = new Thread(new PgSchemaGetClientThrd(thrd_id, option, fst_conf, client_type, class_name, xml_post_editor, clients));
 
 					_get_thrd.setPriority(Thread.MAX_PRIORITY);
 					_get_thrd.start();
@@ -507,7 +507,7 @@ public class xml2pgtsv {
 
 					try {
 
-						Thread _thrd = thrd[thrd_id] = new Thread(new Xml2PgCsvThrd(thrd_id, get_thrd[thrd_id], clients, work_dir, xml_file_filter, xml_file_queue, xml_post_editor, pg_option), thrd_name);
+						Thread _thrd = thrd[thrd_id] = new Thread(new Xml2PgCsvThrd(thrd_id, get_thrd[thrd_id], clients, work_dir, xml_file_filter, xml_file_queue, pg_option), thrd_name);
 
 						_thrd.start();
 

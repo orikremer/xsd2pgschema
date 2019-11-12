@@ -152,7 +152,7 @@ public class XmlSplitterImpl {
 
 		this.xml_file_queue = xml_file_queue;
 
-		client = new PgSchemaClientImpl(is, option, fst_conf, PgSchemaClientType.xpath_evaluation, Thread.currentThread().getStackTrace()[2].getClassName());
+		client = new PgSchemaClientImpl(is, option, fst_conf, PgSchemaClientType.xpath_evaluation, Thread.currentThread().getStackTrace()[2].getClassName(), null, true);
 
 		// prepare shard directories
 

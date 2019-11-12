@@ -135,7 +135,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @param clients array of PgSchema server clients
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue
-	 * @param xml_post_editor XML post editor
 	 * @param index_filter index filter
 	 * @param ds_name data source name
 	 * @param ds_dir_path data source directory path
@@ -148,14 +147,14 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @throws PgSchemaException the pg schema exception
 	 * @throws InterruptedException the interrupted exception
 	 */
-	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final Thread get_thrd, final int client_id, final PgSchemaClientImpl[] clients, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, IndexFilter index_filter, final String ds_name, final Path ds_dir_path, HashMap<String, Integer> doc_rows, HashSet<String>[] sync_del_doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, InterruptedException {
+	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final Thread get_thrd, final int client_id, final PgSchemaClientImpl[] clients, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, IndexFilter index_filter, final String ds_name, final Path ds_dir_path, HashMap<String, Integer> doc_rows, HashSet<String>[] sync_del_doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException, InterruptedException {
 
 		if (get_thrd != null)
 			get_thrd.join();
 
 		this.client = clients[client_id];
 
-		init(shard_id, shard_size, thrd_id, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows);
+		init(shard_id, shard_size, thrd_id, xml_file_filter, xml_file_queue, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows);
 
 	}
 
@@ -183,9 +182,9 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 */
 	public Xml2SphinxDsThrd(final int shard_id, final int shard_size, final int thrd_id, final InputStream is, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, final PgSchemaOption option, IndexFilter index_filter, final String ds_name, final Path ds_dir_path, HashMap<String, Integer> doc_rows, HashSet<String>[] sync_del_doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
-		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.full_text_indexing, Thread.currentThread().getStackTrace()[2].getClassName(), index_filter);
+		client = new PgSchemaClientImpl(is, option, null, PgSchemaClientType.full_text_indexing, Thread.currentThread().getStackTrace()[2].getClassName(), xml_post_editor, index_filter, true);
 
-		init(shard_id, shard_size, thrd_id, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows);
+		init(shard_id, shard_size, thrd_id, xml_file_filter, xml_file_queue, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows);
 
 	}
 
@@ -197,7 +196,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @param thrd_id thread id
 	 * @param xml_file_filter XML file filter
 	 * @param xml_file_queue XML file queue
-	 * @param xml_post_editor XML post editor
 	 * @param index_filter index filter
 	 * @param ds_name data source name
 	 * @param ds_dir_path data source directory path
@@ -209,7 +207,7 @@ public class Xml2SphinxDsThrd implements Runnable {
 	 * @throws NoSuchAlgorithmException the no such algorithm exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	private void init(final int shard_id, final int shard_size, final int thrd_id, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, final XmlPostEditor xml_post_editor, IndexFilter index_filter, final String ds_name, final Path ds_dir_path, HashMap<String, Integer> doc_rows, HashSet<String>[] sync_del_doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
+	private void init(final int shard_id, final int shard_size, final int thrd_id, final XmlFileFilter xml_file_filter, final LinkedBlockingQueue<Path> xml_file_queue, IndexFilter index_filter, final String ds_name, final Path ds_dir_path, HashMap<String, Integer> doc_rows, HashSet<String>[] sync_del_doc_rows) throws ParserConfigurationException, SAXException, IOException, NoSuchAlgorithmException, PgSchemaException {
 
 		this.shard_id = shard_id;
 		this.shard_size = shard_size;
@@ -226,8 +224,6 @@ public class Xml2SphinxDsThrd implements Runnable {
 		this.sync_del_doc_rows = sync_del_doc_rows;
 
 		option = client.option;
-
-		client.schema.applyXmlPostEditor(xml_post_editor);
 
 		// prepare XML validator
 

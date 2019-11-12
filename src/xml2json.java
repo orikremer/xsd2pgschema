@@ -319,7 +319,7 @@ public class xml2json {
 
 				if (no_data_model) {
 
-					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, client_type, class_name, jsonb_option);
+					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, client_type, class_name, xml_post_editor, jsonb_option, true);
 					get_thrd[0] = null;
 
 				}
@@ -331,7 +331,7 @@ public class xml2json {
 					if (thrd_id == 0 && no_data_model)
 						continue;
 
-					Thread _get_thrd = get_thrd[thrd_id] = new Thread(new PgSchemaGetClientThrd(thrd_id, option, fst_conf, client_type, class_name, jsonb_option, clients));
+					Thread _get_thrd = get_thrd[thrd_id] = new Thread(new PgSchemaGetClientThrd(thrd_id, option, fst_conf, client_type, class_name, xml_post_editor, jsonb_option, clients));
 
 					_get_thrd.setPriority(Thread.MAX_PRIORITY);
 					_get_thrd.start();
@@ -344,7 +344,7 @@ public class xml2json {
 
 					try {
 
-						Thread _thrd = thrd[thrd_id] = new Thread(new Xml2JsonThrd(thrd_id, get_thrd[thrd_id], clients, json_dir_path, xml_file_filter, xml_file_queue, xml_post_editor, jsonb_option), thrd_name);
+						Thread _thrd = thrd[thrd_id] = new Thread(new Xml2JsonThrd(thrd_id, get_thrd[thrd_id], clients, json_dir_path, xml_file_filter, xml_file_queue, jsonb_option), thrd_name);
 
 						_thrd.start();
 

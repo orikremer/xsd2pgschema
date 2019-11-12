@@ -424,7 +424,7 @@ public class xml2sphinxds {
 
 				if (no_data_model) {
 
-					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, client_type, class_name, index_filter);
+					clients[0] = new PgSchemaClientImpl(is, option, fst_conf, client_type, class_name, xml_post_editor, index_filter, true);
 					get_thrd[0] = null;
 
 				}
@@ -440,7 +440,7 @@ public class xml2sphinxds {
 						if (_thrd_id == 0 && no_data_model)
 							continue;
 
-						Thread _get_thrd = get_thrd[_thrd_id] = new Thread(new PgSchemaGetClientThrd(_thrd_id, option, fst_conf, client_type, class_name, index_filter, clients));
+						Thread _get_thrd = get_thrd[_thrd_id] = new Thread(new PgSchemaGetClientThrd(_thrd_id, option, fst_conf, client_type, class_name, xml_post_editor, index_filter, clients));
 
 						_get_thrd.setPriority(Thread.MAX_PRIORITY);
 						_get_thrd.start();
@@ -461,9 +461,9 @@ public class xml2sphinxds {
 							Thread _thrd;
 
 							if (thrd_id == 0)
-								_thrd = thrd[_thrd_id] = new Thread(shard_thrd[shard_id] = new Xml2SphinxDsThrd(shard_id, shard_size, thrd_id, get_thrd[_thrd_id], _thrd_id, clients, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows), thrd_name);
+								_thrd = thrd[_thrd_id] = new Thread(shard_thrd[shard_id] = new Xml2SphinxDsThrd(shard_id, shard_size, thrd_id, get_thrd[_thrd_id], _thrd_id, clients, xml_file_filter, xml_file_queue, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows), thrd_name);
 							else
-								_thrd = thrd[_thrd_id] = new Thread(new Xml2SphinxDsThrd(shard_id, shard_size, thrd_id, get_thrd[_thrd_id], _thrd_id, clients, xml_file_filter, xml_file_queue, xml_post_editor, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows), thrd_name);
+								_thrd = thrd[_thrd_id] = new Thread(new Xml2SphinxDsThrd(shard_id, shard_size, thrd_id, get_thrd[_thrd_id], _thrd_id, clients, xml_file_filter, xml_file_queue, index_filter, ds_name, ds_dir_path, doc_rows, sync_del_doc_rows), thrd_name);
 
 							_thrd.start();
 
