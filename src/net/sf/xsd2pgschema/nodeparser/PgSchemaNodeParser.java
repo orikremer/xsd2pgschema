@@ -293,7 +293,7 @@ public abstract class PgSchemaNodeParser {
 
 			}
 
-			else if (!field.matchesChildNodeNameConstraints(node))
+			else if (!field.matchesChildNodeNameConstraint(node))
 				return null;
 
 		}

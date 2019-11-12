@@ -2431,7 +2431,7 @@ public class PgField implements Serializable {
 	 * @param node node
 	 * @return boolean whether one of child node matches child node name constraints
 	 */
-	public boolean matchesChildNodeNameConstraints(Node node) {
+	public boolean matchesChildNodeNameConstraint(Node node) {
 
 		if (child_nodes == null)
 			return true;
