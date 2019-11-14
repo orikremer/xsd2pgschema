@@ -485,13 +485,15 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 				for (int f = 0; f < _fields_size; f++) {
 
+					if (occupied[f])
+						continue;
+
 					field = _fields.get(f);
 
 					if (field.primary_key || field.user_key)
 						continue;
 
-					if (!occupied[f])
-						ps.setNull(field.sql_insert_id, field.getSqlDataType());
+					ps.setNull(field.sql_insert_id, field.getSqlDataType());
 
 				}
 
@@ -499,13 +501,15 @@ public class PgSchemaNode2PgSql extends PgSchemaNodeParser {
 
 					for (int f = 0; f < _fields_size; f++) {
 
+						if (occupied[f])
+							continue;
+
 						field = _fields.get(f);
 
 						if (field.primary_key || field.user_key)
 							continue;
 
-						if (!occupied[f])
-							ps.setNull(field.sql_upsert_id, field.getSqlDataType());
+						ps.setNull(field.sql_upsert_id, field.getSqlDataType());
 
 					}
 

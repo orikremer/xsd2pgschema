@@ -464,13 +464,12 @@ public class XmlBuilder extends CommonBuilder {
 	 *
 	 * @param path_expr current XPath expression
 	 * @param rset current result set
-	 * @return boolean whether to output XML document
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public boolean pgSql2XmlFrag(XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
+	public void pgSql2XmlFrag(XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
 
 		if (deny_frag && getFragment() > 0)
-			return false;
+			return;
 
 		XPathCompType terminus = path_expr.terminus;
 
@@ -584,9 +583,7 @@ public class XmlBuilder extends CommonBuilder {
 
 						if (content != null) {
 
-							String parent_node_name = path_expr.getParentNodeName();
-
-							PgTable parent_table = tables.parallelStream().filter(_table -> _table.writable && _table.xname.equals(parent_node_name)).findFirst().get();
+							PgTable parent_table = schema.getTableNameDictionary().get(path_expr.getParentNodeName());
 
 							writer.writeEmptyElement(parent_table.xprefix, parent_table.xname, parent_table.target_namespace);
 
@@ -635,9 +632,7 @@ public class XmlBuilder extends CommonBuilder {
 
 						if (content != null) {
 
-							String parent_node_name = path_expr.getParentNodeName();
-
-							PgTable parent_table = tables.parallelStream().filter(_table -> _table.writable && _table.xname.equals(parent_node_name)).findFirst().get();
+							PgTable parent_table = schema.getTableNameDictionary().get(path_expr.getParentNodeName());
 
 							writer.writeEmptyElement(parent_table.xprefix, parent_table.xname, parent_table.target_namespace);
 
@@ -759,7 +754,6 @@ public class XmlBuilder extends CommonBuilder {
 
 		incFragment();
 
-		return true;
 	}
 
 	/** The current database connection. */

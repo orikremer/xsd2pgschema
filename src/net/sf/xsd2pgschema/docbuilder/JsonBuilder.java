@@ -1810,13 +1810,12 @@ public class JsonBuilder extends CommonBuilder {
 	 *
 	 * @param path_expr current XPath expression
 	 * @param rset current result set
-	 * @return boolean whether to output JSON document
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public boolean pgSql2JsonFrag(XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
+	public void pgSql2JsonFrag(XPathExpr path_expr, ResultSet rset) throws PgSchemaException {
 
 		if (deny_frag && getFragment() > 0)
-			return false;
+			return;
 
 		XPathCompType terminus = path_expr.terminus;
 
@@ -1949,7 +1948,6 @@ public class JsonBuilder extends CommonBuilder {
 
 		incFragment();
 
-		return true;
 	}
 
 	/** The current database connection. */

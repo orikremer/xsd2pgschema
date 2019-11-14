@@ -4161,6 +4161,7 @@ public class PgSchema implements Serializable {
 
 						if (field.jsonb == null)
 							field.jsonb = new StringBuilder();
+
 						else if (field.jsonb.length() > 0)
 							field.jsonb.setLength(0);
 
