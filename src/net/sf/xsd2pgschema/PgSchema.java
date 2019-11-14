@@ -1915,9 +1915,9 @@ public class PgSchema implements Serializable {
 
 		// update schema locations to unique ones
 
-		tables.parallelStream().forEach(table -> table.schema_location = getUniqueSchemaLocations(table.schema_location));
-		attr_groups.stream().forEach(attr_group -> attr_group.schema_location = getUniqueSchemaLocations(attr_group.schema_location));
-		model_groups.stream().forEach(model_group -> model_group.schema_location = getUniqueSchemaLocations(model_group.schema_location));
+		tables.parallelStream().forEach(table -> table.schema_location = Arrays.stream(table.schema_location.split(" ")).distinct().collect(Collectors.joining(" ")));
+		attr_groups.stream().forEach(attr_group -> attr_group.schema_location = Arrays.stream(attr_group.schema_location.split(" ")).distinct().collect(Collectors.joining(" ")));
+		model_groups.stream().forEach(model_group -> model_group.schema_location = Arrays.stream(model_group.schema_location.split(" ")).distinct().collect(Collectors.joining(" ")));
 
 		// realize PostgreSQL DDL
 
@@ -4011,35 +4011,6 @@ public class PgSchema implements Serializable {
 	 */
 	public String getDefaultDocumentation() {
 		return def_anno_doc;
-	}
-
-	/**
-	 * Return unique schema locations.
-	 *
-	 * @param schema_locations schema locations
-	 * @return String unique schema locations
-	 */
-	private String getUniqueSchemaLocations(String schema_locations) {
-
-		StringBuilder sb = new StringBuilder();
-
-		try {
-
-			for (String schema_location : schema_locations.split(" ")) {
-
-				if (dup_schema_locations.containsKey(schema_location))
-					sb.append(dup_schema_locations.get(schema_location) + " ");
-				else
-					sb.append(schema_location + " ");
-
-			}
-
-			return sb.substring(0, sb.length() - 1);
-
-		} finally {
-			sb.setLength(0);
-		}
-
 	}
 
 	/**

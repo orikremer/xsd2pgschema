@@ -42,9 +42,6 @@ import net.sf.xsd2pgschema.PgTable;
  */
 public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
-	/** The string builder for a line of CSV/TSV format. */
-	private StringBuilder sb = null;
-
 	/** The buffered writer for data conversion. */
 	private BufferedWriter buffw = null;
 
@@ -55,7 +52,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 	private boolean pg_tab_delimiter;
 
 	/** The current delimiter code. */
-	private char pg_delimiter;
+	private String pg_delimiter;
 
 	/** The current null code. */
 	private String pg_null;
@@ -97,11 +94,9 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			if (!pg_view) {
 
-				sb = new StringBuilder();
-
 				buffw = table.buffw;
 
-				pg_delimiter = npb.schema.option.pg_delimiter;
+				pg_delimiter = String.valueOf(npb.schema.option.pg_delimiter);
 
 			}
 
@@ -349,15 +344,10 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 			try {
 
-				for (int f = 0; f < _fields_size; f++)
-					sb.append(values[f] + pg_delimiter);
-
 				if (buffw == null)
 					buffw = table.buffw = Files.newBufferedWriter(table.pathw);
 
-				buffw.write(sb.substring(0, sb.length() - 1) + "\n");
-
-				sb.setLength(0);
+				buffw.write(String.join(pg_delimiter, values) + "\n");
 
 			} catch (IOException e) {
 				System.err.println("Exception occurred while processing table: " + table.xname);

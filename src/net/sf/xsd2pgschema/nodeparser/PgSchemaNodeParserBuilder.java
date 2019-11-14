@@ -285,7 +285,7 @@ public class PgSchemaNodeParserBuilder {
 			if (!has_any) { // initial instance of new document
 
 				doc = any_doc_builder.newDocument();
-				doc_root = doc.createElementNS(schema.getNamespaceUriForPrefix(""), table.pname);
+				doc_root = doc.createElementNS(schema.getDefaultNamespace(), table.pname);
 
 				any_doc_builder.reset();
 
@@ -450,7 +450,7 @@ public class PgSchemaNodeParserBuilder {
 							if (!has_any_attr) { // initial instance of new document
 
 								doc = any_doc_builder.newDocument();
-								doc_root = doc.createElementNS(schema.getNamespaceUriForPrefix(""), table.pname);
+								doc_root = doc.createElementNS(schema.getDefaultNamespace(), table.pname);
 
 								any_doc_builder.reset();
 

@@ -8373,25 +8373,25 @@ public class XPathCompList {
 		case any_element:
 			if (position - 1 < 0)
 				return null;
-			has_prefix = schema.getNamespaceUriForPrefix("") != null;
+			has_prefix = schema.getDefaultNamespace() != null;
 			attr_in_any = getLastNameOfPath(_path[position]).startsWith("@");
 			table_xname = _path[position - 1];
 			_table_xname = "/" + table_xname;
 			table = getTable(new XPathExpr(path.substring(0, path.lastIndexOf(_table_xname)) + _table_xname, XPathCompType.table));
 			field_xname = PgSchemaUtil.any_name;
 			pg_xpath_code = "xpath('/" + (has_prefix ? pg_xpath_prefix_ : "") + table_xname + "/" + (has_prefix ? pg_xpath_prefix_ : "") + _path[position].replace(" @", "/@").replace(" ", "/" + (has_prefix ? pg_xpath_prefix_: "")) + (attr_in_any ? "" : "/text()") + "', "
-					+ table.pgname + "." + PgSchemaUtil.avoidPgReservedWords(field_xname) + (has_prefix ? ", ARRAY[ARRAY['" + pg_xpath_prefix + "', '" + schema.getNamespaceUriForPrefix("") + "']]" : "") + ")::text[]";
+					+ table.pgname + "." + PgSchemaUtil.avoidPgReservedWords(field_xname) + (has_prefix ? ", ARRAY[ARRAY['" + pg_xpath_prefix + "', '" + schema.getDefaultNamespace() + "']]" : "") + ")::text[]";
 			break;
 		case any_attribute:
 			if (position - 1 < 0)
 				return null;
-			has_prefix = schema.getNamespaceUriForPrefix("") != null;
+			has_prefix = schema.getDefaultNamespace() != null;
 			table_xname = _path[position - 1];
 			_table_xname = "/" + table_xname;
 			table = getTable(new XPathExpr(path.substring(0, path.lastIndexOf(_table_xname)) + _table_xname, XPathCompType.table));
 			field_xname = PgSchemaUtil.any_attribute_name;
 			pg_xpath_code = "xpath('/" + (has_prefix ? pg_xpath_prefix_ : "") + table_xname + "/" + _path[position].replace(" ", "/" + (has_prefix ? pg_xpath_prefix_: "")) + "', "
-					+ table.pgname + "." + PgSchemaUtil.avoidPgReservedWords(field_xname) + (has_prefix ? ", ARRAY[ARRAY['" + pg_xpath_prefix + "', '" + schema.getNamespaceUriForPrefix("") + "']]" : "") + ")::text[]";
+					+ table.pgname + "." + PgSchemaUtil.avoidPgReservedWords(field_xname) + (has_prefix ? ", ARRAY[ARRAY['" + pg_xpath_prefix + "', '" + schema.getDefaultNamespace() + "']]" : "") + ")::text[]";
 			break;
 		default:
 			return null;
@@ -8608,7 +8608,7 @@ public class XPathCompList {
 						if (foreign_table.has_any && foreign_table.elem_fields.stream().anyMatch(field -> field.any)) {
 
 							pg_xpath_code = "xpath('/" + (has_prefix ? pg_xpath_prefix_ : "") + foreign_table.pname + "/" + (has_prefix ? pg_xpath_prefix_ : "") + _path[position].replace(" @", "/@").replace(" ", "/" + (has_prefix ? pg_xpath_prefix_: "")) + (attr_in_any ? "" : "/text()") + "', "
-									+ foreign_table.pgname + "." + PgSchemaUtil.avoidPgReservedWords(_field_xname) + (has_prefix ? ", ARRAY[ARRAY['" + pg_xpath_prefix + "', '" + schema.getNamespaceUriForPrefix("")+ "']]" : "") + ")::text[]";
+									+ foreign_table.pgname + "." + PgSchemaUtil.avoidPgReservedWords(_field_xname) + (has_prefix ? ", ARRAY[ARRAY['" + pg_xpath_prefix + "', '" + schema.getDefaultNamespace() + "']]" : "") + ")::text[]";
 
 							try {
 								return new XPathSqlExpr(schema, path, foreign_table, _field_xname, pg_xpath_code, null, terminus);
@@ -8663,7 +8663,7 @@ public class XPathCompList {
 						if (foreign_table.attr_fields.stream().anyMatch(field -> field.any_attribute)) {
 
 							pg_xpath_code = "xpath('/" + (has_prefix ? pg_xpath_prefix_ : "") + foreign_table.pname + "/" + _path[position].replace(" ", "/" + (has_prefix ? pg_xpath_prefix_: "")) + "', "
-									+ foreign_table.pgname + "." + PgSchemaUtil.avoidPgReservedWords(_field_xname) + (has_prefix ? ", ARRAY[ARRAY['" + pg_xpath_prefix + "', '" + schema.getNamespaceUriForPrefix("")+ "']]" : "") + ")::text[]";
+									+ foreign_table.pgname + "." + PgSchemaUtil.avoidPgReservedWords(_field_xname) + (has_prefix ? ", ARRAY[ARRAY['" + pg_xpath_prefix + "', '" + schema.getDefaultNamespace() + "']]" : "") + ")::text[]";
 
 							try {
 								return new XPathSqlExpr(schema, path, foreign_table, _field_xname, pg_xpath_code, null, terminus);
