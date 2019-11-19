@@ -672,6 +672,86 @@ public class PgSchemaOption implements Serializable {
 	}
 
 	/**
+	 * Send GET query to PgSchema server.
+	 *
+	 * @param fst_conf FST configuration
+	 * @param client_type PgSchema client type
+	 * @return PgSchema PostgreSQL data model
+	 */
+	public PgSchema getPgSchemaServer(FSTConfiguration fst_conf, PgSchemaClientType client_type) {
+
+		if (!pg_schema_server)
+			return null;
+
+		try (Socket socket = new Socket(InetAddress.getByName(pg_schema_server_host), pg_schema_server_port)) {
+
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			DataInputStream in = new DataInputStream(socket.getInputStream());
+
+			PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.GET, this, client_type));
+
+			PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
+
+			PgSchema schema = null;
+
+			if (reply.schema_bytes != null) {
+
+				if (stdout_msg)
+					System.out.print(reply.message);
+				else
+					System.err.print(reply.message);
+
+				schema = (PgSchema) fst_conf.asObject(reply.schema_bytes);
+
+			}
+			/*
+			in.close();
+			out.close();
+			 */
+			return schema;
+
+		} catch (IOException | ClassNotFoundException e) {
+			return null;
+		}
+
+	}
+
+	/**
+	 * Send Add query to PgSchema server.
+	 *
+	 * @param fst_conf FST configuration
+	 * @param schema PostgreSQL data model
+	 * @param client_type PgSchema client type
+	 * @param original_caller original caller class name (optional)
+	 */
+	public void addPgSchemaServer(FSTConfiguration fst_conf, PgSchema schema, PgSchemaClientType client_type, String original_caller) {
+
+		if (!pg_schema_server)
+			return;
+
+		try (Socket socket = new Socket(InetAddress.getByName(pg_schema_server_host), pg_schema_server_port)) {
+
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			DataInputStream in = new DataInputStream(socket.getInputStream());
+
+			PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.ADD, fst_conf, schema, client_type, original_caller));
+
+			PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
+
+			if (stdout_msg)
+				System.out.print(reply.message);
+			else
+				System.err.print(reply.message);
+			/*
+			in.close();
+			out.close();
+			 */
+		} catch (IOException | ClassNotFoundException e) {
+		}
+
+	}
+
+	/**
 	 * Send UPDATE query to PgSchema server.
 	 *
 	 * @param fst_conf FST configuration
@@ -687,29 +767,24 @@ public class PgSchemaOption implements Serializable {
 		if (!pingPgSchemaServer(fst_conf))
 			return;
 
-		try {
+		try (Socket socket = new Socket(InetAddress.getByName(pg_schema_server_host), pg_schema_server_port)) {
 
-			try (Socket socket = new Socket(InetAddress.getByName(pg_schema_server_host), pg_schema_server_port)) {
+			DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+			DataInputStream in = new DataInputStream(socket.getInputStream());
 
-				DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-				DataInputStream in = new DataInputStream(socket.getInputStream());
+			PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.UPDATE, fst_conf, schema, client_type, original_caller));
 
-				PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.UPDATE, fst_conf, schema, client_type, original_caller));
+			PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 
-				PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
-
-				if (stdout_msg)
-					System.out.print(reply.message);
-				else
-					System.err.print(reply.message);
-				/*
-				in.close();
-				out.close();
-				 */
-			}
-
+			if (stdout_msg)
+				System.out.print(reply.message);
+			else
+				System.err.print(reply.message);
+			/*
+			in.close();
+			out.close();
+			 */
 		} catch (IOException | ClassNotFoundException e) {
-			e.printStackTrace();
 		}
 
 	}

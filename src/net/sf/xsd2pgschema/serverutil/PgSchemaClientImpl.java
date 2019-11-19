@@ -19,13 +19,8 @@ limitations under the License.
 
 package net.sf.xsd2pgschema.serverutil;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.ConnectException;
-import java.net.InetAddress;
-import java.net.Socket;
 import java.net.UnknownHostException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -38,7 +33,6 @@ import org.xml.sax.SAXException;
 
 import net.sf.xsd2pgschema.PgSchema;
 import net.sf.xsd2pgschema.PgSchemaException;
-import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.docbuilder.JsonBuilderOption;
 import net.sf.xsd2pgschema.option.IndexFilter;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
@@ -81,8 +75,6 @@ public class PgSchemaClientImpl {
 	 */
 	public PgSchemaClientImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final XmlPostEditor xml_post_editor) throws UnknownHostException, IOException, ParserConfigurationException, SAXException, PgSchemaException {
 
-		boolean server_alive = false;
-
 		this.option = option;
 
 		doc_builder_fac = DocumentBuilderFactory.newInstance();
@@ -92,43 +84,7 @@ public class PgSchemaClientImpl {
 		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
 		doc_builder = doc_builder_fac.newDocumentBuilder();
 
-		if (option.pg_schema_server) {
-
-			try {
-
-				try (Socket socket = new Socket(InetAddress.getByName(option.pg_schema_server_host), option.pg_schema_server_port)) {
-
-					DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-					DataInputStream in = new DataInputStream(socket.getInputStream());
-
-					PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.GET, option, client_type));
-
-					PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
-
-					if (reply.schema_bytes != null) {
-
-						schema = (PgSchema) fst_conf.asObject(reply.schema_bytes);
-
-						if (option.stdout_msg)
-							System.out.print(reply.message);
-						else
-							System.err.print(reply.message);
-
-					}
-					/*
-					in.close();
-					out.close();
-					 */
-					server_alive = true;
-
-				}
-
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			} catch (ConnectException e) {
-			}
-
-		}
+		schema = option.getPgSchemaServer(fst_conf, client_type);
 
 		if (schema == null && is != null) {
 
@@ -159,34 +115,8 @@ public class PgSchemaClientImpl {
 				break;
 			}
 
-			if (server_alive && fst_conf != null && !option.hash_size.equals(PgHashSize.debug_string)) {
-
-				try {
-
-					try (Socket socket = new Socket(InetAddress.getByName(option.pg_schema_server_host), option.pg_schema_server_port)) {
-
-						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-						DataInputStream in = new DataInputStream(socket.getInputStream());
-
-						PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.ADD, fst_conf, schema, client_type, original_caller));
-
-						PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
-
-						if (option.stdout_msg)
-							System.out.print(reply.message);
-						else
-							System.err.print(reply.message);
-						/*
-						in.close();
-						out.close();
-						 */
-					}
-
-				} catch (ClassNotFoundException | ConnectException e) {
-					e.printStackTrace();
-				}
-
-			}
+			if (fst_conf != null && !option.hash_size.equals(PgHashSize.debug_string))
+				option.addPgSchemaServer(fst_conf, schema, client_type, original_caller);
 
 		}
 
@@ -213,8 +143,6 @@ public class PgSchemaClientImpl {
 	 */
 	public PgSchemaClientImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final XmlPostEditor xml_post_editor, final IndexFilter index_filter) throws UnknownHostException, IOException, ParserConfigurationException, SAXException, PgSchemaException {
 
-		boolean server_alive = false;
-
 		this.option = option;
 
 		doc_builder_fac = DocumentBuilderFactory.newInstance();
@@ -224,43 +152,7 @@ public class PgSchemaClientImpl {
 		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
 		doc_builder = doc_builder_fac.newDocumentBuilder();
 
-		if (option.pg_schema_server) {
-
-			try {
-
-				try (Socket socket = new Socket(InetAddress.getByName(option.pg_schema_server_host), option.pg_schema_server_port)) {
-
-					DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-					DataInputStream in = new DataInputStream(socket.getInputStream());
-
-					PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.GET, option, client_type));
-
-					PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
-
-					if (reply.schema_bytes != null) {
-
-						schema = (PgSchema) fst_conf.asObject(reply.schema_bytes);
-
-						if (option.stdout_msg)
-							System.out.print(reply.message);
-						else
-							System.err.print(reply.message);
-
-					}
-					/*
-					in.close();
-					out.close();
-					 */
-					server_alive = true;
-
-				}
-
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			} catch (ConnectException e) {
-			}
-
-		}
+		schema = option.getPgSchemaServer(fst_conf, client_type);
 
 		if (schema == null && is != null) {
 
@@ -295,34 +187,8 @@ public class PgSchemaClientImpl {
 				break;
 			}
 
-			if (server_alive && fst_conf != null) {
-
-				try {
-
-					try (Socket socket = new Socket(InetAddress.getByName(option.pg_schema_server_host), option.pg_schema_server_port)) {
-
-						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-						DataInputStream in = new DataInputStream(socket.getInputStream());
-
-						PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.ADD, fst_conf, schema, client_type, original_caller));
-
-						PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
-
-						if (option.stdout_msg)
-							System.out.print(reply.message);
-						else
-							System.err.print(reply.message);
-						/*
-						in.close();
-						out.close();
-						 */
-					}
-
-				} catch (ClassNotFoundException | ConnectException e) {
-					e.printStackTrace();
-				}
-
-			}
+			if (fst_conf != null)
+				option.addPgSchemaServer(fst_conf, schema, client_type, original_caller);
 
 		}
 
@@ -349,8 +215,6 @@ public class PgSchemaClientImpl {
 	 */
 	public PgSchemaClientImpl(final InputStream is, final PgSchemaOption option, final FSTConfiguration fst_conf, final PgSchemaClientType client_type, final String original_caller, final XmlPostEditor xml_post_editor, final JsonBuilderOption jsonb_option) throws UnknownHostException, IOException, ParserConfigurationException, SAXException, PgSchemaException {
 
-		boolean server_alive = false;
-
 		this.option = option;
 
 		doc_builder_fac = DocumentBuilderFactory.newInstance();
@@ -360,43 +224,7 @@ public class PgSchemaClientImpl {
 		doc_builder_fac.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
 		doc_builder = doc_builder_fac.newDocumentBuilder();
 
-		if (option.pg_schema_server) {
-
-			try {
-
-				try (Socket socket = new Socket(InetAddress.getByName(option.pg_schema_server_host), option.pg_schema_server_port)) {
-
-					DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-					DataInputStream in = new DataInputStream(socket.getInputStream());
-
-					PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.GET, option, client_type));
-
-					PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
-
-					if (reply.schema_bytes != null) {
-
-						schema = (PgSchema) fst_conf.asObject(reply.schema_bytes);
-
-						if (option.stdout_msg)
-							System.out.print(reply.message);
-						else
-							System.err.print(reply.message);
-
-					}
-					/*
-					in.close();
-					out.close();
-					 */
-					server_alive = true;
-
-				}
-
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			} catch (ConnectException e) {
-			}
-
-		}
+		schema = option.getPgSchemaServer(fst_conf, client_type);
 
 		if (schema == null && is != null) {
 
@@ -431,34 +259,8 @@ public class PgSchemaClientImpl {
 				break;
 			}
 
-			if (server_alive && fst_conf != null) {
-
-				try {
-
-					try (Socket socket = new Socket(InetAddress.getByName(option.pg_schema_server_host), option.pg_schema_server_port)) {
-
-						DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-						DataInputStream in = new DataInputStream(socket.getInputStream());
-
-						PgSchemaUtil.writeObjectToStream(fst_conf, out, new PgSchemaServerQuery(PgSchemaServerQueryType.ADD, fst_conf, schema, client_type, original_caller));
-
-						PgSchemaServerReply reply = (PgSchemaServerReply) PgSchemaUtil.readObjectFromStream(fst_conf, in);
-
-						if (option.stdout_msg)
-							System.out.print(reply.message);
-						else
-							System.err.print(reply.message);
-						/*
-						in.close();
-						out.close();
-						 */
-					}
-
-				} catch (ClassNotFoundException | ConnectException e) {
-					e.printStackTrace();
-				}
-
-			}
+			if (fst_conf != null)
+				option.addPgSchemaServer(fst_conf, schema, client_type, original_caller);
 
 		}
 
