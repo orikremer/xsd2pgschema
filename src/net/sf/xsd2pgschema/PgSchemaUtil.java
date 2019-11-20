@@ -41,6 +41,7 @@ import java.text.ParseException;
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.function.BiPredicate;
@@ -206,10 +207,10 @@ public class PgSchemaUtil {
 	public static final String comment_node_name = "comment()";
 
 	/** The PostgreSQL reserved words. */
-	public static final String[] pg_reserved_words = { "ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC", "AUTHORIZATION", "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLLATION", "COLUMN", "CONCURRENTLY", "CONSTRAINT", "CREATE", "CROSS", "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT", "DEFERRABLE", "DESC", "DISTINCT", "DO", "ELSE", "END", "EXCEPT", "FALSE", "FETCH", "FOR", "FOREIGN", "FREEZE", "FROM", "FULL", "GRANT", "GROUP", "HAVING", "ILIKE", "IN", "INITIALLY", "INNER", "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "LATERAL", "LEADING", "LEFT", "LIKE", "LIMIT", "LOCALTIME", "LOCALTIMESTAMP", "NATURAL", "NOT", "NOTNULL", "NULL", "OFFSET", "ON", "ONLY", "OR", "ORDER", "OUTER", "OVERLAPS", "PLACING", "PRIMARY", "REFERENCES", "RETURNING", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "TABLESAMPLE", "THEN", "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VARIADIC", "VERBOSE", "WHEN", "WHERE", "WINDOW", "WITH" };
+	public static final List<String> pg_reserved_words = Arrays.asList("ALL", "ANALYSE", "ANALYZE", "AND", "ANY", "ARRAY", "AS", "ASC", "ASYMMETRIC", "AUTHORIZATION", "BINARY", "BOTH", "CASE", "CAST", "CHECK", "COLLATE", "COLLATION", "COLUMN", "CONCURRENTLY", "CONSTRAINT", "CREATE", "CROSS", "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_ROLE", "CURRENT_SCHEMA", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_USER", "DEFAULT", "DEFERRABLE", "DESC", "DISTINCT", "DO", "ELSE", "END", "EXCEPT", "FALSE", "FETCH", "FOR", "FOREIGN", "FREEZE", "FROM", "FULL", "GRANT", "GROUP", "HAVING", "ILIKE", "IN", "INITIALLY", "INNER", "INTERSECT", "INTO", "IS", "ISNULL", "JOIN", "LATERAL", "LEADING", "LEFT", "LIKE", "LIMIT", "LOCALTIME", "LOCALTIMESTAMP", "NATURAL", "NOT", "NOTNULL", "NULL", "OFFSET", "ON", "ONLY", "OR", "ORDER", "OUTER", "OVERLAPS", "PLACING", "PRIMARY", "REFERENCES", "RETURNING", "RIGHT", "SELECT", "SESSION_USER", "SIMILAR", "SOME", "SYMMETRIC", "TABLE", "TABLESAMPLE", "THEN", "TO", "TRAILING", "TRUE", "UNION", "UNIQUE", "USER", "USING", "VARIADIC", "VERBOSE", "WHEN", "WHERE", "WINDOW", "WITH");
 
 	/** The PostgreSQL reserved operator codes. */
-	public static final String[] pg_reserved_ops = { ".", "-", "->", "->>", "-|-", "!", "!!", "!=", "?-", "?-|", "?#", "?|", "?||", "?&", "@", "@-@", "@?", "@@", "@@@", "@>", "*", "/", "&", "&&", "&<", "&<|", "&>", "#", "##", "#-", "#>", "#>>", "%", "^", "+", "<", "<->", "<@", "<^", "<<", "<<=", "<<|", "<=", "<>", "=", ">", ">^", ">=", ">>", ">>=", "|", "|/", "|&>", "|>>", "||", "||/", "~", "~=" };
+	public static final List<String> pg_reserved_op_codes = String.join("", ".", "-", "->", "->>", "-|-", "!", "!!", "!=", "?-", "?-|", "?#", "?|", "?||", "?&", "@", "@-@", "@?", "@@", "@@@", "@>", "*", "/", "&", "&&", "&<", "&<|", "&>", "#", "##", "#-", "#>", "#>>", "%", "^", "+", "<", "<->", "<@", "<^", "<<", "<<=", "<<|", "<=", "<>", "=", ">", ">^", ">=", ">>", ">>=", "|", "|/", "|&>", "|>>", "||", "||/", "~", "~=").chars().distinct().mapToObj(c -> String.valueOf((char) c)).collect(Collectors.toList());
 
 	/** The PostgreSQL date format (ISO 8601). */
 	public static final String pg_date_format = "yyyy-MM-dd";
@@ -717,15 +718,8 @@ public class PgSchemaUtil {
 	 */
 	public static String avoidPgReservedWords(String name) {
 
-		if (Arrays.asList(pg_reserved_words).contains(name.toUpperCase()) || cap_pattern.matcher(name).matches())
+		if (cap_pattern.matcher(name).matches() || pg_reserved_words.contains(name.toUpperCase()) || pg_reserved_op_codes.stream().anyMatch(op_code -> name.contains(op_code)))
 			return "\"" + name + "\"";
-
-		for (String ops : pg_reserved_ops) {
-
-			if (name.contains(ops))
-				return "\"" + name + "\"";
-
-		}
 
 		return name;
 	}
@@ -757,8 +751,12 @@ public class PgSchemaUtil {
 	 */
 	public static String avoidPgReservedOps(String name) {
 
-		for (String ops : pg_reserved_ops)
-			name = name.replace(ops, "_");
+		for (String op_code : pg_reserved_op_codes) {
+
+			if (name.contains(op_code))
+				name = name.replace(op_code, "_");
+
+		}
 
 		return name;
 	}
