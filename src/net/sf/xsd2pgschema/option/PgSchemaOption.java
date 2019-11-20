@@ -115,6 +115,9 @@ public class PgSchemaOption implements Serializable {
 	/** Whether to delete invalid XML. */
 	public boolean del_invalid_xml = false;
 
+	/** Whether to enable data type/range check while data conversion. */
+	public boolean type_check = false;
+
 	/** The verbose mode. */
 	public boolean verbose = false;
 
@@ -134,7 +137,7 @@ public class PgSchemaOption implements Serializable {
 	@Flat
 	public boolean validate = false;
 
-	/** Whether to enable canonical XML Schema validation (validate only whether document is well-formed). */
+	/** Whether to enable canonical XML Schema validation or not (validate only whether document is well-formed). */
 	@Flat
 	public boolean full_check = true;
 
@@ -846,6 +849,9 @@ public class PgSchemaOption implements Serializable {
 			return false;
 
 		if (del_invalid_xml != option.del_invalid_xml)
+			return false;
+
+		if (type_check != option.type_check)
 			return false;
 
 		if (verbose != option.verbose)

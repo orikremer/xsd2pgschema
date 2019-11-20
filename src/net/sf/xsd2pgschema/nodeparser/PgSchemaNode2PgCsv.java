@@ -174,7 +174,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 		if (!table.writable) {
 
 			if (total_nested_fields > 0)
-				table.nested_fields.forEach(field -> setNestedKey(proc_node, field, true));
+				table.nested_fields.forEach(field -> setNestedKey(proc_node, field));
 
 			return;
 		}
@@ -220,7 +220,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 					String nested_key;
 
-					if ((nested_key = setNestedKey(proc_node, field, true)) != null)
+					if ((nested_key = setNestedKey(proc_node, field)) != null)
 						values[f] = npb.getHashKeyString(nested_key);
 
 				}
@@ -229,7 +229,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				else if (field.content_holder) {
 
-					if (setContent(proc_node, field, true)) {
+					if (setContent(proc_node, field)) {
 
 						if (!content.isEmpty())
 							values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);
@@ -282,7 +282,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 				// nested_key should be processed
 
 				if (field.nested_key)
-					setNestedKey(proc_node, field, true);
+					setNestedKey(proc_node, field);
 
 				// document_key
 
@@ -293,7 +293,7 @@ public class PgSchemaNode2PgCsv extends PgSchemaNodeParser {
 
 				else if (field.content_holder) {
 
-					if (setContent(proc_node, field, true)) {
+					if (setContent(proc_node, field)) {
 
 						if (!content.isEmpty())
 							values[f] = pg_tab_delimiter ? PgSchemaUtil.escapeTsv(content) : StringEscapeUtils.escapeCsv(content);

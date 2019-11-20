@@ -473,7 +473,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 		if (!table.jsonable) {
 
 			if (total_nested_fields > 0)
-				table.nested_fields.forEach(field -> setNestedKey(proc_node, field, true));
+				table.nested_fields.forEach(field -> setNestedKey(proc_node, field));
 
 			return;
 		}
@@ -495,7 +495,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 			// nested_key
 
 			if (field.nested_key)
-				setNestedKey(proc_node, field, true);
+				setNestedKey(proc_node, field);
 
 			else if (field.jsonable) {
 
@@ -503,7 +503,7 @@ public class PgSchemaNode2Json extends PgSchemaNodeParser {
 
 				if (field.content_holder) {
 
-					if (setContent(proc_node, field, false))
+					if (setContent(proc_node, field))
 						values[f] = content;
 
 					else if (field.required) {

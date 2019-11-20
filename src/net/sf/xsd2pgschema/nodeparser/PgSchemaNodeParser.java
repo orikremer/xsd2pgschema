@@ -246,10 +246,9 @@ public abstract class PgSchemaNodeParser {
 	 *
 	 * @param node current node
 	 * @param field current field
-	 * @param append whether to append effective nested key or not (dryrun)
 	 * @return String nested key name, null if invalid
 	 */
-	protected String setNestedKey(final Node node, final PgField field, boolean append) {
+	protected String setNestedKey(final Node node, final PgField field) {
 
 		if (table.has_path_restriction) {
 
@@ -288,7 +287,7 @@ public abstract class PgSchemaNodeParser {
 
 				PgField _field = table.getField(field.delegated_sibling_key_name);
 
-				if (_field != null && setNestedKey(node, _field, false) != null)
+				if (_field != null && !testNestedKey(node, _field))
 					return null;
 
 			}
@@ -300,10 +299,57 @@ public abstract class PgSchemaNodeParser {
 
 		PgSchemaNestedKey nested_key = new PgSchemaNestedKey(nested_table, field, current_key);
 
-		if (append)
-			nested_keys.add(nested_key);
+		nested_keys.add(nested_key);
 
 		return nested_key.current_key;
+	}
+
+	/**
+	 * Test nested key.
+	 *
+	 * @param node current node
+	 * @param field current field
+	 * @return boolean whether nested key is valid
+	 */
+	private boolean testNestedKey(final Node node, final PgField field) {
+
+		if (table.has_path_restriction) {
+
+			if (!field.matchesParentNodeNameConstraint(parent_node_name))
+				return false;
+
+			if (!field.matchesAncestorNodeNameConstraint(ancestor_node_name))
+				return false;
+
+		}
+
+		if (field.nested_key_as_attr) {
+
+			if (field.delegated_field_pname != null && ((Element) node).getAttribute(field.foreign_table_xname).isEmpty())
+				return false;
+
+		}
+
+		if (field.nested_key_as_attr_group && !node.hasAttributes())
+			return false;
+
+		if (!field.nested_key_as_attr) {
+
+			if (field.delegated_sibling_key_name != null) {
+
+				PgField _field = table.getField(field.delegated_sibling_key_name);
+
+				if (_field != null && !testNestedKey(node, _field))
+					return false;
+
+			}
+
+			else if (!field.matchesChildNodeNameConstraint(node))
+				return false;
+
+		}
+
+		return true;
 	}
 
 	/**
@@ -359,10 +405,9 @@ public abstract class PgSchemaNodeParser {
 	 *
 	 * @param node current node
 	 * @param field current field
-	 * @param pg_enum_limit whether PostgreSQL enumeration length limit is applied
 	 * @return boolean whether content is valid
 	 */
-	protected boolean setContent(final Node node, final PgField field, final boolean pg_enum_limit) {
+	protected boolean setContent(final Node node, final PgField field) {
 
 		content = null;
 
@@ -375,11 +420,11 @@ public abstract class PgSchemaNodeParser {
 		else if (field.element)
 			setElement(node, field);
 
-		if (applyContentFilter(field, pg_enum_limit)) {
+		if (applyContentFilter(field)) {
 
-			if (content != null && !content.isEmpty()) { // && field.validate(content)) { skip validation while data migration for performance
+			if (content != null && !content.isEmpty() && ((npb.type_check && field.validate(content)) || !npb.type_check)) {
 
-				if (pg_enum_limit) // normalize data for PostgreSQL
+				if (npb.pg_enum_limit) // normalize data for PostgreSQL
 					content = field.normalize(content);
 
 				return true;
@@ -504,10 +549,9 @@ public abstract class PgSchemaNodeParser {
 	 * Apply content filter.
 	 *
 	 * @param field current field
-	 * @param pg_enum_limit whether PostgreSQL enumeration length limit is applied
 	 * @return boolean whether content is valid
 	 */
-	private boolean applyContentFilter(final PgField field, boolean pg_enum_limit) {
+	private boolean applyContentFilter(final PgField field) {
 
 		if (field.default_value != null && (content == null || content.isEmpty()) && npb.fill_default_value)
 			content = field.default_value;
@@ -526,7 +570,7 @@ public abstract class PgSchemaNodeParser {
 
 		if (field.enum_name != null) {
 
-			if (pg_enum_limit) {
+			if (npb.pg_enum_limit) {
 
 				if (content != null && content.length() > PgSchemaUtil.max_enum_len)
 					content = content.substring(0, PgSchemaUtil.max_enum_len);

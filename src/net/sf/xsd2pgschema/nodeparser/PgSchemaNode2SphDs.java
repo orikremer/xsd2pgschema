@@ -164,7 +164,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 		if (!table.indexable) {
 
 			if (total_nested_fields > 0)
-				table.nested_fields.forEach(field -> setNestedKey(proc_node, field, true));
+				table.nested_fields.forEach(field -> setNestedKey(proc_node, field));
 
 			return;
 		}
@@ -186,7 +186,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 			// nested_key
 
 			if (field.nested_key)
-				setNestedKey(proc_node, field, true);
+				setNestedKey(proc_node, field);
 
 			else if (field.indexable) {
 
@@ -194,7 +194,7 @@ public class PgSchemaNode2SphDs extends PgSchemaNodeParser {
 
 				if (field.content_holder) {
 
-					if (setContent(proc_node, field, false))
+					if (setContent(proc_node, field))
 						values[f] = content;
 
 					else if (field.required) {

@@ -83,8 +83,14 @@ public class PgSchemaNodeParserBuilder {
 	/** Whether to fill @default value. */
 	protected boolean fill_default_value;
 
+	/** Whether to enable data type/range check while data conversion. */
+	protected boolean type_check;
+
 	/** Whether default serial key size (unsigned int 32 bits). */
 	protected boolean is_def_ser_size;
+
+	/** Whether PostgreSQL enumeration length limit is applied. */
+	protected boolean pg_enum_limit = false;
 
 	/** The size of hash key. */
 	protected PgHashSize hash_size;
@@ -130,6 +136,7 @@ public class PgSchemaNodeParserBuilder {
 
 		rel_data_ext = schema.option.rel_data_ext;
 		fill_default_value = schema.option.fill_default_value;
+		type_check = schema.option.type_check;
 
 		document_id = schema.document_id;
 
@@ -140,6 +147,7 @@ public class PgSchemaNodeParserBuilder {
 				is_def_ser_size = schema.option.ser_size.equals(PgSerSize.defaultSize());
 			if (schema.option.xpath_key)
 				document_id_len = document_id.length();
+			pg_enum_limit = true;
 		case full_text_indexing:
 			hash_size = schema.option.hash_size;
 			md_hash_key = schema.md_hash_key;

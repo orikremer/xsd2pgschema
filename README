@@ -1,10 +1,14 @@
-﻿ Changes in xsd2pgschema 4.0.4 (release 2019-11-20)
+﻿ Changes in xsd2pgschema 4.0.5 (release 2019-11-20)
+
+  Added a period (.) and jsonb operators as PostgreSQL reserved operators.
+  Add --type-check option to enable data type/range check while data conversion.
+
+ Changes in xsd2pgschema 4.0.4 (release 2019-11-18)
 
   Code refactoring for overall performance gains including start-up time.
   Performance improvement on XPath evaluation with a help of PgSchema server.
   Fixed date change in XPath evaluation output affected by UTC and local timezone.
   Do not throw exception for reporting multiple root nodes.
-  Added a period (.) and jsonb operators as PostgreSQL reserved operators.
 
  Changes in xsd2pgschema 4.0.3 (release 2019-11-05)
 

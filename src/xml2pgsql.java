@@ -290,6 +290,9 @@ public class xml2pgsql {
 				option.full_check = false;
 			}
 
+			else if (args[i].equals("--type-check"))
+				option.type_check = true;
+
 			else if (args[i].equals("--hash-by") && i + 1 < args.length)
 				option.hash_algorithm = args[++i];
 
@@ -618,6 +621,7 @@ public class xml2pgsql {
 		System.err.println("        --validate (turn on XML Schema validation)");
 		System.err.println("        --no-validate (turn off XML Schema validation, default)");
 		System.err.println("        --well-formed (validate only whether document is well-formed)");
+		System.err.println("        --type-check (validate data type/range while data conversion)");
 		System.err.println("        --xml-file-ext FILE_EXTENSION [xml (default) | gz (indicates xml.gz suffix) | zip (indicates xml.zip suffix)]");
 		System.err.println("Option: --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --pg-public-schema (utilize \"public\" schema, default)");

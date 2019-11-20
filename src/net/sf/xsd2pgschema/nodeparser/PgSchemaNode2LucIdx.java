@@ -168,7 +168,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 		if (!table.indexable) {
 
 			if (total_nested_fields > 0)
-				table.nested_fields.forEach(field -> setNestedKey(proc_node, field, true));
+				table.nested_fields.forEach(field -> setNestedKey(proc_node, field));
 
 			return;
 		}
@@ -209,7 +209,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 					String nested_key;
 
-					if ((nested_key = setNestedKey(proc_node, field, true)) != null)
+					if ((nested_key = setNestedKey(proc_node, field)) != null)
 						values[f] = npb.getHashKeyString(nested_key);
 
 				}
@@ -220,7 +220,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 					if (field.content_holder) {
 
-						if (setContent(proc_node, field, false))
+						if (setContent(proc_node, field))
 							values[f] = content;
 
 						else if (field.required) {
@@ -293,7 +293,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 				// nested_key
 
 				if (field.nested_key)
-					setNestedKey(proc_node, field, true);
+					setNestedKey(proc_node, field);
 
 				else if (field.indexable) {
 
@@ -301,7 +301,7 @@ public class PgSchemaNode2LucIdx extends PgSchemaNodeParser {
 
 					if (field.content_holder) {
 
-						if (setContent(proc_node, field, false))
+						if (setContent(proc_node, field))
 							values[f] = content;
 
 						else if (field.required) {
