@@ -377,11 +377,7 @@ public class XmlBuilder extends CommonBuilder {
 	 * @return String converted prefix of namespace URI
 	 */
 	private String getPrefixOf(String prefix) {
-
-		if (qualify_def_ns || prefix.isEmpty() || !prefix.equals(def_prefix))
-			return prefix;
-
-		return "";
+		return qualify_def_ns || prefix.isEmpty() || !prefix.equals(def_prefix) ? prefix : "";
 	}
 
 	/**

@@ -19,6 +19,8 @@ limitations under the License.
 
 package net.sf.xsd2pgschema;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FilenameFilter;
@@ -91,6 +93,9 @@ public class PgSchemaUtil {
 
 	/** The namespace URI representing XML Schema instance. */
 	public static final String xsi_namespace_uri = "http://www.w3.org/2001/XMLSchema-instance";
+
+	/** The location W3C Schema for XML Schema. */
+	public static final String xsd_for_xsd = "http://www.w3.org/2009/XMLSchema/XMLSchema.xsd";
 
 	/** The prefix of xsi_namespace_uri. */
 	public static final String xsi_prefix = "xsi";
@@ -480,6 +485,44 @@ public class PgSchemaUtil {
 				} while (Files.isRegularFile(schema_file_path_part));
 
 				IOUtils.copy(is, Files.newOutputStream(schema_file_path_part));
+
+				Files.move(schema_file_path_part, schema_file_path, StandardCopyOption.REPLACE_EXISTING);
+
+			}
+
+			if (schema_location.equals(xsd_for_xsd)) {
+
+				Path schema_file_path_part = Paths.get(schema_file_path + "~");
+
+				BufferedReader buffr = Files.newBufferedReader(schema_file_path);
+				BufferedWriter buffw = Files.newBufferedWriter(schema_file_path_part);
+
+				buffw.write("<?xml version='1.0'?>\n");
+
+				boolean has_schema_elem = false;
+
+				String line;
+
+				while((line = buffr.readLine()) != null) {
+
+					if (has_schema_elem)
+						buffw.write(line + "\n");
+
+					else {
+
+						line = line.trim();
+
+						if (line.startsWith("<xs:schema ") || line.startsWith("<xsd:scehma ")) {
+							buffw.write(line + "\n");
+							has_schema_elem = true;
+						}
+
+					}
+
+				}
+
+				buffr.close();
+				buffw.close();
 
 				Files.move(schema_file_path_part, schema_file_path, StandardCopyOption.REPLACE_EXISTING);
 

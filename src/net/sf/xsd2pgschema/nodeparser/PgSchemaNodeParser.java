@@ -260,6 +260,9 @@ public abstract class PgSchemaNodeParser {
 
 		}
 
+		if (field.nested_key_as_attr_group && !node.hasAttributes())
+			return null;
+
 		if (field.nested_key_as_attr) {
 
 			if (!node.getParentNode().hasAttributes())
@@ -273,15 +276,10 @@ public abstract class PgSchemaNodeParser {
 
 		}
 
-		else if (table.has_nested_key_to_simple_attr && current_key.contains("@"))
-			return null;
+		else {
 
-		if (field.nested_key_as_attr_group && !node.hasAttributes())
-			return null;
-
-		PgTable nested_table = npb.schema.getTable(field.foreign_table_id);
-
-		if (!field.nested_key_as_attr) {
+			if (table.has_nested_key_to_simple_attr && current_key.contains("@"))
+				return null;
 
 			if (field.delegated_sibling_key_name != null) {
 
@@ -297,7 +295,7 @@ public abstract class PgSchemaNodeParser {
 
 		}
 
-		PgSchemaNestedKey nested_key = new PgSchemaNestedKey(nested_table, field, current_key);
+		PgSchemaNestedKey nested_key = new PgSchemaNestedKey(npb.schema.getTable(field.foreign_table_id), field, current_key);
 
 		nested_keys.add(nested_key);
 
@@ -323,6 +321,9 @@ public abstract class PgSchemaNodeParser {
 
 		}
 
+		if (field.nested_key_as_attr_group && !node.hasAttributes())
+			return false;
+
 		if (field.nested_key_as_attr) {
 
 			if (field.delegated_field_pname != null && ((Element) node).getAttribute(field.foreign_table_xname).isEmpty())
@@ -330,10 +331,7 @@ public abstract class PgSchemaNodeParser {
 
 		}
 
-		if (field.nested_key_as_attr_group && !node.hasAttributes())
-			return false;
-
-		if (!field.nested_key_as_attr) {
+		else {
 
 			if (field.delegated_sibling_key_name != null) {
 

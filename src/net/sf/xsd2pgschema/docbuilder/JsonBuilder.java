@@ -1368,7 +1368,6 @@ public class JsonBuilder extends CommonBuilder {
 
 		if (array_all)
 			field.write(schema_ver, content, true, concat_value_space);
-
 		else
 			writeAnyField(local_name, as_attr, content, indent_level);
 

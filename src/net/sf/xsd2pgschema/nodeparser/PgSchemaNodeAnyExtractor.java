@@ -85,7 +85,6 @@ public class PgSchemaNodeAnyExtractor extends DefaultHandler {
 
 			if (qName.equals(root_node_name))
 				root_node = true;
-
 			else
 				return;
 

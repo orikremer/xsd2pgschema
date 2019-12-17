@@ -92,7 +92,6 @@ public class PgSchemaNodeTester {
 	protected void setRootNode(Node root_node, String root_key) {
 
 		proc_node = root_node;
-
 		primary_key = proc_key = root_key;
 
 	}
@@ -214,7 +213,9 @@ public class PgSchemaNodeTester {
 	protected boolean isLastNode() {
 
 		try {
+
 			return last_node == null || proc_node.equals(last_node) || (indirect && node_ordinal == target_ordinal) || (maxoccurs >= 0 && node_ordinal == maxoccurs);
+
 		} finally {
 			++node_ordinal;
 		}
@@ -230,7 +231,6 @@ public class PgSchemaNodeTester {
 	protected void setProcNode(Node node) {
 
 		proc_node = node;
-
 		proc_key = _proc_key;
 
 	}

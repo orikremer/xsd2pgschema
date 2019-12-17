@@ -67,7 +67,6 @@ public class XmlBuilderAnyAttrRetriever extends CommonBuilderAnyAttrRetriever {
 
 			if (qName.equals(root_node_name))
 				root_node = true;
-
 			else
 				return;
 

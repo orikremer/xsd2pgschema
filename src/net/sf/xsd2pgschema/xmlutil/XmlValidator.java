@@ -48,6 +48,9 @@ public class XmlValidator {
 	/** The error handler. */
 	private ErrHandler err_handler = new ErrHandler();
 
+	/** Whether to validate XML Schema. */
+	private static boolean xsd_for_xsd = false;
+
 	/**
 	 * Instance of XML validator.
 	 *
@@ -73,6 +76,33 @@ public class XmlValidator {
 			}
 
 		}
+
+		dom_parser.setErrorHandler(err_handler);
+
+	}
+
+	/**
+	 * Instance of XML validator (Schema for Schema).
+	 *
+	 * @param xsd_file_path XML Schema file path
+	 */
+	public XmlValidator(Path xsd_file_path) {
+
+		try {
+
+			dom_parser.setFeature("http://xml.org/sax/features/validation", true);
+			dom_parser.setFeature("http://apache.org/xml/features/validation/schema", true);
+			dom_parser.setFeature("http://apache.org/xml/features/validation/schema-full-checking", true);
+			dom_parser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaLanguage", PgSchemaUtil.xs_namespace_uri);
+			dom_parser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaSource", xsd_file_path.toAbsolutePath().toString());
+
+		} catch (SAXNotRecognizedException e) {
+			e.printStackTrace();
+		} catch (SAXNotSupportedException e) {
+			e.printStackTrace();
+		}
+
+		xsd_for_xsd = true;
 
 		dom_parser.setErrorHandler(err_handler);
 
@@ -145,6 +175,16 @@ public class XmlValidator {
 		 */
 		@Override
 		public void error(SAXParseException e) throws SAXException {
+
+			if (xsd_for_xsd && e.getLineNumber() == 915 && e.getSystemId().endsWith(PgSchemaUtil.getSchemaFileName(PgSchemaUtil.xsd_for_xsd))) {
+
+				// Error: at 915
+				// rcase-Recurse.2: There is not a complete functional mapping between the particles.
+				// Error: at 915
+				// derivation-ok-restriction.5.4.2: Error for type 'all'.  The particle of the type is not a valid restriction of the particle of the base.
+
+				return;
+			}
 
 			success = false;
 
