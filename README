@@ -1,4 +1,4 @@
-﻿ Changes in xsd2pgschema 4.0.5 (release 2019-12-17)
+﻿ Changes in xsd2pgschema 4.0.5 (release 2019-12-18)
 
   Added a period (.) and jsonb operators as PostgreSQL reserved operators.
   Added --type-check option to enable data type/range check while data conversion.

@@ -94,8 +94,17 @@ public class PgSchemaUtil {
 	/** The namespace URI representing XML Schema instance. */
 	public static final String xsi_namespace_uri = "http://www.w3.org/2001/XMLSchema-instance";
 
-	/** The location W3C Schema for XML Schema. */
-	public static final String xsd_for_xsd = "http://www.w3.org/2009/XMLSchema/XMLSchema.xsd";
+	/** The W3C Schema file name for XML Schema. */
+	public static final String xsd_for_xsd_name = "XMLSchema.xsd";
+
+	/** The W3C Schema location for XML Schema 1.0 */
+	public static final String xsd_for_xsd_10 = "http://www.w3.org/2001/" + xsd_for_xsd_name;
+
+	/** The W3C Schema location for XML Schema 1.1 (mutable). */
+	public static final String xsd_for_xsd_11_mutable = "http://www.w3.org/2009/XMLSchema/" + xsd_for_xsd_name;
+
+	/** The W3C Schema location for XML Schema 1.1 (immutable) */
+	public static final String xsd_for_xsd_11_immutable = "http://www.w3.org/2012/04/" + xsd_for_xsd_name;
 
 	/** The prefix of xsi_namespace_uri. */
 	public static final String xsi_prefix = "xsi";
@@ -490,7 +499,7 @@ public class PgSchemaUtil {
 
 			}
 
-			if (schema_location.equals(xsd_for_xsd)) {
+			if (schema_location.equals(xsd_for_xsd_10) || schema_location.equals(xsd_for_xsd_11_mutable) || schema_location.equals(xsd_for_xsd_11_immutable)) {
 
 				Path schema_file_path_part = Paths.get(schema_file_path + "~");
 

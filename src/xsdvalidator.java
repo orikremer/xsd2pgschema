@@ -23,6 +23,8 @@ import net.sf.xsd2pgschema.xmlutil.XmlParser;
 import net.sf.xsd2pgschema.xmlutil.XmlValidator;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
@@ -42,16 +44,60 @@ public class xsdvalidator {
 		/** The PostgreSQL data model option. */
 		PgSchemaOption option = new PgSchemaOption(true);
 
-		option.validate = true; // enable XML Schema validation
+		option.validate = option.full_check = true; // enable XML Schema validation
 		option.verbose = true;
 
 		/** The XML file filter. */
 		XmlFileFilter xml_file_filter = new XmlFileFilter();
 
+		String xsd_for_xsd = PgSchemaUtil.xsd_for_xsd_11_mutable;
+
 		for (int i = 0; i < args.length; i++) {
 
 			if (args[i].equals("--xsd") && i + 1 < args.length)
 				option.root_schema_location = args[++i];
+
+			else if (args[i].equals("--schema-ver") && i + 1 < args.length) {
+				switch (args[++i]) {
+				case "1.1":
+				case "11":
+				case "1.1-mutable":
+				case "11-mutable":
+				case "1.1_mutable":
+				case "11_mutable":
+				case "1.1_2009":
+				case "11_2009":
+				case "2009":
+					xsd_for_xsd = PgSchemaUtil.xsd_for_xsd_11_mutable;
+					break;
+				case "1.1-immutable":
+				case "11-immutable":
+				case "1.1_immutable":
+				case "11_immutable":
+				case "1.1_2012_04":
+				case "11_2012_04":
+				case "2012_04":
+				case "1.1_2012-04":
+				case "11_2012-04":
+				case "2012-04":
+				case "1.1_2012":
+				case "11_2012":
+				case "2012":				
+					xsd_for_xsd = PgSchemaUtil.xsd_for_xsd_11_immutable;
+					break;
+				case "1.0":
+				case "10":
+				case "1":
+				case "1.0_2001":
+				case "10_2001":
+				case "1_2001":
+				case "2001":
+					xsd_for_xsd = PgSchemaUtil.xsd_for_xsd_10;
+					break;
+				default:
+					showUsage();
+				}
+			}
 
 			else {
 				System.err.println("Illegal option: " + args[i] + ".");
@@ -65,12 +111,24 @@ public class xsdvalidator {
 			showUsage();
 		}
 
-		if (PgSchemaUtil.getSchemaFileName(option.root_schema_location).equals(PgSchemaUtil.getSchemaFileName(PgSchemaUtil.xsd_for_xsd))) {
-			System.err.println("Avoid XSD file name: " + PgSchemaUtil.getSchemaFileName(PgSchemaUtil.xsd_for_xsd));
+		if (PgSchemaUtil.getSchemaFileName(option.root_schema_location).equals(PgSchemaUtil.xsd_for_xsd_name)) {
+			System.err.println("Avoid XSD file name: " + PgSchemaUtil.xsd_for_xsd_name);
 			System.exit(1);
 		}
 
-		XmlValidator validator = new XmlValidator(PgSchemaUtil.getSchemaFilePath(PgSchemaUtil.xsd_for_xsd, null, false));
+		Path xsd_for_xsd_path = Paths.get(PgSchemaUtil.xsd_for_xsd_name);
+
+		if (Files.exists(xsd_for_xsd_path)) {
+
+			try {
+				Files.delete(xsd_for_xsd_path);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+		}
+
+		XmlValidator validator = new XmlValidator(PgSchemaUtil.getSchemaFilePath(xsd_for_xsd, null, false), option.full_check);
 
 		try {
 			new XmlParser(validator, Paths.get(option.root_schema_location), xml_file_filter, option);
@@ -87,6 +145,7 @@ public class xsdvalidator {
 
 		System.err.println("xsdvalidator: Validate XML Schema");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY");
+		System.err.println("Option: --schema-ver XSD_VERSION (choose from \"1.1-mutable\" (default), \"1.1_immutable\", or \"1.0\")");
 		System.exit(1);
 
 	}
