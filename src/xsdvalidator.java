@@ -145,7 +145,7 @@ public class xsdvalidator {
 
 		System.err.println("xsdvalidator: Validate XML Schema");
 		System.err.println("Usage:  --xsd SCHEMA_LOCATION --xml XML_FILE_OR_DIRECTORY");
-		System.err.println("Option: --schema-ver XSD_VERSION (choose from \"1.1-mutable\" (default), \"1.1_immutable\", or \"1.0\")");
+		System.err.println("Option: --schema-ver XML_SCHEMA_VER (choose from \"1.1-mutable\" (default), \"1.1-immutable\", or \"1.0\")");
 		System.exit(1);
 
 	}
