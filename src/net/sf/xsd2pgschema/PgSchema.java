@@ -173,13 +173,13 @@ public class PgSchema implements Serializable {
 	@Flat
 	private List<PgTable> model_groups = null;
 
-	/** The list of unique constraint corresponding to xs:unique. */
-	@Flat
-	private List<PgKey> unq_keys = null;
-
 	/** The list of identification constraint corresponding to xs:key. */
 	@Flat
 	private List<PgKey> keys = null;
+
+	/** The list of unique constraint corresponding to xs:unique. */
+	@Flat
+	private List<PgKey> unqs = null;
 
 	/** The list of PostgreSQL foreign key corresponding to xs:keyref. */
 	@Flat
@@ -350,9 +350,9 @@ public class PgSchema implements Serializable {
 
 		if (root) {
 
-			unq_keys = new ArrayList<PgKey>();
-
 			keys = new ArrayList<PgKey>();
+			unqs = new ArrayList<PgKey>();
+
 			foreign_keys = new ArrayList<PgForeignKey>();
 
 			pending_attr_groups = new ArrayList<PgPendingGroup>();
@@ -528,10 +528,10 @@ public class PgSchema implements Serializable {
 				if (key.isEmpty())
 					continue;
 
-				if (root_schema.unq_keys.stream().anyMatch(_key -> _key.equals(key)))
+				if (root_schema.unqs.stream().anyMatch(_key -> _key.equals(key)))
 					continue;
 
-				root_schema.unq_keys.add(key);
+				root_schema.unqs.add(key);
 
 			}
 
@@ -1902,8 +1902,8 @@ public class PgSchema implements Serializable {
 				def_stat_msg.append("--    " + tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.any).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any elements, ");
 				def_stat_msg.append(tables.parallelStream().filter(table -> table.writable).map(table -> table.fields.stream().filter(field -> field.any_attribute).count()).reduce((arg0, arg1) -> arg0 + arg1).get() + " any attributes\n");
 				def_stat_msg.append("--   Constraints:\n");
-				def_stat_msg.append("--    " + countKeys(unq_keys) + " unique constraints from " + option.xs_prefix_ + "unique, "
-						+ countKeys(keys) + " unique constraints from " + option.xs_prefix_ + "key, "
+				def_stat_msg.append("--    " + countKeys(keys) + " unique constraints from " + option.xs_prefix_ + "key, "
+						+ countKeys(unqs) + " unique constraints from " + option.xs_prefix_ + "unique, "
 						+ countKeyReferences() + " foreign key constraints from " + option.xs_prefix_ + "keyref\n");
 
 			}
@@ -1960,11 +1960,11 @@ public class PgSchema implements Serializable {
 		model_groups.clear();
 		model_groups = null;
 
-		unq_keys.clear();
-		unq_keys = null;
-
 		keys.clear();
 		keys = null;
+
+		unqs.clear();
+		unqs = null;
 
 		foreign_keys.clear();
 		foreign_keys = null;
@@ -4626,69 +4626,6 @@ public class PgSchema implements Serializable {
 
 		if (option.document_key || option.in_place_document_key) {
 
-			// append unique key constraint from xs:unique
-
-			unq_keys.forEach(key -> {
-
-				PgTable table = getTable(key);
-
-				if (table != null) {
-
-					try {
-
-						if (table.writable)
-							appendUniqueKeyConstraint(table, key, true);
-
-					} catch (PgSchemaException e) {
-						e.printStackTrace();
-					}
-
-				}
-
-				else {
-
-					for (String table_name : key.table_pname.split(" ")) {
-
-						table_name = table_name.replaceFirst(",$", "");
-
-						// wild card
-
-						if (table_name.equals("*")) {
-
-							tables.parallelStream().filter(_table -> _table.writable).forEach(_table -> {
-
-								try {
-									appendUniqueKeyConstraint(_table, key, true);
-								} catch (PgSchemaException e) {
-									e.printStackTrace();
-								}
-
-							});
-
-
-						}
-
-						else {
-
-							table = getTable(key.schema_name, table_name);
-
-							try {
-
-								if (table != null && table.writable)
-									appendUniqueKeyConstraint(table, key, true);
-
-							} catch (PgSchemaException e) {
-								e.printStackTrace();
-							}
-
-						}
-
-					}
-
-				}
-
-			});
-
 			// append unique key constraint from xs:key
 
 			keys.forEach(key -> {
@@ -4753,6 +4690,69 @@ public class PgSchema implements Serializable {
 			});
 
 		}
+
+		// append unique key constraint from xs:unique
+
+		unqs.forEach(key -> {
+
+			PgTable table = getTable(key);
+
+			if (table != null) {
+
+				try {
+
+					if (table.writable)
+						appendUniqueKeyConstraint(table, key, true);
+
+				} catch (PgSchemaException e) {
+					e.printStackTrace();
+				}
+
+			}
+
+			else {
+
+				for (String table_name : key.table_pname.split(" ")) {
+
+					table_name = table_name.replaceFirst(",$", "");
+
+					// wild card
+
+					if (table_name.equals("*")) {
+
+						tables.parallelStream().filter(_table -> _table.writable).forEach(_table -> {
+
+							try {
+								appendUniqueKeyConstraint(_table, key, true);
+							} catch (PgSchemaException e) {
+								e.printStackTrace();
+							}
+
+						});
+
+
+					}
+
+					else {
+
+						table = getTable(key.schema_name, table_name);
+
+						try {
+
+							if (table != null && table.writable)
+								appendUniqueKeyConstraint(table, key, true);
+
+						} catch (PgSchemaException e) {
+							e.printStackTrace();
+						}
+
+					}
+
+				}
+
+			}
+
+		});
 
 		// append foreign key constraint
 
@@ -5186,10 +5186,10 @@ public class PgSchema implements Serializable {
 						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxInclusive=\"" + field.max_inclusive + "\"");
 
 					if (field.max_exclusive != null)
-						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxInclusive=\"" + field.max_exclusive + "\"");
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "maxExclusive=\"" + field.max_exclusive + "\"");
 
 					if (field.min_exclusive != null)
-						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minInclusive=\"" + field.min_exclusive + "\"");
+						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minExclusive=\"" + field.min_exclusive + "\"");
 
 					if (field.min_inclusive != null)
 						System.out.println("-- " + option.xs_prefix_ + "restriction/" + option.xs_prefix_ + "minInclusive=\"" + field.min_inclusive + "\"");
