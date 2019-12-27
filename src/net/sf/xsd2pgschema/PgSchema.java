@@ -4533,8 +4533,12 @@ public class PgSchema implements Serializable {
 
 		tables.parallelStream().forEach(table -> table.pgname = getPgNameOf(table));
 
-		if (!option.ddl_output)
+		if (!option.ddl_output) {
+
+			appendUniqueKeyConstraints();
+
 			return;
+		}
 
 		boolean name_collision = tables.parallelStream().anyMatch(table -> table.name_collision);
 
@@ -4624,135 +4628,7 @@ public class PgSchema implements Serializable {
 
 		}
 
-		if (option.document_key || option.in_place_document_key) {
-
-			// append unique key constraint from xs:key
-
-			keys.forEach(key -> {
-
-				PgTable table = getTable(key);
-
-				if (table != null) {
-
-					try {
-
-						if (table.writable)
-							appendUniqueKeyConstraint(table, key, false);
-
-					} catch (PgSchemaException e) {
-						e.printStackTrace();
-					}
-
-				}
-
-				else {
-
-					for (String table_name : key.table_pname.split(" ")) {
-
-						table_name = table_name.replaceFirst(",$", "");
-
-						// wild card
-
-						if (table_name.equals("*")) {
-
-							tables.parallelStream().filter(_table -> _table.writable).forEach(_table -> {
-
-								try {
-									appendUniqueKeyConstraint(_table, key, false);
-								} catch (PgSchemaException e) {
-									e.printStackTrace();
-								}
-
-							});
-
-
-						}
-
-						else {
-
-							table = getTable(key.schema_name, table_name);
-
-							try {
-
-								if (table != null && table.writable)
-									appendUniqueKeyConstraint(table, key, false);
-
-							} catch (PgSchemaException e) {
-								e.printStackTrace();
-							}
-
-						}
-
-					}
-
-				}
-
-			});
-
-		}
-
-		// append unique key constraint from xs:unique
-
-		unqs.forEach(key -> {
-
-			PgTable table = getTable(key);
-
-			if (table != null) {
-
-				try {
-
-					if (table.writable)
-						appendUniqueKeyConstraint(table, key, true);
-
-				} catch (PgSchemaException e) {
-					e.printStackTrace();
-				}
-
-			}
-
-			else {
-
-				for (String table_name : key.table_pname.split(" ")) {
-
-					table_name = table_name.replaceFirst(",$", "");
-
-					// wild card
-
-					if (table_name.equals("*")) {
-
-						tables.parallelStream().filter(_table -> _table.writable).forEach(_table -> {
-
-							try {
-								appendUniqueKeyConstraint(_table, key, true);
-							} catch (PgSchemaException e) {
-								e.printStackTrace();
-							}
-
-						});
-
-
-					}
-
-					else {
-
-						table = getTable(key.schema_name, table_name);
-
-						try {
-
-							if (table != null && table.writable)
-								appendUniqueKeyConstraint(table, key, true);
-
-						} catch (PgSchemaException e) {
-							e.printStackTrace();
-						}
-
-					}
-
-				}
-
-			}
-
-		});
+		appendUniqueKeyConstraints();
 
 		// append foreign key constraint
 
@@ -5270,7 +5146,139 @@ public class PgSchema implements Serializable {
 	}
 
 	/**
-	 * Append PostgreSQL unique key.
+	 * Append PostgreSQL unique key constraints from xsd:key and xsd:unique.
+	 */
+	private void appendUniqueKeyConstraints() {
+
+		// append unique key constraint from xs:key
+
+		keys.forEach(key -> {
+
+			PgTable table = getTable(key);
+
+			if (table != null) {
+
+				try {
+
+					if (table.writable)
+						appendUniqueKeyConstraint(table, key, false);
+
+				} catch (PgSchemaException e) {
+					e.printStackTrace();
+				}
+
+			}
+
+			else {
+
+				for (String table_name : key.table_pname.split(" ")) {
+
+					table_name = table_name.replaceFirst(",$", "");
+
+					// wild card
+
+					if (table_name.equals("*")) {
+
+						tables.parallelStream().filter(_table -> _table.writable).forEach(_table -> {
+
+							try {
+								appendUniqueKeyConstraint(_table, key, false);
+							} catch (PgSchemaException e) {
+								e.printStackTrace();
+							}
+
+						});
+
+
+					}
+
+					else {
+
+						table = getTable(key.schema_name, table_name);
+
+						try {
+
+							if (table != null && table.writable)
+								appendUniqueKeyConstraint(table, key, false);
+
+						} catch (PgSchemaException e) {
+							e.printStackTrace();
+						}
+
+					}
+
+				}
+
+			}
+
+		});
+
+		// append unique key constraint from xs:unique
+
+		unqs.forEach(key -> {
+
+			PgTable table = getTable(key);
+
+			if (table != null) {
+
+				try {
+
+					if (table.writable)
+						appendUniqueKeyConstraint(table, key, true);
+
+				} catch (PgSchemaException e) {
+					e.printStackTrace();
+				}
+
+			}
+
+			else {
+
+				for (String table_name : key.table_pname.split(" ")) {
+
+					table_name = table_name.replaceFirst(",$", "");
+
+					// wild card
+
+					if (table_name.equals("*")) {
+
+						tables.parallelStream().filter(_table -> _table.writable).forEach(_table -> {
+
+							try {
+								appendUniqueKeyConstraint(_table, key, true);
+							} catch (PgSchemaException e) {
+								e.printStackTrace();
+							}
+
+						});
+
+
+					}
+
+					else {
+
+						table = getTable(key.schema_name, table_name);
+
+						try {
+
+							if (table != null && table.writable)
+								appendUniqueKeyConstraint(table, key, true);
+
+						} catch (PgSchemaException e) {
+							e.printStackTrace();
+						}
+
+					}
+
+				}
+
+			}
+
+		});
+	}
+
+	/**
+	 * Append PostgreSQL unique key constraint.
 	 *
 	 * @param table current table
 	 * @param key PostgreSQL key
@@ -5286,9 +5294,12 @@ public class PgSchema implements Serializable {
 
 		List<String> field_names = new ArrayList<String>();
 
+		String doc_key_pname = null;
+
 		try {
 
-			field_names.add(getDocKeyName(table)); // document key should be included
+			if (option.document_key || option.in_place_document_key)
+				field_names.add(doc_key_pname = getDocKeyName(table)); // document key should be included
 
 			PgField field = table.getPgField(key.field_pnames);
 
@@ -5320,12 +5331,27 @@ public class PgSchema implements Serializable {
 
 			StringBuilder sb = new StringBuilder();
 
-			sb.append(PgSchemaUtil.avoidPgReservedWords(", ", field_names.stream().toArray(String[]::new)));
+			if (option.ddl_output) {
 
-			System.out.println("-- (derived from " + option.xs_prefix_ + (unique ? "unique" : "key") + "[@name='" + key.name + "'])");
-			System.out.println(((option.pg_retain_key && (unique || option.pg_max_uniq_tuple_size <= 0 || field_names.size() <= option.pg_max_uniq_tuple_size)) ? "" : "--") + "ALTER TABLE " + table.pgname + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " UNIQUE ( " + sb.toString() + " );\n");
+				sb.append(PgSchemaUtil.avoidPgReservedWords(", ", field_names.stream().toArray(String[]::new)));
 
-			sb.setLength(0);
+				System.out.println("-- (derived from " + option.xs_prefix_ + (unique ? "unique" : "key") + "[@name='" + key.name + "'])");
+				System.out.println(((option.pg_retain_key && (unique || option.pg_max_uniq_tuple_size <= 0 || field_names.size() <= option.pg_max_uniq_tuple_size)) ? "" : "--") + "ALTER TABLE " + table.pgname + " ADD CONSTRAINT " + PgSchemaUtil.avoidPgReservedOps(constraint_name) + " UNIQUE ( " + sb.toString() + " );\n");
+
+				sb.setLength(0);
+
+			}
+
+			if (table.order_by == null) {
+
+				String _doc_key_pname = doc_key_pname != null ? doc_key_pname : "";
+
+				List<String> _field_names = field_names.stream().filter(field_name -> !field_name.equals(_doc_key_pname)).collect(Collectors.toList());
+
+				if (_field_names.size() > 0)
+					table.order_by = PgSchemaUtil.avoidPgReservedWords(", ", _field_names.stream().toArray(String[]::new));
+
+			}
 
 		} finally {
 			field_names.clear();

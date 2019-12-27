@@ -89,6 +89,9 @@ public class PgTable implements Serializable {
 	/** The concatenated field names having effective SQL select parameter in PostgreSQL (used in SQL clause). */
 	public String select_field_names = null;
 
+	/** The optional ORDER BY clause derived from xsd:key and xsd:unique (used in SQL clause). */
+	public String order_by = null;
+
 	/** The field list. */
 	public List<PgField> fields = null;
 

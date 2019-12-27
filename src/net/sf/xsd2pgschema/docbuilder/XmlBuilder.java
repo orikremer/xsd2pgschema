@@ -1156,7 +1156,7 @@ public class XmlBuilder extends CommonBuilder {
 
 				boolean limit_one = table.has_unique_primary_key || (table.bridge && table.virtual) || (!category_item && !foreign_table.list_holder);
 
-				String sql = "SELECT " + table.select_field_names + " FROM " + table.pgname + " WHERE " + (use_doc_key ? table.doc_key_pgname + "=?" : "") + (use_primary_key ? (use_doc_key ? " AND " : "") + table.primary_key_pgname + "=?" : "") + (limit_one ? " LIMIT 1" : maxoccurs > 0 ? " LIMIT " + maxoccurs : "");
+				String sql = "SELECT " + table.select_field_names + " FROM " + table.pgname + " WHERE " + (use_doc_key ? table.doc_key_pgname + "=?" : "") + (use_primary_key ? (use_doc_key ? " AND " : "") + table.primary_key_pgname + "=?" : "") + (table.order_by != null ? " ORDER BY " + table.order_by : "") + (limit_one ? " LIMIT 1" : maxoccurs > 0 ? " LIMIT " + maxoccurs : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
 
@@ -1561,7 +1561,7 @@ public class XmlBuilder extends CommonBuilder {
 
 				boolean limit_one = table.has_unique_primary_key || (table.bridge && table.virtual);
 
-				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key ? table.doc_key_pgname + "=?" : "") + (use_doc_key ? " AND " : "") + table.primary_key_pgname + "=?" + (limit_one ? " LIMIT 1" : maxoccurs > 0 ? " LIMIT " + maxoccurs : "");
+				String sql = "SELECT " + PgSchemaUtil.avoidPgReservedWords(nested_key.pname) + " FROM " + table.pgname + " WHERE " + (use_doc_key ? table.doc_key_pgname + "=?" : "") + (use_doc_key ? " AND " : "") + table.primary_key_pgname + "=?" + (table.order_by != null ? " ORDER BY " + table.order_by : "") + (limit_one ? " LIMIT 1" : maxoccurs > 0 ? " LIMIT " + maxoccurs : "");
 
 				ps = table.ps = db_conn.prepareStatement(sql);
 
