@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2019 Masashi Yokochi
+    Copyright 2014-2020 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -5347,6 +5347,15 @@ public class PgSchema implements Serializable {
 				String _doc_key_pname = doc_key_pname != null ? doc_key_pname : "";
 
 				List<String> _field_names = field_names.stream().filter(field_name -> !field_name.equals(_doc_key_pname)).collect(Collectors.toList());
+
+				if (option.serial_key && table.list_holder && table.fields.stream().anyMatch(ser_key -> ser_key.serial_key)) {
+
+					if (_field_names.size() > 0)
+						_field_names.clear();
+
+					table.fields.stream().filter(ser_key -> ser_key.serial_key).forEach(ser_key -> _field_names.add(ser_key.name));
+
+				}
 
 				if (_field_names.size() > 0)
 					table.order_by = PgSchemaUtil.avoidPgReservedWords(", ", _field_names.stream().toArray(String[]::new));
