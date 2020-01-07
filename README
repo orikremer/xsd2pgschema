@@ -1,14 +1,18 @@
-﻿ Changes in xsd2pgschema 4.0.5 (release 2020-01-07)
+﻿ Changes in xsd2pgschema 4.0.6 (release 2020-01-07)
+
+  Added xsdvalidator main class to validate XML Schema using W3C's Schema for Schema.
+  Fixed PostgreSQL DDL annotation for xsd:maxExclusive and xsd:minExclusive restraints.
+  Added support for ORDER BY clause derived from xsd:key and xsd:unique.
+  Used serial key in the ORDER BY clause if available.
+  Fixed ConcurrentModificationException when serial key or xpath key is enabled.
+
+ Changes in xsd2pgschema 4.0.5 (release 2019-12-27)
 
   Added a period (.) and jsonb operators as PostgreSQL reserved operators.
   Added --type-check option to enable data type/range check while data conversion.
    The type/range check is disabled by default for performance.
    Please utilize --type-check option when data migration fails because of parse error.
    Invalid data will be omitted (null) while data conversion.
-  Added xsdvalidator main class to validate XML Schema using W3C's Schema for Schema.
-  Fixed PostgreSQL DDL annotation for xsd:maxExclusive and xsd:minExclusive restraints.
-  Added support for ORDER BY clause derived from xsd:key and xsd:unique.
-  Used serial key in the ORDER BY clause if available.
 
  Changes in xsd2pgschema 4.0.4 (release 2019-11-18)
 

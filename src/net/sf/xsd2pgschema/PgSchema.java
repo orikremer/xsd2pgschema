@@ -1136,7 +1136,7 @@ public class PgSchema implements Serializable {
 
 		tables.parallelStream().filter(table -> table.required && (option.rel_model_ext || !table.relational)).forEach(table -> table.writable = true);
 
-		tables.parallelStream().filter(table -> table.writable).forEach(table -> {
+		tables.stream().filter(table -> table.writable).forEach(table -> {
 
 			// add serial key on demand in case that parent table is list holder
 
