@@ -1122,7 +1122,7 @@ public class PgSchema implements Serializable {
 		tables.stream().filter(table -> (table.has_attrs || table.has_simple_attribute || table.has_nested_key_to_simple_attr) &&
 				!table.has_elems && table.total_foreign_fields == 1 &&
 				table.fields.stream().filter(field -> field.attribute || field.nested_key_as_attr).count() > 0 &&
-				!table.fields.stream().anyMatch(field -> field.nested_key && !field.nested_key_as_attr)).forEach(table -> extractNestedKeyAsAttrGrp(getForeignTable(table.fields.stream().filter(field -> field.foreign_key).findFirst().get()), table));
+				!table.fields.stream().anyMatch(field -> field.nested_key && !field.nested_key_as_attr)).forEach(table -> extractNestedKeyAsAttributeGroup(getForeignTable(table.fields.stream().filter(field -> field.foreign_key).findFirst().get()), table));
 
 		// update nested key as simple content with fixed attribute
 
@@ -1383,7 +1383,7 @@ public class PgSchema implements Serializable {
 
 				tables.stream().filter(table -> !table.has_elems && table.total_foreign_fields == 1 &&
 						table.fields.stream().filter(field -> field.attribute || field.nested_key_as_attr || field.nested_key_as_attr_group).count() > 0 &&
-						!table.fields.stream().anyMatch(field -> field.nested_key && !field.nested_key_as_attr)).forEach(table -> extractNestedKeyAsAttrGrp(getForeignTable(table.fields.stream().filter(field -> field.foreign_key).findFirst().get()), table));
+						!table.fields.stream().anyMatch(field -> field.nested_key && !field.nested_key_as_attr)).forEach(table -> extractNestedKeyAsAttributeGroup(getForeignTable(table.fields.stream().filter(field -> field.foreign_key).findFirst().get()), table));
 
 			} while (tables.stream().anyMatch(table -> table.total_nested_fields > 0 && table.fields.stream().anyMatch(field -> field.nested_key_as_attr_group)));
 
@@ -3920,7 +3920,7 @@ public class PgSchema implements Serializable {
 	 * @param table current table
 	 * @param child_table child table
 	 */
-	private void extractNestedKeyAsAttrGrp(PgTable table, PgTable child_table) {
+	private void extractNestedKeyAsAttributeGroup(PgTable table, PgTable child_table) {
 
 		if (!child_table.virtual)
 			return;
@@ -3928,7 +3928,7 @@ public class PgSchema implements Serializable {
 		table.fields.stream().filter(field -> field.nested_key && getForeignTable(field).equals(child_table)).forEach(field -> field.nested_key_as_attr_group = true);
 
 		if (!option.inline_simple_cont && !table.has_elems && table.total_foreign_fields == 1 && table.fields.stream().filter(field -> field.attribute || field.nested_key_as_attr || field.nested_key_as_attr_group).count() > 0 && !table.fields.stream().anyMatch(field -> field.nested_key && !field.nested_key_as_attr))
-			extractNestedKeyAsAttrGrp(getForeignTable(table.fields.stream().filter(field -> field.foreign_key).findFirst().get()), table);
+			extractNestedKeyAsAttributeGroup(getForeignTable(table.fields.stream().filter(field -> field.foreign_key).findFirst().get()), table);
 
 	}
 
