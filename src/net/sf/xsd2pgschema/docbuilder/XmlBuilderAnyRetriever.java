@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018-2019 Masashi Yokochi
+    Copyright 2018-2020 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -108,7 +108,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 					if (!nest_test.has_child_elem)
 						xmlb.writeLineFeedCode();
 
-					xmlb.writeSimpleCharacters(current_indent_bytes);
+					xmlb.out.write(current_indent_bytes);
 
 				} catch (XMLStreamException | IOException e) {
 					e.printStackTrace();
@@ -156,7 +156,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 				if (!has_simple_content && !first_node) {
 
 					xmlb.writeLineFeedCode();
-					xmlb.writeSimpleCharacters(current_indent_bytes);
+					xmlb.out.write(current_indent_bytes);
 
 				}
 
@@ -249,7 +249,7 @@ public class XmlBuilderAnyRetriever extends CommonBuilderAnyRetriever {
 				}
 
 				if (!has_simple_content)
-					xmlb.writeSimpleCharacters(current_indent_bytes);
+					xmlb.out.write(current_indent_bytes);
 
 				xml_writer.writeEndElement();
 

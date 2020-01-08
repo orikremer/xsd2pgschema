@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018-2019 Masashi Yokochi
+    Copyright 2018-2020 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -101,7 +101,7 @@ public class XmlBuilderPendingElem {
 		String table_ns = table.target_namespace;
 		String table_prefix = table.xprefix;
 
-		xmlb.writeSimpleCharacters(header);
+		xmlb.out.write(xmlb.getSimpleBytes(header));
 
 		if (attr_only)
 			xml_writer.writeEmptyElement(table_prefix, table.xname, table_ns);

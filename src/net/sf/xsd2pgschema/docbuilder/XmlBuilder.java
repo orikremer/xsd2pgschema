@@ -231,7 +231,7 @@ public class XmlBuilder extends CommonBuilder {
 	}
 
 	/** The OutputStream of XML stream writer. */
-	private OutputStream out;
+	protected OutputStream out;
 
 	/**
 	 * Write start document.
@@ -318,12 +318,12 @@ public class XmlBuilder extends CommonBuilder {
 	 *
 	 * @param string string.
 	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
+	 *
 	protected void writeSimpleCharacters(String string) throws IOException {
 
 		out.write(getSimpleBytes(string)); // string.getBytes(PgSchemaUtil.latin_1_charset));
 
-	}
+	} */
 
 	/**
 	 * Return byte array of string assuming charset is ISO-Latin-1.
@@ -351,12 +351,12 @@ public class XmlBuilder extends CommonBuilder {
 	 *
 	 * @param bytes byte array.
 	 * @throws IOException Signals that an I/O exception has occurred.
-	 */
+	 *
 	protected void writeSimpleCharacters(byte[] bytes) throws IOException {
 
 		out.write(bytes);
 
-	}
+	} */
 
 	/**
 	 * Write line feed code.
@@ -918,7 +918,7 @@ public class XmlBuilder extends CommonBuilder {
 				if (!nest_test.has_child_elem)
 					writeLineFeedCode();
 
-				writeSimpleCharacters(nest_test.child_indent_bytes);
+				out.write(nest_test.child_indent_bytes);
 
 				insertDocKey(document_key.start_end_elem_tag, document_id);
 
@@ -979,13 +979,12 @@ public class XmlBuilder extends CommonBuilder {
 							if (!nest_test.has_child_elem)
 								writeLineFeedCode();
 
-							writeSimpleCharacters(nest_test.child_indent_bytes);
+							out.write(nest_test.child_indent_bytes);
 
 							if (content != null)
 								writeSimpleElement(field.start_end_elem_tag, field.latin_1_encoded, content);
-
 							else
-								writeSimpleCharacters(field.empty_elem_tag);
+								out.write(field.empty_elem_tag);
 
 							if (!nest_test.has_child_elem || !nest_test.has_content)
 								nest_test.has_child_elem = nest_test.has_content = true;
@@ -1082,7 +1081,7 @@ public class XmlBuilder extends CommonBuilder {
 				writePendingSimpleCont();
 
 				if (!nest_test.has_open_simple_content && !attr_only)
-					writeSimpleCharacters(nest_test.current_indent_bytes);
+					out.write(nest_test.current_indent_bytes);
 				else if (nest_test.has_simple_content)
 					nest_test.has_open_simple_content = false;
 
@@ -1370,13 +1369,12 @@ public class XmlBuilder extends CommonBuilder {
 								if (!nest_test.has_child_elem)
 									writeLineFeedCode();
 
-								writeSimpleCharacters(nest_test.child_indent_bytes);
+								out.write(nest_test.child_indent_bytes);
 
 								if (content != null)
 									writeSimpleElement(field.start_end_elem_tag, field.latin_1_encoded, content);
-
 								else
-									writeSimpleCharacters(field.empty_elem_tag);
+									out.write(field.empty_elem_tag);
 
 								if (!nest_test.has_child_elem || !nest_test.has_content)
 									nest_test.has_child_elem = nest_test.has_content = true;
@@ -1473,7 +1471,7 @@ public class XmlBuilder extends CommonBuilder {
 						writePendingSimpleCont();
 
 						if (!nest_test.has_open_simple_content && !attr_only)
-							writeSimpleCharacters(nest_test.current_indent_bytes);
+							out.write(nest_test.current_indent_bytes);
 						else if (nest_test.has_simple_content)
 							nest_test.has_open_simple_content = false;
 
@@ -1507,7 +1505,7 @@ public class XmlBuilder extends CommonBuilder {
 					writePendingSimpleCont();
 
 					if (!nest_test.has_open_simple_content && !attr_only)
-						writeSimpleCharacters(nest_test.current_indent_bytes);
+						out.write(nest_test.current_indent_bytes);
 					else if (nest_test.has_simple_content)
 						nest_test.has_open_simple_content = false;
 
@@ -1643,7 +1641,7 @@ public class XmlBuilder extends CommonBuilder {
 						writePendingSimpleCont();
 
 						if (!nest_test.has_open_simple_content && !attr_only)
-							writeSimpleCharacters(nest_test.current_indent_bytes);
+							out.write(nest_test.current_indent_bytes);
 						else if (nest_test.has_simple_content)
 							nest_test.has_open_simple_content = false;
 
@@ -1729,7 +1727,7 @@ public class XmlBuilder extends CommonBuilder {
 					writePendingSimpleCont();
 
 					if (!nest_test.has_open_simple_content && !attr_only)
-						writeSimpleCharacters(nest_test.current_indent_bytes);
+						out.write(nest_test.current_indent_bytes);
 					else if (nest_test.has_simple_content)
 						nest_test.has_open_simple_content = false;
 

@@ -753,7 +753,7 @@ public class PgSchema implements Serializable {
 
 		// classify type of table
 
-		tables.stream().forEach(table -> { // do not parallelize this because of order change (simple attribute)
+		tables.stream().forEach(table -> { // do not parallelize this because of simple attribute
 
 			table.classify();
 
@@ -780,7 +780,7 @@ public class PgSchema implements Serializable {
 
 							// detect simple content as attribute
 
-							if (field.nested_key_as_attr) { // do not test table.has_simple_content because table.classify() has not been completed
+							if (field.nested_key_as_attr) { // do not test table.has_simple_content because table.classify() has not been completed yet
 
 								foreign_table.fields.stream().filter(foreign_field -> foreign_field.simple_content).forEach(foreign_field -> {
 
@@ -907,7 +907,7 @@ public class PgSchema implements Serializable {
 
 		// decide parent node name constraint
 
-		tables.stream().filter(table -> table.total_nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> { // do not parallelize this stream which causes null pointer exception
+		tables.stream().filter(table -> table.total_nested_fields > 0).forEach(table -> table.fields.stream().filter(field -> field.nested_key && field.parent_node != null).forEach(field -> { // do not parallelize this stream which causes NullPointerException
 
 			// tolerate parent node name constraint due to name collision
 
@@ -1136,7 +1136,7 @@ public class PgSchema implements Serializable {
 
 		tables.parallelStream().filter(table -> table.required && (option.rel_model_ext || !table.relational)).forEach(table -> table.writable = true);
 
-		tables.stream().filter(table -> table.writable).forEach(table -> {
+		tables.stream().filter(table -> table.writable).forEach(table -> { // do not parallelize this stream which causes ConcurrentModificationException
 
 			// add serial key on demand in case that parent table is list holder
 
