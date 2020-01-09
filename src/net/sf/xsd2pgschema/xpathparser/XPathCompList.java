@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017-2019 Masashi Yokochi
+    Copyright 2017-2020 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -4960,13 +4960,16 @@ public class XPathCompList {
 
 			try {
 
+				PgTable subject_table = path_expr.sql_subject.table;
+				String subject_table_name = subject_table.pgname;
+
 				main_aliases = new HashMap<PgTable, String>();
 				sub_alias_id = 0;
 
 				HashMap<PgTable, String> target_tables = new HashMap<PgTable, String>(); // key = table, value = table path
 				HashMap<PgTable, String> joined_tables = new HashMap<PgTable, String>();
 
-				target_tables.put(path_expr.sql_subject.table, path_expr.terminus.equals(XPathCompType.table) || path_expr.terminus.equals(XPathCompType.simple_content) ? path_expr.sql_subject.path : path_expr.sql_subject.getParentPath());
+				target_tables.put(subject_table, path_expr.terminus.equals(XPathCompType.table) || path_expr.terminus.equals(XPathCompType.simple_content) ? path_expr.sql_subject.path : path_expr.sql_subject.getParentPath());
 
 				if (path_expr.sql_predicates != null)
 					path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.table != null).forEach(sql_expr -> target_tables.put(sql_expr.table, sql_expr.terminus.equals(XPathCompType.table) || sql_expr.terminus.equals(XPathCompType.simple_content) ? sql_expr.path : sql_expr.getParentPath()));
@@ -4983,7 +4986,7 @@ public class XPathCompList {
 
 					// remove subject table from target
 
-					joined_tables.put(path_expr.sql_subject.table, target_tables.get(path_expr.sql_subject.table));
+					joined_tables.put(subject_table, target_tables.get(subject_table));
 
 					HashMap<PgTable, String> linking_tables = new HashMap<PgTable, String>();
 
@@ -4996,7 +4999,7 @@ public class XPathCompList {
 
 						LinkedList<PgTable> linking_order = new LinkedList<PgTable>();
 
-						testJoinClauseForSimpleAttr(path_expr.sql_subject.table, path_expr.sql_subject.path, linking_tables, linking_order);
+						testJoinClauseForSimpleAttr(subject_table, path_expr.sql_subject.path, linking_tables, linking_order);
 
 						if (linking_tables.size() > 0) {
 
@@ -5010,7 +5013,7 @@ public class XPathCompList {
 
 					}
 
-					target_tables.remove(path_expr.sql_subject.table);
+					target_tables.remove(subject_table);
 
 					// simple attribute in predicate expression
 
@@ -5077,13 +5080,14 @@ public class XPathCompList {
 
 				}
 
+				if (subject_table.doc_key_pgname != null)
+					sb.append(" ORDER BY " + subject_table_name + "." + subject_table.doc_key_pgname);
+
 				main_aliases.clear();
 
 				path_expr.sql = sb.toString();
 
 				if (single) {
-
-					String subject_table_name = path_expr.sql_subject.table.pgname;
 
 					if (path_expr.sql.contains(subject_table_name + "."))
 						path_expr.sql = path_expr.sql.replace(subject_table_name + ".", "");
