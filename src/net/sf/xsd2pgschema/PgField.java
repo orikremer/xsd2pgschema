@@ -5580,7 +5580,7 @@ public class PgField implements Serializable {
 			}
 			return "\"" + value + "\"";
 		default: // free text
-			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value));
+			value = StringEscapeUtils.escapeEcmaScript(value);
 
 			if (value.contains("\\/"))
 				value = value.replace("\\/", "/");
@@ -5588,10 +5588,7 @@ public class PgField implements Serializable {
 			if (value.contains("\\'"))
 				value = value.replace("\\'", "'");
 
-			if (!value.startsWith("\""))
-				value = "\"" + value + "\"";
-
-			return value;
+			return "\"" + value + "\"";
 		}
 
 	}
@@ -6682,29 +6679,14 @@ public class PgField implements Serializable {
 			break;
 		case xs_any:
 		case xs_anyAttribute:
-			if (fragment) {
-
-				value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value));
-
-				if (value.contains("\\/"))
-					value = value.replace("\\/", "/");
-
-				if (value.contains("\\'"))
-					value = value.replace("\\'", "'");
-
-				if (!value.startsWith("\""))
-					value = "\"" + value + "\"";
-
-				jsonb.append(value + concat_value_space);
-
-			}
-
-			else
+			if (!fragment) {
 				jsonb.append(value + "\t"); // TSV should be parsed in JSON builder
 
-			return true;
+				return true;
+			}
+			// pass through
 		default: // free text
-			value = StringEscapeUtils.escapeCsv(StringEscapeUtils.escapeEcmaScript(value));
+			value = StringEscapeUtils.escapeEcmaScript(value);
 
 			if (value.contains("\\/"))
 				value = value.replace("\\/", "/");
@@ -6712,10 +6694,7 @@ public class PgField implements Serializable {
 			if (value.contains("\\'"))
 				value = value.replace("\\'", "'");
 
-			if (!value.startsWith("\""))
-				value = "\"" + value + "\"";
-
-			jsonb.append(value);
+			jsonb.append("\"" + value + "\"");
 
 		}
 
