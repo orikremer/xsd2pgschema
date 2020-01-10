@@ -1446,378 +1446,384 @@ public class PgField implements Serializable {
 
 		String child_name;
 
-		for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+		try {
 
-			if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
-				continue;
+			for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
 
-			child_name = ((Element) child).getLocalName();
+				if (child.getNodeType() != Node.ELEMENT_NODE || !child.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
+					continue;
 
-			if (child_name.equals("annotation"))
-				continue;
+				child_name = ((Element) child).getLocalName();
 
-			else if (child_name.equals("any") ||
-					child_name.equals("anyAttribute") ||
-					child_name.equals("attribute") ||
-					child_name.equals("attributeGroup") ||
-					child_name.equals("element") ||
-					child_name.equals("group"))
-				return null;
+				if (child_name.equals("annotation"))
+					continue;
 
-			else if (child_name.equals("restriction")) {
-
-				Element rest_elem;
-				String value;
-
-				for (Node rest_node = child.getFirstChild(); rest_node != null; rest_node = rest_node.getNextSibling()) {
-
-					if (rest_node.getNodeType() != Node.ELEMENT_NODE || !rest_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
-						continue;
-
-					rest_elem = (Element) rest_node;
-
-					value = rest_elem.getAttribute("value");
-
-					if (value == null || value.isEmpty())
-						continue;
-
-					if (rest_elem.getLocalName().equals("length")) {
-
-						try {
-
-							int i = Integer.parseInt(value);
-
-							if (i > 0) {
-
-								restriction = true;
-
-								if (length == null)
-									length = value;
-
-								else if (i > Integer.valueOf(length))
-									length = value;
-
-							}
-
-						} catch (NumberFormatException ex) {
-						}
-
-					}
-
-					else if (rest_elem.getLocalName().equals("minLength")) {
-
-						try {
-
-							int i = Integer.parseInt(value);
-
-							if (i > 0) {
-
-								restriction = true;
-
-								if (min_length == null)
-									min_length = value;
-
-								else if (i < Integer.valueOf(min_length))
-									min_length = value;
-
-							}
-
-						} catch (NumberFormatException ex) {
-						}
-
-					}
-
-					else if (rest_elem.getLocalName().equals("maxLength")) {
-
-						try {
-
-							int i = Integer.parseInt(value);
-
-							if (i > 0) {
-
-								restriction = true;
-
-								if (max_length == null)
-									max_length = value;
-
-								else if (i > Integer.valueOf(max_length))
-									max_length = value;
-
-							}
-
-						} catch (NumberFormatException ex) {
-						}
-
-					}
-
-					else if (rest_elem.getLocalName().equals("pattern")) {
-
-						restriction = true;
-						pattern = value;
-
-					}
-
-					else if (rest_elem.getLocalName().equals("maxInclusive")) {
-
-						try {
-
-							BigDecimal new_value = new BigDecimal(value);
-
-							restriction = true;
-
-							if (max_inclusive == null)
-								max_inclusive = value;
-
-							else {
-
-								BigDecimal old_value = new BigDecimal(max_inclusive);
-
-								if (new_value.compareTo(old_value) > 0)
-									max_inclusive = value;
-
-							}
-
-							if (max_exclusive != null) {
-
-								BigDecimal inc_value = new BigDecimal(max_inclusive);
-								BigDecimal exc_value = new BigDecimal(max_exclusive);
-
-								if (inc_value.compareTo(exc_value) < 0)
-									max_inclusive = null;
-
-							}
-
-						} catch (NumberFormatException ex) {
-						}
-
-					}
-
-					else if (rest_elem.getLocalName().equals("maxExclusive")) {
-
-						try {
-
-							BigDecimal new_value = new BigDecimal(value);
-
-							restriction = true;
-
-							if (max_exclusive == null)
-								max_exclusive = value;
-
-							else {
-
-								BigDecimal old_value = new BigDecimal(max_inclusive);
-
-								if (new_value.compareTo(old_value) > 0)
-									max_exclusive = value;
-
-							}
-
-							if (max_inclusive != null) {
-
-								BigDecimal inc_value = new BigDecimal(max_inclusive);
-								BigDecimal exc_value = new BigDecimal(max_exclusive);
-
-								if (exc_value.compareTo(inc_value) < 0)
-									max_exclusive = null;
-
-							}
-
-						} catch (NumberFormatException ex) {
-						}
-
-					}
-
-					else if (rest_elem.getLocalName().equals("minExclusive")) {
-
-						try {
-
-							BigDecimal new_value = new BigDecimal(value);
-
-							restriction = true;
-
-							if (min_exclusive == null)
-								min_exclusive = value;
-
-							else {
-
-								BigDecimal old_value = new BigDecimal(max_inclusive);
-
-								if (new_value.compareTo(old_value) < 0)
-									min_exclusive = value;
-
-							}
-
-							if (min_inclusive != null) {
-
-								BigDecimal inc_value = new BigDecimal(min_inclusive);
-								BigDecimal exc_value = new BigDecimal(min_exclusive);
-
-								if (exc_value.compareTo(inc_value) > 0)
-									min_exclusive = null;
-
-							}
-
-						} catch (NumberFormatException ex) {
-						}
-
-					}
-
-					else if (rest_elem.getLocalName().equals("minInclusive")) {
-
-						try {
-
-							BigDecimal new_value = new BigDecimal(value);
-
-							restriction = true;
-
-							if (min_inclusive == null)
-								min_inclusive = value;
-
-							else {
-
-								BigDecimal old_value = new BigDecimal(max_inclusive);
-
-								if (new_value.compareTo(old_value) < 0)
-									min_inclusive = value;
-
-							}
-
-							if (min_exclusive != null) {
-
-								BigDecimal inc_value = new BigDecimal(min_inclusive);
-								BigDecimal exc_value = new BigDecimal(min_exclusive);
-
-								if (inc_value.compareTo(exc_value) > 0)
-									min_inclusive = null;
-
-							}
-
-						} catch (NumberFormatException ex) {
-						}
-
-					}
-
-					else if (rest_elem.getLocalName().equals("totalDigits")) {
-
-						try {
-
-							int i = Integer.parseInt(value);
-
-							if (i > 0) {
-
-								restriction = true;
-
-								if (total_digits == null)
-									total_digits = value;
-
-								else if (i > Integer.valueOf(total_digits))
-									total_digits = value;
-
-							}
-
-						} catch (NumberFormatException ex) {
-						}
-
-					}
-
-					else if (rest_elem.getLocalName().equals("fractionDigits")) {
-
-						try {
-
-							int i = Integer.parseInt(value);
-
-							if (i >= 0) {
-
-								restriction = true;
-
-								if (fraction_digits == null)
-									fraction_digits = value;
-
-								else if (i > Integer.valueOf(fraction_digits))
-									fraction_digits = value;
-
-							}
-
-						} catch (NumberFormatException ex) {
-						}
-
-					}
-
-					else if (rest_elem.getLocalName().equals("whiteSpace")) {
-
-						if (value.equals("replace") || value.equals("collapse")) {
-
-							restriction = true;
-							white_space = value;
-
-						}
-
-					}
-
-					else if (rest_elem.getLocalName().equals("explicitTimezone")) {
-
-						restriction = true;
-						explicit_timezone = value;
-
-					}
-
-					else if (rest_elem.getLocalName().equals("assertions")) {
-
-						restriction = true;
-						assertions = value;
-
-					}
-
-				}
-
-				if (!restriction)
+				else if (child_name.equals("any") ||
+						child_name.equals("anyAttribute") ||
+						child_name.equals("attribute") ||
+						child_name.equals("attributeGroup") ||
+						child_name.equals("element") ||
+						child_name.equals("group"))
 					return null;
 
-				if (length != null)
-					sb.append(option.xs_prefix_ + "length/@value='" + length + "' and ");
+				else if (child_name.equals("restriction")) {
 
-				if (min_length != null)
-					sb.append(option.xs_prefix_ + "minLength/@value='" + min_length + "' and ");
+					Element rest_elem;
+					String value;
 
-				if (max_length != null)
-					sb.append(option.xs_prefix_ + "maxLength/@value='" + max_length + "' and ");
+					for (Node rest_node = child.getFirstChild(); rest_node != null; rest_node = rest_node.getNextSibling()) {
 
-				if (pattern != null)
-					sb.append(option.xs_prefix_ + "pattern/@value='" + pattern + "' and ");
+						if (rest_node.getNodeType() != Node.ELEMENT_NODE || !rest_node.getNamespaceURI().equals(PgSchemaUtil.xs_namespace_uri))
+							continue;
 
-				if (max_inclusive != null)
-					sb.append(option.xs_prefix_ + "maxInclusive/@value='" + max_inclusive + "' and ");	
+						rest_elem = (Element) rest_node;
 
-				if (max_exclusive != null)
-					sb.append(option.xs_prefix_ + "maxExclusive/@value='" + max_exclusive + "' and ");
+						value = rest_elem.getAttribute("value");
 
-				if (min_exclusive != null)
-					sb.append(option.xs_prefix_ + "minExclusive/@value='" + min_exclusive + "' and ");
+						if (value == null || value.isEmpty())
+							continue;
 
-				if (min_inclusive != null)
-					sb.append(option.xs_prefix_ + "minInclusive/@value='" + min_inclusive + "' and ");	
+						if (rest_elem.getLocalName().equals("length")) {
 
-				if (total_digits != null)
-					sb.append(option.xs_prefix_ + "totalDigits/@value='" + total_digits + "' and ");
+							try {
 
-				if (fraction_digits != null)
-					sb.append(option.xs_prefix_ + "fractionDigits/@value='" + fraction_digits + "' and ");
+								int i = Integer.parseInt(value);
 
-				if (white_space != null)
-					sb.append(option.xs_prefix_ + "whiteSpace/@value='" + white_space + "' and ");
+								if (i > 0) {
 
-				if (explicit_timezone != null)
-					sb.append(option.xs_prefix_ + "explicitTimezone/@value='" + explicit_timezone + "' and ");
+									restriction = true;
 
-				if (assertions != null)
-					sb.append(option.xs_prefix_ + "assertions/@value='" + assertions + "' and ");
+									if (length == null)
+										length = value;
 
-				return sb.substring(0, sb.length() - 5);
+									else if (i > Integer.valueOf(length))
+										length = value;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
+
+						}
+
+						else if (rest_elem.getLocalName().equals("minLength")) {
+
+							try {
+
+								int i = Integer.parseInt(value);
+
+								if (i > 0) {
+
+									restriction = true;
+
+									if (min_length == null)
+										min_length = value;
+
+									else if (i < Integer.valueOf(min_length))
+										min_length = value;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
+
+						}
+
+						else if (rest_elem.getLocalName().equals("maxLength")) {
+
+							try {
+
+								int i = Integer.parseInt(value);
+
+								if (i > 0) {
+
+									restriction = true;
+
+									if (max_length == null)
+										max_length = value;
+
+									else if (i > Integer.valueOf(max_length))
+										max_length = value;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
+
+						}
+
+						else if (rest_elem.getLocalName().equals("pattern")) {
+
+							restriction = true;
+							pattern = value;
+
+						}
+
+						else if (rest_elem.getLocalName().equals("maxInclusive")) {
+
+							try {
+
+								BigDecimal new_value = new BigDecimal(value);
+
+								restriction = true;
+
+								if (max_inclusive == null)
+									max_inclusive = value;
+
+								else {
+
+									BigDecimal old_value = new BigDecimal(max_inclusive);
+
+									if (new_value.compareTo(old_value) > 0)
+										max_inclusive = value;
+
+								}
+
+								if (max_exclusive != null) {
+
+									BigDecimal inc_value = new BigDecimal(max_inclusive);
+									BigDecimal exc_value = new BigDecimal(max_exclusive);
+
+									if (inc_value.compareTo(exc_value) < 0)
+										max_inclusive = null;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
+
+						}
+
+						else if (rest_elem.getLocalName().equals("maxExclusive")) {
+
+							try {
+
+								BigDecimal new_value = new BigDecimal(value);
+
+								restriction = true;
+
+								if (max_exclusive == null)
+									max_exclusive = value;
+
+								else {
+
+									BigDecimal old_value = new BigDecimal(max_inclusive);
+
+									if (new_value.compareTo(old_value) > 0)
+										max_exclusive = value;
+
+								}
+
+								if (max_inclusive != null) {
+
+									BigDecimal inc_value = new BigDecimal(max_inclusive);
+									BigDecimal exc_value = new BigDecimal(max_exclusive);
+
+									if (exc_value.compareTo(inc_value) < 0)
+										max_exclusive = null;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
+
+						}
+
+						else if (rest_elem.getLocalName().equals("minExclusive")) {
+
+							try {
+
+								BigDecimal new_value = new BigDecimal(value);
+
+								restriction = true;
+
+								if (min_exclusive == null)
+									min_exclusive = value;
+
+								else {
+
+									BigDecimal old_value = new BigDecimal(max_inclusive);
+
+									if (new_value.compareTo(old_value) < 0)
+										min_exclusive = value;
+
+								}
+
+								if (min_inclusive != null) {
+
+									BigDecimal inc_value = new BigDecimal(min_inclusive);
+									BigDecimal exc_value = new BigDecimal(min_exclusive);
+
+									if (exc_value.compareTo(inc_value) > 0)
+										min_exclusive = null;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
+
+						}
+
+						else if (rest_elem.getLocalName().equals("minInclusive")) {
+
+							try {
+
+								BigDecimal new_value = new BigDecimal(value);
+
+								restriction = true;
+
+								if (min_inclusive == null)
+									min_inclusive = value;
+
+								else {
+
+									BigDecimal old_value = new BigDecimal(max_inclusive);
+
+									if (new_value.compareTo(old_value) < 0)
+										min_inclusive = value;
+
+								}
+
+								if (min_exclusive != null) {
+
+									BigDecimal inc_value = new BigDecimal(min_inclusive);
+									BigDecimal exc_value = new BigDecimal(min_exclusive);
+
+									if (inc_value.compareTo(exc_value) > 0)
+										min_inclusive = null;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
+
+						}
+
+						else if (rest_elem.getLocalName().equals("totalDigits")) {
+
+							try {
+
+								int i = Integer.parseInt(value);
+
+								if (i > 0) {
+
+									restriction = true;
+
+									if (total_digits == null)
+										total_digits = value;
+
+									else if (i > Integer.valueOf(total_digits))
+										total_digits = value;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
+
+						}
+
+						else if (rest_elem.getLocalName().equals("fractionDigits")) {
+
+							try {
+
+								int i = Integer.parseInt(value);
+
+								if (i >= 0) {
+
+									restriction = true;
+
+									if (fraction_digits == null)
+										fraction_digits = value;
+
+									else if (i > Integer.valueOf(fraction_digits))
+										fraction_digits = value;
+
+								}
+
+							} catch (NumberFormatException ex) {
+							}
+
+						}
+
+						else if (rest_elem.getLocalName().equals("whiteSpace")) {
+
+							if (value.equals("replace") || value.equals("collapse")) {
+
+								restriction = true;
+								white_space = value;
+
+							}
+
+						}
+
+						else if (rest_elem.getLocalName().equals("explicitTimezone")) {
+
+							restriction = true;
+							explicit_timezone = value;
+
+						}
+
+						else if (rest_elem.getLocalName().equals("assertions")) {
+
+							restriction = true;
+							assertions = value;
+
+						}
+
+					}
+
+					if (!restriction)
+						return null;
+
+					if (length != null)
+						sb.append(option.xs_prefix_ + "length/@value='" + length + "' and ");
+
+					if (min_length != null)
+						sb.append(option.xs_prefix_ + "minLength/@value='" + min_length + "' and ");
+
+					if (max_length != null)
+						sb.append(option.xs_prefix_ + "maxLength/@value='" + max_length + "' and ");
+
+					if (pattern != null)
+						sb.append(option.xs_prefix_ + "pattern/@value='" + pattern + "' and ");
+
+					if (max_inclusive != null)
+						sb.append(option.xs_prefix_ + "maxInclusive/@value='" + max_inclusive + "' and ");	
+
+					if (max_exclusive != null)
+						sb.append(option.xs_prefix_ + "maxExclusive/@value='" + max_exclusive + "' and ");
+
+					if (min_exclusive != null)
+						sb.append(option.xs_prefix_ + "minExclusive/@value='" + min_exclusive + "' and ");
+
+					if (min_inclusive != null)
+						sb.append(option.xs_prefix_ + "minInclusive/@value='" + min_inclusive + "' and ");	
+
+					if (total_digits != null)
+						sb.append(option.xs_prefix_ + "totalDigits/@value='" + total_digits + "' and ");
+
+					if (fraction_digits != null)
+						sb.append(option.xs_prefix_ + "fractionDigits/@value='" + fraction_digits + "' and ");
+
+					if (white_space != null)
+						sb.append(option.xs_prefix_ + "whiteSpace/@value='" + white_space + "' and ");
+
+					if (explicit_timezone != null)
+						sb.append(option.xs_prefix_ + "explicitTimezone/@value='" + explicit_timezone + "' and ");
+
+					if (assertions != null)
+						sb.append(option.xs_prefix_ + "assertions/@value='" + assertions + "' and ");
+
+					return sb.substring(0, sb.length() - 5);
+				}
+
+				if (child.hasChildNodes())
+					extractRestrictionLU(option, child);
+
 			}
 
-			if (child.hasChildNodes())
-				extractRestrictionLU(option, child);
-
+		} finally {
+			sb.setLength(0);
 		}
 
 		return null;

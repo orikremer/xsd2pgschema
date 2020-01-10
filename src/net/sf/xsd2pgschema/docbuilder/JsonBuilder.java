@@ -173,9 +173,9 @@ public class JsonBuilder extends CommonBuilder {
 		this.allow_frag = option.allow_frag;
 		this.deny_frag = option.deny_frag;
 
-		if (indent_space.length() != option.indent_offset) {
+		StringBuilder sb = new StringBuilder();
 
-			StringBuilder sb = new StringBuilder();
+		if (indent_space.length() != option.indent_offset) {
 
 			for (int l = 0; l < option.indent_offset; l++)
 				sb.append(" ");
@@ -184,9 +184,9 @@ public class JsonBuilder extends CommonBuilder {
 
 			initIndentSpacesArray(4);
 
-		}
+			sb.setLength(0);
 
-		StringBuilder sb = new StringBuilder();
+		}
 
 		for (int l = 0; l < (key_value_offset = option.key_value_offset); l++)
 			sb.append(" ");

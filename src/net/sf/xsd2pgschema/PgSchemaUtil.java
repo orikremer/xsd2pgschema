@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2019 Masashi Yokochi
+    Copyright 2014-2020 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -787,12 +787,19 @@ public class PgSchemaUtil {
 
 		StringBuilder sb = new StringBuilder();
 
-		for (String name : names)
-			sb.append(avoidPgReservedWords(name) + delimiter);
+		try {
 
-		sb.setLength(sb.length() - delimiter.length());
+			for (String name : names)
+				sb.append(avoidPgReservedWords(name) + delimiter);
 
-		return sb.toString();
+			sb.setLength(sb.length() - delimiter.length());
+
+			return sb.toString();
+
+		} finally {
+			sb.setLength(0);
+		}
+
 	}
 
 	/**
