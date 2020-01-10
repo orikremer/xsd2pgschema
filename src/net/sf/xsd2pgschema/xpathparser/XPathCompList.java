@@ -4892,8 +4892,10 @@ public class XPathCompList {
 
 	/**
 	 * Translate to XPath expression to SQL expression.
+	 *
+	 * @param deny_frag whether to deny fragmented document
 	 */
-	public void translateToSqlExpr() {
+	public void translateToSqlExpr(boolean deny_frag) {
 
 		path_exprs.forEach(path_expr -> {
 
@@ -5080,7 +5082,10 @@ public class XPathCompList {
 
 				}
 
-				if (subject_table.doc_key_pgname != null)
+				if (deny_frag)
+					sb.append(" LIMIT 1");
+
+				else if (subject_table.doc_key_pgname != null)
 					sb.append(" ORDER BY " + subject_table_name + "." + subject_table.doc_key_pgname);
 
 				main_aliases.clear();

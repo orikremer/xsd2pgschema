@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017-2019 Masashi Yokochi
+    Copyright 2017-2020 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -178,17 +178,18 @@ public class XPathEvaluatorImpl {
 	 *
 	 * @param xpath_query XPath query
 	 * @param variables XPath variable reference
+	 * @param deny_frag whether to deny fragmented document
 	 * @throws IOException Signals that an I/O exception has occurred.
 	 * @throws xpathListenerException the xpath listener exception
 	 * @throws PgSchemaException the pg schema exception
 	 */
-	public void translate(String xpath_query, HashMap<String, String> variables) throws IOException, xpathListenerException, PgSchemaException {
+	public void translate(String xpath_query, HashMap<String, String> variables, boolean deny_frag) throws IOException, xpathListenerException, PgSchemaException {
 
 		StringBuilder sb = new StringBuilder();
 
 		try {
 
-			XPathQuery xpq = new XPathQuery(xpath_query, variables);
+			XPathQuery xpq = new XPathQuery(xpath_query, variables, deny_frag);
 
 			Optional<XPathQuery> opt = prev_xpath_queries.stream().filter(prev_xpath_query -> prev_xpath_query.equals(xpq)).findFirst();
 
@@ -251,7 +252,7 @@ public class XPathEvaluatorImpl {
 
 			long start_time2 = System.currentTimeMillis();
 
-			xpath_comp_list.translateToSqlExpr();
+			xpath_comp_list.translateToSqlExpr(deny_frag);
 
 			long end_time2 = System.currentTimeMillis();
 

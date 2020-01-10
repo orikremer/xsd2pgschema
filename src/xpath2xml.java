@@ -322,7 +322,7 @@ public class xpath2xml {
 
 				String xpath_query = xpath_queries.get(id);
 
-				evaluator.translate(xpath_query, variables);
+				evaluator.translate(xpath_query, variables, xmlb.deny_frag);
 
 				if (!pg_option.name.isEmpty())
 					evaluator.composeXml(id, xpath_queries.size(), xml_dir_name, out_file_name, xmlb);

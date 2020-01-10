@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2019 Masashi Yokochi
+    Copyright 2019-2020 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -48,16 +48,21 @@ public class XPathQuery implements Serializable {
 	/** Instance of XPath expressions. */
 	public List<XPathExpr> path_exprs = null;
 
+	/** Whether to deny fragmented document. */
+	public boolean deny_frag = false;
+
 	/**
 	 * Instance of XPathQuery.
 	 *
 	 * @param xpath_query XPath query
 	 * @param variables XPath variable reference
+	 * @param deny_frag whether to deny fragmented document
 	 */
-	public XPathQuery(String xpath_query, HashMap<String, String> variables) {
+	public XPathQuery(String xpath_query, HashMap<String, String> variables, boolean deny_frag) {
 
 		this.xpath_query = xpath_query;
 		this.variables = concatVars(variables);
+		this.deny_frag = deny_frag;
 
 	}
 
@@ -93,7 +98,7 @@ public class XPathQuery implements Serializable {
 	 * @return boolean whether the XPath query matches
 	 */
 	public boolean equals(XPathQuery xpq) {
-		return this.xpath_query.equals(xpq.xpath_query) && this.variables.equals(xpq.variables);
+		return this.xpath_query.equals(xpq.xpath_query) && this.variables.equals(xpq.variables) && this.deny_frag == xpq.deny_frag;
 	}
 
 	/**

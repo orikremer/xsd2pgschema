@@ -957,12 +957,12 @@ public class PgField implements Serializable {
 
 			}
 
-			String nillable = elem.getAttribute("nillable");
+			String _nillable = elem.getAttribute("nillable");
 
-			if (nillable != null && !nillable.isEmpty()) {
+			if (_nillable != null && !_nillable.isEmpty()) {
 
-				required = nillable.equals("false");
-				this.nillable = nillable.equals("true");
+				required = _nillable.equals("false");
+				nillable = _nillable.equals("true");
 
 			}
 
@@ -2250,9 +2250,7 @@ public class PgField implements Serializable {
 	 */
 	protected void setListHolder() {
 
-		list_holder = (!maxoccurs.equals("0") && !maxoccurs.equals("1")) || (!minoccurs.equals("0") && !minoccurs.equals("1"));
-
-		if (list_holder) {
+		if (list_holder = (!maxoccurs.equals("0") && !maxoccurs.equals("1")) || (!minoccurs.equals("0") && !minoccurs.equals("1"))) {
 
 			if (maxoccurs.equals("unbounded"))
 				this._maxoccurs = -1;
@@ -2316,12 +2314,10 @@ public class PgField implements Serializable {
 	 */
 	protected void setOmissible(PgTable table, PgSchemaOption option) {
 
-		if ((dtd_data_holder && option.discarded_document_key_names.contains(name)) || ((dtd_data_holder || simple_content) && option.discarded_document_key_names.contains(table.name + "." + name))) {
+		if ((dtd_data_holder && option.discarded_document_key_names.contains(name)) || ((dtd_data_holder || simple_content) && option.discarded_document_key_names.contains(table.name + "." + name)))
 			omissible = true;
-			return;
-		}
-
-		omissible = (!option.document_key && !option.in_place_document_key && document_key) || (!option.serial_key && serial_key) || (!option.xpath_key && xpath_key) || (!option.rel_data_ext && system_key);
+		else
+			omissible = (!option.document_key && !option.in_place_document_key && document_key) || (!option.serial_key && serial_key) || (!option.xpath_key && xpath_key) || (!option.rel_data_ext && system_key);
 
 	}
 
@@ -2333,12 +2329,10 @@ public class PgField implements Serializable {
 	 */
 	protected void setIndexable(PgTable table, PgSchemaOption option) {
 
-		if (system_key || user_key || (dtd_data_holder && option.discarded_document_key_names.contains(name)) || ((dtd_data_holder || simple_content) && option.discarded_document_key_names.contains(table.name + "." + name))) {
+		if (system_key || user_key || (dtd_data_holder && option.discarded_document_key_names.contains(name)) || ((dtd_data_holder || simple_content) && option.discarded_document_key_names.contains(table.name + "." + name)))
 			indexable = false;
-			return;
-		}
-
-		indexable = !option.field_resolved || (option.field_resolved && field_sel) || (option.attr_resolved && attr_sel);
+		else
+			indexable = !option.field_resolved || (option.field_resolved && field_sel) || (option.attr_resolved && attr_sel);
 
 	}
 
@@ -2350,12 +2344,10 @@ public class PgField implements Serializable {
 	 */
 	protected void setJsonable(PgTable table, PgSchemaOption option) {
 
-		if (system_key || user_key || (dtd_data_holder && option.discarded_document_key_names.contains(name)) || ((dtd_data_holder || simple_content) && option.discarded_document_key_names.contains(table.name + "." + name))) {
+		if (system_key || user_key || (dtd_data_holder && option.discarded_document_key_names.contains(name)) || ((dtd_data_holder || simple_content) && option.discarded_document_key_names.contains(table.name + "." + name)))
 			jsonable = false;
-			return;
-		}
-
-		jsonable = true;
+		else
+			jsonable = true;
 
 	}
 
@@ -2538,7 +2530,6 @@ public class PgField implements Serializable {
 		if (dtd_data_holder && option.discarded_document_key_names.contains(name))
 			return false;
 		 */
-
 		if (node_name.startsWith(prefix + ":"))
 			node_name = PgSchemaUtil.getUnqualifiedName(node_name);
 

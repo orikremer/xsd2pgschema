@@ -335,7 +335,7 @@ public class xpath2json {
 
 				String xpath_query = xpath_queries.get(id);
 
-				evaluator.translate(xpath_query, variables);
+				evaluator.translate(xpath_query, variables, jsonb_option.deny_frag);
 
 				if (!pg_option.name.isEmpty())
 					evaluator.composeJson(id, xpath_queries.size(), json_dir_name, out_file_name, jsonb);

@@ -289,7 +289,7 @@ public class xpath2pgsql {
 
 				String xpath_query = xpath_queries.get(id);
 
-				evaluator.translate(xpath_query, variables);
+				evaluator.translate(xpath_query, variables, false);
 
 				if (!pg_option.name.isEmpty())
 					evaluator.execute(id, xpath_queries.size(), out_dir_name, out_file_name);
