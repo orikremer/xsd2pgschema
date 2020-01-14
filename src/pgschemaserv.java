@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018 Masashi Yokochi
+    Copyright 2018-2020 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -162,7 +162,9 @@ public class pgschemaserv {
 
 				ServerSocket server_socket = new ServerSocket(option.pg_schema_server_port);
 
-				System.out.println("\n" + server_start_info_header + " port number: " + option.pg_schema_server_port + "\n" + server_start_info_header + " lifetime   : " + (option.pg_schema_server_lifetime / 1000L) + " sec");
+				System.out.println("\n" + server_start_info_header + " version    : " + PgSchemaUtil.version + "\n"
+						+ server_start_info_header + " port number: " + option.pg_schema_server_port + "\n"
+						+ server_start_info_header + " lifetime   : " + (option.pg_schema_server_lifetime / 1000L) + " sec");
 
 				List<PgSchemaServerImpl> list = new ArrayList<PgSchemaServerImpl>();
 

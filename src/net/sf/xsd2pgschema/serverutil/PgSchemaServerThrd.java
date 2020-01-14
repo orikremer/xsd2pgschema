@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018-2019 Masashi Yokochi
+    Copyright 2018-2020 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -124,40 +124,74 @@ public class PgSchemaServerThrd implements Runnable {
 
 			switch (query.type) {
 			case ADD:
-				PgSchemaServerImpl new_item = new PgSchemaServerImpl(query);
-				list.add(new_item);
+				if (query.version.equals(PgSchemaUtil.version)) {
+					PgSchemaServerImpl new_item = new PgSchemaServerImpl(query);
+					list.add(new_item);
 
-				reply.message = server_info_header + blue_color + "ADD" + server_info_footer;
+					reply.message = server_info_header + blue_color + "ADD" + server_info_footer;
+				}
+				else
+					reply.message = server_info_header + red_color + "SERVER VERSION MISMATCH" + server_info_footer;
 				break;
 			case MATCH:
-				Optional<PgSchemaServerImpl> match_opt = list.stream().filter(arg -> arg.client_type.equals(query.client_type) && arg.option.equals(query.option)).findFirst();
+				if (query.version.equals(PgSchemaUtil.version)) {
+					Optional<PgSchemaServerImpl> match_opt = list.stream().filter(arg -> arg.client_type.equals(query.client_type) && arg.option.equals(query.option)).findFirst();
 
-				if (match_opt.isPresent())
-					reply.message = server_info_header + green_color + "MATCH" + server_info_footer;
-				else
-					reply.message = server_info_header + red_color + "MATCH NOTHING" + server_info_footer;
+					if (match_opt.isPresent())
+						reply.message = server_info_header + green_color + "MATCH" + server_info_footer;
+					else
+						reply.message = server_info_header + red_color + "MATCH NOTHING" + server_info_footer;
+				} else
+					reply.message = server_info_header + red_color + "SERVER VERSION MISMATCH" + server_info_footer;
 				break;
 			case GET:
-				Optional<PgSchemaServerImpl> get_opt = list.stream().filter(arg -> arg.client_type.equals(query.client_type) && arg.option.equals(query.option)).findFirst();
+				if (query.version.equals(PgSchemaUtil.version)) {
+					Optional<PgSchemaServerImpl> get_opt = list.stream().filter(arg -> arg.client_type.equals(query.client_type) && arg.option.equals(query.option)).findFirst();
 
-				if (get_opt.isPresent()) {
+					if (get_opt.isPresent()) {
 
-					PgSchemaServerImpl get_item = get_opt.get();
-					get_item.touch();
+						PgSchemaServerImpl get_item = get_opt.get();
+						get_item.touch();
 
-					reply.message = server_info_header + green_color + "GET" + server_info_footer;
-					reply.schema_bytes = get_item.schema_bytes;
+						reply.message = server_info_header + green_color + "GET" + server_info_footer;
+						reply.schema_bytes = get_item.schema_bytes;
 
+					} else
+						reply.message = server_info_header + red_color + "GET NOTHING" + server_info_footer;
 				} else
-					reply.message = server_info_header + red_color + "GET NOTHING" + server_info_footer;
+					reply.message = server_info_header + red_color + "SERVER VERSION MISMATCH" + server_info_footer;
+				break;
+			case UPDATE:
+				if (query.version.equals(PgSchemaUtil.version)) {
+					PgSchemaServerImpl update_item = new PgSchemaServerImpl(query);
+
+					Optional<PgSchemaServerImpl> update_opt = list.stream().filter(arg -> arg.client_type.equals(query.client_type) && arg.option.equals(query.option)).findFirst();
+
+					if (update_opt.isPresent()) {
+						list.set(list.indexOf(update_opt.get()), update_item);
+
+						reply.message = server_info_header + green_color + "UPDATE" + server_info_footer;
+					}
+					else {
+						list.add(update_item);
+
+						reply.message = server_info_header + blue_color + "ADD" + server_info_footer;
+					}
+				}
+				else
+					reply.message = server_info_header + red_color + "SERVER VERSION MISMATCH" + server_info_footer;
 				break;
 			case PING:
-				reply.message = server_info_header + blue_color + "PING OK" + server_info_footer;
+				if (query.version.equals(PgSchemaUtil.version))
+					reply.message = server_info_header + blue_color + "PING OK" + server_info_footer;
+				else
+					reply.message = server_info_header + red_color + "SERVER VERSION MISMATCH" + server_info_footer;
 				break;
 			case STATUS:
 				StringBuilder sb = new StringBuilder();
 
-				sb.append(server_status_info_header + " count of data models: " + list.size() + "\n");
+				sb.append(server_status_info_header + " version              : " + PgSchemaUtil.version + "\n");
+				sb.append(server_status_info_header + " number of data models: " + list.size() + "\n");
 
 				Calendar cal = Calendar.getInstance();
 
@@ -188,22 +222,6 @@ public class PgSchemaServerThrd implements Runnable {
 
 				stop = true;
 
-				break;
-			case UPDATE:
-				PgSchemaServerImpl update_item = new PgSchemaServerImpl(query);
-
-				Optional<PgSchemaServerImpl> update_opt = list.stream().filter(arg -> arg.client_type.equals(query.client_type) && arg.option.equals(query.option)).findFirst();
-
-				if (update_opt.isPresent()) {
-					list.set(list.indexOf(update_opt.get()), update_item);
-
-					reply.message = server_info_header + green_color + "UPDATE" + server_info_footer;
-				}
-				else {
-					list.add(update_item);
-
-					reply.message = server_info_header + blue_color + "ADD" + server_info_footer;
-				}
 				break;
 			}
 

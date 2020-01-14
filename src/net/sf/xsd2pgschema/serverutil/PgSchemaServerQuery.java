@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2018-2019 Masashi Yokochi
+    Copyright 2018-2020 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -24,6 +24,7 @@ import java.io.Serializable;
 import org.nustaq.serialization.FSTConfiguration;
 
 import net.sf.xsd2pgschema.PgSchema;
+import net.sf.xsd2pgschema.PgSchemaUtil;
 import net.sf.xsd2pgschema.option.PgSchemaOption;
 
 /**
@@ -35,6 +36,9 @@ public class PgSchemaServerQuery implements Serializable {
 
 	/** The default serial version ID. */
 	private static final long serialVersionUID = 1L;
+
+	/** The version number. */
+	public final String version = PgSchemaUtil.version;
 
 	/** The PgSchema server query type. */
 	public PgSchemaServerQueryType type;

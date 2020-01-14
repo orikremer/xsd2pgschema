@@ -3742,10 +3742,16 @@ public class PgSchema implements Serializable {
 
 			else if (!known_table.schema_location.contains(table.schema_location)) {
 
-				if (!known_table.schema_location.contains(root_schema.unq_schema_locations.get(table.target_namespace)))
-					known_table.schema_location += " " + table.schema_location;
-				else
-					root_schema.dup_schema_locations.put(table.schema_location, root_schema.unq_schema_locations.get(table.target_namespace));
+				String schema_location = root_schema.unq_schema_locations.get(table.target_namespace);
+
+				if (schema_location != null) {
+
+					if (!known_table.schema_location.contains(schema_location))
+						known_table.schema_location += " " + table.schema_location;
+					else
+						root_schema.dup_schema_locations.put(table.schema_location, schema_location);
+
+				}
 
 			}
 
@@ -5344,21 +5350,19 @@ public class PgSchema implements Serializable {
 
 			if (table.order_by == null) {
 
-				String _doc_key_pname = doc_key_pname != null ? doc_key_pname : "";
+				if (option.serial_key && table.fields.stream().anyMatch(ser_key -> ser_key.serial_key))
+					table.order_by = PgSchemaUtil.avoidPgReservedWords(table.fields.stream().filter(ser_key -> ser_key.serial_key).findFirst().get().pname);
 
-				List<String> _field_names = field_names.stream().filter(field_name -> !field_name.equals(_doc_key_pname)).collect(Collectors.toList());
+				else {
 
-				if (option.serial_key && table.list_holder && table.fields.stream().anyMatch(ser_key -> ser_key.serial_key)) {
+					String _doc_key_pname = doc_key_pname != null ? doc_key_pname : "";
+
+					List<String> _field_names = field_names.stream().filter(field_name -> !field_name.equals(_doc_key_pname)).collect(Collectors.toList());
 
 					if (_field_names.size() > 0)
-						_field_names.clear();
-
-					table.fields.stream().filter(ser_key -> ser_key.serial_key).forEach(ser_key -> _field_names.add(ser_key.name));
+						table.order_by = PgSchemaUtil.avoidPgReservedWords(", ", _field_names.stream().toArray(String[]::new));						
 
 				}
-
-				if (_field_names.size() > 0)
-					table.order_by = PgSchemaUtil.avoidPgReservedWords(", ", _field_names.stream().toArray(String[]::new));
 
 			}
 

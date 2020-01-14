@@ -88,6 +88,9 @@ import net.sf.xsd2pgschema.xpathparser.XPathCompList;
  */
 public class PgSchemaUtil {
 
+	/** The version number. */
+	public static final String version = "4.0.7";
+
 	/** The namespace URI representing XML Schema 1.x. */
 	public static final String xs_namespace_uri = "http://www.w3.org/2001/XMLSchema";
 
