@@ -5036,6 +5036,7 @@ public class PgSchema implements Serializable {
 						System.out.println(", but dismissed due to name collision");
 
 					}
+
 				}
 
 				if (!table.target_namespace.isEmpty() && !field.system_key && !field.user_key && !field.any_content_holder && !field.is_same_namespace_of_table)

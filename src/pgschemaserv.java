@@ -162,7 +162,8 @@ public class pgschemaserv {
 
 				ServerSocket server_socket = new ServerSocket(option.pg_schema_server_port);
 
-				System.out.println("\n" + server_start_info_header + " version    : " + PgSchemaUtil.version + "\n"
+				System.out.println("\n"
+						+ server_start_info_header + " version    : " + PgSchemaUtil.version + "\n"
 						+ server_start_info_header + " port number: " + option.pg_schema_server_port + "\n"
 						+ server_start_info_header + " lifetime   : " + (option.pg_schema_server_lifetime / 1000L) + " sec");
 
