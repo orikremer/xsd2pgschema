@@ -95,7 +95,7 @@ public class PgOption {
 	private boolean _no_create_non_uniq_pkey_index = false;
 
 	/** The internal status corresponding to --drop-non-uniq-pkey-index option. */
-	private boolean _drop_non_uniq_pkey_index = false;	
+	private boolean _drop_non_uniq_pkey_index = false;
 
 	/** The internal status corresponding to --create-doc-key-index option. */
 	private boolean _create_doc_key_index = false;

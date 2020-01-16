@@ -392,7 +392,7 @@ public class tsv2pgsql {
 		System.err.println("        --pg-map-double-decimal (map xs:decimal to double precision 64 bits)");
 		System.err.println("        --pg-map-float-decimal (map xs:decimal to single precision 32 bits)");
 		System.err.println("        --pg-map-timestamp (map xs:date to PostgreSQL timestamp type according to the W3C rules)");
-		System.err.println("        --pg-map-date (map xs:date to PostgreSQL date type, default)");	
+		System.err.println("        --pg-map-date (map xs:date to PostgreSQL date type, default)");
 		System.err.println("        --pg-comma-delimiter (use comma separated file)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --doc-key-name DOC_KEY_NAME (default=\"" + option.def_document_key_name + "\")");

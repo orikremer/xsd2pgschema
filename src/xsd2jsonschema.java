@@ -212,7 +212,7 @@ public class xsd2jsonschema {
 		System.err.println("        --no-wild-card (turn off wild card extension)");
 		System.err.println("        --case-insensitive (all table and column names are lowercase)");
 		System.err.println("        --json-map-date-time (map xs:date to JSON Schema date-time type according to the W3C rules)");
-		System.err.println("        --json-map-date (map xs:date to JSON Schema date type, default)");	
+		System.err.println("        --json-map-date (map xs:date to JSON Schema date type, default)");
 		System.err.println("        --field-annotation (retrieve field annotation, default)");
 		System.err.println("        --no-field-annotation (do not retrieve field annotation)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");

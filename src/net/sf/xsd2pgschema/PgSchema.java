@@ -155,7 +155,7 @@ public class PgSchema implements Serializable {
 
 	/** The list of PostgreSQL table name inlined simple content as primitive data type. */
 	@Flat
-	private HashSet<String> pg_inline_simple_conts = null;	
+	private HashSet<String> pg_inline_simple_conts = null;
 
 	/** The unique schema locations (value) with its target namespace (key). */
 	@Flat
@@ -1718,7 +1718,7 @@ public class PgSchema implements Serializable {
 						Optional<PgTable> opt = tables.parallelStream().filter(_table -> _table.total_nested_fields > 0 && _table.fields.stream().anyMatch(_field -> _field.nested_key && getForeignTable(_field).equals(table))).findFirst();
 
 						if (!opt.isPresent()) {
-							disrupted_tables.add(table);	
+							disrupted_tables.add(table);
 							unused_tables.add(table);
 						}
 
@@ -5361,7 +5361,7 @@ public class PgSchema implements Serializable {
 					List<String> _field_names = field_names.stream().filter(field_name -> !field_name.equals(_doc_key_pname)).collect(Collectors.toList());
 
 					if (_field_names.size() > 0)
-						table.order_by = PgSchemaUtil.avoidPgReservedWords(", ", _field_names.stream().toArray(String[]::new));						
+						table.order_by = PgSchemaUtil.avoidPgReservedWords(", ", _field_names.stream().toArray(String[]::new));
 
 				}
 
@@ -6322,9 +6322,14 @@ public class PgSchema implements Serializable {
 
 					if (Files.exists(data_path)) {
 
+						long buffer_size = Files.size(data_path);
+
+						if (buffer_size > PgSchemaUtil.def_buffered_output_stream_buffer_size)
+							buffer_size = PgSchemaUtil.def_buffered_output_stream_buffer_size;
+
 						String sql = "COPY " + table.pgname + " FROM STDIN" + (option.pg_tab_delimiter ? "" : " WITH CSV");
 
-						copy_man.copyIn(sql, Files.newInputStream(data_path), PgSchemaUtil.def_buffered_output_stream_buffer_size);
+						copy_man.copyIn(sql, Files.newInputStream(data_path), (int) buffer_size);
 
 					}
 
@@ -7642,7 +7647,7 @@ public class PgSchema implements Serializable {
 								db_column_type = java.sql.Types.DECIMAL;
 
 							if (db_column_type == java.sql.Types.REAL) // REAL and FLOAT are equivalent in PostgreSQL
-								db_column_type = java.sql.Types.FLOAT;							
+								db_column_type = java.sql.Types.FLOAT;
 
 							if (db_column_type == java.sql.Types.BIT) // BIT and BOOLEAN are equivalent in PostgreSQL
 								db_column_type = java.sql.Types.BOOLEAN;

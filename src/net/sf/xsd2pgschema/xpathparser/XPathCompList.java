@@ -5986,7 +5986,6 @@ public class XPathCompList {
 						e.printStackTrace();
 					}
 				}
-
 				appendSqlColumnName(src_table, serial_key_name, sb);
 				break;
 			case "count":
@@ -7204,6 +7203,7 @@ public class XPathCompList {
 					translateFunctionCallContext(src_path_expr, parent, tree, sb_list.size() > 1 ? sb_list.get(1) : sb, sb_list.peek());
 					sb_list.removeFirst();
 					break;
+				default:
 				}
 
 			}
@@ -7280,7 +7280,7 @@ public class XPathCompList {
 				sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 				break;
 			case text:
-				PgTable parent_table = getParentTable(src_path_expr);
+				PgTable src_table = getTable(src_path_expr);
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
@@ -7288,7 +7288,7 @@ public class XPathCompList {
 						e.printStackTrace();
 					}
 				}
-				appendSqlColumnName(parent_table, serial_key_name, sb);
+				appendSqlColumnName(src_table, serial_key_name, sb);
 				sb.append(" = " + sql_expr.predicate);
 				break;
 			default:
@@ -7556,7 +7556,7 @@ public class XPathCompList {
 					sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 					break;
 				case text:
-					PgTable parent_table = getParentTable(src_path_expr);
+					PgTable src_table = getTable(src_path_expr);
 					if (!serial_key) {
 						try {
 							throw new PgSchemaException(tree, "serial key", serial_key);
@@ -7564,7 +7564,7 @@ public class XPathCompList {
 							e.printStackTrace();
 						}
 					}
-					appendSqlColumnName(parent_table, serial_key_name, sb);
+					appendSqlColumnName(src_table, serial_key_name, sb);
 					sb.append(" = " + sql_expr.predicate);
 					break;
 				default:
@@ -7614,11 +7614,12 @@ public class XPathCompList {
 			sb.append(" " + sql_expr.binary_operator + " " + sql_expr.value);
 			break;
 		case text:
-			if (_predicateContextClass != null && (_predicateContextClass.equals("EqualityExprContext") || _predicateContextClass.equals("RelationalExprContext") || _predicateContextHasBooleanFunc))
+			if (_predicateContextClass != null && (/* _predicateContextClass.equals("EqualityExprContext") || */ _predicateContextClass.equals("RelationalExprContext") || _predicateContextHasBooleanFunc)) {
 				sb.append(sql_expr.predicate);
+			}
 
 			else {
-				PgTable parent_table = getParentTable(src_path_expr);
+				PgTable src_table = getTable(src_path_expr);
 				if (!serial_key) {
 					try {
 						throw new PgSchemaException(tree, "serial key", serial_key);
@@ -7626,7 +7627,7 @@ public class XPathCompList {
 						e.printStackTrace();
 					}
 				}
-				appendSqlColumnName(parent_table, serial_key_name, sb);
+				appendSqlColumnName(src_table, serial_key_name, sb);
 				sb.append(" = " + sql_expr.predicate);
 			}
 			break;
@@ -7694,7 +7695,7 @@ public class XPathCompList {
 
 			while ((dst_table = linking_order.poll()) != null) {
 
-				if (!joined_tables.containsKey(dst_table))
+				if (!joined_tables.containsKey(dst_table) && target_tables.containsKey(dst_table))
 					joined_tables.put(dst_table, target_tables.get(dst_table));
 
 				target_tables.remove(dst_table);
@@ -8041,14 +8042,14 @@ public class XPathCompList {
 
 			src_table = linking_order.poll();
 
-			if (!joined_tables.containsKey(src_table))
+			if (!joined_tables.containsKey(src_table) && target_tables.containsKey(src_table))
 				joined_tables.put(src_table, target_tables.get(src_table));
 
 			target_tables.remove(src_table);
 
 			while ((dst_table = linking_order.poll()) != null) {
 
-				if (!joined_tables.containsKey(dst_table))
+				if (!joined_tables.containsKey(dst_table) && target_tables.containsKey(dst_table))
 					joined_tables.put(dst_table, target_tables.get(dst_table));
 
 				target_tables.remove(dst_table);
@@ -8286,14 +8287,14 @@ public class XPathCompList {
 
 		src_table = touched_tables.poll();
 
-		if (!joined_tables.containsKey(src_table))
+		if (!joined_tables.containsKey(src_table) && target_tables.containsKey(src_table))
 			joined_tables.put(src_table, target_tables.get(src_table));
 
 		target_tables.remove(src_table);
 
 		while ((dst_table = touched_tables.poll()) != null) {
 
-			if (!joined_tables.containsKey(dst_table))
+			if (!joined_tables.containsKey(dst_table) && target_tables.containsKey(dst_table))
 				joined_tables.put(dst_table, target_tables.get(dst_table));
 
 			target_tables.remove(dst_table);

@@ -109,7 +109,7 @@ public abstract class PgSchemaNodeParser {
 				_fields = table.custom_fields;
 				_fields_size = _fields.size();
 			}
-			break;			
+			break;
 		case json_conversion:
 			if (table.jsonable) {
 				_fields = table.custom_fields;

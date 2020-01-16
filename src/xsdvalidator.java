@@ -82,7 +82,7 @@ public class xsdvalidator {
 				case "2012-04":
 				case "1.1_2012":
 				case "11_2012":
-				case "2012":				
+				case "2012":
 					xsd_for_xsd = PgSchemaUtil.xsd_for_xsd_11_immutable;
 					break;
 				case "1.0":

@@ -300,7 +300,7 @@ public class xpathparser {
 		System.err.println("        --pg-map-double-decimal (map xs:decimal to double precision 64 bits)");
 		System.err.println("        --pg-map-float-decimal (map xs:decimal to single precision 32 bits)");
 		System.err.println("        --pg-map-timestamp (map xs:date to PostgreSQL timestamp type according to the W3C rules)");
-		System.err.println("        --pg-map-date (map xs:date to PostgreSQL date type, default)");	
+		System.err.println("        --pg-map-date (map xs:date to PostgreSQL date type, default)");
 		System.err.println("        --no-cache-xsd (retrieve XML Schemata without caching)");
 		System.err.println("        --hash-by ALGORITHM [MD2 | MD5 | SHA-1 (default) | SHA-224 | SHA-256 | SHA-384 | SHA-512]");
 		System.err.println("        --hash-size BIT_SIZE [int (32 bits) | long (64 bits, default) | native (default bits of algorithm) | debug (string)]");

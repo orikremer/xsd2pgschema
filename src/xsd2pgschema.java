@@ -270,7 +270,7 @@ public class xsd2pgschema {
 		System.err.println("        --pg-map-double-decimal (map xs:decimal to double precision 64 bits)");
 		System.err.println("        --pg-map-float-decimal (map xs:decimal to single precision 32 bits)");
 		System.err.println("        --pg-map-timestamp (map xs:date to PostgreSQL timestamp type according to the W3C rules)");
-		System.err.println("        --pg-map-date (map xs:date to PostgreSQL date type, default)");	
+		System.err.println("        --pg-map-date (map xs:date to PostgreSQL date type, default)");
 		System.err.println("        --field-annotation (retrieve field annotation)");
 		System.err.println("        --no-field-annotation (do not retrieve field annotation, default)");
 		System.err.println("        --pg-comment-on (set annotation as comment in PostgreSQL DB.)");

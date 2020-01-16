@@ -1788,7 +1788,7 @@ public class PgField implements Serializable {
 						sb.append(option.xs_prefix_ + "pattern/@value='" + pattern + "' and ");
 
 					if (max_inclusive != null)
-						sb.append(option.xs_prefix_ + "maxInclusive/@value='" + max_inclusive + "' and ");	
+						sb.append(option.xs_prefix_ + "maxInclusive/@value='" + max_inclusive + "' and ");
 
 					if (max_exclusive != null)
 						sb.append(option.xs_prefix_ + "maxExclusive/@value='" + max_exclusive + "' and ");
@@ -1797,7 +1797,7 @@ public class PgField implements Serializable {
 						sb.append(option.xs_prefix_ + "minExclusive/@value='" + min_exclusive + "' and ");
 
 					if (min_inclusive != null)
-						sb.append(option.xs_prefix_ + "minInclusive/@value='" + min_inclusive + "' and ");	
+						sb.append(option.xs_prefix_ + "minInclusive/@value='" + min_inclusive + "' and ");
 
 					if (total_digits != null)
 						sb.append(option.xs_prefix_ + "totalDigits/@value='" + total_digits + "' and ");
