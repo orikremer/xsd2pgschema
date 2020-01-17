@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -1263,13 +1264,21 @@ public class PgSchemaUtil {
 	 */
 	public static Object readObjectFromStream(FSTConfiguration fst_conf, DataInputStream in) throws IOException, ClassNotFoundException {
 
-		int len = in.readInt();
-		byte buffer[] = new byte[len]; // this could be reused !
+		try {
 
-		while (len > 0)
-			len -= in.read(buffer, buffer.length - len, len);
+			int len = in.readInt();
 
-		return fst_conf.getObjectInput(buffer).readObject();
+			byte buffer[] = new byte[len]; // this could be reused !
+
+			while (len > 0)
+				len -= in.read(buffer, buffer.length - len, len);
+
+			return fst_conf.getObjectInput(buffer).readObject();
+
+		} catch (EOFException e) {
+			return null;
+		}
+
 	}
 
 	/**

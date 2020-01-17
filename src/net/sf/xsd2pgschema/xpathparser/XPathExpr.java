@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2017-2019 Masashi Yokochi
+    Copyright 2017-2020 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -50,6 +50,12 @@ public class XPathExpr implements Serializable {
 
 	/** The predicate SQL expression. */
 	protected List<XPathSqlExpr> sql_predicates = null;
+
+	/** The adverb SQL expression. */
+	protected XPathSqlExpr sql_adverb = null;
+
+	/** The subject_function SQL expression. */
+	protected XPathSqlExpr sql_subject_func = null;
 
 	/**
 	 * Instance of XPathExpr.
@@ -123,6 +129,30 @@ public class XPathExpr implements Serializable {
 			sql_predicates = new ArrayList<XPathSqlExpr>();
 
 		sql_predicates.add(sql_expr);
+
+	}
+
+	/**
+	 * Set a SQL expression as adverb.
+	 *
+	 * @param sql_expr adverb SQL expression
+	 */
+	public void setAdverbSql(XPathSqlExpr sql_expr) {
+
+		if (sql_adverb == null)
+			sql_adverb = sql_expr;
+
+	}
+
+	/**
+	 * Set a SQL expression as subject function
+	 *
+	 * @param sql_expr subject function SQL expression
+	 */
+	public void setSubjectFuncSql(XPathSqlExpr sql_expr) {
+
+		if (sql_subject_func == null)
+			sql_subject_func = sql_expr;
 
 	}
 

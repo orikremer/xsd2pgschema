@@ -122,6 +122,9 @@ public class PgSchemaServerThrd implements Runnable {
 
 			PgSchemaServerQuery query = (PgSchemaServerQuery) PgSchemaUtil.readObjectFromStream(fst_conf, in);
 
+			if (query == null)
+				return;
+
 			switch (query.type) {
 			case ADD:
 			case MATCH:

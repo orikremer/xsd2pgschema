@@ -1,6 +1,6 @@
 /*
     xsd2pgschema - Database replication tool based on XML Schema
-    Copyright 2014-2019 Masashi Yokochi
+    Copyright 2014-2020 Masashi Yokochi
 
     https://sourceforge.net/projects/xsd2pgschema/
 
@@ -788,6 +788,7 @@ public class PgSchemaOption implements Serializable {
 			out.close();
 			 */
 		} catch (IOException | ClassNotFoundException e) {
+		} catch (RuntimeException e) {
 		}
 
 	}
