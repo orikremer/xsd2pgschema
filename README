@@ -1,9 +1,10 @@
-﻿ Changes in xsd2pgschema 4.0.7 (release 2020-01-17)
+﻿ Changes in xsd2pgschema 4.0.7 (release 2020-01-20)
 
   [Ticket #9] Fixed NullPointerException while schema generation.
   Used serial key in the ORDER BY clause if available.
   Imposed to use the same version of PgSchema server.
   Fixed SQL translation of document order dependent XPath query using position() and last().
+  Fixed SQL translation of XPath query including aggregate functions, count(), and sum().
 
  Changes in xsd2pgschema 4.0.6 (release 2020-01-09)
 

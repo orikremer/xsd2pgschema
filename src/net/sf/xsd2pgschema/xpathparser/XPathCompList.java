@@ -61,6 +61,12 @@ public class XPathCompList {
 	/** XPath variable reference. */
 	private HashMap<String, String> variables = null;
 
+	/** The path expression reference for each union id. */
+	private HashMap<Integer, Integer> path_expr_union_refs = null;
+
+	/** Whether FunctionCallContext node that is translated to SQL aggregation exists. */
+	private boolean aggr_func_expr = false;
+
 	/** Whether UnionExprNoRootContext node exists. */
 	private boolean union_expr = false;
 
@@ -162,6 +168,8 @@ public class XPathCompList {
 
 		this.variables = variables;
 
+		path_expr_union_refs = new HashMap<Integer, Integer>();
+
 	}
 
 	/**
@@ -186,6 +194,9 @@ public class XPathCompList {
 
 		if (pred_exprs != null)
 			pred_exprs.clear();
+
+		if (path_expr_union_refs != null)
+			path_expr_union_refs.clear();
 
 	}
 
@@ -263,7 +274,18 @@ public class XPathCompList {
 					continue;
 
 				if (!text.equals("/") && !text.equals("//") && !text.equals("|") && !text.equals("*")) {
-					union_counter++;
+
+					if (child.getParent().getClass().getSimpleName().equals("FunctionNameContext")) {
+						ParseTree func_name = child.getParent();
+						comps.add(new XPathComp(union_counter, step_counter, func_name));
+						if (verbose)
+							System.out.println(union_counter + "." + step_counter + " - " + func_name.getClass().getSimpleName() + " '" + func_name.getText() + "'");
+
+						aggr_func_expr = true;
+
+					} else
+						union_counter++;
+
 					continue;
 				}
 
@@ -274,16 +296,12 @@ public class XPathCompList {
 					union_counter++;
 					step_counter = 0;
 
-				}
-
-				if (text.equals("*")) {
+				} else if (text.equals("*")) {
 
 					step_counter--;
 					wild_card = true;
 
-				}
-
-				else if (wild_card) {
+				} else if (wild_card) {
 
 					step_counter++;
 					wild_card = false;
@@ -646,6 +664,9 @@ public class XPathCompList {
 
 				comps = arrayOf(union_id, step_id);
 
+				if (step_id == 0)
+					path_expr_union_refs.put(union_id, path_exprs.size());
+
 				for (XPathComp comp : comps) {
 
 					anyClass = comp.tree.getClass().getSimpleName();
@@ -676,6 +697,9 @@ public class XPathCompList {
 						break;
 					case "NameTestContext":
 						testNameTestContext(comp, comps, false);
+						break;
+					case "FunctionNameContext":
+						testFunctionNameContext(comp);
 						break;
 					default:
 						throw new PgSchemaException(comp.tree);
@@ -4208,6 +4232,24 @@ public class XPathCompList {
 	}
 
 	/**
+	 * Test FunctionNameContext node.
+	 *
+	 * @param comp current XPath component
+	 * @throws PgSchemaException the pg schema exception
+	 */
+	private void testFunctionNameContext(XPathComp comp) throws PgSchemaException {
+
+		switch (comp.tree.getText()) {
+		case "count":
+		case "sum":
+			break;
+		default:
+			throw new PgSchemaException(comp.tree);
+		}
+
+	}
+
+	/**
 	 * Test PredicateContext node.
 	 *
 	 * @param comp current XPath component
@@ -4275,6 +4317,8 @@ public class XPathCompList {
 							break;
 						case "NameTestContext":
 							pred_list.testNameTestContext(pred_comp, pred_comps, true);
+							break;
+						case "FunctionNameContext":
 							break;
 						default:
 							throw new PgSchemaException(pred_comp.tree);
@@ -5089,7 +5133,7 @@ public class XPathCompList {
 					sb.append(" LIMIT 1");
 
 				else if (subject_table.doc_key_pgname != null)
-					sb.append(" ORDER BY " + subject_table_name + "." + subject_table.doc_key_pgname);
+					sb.append((aggr_func_expr ? " GROUP BY " : " ORDER BY ") + subject_table_name + "." + subject_table.doc_key_pgname);
 
 				path_expr.sql = sb.toString();
 
@@ -5154,18 +5198,34 @@ public class XPathCompList {
 	 */
 	private void appendSqlSubject(XPathExpr path_expr, StringBuilder sb) {
 
-		if (path_expr.sql_subject_func == null) {
+		if (!aggr_func_expr) {
 			appendSqlColumnName(path_expr.sql_subject, sb);
 			return;
 		}
 
-		String[] func = path_expr.sql_subject_func.predicate.split("*"); // xsd:func ( * )
+		path_expr_union_refs.entrySet().stream().filter(arg -> arg.getValue() == path_exprs.indexOf(path_expr)).sorted(Comparator.comparingInt(arg -> arg.getKey())).forEach(arg -> {
 
-		sb.append(func[0]);
+			comps.stream().filter(comp -> comp.union_id == arg.getKey() && comp.step_id == 0 && comp.tree.getClass().getSimpleName().equals("FunctionNameContext")).forEach(comp -> {
+
+				sb.append(comp.tree.getText() + "( ");
+
+			});
+
+		});
 
 		appendSqlColumnName(path_expr.sql_subject, sb);
 
-		sb.append(func[1]);
+		path_expr_union_refs.entrySet().stream().filter(arg -> arg.getValue() == path_exprs.indexOf(path_expr)).sorted(Comparator.comparingInt(arg -> arg.getKey())).forEach(arg -> {
+
+			comps.stream().filter(comp -> comp.union_id == arg.getKey() && comp.step_id == 0 && comp.tree.getClass().getSimpleName().equals("FunctionNameContext")).forEach(comp -> {
+
+				sb.append(" )");
+
+			});
+
+		});
+
+		path_expr.terminus = XPathCompType.text;
 
 	}
 
@@ -5981,18 +6041,6 @@ public class XPathCompList {
 				}
 				appendSqlColumnName(src_table, serial_key_name, sb);
 				break;
-			case "count":
-				if (pred_size != 1)
-					throw new PgSchemaException(tree);
-
-				sql_expr = sql_predicates.get(0);
-
-				if (sql_expr.predicate != null)
-					throw new PgSchemaException(tree);
-
-				src_path_expr.setSubjectFuncSql(new XPathSqlExpr(schema, null, null, null, null, "count ( * )", XPathCompType.text, parent, tree));
-
-				return false;
 			case "id":
 				if (pred_size != 1)
 					throw new PgSchemaException(tree);
@@ -6864,18 +6912,6 @@ public class XPathCompList {
 
 				}
 				break;
-			case "sum":
-				if (pred_size != 1)
-					throw new PgSchemaException(tree);
-
-				sql_expr_str = sql_predicates.get(0);
-
-				if (sql_expr_str.predicate != null)
-					throw new PgSchemaException(tree);
-
-				src_path_expr.setSubjectFuncSql(new XPathSqlExpr(schema, null, null, null, null, "sum ( * )", XPathCompType.text, parent, tree));
-
-				return false;
 			case "floor":
 			case "ceiling":
 			case "round":

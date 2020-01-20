@@ -477,9 +477,9 @@ public class XmlBuilder extends CommonBuilder {
 
 		PgField field = path_expr.sql_subject.field;
 
-		String field_name = field.xname;
-		String field_ns = field.target_namespace;
-		String field_prefix = field.xprefix;
+		String field_name = field != null ? field.xname : null;
+		String field_ns = field != null ? field.target_namespace : null;
+		String field_prefix = field != null ? field.xprefix : null;
 
 		try {
 

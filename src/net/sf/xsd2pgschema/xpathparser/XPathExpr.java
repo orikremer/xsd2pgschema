@@ -54,9 +54,6 @@ public class XPathExpr implements Serializable {
 	/** The adverb SQL expression. */
 	protected XPathSqlExpr sql_adverb = null;
 
-	/** The subject_function SQL expression. */
-	protected XPathSqlExpr sql_subject_func = null;
-
 	/**
 	 * Instance of XPathExpr.
 	 *
@@ -141,18 +138,6 @@ public class XPathExpr implements Serializable {
 
 		if (sql_adverb == null)
 			sql_adverb = sql_expr;
-
-	}
-
-	/**
-	 * Set a SQL expression as subject function
-	 *
-	 * @param sql_expr subject function SQL expression
-	 */
-	public void setSubjectFuncSql(XPathSqlExpr sql_expr) {
-
-		if (sql_subject_func == null)
-			sql_subject_func = sql_expr;
 
 	}
 
