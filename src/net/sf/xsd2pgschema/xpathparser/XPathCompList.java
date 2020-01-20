@@ -4240,6 +4240,9 @@ public class XPathCompList {
 	private void testFunctionNameContext(XPathComp comp) throws PgSchemaException {
 
 		switch (comp.tree.getText()) {
+		case "local-name":
+		case "namespace-uri":
+		case "name":
 		case "count":
 		case "sum":
 			break;
@@ -5203,27 +5206,80 @@ public class XPathCompList {
 			return;
 		}
 
-		path_expr_union_refs.entrySet().stream().filter(arg -> arg.getValue() == path_exprs.indexOf(path_expr)).sorted(Comparator.comparingInt(arg -> arg.getKey())).forEach(arg -> {
-
-			comps.stream().filter(comp -> comp.union_id == arg.getKey() && comp.step_id == 0 && comp.tree.getClass().getSimpleName().equals("FunctionNameContext")).forEach(comp -> {
-
-				sb.append(comp.tree.getText() + "( ");
-
-			});
-
-		});
-
-		appendSqlColumnName(path_expr.sql_subject, sb);
+		StringBuilder _sb = new StringBuilder();
 
 		path_expr_union_refs.entrySet().stream().filter(arg -> arg.getValue() == path_exprs.indexOf(path_expr)).sorted(Comparator.comparingInt(arg -> arg.getKey())).forEach(arg -> {
 
 			comps.stream().filter(comp -> comp.union_id == arg.getKey() && comp.step_id == 0 && comp.tree.getClass().getSimpleName().equals("FunctionNameContext")).forEach(comp -> {
 
-				sb.append(" )");
+				String func_name = comp.tree.getText();
+
+				switch (func_name) {
+				case "local-name":
+					switch (path_expr.terminus) {
+					case table:
+						sb.append("'" + path_expr.sql_subject.table.pname + "'");
+						break;
+					case element:
+					case simple_content:
+					case attribute:
+					case any_element:
+					case any_attribute:
+						sb.append("'" + path_expr.sql_subject.field.pname + "'");
+						break;
+					default:
+					}
+					break;
+				case "namespace-uri":
+					switch (path_expr.terminus) {
+					case table:
+						sb.append("'" + (path_expr.sql_subject.table.target_namespace != null ? path_expr.sql_subject.table.target_namespace.split(" ")[0] : "") + "'");
+						break;
+					case element:
+					case simple_content:
+					case attribute:
+					case any_element:
+					case any_attribute:
+						sb.append("'" + (path_expr.sql_subject.field.target_namespace != null ? path_expr.sql_subject.field.target_namespace.split(" ")[0] : "") + "'");
+						break;
+					default:
+					}					
+					break;
+				case "name":
+					switch (path_expr.terminus) {
+					case table:
+						String prefix = path_expr.sql_subject.table.prefix;
+						sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + path_expr.sql_subject.table.pname + "'");
+						break;
+					case element:
+					case simple_content:
+					case attribute:
+					case any_element:
+					case any_attribute:
+						PgField field = path_expr.sql_subject.table.getCanField(path_expr.sql_subject.field.xname);
+						prefix = field.prefix;
+						sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + path_expr.sql_subject.field.pname + "'");
+						break;
+					default:
+					}
+					break;
+				case "count":
+				case "sum":
+					sb.append(func_name + "( ");
+					_sb.append(" )");
+					break;
+				}
 
 			});
 
 		});
+
+		if (_sb.indexOf(")") != -1)
+			appendSqlColumnName(path_expr.sql_subject, sb);
+
+		sb.append(_sb);
+
+		_sb.setLength(0);
 
 		path_expr.terminus = XPathCompType.text;
 
@@ -6167,7 +6223,7 @@ public class XPathCompList {
 						case any_attribute:
 							table = getParentTable(sql_expr);
 							PgField field = table.getCanField(sql_expr.xname);
-							prefix = field.is_same_namespace_of_table ? "" : field.prefix;
+							prefix = field.prefix;
 
 							switch (sql_expr.terminus) {
 							case any_element:
