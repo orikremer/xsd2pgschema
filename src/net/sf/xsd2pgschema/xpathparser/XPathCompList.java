@@ -529,7 +529,10 @@ public class XPathCompList {
 		return anyClass.equals("RelativeLocationPathContext")
 				|| anyClass.equals("AbsoluteLocationPathNorootContext")
 				|| anyClass.equals("StepContext")
-				|| anyClass.equals("NodeTestContext");
+				|| anyClass.equals("NCNameContext")
+				|| anyClass.equals("NodeTestContext")
+				|| anyClass.equals("NameTestContext")
+				|| anyClass.equals("QNameContext");
 	}
 
 	/**
