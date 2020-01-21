@@ -243,12 +243,12 @@ public class xpathparser {
 			XPathCompList xpath_comp_list = new XPathCompList(client.schema, tree, variables);
 
 			if (xpath_comp_list.comps.size() == 0)
-				throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
+				throw new xpathListenerException("Insufficient XPath expression. (" + main_text + ")");
 
 			xpath_comp_list.validate(false);
 
 			if (xpath_comp_list.path_exprs.size() == 0)
-				throw new xpathListenerException("Invalid XPath expression. (" + main_text + ")");
+				throw new xpathListenerException("Insufficient XPath expression. " + (xpath_comp_list.func_expr ? "Hint: id() can be replaced with an appropriate location path expression. " : "") + "(" + main_text + ")");
 
 			StringBuilder sb = new StringBuilder();
 

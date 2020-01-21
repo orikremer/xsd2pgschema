@@ -64,9 +64,6 @@ public class XPathCompList {
 	/** The path expression reference for each union id. */
 	private HashMap<Integer, Integer> path_expr_union_refs = null;
 
-	/** Whether FunctionCallContext node that is translated to SQL aggregation exists. */
-	private boolean aggr_func_expr = false;
-
 	/** Whether UnionExprNoRootContext node exists. */
 	private boolean union_expr = false;
 
@@ -114,6 +111,9 @@ public class XPathCompList {
 
 	/** Whether any dictionary has been updated. */
 	public boolean updated = false;
+
+	/** Whether FunctionCallContext node that is translated to SQL aggregation exists. */
+	public boolean func_expr = false;
 
 	// XPath parser being aware of XML Schema
 
@@ -281,7 +281,7 @@ public class XPathCompList {
 						if (verbose)
 							System.out.println(union_counter + "." + step_counter + " - " + func_name.getClass().getSimpleName() + " '" + func_name.getText() + "'");
 
-						aggr_func_expr = true;
+						func_expr = true;
 
 					} else
 						union_counter++;
@@ -4240,6 +4240,7 @@ public class XPathCompList {
 	private void testFunctionNameContext(XPathComp comp) throws PgSchemaException {
 
 		switch (comp.tree.getText()) {
+		case "id":
 		case "local-name":
 		case "namespace-uri":
 		case "name":
@@ -5136,7 +5137,7 @@ public class XPathCompList {
 						sb.append(" LIMIT 1");
 
 					else if (subject_table.doc_key_pgname != null)
-						sb.append((aggr_func_expr ? " GROUP BY " : " ORDER BY ") + subject_table_name + "." + subject_table.doc_key_pgname);
+						sb.append((func_expr ? " GROUP BY " : " ORDER BY ") + subject_table_name + "." + subject_table.doc_key_pgname);
 
 				}
 
@@ -5204,7 +5205,7 @@ public class XPathCompList {
 	 */
 	private boolean appendSqlSubject(XPathExpr path_expr, StringBuilder sb) {
 
-		if (!aggr_func_expr) {
+		if (!func_expr) {
 			appendSqlColumnName(path_expr.sql_subject, sb);
 			return true;
 		}
@@ -6115,7 +6116,7 @@ public class XPathCompList {
 				if (sql_expr.predicate != null)
 					throw new PgSchemaException(tree);
 
-				throw new PgSchemaException("Aggregate function count() are not allowed in WHERE clause. Hint: Please devide the original query and combine the results later.");
+				throw new PgSchemaException("Aggregate function count() are not allowed in WHERE clause. Hint: The original query can be split into several parts and combine the results later.");
 			case "id":
 				if (pred_size != 1)
 					throw new PgSchemaException(tree);
@@ -6123,11 +6124,9 @@ public class XPathCompList {
 				sql_expr = sql_predicates.get(0);
 
 				if (sql_expr.predicate != null)
-					sb.append(sql_expr.predicate);
+					throw new PgSchemaException(tree);
 
-				else
-					appendSqlColumnName(sql_expr, sb);
-				break;
+				throw new PgSchemaException("Aggregate function id() are not allowed in WHERE clause. Hint: The original query can be split into several parts and combine the results later.");
 			case "local-name":
 				if (pred_size > 1)
 					throw new PgSchemaException(tree);
@@ -6996,7 +6995,7 @@ public class XPathCompList {
 				if (sql_expr_str.predicate != null)
 					throw new PgSchemaException(tree);
 
-				throw new PgSchemaException("Aggregate function sum() are not allowed in WHERE clause. Hint: Please devide the original query and combine the results later.");
+				throw new PgSchemaException("Aggregate function sum() are not allowed in WHERE clause. Hint: The original query can be split into several parts and combine the results later.");
 			case "floor":
 			case "ceiling":
 			case "round":
