@@ -5013,52 +5013,28 @@ public class XPathCompList {
 
 				sb.append("SELECT ");
 
-				appendSqlSubject(path_expr, sb);
+				if (appendSqlSubject(path_expr, sb)) {
 
-				sb.append(" FROM ");
+					sb.append(" FROM ");
 
-				if (src_comps != null) {
+					if (src_comps != null) {
 
-					// remove subject table from target
+						// remove subject table from target
 
-					joined_tables.put(subject_table, target_tables.get(subject_table));
+						joined_tables.put(subject_table, target_tables.get(subject_table));
 
-					HashMap<PgTable, String> linking_tables = new HashMap<PgTable, String>();
+						HashMap<PgTable, String> linking_tables = new HashMap<PgTable, String>();
 
-					LinkedList<LinkedList<PgTable>> linking_orders = new LinkedList<LinkedList<PgTable>>();
-					LinkedList<LinkedList<PgTable>> _linking_orders = new LinkedList<LinkedList<PgTable>>();
+						LinkedList<LinkedList<PgTable>> linking_orders = new LinkedList<LinkedList<PgTable>>();
+						LinkedList<LinkedList<PgTable>> _linking_orders = new LinkedList<LinkedList<PgTable>>();
 
-					// simple attribute in subject expression
+						// simple attribute in subject expression
 
-					if (path_expr.terminus.equals(XPathCompType.attribute) && !path_expr.sql_subject.field.attribute) {
-
-						LinkedList<PgTable> linking_order = new LinkedList<PgTable>();
-
-						testJoinClauseForSimpleAttr(subject_table, path_expr.sql_subject.path, linking_tables, linking_order);
-
-						if (linking_tables.size() > 0) {
-
-							target_tables.putAll(linking_tables);
-							linking_tables.clear();
-
-						}
-
-						linking_orders.add(linking_order);
-						_linking_orders.add(new LinkedList<PgTable>(linking_order));
-
-					}
-
-					target_tables.remove(subject_table);
-
-					// simple attribute in predicate expression
-
-					if (path_expr.sql_predicates != null) {
-
-						path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.terminus.equals(XPathCompType.attribute) && !sql_expr.field.attribute).forEach(sql_expr -> {
+						if (path_expr.terminus.equals(XPathCompType.attribute) && !path_expr.sql_subject.field.attribute) {
 
 							LinkedList<PgTable> linking_order = new LinkedList<PgTable>();
 
-							testJoinClauseForSimpleAttr(sql_expr.table, sql_expr.path, linking_tables, linking_order);
+							testJoinClauseForSimpleAttr(subject_table, path_expr.sql_subject.path, linking_tables, linking_order);
 
 							if (linking_tables.size() > 0) {
 
@@ -5070,73 +5046,99 @@ public class XPathCompList {
 							linking_orders.add(linking_order);
 							_linking_orders.add(new LinkedList<PgTable>(linking_order));
 
-						});
+						}
+
+						target_tables.remove(subject_table);
+
+						// simple attribute in predicate expression
+
+						if (path_expr.sql_predicates != null) {
+
+							path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.terminus.equals(XPathCompType.attribute) && !sql_expr.field.attribute).forEach(sql_expr -> {
+
+								LinkedList<PgTable> linking_order = new LinkedList<PgTable>();
+
+								testJoinClauseForSimpleAttr(sql_expr.table, sql_expr.path, linking_tables, linking_order);
+
+								if (linking_tables.size() > 0) {
+
+									target_tables.putAll(linking_tables);
+									linking_tables.clear();
+
+								}
+
+								linking_orders.add(linking_order);
+								_linking_orders.add(new LinkedList<PgTable>(linking_order));
+
+							});
+
+						}
+
+						HashMap<PgTable, String> _target_tables = new HashMap<PgTable, String>(target_tables);
+						HashMap<PgTable, String> _joined_tables = new HashMap<PgTable, String>(joined_tables);
+
+						testJoinClause(_target_tables, _joined_tables, linking_tables, _linking_orders);
+
+						if (linking_tables.size() > 0) {
+
+							target_tables.putAll(linking_tables);
+							linking_tables.clear();
+
+						}
+
+						_joined_tables.forEach((_table_, _path_) -> appendSqlTable(_table_, sb));
+
+						_joined_tables.clear();
+
+						sb.setLength(sb.length() - 2); // remove last ", "
+
+						sb.append(" WHERE ");
+
+						int begin = sb.length();
+
+						for (XPathComp src_comp : src_comps) {
+
+							translatePredicateTree2SqlImpl(src_comp, path_expr, sb);
+
+							if (sb.length() > begin)
+								sb.append(" AND ");
+
+							begin = sb.length();
+
+						}
+
+						appendJoinClause(target_tables, joined_tables, linking_orders, sb);
+
+						if (!sb.substring(sb.length() - 6).equals("WHERE "))
+							sb.setLength(sb.length() - 5); // remove last " AND "
+
+						joined_tables.clear();
 
 					}
 
-					HashMap<PgTable, String> _target_tables = new HashMap<PgTable, String>(target_tables);
-					HashMap<PgTable, String> _joined_tables = new HashMap<PgTable, String>(joined_tables);
+					else {
 
-					testJoinClause(_target_tables, _joined_tables, linking_tables, _linking_orders);
+						target_tables.forEach((_table_, _path_) -> appendSqlTable(_table_, sb));
 
-					if (linking_tables.size() > 0) {
+						sb.setLength(sb.length() - 2); // remove last ", "
 
-						target_tables.putAll(linking_tables);
-						linking_tables.clear();
+						target_tables.clear();
 
 					}
 
-					_joined_tables.forEach((_table_, _path_) -> appendSqlTable(_table_, sb));
+					if (sb.substring(sb.length() - 6).equals("WHERE "))
+						sb.setLength(sb.length() - 7);
 
-					_joined_tables.clear();
+					if (path_expr.sql_adverb != null)
+						sb.append(" " + path_expr.sql_adverb.predicate);
 
-					sb.setLength(sb.length() - 2); // remove last ", "
+					else if (deny_frag)
+						sb.append(" LIMIT 1");
 
-					sb.append(" WHERE ");
-
-					int begin = sb.length();
-
-					for (XPathComp src_comp : src_comps) {
-
-						translatePredicateTree2SqlImpl(src_comp, path_expr, sb);
-
-						if (sb.length() > begin)
-							sb.append(" AND ");
-
-						begin = sb.length();
-
-					}
-
-					appendJoinClause(target_tables, joined_tables, linking_orders, sb);
-
-					if (!sb.substring(sb.length() - 6).equals("WHERE "))
-						sb.setLength(sb.length() - 5); // remove last " AND "
-
-					joined_tables.clear();
+					else if (subject_table.doc_key_pgname != null)
+						sb.append((aggr_func_expr ? " GROUP BY " : " ORDER BY ") + subject_table_name + "." + subject_table.doc_key_pgname);
 
 				}
-
-				else {
-
-					target_tables.forEach((_table_, _path_) -> appendSqlTable(_table_, sb));
-
-					sb.setLength(sb.length() - 2); // remove last ", "
-
-					target_tables.clear();
-
-				}
-
-				if (sb.substring(sb.length() - 6).equals("WHERE "))
-					sb.setLength(sb.length() - 7);
-
-				if (path_expr.sql_adverb != null)
-					sb.append(" " + path_expr.sql_adverb.predicate);
-
-				else if (deny_frag)
-					sb.append(" LIMIT 1");
-
-				else if (subject_table.doc_key_pgname != null)
-					sb.append((aggr_func_expr ? " GROUP BY " : " ORDER BY ") + subject_table_name + "." + subject_table.doc_key_pgname);
 
 				path_expr.sql = sb.toString();
 
@@ -5198,12 +5200,13 @@ public class XPathCompList {
 	 *
 	 * @param sql_expr SQL expression
 	 * @param sb StringBuilder to store SQL expression
+	 * @return boolean whether subject relates to tables in FROM clause
 	 */
-	private void appendSqlSubject(XPathExpr path_expr, StringBuilder sb) {
+	private boolean appendSqlSubject(XPathExpr path_expr, StringBuilder sb) {
 
 		if (!aggr_func_expr) {
 			appendSqlColumnName(path_expr.sql_subject, sb);
-			return;
+			return true;
 		}
 
 		StringBuilder _sb = new StringBuilder();
@@ -5218,14 +5221,14 @@ public class XPathCompList {
 				case "local-name":
 					switch (path_expr.terminus) {
 					case table:
-						sb.append("'" + path_expr.sql_subject.table.pname + "'");
+						sb.append("'" + path_expr.sql_subject.table.pname + "' AS \"local-name\"");
 						break;
 					case element:
 					case simple_content:
 					case attribute:
 					case any_element:
 					case any_attribute:
-						sb.append("'" + path_expr.sql_subject.field.pname + "'");
+						sb.append("'" + path_expr.sql_subject.field.pname + "' AS \"local-name\"");
 						break;
 					default:
 					}
@@ -5233,23 +5236,23 @@ public class XPathCompList {
 				case "namespace-uri":
 					switch (path_expr.terminus) {
 					case table:
-						sb.append("'" + (path_expr.sql_subject.table.target_namespace != null ? path_expr.sql_subject.table.target_namespace.split(" ")[0] : "") + "'");
+						sb.append("'" + (path_expr.sql_subject.table.target_namespace != null ? path_expr.sql_subject.table.target_namespace.split(" ")[0] : "") + "' AS \"namespace-uri\"");
 						break;
 					case element:
 					case simple_content:
 					case attribute:
 					case any_element:
 					case any_attribute:
-						sb.append("'" + (path_expr.sql_subject.field.target_namespace != null ? path_expr.sql_subject.field.target_namespace.split(" ")[0] : "") + "'");
+						sb.append("'" + (path_expr.sql_subject.field.target_namespace != null ? path_expr.sql_subject.field.target_namespace.split(" ")[0] : "") + "' AS \"namespace-uri\"");
 						break;
 					default:
-					}					
+					}
 					break;
 				case "name":
 					switch (path_expr.terminus) {
 					case table:
 						String prefix = path_expr.sql_subject.table.prefix;
-						sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + path_expr.sql_subject.table.pname + "'");
+						sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + path_expr.sql_subject.table.pname + "' AS name");
 						break;
 					case element:
 					case simple_content:
@@ -5258,7 +5261,7 @@ public class XPathCompList {
 					case any_attribute:
 						PgField field = path_expr.sql_subject.table.getCanField(path_expr.sql_subject.field.xname);
 						prefix = field.prefix;
-						sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + path_expr.sql_subject.field.pname + "'");
+						sb.append("'" + (!prefix.isEmpty() ? prefix + ":" : "") + path_expr.sql_subject.field.pname + "' AS name");
 						break;
 					default:
 					}
@@ -5274,15 +5277,21 @@ public class XPathCompList {
 
 		});
 
-		if (_sb.indexOf(")") != -1)
+		boolean func_call = _sb.indexOf(")") != -1;
+
+		if (func_call) {
+
 			appendSqlColumnName(path_expr.sql_subject, sb);
 
-		sb.append(_sb);
+			sb.append(_sb);
 
-		_sb.setLength(0);
+			_sb.setLength(0);
+
+		}
 
 		path_expr.terminus = XPathCompType.text;
 
+		return func_call;
 	}
 
 	/**
@@ -6097,6 +6106,16 @@ public class XPathCompList {
 				}
 				appendSqlColumnName(src_table, serial_key_name, sb);
 				break;
+			case "count":
+				if (pred_size != 1)
+					throw new PgSchemaException(tree);
+
+				sql_expr = sql_predicates.get(0);
+
+				if (sql_expr.predicate != null)
+					throw new PgSchemaException(tree);
+
+				throw new PgSchemaException("Aggregate function count() are not allowed in WHERE clause. Hint: Please devide the original query and combine the results later.");
 			case "id":
 				if (pred_size != 1)
 					throw new PgSchemaException(tree);
@@ -6968,6 +6987,16 @@ public class XPathCompList {
 
 				}
 				break;
+			case "sum":
+				if (pred_size != 1)
+					throw new PgSchemaException(tree);
+
+				sql_expr_str = sql_predicates.get(0);
+
+				if (sql_expr_str.predicate != null)
+					throw new PgSchemaException(tree);
+
+				throw new PgSchemaException("Aggregate function sum() are not allowed in WHERE clause. Hint: Please devide the original query and combine the results later.");
 			case "floor":
 			case "ceiling":
 			case "round":
