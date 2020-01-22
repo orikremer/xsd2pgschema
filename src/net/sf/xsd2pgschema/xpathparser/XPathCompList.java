@@ -276,8 +276,10 @@ public class XPathCompList {
 				if (!text.equals("/") && !text.equals("//") && !text.equals("|") && !text.equals("*")) {
 
 					if (child.getParent().getClass().getSimpleName().equals("FunctionNameContext")) {
+
 						ParseTree func_name = child.getParent();
 						comps.add(new XPathComp(union_counter, step_counter, func_name));
+
 						if (verbose)
 							System.out.println(union_counter + "." + step_counter + " - " + func_name.getClass().getSimpleName() + " '" + func_name.getText() + "'");
 
@@ -4973,22 +4975,22 @@ public class XPathCompList {
 				}
 			}
 
-			Set<XPathComp> src_comps = null;
+			Set<XPathComp> pred_comps = null;
 
 			if (pred_exprs != null && pred_exprs.size() > 0) {
 
 				String _path = path; // finalized
 
-				src_comps = pred_exprs.stream().filter(predicate -> _path.startsWith(predicate.src_path_expr.path)).map(predicate -> predicate.src_comp).collect(Collectors.toSet());
+				pred_comps = pred_exprs.stream().filter(predicate -> _path.startsWith(predicate.src_path_expr.path)).map(predicate -> predicate.src_comp).collect(Collectors.toSet());
 
 				try {
 
-					for (XPathComp src_comp : src_comps) {
+					for (XPathComp pred_comp : pred_comps) {
 
 						if (verbose)
-							System.out.println("\nReversed abstract syntax tree of predicate: '" + src_comp.tree.getText() + "'");
+							System.out.println("\nReversed abstract syntax tree of predicate: '" + pred_comp.tree.getText() + "'");
 
-						testPredicateTree2SqlExpr(src_comp, path_expr);
+						testPredicateTree2SqlExpr(pred_comp, path_expr);
 
 					}
 
@@ -5021,7 +5023,7 @@ public class XPathCompList {
 
 					sb.append(" FROM ");
 
-					if (src_comps != null) {
+					if (pred_comps != null) {
 
 						// remove subject table from target
 
@@ -5100,9 +5102,9 @@ public class XPathCompList {
 
 						int begin = sb.length();
 
-						for (XPathComp src_comp : src_comps) {
+						for (XPathComp pred_comp : pred_comps) {
 
-							translatePredicateTree2SqlImpl(src_comp, path_expr, sb);
+							translatePredicateTree2SqlImpl(pred_comp, path_expr, sb);
 
 							if (sb.length() > begin)
 								sb.append(" AND ");
@@ -5997,6 +5999,75 @@ public class XPathCompList {
 		if (src_path_expr.sql_predicates != null && src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).count() > 0)
 			sql_predicates = src_path_expr.sql_predicates.stream().filter(sql_expr -> sql_expr.parent_tree.equals(tree)).collect(Collectors.toList());
 
+		if (sql_predicates != null) {
+
+			for (int i = 0; i < sql_predicates.size(); i++) {
+
+				XPathSqlExpr sql_expr = sql_predicates.get(i);
+
+				if (sql_expr.predicate == null) {
+
+					String currentClass = sql_expr.current_tree.getClass().getSimpleName();
+
+					if (isPathContextClass(currentClass)) { // quick silver solution
+
+						String parent_path = sql_expr.path;
+						String pred_path = sql_expr.current_tree.getText();
+
+						XPathCompType pred_type = XPathCompType.element;
+
+						while (true) {
+
+							if (pred_path.startsWith("./"))
+								pred_path = pred_path.replaceFirst("^./", "");
+							else if (pred_path.startsWith("self::"))
+								pred_path = pred_path.replaceFirst("^self::", "");
+							else if (pred_path.startsWith("../")) {
+								XPathExpr current_path = new XPathExpr(parent_path, XPathCompType.table);
+								parent_path = current_path.getParentPath();
+								pred_path = pred_path.replaceFirst("^../", "");
+							}
+							else if (pred_path.startsWith("parent::")) {
+								XPathExpr current_path = new XPathExpr(parent_path, XPathCompType.table);
+								parent_path = current_path.getParentPath();
+								pred_path = pred_path.replaceFirst("^parent::", "");
+							}
+							else if (pred_path.startsWith("attribute::")) {
+								pred_type = XPathCompType.attribute;
+								pred_path = pred_path.replaceFirst("^attribute::", "");
+								break;
+							}
+							else if (pred_path.startsWith("@")) {
+								pred_type = XPathCompType.attribute;
+								pred_path = pred_path.replaceFirst("^@", "");
+								break;
+							}
+							else if (pred_path.contains("child::"))
+								pred_path = pred_path.replaceAll("child::", "");
+							else
+								break;
+
+						}
+
+						String[] _pred_paths = pred_path.split("/");
+
+						for (int j = 0; j < _pred_paths.length; j++) {
+
+							if (_pred_paths[j].contains(":"))
+								_pred_paths[j] = PgSchemaUtil.getUnqualifiedName(_pred_paths[j]);
+
+						}
+
+						sql_predicates.set(i, getXPathSqlExprOfPath(parent_path + "/" + String.join("/", _pred_paths), pred_type));
+
+					}
+
+				}
+
+			}
+
+		}
+
 		String func_name = null;
 
 		ParseTree child;
@@ -6119,7 +6190,7 @@ public class XPathCompList {
 				if (sql_expr.predicate != null)
 					throw new PgSchemaException(tree);
 
-				throw new PgSchemaException("Aggregate function count() are not allowed in WHERE clause. Hint: The original query can be split into several parts and combine the results later.");
+				throw new PgSchemaException("Aggregate function count() can not exist in WHERE clause. Hint: The original query might be split into several parts, and you may need to combine the results later.");
 			case "id":
 				if (pred_size != 1)
 					throw new PgSchemaException(tree);
@@ -6129,7 +6200,7 @@ public class XPathCompList {
 				if (sql_expr.predicate != null)
 					throw new PgSchemaException(tree);
 
-				throw new PgSchemaException("Aggregate function id() are not allowed in WHERE clause. Hint: The original query can be split into several parts and combine the results later.");
+				throw new PgSchemaException("Aggregate function id() can not exist in WHERE clause. Hint: The original query might be split into several parts, and you may need to combine the results later.");
 			case "local-name":
 				if (pred_size > 1)
 					throw new PgSchemaException(tree);
@@ -6998,7 +7069,7 @@ public class XPathCompList {
 				if (sql_expr_str.predicate != null)
 					throw new PgSchemaException(tree);
 
-				throw new PgSchemaException("Aggregate function sum() are not allowed in WHERE clause. Hint: The original query can be split into several parts and combine the results later.");
+				throw new PgSchemaException("Aggregate function sum() can not exist in WHERE clause. Hint: The original query might be split into several parts, and you may need to combine the results later.");
 			case "floor":
 			case "ceiling":
 			case "round":
@@ -7704,7 +7775,7 @@ public class XPathCompList {
 				appendSqlColumnName(src_table, serial_key_name, sb);
 				sb.append(" = " + ser_id);
 			} catch (NumberFormatException e) {
-				if (_predicateContextClass != null && (_predicateContextClass.equals("EqualityExprContext") || _predicateContextClass.equals("RelationalExprContext") || _predicateContextHasBooleanFunc))
+				if (_predicateContextClass != null && (_predicateContextClass.equals("EqualityExprContext") || _predicateContextClass.equals("RelationalExprContext") || _predicateContextClass.equals("FunctionCallContext") || _predicateContextHasBooleanFunc))
 					sb.append(sql_expr.predicate);
 			}
 			break;
