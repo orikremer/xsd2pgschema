@@ -6565,60 +6565,6 @@ public class XPathCompList {
 
 				else {
 
-					String first_arg = sql_expr_str.predicate;
-					if (first_arg != null)
-						first_arg = first_arg.substring(1, first_arg.length() - 1);
-
-					String second_arg = sql_expr_sub.predicate;
-					if (second_arg != null)
-						second_arg = second_arg.substring(1, second_arg.length() - 1);
-
-					switch (func_name) {
-					case "substring-before":
-						sb.append("left( ");
-						break;
-					case "substring-after":
-						sb.append("right( ");
-						break;
-					}
-
-					if (sql_expr_str.predicate != null)
-						sb.append(sql_expr_str.predicate);
-					else
-						appendSqlColumnName(sql_expr_str, sb);
-
-					sb.append(", ");
-
-					if (func_name.equals("substring-after")) {
-
-						if (sql_expr_str.predicate != null)
-							sb.append(first_arg.length());
-
-						else {
-
-							sb.append("length( ");
-							appendSqlColumnName(sql_expr_str, sb);
-							sb.append(" )");
-
-						}
-
-						sb.append(" - ");
-
-						if (sql_expr_sub.predicate != null)
-							sb.append(second_arg.length());
-
-						else {
-
-							sb.append("length( ");
-							appendSqlColumnName(sql_expr_sub, sb);
-							sb.append(" )");
-
-						}
-
-						sb.append(" + 1 - ");
-
-					}
-
 					sb.append("strpos( ");
 
 					if (sql_expr_str.predicate != null)
@@ -6633,10 +6579,42 @@ public class XPathCompList {
 					else
 						appendSqlColumnName(sql_expr_sub, sb);
 
-					sb.append(" )");
+					sb.append(" ) > 0 AND substring( ");
 
-					if (func_name.equals("substring-before"))
-						sb.append(" - 1");
+					if (sql_expr_str.predicate != null)
+						sb.append(sql_expr_str.predicate);
+					else
+						appendSqlColumnName(sql_expr_str, sb);
+
+					switch (func_name) {
+					case "substring-before":
+						sb.append(", 0, strpos( ");
+						break;
+					case "substring-after":
+						sb.append(", strpos( ");
+						break;
+					}
+
+					if (sql_expr_str.predicate != null)
+						sb.append(sql_expr_str.predicate);
+					else
+						appendSqlColumnName(sql_expr_str, sb);
+
+					sb.append(", ");
+
+					if (sql_expr_sub.predicate != null)
+						sb.append(sql_expr_sub.predicate);
+					else
+						appendSqlColumnName(sql_expr_sub, sb);
+
+					switch (func_name) {
+					case "substring-before":
+						sb.append(" )");
+						break;
+					case "substring-after":
+						sb.append(" ) + 1");
+						break;
+					}
 
 					sb.append(" )");
 
