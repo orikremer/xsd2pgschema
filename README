@@ -1,14 +1,19 @@
-﻿ Changes in xsd2pgschema 4.0.7 (release 2020-01-23)
+﻿ Changes in xsd2pgschema 4.1.0 (release 2020-01-23)
 
-  [Ticket #9] Fixed NullPointerException while schema generation.
-  Used serial key in the ORDER BY clause if available.
-  Imposed to use the same version of PgSchema server.
+  NOTICE: We recommend all users should update 4.1.0 or later.
+   Fixed duplication of primary key that affects the following versions: 4.0.5, 4.0.6, and 4.0.7
   Fixed SQL translation of document order dependent XPath query using position() and last() functions.
   Fixed SQL translation of XPath query including aggregate functions, count(), sum(), local-name(), namespace-uri(), and name().
   Fixed SQL translation of XPath query including string-before(), string-after(), number(), boolean(), and not() functions.
   Added diagnostic hint for XPath query including id(), count(), and sum() functions.
   Fixed node identification in XPath function call context.
-  Fixed duplication of primary key that affects the following versions: 4.0.5 (withdrawn), 4.0.6 (withdrawn), and 4.0.7 released before 2020-01-22.
+  Updated dependency (ANTLR4 from 4.7 to 4.8).
+
+ Changes in xsd2pgschema 4.0.7 (release 2020-01-22)
+
+  [Ticket #9] Fixed NullPointerException while schema generation.
+  Used serial key in the ORDER BY clause if available.
+  Imposed to use the same version of PgSchema server.
 
  Changes in xsd2pgschema 4.0.6 (release 2020-01-09)
 

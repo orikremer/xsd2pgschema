@@ -5141,8 +5141,14 @@ public class XPathCompList {
 					else if (deny_frag)
 						sb.append(" LIMIT 1");
 
-					else if (subject_table.doc_key_pgname != null)
+					else if (subject_table.doc_key_pgname != null) {
+
 						sb.append((func_expr ? " GROUP BY " : " ORDER BY ") + subject_table_name + "." + subject_table.doc_key_pgname);
+
+						if (!func_expr && option.serial_key && subject_table.order_by != null && !subject_table.order_by.contains(subject_table.doc_key_pgname))
+							sb.append(", " + subject_table_name + "." + subject_table.order_by);
+
+					}
 
 				}
 
@@ -6058,7 +6064,31 @@ public class XPathCompList {
 
 						}
 
-						sql_predicates.set(i, getXPathSqlExprOfPath(parent_path + "/" + String.join("/", _pred_paths), pred_type));
+						pred_path = parent_path + "/" + String.join("/", _pred_paths);
+
+						XPathSqlExpr _sql_expr = getXPathSqlExprOfPath(pred_path, pred_type);
+
+						if (_sql_expr == null) {
+
+							if (pred_type.equals(XPathCompType.attribute) && option.wild_card)
+								_sql_expr = getXPathSqlExprOfPath(pred_path, XPathCompType.any_attribute);
+
+							else {
+
+								String last_path = _pred_paths[_pred_paths.length - 1];
+
+								if (last_path.equals("text()"))
+									_sql_expr = getXPathSqlExprOfPath(pred_path, XPathCompType.simple_content);
+
+								else if (option.wild_card)
+									_sql_expr = getXPathSqlExprOfPath(pred_path, XPathCompType.any_element);
+
+							}
+
+						}
+
+						if (_sql_expr != null)
+							sql_predicates.set(i, _sql_expr);
 
 					}
 

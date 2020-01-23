@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>net.sf.xsd2pgschema</groupId>
 	<artifactId>xsd2pgschema</artifactId>
-	<version>4.0.7</version>
+	<version>4.1.0</version>
 	<name>xsd2pgschema</name>
 	<description>Database replication tool based on XML Schema</description>
 	<url>https://sourceforge.net/projects/xsd2pgschema/</url>
@@ -52,22 +52,22 @@
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-core</artifactId>
-			<version>8.4.0</version>
+			<version>8.4.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-analyzers-common</artifactId>
-			<version>8.4.0</version>
+			<version>8.4.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-suggest</artifactId>
-			<version>8.4.0</version>
+			<version>8.4.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.lucene</groupId>
 			<artifactId>lucene-misc</artifactId>
-			<version>8.4.0</version>
+			<version>8.4.1</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>
@@ -92,7 +92,7 @@
 		<dependency>
 			<groupId>org.antlr</groupId>
 			<artifactId>antlr4</artifactId>
-			<version>4.7.2</version>
+			<version>4.8-1</version>
 		</dependency>
 		<dependency>
 			<groupId>de.ruedigermoeller</groupId>
