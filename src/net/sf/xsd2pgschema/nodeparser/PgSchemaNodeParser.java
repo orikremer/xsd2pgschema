@@ -285,7 +285,7 @@ public abstract class PgSchemaNodeParser {
 
 				PgField _field = table.getField(field.delegated_sibling_key_name);
 
-				if (_field != null && !testNestedKey(node, _field))
+				if (_field != null && testNestedKey(node, _field))
 					return null;
 
 			}
@@ -326,6 +326,12 @@ public abstract class PgSchemaNodeParser {
 
 		if (field.nested_key_as_attr) {
 
+			if (!node.getParentNode().hasAttributes())
+				return false;
+
+			if (table.has_simple_content && !node.hasAttributes())
+				return false;
+
 			if (field.delegated_field_pname != null && ((Element) node).getAttribute(field.foreign_table_xname).isEmpty())
 				return false;
 
@@ -333,11 +339,14 @@ public abstract class PgSchemaNodeParser {
 
 		else {
 
+			if (table.has_nested_key_to_simple_attr && current_key.contains("@"))
+				return false;
+
 			if (field.delegated_sibling_key_name != null) {
 
 				PgField _field = table.getField(field.delegated_sibling_key_name);
 
-				if (_field != null && !testNestedKey(node, _field))
+				if (_field != null && testNestedKey(node, _field))
 					return false;
 
 			}
