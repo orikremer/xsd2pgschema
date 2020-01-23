@@ -6932,10 +6932,24 @@ public class XPathCompList {
 				String first_arg = sql_expr_str.predicate;
 
 				if (((first_arg.startsWith("'") && first_arg.endsWith("'")) ||
-						(first_arg.startsWith("\"") && first_arg.endsWith("\""))))
+						(first_arg.startsWith("\"") && first_arg.endsWith("\"")))) {
 					first_arg = first_arg.substring(1, first_arg.length() - 1);
 
-				src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, null, first_arg.isEmpty() ? "FALSE" : "TRUE", XPathCompType.text, parent, tree));
+					src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, null, first_arg.isEmpty() ? "FALSE" : "TRUE", XPathCompType.text, parent, tree));
+
+				} else {
+
+					try {
+
+						BigDecimal value = new BigDecimal(first_arg.trim());
+
+						src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, null, value.equals(BigDecimal.ZERO) ? "FALSE" : "TRUE", XPathCompType.text, parent, tree));
+
+					} catch (NumberFormatException e) {
+						src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, null, "FALSE", XPathCompType.text, parent, tree));
+					}
+
+				}
 
 			}
 
@@ -6943,11 +6957,39 @@ public class XPathCompList {
 
 				StringBuilder sb = new StringBuilder();
 
+				PgField field = sql_expr_str.table.getPgField(sql_expr_str.pname);
+
 				sb.append("( ");
 
-				appendSqlColumnName(sql_expr_str, sb);
+				switch (field.xs_type) {
+				case xs_boolean:
+					appendSqlColumnName(sql_expr_str, sb);
+					break;
+				case xs_float:
+				case xs_double:
+				case xs_decimal:
+				case xs_integer:
+				case xs_nonNegativeInteger:
+				case xs_nonPositiveInteger:
+				case xs_positiveInteger:
+				case xs_negativeInteger:
+				case xs_long:
+				case xs_unsignedLong:
+				case xs_int:
+				case xs_unsignedInt:
+				case xs_short:
+				case xs_unsignedShort:
+				case xs_byte:
+				case xs_unsignedByte:
+					appendSqlColumnName(sql_expr_str, sb);
+					sb.append(" = 0");
+					break;
+				default:
+					appendSqlColumnName(sql_expr_str, sb);
+					sb.append(" IS NOT NULL");
+				}
 
-				sb.append(" IS NOT NULL )");
+				sb.append(" )");
 
 				src_path_expr.appendPredicateSql(new XPathSqlExpr(schema, null, null, null, null, sb.toString(), XPathCompType.text, parent, tree));
 
@@ -7033,8 +7075,15 @@ public class XPathCompList {
 
 					}
 
-					else
+					else {
+
+						sb.append("cast( ");
+
 						appendSqlColumnName(sql_expr_str, sb);
+
+						sb.append(" AS numeric )");
+
+					}
 
 				}
 				break;
@@ -7420,6 +7469,8 @@ public class XPathCompList {
 					appendSqlColumnName(src_table, serial_key_name, sb);
 					sb.append(" = " + ser_id);
 				} catch (NumberFormatException e) {
+					if (_predicateContextClass != null && (_predicateContextClass.equals("EqualityExprContext") || _predicateContextClass.equals("RelationalExprContext") || _predicateContextClass.equals("FunctionCallContext") || _predicateContextHasBooleanFunc))
+						sb.append(sql_expr.predicate);
 				}
 				break;
 			default:
@@ -7688,6 +7739,8 @@ public class XPathCompList {
 						appendSqlColumnName(src_table, serial_key_name, sb);
 						sb.append(" = " + ser_id);
 					} catch (NumberFormatException e) {
+						if (_predicateContextClass != null && (_predicateContextClass.equals("EqualityExprContext") || _predicateContextClass.equals("RelationalExprContext") || _predicateContextClass.equals("FunctionCallContext") || _predicateContextHasBooleanFunc))
+							sb.append(sql_expr.predicate);
 					}
 					break;
 				default:
