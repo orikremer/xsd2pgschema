@@ -6420,11 +6420,8 @@ public class XPathCompList {
 
 					else {
 
-						sb.append("cast( ");
-
 						appendSqlColumnName(sql_expr_str, sb);
-
-						sb.append(" AS text )");
+						sb.append("::text");
 
 					}
 
@@ -7115,11 +7112,8 @@ public class XPathCompList {
 
 					else {
 
-						sb.append("cast( ");
-
 						appendSqlColumnName(sql_expr_str, sb);
-
-						sb.append(" AS numeric )");
+						sb.append("::numeric");
 
 					}
 
