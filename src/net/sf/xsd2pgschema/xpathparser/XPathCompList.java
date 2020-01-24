@@ -5392,7 +5392,7 @@ public class XPathCompList {
 
 				// arbitrary PathContext node
 
-				if (isPathContextClass(currentClass))
+				if (isPathContextClass(currentClass) && !parentClass.equals("VariableReferenceContext"))
 					testPathContext(src_comp, src_path_expr, parent, tree);
 
 				else {
@@ -6417,8 +6417,15 @@ public class XPathCompList {
 					if (sql_expr_str.predicate != null)
 						sb.append(sql_expr_str.predicate);
 
-					else
+					else {
+
+						sb.append("cast( ");
+
 						appendSqlColumnName(sql_expr_str, sb);
+
+						sb.append(" AS text )");
+
+					}
 
 				}
 				break;
