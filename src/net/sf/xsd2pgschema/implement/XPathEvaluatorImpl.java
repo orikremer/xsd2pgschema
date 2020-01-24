@@ -197,7 +197,14 @@ public class XPathEvaluatorImpl {
 
 				XPathQuery _xpq = opt.get();
 
-				sb.append("Input XPath query:\n" + xpath_query + "\n\nTarget path in XML Schema: " + option.root_schema_location + "\n");
+				sb.append("Input XPath query:\n" + xpath_query + "\n");
+				if (variables.size() > 0) {
+					sb.append("\nInput XPath variable:\n");
+					variables.entrySet().forEach(arg -> sb.append("$" + arg.getKey() + "=" + arg.getValue() + ", "));
+					sb.setLength(sb.length() - 2);
+					sb.append("\n");
+				}
+				sb.append("\nTarget path in XML Schema: " + option.root_schema_location + "\n");
 
 				sb.append(_xpq.path_string + "\nSQL expression:\n" + _xpq.sql_string + "\n");
 
@@ -246,7 +253,14 @@ public class XPathEvaluatorImpl {
 
 			long end_time__ = System.currentTimeMillis();
 
-			sb.append("Input XPath query:\n" + main_text + "\n\nTarget path in XML Schema: " + option.root_schema_location + "\n");
+			sb.append("Input XPath query:\n" + main_text + "\n");
+			if (variables.size() > 0) {
+				sb.append("\nInput XPath variable:\n");
+				variables.entrySet().forEach(arg -> sb.append("$" + arg.getKey() + "=" + arg.getValue() + ", "));
+				sb.setLength(sb.length() - 2);
+				sb.append("\n");
+			}
+			sb.append("\nTarget path in XML Schema: " + option.root_schema_location + "\n");
 
 			// translate XPath to SQL
 

@@ -6070,17 +6070,18 @@ public class XPathCompList {
 
 						if (_sql_expr == null) {
 
-							if (pred_type.equals(XPathCompType.attribute) && option.wild_card)
-								_sql_expr = getXPathSqlExprOfPath(pred_path, XPathCompType.any_attribute);
+							if (pred_type.equals(XPathCompType.attribute)) {
+
+								if (option.wild_card)
+									_sql_expr = getXPathSqlExprOfPath(pred_path, XPathCompType.any_attribute);
+
+							}
 
 							else {
 
-								String last_path = _pred_paths[_pred_paths.length - 1];
+								_sql_expr = getXPathSqlExprOfPath(pred_path, XPathCompType.simple_content);
 
-								if (last_path.equals("text()"))
-									_sql_expr = getXPathSqlExprOfPath(pred_path, XPathCompType.simple_content);
-
-								else if (option.wild_card)
+								if (_sql_expr == null && option.wild_card)
 									_sql_expr = getXPathSqlExprOfPath(pred_path, XPathCompType.any_element);
 
 							}

@@ -252,7 +252,14 @@ public class xpathparser {
 
 			StringBuilder sb = new StringBuilder();
 
-			sb.append("Input XPath query:\n " + main_text + "\n\nTarget path in XML Schema: " + option.root_schema_location + "\n");
+			sb.append("Input XPath query:\n " + main_text + "\n");
+			if (variables.size() > 0) {
+				sb.append("\nInput XPath variable:\n");
+				variables.entrySet().forEach(arg -> sb.append("$" + arg.getKey() + "=" + arg.getValue() + ", "));
+				sb.setLength(sb.length() - 2);
+				sb.append("\n");
+			}
+			sb.append("\nTarget path in XML Schema: " + option.root_schema_location + "\n");
 
 			xpath_comp_list.showPathExprs(sb);
 
