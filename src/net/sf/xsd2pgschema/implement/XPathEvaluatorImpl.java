@@ -200,7 +200,7 @@ public class XPathEvaluatorImpl {
 				sb.append("Input XPath query:\n" + xpath_query + "\n");
 				if (variables.size() > 0) {
 					sb.append("\nInput XPath variable:\n");
-					variables.entrySet().forEach(arg -> sb.append("$" + arg.getKey() + "=" + arg.getValue() + ", "));
+					variables.entrySet().forEach(arg -> sb.append("$" + arg.getKey() + " = " + arg.getValue() + ", "));
 					sb.setLength(sb.length() - 2);
 					sb.append("\n");
 				}
@@ -256,7 +256,7 @@ public class XPathEvaluatorImpl {
 			sb.append("Input XPath query:\n" + main_text + "\n");
 			if (variables.size() > 0) {
 				sb.append("\nInput XPath variable:\n");
-				variables.entrySet().forEach(arg -> sb.append("$" + arg.getKey() + "=" + arg.getValue() + ", "));
+				variables.entrySet().forEach(arg -> sb.append("$" + arg.getKey() + " = " + arg.getValue() + ", "));
 				sb.setLength(sb.length() - 2);
 				sb.append("\n");
 			}
