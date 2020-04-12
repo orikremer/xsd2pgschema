@@ -444,8 +444,6 @@ public class XmlSplitterImpl {
 
 			if (no_header) {
 
-				header_start_events.add(element);
-
 				if (doc_unit) {
 
 					// reverse order of end events
@@ -458,6 +456,8 @@ public class XmlSplitterImpl {
 
 				else {
 
+					header_start_events.add(element);
+
 					// append end event
 
 					QName qname = start_elem.getName();
@@ -468,10 +468,9 @@ public class XmlSplitterImpl {
 
 			}
 
-			else if (xml_writer == null) {
+			if ((!no_header) && (xml_writer == null)) {
 
-				if (!doc_unit)
-					interim_events.add(element);
+				interim_events.add(element);
 
 				if (attr_doc_key && _cur_path.equals(attr_doc_key_holder)) {
 
@@ -506,7 +505,7 @@ public class XmlSplitterImpl {
 
 			}
 
-			else {
+			else if (xml_writer != null) {
 
 				try {
 
